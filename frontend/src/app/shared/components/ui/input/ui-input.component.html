@@ -1,0 +1,68 @@
+<label class="ui-field">
+  <span class="ui-field__label-row">
+    <span class="ui-field__label">{{ label() }}</span>
+    @if (labelActionText() && labelActionRouterLink()) {
+      <a class="ui-field__label-action" [routerLink]="labelActionRouterLink()">
+        {{ labelActionText() }}
+      </a>
+    }
+  </span>
+
+  @if (showPasswordToggle() && type() === 'password') {
+    <span class="ui-field__password" [class.ui-field__password--invalid]="error()">
+      <input
+        class="ui-field__control"
+        [type]="effectiveType()"
+        [name]="name()"
+        [value]="value()"
+        [autocomplete]="autocomplete()"
+        [placeholder]="placeholder()"
+        [required]="required()"
+        [attr.aria-invalid]="error() ? true : null"
+        (input)="handleInput($event)"
+      />
+      <button
+        class="ui-field__icon-button"
+        type="button"
+        [attr.aria-label]="revealPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+        (click)="togglePassword()"
+      >
+        <app-ui-icon [icon]="revealPassword() ? EyeOff : Eye" [size]="18" aria-hidden="true" />
+      </button>
+    </span>
+  } @else {
+    <input
+      class="ui-field__control"
+      [type]="effectiveType()"
+      [name]="name()"
+      [value]="value()"
+      [autocomplete]="autocomplete()"
+      [placeholder]="placeholder()"
+      [required]="required()"
+      [attr.aria-invalid]="error() ? true : null"
+      (input)="handleInput($event)"
+    />
+  }
+
+  @if (showStrength() && type() === 'password') {
+    <span class="ui-field__strength">
+      <span class="ui-field__strength-bar" aria-hidden="true">
+        @for (step of strengthSteps; track step) {
+          <span
+            [class.active]="step <= passwordStrength().score"
+            [class.weak]="passwordStrength().tone === 'weak'"
+            [class.medium]="passwordStrength().tone === 'medium'"
+            [class.strong]="passwordStrength().tone === 'strong'"
+          ></span>
+        }
+      </span>
+      <span class="ui-field__strength-label">{{ passwordStrength().label }}</span>
+    </span>
+  }
+
+  @if (error()) {
+    <span class="ui-field__error">{{ error() }}</span>
+  } @else if (helperText()) {
+    <span class="ui-field__helper">{{ helperText() }}</span>
+  }
+</label>

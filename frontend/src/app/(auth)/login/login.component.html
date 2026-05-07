@@ -1,0 +1,84 @@
+<main class="auth-page">
+  <section class="brand-panel" aria-label="Projeto Med">
+    <div class="brand-top">
+      <img class="brand-logo" src="logo.png" alt="Projeto Med" />
+    </div>
+
+    <div class="brand-story">
+      <p class="brand-kicker">Para alunos da rede Afya</p>
+      <h1 class="brand-title">Treine com questões feitas pra <em>sua prova.</em></h1>
+      <p class="brand-description">
+        Banco específico para Provas Nacionais, Processuais (N1/N2) e Laboratório (P1/P2).
+        Estude exatamente o que cai.
+      </p>
+
+      <div class="metrics" aria-label="Indicadores da plataforma">
+        <div class="metric">
+          <strong>4.8k+</strong>
+          <span>questões</span>
+        </div>
+        <div class="metric">
+          <strong>12</strong>
+          <span>períodos cobertos</span>
+        </div>
+        <div class="metric">
+          <strong>82%</strong>
+          <span>aprovação N1</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="brand-footer">© 2026 Projeto Med</p>
+  </section>
+
+  <section class="form-panel">
+    <div class="auth-box">
+      <nav class="auth-tabs" aria-label="Autenticação">
+        <a class="auth-tab active" routerLink="/login">Entrar</a>
+        <a class="auth-tab" routerLink="/cadastro">Criar conta</a>
+      </nav>
+
+      <h2 class="auth-heading">Bem-vindo de volta.</h2>
+      <p class="auth-copy">Continue a sua sequência de estudos.</p>
+
+      <form class="form">
+        <app-ui-input
+          label="E-mail institucional"
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="seu@email.com"
+          [value]="email()"
+          [error]="state() === 'error' ? 'Email ou senha incorretos.' : null"
+          (valueChange)="email.set($event)"
+        />
+
+        <app-ui-input
+          label="Senha"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          labelActionText="Esqueci a senha"
+          labelActionRouterLink="/recuperar-senha"
+          [value]="password()"
+          [error]="state() === 'error' ? 'Verifique sua senha e tente novamente.' : null"
+          [showPasswordToggle]="true"
+          (valueChange)="password.set($event)"
+        />
+
+        <app-ui-button
+          label="Entrar"
+          loadingLabel="Entrando..."
+          [loading]="state() === 'loading'"
+          [showArrow]="true"
+        />
+      </form>
+
+      <p class="legal">
+        Ao continuar você concorda com os <a class="link" href="#">termos de uso</a> e
+        <a class="link" href="#">política de privacidade</a>.
+      </p>
+    </div>
+  </section>
+</main>

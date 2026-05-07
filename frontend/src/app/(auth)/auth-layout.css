@@ -1,0 +1,249 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  background: var(--color-surface);
+}
+
+.brand-panel {
+  position: relative;
+  display: flex;
+  min-height: 36vh;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: 2rem 1.25rem;
+  color: var(--color-text-inverse);
+  background:
+    radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.18), transparent 26%),
+    linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
+}
+
+.brand-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 34%),
+    radial-gradient(circle at 20% 85%, rgba(13, 148, 136, 0.22), transparent 28%);
+  pointer-events: none;
+}
+
+.brand-top,
+.brand-story,
+.brand-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.brand-top {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.brand-logo {
+  height: 3.5rem;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.brand-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.brand-subtitle,
+.brand-kicker,
+.brand-description,
+.brand-footer,
+.metric span {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.brand-subtitle,
+.brand-kicker,
+.brand-footer,
+.metric span {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.brand-story {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0 3rem;
+}
+
+.brand-title {
+  max-width: 31rem;
+  margin: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 2.875rem;
+  font-weight: 600;
+  line-height: 0.98;
+}
+
+.brand-title em {
+  font-style: italic;
+  font-weight: 600;
+}
+
+.brand-description {
+  max-width: 33rem;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-width: 31rem;
+  margin-top: 1.5rem;
+}
+
+.metric {
+  min-height: 5.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.metric strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 1.625rem;
+  line-height: 1;
+}
+
+.form-panel {
+  display: grid;
+  align-items: center;
+  padding: 2rem 1rem 4.5rem;
+  background: var(--color-surface);
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.auth-tabs {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 0.25rem;
+  margin-bottom: 2rem;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  background: var(--color-surface-2);
+}
+
+.auth-tab {
+  border-radius: 0.375rem;
+  padding: 0.625rem 1.125rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-tab.active {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+}
+
+.auth-heading {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.auth-copy {
+  margin: 0.5rem 0 2rem;
+  color: var(--color-text-muted);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.success {
+  margin: 0;
+  border: 1px solid rgba(5, 150, 105, 0.24);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--color-success);
+  background: #ecfdf5;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.link {
+  color: #1d4ed8;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.legal {
+  margin-top: 2rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.footer-link {
+  margin-top: 1.25rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+@media (min-width: 900px) {
+  .auth-page {
+    grid-template-columns: minmax(420px, 44vw) 1fr;
+  }
+
+  .brand-panel {
+    min-height: 100vh;
+    padding: 3.5rem;
+  }
+
+  .form-panel {
+    min-height: 100vh;
+    padding: 3rem;
+    background: #fbfbfc;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand-title {
+    font-size: 2.25rem;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-heading {
+    font-size: 1.75rem;
+  }
+}

@@ -1,0 +1,63 @@
+<main class="auth-page">
+  <section class="brand-panel" aria-label="Projeto Med">
+    <div class="brand-top">
+      <img class="brand-logo" src="logo.png" alt="Projeto Med" />
+    </div>
+
+    <div class="brand-story">
+      <p class="brand-kicker">Nova senha</p>
+      <h1 class="brand-title">Proteja seu histórico de <em>desempenho.</em></h1>
+      <p class="brand-description">
+        Escolha uma senha forte para manter seus simulados e resultados seguros.
+      </p>
+    </div>
+
+    <p class="brand-footer">© 2026 Projeto Med</p>
+  </section>
+
+  <section class="form-panel">
+    <div class="auth-box">
+      <h2 class="auth-heading">Redefinir senha.</h2>
+      <p class="auth-copy">Crie uma nova senha para voltar ao Projeto Med.</p>
+
+      <form class="form">
+        <app-ui-input
+          label="Nova senha"
+          name="password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="••••••••"
+          [value]="password()"
+          [showPasswordToggle]="true"
+          [showStrength]="true"
+          (valueChange)="password.set($event)"
+        />
+
+        <app-ui-input
+          label="Confirmar nova senha"
+          name="confirmPassword"
+          type="password"
+          autocomplete="new-password"
+          placeholder="••••••••"
+          [value]="confirmPassword()"
+          [error]="state() === 'error' ? 'As senhas não conferem.' : null"
+          [showPasswordToggle]="true"
+          (valueChange)="confirmPassword.set($event)"
+        />
+
+        @if (state() === 'success') {
+          <p class="success">Senha redefinida. Redirecionando para o login...</p>
+        }
+
+        <app-ui-button
+          label="Redefinir senha"
+          loadingLabel="Redefinindo..."
+          [loading]="state() === 'loading'"
+          [showArrow]="true"
+        />
+      </form>
+
+      <p class="footer-link"><a class="link" routerLink="/login">Voltar ao login</a></p>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,49 @@
+<main class="auth-page">
+  <section class="brand-panel" aria-label="Projeto Med">
+    <div class="brand-top">
+      <img class="brand-logo" src="logo.png" alt="Projeto Med" />
+    </div>
+
+    <div class="brand-story">
+      <p class="brand-kicker">Acesso seguro</p>
+      <h1 class="brand-title">Volte para sua rotina de <em>estudos.</em></h1>
+      <p class="brand-description">
+        Enviaremos um link de recuperação para o e-mail usado no seu cadastro.
+      </p>
+    </div>
+
+    <p class="brand-footer">© 2026 Projeto Med</p>
+  </section>
+
+  <section class="form-panel">
+    <div class="auth-box">
+      <h2 class="auth-heading">Recuperar senha.</h2>
+      <p class="auth-copy">Informe seu e-mail institucional para receber o link.</p>
+
+      <form class="form">
+        <app-ui-input
+          label="E-mail institucional"
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="seu@email.com"
+          [value]="email()"
+          (valueChange)="email.set($event)"
+        />
+
+        @if (state() === 'success') {
+          <p class="success">Email enviado! Verifique sua caixa de entrada.</p>
+        }
+
+        <app-ui-button
+          label="Enviar link de recuperação"
+          loadingLabel="Enviando..."
+          [loading]="state() === 'loading'"
+          [showArrow]="true"
+        />
+      </form>
+
+      <p class="footer-link"><a class="link" routerLink="/login">Voltar ao login</a></p>
+    </div>
+  </section>
+</main>

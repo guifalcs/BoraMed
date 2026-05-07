@@ -1,0 +1,17 @@
+<button
+  class="ui-button"
+  [class.ui-button--primary]="variant() === 'primary'"
+  [class.ui-button--secondary]="variant() === 'secondary'"
+  [class.ui-button--danger]="variant() === 'danger'"
+  [class.ui-button--full]="fullWidth()"
+  [type]="type()"
+  [disabled]="disabled() || loading()"
+  [attr.aria-label]="ariaLabel()"
+  [attr.aria-busy]="loading()"
+  (click)="handleClick($event)"
+>
+  <span>{{ loading() ? loadingLabel() : label() }}</span>
+  @if (showArrow() && !loading()) {
+    <span class="ui-button__arrow" aria-hidden="true">→</span>
+  }
+</button>

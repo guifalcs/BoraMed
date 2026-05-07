@@ -1,0 +1,86 @@
+<main class="auth-page">
+  <section class="brand-panel" aria-label="Projeto Med">
+    <div class="brand-top">
+      <img class="brand-logo" src="logo.png" alt="Projeto Med" />
+    </div>
+
+    <div class="brand-story">
+      <p class="brand-kicker">Seu plano de revisão começa aqui</p>
+      <h1 class="brand-title">Monte simulados por tema, prova e <em>período.</em></h1>
+      <p class="brand-description">
+        Organize sua preparação com questões alinhadas às avaliações da rede Afya.
+      </p>
+    </div>
+
+    <p class="brand-footer">© 2026 Projeto Med</p>
+  </section>
+
+  <section class="form-panel">
+    <div class="auth-box">
+      <nav class="auth-tabs" aria-label="Autenticação">
+        <a class="auth-tab" routerLink="/login">Entrar</a>
+        <a class="auth-tab active" routerLink="/cadastro">Criar conta</a>
+      </nav>
+
+      <h2 class="auth-heading">Crie sua conta.</h2>
+      <p class="auth-copy">Use seu e-mail institucional para começar.</p>
+
+      <form class="form">
+        <app-ui-input
+          label="Nome completo"
+          name="fullName"
+          autocomplete="name"
+          placeholder="Nome Sobrenome"
+          [value]="fullName()"
+          [error]="state() === 'error' ? 'Informe seu nome completo.' : null"
+          (valueChange)="fullName.set($event)"
+        />
+
+        <app-ui-input
+          label="E-mail institucional"
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="seu@email.com"
+          [value]="email()"
+          [error]="state() === 'error' ? 'Use um e-mail institucional válido.' : null"
+          (valueChange)="email.set($event)"
+        />
+
+        <app-ui-input
+          label="Senha"
+          name="password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="••••••••"
+          [value]="password()"
+          [error]="state() === 'error' ? 'A senha precisa ter pelo menos 8 caracteres.' : null"
+          [showPasswordToggle]="true"
+          [showStrength]="true"
+          (valueChange)="password.set($event)"
+        />
+
+        <app-ui-input
+          label="Confirmar senha"
+          name="confirmPassword"
+          type="password"
+          autocomplete="new-password"
+          placeholder="••••••••"
+          [value]="confirmPassword()"
+          [error]="state() === 'error' ? 'As senhas não conferem.' : null"
+          [showPasswordToggle]="true"
+          (valueChange)="confirmPassword.set($event)"
+        />
+
+        <app-ui-button
+          label="Criar conta"
+          loadingLabel="Criando conta..."
+          [loading]="state() === 'loading'"
+          [showArrow]="true"
+        />
+      </form>
+
+      <p class="footer-link">Já tem conta? <a class="link" routerLink="/login">Já tenho conta</a></p>
+    </div>
+  </section>
+</main>

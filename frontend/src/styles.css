@@ -1,13 +1,40 @@
-html {
-  color-scheme: dark;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap");
+
+:root {
+  --color-primary: #1e40af;
+  --color-primary-light: #3b82f6;
+  --color-primary-dark: #1e3a8a;
+  --color-action: #2554dc;
+  --color-success: #059669;
+  --color-danger: #dc2626;
+  --color-warning: #d97706;
+  --color-bg: #f8fafc;
+  --color-bg-soft: #fbfbfc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   margin: 0;
+  color: var(--color-text);
   font-family: Inter, "Segoe UI", sans-serif;
-  background: #020617;
+  background: var(--color-bg);
 }
 
 * {
   box-sizing: border-box;
+}
+
+button,
+input {
+  font: inherit;
 }

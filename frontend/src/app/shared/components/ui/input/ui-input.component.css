@@ -1,0 +1,120 @@
+.ui-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ui-field__label {
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.ui-field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ui-field__label-action {
+  color: #1d4ed8;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ui-field__label-action:hover {
+  text-decoration: underline;
+}
+
+.ui-field__control {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+}
+
+.ui-field__control:focus,
+.ui-field__password:focus-within {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.ui-field__control[aria-invalid="true"],
+.ui-field__password--invalid {
+  border-color: var(--color-danger);
+}
+
+.ui-field__password {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+}
+
+.ui-field__password .ui-field__control {
+  border: 0;
+  box-shadow: none;
+}
+
+.ui-field__icon-button {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ui-field__error,
+.ui-field__helper,
+.ui-field__strength-label {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.ui-field__error {
+  color: var(--color-danger);
+}
+
+.ui-field__helper,
+.ui-field__strength-label {
+  color: var(--color-text-muted);
+}
+
+.ui-field__strength {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.ui-field__strength-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+}
+
+.ui-field__strength-bar span {
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+}
+
+.ui-field__strength-bar span.active.weak {
+  background: var(--color-danger);
+}
+
+.ui-field__strength-bar span.active.medium {
+  background: var(--color-warning);
+}
+
+.ui-field__strength-bar span.active.strong {
+  background: var(--color-success);
+}
