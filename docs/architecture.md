@@ -3,11 +3,11 @@
 
 > Decisões são append-only. Nunca editar uma decisão anterior — apenas adicionar novas.
 
-## ADR-001: Next.js App Router + Supabase
+## ADR-001: Angular + Supabase
 
  **Data** : 2025-05
- **Decisão** : Next.js 14 com App Router para frontend; Supabase para DB, Auth e Storage.
- **Motivo** : Stack completa com menor overhead operacional para time de 2 pessoas. Supabase elimina backend próprio. Next.js Server Components reduzem JS no cliente.
+ **Decisão** : Angular 18+ (standalone components, signals) para frontend; Supabase para DB, Auth e Storage.
+ **Motivo** : Stack padrão Rebuild já dominada pelo time. Angular standalone + signals reduz boilerplate. Supabase elimina backend próprio para time de 2 pessoas.
 
 ## ADR-002: Web-first, mobile-friendly
 
@@ -39,8 +39,8 @@
  **Decisão** : Banco de questões processuais e de laboratório contém questões reescritas/adaptadas pelos sócios, não cópias das provas originais dos professores Afya.
  **Motivo** : Provas elaboradas por professores pertencem à instituição. Reescrita elimina risco jurídico e é suficiente para o propósito pedagógico.
 
-## ADR-007: Geração de simulado server-side
+## ADR-007: Sorteio de questões server-side via Supabase RPC
 
  **Data** : 2025-05
- **Decisão** : Lógica de sorteio e montagem do simulado roda em Server Action, não no cliente.
- **Motivo** : Evita exposição da lógica de seleção e dos IDs das questões antes do aluno responder. Reduz superfície de manipulação.
+ **Decisão** : Lógica de sorteio e montagem do simulado roda em Supabase RPC ou Edge Function, não no cliente Angular.
+ **Motivo** : Evita exposição dos IDs de todas as questões antes do aluno responder. Reduz superfície de manipulação.

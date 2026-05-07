@@ -3,14 +3,16 @@
 
 ## Stack
 
-Next.js 14 App Router + TypeScript + Tailwind | Supabase | Vercel | Playwright
+Angular 18+ (standalone, signals) + TypeScript + Tailwind | Supabase | Vercel | Playwright
 
 ## Comandos
 
 ```bash
-npm run dev          # dev local
-npm run build        # build
-npm run lint         # lint
+ng serve             # dev em localhost:4200
+ng build             # build de produção
+ng lint              # lint
+ng test              # testes unitários
+npm run storybook    # Storybook em localhost:6006
 npx supabase start   # supabase local (Docker)
 npx supabase db push # migrations (DEV apenas)
 npx playwright test  # testes e2e
@@ -19,22 +21,27 @@ npx playwright test  # testes e2e
 ## Convenções
 
 * TypeScript strict. Sem `any`.
+* Standalone components. Sem NgModule.
+* Signals para estado reativo. Evitar RxJS para estado simples.
+* `ChangeDetectionStrategy.OnPush` em todos os componentes.
 * kebab-case para arquivos, PascalCase para componentes.
-* Server Components por padrão. `'use client'` só para interatividade.
-* Server Actions em `actions.ts` dentro da pasta da feature.
 * Commits em português: `tipo(escopo): descrição`
 * Migrations: `YYYYMMDDHHMMSS_nome_descritivo.sql`
 
 ## Estrutura
 
 ```
-frontend/src/app/          # rotas Next.js (App Router)
-frontend/src/components/   # componentes reutilizáveis
-frontend/src/lib/          # supabase client/server, utils
-frontend/src/types/        # tipos TypeScript do domínio
-supabase/migrations/       # migrations SQL com timestamp
-supabase/functions/        # edge functions Deno
-docs/                      # regras de negócio, arquitetura, design
+frontend/src/app/
+  (auth)/            # login, cadastro
+  (dashboard)/       # área logada
+    provas/          # provas nacionais
+    simulado/        # geração e execução
+    historico/       # desempenho
+  core/              # guards, interceptors, services globais
+  shared/            # componentes, pipes, directives reutilizáveis
+supabase/migrations/ # migrations SQL com timestamp
+supabase/functions/  # edge functions Deno
+docs/                # documentação de domínio
 ```
 
 ## Módulos MVP
@@ -50,4 +57,4 @@ docs/                      # regras de negócio, arquitetura, design
 * NUNCA expor service role key no frontend.
 * RLS obrigatório em toda tabela nova.
 * Questões de laboratório exigem `imagem_url`.
-* Lógica de sorteio de questões: sempre server-side.
+* Sorteio de questões: Supabase RPC ou Edge Function — nunca lógica no cliente.

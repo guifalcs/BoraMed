@@ -4,9 +4,12 @@
 ## Comandos
 
 ```bash
-npm run dev    # dev em localhost:3000
-npm run build  # build de produção
-npm run lint   # eslint
+ng serve             # dev em localhost:4200
+ng build             # build de produção
+ng lint              # lint
+ng test              # testes unitários (Karma/Jasmine)
+ng generate component # gerar componente
+npm run storybook    # Storybook em localhost:6006
 npx playwright test  # testes e2e
 ```
 
@@ -16,72 +19,107 @@ npx playwright test  # testes e2e
 src/
   app/
     (auth)/
-      login/page.tsx
-      cadastro/page.tsx
+      login/
+        login.component.ts
+        login.component.html
+      cadastro/
+        cadastro.component.ts
     (dashboard)/
-      layout.tsx              # sidebar + header
-      page.tsx                # home/dashboard
+      dashboard.component.ts       # layout com sidebar
       provas/
-        page.tsx              # lista de provas nacionais
-        [id]/page.tsx         # prova específica
+        provas-list.component.ts   # lista de provas nacionais
+        prova-detail.component.ts  # execução da prova
       simulado/
-        novo/page.tsx         # configurador de simulado
-        [id]/page.tsx         # execução do simulado
-        [id]/resultado/page.tsx
-      historico/page.tsx
-  components/
-    ui/                       # Button, Input, Card, Badge, Skeleton
-    questao/
-      questao-card.tsx
-      alternativa-item.tsx
-    simulado/
-      simulado-header.tsx     # progresso + timer + finalizar
-      configurador.tsx        # seletor de tema + quantidade
-      resultado-summary.tsx
-    layout/
-      sidebar.tsx
-      bottom-nav.tsx          # mobile
-  lib/
-    supabase/
-      client.ts               # createBrowserClient
-      server.ts               # createServerClient
-    utils/
-      simulado.ts             # lógica de sorteio, cálculo de nota
-  types/
-    index.ts                  # Questao, Alternativa, Simulado, Resultado...
+        simulado-config.component.ts   # configurador
+        simulado-exec.component.ts     # execução
+        simulado-result.component.ts   # resultado
+      historico/
+        historico.component.ts
+    core/
+      guards/
+        auth.guard.ts
+      services/
+        supabase.service.ts
+        auth.service.ts
+        simulado.service.ts
+      interceptors/
+    shared/
+      components/
+        questao-card/
+        alternativa-item/
+        simulado-header/
+        resultado-summary/
+        ui/                        # Button, Badge, Skeleton, Input
+      pipes/
+      directives/
+  environments/
+    environment.ts
+    environment.prod.ts
 ```
 
-## Supabase Client
+## Padrão de Componente
 
 ```ts
-// Server Component / Server Action
-import { createClient } from '@/lib/supabase/server'
-
-// Client Component
-import { createClient } from '@/lib/supabase/client'
+// kebab-case no arquivo, PascalCase na classe
+// questao-card.component.ts
+@Component({
+  selector: 'app-questao-card',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './questao-card.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class QuestaoCardComponent {
+  questao = input.required<Questao>()
+  numero = input.required<number>()
+  onResponder = output<string>()
+}
 ```
 
 ## Regras
 
-* Sem `any`. Todos os tipos em `src/types/index.ts`.
+* Standalone components. Sem NgModule.
+* Signals para estado: `signal()`, `computed()`, `effect()`.
+* `input()` e `output()` em vez de `@Input()` / `@Output()`.
+* `ChangeDetectionStrategy.OnPush` em todos os componentes.
+* Sem `any`. Tipos em `src/app/core/models/`.
+* Tailwind para todos os estilos. Sem CSS scoped salvo casos excepcionais.
 * Mobile-first. Breakpoint principal: `md` (768px).
-* Server Components por padrão. `'use client'` só para hooks/eventos.
-* Server Actions em `actions.ts` dentro da pasta da feature.
-* Validação de input com zod em toda Server Action.
 * Imagens de laboratório: skeleton durante loading, `max-w-lg w-full mx-auto rounded-lg`.
-* Lógica de sorteio de questões: sempre server-side (nunca expor IDs no cliente antes de responder).
+* Sorteio de questões: chamar `supabase.service.ts` que delega para RPC/Edge Function.
+
+## Supabase Service
+
+```ts
+// core/services/supabase.service.ts
+@Injectable({ providedIn: 'root' })
+export class SupabaseService {
+  private client = createClient(
+    environment.supabaseUrl,
+    environment.supabaseAnonKey
+  )
+
+  get supabase() { return this.client }
+}
+```
 
 ## Checklist de novo componente
 
-* [ ] Arquivo em kebab-case, componente exportado em PascalCase
-* [ ] Props tipadas com interface (sem `any`)
-* [ ] Mobile-first (testar em 375px)
-* [ ] Loading state se buscar dados
-* [ ] Sem lógica de negócio — delegar para `lib/utils/` ou Server Action
+* [ ] Arquivo kebab-case, classe PascalCase
+* [ ] `standalone: true`
+* [ ] `ChangeDetectionStrategy.OnPush`
+* [ ] Props via `input()`, eventos via `output()`
+* [ ] Sem `any`
+* [ ] Mobile-first
+* [ ] Story no Storybook
 
 ## Variáveis de Ambiente
 
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```ts
+// environments/environment.ts
+export const environment = {
+  production: false,
+  supabaseUrl: '',
+  supabaseAnonKey: '',
+}
 ```

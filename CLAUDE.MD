@@ -1,4 +1,5 @@
-# Projeto Med
+
+# Projeto Med — CLAUDE.md
 
 ## Visão Geral
 
@@ -9,27 +10,30 @@ Plataforma de simulados para estudantes de medicina da rede Afya.
 
 ## Stack
 
-* **Frontend** : Next.js 14 (App Router) + Tailwind CSS + TypeScript
+* **Frontend** : Angular 18+ (standalone components, signals) + Tailwind CSS + TypeScript
 * **Backend/DB** : Supabase (Postgres + Auth + Storage)
 * **Deploy** : Vercel (frontend) + Supabase (backend)
 * **Testes E2E** : Playwright
+* **Storybook** : para desenvolvimento isolado de componentes
 
 ## Comandos
 
 ```bash
-npm run dev          # dev local
-npm run build        # build
-npm run lint         # lint
-npx supabase start   # iniciar supabase local (Docker)
-npx supabase db push # aplicar migrations (DEV apenas)
-npx playwright test  # testes e2e
+ng serve                    # dev em localhost:4200
+ng build                    # build de produção
+ng lint                     # lint
+ng test                     # testes unitários (Karma/Jasmine)
+npm run storybook           # Storybook em localhost:6006
+npx supabase start          # iniciar supabase local (Docker)
+npx supabase db push        # aplicar migrations (DEV apenas)
+npx playwright test         # testes e2e
 ```
 
 ## Estrutura de Pastas
 
 ```
 projeto-med/
-├── frontend/        # Next.js app
+├── frontend/        # Angular app
 ├── supabase/        # migrations, edge functions, seed
 ├── docs/            # regras de negócio, arquitetura, design
 ├── .claude/         # agentes, commands, skills
@@ -39,7 +43,9 @@ projeto-med/
 ## Regras de Código
 
 * TypeScript strict. Sem `any`.
-* Server Components por padrão; `use client` só quando necessário.
+* Standalone components (sem NgModule).
+* Signals para estado reativo. Evitar RxJS para estado simples.
+* `ChangeDetectionStrategy.OnPush` em todos os componentes.
 * Nomes de arquivo: kebab-case. Componentes: PascalCase.
 * Commits: `tipo(escopo): descrição` em português.
 * Toda migration: prefixo timestamp + nome descritivo.
@@ -61,6 +67,7 @@ Campos chave em `questao`: `tipo` (nacional|processual|laboratorio), `periodo`, 
 * NUNCA editar migrations já aplicadas — apenas criar novas.
 * Questões de laboratório sempre têm `imagem_url` obrigatório.
 * Auth: login/senha simples (Supabase Auth email/password).
+* Lógica de sorteio de questões: server-side via Supabase (RPC ou Edge Function).
 
 ## Como Responder
 
