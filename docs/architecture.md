@@ -24,7 +24,7 @@
 ## ADR-004: Storage de imagens no Supabase
 
  **Data** : 2025-05
- **Decisão** : Imagens de lâminas e peças armazenadas no Supabase Storage, bucket `questoes-lab`.
+ **Decisão** : Imagens de lâminas e peças armazenadas no Supabase Storage.
  **Motivo** : Integrado ao mesmo projeto, RLS nativo, CDN incluído no plano.
 
 ## ADR-005: Deploy Vercel + Supabase Cloud
