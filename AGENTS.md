@@ -1,4 +1,3 @@
-
 # Projeto Med — AGENTS.md
 
 ## Stack
@@ -58,3 +57,4 @@ docs/                # documentação de domínio
 * RLS obrigatório em toda tabela nova.
 * Questões de laboratório exigem `imagem_url`.
 * Sorteio de questões: Supabase RPC ou Edge Function — nunca lógica no cliente.
+  Sempre que criar uma funcionalidade, atualizar docs + changelog necessárias do sistema para refletir o estado atual
