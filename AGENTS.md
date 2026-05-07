@@ -1,4 +1,4 @@
-# Projeto Med — AGENTS.md
+# BoraMed — AGENTS.md
 
 ## Stack
 

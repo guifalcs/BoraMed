@@ -1,5 +1,5 @@
 
-# Regras de Negócio — Projeto Med
+# Regras de Negócio — BoraMed
 
 ## Entidades Principais
 

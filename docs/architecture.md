@@ -1,5 +1,5 @@
 
-# Arquitetura — Projeto Med
+# Arquitetura — BoraMed
 
 > Decisões são append-only. Nunca editar uma decisão anterior — apenas adicionar novas.
 

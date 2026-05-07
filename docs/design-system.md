@@ -1,4 +1,4 @@
-# Design System — Projeto Med
+# Design System — BoraMed
 
 Direção visual: plataforma educacional médica com aparência institucional, limpa e confiante. A base deve combinar uma experiência de estudo objetiva com momentos de marca mais fortes, usando azul Afya/medicina como cor principal e acentos violetas apenas em gradientes de marca.
 
@@ -105,7 +105,7 @@ background:
 Elementos:
 
 * Logo/monograma no topo, `48px`, `border-radius: 12px`, fundo branco com 14% de opacidade.
-* Nome `Projeto Med` em Inter 800.
+* Nome `BoraMed` em Inter 800.
 * Headline em Playfair Display, com `em` itálico para a palavra de destaque.
 * Métricas em cards translúcidos com borda branca em 18% de opacidade.
 

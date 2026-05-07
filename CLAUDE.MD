@@ -1,4 +1,4 @@
-# Projeto Med — CLAUDE.md
+# BoraMed — CLAUDE.md
 
 ## Visão Geral
 

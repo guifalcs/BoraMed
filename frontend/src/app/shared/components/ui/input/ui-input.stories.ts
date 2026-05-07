@@ -44,7 +44,7 @@ export const Password: Story = {
   args: {
     label: 'Senha',
     name: 'password',
-    value: 'projetomed',
+    value: 'boramed',
     type: 'password',
     autocomplete: 'current-password',
     labelActionText: 'Esqueci a senha',

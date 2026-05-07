@@ -28,7 +28,7 @@ npx supabase gen types typescript --local # gera tipos TS do schema
 * Service role key: apenas em edge functions ou server-side. Nunca no frontend.
 * Migrations em `migrations/`, edge functions em `functions/`.
 
-## Schema — Projeto Med
+## Schema — BoraMed
 
 ```sql
 -- Tipos
