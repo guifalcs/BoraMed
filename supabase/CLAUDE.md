@@ -8,13 +8,17 @@ DEV_REF:  (preencher após criar projeto no Supabase Cloud)
 PROD_REF: (preencher após criar projeto no Supabase Cloud)
 ```
 
-## Comandos
+## Comandos e Fluxo de Dev (Supabase Skill)
+
+* Desenvolva as mudanças de banco iterando livremente via MCP (`execute_sql`) ou CLI (`npx supabase db query "SQL"`).
+* Antes de commitar: verifique potenciais problemas rodando os alertas de segurança via MCP (`get_advisors`) ou CLI (`npx supabase db advisors`).
+* Quando a estrutura final no banco local estiver correta e testada, extraia a migration definitiva: `npx supabase db pull <nome-descritivo> --local --yes`.
 
 ```bash
 npx supabase start                        # inicia Docker local
+npx supabase db query "SQL"               # executa SQL no banco local (para testar schemas)
+npx supabase db pull nome --local --yes   # gera a migration do que foi alterado ("commit")
 npx supabase db reset                     # reseta e aplica todas as migrations
-npx supabase migration new nome           # cria nova migration
-npx supabase db push                      # aplica migrations (DEV apenas)
 npx supabase functions serve              # roda edge functions localmente
 npx supabase functions deploy nome        # deploy de edge function
 npx supabase gen types typescript --local # gera tipos TS do schema
@@ -22,9 +26,9 @@ npx supabase gen types typescript --local # gera tipos TS do schema
 
 ## Regras
 
+* NUNCA utilizar `supabase migration new` para escrever SQL na mão e tentar fazer push logo em sequência sem testar (anti-pattern)
 * NUNCA editar migration já aplicada (commitada).
-* NUNCA fazer `db push` para produção manualmente — apenas via CI.
-* RLS obrigatório em toda tabela nova.
+* Para Segurança, Auth, RLS e Views: Exija conformidade **estrita** com as regras estabelecidas na **Supabase Skill Oficial** (`.agents/skills/supabase/SKILL.md`). A skill é a fonte primária da verdade sobre regras e práticas seguras.
 * Service role key: apenas em edge functions ou server-side. Nunca no frontend.
 * Migrations em `migrations/`, edge functions em `functions/`.
 

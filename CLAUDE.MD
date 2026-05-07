@@ -24,7 +24,7 @@ ng lint                     # lint
 ng test                     # testes unitários (Karma/Jasmine)
 npm run storybook           # Storybook em localhost:6006
 npx supabase start          # iniciar supabase local (Docker)
-npx supabase db push        # aplicar migrations (DEV apenas)
+npx supabase db pull nome --local --yes # extrai/commit a migration das modificações locais testadas
 npx playwright test         # testes e2e
 ```
 

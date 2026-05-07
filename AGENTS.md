@@ -13,7 +13,7 @@ ng lint              # lint
 ng test              # testes unitários
 npm run storybook    # Storybook em localhost:6006
 npx supabase start   # supabase local (Docker)
-npx supabase db push # migrations (DEV apenas)
+npx supabase db pull nome --local --yes # extrai a migration consolidada (pós dev/SQL testes)
 npx playwright test  # testes e2e
 ```
 
@@ -25,7 +25,7 @@ npx playwright test  # testes e2e
 * `ChangeDetectionStrategy.OnPush` em todos os componentes.
 * kebab-case para arquivos, PascalCase para componentes.
 * Commits em português: `tipo(escopo): descrição`
-* Migrations: `YYYYMMDDHHMMSS_nome_descritivo.sql`
+* Fluxo Supabase: iterar por `db query` e salvar via `db pull <nome> --local --yes`.
 
 ## Estrutura
 
