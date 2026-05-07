@@ -1,4 +1,3 @@
-
 # Projeto Med — CLAUDE.md
 
 ## Visão Geral
@@ -68,6 +67,7 @@ Campos chave em `questao`: `tipo` (nacional|processual|laboratorio), `periodo`, 
 * Questões de laboratório sempre têm `imagem_url` obrigatório.
 * Auth: login/senha simples (Supabase Auth email/password).
 * Lógica de sorteio de questões: server-side via Supabase (RPC ou Edge Function).
+  Sempre que criar uma funcionalidade, atualizar docs necessárias do sistema para refletir o estado atual
 
 ## Como Responder
 
