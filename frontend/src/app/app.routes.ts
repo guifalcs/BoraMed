@@ -25,6 +25,19 @@ export const routes: Routes = [
         (m) => m.RedefinirSenhaComponent,
       ),
   },
+  {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./(dashboard)/dashboard.component').then((m) => m.DashboardComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./(dashboard)/inicio/inicio.component').then((m) => m.InicioComponent),
+      },
+      { path: '**', redirectTo: '' },
+    ],
+  },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   { path: '**', redirectTo: 'login' },
 ];

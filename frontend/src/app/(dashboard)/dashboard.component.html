@@ -1,0 +1,52 @@
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <img src="logo.png" alt="BoraMed" class="sidebar-logo" />
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Navegação principal">
+      @for (item of navItems; track item.route) {
+        <a
+          class="nav-item"
+          [routerLink]="item.route"
+          routerLinkActive="nav-item--active"
+        >
+          <app-ui-icon [icon]="item.icon" [size]="20" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar" aria-hidden="true">G</div>
+        <div class="user-info">
+          <span class="user-name">Guilherme</span>
+          <span class="user-role">Aluno</span>
+        </div>
+      </div>
+      <button class="logout-btn" type="button" aria-label="Sair">
+        <app-ui-icon [icon]="logOutIcon" [size]="18" />
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    @for (item of navItems; track item.route) {
+      <a
+        class="bottom-nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="bottom-nav-item--active"
+      >
+        <app-ui-icon [icon]="item.icon" [size]="22" />
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+</div>
