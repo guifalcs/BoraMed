@@ -55,11 +55,6 @@ projeto-med/
 2. **Simulados Processuais** — filtro por tema + qtd, geração aleatória.
 3. **Simulados de Laboratório** — questões com imagens de lâminas/peças.
 
-## Banco de Questões — Estrutura
-
-Entidades principais: `questao`, `alternativa`, `tema`, `prova`, `simulado`, `resultado`.
-Campos chave em `questao`: `tipo` (nacional|processual|laboratorio), `periodo`, `tema_id`, `imagem_url`, `faculdade_afya`.
-
 ## Regras Críticas
 
 * NUNCA rodar `supabase db push` contra o project ref de produção diretamente.
