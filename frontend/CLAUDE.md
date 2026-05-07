@@ -10,6 +10,7 @@ ng lint              # lint
 ng test              # testes unitários (Karma/Jasmine)
 ng generate component # gerar componente
 npm run storybook    # Storybook em localhost:6006
+npm run build-storybook  # build estático do Storybook
 npx playwright test  # testes e2e
 ```
 
@@ -27,12 +28,12 @@ src/
     (dashboard)/
       dashboard.component.ts       # layout com sidebar
       provas/
-        provas-list.component.ts   # lista de provas nacionais
-        prova-detail.component.ts  # execução da prova
+        provas-list.component.ts
+        prova-detail.component.ts
       simulado/
-        simulado-config.component.ts   # configurador
-        simulado-exec.component.ts     # execução
-        simulado-result.component.ts   # resultado
+        simulado-config.component.ts
+        simulado-exec.component.ts
+        simulado-result.component.ts
       historico/
         historico.component.ts
     core/
@@ -44,9 +45,15 @@ src/
         simulado.service.ts
       interceptors/
     shared/
-      components/
+      components/                  # TODO componente aqui = obrigatório ter story
         questao-card/
+          questao-card.component.ts
+          questao-card.component.html
+          questao-card.component.stories.ts
         alternativa-item/
+          alternativa-item.component.ts
+          alternativa-item.component.html
+          alternativa-item.component.stories.ts
         simulado-header/
         resultado-summary/
         ui/                        # Button, Badge, Skeleton, Input
@@ -57,11 +64,16 @@ src/
     environment.prod.ts
 ```
 
+## Storybook — Regra Obrigatória
+
+* Todo componente em `shared/components/` DEVE ter um arquivo `.stories.ts`.
+* Story cobre no mínimo: estado default, estado de loading (se aplicável), variações de props relevantes.
+* Componentes de página (`(dashboard)/`, `(auth)/`) não precisam de story — apenas os de `shared/`.
+* Rodar `npm run storybook` antes de abrir PR que adiciona ou modifica componentes compartilhados.
+
 ## Padrão de Componente
 
 ```ts
-// kebab-case no arquivo, PascalCase na classe
-// questao-card.component.ts
 @Component({
   selector: 'app-questao-card',
   standalone: true,
@@ -76,6 +88,16 @@ export class QuestaoCardComponent {
 }
 ```
 
+## Supabase Client
+
+```ts
+// Server Component / Server Action
+import { createClient } from '@/lib/supabase/server'
+
+// Client Component
+import { createClient } from '@/lib/supabase/client'
+```
+
 ## Regras
 
 * Standalone components. Sem NgModule.
@@ -86,22 +108,7 @@ export class QuestaoCardComponent {
 * Tailwind para todos os estilos. Sem CSS scoped salvo casos excepcionais.
 * Mobile-first. Breakpoint principal: `md` (768px).
 * Imagens de laboratório: skeleton durante loading, `max-w-lg w-full mx-auto rounded-lg`.
-* Sorteio de questões: chamar `supabase.service.ts` que delega para RPC/Edge Function.
-
-## Supabase Service
-
-```ts
-// core/services/supabase.service.ts
-@Injectable({ providedIn: 'root' })
-export class SupabaseService {
-  private client = createClient(
-    environment.supabaseUrl,
-    environment.supabaseAnonKey
-  )
-
-  get supabase() { return this.client }
-}
-```
+* Sorteio de questões: chamar `simulado.service.ts` que delega para RPC/Edge Function.
 
 ## Checklist de novo componente
 
@@ -110,8 +117,9 @@ export class SupabaseService {
 * [ ] `ChangeDetectionStrategy.OnPush`
 * [ ] Props via `input()`, eventos via `output()`
 * [ ] Sem `any`
-* [ ] Mobile-first
-* [ ] Story no Storybook
+* [ ] Mobile-first (testar em 375px)
+* [ ] Story em `.stories.ts` (obrigatório para `shared/components/`)
+* [ ] Loading state se buscar dados
 
 ## Variáveis de Ambiente
 
