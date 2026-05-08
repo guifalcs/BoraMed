@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TIPO_USUARIO_VALUES } from './auth.types';
 
 const strongPassword = z
   .string()
@@ -9,6 +10,7 @@ const strongPassword = z
 
 export const updateProfileSchema = z.object({
   nome_completo: z.string().min(2, 'Nome muito curto').trim(),
+  tipo_usuario: z.enum(TIPO_USUARIO_VALUES, { message: 'Selecione seu perfil' }),
   periodo: z.number().min(1, 'Período inválido').max(12, 'Período inválido').nullable().optional(),
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

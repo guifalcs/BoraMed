@@ -9,8 +9,18 @@ import { updateProfileSchema, changePasswordSchema } from '../../core/models/pro
 import { ProfileService } from '../../core/services/profile.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import type { TipoUsuario } from '../../core/models/auth.types';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
+
+const TIPO_USUARIO_OPTIONS: SelectOption<string>[] = [
+  { value: 'estudante_medicina', label: 'Estudante de Medicina' },
+  { value: 'medico',             label: 'Médico' },
+  { value: 'residente',          label: 'Residente' },
+  { value: 'cursinho',           label: 'Cursinho / Pré-vestibular' },
+  { value: 'ensino_medio',       label: 'Ensino Médio' },
+  { value: 'outro',              label: 'Outro' },
+];
 
 const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
@@ -32,19 +42,23 @@ export class PerfilComponent {
 
   protected readonly cameraIcon: LucideIconData = Camera;
   protected readonly trashIcon: LucideIconData = Trash2;
+  protected readonly tipoUsuarioOptions = TIPO_USUARIO_OPTIONS;
   protected readonly periodoOptions = PERIODO_OPTIONS;
 
   // Derived from services
   protected readonly email = computed(() => this.auth.user()?.email ?? '');
   protected readonly avatarUrl = computed(() => this.profileService.profile()?.avatar_url ?? null);
   protected readonly isProfileLoading = this.profileService.isLoading;
+  protected readonly isAvatarLoading = signal(false);
   protected readonly hasSenha = computed(
     () => this.auth.user()?.app_metadata?.['providers']?.includes('email') ?? false,
   );
 
   // Profile form state
   protected readonly nomeCompleto = signal('');
+  protected readonly tipoUsuario = signal<TipoUsuario | null>(null);
   protected readonly periodo = signal<number | null>(null);
+  protected readonly showPeriodo = computed(() => this.tipoUsuario() === 'estudante_medicina');
   protected readonly profileStatus = signal<FormStatus>('idle');
   protected readonly profileFieldErrors = signal<Partial<Record<string, string>>>({});
 
@@ -58,6 +72,9 @@ export class PerfilComponent {
   // Computed errors — profile
   protected readonly nomeCompletoError = computed<string | null>(
     () => this.profileFieldErrors()['nome_completo'] ?? null,
+  );
+  protected readonly tipoUsuarioError = computed<string | null>(
+    () => this.profileFieldErrors()['tipo_usuario'] ?? null,
   );
   protected readonly periodoError = computed<string | null>(
     () => this.profileFieldErrors()['periodo'] ?? null,
@@ -79,7 +96,8 @@ export class PerfilComponent {
       const p = this.profileService.profile();
       if (p) {
         this.nomeCompleto.set(p.nome_completo ?? '');
-        this.periodo.set(p.periodo);
+        this.tipoUsuario.set(p.tipo_usuario);
+        this.periodo.set(p.tipo_usuario === 'estudante_medicina' ? p.periodo : null);
       }
     });
   }
@@ -90,7 +108,8 @@ export class PerfilComponent {
 
     const parsed = updateProfileSchema.safeParse({
       nome_completo: this.nomeCompleto(),
-      periodo: this.periodo(),
+      tipo_usuario: this.tipoUsuario(),
+      periodo: this.showPeriodo() ? this.periodo() : null,
     });
 
     if (!parsed.success) {
@@ -169,25 +188,36 @@ export class PerfilComponent {
       return;
     }
 
+    this.isAvatarLoading.set(true);
     void this.profileService.uploadAvatar(file).then((result) => {
       if (result.ok) {
         this.toast.success('Foto de perfil atualizada!');
       } else {
         this.toast.error(result.error);
       }
-      // Reset input so the same file can be re-selected
       input.value = '';
+      this.isAvatarLoading.set(false);
     });
   }
 
   protected handleRemoveAvatar(): void {
+    this.isAvatarLoading.set(true);
     void this.profileService.removeAvatar().then((result) => {
       if (result.ok) {
         this.toast.success('Foto de perfil removida.');
       } else {
         this.toast.error(result.error);
       }
+      this.isAvatarLoading.set(false);
     });
+  }
+
+  protected handleTipoUsuarioChange(value: string | number | null): void {
+    const tipo = typeof value === 'string' ? (value as TipoUsuario) : null;
+    this.tipoUsuario.set(tipo);
+    if (tipo !== 'estudante_medicina') {
+      this.periodo.set(null);
+    }
   }
 
   protected handlePeriodoChange(value: string | number | null): void {

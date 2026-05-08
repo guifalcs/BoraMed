@@ -14,6 +14,11 @@
   font-weight: 700;
 }
 
+.ui-field__required {
+  color: var(--color-danger);
+  margin-left: 0.2em;
+}
+
 .ui-field__label-row {
   display: flex;
   align-items: center;

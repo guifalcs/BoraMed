@@ -7,165 +7,229 @@
   <div class="perfil-card">
 
     @if (isProfileLoading()) {
-      <div class="perfil-loading" aria-live="polite" aria-busy="true">
-        <span class="perfil-loading__text">Carregando...</span>
-      </div>
-    }
-
-    <!-- Seção 1: Dados Pessoais -->
-    <section class="perfil-section" aria-labelledby="dados-pessoais-heading">
-      <h2 class="perfil-section__title" id="dados-pessoais-heading">Dados Pessoais</h2>
-
-      <form class="dados-layout" (submit)="handleProfileSubmit($event)">
-        <!-- Avatar -->
-        <div class="dados-avatar-col">
-          <div class="perfil-avatar-wrapper">
-            <app-ui-avatar
-              [avatarUrl]="avatarUrl()"
-              [name]="nomeCompleto() || email() || 'Usuário'"
-              size="lg"
-            />
-            <div class="perfil-avatar-actions">
-              <input
-                type="file"
-                accept="image/*"
-                #fileInput
-                style="display:none"
-                (change)="handleAvatarUpload($event)"
-              />
-              <button
-                class="perfil-avatar-btn perfil-avatar-btn--upload"
-                type="button"
-                aria-label="Enviar foto de perfil"
-                (click)="fileInput.click()"
-              >
-                <app-ui-icon [icon]="cameraIcon" [size]="16" />
-              </button>
-              <button
-                class="perfil-avatar-btn perfil-avatar-btn--remove"
-                type="button"
-                aria-label="Remover foto de perfil"
-                [disabled]="!avatarUrl()"
-                (click)="handleRemoveAvatar()"
-              >
-                <app-ui-icon [icon]="trashIcon" [size]="16" />
-              </button>
+      <!-- Skeleton -->
+      <div class="perfil-skeleton" aria-hidden="true">
+        <div class="perfil-section">
+          <div class="skeleton skeleton--title"></div>
+          <div class="dados-layout">
+            <div class="dados-avatar-col">
+              <div class="skeleton skeleton--avatar"></div>
+            </div>
+            <div class="dados-fields-col">
+              <div class="dados-fields-grid">
+                <div class="skeleton-field">
+                  <div class="skeleton skeleton--label"></div>
+                  <div class="skeleton skeleton--input"></div>
+                </div>
+                <div class="skeleton-field">
+                  <div class="skeleton skeleton--label"></div>
+                  <div class="skeleton skeleton--input"></div>
+                </div>
+                <div class="skeleton-field dados-email-field">
+                  <div class="skeleton skeleton--label"></div>
+                  <div class="skeleton skeleton--input"></div>
+                </div>
+              </div>
+              <div class="perfil-form__actions">
+                <div class="skeleton skeleton--button"></div>
+              </div>
             </div>
           </div>
         </div>
-
-        <!-- Fields -->
-        <div class="dados-fields-col">
-          <div class="dados-fields-grid">
-            <app-ui-input
-              label="Nome completo"
-              name="nome_completo"
-              type="text"
-              autocomplete="name"
-              placeholder="Seu nome completo"
-              [value]="nomeCompleto()"
-              [error]="nomeCompletoError()"
-              (valueChange)="nomeCompleto.set($event)"
-            />
-
-            <app-ui-select
-              label="Período"
-              name="periodo"
-              placeholder="Selecione"
-              [options]="periodoOptions"
-              [value]="periodo()"
-              [error]="periodoError()"
-              (valueChange)="handlePeriodoChange($event)"
-            />
-
-            <div class="ui-field dados-email-field">
-              <span class="ui-field__label-row">
-                <span class="ui-field__label">E-mail</span>
-              </span>
-              <p class="perfil-email-readonly">{{ email() }}</p>
-              <span class="ui-field__helper">O e-mail não pode ser alterado aqui.</span>
-            </div>
-          </div>
-
-          @if (profileStatus() === 'success') {
-            <p class="perfil-success">Dados salvos com sucesso!</p>
-          }
-
-          <div class="perfil-form__actions">
-            <app-ui-button
-              label="Salvar"
-              loadingLabel="Salvando..."
-              type="submit"
-              [fullWidth]="false"
-              [loading]="profileStatus() === 'loading'"
-              [disabled]="profileStatus() === 'success'"
-            />
-          </div>
-        </div>
-      </form>
-    </section>
-
-    <!-- Seção 2: Alterar Senha -->
-    @if (hasSenha()) {
-      <section class="perfil-section perfil-section--divided" aria-labelledby="alterar-senha-heading">
-        <h2 class="perfil-section__title" id="alterar-senha-heading">Alterar Senha</h2>
-
-        <form (submit)="handlePasswordSubmit($event)">
+        <div class="perfil-section perfil-section--divided">
+          <div class="skeleton skeleton--title"></div>
           <div class="senha-grid">
-            <app-ui-input
-              label="Senha atual"
-              name="currentPassword"
-              type="password"
-              autocomplete="current-password"
-              placeholder="••••••••"
-              [value]="currentPassword()"
-              [error]="currentPasswordError()"
-              [showPasswordToggle]="true"
-              (valueChange)="currentPassword.set($event)"
-            />
+            <div class="skeleton-field">
+              <div class="skeleton skeleton--label"></div>
+              <div class="skeleton skeleton--input"></div>
+            </div>
+            <div class="skeleton-field">
+              <div class="skeleton skeleton--label"></div>
+              <div class="skeleton skeleton--input"></div>
+            </div>
+            <div class="skeleton-field">
+              <div class="skeleton skeleton--label"></div>
+              <div class="skeleton skeleton--input"></div>
+            </div>
+          </div>
+          <div class="perfil-form__actions" style="margin-top: 1.25rem;">
+            <div class="skeleton skeleton--button"></div>
+          </div>
+        </div>
+      </div>
+    } @else {
 
-            <app-ui-input
-              label="Nova senha"
-              name="newPassword"
-              type="password"
-              autocomplete="new-password"
-              placeholder="••••••••"
-              [value]="newPassword()"
-              [error]="newPasswordError()"
-              [showPasswordToggle]="true"
-              [showStrength]="true"
-              (valueChange)="newPassword.set($event)"
-            />
+      <!-- Seção 1: Dados Pessoais -->
+      <section class="perfil-section" aria-labelledby="dados-pessoais-heading">
+        <h2 class="perfil-section__title" id="dados-pessoais-heading">Dados Pessoais</h2>
 
-            <app-ui-input
-              label="Confirmar nova senha"
-              name="confirmPassword"
-              type="password"
-              autocomplete="new-password"
-              placeholder="••••••••"
-              [value]="confirmPassword()"
-              [error]="confirmPasswordError()"
-              [showPasswordToggle]="true"
-              (valueChange)="confirmPassword.set($event)"
-            />
+        <form class="dados-layout" (submit)="handleProfileSubmit($event)">
+          <!-- Avatar -->
+          <div class="dados-avatar-col">
+            <div class="perfil-avatar-wrapper">
+              <app-ui-avatar
+                [avatarUrl]="avatarUrl()"
+                [name]="nomeCompleto() || email() || 'Usuário'"
+                size="lg"
+              />
+              @if (isAvatarLoading()) {
+                <div class="perfil-avatar-overlay" aria-label="Carregando foto...">
+                  <div class="perfil-avatar-spinner"></div>
+                </div>
+              }
+              <div class="perfil-avatar-actions">
+                <input
+                  type="file"
+                  accept="image/*"
+                  #fileInput
+                  style="display:none"
+                  (change)="handleAvatarUpload($event)"
+                />
+                <button
+                  class="perfil-avatar-btn perfil-avatar-btn--upload"
+                  type="button"
+                  aria-label="Enviar foto de perfil"
+                  [disabled]="isAvatarLoading()"
+                  (click)="fileInput.click()"
+                >
+                  <app-ui-icon [icon]="cameraIcon" [size]="16" />
+                </button>
+                <button
+                  class="perfil-avatar-btn perfil-avatar-btn--remove"
+                  type="button"
+                  aria-label="Remover foto de perfil"
+                  [disabled]="!avatarUrl() || isAvatarLoading()"
+                  (click)="handleRemoveAvatar()"
+                >
+                  <app-ui-icon [icon]="trashIcon" [size]="16" />
+                </button>
+              </div>
+            </div>
           </div>
 
-          @if (passwordStatus() === 'success') {
-            <p class="perfil-success" style="margin-top: 0.75rem;">Senha alterada com sucesso!</p>
-          }
+          <!-- Fields -->
+          <div class="dados-fields-col">
+            <div class="dados-fields-grid">
+              <app-ui-input
+                label="Nome completo"
+                name="nome_completo"
+                type="text"
+                autocomplete="name"
+                placeholder="Seu nome completo"
+                [required]="true"
+                [value]="nomeCompleto()"
+                [error]="nomeCompletoError()"
+                (valueChange)="nomeCompleto.set($event)"
+              />
 
-          <div class="perfil-form__actions" style="margin-top: 1.25rem;">
-            <app-ui-button
-              label="Salvar senha"
-              loadingLabel="Salvando..."
-              type="submit"
-              [fullWidth]="false"
-              [loading]="passwordStatus() === 'loading'"
-              [disabled]="passwordStatus() === 'success'"
-            />
+              <app-ui-select
+                label="Perfil"
+                name="tipo_usuario"
+                placeholder="Selecione seu perfil"
+                [required]="true"
+                [options]="tipoUsuarioOptions"
+                [value]="tipoUsuario()"
+                [error]="tipoUsuarioError()"
+                (valueChange)="handleTipoUsuarioChange($event)"
+              />
+
+              @if (showPeriodo()) {
+                <app-ui-select
+                  label="Período"
+                  name="periodo"
+                  placeholder="Selecione"
+                  [options]="periodoOptions"
+                  [value]="periodo()"
+                  [error]="periodoError()"
+                  (valueChange)="handlePeriodoChange($event)"
+                />
+              }
+
+              <div class="ui-field dados-email-field">
+                <span class="ui-field__label-row">
+                  <span class="ui-field__label">E-mail</span>
+                </span>
+                <p class="perfil-email-readonly">{{ email() }}</p>
+                <span class="ui-field__helper">O e-mail não pode ser alterado aqui.</span>
+              </div>
+            </div>
+
+            <div class="perfil-form__actions">
+              <app-ui-button
+                label="Salvar"
+                loadingLabel="Salvando..."
+                type="submit"
+                [fullWidth]="false"
+                [loading]="profileStatus() === 'loading'"
+                [disabled]="profileStatus() === 'success'"
+              />
+            </div>
           </div>
         </form>
       </section>
+
+      <!-- Seção 2: Alterar Senha -->
+      @if (hasSenha()) {
+        <section class="perfil-section perfil-section--divided" aria-labelledby="alterar-senha-heading">
+          <h2 class="perfil-section__title" id="alterar-senha-heading">Alterar Senha</h2>
+
+          <form (submit)="handlePasswordSubmit($event)">
+            <div class="senha-grid">
+              <app-ui-input
+                label="Senha atual"
+                name="currentPassword"
+                type="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                [required]="true"
+                [value]="currentPassword()"
+                [error]="currentPasswordError()"
+                [showPasswordToggle]="true"
+                (valueChange)="currentPassword.set($event)"
+              />
+
+              <app-ui-input
+                label="Nova senha"
+                name="newPassword"
+                type="password"
+                autocomplete="new-password"
+                placeholder="••••••••"
+                [required]="true"
+                [value]="newPassword()"
+                [error]="newPasswordError()"
+                [showPasswordToggle]="true"
+                [showStrength]="true"
+                (valueChange)="newPassword.set($event)"
+              />
+
+              <app-ui-input
+                label="Confirmar nova senha"
+                name="confirmPassword"
+                type="password"
+                autocomplete="new-password"
+                placeholder="••••••••"
+                [required]="true"
+                [value]="confirmPassword()"
+                [error]="confirmPasswordError()"
+                [showPasswordToggle]="true"
+                (valueChange)="confirmPassword.set($event)"
+              />
+            </div>
+
+            <div class="perfil-form__actions" style="margin-top: 1.25rem;">
+              <app-ui-button
+                label="Salvar senha"
+                loadingLabel="Salvando..."
+                type="submit"
+                [fullWidth]="false"
+                [loading]="passwordStatus() === 'loading'"
+                [disabled]="passwordStatus() === 'success'"
+              />
+            </div>
+          </form>
+        </section>
+      }
+
     }
 
   </div>

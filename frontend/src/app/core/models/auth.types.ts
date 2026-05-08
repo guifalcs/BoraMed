@@ -1,11 +1,23 @@
 import type { User } from '@supabase/supabase-js';
 
+export const TIPO_USUARIO_VALUES = [
+  'estudante_medicina',
+  'medico',
+  'residente',
+  'cursinho',
+  'ensino_medio',
+  'outro',
+] as const;
+
+export type TipoUsuario = (typeof TIPO_USUARIO_VALUES)[number];
+
 export interface Profile {
   id: string;
   email: string;
   criado_em: string;
   nome_completo: string | null;
   avatar_url: string | null;
+  tipo_usuario: TipoUsuario | null;
   periodo: number | null;
   atualizado_em: string;
 }

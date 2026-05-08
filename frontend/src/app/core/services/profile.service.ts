@@ -47,6 +47,7 @@ export class ProfileService {
         .from('profiles')
         .update({
           nome_completo: input.nome_completo,
+          tipo_usuario: input.tipo_usuario ?? null,
           periodo: input.periodo ?? null,
         })
         .eq('id', user.id)
@@ -86,6 +87,13 @@ export class ProfileService {
         .single();
 
       if (updateError) throw updateError;
+
+      await new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = img.onerror = () => resolve();
+        img.src = publicUrl;
+      });
+
       this._profile.set(data as Profile);
       return { ok: true };
     } catch {

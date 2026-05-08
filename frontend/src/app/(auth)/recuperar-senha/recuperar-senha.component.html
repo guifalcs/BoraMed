@@ -27,6 +27,7 @@
           type="email"
           autocomplete="email"
           placeholder="seu@email.com"
+          [required]="true"
           [value]="email()"
           (valueChange)="email.set($event)"
         />

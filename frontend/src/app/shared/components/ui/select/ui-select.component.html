@@ -1,12 +1,18 @@
-<label class="ui-field" [class.ui-field--disabled]="disabled()">
+<div class="ui-field" [class.ui-field--disabled]="disabled()">
   <span class="ui-field__label-row">
-    <span class="ui-field__label">{{ label() }}</span>
+    <span class="ui-field__label">
+      {{ label() }}
+      @if (required()) {
+        <span class="ui-field__required" aria-hidden="true">*</span>
+      }
+    </span>
   </span>
 
   <div class="ui-select">
     <button
       class="ui-select__trigger"
       type="button"
+      [attr.aria-label]="label()"
       [attr.aria-expanded]="isOpen()"
       aria-haspopup="listbox"
       [class.ui-select__trigger--open]="isOpen()"
@@ -52,4 +58,4 @@
   } @else if (helperText()) {
     <span class="ui-field__helper">{{ helperText() }}</span>
   }
-</label>
+</div>

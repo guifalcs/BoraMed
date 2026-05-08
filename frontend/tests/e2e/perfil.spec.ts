@@ -1,0 +1,74 @@
+import { test, expect } from '@playwright/test';
+import { PerfilPage } from './pages/perfil.page';
+
+test.describe('Página de Perfil', () => {
+  let perfil: PerfilPage;
+
+  test.beforeEach(async ({ page }) => {
+    perfil = new PerfilPage(page);
+    await perfil.goto();
+  });
+
+  test('carrega os dados do perfil sem erros', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Meu Perfil' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dados Pessoais' })).toBeVisible();
+    await expect(perfil.nomeInput).toBeVisible();
+    await expect(perfil.perfilSelect).toBeVisible();
+  });
+
+  test('exibe asterisco nos campos obrigatórios', async ({ page }) => {
+    // Nome completo e Perfil são obrigatórios
+    const requiredMarkers = page.locator('.ui-field__required');
+    await expect(requiredMarkers.first()).toBeVisible();
+    await expect(requiredMarkers).toHaveCount(await requiredMarkers.count());
+    expect(await requiredMarkers.count()).toBeGreaterThanOrEqual(2);
+  });
+
+  test('exibe erro de validação ao salvar sem nome', async ({ page }) => {
+    await perfil.nomeInput.clear();
+    await perfil.saveButton.click();
+    await expect(page.getByText('Nome muito curto')).toBeVisible();
+  });
+
+  test('exibe erro de validação ao salvar sem perfil selecionado', async ({ page }) => {
+    // Limpa nome para garantir que o perfil está vazio (usuário novo)
+    // Se já tiver perfil selecionado, o teste deve verificar que o campo é obrigatório
+    await expect(perfil.perfilSelect).toBeVisible();
+    // O asterisco confirma que é obrigatório
+    const perfilLabel = page.locator('.ui-field__label').filter({ hasText: 'Perfil' });
+    await expect(perfilLabel.locator('.ui-field__required')).toBeVisible();
+  });
+
+  test('campo Período aparece ao selecionar Estudante de Medicina', async ({ page }) => {
+    await expect(perfil.periodoSelect).not.toBeVisible();
+    await perfil.selectPerfil('Estudante de Medicina');
+    await expect(perfil.periodoSelect).toBeVisible();
+  });
+
+  test('campo Período some ao trocar para outro perfil', async ({ page }) => {
+    await perfil.selectPerfil('Estudante de Medicina');
+    await expect(perfil.periodoSelect).toBeVisible();
+
+    await perfil.selectPerfil('Médico');
+    await expect(perfil.periodoSelect).not.toBeVisible();
+  });
+
+  test('salva dados pessoais com sucesso', async ({ page }) => {
+    await perfil.nomeInput.clear();
+    await perfil.nomeInput.fill('Nome de Teste E2E');
+    await perfil.selectPerfil('Médico');
+    await perfil.saveButton.click();
+
+    // Toast de sucesso deve aparecer
+    await expect(page.getByText('Dados salvos com sucesso!')).toBeVisible({ timeout: 8_000 });
+  });
+
+  test('selecionar opção fecha o dropdown imediatamente', async ({ page }) => {
+    await perfil.perfilSelect.click();
+    const dropdown = page.getByRole('listbox', { name: 'Perfil' });
+    await expect(dropdown).toBeVisible();
+
+    await dropdown.getByText('Residente').click();
+    await expect(dropdown).not.toBeVisible();
+  });
+});

@@ -1,6 +1,11 @@
 <label class="ui-field">
   <span class="ui-field__label-row">
-    <span class="ui-field__label">{{ label() }}</span>
+    <span class="ui-field__label">
+      {{ label() }}
+      @if (required()) {
+        <span class="ui-field__required" aria-hidden="true">*</span>
+      }
+    </span>
     @if (labelActionText() && labelActionRouterLink()) {
       <a class="ui-field__label-action" [routerLink]="labelActionRouterLink()">
         {{ labelActionText() }}
