@@ -1,15 +1,12 @@
 .perfil-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 2rem 1.5rem;
-  max-width: 640px;
+  padding: 2rem 2.5rem;
+  max-width: 960px;
 }
 
 /* ── Header ──────────────────────────────────────────── */
 
 .perfil-header {
-  margin-bottom: 0.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .perfil-title {
@@ -31,25 +28,66 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  padding: 1.75rem;
+  overflow: hidden;
+}
+
+/* ── Section ─────────────────────────────────────────── */
+
+.perfil-section {
+  padding: 1.75rem 2rem;
+}
+
+.perfil-section--divided {
+  border-top: 1px solid var(--color-border);
+}
+
+.perfil-section__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 1.5rem;
+}
+
+/* ── Dados Pessoais layout ───────────────────────────── */
+
+.dados-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.dados-avatar-col {
+  flex-shrink: 0;
+  padding-top: 0.25rem;
+}
+
+.dados-fields-col {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.perfil-card__title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin: 0;
+.dados-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
-/* ── Avatar area ─────────────────────────────────────── */
-
-.perfil-avatar-area {
-  display: flex;
-  justify-content: flex-start;
+.dados-email-field {
+  grid-column: 1 / -1;
 }
+
+/* ── Senha section layout ────────────────────────────── */
+
+.senha-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+/* ── Avatar controls ─────────────────────────────────── */
 
 .perfil-avatar-wrapper {
   position: relative;
@@ -94,19 +132,12 @@
   filter: brightness(0.9);
 }
 
-/* ── Form ────────────────────────────────────────────── */
-
-.perfil-form {
-  display: grid;
-  gap: 1.25rem;
-}
+/* ── Form elements ───────────────────────────────────── */
 
 .perfil-form__actions {
   display: flex;
   justify-content: flex-end;
 }
-
-/* ── Reuse ui-field styles for select ───────────────── */
 
 .ui-field {
   display: grid;
@@ -134,6 +165,7 @@
   padding: 0.75rem 1rem;
   color: var(--color-text);
   background: var(--color-surface);
+  font-size: 0.9375rem;
   outline: none;
   appearance: auto;
 }
@@ -159,8 +191,6 @@
   color: var(--color-text-muted);
 }
 
-/* ── Email read-only ─────────────────────────────────── */
-
 .perfil-email-readonly {
   margin: 0;
   min-height: 3rem;
@@ -171,10 +201,8 @@
   border-radius: 0.5rem;
   background: var(--color-surface-2);
   color: var(--color-text-muted);
-  font-size: 1rem;
+  font-size: 0.9375rem;
 }
-
-/* ── Success message ─────────────────────────────────── */
 
 .perfil-success {
   margin: 0;
@@ -190,7 +218,25 @@
     padding: 1.25rem 1rem;
   }
 
-  .perfil-card {
+  .perfil-section {
     padding: 1.25rem;
+  }
+
+  .dados-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .dados-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dados-email-field {
+    grid-column: auto;
+  }
+
+  .senha-grid {
+    grid-template-columns: 1fr;
   }
 }

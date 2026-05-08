@@ -4,151 +4,163 @@
     <p class="perfil-subtitle">Gerencie suas informações pessoais e senha de acesso.</p>
   </header>
 
-  <!-- Card 1: Dados Pessoais -->
-  <section class="perfil-card" aria-labelledby="dados-pessoais-heading">
-    <h2 class="perfil-card__title" id="dados-pessoais-heading">Dados Pessoais</h2>
+  <div class="perfil-card">
 
-    <div class="perfil-avatar-area">
-      <div class="perfil-avatar-wrapper">
-        <app-ui-avatar
-          [avatarUrl]="mockAvatarUrl()"
-          [name]="nomeCompleto()"
-          size="lg"
-        />
-        <div class="perfil-avatar-actions">
-          <button
-            class="perfil-avatar-btn perfil-avatar-btn--upload"
-            type="button"
-            aria-label="Enviar foto de perfil"
-          >
-            <app-ui-icon [icon]="cameraIcon" [size]="16" />
-          </button>
-          <button
-            class="perfil-avatar-btn perfil-avatar-btn--remove"
-            type="button"
-            aria-label="Remover foto de perfil"
-          >
-            <app-ui-icon [icon]="trashIcon" [size]="16" />
-          </button>
+    <!-- Seção 1: Dados Pessoais -->
+    <section class="perfil-section" aria-labelledby="dados-pessoais-heading">
+      <h2 class="perfil-section__title" id="dados-pessoais-heading">Dados Pessoais</h2>
+
+      <form class="dados-layout" (submit)="handleProfileSubmit($event)">
+        <!-- Avatar -->
+        <div class="dados-avatar-col">
+          <div class="perfil-avatar-wrapper">
+            <app-ui-avatar
+              [avatarUrl]="mockAvatarUrl()"
+              [name]="nomeCompleto()"
+              size="lg"
+            />
+            <div class="perfil-avatar-actions">
+              <button
+                class="perfil-avatar-btn perfil-avatar-btn--upload"
+                type="button"
+                aria-label="Enviar foto de perfil"
+              >
+                <app-ui-icon [icon]="cameraIcon" [size]="16" />
+              </button>
+              <button
+                class="perfil-avatar-btn perfil-avatar-btn--remove"
+                type="button"
+                aria-label="Remover foto de perfil"
+              >
+                <app-ui-icon [icon]="trashIcon" [size]="16" />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <form class="perfil-form" (submit)="handleProfileSubmit($event)">
-      <app-ui-input
-        label="Nome completo"
-        name="nome_completo"
-        type="text"
-        autocomplete="name"
-        placeholder="Seu nome completo"
-        [value]="nomeCompleto()"
-        [error]="nomeCompletoError()"
-        (valueChange)="nomeCompleto.set($event)"
-      />
+        <!-- Fields -->
+        <div class="dados-fields-col">
+          <div class="dados-fields-grid">
+            <app-ui-input
+              label="Nome completo"
+              name="nome_completo"
+              type="text"
+              autocomplete="name"
+              placeholder="Seu nome completo"
+              [value]="nomeCompleto()"
+              [error]="nomeCompletoError()"
+              (valueChange)="nomeCompleto.set($event)"
+            />
 
-      <div class="ui-field">
-        <span class="ui-field__label-row">
-          <span class="ui-field__label">Período</span>
-        </span>
-        <select
-          class="ui-field__control"
-          name="periodo"
-          [class.ui-field__control--invalid]="periodoError()"
-          (change)="handlePeriodoChange($event)"
-        >
-          <option value="" [selected]="periodo() === null">Selecione o período</option>
-          @for (p of periodos; track p) {
-            <option [value]="p" [selected]="periodo() === p">{{ p }}º período</option>
+            <div class="ui-field">
+              <span class="ui-field__label-row">
+                <span class="ui-field__label">Período</span>
+              </span>
+              <select
+                class="ui-field__control"
+                name="periodo"
+                [class.ui-field__control--invalid]="periodoError()"
+                (change)="handlePeriodoChange($event)"
+              >
+                <option value="" [selected]="periodo() === null">Selecione</option>
+                @for (p of periodos; track p) {
+                  <option [value]="p" [selected]="periodo() === p">{{ p }}º período</option>
+                }
+              </select>
+              @if (periodoError()) {
+                <span class="ui-field__error">{{ periodoError() }}</span>
+              }
+            </div>
+
+            <div class="ui-field dados-email-field">
+              <span class="ui-field__label-row">
+                <span class="ui-field__label">E-mail</span>
+              </span>
+              <p class="perfil-email-readonly">{{ mockEmail }}</p>
+              <span class="ui-field__helper">O e-mail não pode ser alterado aqui.</span>
+            </div>
+          </div>
+
+          @if (profileStatus() === 'success') {
+            <p class="perfil-success">Dados salvos com sucesso!</p>
           }
-        </select>
-        @if (periodoError()) {
-          <span class="ui-field__error">{{ periodoError() }}</span>
-        }
-      </div>
 
-      <div class="ui-field">
-        <span class="ui-field__label-row">
-          <span class="ui-field__label">E-mail</span>
-        </span>
-        <p class="perfil-email-readonly">{{ mockEmail }}</p>
-        <span class="ui-field__helper">O e-mail não pode ser alterado aqui.</span>
-      </div>
-
-      @if (profileStatus() === 'success') {
-        <p class="perfil-success">Dados salvos com sucesso!</p>
-      }
-
-      <div class="perfil-form__actions">
-        <app-ui-button
-          label="Salvar"
-          loadingLabel="Salvando..."
-          type="submit"
-          [fullWidth]="false"
-          [loading]="profileStatus() === 'loading'"
-          [disabled]="profileStatus() === 'success'"
-        />
-      </div>
-    </form>
-  </section>
-
-  <!-- Card 2: Alterar Senha -->
-  @if (hasSenha()) {
-    <section class="perfil-card" aria-labelledby="alterar-senha-heading">
-      <h2 class="perfil-card__title" id="alterar-senha-heading">Alterar Senha</h2>
-
-      <form class="perfil-form" (submit)="handlePasswordSubmit($event)">
-        <app-ui-input
-          label="Senha atual"
-          name="currentPassword"
-          type="password"
-          autocomplete="current-password"
-          placeholder="••••••••"
-          [value]="currentPassword()"
-          [error]="currentPasswordError()"
-          [showPasswordToggle]="true"
-          (valueChange)="currentPassword.set($event)"
-        />
-
-        <app-ui-input
-          label="Nova senha"
-          name="newPassword"
-          type="password"
-          autocomplete="new-password"
-          placeholder="••••••••"
-          [value]="newPassword()"
-          [error]="newPasswordError()"
-          [showPasswordToggle]="true"
-          [showStrength]="true"
-          (valueChange)="newPassword.set($event)"
-        />
-
-        <app-ui-input
-          label="Confirmar nova senha"
-          name="confirmPassword"
-          type="password"
-          autocomplete="new-password"
-          placeholder="••••••••"
-          [value]="confirmPassword()"
-          [error]="confirmPasswordError()"
-          [showPasswordToggle]="true"
-          (valueChange)="confirmPassword.set($event)"
-        />
-
-        @if (passwordStatus() === 'success') {
-          <p class="perfil-success">Senha alterada com sucesso!</p>
-        }
-
-        <div class="perfil-form__actions">
-          <app-ui-button
-            label="Salvar senha"
-            loadingLabel="Salvando..."
-            type="submit"
-            [fullWidth]="false"
-            [loading]="passwordStatus() === 'loading'"
-            [disabled]="passwordStatus() === 'success'"
-          />
+          <div class="perfil-form__actions">
+            <app-ui-button
+              label="Salvar"
+              loadingLabel="Salvando..."
+              type="submit"
+              [fullWidth]="false"
+              [loading]="profileStatus() === 'loading'"
+              [disabled]="profileStatus() === 'success'"
+            />
+          </div>
         </div>
       </form>
     </section>
-  }
+
+    <!-- Seção 2: Alterar Senha -->
+    @if (hasSenha()) {
+      <section class="perfil-section perfil-section--divided" aria-labelledby="alterar-senha-heading">
+        <h2 class="perfil-section__title" id="alterar-senha-heading">Alterar Senha</h2>
+
+        <form (submit)="handlePasswordSubmit($event)">
+          <div class="senha-grid">
+            <app-ui-input
+              label="Senha atual"
+              name="currentPassword"
+              type="password"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              [value]="currentPassword()"
+              [error]="currentPasswordError()"
+              [showPasswordToggle]="true"
+              (valueChange)="currentPassword.set($event)"
+            />
+
+            <app-ui-input
+              label="Nova senha"
+              name="newPassword"
+              type="password"
+              autocomplete="new-password"
+              placeholder="••••••••"
+              [value]="newPassword()"
+              [error]="newPasswordError()"
+              [showPasswordToggle]="true"
+              [showStrength]="true"
+              (valueChange)="newPassword.set($event)"
+            />
+
+            <app-ui-input
+              label="Confirmar nova senha"
+              name="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              placeholder="••••••••"
+              [value]="confirmPassword()"
+              [error]="confirmPasswordError()"
+              [showPasswordToggle]="true"
+              (valueChange)="confirmPassword.set($event)"
+            />
+          </div>
+
+          @if (passwordStatus() === 'success') {
+            <p class="perfil-success" style="margin-top: 0.75rem;">Senha alterada com sucesso!</p>
+          }
+
+          <div class="perfil-form__actions" style="margin-top: 1.25rem;">
+            <app-ui-button
+              label="Salvar senha"
+              loadingLabel="Salvando..."
+              type="submit"
+              [fullWidth]="false"
+              [loading]="passwordStatus() === 'loading'"
+              [disabled]="passwordStatus() === 'success'"
+            />
+          </div>
+        </form>
+      </section>
+    }
+
+  </div>
 </div>
