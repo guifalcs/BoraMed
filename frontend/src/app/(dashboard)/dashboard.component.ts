@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BookOpen, Clock, LogOut, LucideIconData, Zap } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
+import { ProfileService } from '../core/services/profile.service';
 
 interface NavItem {
   label: string;
@@ -23,9 +24,19 @@ interface NavItem {
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificationService);
+  private readonly profileService = inject(ProfileService);
 
   protected readonly logOutIcon = LogOut;
-  protected readonly userName = signal('Guilherme Falcão');
+  protected readonly profile = this.profileService.profile;
+  protected readonly user = this.auth.user;
+
+  constructor() {
+    effect(() => {
+      if (this.auth.user()) {
+        void this.profileService.loadProfile();
+      }
+    });
+  }
 
   protected async handleSignOut(): Promise<void> {
     this.toast.success('Sessão encerrada. Até logo!');

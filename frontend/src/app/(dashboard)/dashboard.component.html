@@ -20,9 +20,13 @@
 
     <div class="sidebar-bottom">
       <a class="user-card" routerLink="/dashboard/perfil" aria-label="Ver perfil">
-        <app-ui-avatar [name]="userName()" size="sm" />
+        <app-ui-avatar
+          [name]="profile()?.nome_completo ?? user()?.email ?? 'Usuário'"
+          [avatarUrl]="profile()?.avatar_url ?? null"
+          size="sm"
+        />
         <div class="user-info">
-          <span class="user-name">{{ userName() }}</span>
+          <span class="user-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
           <span class="user-role">Aluno</span>
         </div>
       </a>

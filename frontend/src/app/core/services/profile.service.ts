@@ -1,0 +1,158 @@
+import { Injectable, inject, signal } from '@angular/core';
+import { AuthService } from './auth.service';
+import { SupabaseService } from './supabase.service';
+import type { Profile } from '../models/auth.types';
+import type { ChangePasswordInput, UpdateProfileInput } from '../models/profile.schemas';
+
+export type ProfileResult = { ok: true } | { ok: false; error: string };
+
+@Injectable({ providedIn: 'root' })
+export class ProfileService {
+  private readonly supabase = inject(SupabaseService).client;
+  private readonly auth = inject(AuthService);
+
+  private readonly _profile = signal<Profile | null>(null);
+  private readonly _isLoading = signal(false);
+
+  readonly profile = this._profile.asReadonly();
+  readonly isLoading = this._isLoading.asReadonly();
+
+  async loadProfile(): Promise<void> {
+    const user = this.auth.user();
+    if (!user) return;
+
+    this._isLoading.set(true);
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      this._profile.set(data as Profile);
+    } catch {
+      this._profile.set(null);
+    } finally {
+      this._isLoading.set(false);
+    }
+  }
+
+  async updateProfile(input: UpdateProfileInput): Promise<ProfileResult> {
+    const user = this.auth.user();
+    if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .update({
+          nome_completo: input.nome_completo,
+          periodo: input.periodo ?? null,
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      this._profile.set(data as Profile);
+      return { ok: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao salvar dados.';
+      return { ok: false, error: message };
+    }
+  }
+
+  async uploadAvatar(file: File): Promise<ProfileResult> {
+    const user = this.auth.user();
+    if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg';
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await this.supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = this.supabase.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+
+      const { data, error: updateError } = await this.supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      this._profile.set(data as Profile);
+      return { ok: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao enviar avatar.';
+      return { ok: false, error: message };
+    }
+  }
+
+  async removeAvatar(): Promise<ProfileResult> {
+    const user = this.auth.user();
+    if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    const currentProfile = this._profile();
+    if (!currentProfile?.avatar_url) return { ok: false, error: 'Nenhum avatar para remover.' };
+
+    try {
+      // Extract the storage path from the public URL
+      const url = new URL(currentProfile.avatar_url);
+      const pathParts = url.pathname.split('/avatars/');
+      const storagePath = pathParts[1] ?? '';
+
+      if (storagePath) {
+        const { error: deleteError } = await this.supabase.storage
+          .from('avatars')
+          .remove([storagePath]);
+
+        if (deleteError) throw deleteError;
+      }
+
+      const { data, error: updateError } = await this.supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      this._profile.set(data as Profile);
+      return { ok: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao remover avatar.';
+      return { ok: false, error: message };
+    }
+  }
+
+  async changePassword(input: ChangePasswordInput): Promise<ProfileResult> {
+    const user = this.auth.user();
+    if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    try {
+      const { error: signInError } = await this.supabase.auth.signInWithPassword({
+        email: user.email ?? '',
+        password: input.currentPassword,
+      });
+
+      if (signInError) return { ok: false, error: 'Senha atual incorreta.' };
+
+      const { error: updateError } = await this.supabase.auth.updateUser({
+        password: input.newPassword,
+      });
+
+      if (updateError) throw updateError;
+      return { ok: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao alterar senha.';
+      return { ok: false, error: message };
+    }
+  }
+}

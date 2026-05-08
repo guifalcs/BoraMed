@@ -6,6 +6,12 @@
 
   <div class="perfil-card">
 
+    @if (isProfileLoading()) {
+      <div class="perfil-loading" aria-live="polite" aria-busy="true">
+        <span class="perfil-loading__text">Carregando...</span>
+      </div>
+    }
+
     <!-- Seção 1: Dados Pessoais -->
     <section class="perfil-section" aria-labelledby="dados-pessoais-heading">
       <h2 class="perfil-section__title" id="dados-pessoais-heading">Dados Pessoais</h2>
@@ -15,15 +21,23 @@
         <div class="dados-avatar-col">
           <div class="perfil-avatar-wrapper">
             <app-ui-avatar
-              [avatarUrl]="mockAvatarUrl()"
-              [name]="nomeCompleto()"
+              [avatarUrl]="avatarUrl()"
+              [name]="nomeCompleto() || email() || 'Usuário'"
               size="lg"
             />
             <div class="perfil-avatar-actions">
+              <input
+                type="file"
+                accept="image/*"
+                #fileInput
+                style="display:none"
+                (change)="handleAvatarUpload($event)"
+              />
               <button
                 class="perfil-avatar-btn perfil-avatar-btn--upload"
                 type="button"
                 aria-label="Enviar foto de perfil"
+                (click)="fileInput.click()"
               >
                 <app-ui-icon [icon]="cameraIcon" [size]="16" />
               </button>
@@ -31,6 +45,8 @@
                 class="perfil-avatar-btn perfil-avatar-btn--remove"
                 type="button"
                 aria-label="Remover foto de perfil"
+                [disabled]="!avatarUrl()"
+                (click)="handleRemoveAvatar()"
               >
                 <app-ui-icon [icon]="trashIcon" [size]="16" />
               </button>
@@ -66,7 +82,7 @@
               <span class="ui-field__label-row">
                 <span class="ui-field__label">E-mail</span>
               </span>
-              <p class="perfil-email-readonly">{{ mockEmail }}</p>
+              <p class="perfil-email-readonly">{{ email() }}</p>
               <span class="ui-field__helper">O e-mail não pode ser alterado aqui.</span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Camera, LucideIconData, Trash2 } from 'lucide-angular';
 import { UiAvatarComponent } from '../../shared/components/ui/avatar/ui-avatar.component';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
@@ -6,6 +6,9 @@ import { UiInputComponent } from '../../shared/components/ui/input/ui-input.comp
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { updateProfileSchema, changePasswordSchema } from '../../core/models/profile.schemas';
+import { ProfileService } from '../../core/services/profile.service';
+import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -23,18 +26,25 @@ const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PerfilComponent {
+  private readonly profileService = inject(ProfileService);
+  protected readonly auth = inject(AuthService);
+  private readonly toast = inject(NotificationService);
+
   protected readonly cameraIcon: LucideIconData = Camera;
   protected readonly trashIcon: LucideIconData = Trash2;
   protected readonly periodoOptions = PERIODO_OPTIONS;
 
-  // Mock data
-  protected readonly hasSenha = signal(true);
-  protected readonly mockEmail = 'guilherme@example.com';
-  protected readonly mockAvatarUrl = signal<string | null>(null);
+  // Derived from services
+  protected readonly email = computed(() => this.auth.user()?.email ?? '');
+  protected readonly avatarUrl = computed(() => this.profileService.profile()?.avatar_url ?? null);
+  protected readonly isProfileLoading = this.profileService.isLoading;
+  protected readonly hasSenha = computed(
+    () => this.auth.user()?.app_metadata?.['providers']?.includes('email') ?? false,
+  );
 
   // Profile form state
-  protected readonly nomeCompleto = signal('Guilherme Falcão');
-  protected readonly periodo = signal<number | null>(5);
+  protected readonly nomeCompleto = signal('');
+  protected readonly periodo = signal<number | null>(null);
   protected readonly profileStatus = signal<FormStatus>('idle');
   protected readonly profileFieldErrors = signal<Partial<Record<string, string>>>({});
 
@@ -64,6 +74,16 @@ export class PerfilComponent {
     () => this.passwordFieldErrors()['confirmPassword'] ?? null,
   );
 
+  constructor() {
+    effect(() => {
+      const p = this.profileService.profile();
+      if (p) {
+        this.nomeCompleto.set(p.nome_completo ?? '');
+        this.periodo.set(p.periodo);
+      }
+    });
+  }
+
   protected handleProfileSubmit(event: SubmitEvent): void {
     event.preventDefault();
     this.profileFieldErrors.set({});
@@ -85,10 +105,16 @@ export class PerfilComponent {
     }
 
     this.profileStatus.set('loading');
-    setTimeout(() => {
-      this.profileStatus.set('success');
-      setTimeout(() => this.profileStatus.set('idle'), 3000);
-    }, 600);
+    void this.profileService.updateProfile(parsed.data).then((result) => {
+      if (result.ok) {
+        this.toast.success('Dados salvos com sucesso!');
+        this.profileStatus.set('success');
+        setTimeout(() => this.profileStatus.set('idle'), 3000);
+      } else {
+        this.toast.error(result.error);
+        this.profileStatus.set('error');
+      }
+    });
   }
 
   protected handlePasswordSubmit(event: SubmitEvent): void {
@@ -113,13 +139,55 @@ export class PerfilComponent {
     }
 
     this.passwordStatus.set('loading');
-    setTimeout(() => {
-      this.passwordStatus.set('success');
-      this.currentPassword.set('');
-      this.newPassword.set('');
-      this.confirmPassword.set('');
-      setTimeout(() => this.passwordStatus.set('idle'), 3000);
-    }, 600);
+    void this.profileService.changePassword(parsed.data).then((result) => {
+      if (result.ok) {
+        this.toast.success('Senha alterada com sucesso!');
+        this.currentPassword.set('');
+        this.newPassword.set('');
+        this.confirmPassword.set('');
+        this.passwordStatus.set('success');
+        setTimeout(() => this.passwordStatus.set('idle'), 3000);
+      } else {
+        this.passwordFieldErrors.set({ currentPassword: result.error });
+        this.passwordStatus.set('error');
+      }
+    });
+  }
+
+  protected handleAvatarUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Apenas arquivos de imagem são permitidos.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.toast.error('A imagem deve ter no máximo 5 MB.');
+      return;
+    }
+
+    void this.profileService.uploadAvatar(file).then((result) => {
+      if (result.ok) {
+        this.toast.success('Foto de perfil atualizada!');
+      } else {
+        this.toast.error(result.error);
+      }
+      // Reset input so the same file can be re-selected
+      input.value = '';
+    });
+  }
+
+  protected handleRemoveAvatar(): void {
+    void this.profileService.removeAvatar().then((result) => {
+      if (result.ok) {
+        this.toast.success('Foto de perfil removida.');
+      } else {
+        this.toast.error(result.error);
+      }
+    });
   }
 
   protected handlePeriodoChange(value: string | number | null): void {
