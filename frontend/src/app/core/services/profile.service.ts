@@ -76,7 +76,7 @@ export class ProfileService {
       if (uploadError) throw uploadError;
 
       const { data: urlData } = this.supabase.storage.from('avatars').getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
       const { data, error: updateError } = await this.supabase
         .from('profiles')
