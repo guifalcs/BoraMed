@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { signupSchema } from '../../core/models/auth.schemas';
 
 type CadastroState = 'idle' | 'error' | 'loading' | 'success';
@@ -16,6 +17,7 @@ type CadastroState = 'idle' | 'error' | 'loading' | 'success';
 })
 export class CadastroComponent {
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(NotificationService);
 
   protected readonly fullName = signal('');
   protected readonly email = signal('');
@@ -50,6 +52,7 @@ export class CadastroComponent {
     const result = await this.auth.signup(parsed.data);
 
     if (result.ok) {
+      this.toast.success('Conta criada! Verifique seu e-mail para ativar o acesso.');
       this.state.set('success');
     } else {
       const errors: Record<string, string> = {};

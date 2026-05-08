@@ -1,0 +1,7 @@
+<div class="toast" [class]="'toast--' + type()" role="alert" aria-live="polite">
+  <app-ui-icon [icon]="icon()" [size]="20" class="toast-icon" />
+  <p class="toast-message">{{ message() }}</p>
+  <button class="toast-close" type="button" (click)="dismiss.emit()" aria-label="Fechar notificação">
+    <app-ui-icon [icon]="xIcon" [size]="14" />
+  </button>
+</div>

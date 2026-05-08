@@ -7,7 +7,7 @@ const meta: Meta<UiInputComponent> = {
   component: UiInputComponent,
   tags: ['autodocs'],
   args: {
-    label: 'E-mail institucional',
+    label: 'E-mail',
     name: 'email',
     value: 'arthur@afya.edu.br',
     type: 'email',
@@ -36,7 +36,7 @@ export const Email: Story = {};
 
 export const WithError: Story = {
   args: {
-    error: 'Use um e-mail institucional válido.',
+    error: 'E-mail inválido.',
   },
 };
 

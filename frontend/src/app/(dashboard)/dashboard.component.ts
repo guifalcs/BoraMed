@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BookOpen, Clock, LogOut, LucideIconData, Zap } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { AuthService } from '../core/services/auth.service';
+import { NotificationService } from '../core/services/notification.service';
 
 interface NavItem {
   label: string;
@@ -20,10 +21,12 @@ interface NavItem {
 })
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(NotificationService);
 
   protected readonly logOutIcon = LogOut;
 
   protected async handleSignOut(): Promise<void> {
+    this.toast.success('Sessão encerrada. Até logo!');
     await this.auth.signOut();
   }
 

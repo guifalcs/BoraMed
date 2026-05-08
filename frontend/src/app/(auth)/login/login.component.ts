@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { loginSchema } from '../../core/models/auth.schemas';
 import type { AuthErrorCode } from '../../core/models/auth.types';
 
@@ -18,6 +19,7 @@ type LoginState = 'idle' | 'error' | 'loading';
 export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(NotificationService);
 
   protected readonly email = signal('');
   protected readonly password = signal('');
@@ -54,6 +56,7 @@ export class LoginComponent {
     const result = await this.auth.login(parsed.data);
 
     if (result.ok) {
+      this.toast.success('Bem-vindo de volta!');
       void this.router.navigate(['/dashboard']);
     } else {
       this.errorCode.set(result.error);

@@ -28,6 +28,7 @@
           autocomplete="new-password"
           placeholder="••••••••"
           [value]="password()"
+          [error]="passwordError()"
           [showPasswordToggle]="true"
           [showStrength]="true"
           (valueChange)="password.set($event)"

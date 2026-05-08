@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { recoverPasswordSchema } from '../../core/models/auth.schemas';
 
 type RecuperarSenhaState = 'idle' | 'loading' | 'success';
@@ -16,6 +17,7 @@ type RecuperarSenhaState = 'idle' | 'loading' | 'success';
 })
 export class RecuperarSenhaComponent {
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(NotificationService);
 
   protected readonly email = signal('');
   protected readonly state = signal<RecuperarSenhaState>('idle');
@@ -27,8 +29,8 @@ export class RecuperarSenhaComponent {
     if (!parsed.success) return;
 
     this.state.set('loading');
-    // Sempre retorna success mesmo se e-mail não existir (evita user enumeration)
     await this.auth.recoverPassword(parsed.data);
+    this.toast.success('Se este e-mail existir, o link de recuperação foi enviado.');
     this.state.set('success');
   }
 }
