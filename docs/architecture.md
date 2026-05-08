@@ -44,3 +44,9 @@
  **Data** : 2025-05
  **Decisão** : Lógica de sorteio e montagem do simulado roda em Supabase RPC ou Edge Function, não no cliente Angular.
  **Motivo** : Evita exposição dos IDs de todas as questões antes do aluno responder. Reduz superfície de manipulação.
+
+## ADR-008: Google OAuth adicionado ao MVP
+
+ **Data** : 2026-05
+ **Decisão** : Google OAuth via Supabase Auth adicionado, ao lado de email/senha. ADR-003 revisado.
+ **Motivo** : Templates de auth já previam os botões. Supabase OAuth não adiciona complexidade de backend nem exige mudança de schema.

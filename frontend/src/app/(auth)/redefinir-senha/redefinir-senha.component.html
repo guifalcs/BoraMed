@@ -20,7 +20,7 @@
       <h2 class="auth-heading">Redefinir senha.</h2>
       <p class="auth-copy">Crie uma nova senha para voltar ao BoraMed.</p>
 
-      <form class="form">
+      <form class="form" (submit)="handleSubmit($event)">
         <app-ui-input
           label="Nova senha"
           name="password"
@@ -40,7 +40,7 @@
           autocomplete="new-password"
           placeholder="••••••••"
           [value]="confirmPassword()"
-          [error]="state() === 'error' ? 'As senhas não conferem.' : null"
+          [error]="confirmError()"
           [showPasswordToggle]="true"
           (valueChange)="confirmPassword.set($event)"
         />
@@ -52,7 +52,9 @@
         <app-ui-button
           label="Redefinir senha"
           loadingLabel="Redefinindo..."
+          type="submit"
           [loading]="state() === 'loading'"
+          [disabled]="state() === 'success'"
           [showArrow]="true"
         />
       </form>

@@ -20,7 +20,7 @@
       <h2 class="auth-heading">Recuperar senha.</h2>
       <p class="auth-copy">Informe seu e-mail institucional para receber o link.</p>
 
-      <form class="form">
+      <form class="form" (submit)="handleSubmit($event)">
         <app-ui-input
           label="E-mail institucional"
           name="email"
@@ -32,13 +32,15 @@
         />
 
         @if (state() === 'success') {
-          <p class="success">Email enviado! Verifique sua caixa de entrada.</p>
+          <p class="success">Se este e-mail estiver cadastrado, você receberá as instruções.</p>
         }
 
         <app-ui-button
           label="Enviar link de recuperação"
           loadingLabel="Enviando..."
+          type="submit"
           [loading]="state() === 'loading'"
+          [disabled]="state() === 'success'"
           [showArrow]="true"
         />
       </form>
