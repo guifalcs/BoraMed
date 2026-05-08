@@ -74,6 +74,14 @@
   align-items: center;
   gap: 0.625rem;
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 0.375rem;
+  transition: background 0.13s;
+}
+
+.user-card:hover {
+  background: var(--color-surface-2);
 }
 
 .user-avatar {

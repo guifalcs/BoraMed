@@ -41,6 +41,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./(dashboard)/inicio/inicio.component').then((m) => m.InicioComponent),
       },
+      {
+        path: 'perfil',
+        loadComponent: () =>
+          import('./(dashboard)/perfil/perfil.component').then((m) => m.PerfilComponent),
+      },
       { path: '**', redirectTo: '' },
     ],
   },

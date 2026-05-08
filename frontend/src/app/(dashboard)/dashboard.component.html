@@ -19,13 +19,13 @@
     </nav>
 
     <div class="sidebar-bottom">
-      <div class="user-card">
-        <div class="user-avatar" aria-hidden="true">G</div>
+      <a class="user-card" routerLink="/dashboard/perfil" aria-label="Ver perfil">
+        <app-ui-avatar [name]="userName()" size="sm" />
         <div class="user-info">
-          <span class="user-name">Guilherme</span>
+          <span class="user-name">{{ userName() }}</span>
           <span class="user-role">Aluno</span>
         </div>
-      </div>
+      </a>
       <button class="logout-btn" type="button" aria-label="Sair" (click)="handleSignOut()">
         <app-ui-icon [icon]="logOutIcon" [size]="18" />
       </button>

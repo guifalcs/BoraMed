@@ -1,0 +1,196 @@
+.perfil-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 1.5rem;
+  max-width: 640px;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+
+.perfil-header {
+  margin-bottom: 0.25rem;
+}
+
+.perfil-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.25rem;
+}
+
+.perfil-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Card ────────────────────────────────────────────── */
+
+.perfil-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.perfil-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Avatar area ─────────────────────────────────────── */
+
+.perfil-avatar-area {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.perfil-avatar-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.perfil-avatar-actions {
+  position: absolute;
+  bottom: -0.25rem;
+  right: -0.25rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.perfil-avatar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  cursor: pointer;
+  transition: filter 0.13s;
+}
+
+.perfil-avatar-btn--upload {
+  background: var(--color-action);
+  color: #fff;
+}
+
+.perfil-avatar-btn--upload:hover {
+  filter: brightness(0.9);
+}
+
+.perfil-avatar-btn--remove {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.perfil-avatar-btn--remove:hover {
+  filter: brightness(0.9);
+}
+
+/* ── Form ────────────────────────────────────────────── */
+
+.perfil-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.perfil-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Reuse ui-field styles for select ───────────────── */
+
+.ui-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ui-field__label {
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.ui-field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ui-field__control {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  appearance: auto;
+}
+
+.ui-field__control:focus {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.ui-field__control--invalid {
+  border-color: var(--color-danger);
+}
+
+.ui-field__error {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-danger);
+}
+
+.ui-field__helper {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+/* ── Email read-only ─────────────────────────────────── */
+
+.perfil-email-readonly {
+  margin: 0;
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+/* ── Success message ─────────────────────────────────── */
+
+.perfil-success {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-success);
+}
+
+/* ── Mobile ──────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .perfil-page {
+    padding: 1.25rem 1rem;
+  }
+
+  .perfil-card {
+    padding: 1.25rem;
+  }
+}

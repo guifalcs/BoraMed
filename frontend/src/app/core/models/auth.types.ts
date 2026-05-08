@@ -4,6 +4,10 @@ export interface Profile {
   id: string;
   email: string;
   criado_em: string;
+  nome_completo: string | null;
+  avatar_url: string | null;
+  periodo: number | null;
+  atualizado_em: string;
 }
 
 export type AuthResult = { ok: true; needsConfirmation?: boolean } | { ok: false; error: AuthErrorCode };

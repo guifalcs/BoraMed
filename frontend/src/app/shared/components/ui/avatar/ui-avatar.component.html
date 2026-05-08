@@ -1,0 +1,21 @@
+@if (showImage()) {
+  <img
+    class="ui-avatar__img"
+    [class.ui-avatar--sm]="size() === 'sm'"
+    [class.ui-avatar--md]="size() === 'md'"
+    [class.ui-avatar--lg]="size() === 'lg'"
+    [src]="avatarUrl()!"
+    [alt]="name()"
+    (error)="handleImageError()"
+  />
+} @else {
+  <div
+    class="ui-avatar__fallback"
+    [class.ui-avatar--sm]="size() === 'sm'"
+    [class.ui-avatar--md]="size() === 'md'"
+    [class.ui-avatar--lg]="size() === 'lg'"
+    aria-hidden="true"
+  >
+    {{ initials() }}
+  </div>
+}

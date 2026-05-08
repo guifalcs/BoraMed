@@ -1,0 +1,35 @@
+.ui-avatar__img,
+.ui-avatar__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.ui-avatar__fallback {
+  background: linear-gradient(135deg, #1e40af 0%, #6427d9 100%);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Sizes */
+
+.ui-avatar--sm {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.8125rem;
+}
+
+.ui-avatar--md {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.9375rem;
+}
+
+.ui-avatar--lg {
+  width: 5rem;
+  height: 5rem;
+  font-size: 1.5rem;
+}
