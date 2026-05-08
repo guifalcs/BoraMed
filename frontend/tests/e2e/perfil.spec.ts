@@ -71,4 +71,36 @@ test.describe('Página de Perfil', () => {
     await dropdown.getByText('Residente').click();
     await expect(dropdown).not.toBeVisible();
   });
+
+  test.describe('Seção Alterar Senha', () => {
+    test('exibe a seção Alterar Senha com os campos e botão', async ({ page }) => {
+      await expect(page.getByRole('heading', { name: 'Alterar Senha' })).toBeVisible();
+      await expect(perfil.currentPasswordInput).toBeVisible();
+      await expect(perfil.newPasswordInput).toBeVisible();
+      await expect(perfil.confirmPasswordInput).toBeVisible();
+      await expect(perfil.savePasswordButton).toBeVisible();
+    });
+
+    test('exibe erro ao submeter formulário de senha sem preencher campos', async ({ page }) => {
+      await perfil.savePasswordButton.click();
+      await expect(page.getByText('Senha atual obrigatória')).toBeVisible();
+    });
+
+    test('exibe erro quando as senhas nova e confirmação não conferem', async ({ page }) => {
+      await perfil.currentPasswordInput.fill('SenhaAtual1!');
+      await perfil.newPasswordInput.fill('NovaSenha1!');
+      await perfil.confirmPasswordInput.fill('SenhaErrada1!');
+      await perfil.savePasswordButton.click();
+      await expect(page.getByText('As senhas não conferem')).toBeVisible();
+    });
+
+    test('exibe erro quando a nova senha não atende aos requisitos de força', async ({ page }) => {
+      await perfil.currentPasswordInput.fill('qualquercoisa');
+      await perfil.newPasswordInput.fill('fraca');
+      await perfil.confirmPasswordInput.fill('fraca');
+      await perfil.savePasswordButton.click();
+      // A mensagem exata depende do requisito que falhar primeiro (maiúscula, número, especial)
+      await expect(page.locator('.ui-field__error').first()).toBeVisible();
+    });
+  });
 });
