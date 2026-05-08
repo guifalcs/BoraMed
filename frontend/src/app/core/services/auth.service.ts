@@ -55,12 +55,13 @@ export class AuthService implements OnDestroy {
   }
 
   async signup(input: SignupInput): Promise<AuthResult> {
-    const { error } = await this.supabase.auth.signUp({
+    const { data, error } = await this.supabase.auth.signUp({
       email: input.email,
       password: input.password,
       options: { data: { full_name: input.fullName } },
     });
-    return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
+    if (error) return { ok: false, error: this.mapError(error.message) };
+    return { ok: true, needsConfirmation: data.session === null };
   }
 
   async recoverPassword(input: RecoverPasswordInput): Promise<AuthResult> {

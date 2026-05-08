@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -18,6 +18,7 @@ type CadastroState = 'idle' | 'error' | 'loading' | 'success';
 export class CadastroComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificationService);
+  private readonly router = inject(Router);
 
   protected readonly fullName = signal('');
   protected readonly email = signal('');
@@ -52,8 +53,13 @@ export class CadastroComponent {
     const result = await this.auth.signup(parsed.data);
 
     if (result.ok) {
-      this.toast.success('Conta criada! Verifique seu e-mail para ativar o acesso.');
-      this.state.set('success');
+      if (result.needsConfirmation) {
+        this.toast.success('Conta criada! Verifique seu e-mail para ativar o acesso.');
+        this.state.set('success');
+      } else {
+        this.toast.success('Conta criada com sucesso!');
+        void this.router.navigate(['/dashboard']);
+      }
     } else {
       const errors: Record<string, string> = {};
       if (result.error === 'EMAIL_IN_USE') {

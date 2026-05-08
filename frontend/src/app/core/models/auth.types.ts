@@ -6,7 +6,7 @@ export interface Profile {
   criado_em: string;
 }
 
-export type AuthResult = { ok: true } | { ok: false; error: AuthErrorCode };
+export type AuthResult = { ok: true; needsConfirmation?: boolean } | { ok: false; error: AuthErrorCode };
 
 export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
