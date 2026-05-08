@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#1e40af"/>
+      <stop offset="50%"  stop-color="#2451d8"/>
+      <stop offset="100%" stop-color="#6427d9"/>
+    </linearGradient>
+    <clipPath id="cross">
+      <rect x="31" y="3"  width="38" height="94" rx="14"/>
+      <rect x="3"  y="31" width="94" height="38" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <!-- Cruz com gradiente -->
+  <rect width="100" height="100" fill="url(#g)" clip-path="url(#cross)"/>
+
+  <!-- Seta diagonal ↗ branca -->
+  <path d="M35,67 L63,39 M63,39 L63,53 M63,39 L49,39"
+        stroke="white" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round"
+        fill="none"/>
+</svg>
