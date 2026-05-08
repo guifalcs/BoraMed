@@ -82,3 +82,10 @@ revoke execute on function public.handle_new_user()   from anon, authenticated;
 revoke execute on function public.handle_new_user()   from public;
 revoke execute on function public.set_atualizado_em() from anon, authenticated;
 revoke execute on function public.set_atualizado_em() from public;
+
+-- anon não deve acessar profiles de nenhuma forma
+revoke all on public.profiles from anon;
+
+-- authenticated: apenas SELECT (ler perfil) e UPDATE (editar próprio perfil)
+-- INSERT é exclusivo do trigger handle_new_user; DELETE não é exposto ao usuário
+revoke insert, delete, truncate, trigger, references on public.profiles from authenticated;
