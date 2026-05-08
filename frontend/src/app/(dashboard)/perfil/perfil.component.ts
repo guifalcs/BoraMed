@@ -4,16 +4,20 @@ import { UiAvatarComponent } from '../../shared/components/ui/avatar/ui-avatar.c
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { updateProfileSchema, changePasswordSchema } from '../../core/models/profile.schemas';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
-const PERIODOS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1}º período`,
+}));
 
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [UiAvatarComponent, UiButtonComponent, UiInputComponent, UiIconComponent],
+  imports: [UiAvatarComponent, UiButtonComponent, UiInputComponent, UiIconComponent, UiSelectComponent],
   templateUrl: './perfil.component.html',
   styleUrl: './perfil.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,7 +25,7 @@ const PERIODOS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 export class PerfilComponent {
   protected readonly cameraIcon: LucideIconData = Camera;
   protected readonly trashIcon: LucideIconData = Trash2;
-  protected readonly periodos = PERIODOS;
+  protected readonly periodoOptions = PERIODO_OPTIONS;
 
   // Mock data
   protected readonly hasSenha = signal(true);
@@ -118,9 +122,7 @@ export class PerfilComponent {
     }, 600);
   }
 
-  protected handlePeriodoChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const value = parseInt(select.value, 10);
-    this.periodo.set(isNaN(value) ? null : value);
+  protected handlePeriodoChange(value: string | number | null): void {
+    this.periodo.set(typeof value === 'number' ? value : null);
   }
 }

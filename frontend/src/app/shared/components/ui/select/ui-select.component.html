@@ -1,0 +1,55 @@
+<label class="ui-field" [class.ui-field--disabled]="disabled()">
+  <span class="ui-field__label-row">
+    <span class="ui-field__label">{{ label() }}</span>
+  </span>
+
+  <div class="ui-select">
+    <button
+      class="ui-select__trigger"
+      type="button"
+      [attr.aria-expanded]="isOpen()"
+      aria-haspopup="listbox"
+      [class.ui-select__trigger--open]="isOpen()"
+      [class.ui-select__trigger--invalid]="error()"
+      [disabled]="disabled() || null"
+      (click)="toggle()"
+      (keydown)="handleKeydown($event)"
+    >
+      <span [class.ui-select__placeholder]="!selectedLabel()">
+        {{ selectedLabel() ?? placeholder() }}
+      </span>
+      <app-ui-icon
+        class="ui-select__chevron"
+        [class.ui-select__chevron--open]="isOpen()"
+        [icon]="chevronDownIcon"
+        [size]="16"
+        aria-hidden="true"
+      />
+    </button>
+
+    @if (isOpen()) {
+      <ul class="ui-select__dropdown" role="listbox" [attr.aria-label]="label()">
+        @for (option of options(); track option.value) {
+          <li
+            class="ui-select__option"
+            role="option"
+            [class.ui-select__option--selected]="option.value === value()"
+            [attr.aria-selected]="option.value === value()"
+            (click)="select(option)"
+          >
+            <span>{{ option.label }}</span>
+            @if (option.value === value()) {
+              <app-ui-icon [icon]="checkIcon" [size]="14" aria-hidden="true" />
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  @if (error()) {
+    <span class="ui-field__error">{{ error() }}</span>
+  } @else if (helperText()) {
+    <span class="ui-field__helper">{{ helperText() }}</span>
+  }
+</label>

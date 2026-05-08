@@ -139,58 +139,6 @@
   justify-content: flex-end;
 }
 
-.ui-field {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.ui-field__label {
-  color: var(--color-text);
-  font-size: 0.8125rem;
-  font-weight: 700;
-}
-
-.ui-field__label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.ui-field__control {
-  width: 100%;
-  min-height: 3rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  color: var(--color-text);
-  background: var(--color-surface);
-  font-size: 0.9375rem;
-  outline: none;
-  appearance: auto;
-}
-
-.ui-field__control:focus {
-  border-color: var(--color-primary-light);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
-}
-
-.ui-field__control--invalid {
-  border-color: var(--color-danger);
-}
-
-.ui-field__error {
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: var(--color-danger);
-}
-
-.ui-field__helper {
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: var(--color-text-muted);
-}
-
 .perfil-email-readonly {
   margin: 0;
   min-height: 3rem;

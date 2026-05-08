@@ -52,25 +52,15 @@
               (valueChange)="nomeCompleto.set($event)"
             />
 
-            <div class="ui-field">
-              <span class="ui-field__label-row">
-                <span class="ui-field__label">Período</span>
-              </span>
-              <select
-                class="ui-field__control"
-                name="periodo"
-                [class.ui-field__control--invalid]="periodoError()"
-                (change)="handlePeriodoChange($event)"
-              >
-                <option value="" [selected]="periodo() === null">Selecione</option>
-                @for (p of periodos; track p) {
-                  <option [value]="p" [selected]="periodo() === p">{{ p }}º período</option>
-                }
-              </select>
-              @if (periodoError()) {
-                <span class="ui-field__error">{{ periodoError() }}</span>
-              }
-            </div>
+            <app-ui-select
+              label="Período"
+              name="periodo"
+              placeholder="Selecione"
+              [options]="periodoOptions"
+              [value]="periodo()"
+              [error]="periodoError()"
+              (valueChange)="handlePeriodoChange($event)"
+            />
 
             <div class="ui-field dados-email-field">
               <span class="ui-field__label-row">
