@@ -56,9 +56,8 @@ export class ProfileService {
       if (error) throw error;
       this._profile.set(data as Profile);
       return { ok: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao salvar dados.';
-      return { ok: false, error: message };
+    } catch {
+      return { ok: false, error: 'Não foi possível salvar os dados. Tente novamente.' };
     }
   }
 
@@ -89,9 +88,8 @@ export class ProfileService {
       if (updateError) throw updateError;
       this._profile.set(data as Profile);
       return { ok: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao enviar avatar.';
-      return { ok: false, error: message };
+    } catch {
+      return { ok: false, error: 'Não foi possível enviar a foto. Verifique sua conexão e tente novamente.' };
     }
   }
 
@@ -126,9 +124,8 @@ export class ProfileService {
       if (updateError) throw updateError;
       this._profile.set(data as Profile);
       return { ok: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao remover avatar.';
-      return { ok: false, error: message };
+    } catch {
+      return { ok: false, error: 'Não foi possível remover a foto. Tente novamente.' };
     }
   }
 
@@ -150,9 +147,8 @@ export class ProfileService {
 
       if (updateError) throw updateError;
       return { ok: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao alterar senha.';
-      return { ok: false, error: message };
+    } catch {
+      return { ok: false, error: 'Não foi possível alterar a senha. Tente novamente.' };
     }
   }
 }

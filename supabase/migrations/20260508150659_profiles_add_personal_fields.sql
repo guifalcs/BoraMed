@@ -49,6 +49,15 @@ $function$
 CREATE TRIGGER on_profiles_updated BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.set_atualizado_em();
 
 
+  create policy "avatars_select_own"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+  using ((bucket_id = 'avatars'::text));
+
+
+
   create policy "avatars_delete_own"
   on "storage"."objects"
   as permissive
