@@ -78,5 +78,7 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
-revoke execute on function public.handle_new_user() from public;
+revoke execute on function public.handle_new_user()   from anon, authenticated;
+revoke execute on function public.handle_new_user()   from public;
+revoke execute on function public.set_atualizado_em() from anon, authenticated;
 revoke execute on function public.set_atualizado_em() from public;
