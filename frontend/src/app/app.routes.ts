@@ -46,6 +46,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./(dashboard)/perfil/perfil.component').then((m) => m.PerfilComponent),
       },
+      {
+        path: 'suporte',
+        loadComponent: () =>
+          import('./(dashboard)/suporte/suporte.component').then((m) => m.SuporteComponent),
+      },
       { path: '**', redirectTo: '' },
     ],
   },
