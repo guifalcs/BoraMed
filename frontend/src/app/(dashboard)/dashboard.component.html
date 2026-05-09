@@ -2,7 +2,9 @@
 
   <aside class="sidebar">
     <div class="sidebar-top">
-      <img src="logo.png" alt="BoraMed" class="sidebar-logo" />
+      <a routerLink="/dashboard" aria-label="Ir para início">
+        <img src="logo.png" alt="BoraMed" class="sidebar-logo" />
+      </a>
     </div>
 
     <nav class="sidebar-nav" aria-label="Navegação principal">
@@ -11,6 +13,7 @@
           class="nav-item"
           [routerLink]="item.route"
           routerLinkActive="nav-item--active"
+          [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
         >
           <app-ui-icon [icon]="item.icon" [size]="20" />
           <span>{{ item.label }}</span>
@@ -36,6 +39,35 @@
     </div>
   </aside>
 
+  <header class="mobile-header">
+    <a routerLink="/dashboard" aria-label="Ir para início">
+      <img src="logotipo.png" alt="BoraMed" class="mobile-logo" />
+    </a>
+    <div class="mobile-avatar-wrapper">
+      <button class="mobile-avatar-btn" type="button" aria-label="Menu do perfil" (click)="toggleMenu()">
+        <app-ui-avatar
+          [name]="profile()?.nome_completo ?? user()?.email ?? 'Usuário'"
+          [avatarUrl]="profile()?.avatar_url ?? null"
+          size="sm"
+        />
+      </button>
+
+      @if (menuAberto()) {
+        <div class="mobile-menu-backdrop" (click)="fecharMenu()"></div>
+        <div class="mobile-menu" role="menu">
+          <a class="mobile-menu-item" routerLink="/dashboard/perfil" (click)="fecharMenu()" role="menuitem">
+            <app-ui-icon [icon]="userIcon" [size]="18" />
+            <span>Perfil</span>
+          </a>
+          <button class="mobile-menu-item mobile-menu-item--danger" type="button" role="menuitem" (click)="handleSignOut()">
+            <app-ui-icon [icon]="logOutIcon" [size]="18" />
+            <span>Sair</span>
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
   <main class="main-content">
     <router-outlet />
   </main>
@@ -46,6 +78,7 @@
         class="bottom-nav-item"
         [routerLink]="item.route"
         routerLinkActive="bottom-nav-item--active"
+        [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
       >
         <app-ui-icon [icon]="item.icon" [size]="22" />
         <span>{{ item.label }}</span>
