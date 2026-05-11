@@ -51,6 +51,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./(dashboard)/suporte/suporte.component').then((m) => m.SuporteComponent),
       },
+      {
+        path: 'provas',
+        loadChildren: () =>
+          import('./(dashboard)/provas/provas.routes').then((m) => m.provasRoutes),
+      },
       { path: '**', redirectTo: '' },
     ],
   },

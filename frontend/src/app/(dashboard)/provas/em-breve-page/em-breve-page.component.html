@@ -1,0 +1,18 @@
+<div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
+  <div class="mx-auto max-w-2xl">
+    <button
+      type="button"
+      class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+      (click)="voltar()"
+    >
+      <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
+      Voltar
+    </button>
+
+    <app-em-breve-banner
+      [titulo]="conteudo().titulo"
+      [descricao]="conteudo().descricao"
+      [icone]="conteudo().icone"
+    />
+  </div>
+</div>

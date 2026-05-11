@@ -1,0 +1,68 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import type { QuestaoComAlternativas } from '../../../core/models/questao';
+import type { ModoProva } from '../../../core/models/tentativa';
+import type { EstadoAlternativa } from '../alternativa-item/alternativa-item.component';
+import { AlternativaItemComponent } from '../alternativa-item/alternativa-item.component';
+import { QuestaoExplicacaoComponent } from '../questao-explicacao/questao-explicacao.component';
+
+@Component({
+  selector: 'app-questao-card',
+  standalone: true,
+  imports: [AlternativaItemComponent, QuestaoExplicacaoComponent],
+  templateUrl: './questao-card.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class QuestaoCardComponent {
+  questao = input.required<QuestaoComAlternativas>();
+  numero = input.required<number>();
+  modo = input.required<ModoProva>();
+  respostaSelecionada = input<string | null>(null);
+  alternativaCorreta = input<string | null>(null);
+  gabaritioVisivel = input<boolean>(false);
+
+  responder = output<string>();
+
+  protected readonly imgCarregada = signal(false);
+
+  protected readonly exibirExplicacao = computed(
+    () =>
+      !!this.questao().explicacao &&
+      this.modo() === 'estudo' &&
+      this.respostaSelecionada() !== null,
+  );
+
+  protected estadoAlternativa(altId: string): EstadoAlternativa {
+    const selecionada = this.respostaSelecionada();
+    const corretaId = this.alternativaCorreta();
+    const gabarito = this.gabaritioVisivel();
+    const modo = this.modo();
+
+    if (modo === 'visualizar' || gabarito) {
+      const alt = this.questao().alternativas.find((a) => a.id === altId);
+      if (alt?.correta) return 'correta';
+      if (altId === selecionada) return 'errada';
+      return 'desabilitada';
+    }
+
+    if (modo === 'estudo' && corretaId !== null) {
+      const alt = this.questao().alternativas.find((a) => a.id === altId);
+      if (alt?.correta) return 'correta';
+      if (altId === selecionada) return 'errada';
+      return 'desabilitada';
+    }
+
+    if (altId === selecionada) return 'selecionada';
+    return 'idle';
+  }
+
+  protected onImgLoad(): void {
+    this.imgCarregada.set(true);
+  }
+}

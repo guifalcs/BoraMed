@@ -1,0 +1,29 @@
+<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:flex-col">
+  <div class="w-full">
+    <app-ui-select
+      label="Subtipo"
+      name="subtipo"
+      [options]="subtipoOpcoes"
+      [value]="filtros().subtipo ?? ''"
+      (valueChange)="onSubtipoChange($event?.toString() ?? '')"
+    />
+  </div>
+  <div class="w-full">
+    <app-ui-select
+      label="Período"
+      name="periodo"
+      [options]="periodoOpcoes"
+      [value]="filtros().periodo ? filtros().periodo!.toString() : ''"
+      (valueChange)="onPeriodoChange($event?.toString() ?? '')"
+    />
+  </div>
+  <div class="w-full">
+    <app-ui-select
+      label="Ano"
+      name="ano"
+      [options]="anoOpcoes"
+      [value]="filtros().ano ? filtros().ano!.toString() : ''"
+      (valueChange)="onAnoChange($event?.toString() ?? '')"
+    />
+  </div>
+</div>

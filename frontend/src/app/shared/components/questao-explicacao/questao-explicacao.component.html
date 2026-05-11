@@ -1,0 +1,11 @@
+@if (visivel()) {
+  <div class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+    <h4 class="mb-2 text-sm font-semibold text-emerald-800">Explicação</h4>
+    <p class="text-sm text-emerald-900 leading-relaxed">{{ explicacao() }}</p>
+    @if (referencia()) {
+      <p class="mt-3 text-xs text-emerald-700 border-t border-emerald-200 pt-2">
+        <span class="font-semibold">Referência:</span> {{ referencia() }}
+      </p>
+    }
+  </div>
+}

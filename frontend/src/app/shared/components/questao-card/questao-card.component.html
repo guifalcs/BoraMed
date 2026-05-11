@@ -1,0 +1,58 @@
+<div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+  <!-- Número -->
+  <span class="mb-3 inline-flex items-center rounded bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
+    Questão {{ numero() }}
+  </span>
+
+  <!-- Imagem -->
+  @if (questao().imagem_url) {
+    <div class="mb-4">
+      @if (!imgCarregada()) {
+        <div class="aspect-video w-full max-w-lg mx-auto animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+      }
+      <img
+        [src]="questao().imagem_url!"
+        [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+        class="max-w-lg w-full mx-auto rounded-lg"
+        [class.hidden]="!imgCarregada()"
+        (load)="onImgLoad()"
+      />
+      @if (questao().imagem_legenda && imgCarregada()) {
+        <p class="mt-1 text-center text-xs text-[var(--color-text-muted)]">{{ questao().imagem_legenda }}</p>
+      }
+    </div>
+  }
+
+  <!-- Enunciado de apoio -->
+  @if (questao().enunciado_apoio) {
+    <p class="mb-3 rounded-lg bg-blue-50 p-3 text-sm text-[var(--color-text)] border border-blue-100">
+      {{ questao().enunciado_apoio }}
+    </p>
+  }
+
+  <!-- Enunciado -->
+  <p class="mb-4 text-base font-medium text-[var(--color-text)] leading-relaxed">
+    {{ questao().enunciado }}
+  </p>
+
+  <!-- Alternativas -->
+  <ul class="flex flex-col gap-2">
+    @for (alt of questao().alternativas; track alt.id) {
+      <li>
+        <app-alternativa-item
+          [alternativa]="alt"
+          [estado]="estadoAlternativa(alt.id)"
+          (selecionar)="responder.emit($event)"
+        />
+      </li>
+    }
+  </ul>
+
+  <!-- Explicação (modo Estudo após responder) -->
+  @if (exibirExplicacao()) {
+    <app-questao-explicacao
+      [explicacao]="questao().explicacao!"
+      [referencia]="questao().referencia"
+    />
+  }
+</div>

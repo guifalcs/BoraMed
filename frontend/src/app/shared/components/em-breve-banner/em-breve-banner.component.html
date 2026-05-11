@@ -1,0 +1,19 @@
+<div class="flex flex-col items-center justify-center gap-6 py-16 px-4 text-center">
+  <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E40AF] to-[#6427D9] text-white shadow-lg">
+    @if (icone()) {
+      <app-ui-icon [icon]="icone()!" [size]="36" />
+    } @else {
+      <span class="text-3xl">🚀</span>
+    }
+  </div>
+
+  <div class="flex flex-col gap-2 max-w-md">
+    <span class="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 mx-auto">
+      Em breve
+    </span>
+    <h2 class="text-xl font-bold text-[var(--color-text)]">{{ titulo() }}</h2>
+    @if (descricao()) {
+      <p class="text-sm text-[var(--color-text-muted)]">{{ descricao() }}</p>
+    }
+  </div>
+</div>
