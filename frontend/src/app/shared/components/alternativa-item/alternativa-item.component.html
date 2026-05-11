@@ -1,0 +1,15 @@
+<button
+  type="button"
+  [class]="classes()"
+  (click)="handleClick()"
+  [disabled]="estado() === 'desabilitada'"
+>
+  <span [class]="letraClasses()">{{ alternativa().letra }}</span>
+  <span class="flex-1">{{ alternativa().texto }}</span>
+  @if (estado() === 'correta') {
+    <span class="shrink-0 text-[var(--color-success)]">✓</span>
+  }
+  @if (estado() === 'errada') {
+    <span class="shrink-0 text-[var(--color-danger)]">✗</span>
+  }
+</button>

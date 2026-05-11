@@ -1,0 +1,102 @@
+@if (isLoading()) {
+  <div class="flex items-center justify-center py-24">
+    <div class="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent"></div>
+  </div>
+}
+
+@if (!isLoading() && erro()) {
+  <div class="px-4 py-8 text-center">
+    <p class="text-sm text-[var(--color-danger)]">{{ erro() }}</p>
+    <a routerLink="/dashboard/provas" class="mt-4 inline-block text-sm text-[var(--color-primary)] underline">Voltar para provas</a>
+  </div>
+}
+
+@if (!isLoading() && !erro() && tentativa()) {
+  <!-- Header sticky -->
+  <app-prova-header
+    [titulo]="tentativa()!.prova_id"
+    [totalQuestoes]="questoes().length"
+    [totalRespondidas]="totalRespondidas()"
+    [segundos]="timerSeconds()"
+    [modo]="modo()"
+    [salvando]="salvando()"
+    (finalizar)="onFinalizar()"
+    (pausar)="onPausar()"
+  />
+
+  <div class="mx-auto max-w-3xl px-4 py-6">
+    <!-- Navegação de questões (modo visualizar: todas; outros: uma por vez) -->
+    @if (modo() === 'visualizar') {
+      <div class="space-y-6">
+        @for (q of questoes(); track q.id; let i = $index) {
+          <app-questao-card
+            [questao]="q"
+            [numero]="i + 1"
+            [modo]="modo()"
+            [respostaSelecionada]="respostas().get(q.id) ?? null"
+            [alternativaCorreta]="null"
+            [gabaritioVisivel]="true"
+            (responder)="onResponder($event)"
+          />
+        }
+      </div>
+    } @else {
+      @if (questaoAtual()) {
+        <app-questao-card
+          [questao]="questaoAtual()!"
+          [numero]="questaoAtualIdx() + 1"
+          [modo]="modo()"
+          [respostaSelecionada]="respostaSelecionadaAtual()"
+          [alternativaCorreta]="alternativaCorretaAtual()"
+          [gabaritioVisivel]="false"
+          (responder)="onResponder($event)"
+        />
+
+        <!-- Navegação prev/next -->
+        <div class="mt-6 flex items-center justify-between">
+          <button
+            type="button"
+            class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+            [disabled]="questaoAtualIdx() === 0"
+            (click)="questaoAnterior()"
+          >
+            ← Anterior
+          </button>
+
+          <!-- Indicador de posição -->
+          <span class="text-sm text-[var(--color-text-muted)]">
+            {{ questaoAtualIdx() + 1 }} / {{ questoes().length }}
+          </span>
+
+          <button
+            type="button"
+            class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+            [disabled]="questaoAtualIdx() === questoes().length - 1"
+            (click)="proximaQuestao()"
+          >
+            Próxima →
+          </button>
+        </div>
+
+        <!-- Grade de questões -->
+        <div class="mt-6 flex flex-wrap gap-2">
+          @for (q of questoes(); track q.id; let i = $index) {
+            <button
+              type="button"
+              class="h-8 w-8 rounded text-xs font-medium transition-colors"
+              [class.bg-[var(--color-primary)]]="i === questaoAtualIdx()"
+              [class.text-white]="i === questaoAtualIdx()"
+              [class.bg-emerald-100]="i !== questaoAtualIdx() && respostas().has(q.id)"
+              [class.text-emerald-700]="i !== questaoAtualIdx() && respostas().has(q.id)"
+              [class.bg-[var(--color-surface-2)]]="i !== questaoAtualIdx() && !respostas().has(q.id)"
+              [class.text-[var(--color-text-muted)]]="i !== questaoAtualIdx() && !respostas().has(q.id)"
+              (click)="irParaQuestao(i)"
+            >
+              {{ i + 1 }}
+            </button>
+          }
+        </div>
+      }
+    }
+  </div>
+}

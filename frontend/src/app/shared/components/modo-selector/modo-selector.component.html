@@ -1,0 +1,13 @@
+<div class="flex flex-col gap-3 sm:flex-row">
+  @for (opcao of opcoes; track opcao.value) {
+    <button
+      type="button"
+      class="flex flex-1 flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all"
+      [class]="btnClass()(opcao)"
+      (click)="selecionar(opcao.value)"
+    >
+      <span class="text-sm font-semibold text-[var(--color-text)]">{{ opcao.label }}</span>
+      <span class="text-xs text-[var(--color-text-muted)]">{{ opcao.descricao }}</span>
+    </button>
+  }
+</div>

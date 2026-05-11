@@ -1,0 +1,24 @@
+@if (isLoading()) {
+  <div class="flex items-center justify-center py-24">
+    <div class="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent"></div>
+  </div>
+}
+
+@if (!isLoading() && erro()) {
+  <div class="px-4 py-8">
+    <app-empty-state
+      titulo="Erro ao carregar resultado"
+      [descricao]="erro()"
+      labelBotao="Voltar para provas"
+      (acao)="onVoltar()"
+    />
+  </div>
+}
+
+@if (!isLoading() && resultado()) {
+  <app-resultado-summary
+    [resultado]="resultado()!"
+    (voltar)="onVoltar()"
+    (refazer)="onRefazer()"
+  />
+}

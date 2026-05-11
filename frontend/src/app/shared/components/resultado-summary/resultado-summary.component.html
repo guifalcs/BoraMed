@@ -1,0 +1,51 @@
+<div class="mx-auto max-w-2xl space-y-6 py-8 px-4">
+  <!-- Nota principal -->
+  <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-sm">
+    <p class="text-sm font-medium text-[var(--color-text-muted)] mb-1">Sua nota</p>
+    <p class="text-6xl font-extrabold" [class]="notaClass()">{{ nota() | number:'1.0-1' }}%</p>
+    <p class="mt-2 text-sm text-[var(--color-text-muted)]">{{ notaMensagem() }}</p>
+    <p class="mt-4 text-base font-medium text-[var(--color-text)]">
+      {{ acertos() }} de {{ total() }} questões corretas
+    </p>
+
+    <!-- Barra de progresso -->
+    <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+      <div
+        class="h-full rounded-full transition-all"
+        [class.bg-[var(--color-success)]]="nota() >= 70"
+        [class.bg-[var(--color-warning)]]="nota() >= 50 && nota() < 70"
+        [class.bg-[var(--color-danger)]]="nota() < 50"
+        [style.width.%]="nota()"
+      ></div>
+    </div>
+  </div>
+
+  <!-- Distribuição por tema -->
+  @if (resultado().distribuicao_temas.length > 0) {
+    <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+      <h3 class="mb-4 text-sm font-semibold text-[var(--color-text)]">Desempenho por tema</h3>
+      <ul class="space-y-3">
+        @for (d of resultado().distribuicao_temas; track d.tema.id) {
+          <li>
+            <div class="mb-1 flex items-center justify-between text-sm">
+              <span class="text-[var(--color-text)]">{{ d.tema.nome }}</span>
+              <span class="text-[var(--color-text-muted)]">{{ d.acertos }}/{{ d.total }}</span>
+            </div>
+            <div class="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+              <div
+                class="h-full rounded-full bg-[var(--color-primary)]"
+                [style.width.%]="d.total > 0 ? (d.acertos / d.total) * 100 : 0"
+              ></div>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- Ações -->
+  <div class="flex flex-col gap-3 sm:flex-row">
+    <app-ui-button label="Voltar para a prova" variant="secondary" (buttonClick)="voltar.emit()" />
+    <app-ui-button label="Refazer" variant="primary" (buttonClick)="refazer.emit()" />
+  </div>
+</div>
