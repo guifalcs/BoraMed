@@ -3,7 +3,7 @@ export interface Alternativa {
   questao_id: string;
   letra: 'A' | 'B' | 'C' | 'D' | 'E';
   texto: string;
-  correta: boolean | null;
+  correta: boolean;
   ordem: number;
   imagem_url: string | null;
 }
