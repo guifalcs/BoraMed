@@ -1,27 +1,73 @@
-<button
-  type="button"
-  class="w-full rounded-xl border bg-[var(--color-surface)] p-5 text-left shadow-sm transition-all hover:shadow-md hover:border-[var(--color-primary-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-  [class.border-[var(--color-primary)]]="destacar()"
-  [class.border-[var(--color-border)]]="!destacar()"
-  (click)="abrirProva.emit(prova().id)"
->
-  <div class="flex items-start justify-between gap-3">
-    <div class="flex flex-col gap-1">
-      <span class="text-base font-semibold text-[var(--color-text)]">{{ prova().nome }}</span>
-      <span class="text-xs text-[var(--color-text-muted)]">
-        {{ prova().ano }} · {{ prova().semestre }}º semestre · {{ prova().periodo }}º período
+<!-- Variant: row (dentro de um card-lista) -->
+@if (variant() === 'row') {
+  <button
+    type="button"
+    class="group w-full px-4 py-3.5 text-left transition-colors hover:bg-[var(--color-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)] sm:px-6"
+    (click)="abrirProva.emit(prova().id)"
+  >
+    <div class="flex items-center gap-4">
+      <!-- Badge subtipo -->
+      <span
+        class="hidden shrink-0 rounded-md px-2 py-0.5 text-xs font-bold sm:inline-block"
+        [class]="badgeClass()"
+      >
+        {{ subtipoLabel() ?? '—' }}
+      </span>
+
+      <!-- Nome + meta mobile -->
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
+          {{ prova().nome }}
+        </p>
+        <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
+          <!-- Badge visível só em mobile -->
+          @if (subtipoLabel()) {
+            <span class="sm:hidden rounded px-1.5 py-0.5 font-bold" [class]="badgeClass()">{{ subtipoLabel() }}</span>
+          }
+          <span>{{ prova().periodo }}º período</span>
+          <span class="hidden sm:inline">·</span>
+          <span>{{ prova().ano }} · {{ prova().semestre }}º sem.</span>
+          <span class="hidden sm:inline">·</span>
+          <span>{{ prova().qtd_questoes }} questões</span>
+          @if (prova().tempo_sugerido_minutos) {
+            <span>· {{ prova().tempo_sugerido_minutos }} min</span>
+          }
+        </div>
+      </div>
+
+      <!-- Seta -->
+      <span class="shrink-0 text-[var(--color-text-muted)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-primary)]">
+        →
       </span>
     </div>
-    @if (subtipoLabel()) {
-      <span class="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-        {{ subtipoLabel() }}
-      </span>
-    }
-  </div>
-  <div class="mt-3 flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
-    <span>{{ prova().qtd_questoes }} questões</span>
-    @if (prova().tempo_sugerido_minutos) {
-      <span>{{ prova().tempo_sugerido_minutos }} min</span>
-    }
-  </div>
-</button>
+  </button>
+}
+
+<!-- Variant: card (standalone) -->
+@if (variant() === 'card') {
+  <button
+    type="button"
+    class="group w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-left shadow-sm transition-all hover:shadow-md hover:border-[var(--color-primary-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+    (click)="abrirProva.emit(prova().id)"
+  >
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex flex-col gap-1 min-w-0">
+        <span class="truncate text-base font-semibold text-[var(--color-text)]">{{ prova().nome }}</span>
+        <span class="text-xs text-[var(--color-text-muted)]">
+          {{ prova().ano }} · {{ prova().semestre }}º semestre · {{ prova().periodo }}º período
+        </span>
+      </div>
+      @if (subtipoLabel()) {
+        <span class="shrink-0 rounded-md px-2 py-0.5 text-xs font-bold" [class]="badgeClass()">
+          {{ subtipoLabel() }}
+        </span>
+      }
+    </div>
+    <div class="mt-3 flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
+      <span>{{ prova().qtd_questoes }} questões</span>
+      @if (prova().tempo_sugerido_minutos) {
+        <span>{{ prova().tempo_sugerido_minutos }} min</span>
+      }
+    </div>
+  </button>
+}

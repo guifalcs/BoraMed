@@ -20,7 +20,7 @@ const meta: Meta<ProvaCardComponent> = {
   title: 'Provas/ProvaCard',
   component: ProvaCardComponent,
   tags: ['autodocs'],
-  args: { prova, destacar: false },
+  args: { prova },
 };
 
 export default meta;
@@ -28,7 +28,7 @@ type Story = StoryObj<ProvaCardComponent>;
 
 export const Default: Story = {};
 
-export const Destacado: Story = { args: { destacar: true } };
+export const RowVariant: Story = { args: { variant: 'row' } };
 
 export const TesteProgresso: Story = {
   args: { prova: { ...prova, subtipo_nacional: 'teste_progresso', qtd_questoes: 20, tempo_sugerido_minutos: null } },

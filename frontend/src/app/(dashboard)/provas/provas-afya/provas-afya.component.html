@@ -1,143 +1,159 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
-  <div class="mx-auto max-w-6xl">
+  <div class="mx-auto max-w-4xl">
 
     <a routerLink="/dashboard/provas" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
       <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
       Provas
     </a>
 
-    <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Rede Afya — Nacional</h1>
-    <p class="mb-6 text-sm text-[var(--color-text-muted)]">Provas antigas de todos os campi.</p>
-
-    <!-- Filtros -->
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-
-      <!-- Pills de subtipo -->
-      <div class="flex flex-wrap gap-2">
-        @for (pill of subtipoPills; track pill.value) {
-          <button
-            type="button"
-            class="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
-            [class.border-[var(--color-primary)]]="subtipoAtivo() === pill.value"
-            [class.bg-[var(--color-primary)]]="subtipoAtivo() === pill.value"
-            [class.text-white]="subtipoAtivo() === pill.value"
-            [class.border-[var(--color-border)]]="subtipoAtivo() !== pill.value"
-            [class.bg-[var(--color-surface)]]="subtipoAtivo() !== pill.value"
-            [class.text-[var(--color-text-muted)]]="subtipoAtivo() !== pill.value"
-            (click)="setSubtipo(pill.value)"
-          >
-            {{ pill.label }}
-          </button>
-        }
-      </div>
-
-      <!-- Selects de período e ano -->
-      <div class="flex gap-3 sm:ml-auto">
-        <div class="w-40">
-          <app-ui-select
-            label="Período"
-            name="periodo"
-            [options]="periodoOpcoes"
-            [value]="periodoFiltro() ?? ''"
-            (valueChange)="onPeriodoChange($event)"
-          />
-        </div>
-        <div class="w-32">
-          <app-ui-select
-            label="Ano"
-            name="ano"
-            [options]="anoOpcoes"
-            [value]="anoFiltro() ?? ''"
-            (valueChange)="onAnoChange($event)"
-          />
-        </div>
-      </div>
-
+    <div class="mb-6">
+      <h1 class="text-2xl font-extrabold text-[var(--color-text)]">Rede Afya — Nacional</h1>
+      <p class="mt-1 text-sm text-[var(--color-text-muted)]">Provas antigas de todos os campi.</p>
     </div>
 
-    <!-- Loading -->
-    @if (isLoading()) {
-      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        @for (i of [1,2,3,4,5,6]; track i) {
-          <div class="h-28 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
-        }
+    <!-- Card principal -->
+    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+
+      <!-- Toolbar do card -->
+      <div class="flex flex-wrap items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">
+
+        <!-- Pills de subtipo -->
+        <div class="flex flex-wrap gap-1.5">
+          @for (pill of subtipoPills; track pill.value) {
+            <button
+              type="button"
+              class="rounded-md px-2.5 py-1 text-xs font-semibold transition-colors"
+              [class.bg-[var(--color-primary)]]="subtipoAtivo() === pill.value"
+              [class.text-white]="subtipoAtivo() === pill.value"
+              [class.bg-[var(--color-surface)]]="subtipoAtivo() !== pill.value"
+              [class.text-[var(--color-text-muted)]]="subtipoAtivo() !== pill.value"
+              [class.border]="subtipoAtivo() !== pill.value"
+              [class.border-[var(--color-border)]]="subtipoAtivo() !== pill.value"
+              [class.hover:bg-[var(--color-surface-2)]]="subtipoAtivo() !== pill.value"
+              (click)="setSubtipo(pill.value)"
+            >
+              {{ pill.label }}
+            </button>
+          }
+        </div>
+
+        <!-- Selects + contador -->
+        <div class="ml-auto flex items-center gap-2">
+          <div class="w-36">
+            <app-ui-select
+              label="Período"
+              name="periodo"
+              [options]="periodoOpcoes"
+              [value]="periodoFiltro() ?? ''"
+              (valueChange)="onPeriodoChange($event)"
+            />
+          </div>
+          <div class="w-28">
+            <app-ui-select
+              label="Ano"
+              name="ano"
+              [options]="anoOpcoes"
+              [value]="anoFiltro() ?? ''"
+              (valueChange)="onAnoChange($event)"
+            />
+          </div>
+          @if (!isLoading()) {
+            <span class="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:inline">
+              {{ provasFiltradas().length }}
+              {{ provasFiltradas().length === 1 ? 'prova' : 'provas' }}
+            </span>
+          }
+        </div>
+
       </div>
-    }
 
-    <!-- Erro -->
-    @if (!isLoading() && erro()) {
-      <app-empty-state
-        titulo="Erro ao carregar provas"
-        [descricao]="erro()"
-        labelBotao="Tentar novamente"
-        (acao)="ngOnInit()"
-      />
-    }
+      <!-- Loading -->
+      @if (isLoading()) {
+        <ul>
+          @for (i of [1,2,3,4,5]; track i) {
+            <li class="border-b border-[var(--color-border)] px-6 py-4 last:border-b-0">
+              <div class="flex items-center gap-4">
+                <div class="hidden h-5 w-8 animate-pulse rounded bg-[var(--color-surface-2)] sm:block"></div>
+                <div class="flex-1 space-y-2">
+                  <div class="h-4 w-48 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
+                  <div class="h-3 w-32 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
 
-    <!-- Lista -->
-    @if (!isLoading() && !erro() && provasFiltradas().length > 0) {
-      <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        @for (prova of provasFiltradas(); track prova.id) {
-          <li>
-            <app-prova-card [prova]="prova" (abrirProva)="abrirProva($event)" />
-          </li>
-        }
-      </ul>
-    }
+      <!-- Erro -->
+      @if (!isLoading() && erro()) {
+        <div class="px-6 py-12">
+          <app-empty-state
+            titulo="Erro ao carregar provas"
+            [descricao]="erro()"
+            labelBotao="Tentar novamente"
+            (acao)="ngOnInit()"
+          />
+        </div>
+      }
 
-    <!-- Estado vazio -->
-    @if (!isLoading() && !erro() && provasFiltradas().length === 0) {
-      <app-empty-state
-        titulo="Nenhuma prova encontrada"
-        descricao="Estamos preparando o banco de provas. Em breve você terá acesso ao acervo completo."
-      />
-    }
+      <!-- Linhas -->
+      @if (!isLoading() && !erro() && provasFiltradas().length > 0) {
+        <ul class="divide-y divide-[var(--color-border)]">
+          @for (prova of provasFiltradas(); track prova.id) {
+            <li>
+              <app-prova-card
+                [prova]="prova"
+                variant="row"
+                (abrirProva)="abrirProva($event)"
+              />
+            </li>
+          }
+        </ul>
+      }
+
+      <!-- Estado vazio -->
+      @if (!isLoading() && !erro() && provasFiltradas().length === 0) {
+        <div class="px-6 py-16">
+          <app-empty-state
+            titulo="Nenhuma prova encontrada"
+            descricao="Estamos preparando o banco de provas. Em breve você terá acesso ao acervo completo."
+          />
+        </div>
+      }
+
+    </div>
+    <!-- /Card principal -->
 
     <!-- Em breve -->
-    <div class="mt-12 border-t border-[var(--color-border)] pt-8">
-      <p class="mb-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Em breve</p>
-      <div class="grid gap-3 sm:grid-cols-3">
+    <div class="mt-8">
+      <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Em breve</p>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 
         <a
           routerLink="/dashboard/provas/afya/em-breve"
           [queryParams]="{ tipo: 'processual' }"
-          class="flex items-center gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-60 transition-opacity hover:opacity-80"
+          class="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)] opacity-60 transition-opacity hover:opacity-80"
         >
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
-            <app-ui-icon [icon]="stethoscopeIcon" [size]="18" />
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[var(--color-text)]">Processual</p>
-            <p class="text-xs text-[var(--color-text-muted)]">N1 e N2 processuais</p>
-          </div>
+          <app-ui-icon [icon]="stethoscopeIcon" [size]="16" />
+          <span class="text-sm font-medium">Processual</span>
         </a>
 
         <a
           routerLink="/dashboard/provas/afya/em-breve"
           [queryParams]="{ tipo: 'multiestacoes' }"
-          class="flex items-center gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-60 transition-opacity hover:opacity-80"
+          class="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)] opacity-60 transition-opacity hover:opacity-80"
         >
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
-            <app-ui-icon [icon]="flaskIcon" [size]="18" />
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[var(--color-text)]">Multiestações</p>
-            <p class="text-xs text-[var(--color-text-muted)]">Lab com imagens</p>
-          </div>
+          <app-ui-icon [icon]="flaskIcon" [size]="16" />
+          <span class="text-sm font-medium">Multiestações</span>
         </a>
 
         <a
           routerLink="/dashboard/provas/afya/em-breve"
           [queryParams]="{ modo: 'simulado-temas' }"
-          class="flex items-center gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-60 transition-opacity hover:opacity-80"
+          class="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)] opacity-60 transition-opacity hover:opacity-80"
         >
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
-            <app-ui-icon [icon]="zapIcon" [size]="18" />
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[var(--color-text)]">Simulado por temas</p>
-            <p class="text-xs text-[var(--color-text-muted)]">Monte seu simulado</p>
-          </div>
+          <app-ui-icon [icon]="zapIcon" [size]="16" />
+          <span class="text-sm font-medium">Simulado por temas</span>
         </a>
 
       </div>
