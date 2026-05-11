@@ -1,5 +1,5 @@
-<div class="flex flex-wrap gap-3">
-  <div class="min-w-[160px] flex-1">
+<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:flex-col">
+  <div class="w-full">
     <app-ui-select
       label="Subtipo"
       name="subtipo"
@@ -8,7 +8,7 @@
       (valueChange)="onSubtipoChange($event?.toString() ?? '')"
     />
   </div>
-  <div class="min-w-[150px] flex-1">
+  <div class="w-full">
     <app-ui-select
       label="Período"
       name="periodo"
@@ -17,7 +17,7 @@
       (valueChange)="onPeriodoChange($event?.toString() ?? '')"
     />
   </div>
-  <div class="min-w-[120px] flex-1">
+  <div class="w-full">
     <app-ui-select
       label="Ano"
       name="ano"

@@ -12,20 +12,6 @@ export const provasRoutes: Routes = [
       import('./em-breve-page/em-breve-page.component').then((m) => m.EmBrevePageComponent),
   },
   {
-    path: 'afya/nacional/lista',
-    loadComponent: () =>
-      import('./provas-nacional-lista/provas-nacional-lista.component').then(
-        (m) => m.ProvasNacionalListaComponent,
-      ),
-  },
-  {
-    path: 'afya/nacional',
-    loadComponent: () =>
-      import('./provas-nacional/provas-nacional.component').then(
-        (m) => m.ProvasNacionalComponent,
-      ),
-  },
-  {
     path: 'afya',
     loadComponent: () =>
       import('./provas-afya/provas-afya.component').then((m) => m.ProvasAfyaComponent),
