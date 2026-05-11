@@ -1,5 +1,5 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
-  <div class="mx-auto max-w-4xl">
+  <div class="mx-auto max-w-6xl">
 
     <a routerLink="/dashboard/provas" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
       <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
@@ -15,55 +15,41 @@
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
 
       <!-- Toolbar do card -->
-      <div class="flex flex-wrap items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">
+      <div class="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">
 
-        <!-- Pills de subtipo -->
-        <div class="flex flex-wrap gap-1.5">
-          @for (pill of subtipoPills; track pill.value) {
-            <button
-              type="button"
-              class="rounded-md px-2.5 py-1 text-xs font-semibold transition-colors"
-              [class.bg-[var(--color-primary)]]="subtipoAtivo() === pill.value"
-              [class.text-white]="subtipoAtivo() === pill.value"
-              [class.bg-[var(--color-surface)]]="subtipoAtivo() !== pill.value"
-              [class.text-[var(--color-text-muted)]]="subtipoAtivo() !== pill.value"
-              [class.border]="subtipoAtivo() !== pill.value"
-              [class.border-[var(--color-border)]]="subtipoAtivo() !== pill.value"
-              [class.hover:bg-[var(--color-surface-2)]]="subtipoAtivo() !== pill.value"
-              (click)="setSubtipo(pill.value)"
-            >
-              {{ pill.label }}
-            </button>
-          }
+        <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
+          <app-ui-select
+            label="Tipo"
+            name="subtipo"
+            [options]="subtipoOpcoes"
+            [value]="subtipoAtivo() === 'todas' ? '' : subtipoAtivo()"
+            (valueChange)="onSubtipoChange($event)"
+          />
         </div>
-
-        <!-- Selects + contador -->
-        <div class="ml-auto flex items-center gap-2">
-          <div class="w-36">
-            <app-ui-select
-              label="Período"
-              name="periodo"
-              [options]="periodoOpcoes"
-              [value]="periodoFiltro() ?? ''"
-              (valueChange)="onPeriodoChange($event)"
-            />
-          </div>
-          <div class="w-28">
-            <app-ui-select
-              label="Ano"
-              name="ano"
-              [options]="anoOpcoes"
-              [value]="anoFiltro() ?? ''"
-              (valueChange)="onAnoChange($event)"
-            />
-          </div>
-          @if (!isLoading()) {
-            <span class="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:inline">
-              {{ provasFiltradas().length }}
-              {{ provasFiltradas().length === 1 ? 'prova' : 'provas' }}
-            </span>
-          }
+        <div style="width:9rem;min-width:9rem;max-width:9rem;flex:none">
+          <app-ui-select
+            label="Período"
+            name="periodo"
+            [options]="periodoOpcoes"
+            [value]="periodoFiltro() ?? ''"
+            (valueChange)="onPeriodoChange($event)"
+          />
         </div>
+        <div style="width:7rem;min-width:7rem;max-width:7rem;flex:none">
+          <app-ui-select
+            label="Ano"
+            name="ano"
+            [options]="anoOpcoes"
+            [value]="anoFiltro() ?? ''"
+            (valueChange)="onAnoChange($event)"
+          />
+        </div>
+        @if (!isLoading()) {
+          <span class="ml-auto hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:inline">
+            {{ provasFiltradas().length }}
+            {{ provasFiltradas().length === 1 ? 'prova' : 'provas' }}
+          </span>
+        }
 
       </div>
 
