@@ -41,20 +41,20 @@ export class ProvasAfyaComponent implements OnInit {
   protected readonly periodoFiltro = signal<number | null>(null);
   protected readonly anoFiltro = signal<number | null>(null);
 
-  protected readonly subtipoPills: { value: SubtipoFiltro; label: string }[] = [
-    { value: 'todas', label: 'Todas' },
+  protected readonly subtipoOpcoes: SelectOption[] = [
+    { value: '', label: 'Todos' },
     { value: 'N1', label: 'N1' },
     { value: 'teste_progresso', label: 'Teste de Progresso' },
     { value: 'N2', label: 'N2 — Integradora' },
   ];
 
   protected readonly periodoOpcoes: SelectOption[] = [
-    { value: '', label: 'Todos os períodos' },
+    { value: '', label: 'Todos' },
     ...Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}º período` })),
   ];
 
   protected readonly anoOpcoes: SelectOption[] = [
-    { value: '', label: 'Todos os anos' },
+    { value: '', label: 'Todos' },
     ...Array.from({ length: 6 }, (_, i) => ({ value: 2024 - i, label: String(2024 - i) })),
   ];
 
@@ -90,8 +90,8 @@ export class ProvasAfyaComponent implements OnInit {
     this.isLoading.set(false);
   }
 
-  protected setSubtipo(s: SubtipoFiltro): void {
-    this.subtipoAtivo.set(s);
+  protected onSubtipoChange(v: string | number | null): void {
+    this.subtipoAtivo.set((v as SubtipoFiltro) || 'todas');
   }
 
   protected onPeriodoChange(v: string | number | null): void {
