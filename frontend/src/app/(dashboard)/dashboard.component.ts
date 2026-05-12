@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, Clock, Home, LifeBuoy, LogOut, LucideIconData, User, Zap } from 'lucide-angular';
+import { BookOpen, Home, LifeBuoy, LogOut, LucideIconData, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { ProfileService } from '../core/services/profile.service';
+import { TentativaService } from '../core/services/tentativa.service';
 
 interface NavItem {
   label: string;
@@ -26,12 +27,21 @@ export class DashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificationService);
   private readonly profileService = inject(ProfileService);
+  private readonly tentativaService = inject(TentativaService);
 
   protected readonly logOutIcon = LogOut;
   protected readonly userIcon = User;
   protected readonly profile = this.profileService.profile;
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);
+
+  protected readonly provasRoute = computed<string[]>(() => {
+    const t = this.tentativaService.tentativaAtiva();
+    if (t && t.status !== 'finalizada' && t.modo !== 'visualizar') {
+      return ['/dashboard/provas', t.prova_id, 'tentativa', t.id];
+    }
+    return ['/dashboard/provas'];
+  });
 
   constructor() {
     effect(() => {
@@ -58,8 +68,6 @@ export class DashboardComponent {
   protected readonly navItems: NavItem[] = [
     { label: 'Início', icon: Home, route: '/dashboard', exact: true },
     { label: 'Provas', icon: BookOpen, route: '/dashboard/provas' },
-    { label: 'Simulados', icon: Zap, route: '/dashboard/simulado' },
-    { label: 'Histórico', icon: Clock, route: '/dashboard/historico' },
     { label: 'Suporte', icon: LifeBuoy, route: '/dashboard/suporte' },
   ];
 }

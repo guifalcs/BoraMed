@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
 import { ResultadoSummaryComponent } from '../../../shared/components/resultado-summary/resultado-summary.component';
@@ -14,13 +14,12 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 @Component({
   selector: 'app-tentativa-resultado',
   standalone: true,
-  imports: [ResultadoSummaryComponent, EmptyStateComponent],
+  imports: [ResultadoSummaryComponent, EmptyStateComponent, RouterLink],
   templateUrl: './tentativa-resultado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TentativaResultadoComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
 
   protected readonly resultado = signal<ResultadoTentativa | null>(null);
@@ -35,6 +34,7 @@ export class TentativaResultadoComponent implements OnInit {
 
     if (result.ok) {
       this.resultado.set(result.data);
+      this.tentativaService.setLastResultado(result.data);
     } else {
       this.erro.set(result.error);
     }
@@ -42,13 +42,4 @@ export class TentativaResultadoComponent implements OnInit {
     this.isLoading.set(false);
   }
 
-  protected onVoltar(): void {
-    const provaId = this.route.snapshot.paramMap.get('provaId') ?? '';
-    void this.router.navigate(['/dashboard/provas', provaId]);
-  }
-
-  protected onRefazer(): void {
-    const provaId = this.route.snapshot.paramMap.get('provaId') ?? '';
-    void this.router.navigate(['/dashboard/provas', provaId]);
-  }
 }

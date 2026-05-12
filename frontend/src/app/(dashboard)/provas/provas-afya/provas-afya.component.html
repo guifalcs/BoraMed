@@ -18,30 +18,30 @@
       <div class="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">
 
         <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
-          <app-ui-select
+          <app-ui-multiselect
             label="Tipo"
             name="subtipo"
             [options]="subtipoOpcoes"
-            [value]="subtipoAtivo() === 'todas' ? '' : subtipoAtivo()"
-            (valueChange)="onSubtipoChange($event)"
+            [values]="subtiposFiltro()"
+            (valuesChange)="onSubtipoChange($event)"
           />
         </div>
         <div style="width:9rem;min-width:9rem;max-width:9rem;flex:none">
-          <app-ui-select
+          <app-ui-multiselect
             label="Período"
             name="periodo"
             [options]="periodoOpcoes"
-            [value]="periodoFiltro() ?? ''"
-            (valueChange)="onPeriodoChange($event)"
+            [values]="periodosFiltro()"
+            (valuesChange)="onPeriodoChange($event)"
           />
         </div>
         <div style="width:7rem;min-width:7rem;max-width:7rem;flex:none">
-          <app-ui-select
+          <app-ui-multiselect
             label="Ano"
             name="ano"
-            [options]="anoOpcoes"
-            [value]="anoFiltro() ?? ''"
-            (valueChange)="onAnoChange($event)"
+            [options]="anoOpcoes()"
+            [values]="anosFiltro()"
+            (valuesChange)="onAnoChange($event)"
           />
         </div>
         @if (!isLoading()) {

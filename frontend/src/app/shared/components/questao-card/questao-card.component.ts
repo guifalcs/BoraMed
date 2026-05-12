@@ -9,13 +9,14 @@ import {
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { ModoProva } from '../../../core/models/tentativa';
 import type { EstadoAlternativa } from '../alternativa-item/alternativa-item.component';
+import { MarkdownComponent } from 'ngx-markdown';
 import { AlternativaItemComponent } from '../alternativa-item/alternativa-item.component';
 import { QuestaoExplicacaoComponent } from '../questao-explicacao/questao-explicacao.component';
 
 @Component({
   selector: 'app-questao-card',
   standalone: true,
-  imports: [AlternativaItemComponent, QuestaoExplicacaoComponent],
+  imports: [MarkdownComponent, AlternativaItemComponent, QuestaoExplicacaoComponent],
   templateUrl: './questao-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,7 +36,12 @@ export class QuestaoCardComponent {
     () =>
       !!this.questao().explicacao &&
       this.modo() === 'estudo' &&
-      this.respostaSelecionada() !== null,
+      this.respostaSelecionada() !== null &&
+      this.alternativaCorreta() !== null,
+  );
+
+  protected readonly naoRespondida = computed(
+    () => this.gabaritioVisivel() && this.respostaSelecionada() === null,
   );
 
   protected estadoAlternativa(altId: string): EstadoAlternativa {

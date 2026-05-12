@@ -2,37 +2,34 @@
 @if (variant() === 'row') {
   <button
     type="button"
-    class="group w-full px-4 py-3.5 text-left transition-colors hover:bg-[var(--color-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)] sm:px-6"
+    class="group w-full px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)] sm:px-6"
     (click)="abrirProva.emit(prova().id)"
   >
-    <div class="flex items-center gap-4">
-      <!-- Badge subtipo -->
+    <div class="flex items-center gap-3">
+      <!-- Badge subtipo (desktop) -->
       <span
-        class="hidden shrink-0 rounded-md px-2 py-0.5 text-xs font-bold sm:inline-block"
+        class="hidden shrink-0 w-16 text-center rounded px-1.5 py-0.5 text-xs font-bold sm:inline-block"
         [class]="badgeClass()"
       >
-        {{ subtipoLabel() ?? '—' }}
+        {{ subtipoLabelFull() ?? '—' }}
       </span>
 
-      <!-- Nome + meta mobile -->
+      <!-- Nome + meta -->
       <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
+        <p class="truncate text-sm font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
           {{ prova().nome }}
         </p>
-        <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
-          <!-- Badge visível só em mobile -->
+        <p class="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
           @if (subtipoLabel()) {
-            <span class="sm:hidden rounded px-1.5 py-0.5 font-bold" [class]="badgeClass()">{{ subtipoLabel() }}</span>
+            <span class="sm:hidden rounded px-1 py-0.5 font-bold leading-none" [class]="badgeClass()">{{ subtipoLabel() }}</span>
+            <span class="sm:hidden">·</span>
           }
-          <span>{{ prova().periodo }}º período</span>
-          <span class="hidden sm:inline">·</span>
-          <span>{{ prova().ano }} · {{ prova().semestre }}º sem.</span>
-          <span class="hidden sm:inline">·</span>
-          <span>{{ prova().qtd_questoes }} questões</span>
-          @if (prova().tempo_sugerido_minutos) {
-            <span>· {{ prova().tempo_sugerido_minutos }} min</span>
-          }
-        </div>
+          <span>{{ prova().periodo }}º P</span>
+          <span>·</span>
+          <span>{{ prova().ano }}/{{ prova().semestre }}</span>
+          <span>·</span>
+          <span>{{ prova().qtd_questoes }}q</span>
+        </p>
       </div>
 
       <!-- Seta -->

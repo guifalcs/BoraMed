@@ -5,14 +5,14 @@ export type ProvaCardVariant = 'card' | 'row';
 
 const SUBTIPO_LABEL: Record<SubtipoProva, string> = {
   N1: 'N1',
-  teste_progresso: 'TP',
+  teste_progresso: 'TPI',
   N2: 'N2',
 };
 
 const SUBTIPO_LABEL_FULL: Record<SubtipoProva, string> = {
   N1: 'N1',
-  teste_progresso: 'Teste de Progresso',
-  N2: 'N2 — Integradora',
+  teste_progresso: 'TPI',
+  N2: 'Integradora',
 };
 
 @Component({

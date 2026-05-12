@@ -1,0 +1,46 @@
+<div class="mx-auto max-w-3xl px-4 py-6">
+  <a
+    [routerLink]="backRoute()"
+    class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+  >
+    <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
+    {{ tentativaId() ? 'Voltar para o resultado' : 'Voltar para a prova' }}
+  </a>
+
+  @if (provaNome()) {
+    <h1 class="mb-6 text-xl font-extrabold text-[var(--color-text)]">{{ provaNome() }}</h1>
+  }
+
+  @if (isLoading()) {
+    <div class="space-y-4">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="h-40 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
+      }
+    </div>
+  }
+
+  @if (!isLoading() && erro()) {
+    <app-empty-state
+      titulo="Erro ao carregar questões"
+      [descricao]="erro()"
+      labelBotao="Voltar"
+      [routerLink]="['/dashboard/provas', provaId()]"
+    />
+  }
+
+  @if (!isLoading() && !erro()) {
+    <div class="space-y-6">
+      @for (q of questoes(); track q.id; let i = $index) {
+        <app-questao-card
+          [questao]="q"
+          [numero]="i + 1"
+          modo="visualizar"
+          [respostaSelecionada]="respostasMap().get(q.id) ?? null"
+          [alternativaCorreta]="null"
+          [gabaritioVisivel]="true"
+          (responder)="$event"
+        />
+      }
+    </div>
+  }
+</div>

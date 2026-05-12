@@ -21,11 +21,6 @@
   font-weight: 700;
 }
 
-.ui-field__required {
-  color: var(--color-danger);
-  margin-left: 0.2em;
-}
-
 .ui-field__label-row {
   display: flex;
   align-items: center;
@@ -37,12 +32,6 @@
   font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--color-danger);
-}
-
-.ui-field__helper {
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: var(--color-text-muted);
 }
 
 /* ── Trigger ─────────────────────────────────────────── */
@@ -117,7 +106,7 @@
 /* ── Dropdown ────────────────────────────────────────── */
 
 .ui-select__dropdown {
-  position: fixed; /* fallback; sobrescrito pelo [ngStyle] com coordenadas calculadas */
+  position: fixed; /* sobrescrito pelo [ngStyle] com coordenadas calculadas */
   z-index: 9999;
   margin: 0;
   padding: 0.25rem;

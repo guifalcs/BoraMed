@@ -10,15 +10,11 @@
       titulo="Erro ao carregar resultado"
       [descricao]="erro()"
       labelBotao="Voltar para provas"
-      (acao)="onVoltar()"
+      [routerLink]="['/dashboard/provas']"
     />
   </div>
 }
 
 @if (!isLoading() && resultado()) {
-  <app-resultado-summary
-    [resultado]="resultado()!"
-    (voltar)="onVoltar()"
-    (refazer)="onRefazer()"
-  />
+  <app-resultado-summary [resultado]="resultado()!" />
 }

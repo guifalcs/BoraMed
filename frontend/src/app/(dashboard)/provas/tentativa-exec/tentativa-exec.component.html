@@ -14,72 +14,91 @@
 @if (!isLoading() && !erro() && tentativa()) {
   <!-- Header sticky -->
   <app-prova-header
-    [titulo]="tentativa()!.prova_id"
+    [titulo]="provaNome()"
     [totalQuestoes]="questoes().length"
     [totalRespondidas]="totalRespondidas()"
     [segundos]="timerSeconds()"
     [modo]="modo()"
+    [isPaused]="isPaused()"
     [salvando]="salvando()"
     (finalizar)="onFinalizar()"
-    (pausar)="onPausar()"
+    (togglePausar)="onTogglePausar()"
+    (sair)="onSair()"
   />
 
   <div class="mx-auto max-w-3xl px-4 py-6">
-    <!-- Navegação de questões (modo visualizar: todas; outros: uma por vez) -->
-    @if (modo() === 'visualizar') {
-      <div class="space-y-6">
-        @for (q of questoes(); track q.id; let i = $index) {
-          <app-questao-card
-            [questao]="q"
-            [numero]="i + 1"
-            [modo]="modo()"
-            [respostaSelecionada]="respostas().get(q.id) ?? null"
-            [alternativaCorreta]="null"
-            [gabaritioVisivel]="true"
-            (responder)="onResponder($event)"
-          />
-        }
+    @if (questaoAtual()) {
+      <app-questao-card
+        [questao]="questaoAtual()!"
+        [numero]="questaoAtualIdx() + 1"
+        [modo]="modo()"
+        [respostaSelecionada]="respostaSelecionadaAtual()"
+        [alternativaCorreta]="alternativaCorretaAtual()"
+        [gabaritioVisivel]="false"
+        (responder)="onResponder($event)"
+      />
+
+      <!-- Navegação prev/next -->
+      <div class="mt-6 flex items-center justify-between">
+        <button
+          type="button"
+          class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+          [disabled]="questaoAtualIdx() === 0"
+          (click)="questaoAnterior()"
+        >
+          ← Anterior
+        </button>
+
+        <!-- Mobile: contador vira toggle da grade -->
+        <button
+          type="button"
+          class="flex items-center gap-1 text-sm text-[var(--color-text-muted)] sm:hidden"
+          (click)="mostrarGrade.update(v => !v)"
+        >
+          {{ questaoAtualIdx() + 1 }} / {{ questoes().length }}
+          <app-ui-icon [icon]="mostrarGrade() ? chevronUpIcon : chevronDownIcon" [size]="14" />
+        </button>
+
+        <!-- Desktop: só texto -->
+        <span class="hidden text-sm text-[var(--color-text-muted)] sm:inline">
+          {{ questaoAtualIdx() + 1 }} / {{ questoes().length }}
+        </span>
+
+        <button
+          type="button"
+          class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+          [disabled]="questaoAtualIdx() === questoes().length - 1"
+          (click)="proximaQuestao()"
+        >
+          Próxima →
+        </button>
       </div>
-    } @else {
-      @if (questaoAtual()) {
-        <app-questao-card
-          [questao]="questaoAtual()!"
-          [numero]="questaoAtualIdx() + 1"
-          [modo]="modo()"
-          [respostaSelecionada]="respostaSelecionadaAtual()"
-          [alternativaCorreta]="alternativaCorretaAtual()"
-          [gabaritioVisivel]="false"
-          (responder)="onResponder($event)"
-        />
 
-        <!-- Navegação prev/next -->
-        <div class="mt-6 flex items-center justify-between">
-          <button
-            type="button"
-            class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
-            [disabled]="questaoAtualIdx() === 0"
-            (click)="questaoAnterior()"
-          >
-            ← Anterior
-          </button>
+      <!-- Grade de questões: recolhível no mobile, sempre visível no desktop -->
+      <div class="mt-4">
+        <!-- Mobile -->
+        @if (mostrarGrade()) {
+          <div class="flex flex-wrap gap-2 sm:hidden">
+            @for (q of questoes(); track q.id; let i = $index) {
+              <button
+                type="button"
+                class="h-8 w-8 rounded text-xs font-medium transition-colors"
+                [class.bg-[var(--color-primary)]]="i === questaoAtualIdx()"
+                [class.text-white]="i === questaoAtualIdx()"
+                [class.bg-emerald-100]="i !== questaoAtualIdx() && respostas().has(q.id)"
+                [class.text-emerald-700]="i !== questaoAtualIdx() && respostas().has(q.id)"
+                [class.bg-[var(--color-surface-2)]]="i !== questaoAtualIdx() && !respostas().has(q.id)"
+                [class.text-[var(--color-text-muted)]]="i !== questaoAtualIdx() && !respostas().has(q.id)"
+                (click)="irParaQuestao(i); mostrarGrade.set(false)"
+              >
+                {{ i + 1 }}
+              </button>
+            }
+          </div>
+        }
 
-          <!-- Indicador de posição -->
-          <span class="text-sm text-[var(--color-text-muted)]">
-            {{ questaoAtualIdx() + 1 }} / {{ questoes().length }}
-          </span>
-
-          <button
-            type="button"
-            class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
-            [disabled]="questaoAtualIdx() === questoes().length - 1"
-            (click)="proximaQuestao()"
-          >
-            Próxima →
-          </button>
-        </div>
-
-        <!-- Grade de questões -->
-        <div class="mt-6 flex flex-wrap gap-2">
+        <!-- Desktop -->
+        <div class="hidden flex-wrap gap-2 sm:flex">
           @for (q of questoes(); track q.id; let i = $index) {
             <button
               type="button"
@@ -96,7 +115,7 @@
             </button>
           }
         </div>
-      }
+      </div>
     }
   </div>
 }

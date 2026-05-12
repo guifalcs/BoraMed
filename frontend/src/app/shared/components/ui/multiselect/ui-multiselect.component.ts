@@ -11,41 +11,40 @@ import {
 import { NgStyle } from '@angular/common';
 import { Check, ChevronDown, LucideIconData } from 'lucide-angular';
 import { UiIconComponent } from '../icon/ui-icon.component';
-
-export interface SelectOption<T extends string | number = string | number> {
-  value: T;
-  label: string;
-}
+import type { SelectOption } from '../select/ui-select.component';
 
 @Component({
-  selector: 'app-ui-select',
+  selector: 'app-ui-multiselect',
   standalone: true,
   imports: [UiIconComponent, NgStyle],
-  templateUrl: './ui-select.component.html',
-  styleUrl: './ui-select.component.css',
+  templateUrl: './ui-multiselect.component.html',
+  styleUrl: './ui-multiselect.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UiSelectComponent {
+export class UiMultiselectComponent {
   label = input.required<string>();
   name = input.required<string>();
   options = input.required<SelectOption[]>();
-  value = input<string | number | null>(null);
-  placeholder = input('Selecione...');
+  values = input<(string | number)[]>([]);
+  placeholder = input('Todos');
   error = input<string | null>(null);
-  helperText = input<string | null>(null);
-  required = input(false);
   disabled = input(false);
 
-  valueChange = output<string | number | null>();
+  valuesChange = output<(string | number)[]>();
 
   protected readonly chevronDownIcon: LucideIconData = ChevronDown;
   protected readonly checkIcon: LucideIconData = Check;
   protected readonly isOpen = signal(false);
   protected readonly dropdownStyles = signal<Record<string, string>>({});
 
-  protected readonly selectedLabel = computed(
-    () => this.options().find((o) => o.value === this.value())?.label ?? null,
-  );
+  protected readonly triggerLabel = computed(() => {
+    const selected = this.values();
+    if (selected.length === 0) return null;
+    if (selected.length === 1) {
+      return this.options().find((o) => o.value === selected[0])?.label ?? null;
+    }
+    return `${selected.length} selecionados`;
+  });
 
   constructor(private readonly el: ElementRef) {}
 
@@ -80,15 +79,19 @@ export class UiSelectComponent {
     this.isOpen.update((v) => !v);
   }
 
-  protected select(option: SelectOption): void {
-    this.valueChange.emit(option.value);
-    this.isOpen.set(false);
+  protected isSelected(value: string | number): boolean {
+    return this.values().includes(value);
+  }
+
+  protected toggleOption(value: string | number): void {
+    const current = this.values();
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    this.valuesChange.emit(next);
   }
 
   protected handleKeydown(event: KeyboardEvent): void {
-    const opts = this.options();
-    const idx = opts.findIndex((o) => o.value === this.value());
-
     switch (event.key) {
       case 'Enter':
       case ' ':
@@ -99,20 +102,6 @@ export class UiSelectComponent {
         event.preventDefault();
         this.isOpen.set(false);
         break;
-      case 'ArrowDown': {
-        event.preventDefault();
-        if (!this.isOpen()) { this.isOpen.set(true); return; }
-        const next = opts[(idx + 1) % opts.length];
-        if (next) this.valueChange.emit(next.value);
-        break;
-      }
-      case 'ArrowUp': {
-        event.preventDefault();
-        if (!this.isOpen()) { this.isOpen.set(true); return; }
-        const prev = opts[(idx - 1 + opts.length) % opts.length];
-        if (prev) this.valueChange.emit(prev.value);
-        break;
-      }
     }
   }
 }

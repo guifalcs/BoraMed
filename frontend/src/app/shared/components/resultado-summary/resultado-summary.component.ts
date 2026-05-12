@@ -1,20 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../ui/button/ui-button.component';
 
 @Component({
   selector: 'app-resultado-summary',
   standalone: true,
-  imports: [UiButtonComponent, DecimalPipe],
+  imports: [UiButtonComponent, DecimalPipe, RouterLink],
   templateUrl: './resultado-summary.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResultadoSummaryComponent {
   resultado = input.required<ResultadoTentativa>();
 
-  voltar = output<void>();
-  refazer = output<void>();
+  protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
 
   protected readonly nota = computed(() => this.resultado().tentativa.nota ?? 0);
 
@@ -34,4 +34,14 @@ export class ResultadoSummaryComponent {
 
   protected readonly acertos = computed(() => this.resultado().tentativa.acertos);
   protected readonly total = computed(() => this.resultado().tentativa.total_questoes);
+
+  protected readonly tempoFormatado = computed(() => {
+    const total = this.resultado().tentativa.tempo_acumulado_segundos;
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    if (h > 0) return `${h}h ${m}min`;
+    if (m > 0) return `${m}min ${s}s`;
+    return `${s}s`;
+  });
 }

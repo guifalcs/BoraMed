@@ -1,11 +1,6 @@
 <div class="ui-field" [class.ui-field--disabled]="disabled()">
   <span class="ui-field__label-row">
-    <span class="ui-field__label">
-      {{ label() }}
-      @if (required()) {
-        <span class="ui-field__required" aria-hidden="true">*</span>
-      }
-    </span>
+    <span class="ui-field__label">{{ label() }}</span>
   </span>
 
   <div class="ui-select">
@@ -21,8 +16,8 @@
       (click)="toggle()"
       (keydown)="handleKeydown($event)"
     >
-      <span [class.ui-select__placeholder]="!selectedLabel()">
-        {{ selectedLabel() ?? placeholder() }}
+      <span [class.ui-select__placeholder]="!triggerLabel()">
+        {{ triggerLabel() ?? placeholder() }}
       </span>
       <app-ui-icon
         class="ui-select__chevron"
@@ -39,12 +34,12 @@
           <li
             class="ui-select__option"
             role="option"
-            [class.ui-select__option--selected]="option.value === value()"
-            [attr.aria-selected]="option.value === value()"
-            (click)="select(option)"
+            [class.ui-select__option--selected]="isSelected(option.value)"
+            [attr.aria-selected]="isSelected(option.value)"
+            (click)="toggleOption(option.value)"
           >
             <span>{{ option.label }}</span>
-            @if (option.value === value()) {
+            @if (isSelected(option.value)) {
               <app-ui-icon [icon]="checkIcon" [size]="14" aria-hidden="true" />
             }
           </li>
@@ -55,7 +50,5 @@
 
   @if (error()) {
     <span class="ui-field__error">{{ error() }}</span>
-  } @else if (helperText()) {
-    <span class="ui-field__helper">{{ helperText() }}</span>
   }
 </div>

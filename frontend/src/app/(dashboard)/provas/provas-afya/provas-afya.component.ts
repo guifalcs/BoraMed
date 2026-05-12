@@ -13,14 +13,13 @@ import type { Prova, SubtipoProva } from '../../../core/models/prova';
 import { ProvaCardComponent } from '../../../shared/components/prova-card/prova-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
-import { UiSelectComponent, SelectOption } from '../../../shared/components/ui/select/ui-select.component';
-
-type SubtipoFiltro = 'todas' | SubtipoProva;
+import { UiMultiselectComponent } from '../../../shared/components/ui/multiselect/ui-multiselect.component';
+import type { SelectOption } from '../../../shared/components/ui/select/ui-select.component';
 
 @Component({
   selector: 'app-provas-afya',
   standalone: true,
-  imports: [RouterLink, ProvaCardComponent, EmptyStateComponent, UiIconComponent, UiSelectComponent],
+  imports: [RouterLink, ProvaCardComponent, EmptyStateComponent, UiIconComponent, UiMultiselectComponent],
   templateUrl: './provas-afya.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,41 +36,41 @@ export class ProvasAfyaComponent implements OnInit {
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
 
-  protected readonly subtipoAtivo = signal<SubtipoFiltro>('todas');
-  protected readonly periodoFiltro = signal<number | null>(null);
-  protected readonly anoFiltro = signal<number | null>(null);
+  protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
+  protected readonly periodosFiltro = signal<number[]>([]);
+  protected readonly anosFiltro = signal<number[]>([]);
 
   protected readonly subtipoOpcoes: SelectOption[] = [
-    { value: '', label: 'Todos' },
     { value: 'N1', label: 'N1' },
-    { value: 'teste_progresso', label: 'Teste de Progresso' },
-    { value: 'N2', label: 'N2 — Integradora' },
+    { value: 'teste_progresso', label: 'TPI' },
+    { value: 'N2', label: 'Integradora' },
   ];
 
-  protected readonly periodoOpcoes: SelectOption[] = [
-    { value: '', label: 'Todos' },
-    ...Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}º período` })),
-  ];
+  protected readonly periodoOpcoes: SelectOption[] = Array.from({ length: 12 }, (_, i) => ({
+    value: i + 1,
+    label: `${i + 1}º período`,
+  }));
 
-  protected readonly anoOpcoes: SelectOption[] = [
-    { value: '', label: 'Todos' },
-    ...Array.from({ length: 6 }, (_, i) => ({ value: 2024 - i, label: String(2024 - i) })),
-  ];
+  protected readonly anoOpcoes = computed<SelectOption[]>(() =>
+    [...new Set(this.todasAsProvas().map((p) => p.ano).filter((a): a is number => a != null))]
+      .sort((a, b) => b - a)
+      .map((ano) => ({ value: ano, label: String(ano) })),
+  );
 
   protected readonly provasFiltradas = computed(() => {
     let lista = this.todasAsProvas();
-    const subtipo = this.subtipoAtivo();
-    const periodo = this.periodoFiltro();
-    const ano = this.anoFiltro();
+    const subtipos = this.subtiposFiltro();
+    const periodos = this.periodosFiltro();
+    const anos = this.anosFiltro();
 
-    if (subtipo !== 'todas') {
-      lista = lista.filter((p) => p.subtipo_nacional === subtipo);
+    if (subtipos.length > 0) {
+      lista = lista.filter((p) => p.subtipo_nacional && subtipos.includes(p.subtipo_nacional));
     }
-    if (periodo) {
-      lista = lista.filter((p) => p.periodo === periodo);
+    if (periodos.length > 0) {
+      lista = lista.filter((p) => p.periodo != null && periodos.includes(p.periodo));
     }
-    if (ano) {
-      lista = lista.filter((p) => p.ano === ano);
+    if (anos.length > 0) {
+      lista = lista.filter((p) => p.ano != null && anos.includes(p.ano));
     }
     return lista;
   });
@@ -90,16 +89,16 @@ export class ProvasAfyaComponent implements OnInit {
     this.isLoading.set(false);
   }
 
-  protected onSubtipoChange(v: string | number | null): void {
-    this.subtipoAtivo.set((v as SubtipoFiltro) || 'todas');
+  protected onSubtipoChange(values: (string | number)[]): void {
+    this.subtiposFiltro.set(values as SubtipoProva[]);
   }
 
-  protected onPeriodoChange(v: string | number | null): void {
-    this.periodoFiltro.set(v ? Number(v) : null);
+  protected onPeriodoChange(values: (string | number)[]): void {
+    this.periodosFiltro.set(values.map(Number));
   }
 
-  protected onAnoChange(v: string | number | null): void {
-    this.anoFiltro.set(v ? Number(v) : null);
+  protected onAnoChange(values: (string | number)[]): void {
+    this.anosFiltro.set(values.map(Number));
   }
 
   protected abrirProva(id: string): void {

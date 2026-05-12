@@ -5,26 +5,28 @@ const meta: Meta<QuestaoExplicacaoComponent> = {
   title: 'Provas/QuestaoExplicacao',
   component: QuestaoExplicacaoComponent,
   tags: ['autodocs'],
-  args: {
-    explicacao:
-      'A resposta correta é a letra B. O choque anafilático requer tratamento imediato com adrenalina intramuscular na dose de 0,3–0,5mg no músculo vasto lateral da coxa.',
-    visivel: true,
-  },
 };
 
 export default meta;
 type Story = StoryObj<QuestaoExplicacaoComponent>;
 
-export const Visivel: Story = {};
-
-export const ComReferencia: Story = {
+export const ComExplicacao: Story = {
   args: {
-    referencia: 'Guia Médico Afya, 1º período, p. 142.',
+    explicacao: 'A **eosinofilia** é o achado-chave. Eosinófilos liberam grânulos citotóxicos (MBP e ECP) que perfuram a membrana de parasitas grandes. **Alternativa correta: D.**',
+    referencia: 'ABBAS, A. K. et al. Imunologia Básica. 7. ed. Rio de Janeiro: GEN Guanabara Koogan, 2025.',
   },
 };
 
-export const Oculta: Story = {
+export const SemReferencia: Story = {
   args: {
-    visivel: false,
+    explicacao: 'O parassimpático **reduz** a frequência cardíaca; quem aumenta é o simpático. **Alternativa correta: D.**',
+    referencia: null,
+  },
+};
+
+export const SemExplicacao: Story = {
+  args: {
+    explicacao: null,
+    referencia: null,
   },
 };

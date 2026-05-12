@@ -29,11 +29,6 @@ export class ModoSelectorComponent {
       label: 'Estudo',
       descricao: 'Questão por questão. Gabarito imediato após cada resposta.',
     },
-    {
-      value: 'visualizar',
-      label: 'Visualizar',
-      descricao: 'Scroll livre com gabarito visível.',
-    },
   ];
 
   protected readonly btnClass = computed(() => (opcao: ModoOpcao) => {

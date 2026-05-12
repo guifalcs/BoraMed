@@ -31,6 +31,11 @@ export const provasRoutes: Routes = [
       ),
   },
   {
+    path: ':provaId/visualizar',
+    loadComponent: () =>
+      import('./prova-visualizar/prova-visualizar.component').then((m) => m.ProvaVisualizarComponent),
+  },
+  {
     path: ':provaId',
     loadComponent: () =>
       import('./prova-detalhe/prova-detalhe.component').then((m) => m.ProvaDetalheComponent),

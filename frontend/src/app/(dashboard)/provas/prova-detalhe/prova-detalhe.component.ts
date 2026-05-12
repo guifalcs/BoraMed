@@ -71,6 +71,7 @@ export class ProvaDetalheComponent implements OnInit {
     this.iniciando.set(false);
 
     if (result.ok) {
+      this.tentativaService.setProvaNome(prova.nome);
       void this.router.navigate(['/dashboard/provas', prova.id, 'tentativa', result.data.tentativa.id]);
     }
   }
@@ -85,6 +86,7 @@ export class ProvaDetalheComponent implements OnInit {
     this.iniciando.set(false);
 
     if (result.ok) {
+      this.tentativaService.setProvaNome(prova.nome);
       void this.router.navigate(['/dashboard/provas', prova.id, 'tentativa', tentativa.id]);
     }
   }

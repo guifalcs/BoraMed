@@ -7,6 +7,11 @@
     <p class="mt-4 text-base font-medium text-[var(--color-text)]">
       {{ acertos() }} de {{ total() }} questões corretas
     </p>
+    @if (resultado().tentativa.modo !== 'visualizar' && resultado().tentativa.tempo_acumulado_segundos > 0) {
+      <p class="mt-1 text-sm text-[var(--color-text-muted)]">
+        Tempo total: {{ tempoFormatado() }}
+      </p>
+    }
 
     <!-- Barra de progresso -->
     <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
@@ -44,8 +49,29 @@
   }
 
   <!-- Ações -->
-  <div class="flex flex-col gap-3 sm:flex-row">
-    <app-ui-button label="Voltar para a prova" variant="secondary" (buttonClick)="voltar.emit()" />
-    <app-ui-button label="Refazer" variant="primary" (buttonClick)="refazer.emit()" />
+  <div class="flex flex-col gap-3">
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <a
+        class="flex-1"
+        [routerLink]="['/dashboard/provas', provaId(), 'visualizar']"
+      >
+        <app-ui-button label="Revisar questões" variant="primary" />
+      </a>
+      <a
+        class="flex-1"
+        [routerLink]="['/dashboard/provas', provaId()]"
+      >
+        <app-ui-button label="Refazer prova" variant="secondary" />
+      </a>
+    </div>
+
+    <div class="text-center">
+      <a
+        routerLink="/dashboard/provas"
+        class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+      >
+        ← Todas as provas
+      </a>
+    </div>
   </div>
 </div>

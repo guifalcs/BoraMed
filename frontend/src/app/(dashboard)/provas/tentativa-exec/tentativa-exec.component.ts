@@ -9,17 +9,20 @@ import {
   computed,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ChevronDown, ChevronUp } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
+import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { ProvaHeaderComponent } from '../../../shared/components/prova-header/prova-header.component';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
-  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent],
+  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent],
   providers: [TimerService],
   templateUrl: './tentativa-exec.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +31,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
+  private readonly provaService = inject(ProvaService);
   private readonly timer = inject(TimerService);
 
   protected readonly tentativa = signal<Tentativa | null>(null);
@@ -38,8 +42,16 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly isLoading = signal(true);
   protected readonly salvando = signal(false);
   protected readonly erro = signal<string | null>(null);
+  protected readonly isPaused = signal(false);
+  protected readonly mostrarGrade = signal(false);
+
+  protected readonly chevronDownIcon = ChevronDown;
+  protected readonly chevronUpIcon = ChevronUp;
+
+  private _finalizado = false;
 
   protected readonly timerSeconds = this.timer.seconds;
+  protected readonly provaNome = this.tentativaService.provaNome;
 
   protected readonly questaoAtual = computed(() => {
     const q = this.questoes();
@@ -81,6 +93,14 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       }
       this.respostas.set(respostasMap);
       this.timer.start(tentativaAtiva.tempo_acumulado_segundos);
+
+      if (!this.tentativaService.provaNome()) {
+        const provaResult = await this.provaService.buscarProva(tentativaAtiva.prova_id);
+        if (provaResult.ok) {
+          this.tentativaService.setProvaNome(provaResult.data.nome);
+        }
+      }
+
       this.isLoading.set(false);
     } else {
       this.erro.set('Tentativa não encontrada. Volte e tente novamente.');
@@ -89,7 +109,12 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    const segundos = this.timer.seconds();
     this.timer.stop();
+    const tentativa = this.tentativa();
+    if (!this._finalizado && tentativa) {
+      void this.tentativaService.pausar(tentativa.id, segundos);
+    }
   }
 
   protected async onResponder(alternativaId: string): Promise<void> {
@@ -122,9 +147,6 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
         });
       }
 
-      if (this.questaoAtualIdx() < this.questoes().length - 1) {
-        setTimeout(() => this.questaoAtualIdx.update((i) => i + 1), 1200);
-      }
     }
   }
 
@@ -144,23 +166,32 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected async onPausar(): Promise<void> {
+  protected onSair(): void {
     const tentativa = this.tentativa();
-    if (!tentativa) return;
+    if (tentativa) {
+      void this.router.navigate(['/dashboard/provas', tentativa.prova_id]);
+    }
+  }
 
-    this.timer.pause();
-    await this.tentativaService.pausar(tentativa.id);
-    void this.router.navigate(['/dashboard/provas', tentativa.prova_id]);
+  protected onTogglePausar(): void {
+    if (this.isPaused()) {
+      this.timer.resume();
+      this.isPaused.set(false);
+    } else {
+      this.timer.pause();
+      this.isPaused.set(true);
+    }
   }
 
   protected async onFinalizar(): Promise<void> {
     const tentativa = this.tentativa();
     if (!tentativa) return;
 
+    this._finalizado = true;
     this.salvando.set(true);
     this.timer.pause();
 
-    const result = await this.tentativaService.finalizar(tentativa.id);
+    const result = await this.tentativaService.finalizar(tentativa.id, this.timer.seconds());
 
     this.salvando.set(false);
 

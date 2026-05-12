@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { Pause, X } from 'lucide-angular';
+import { ArrowLeft, Flag, Pause, Play } from 'lucide-angular';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { TimerComponent } from '../timer/timer.component';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
-import { UiButtonComponent } from '../ui/button/ui-button.component';
 
 @Component({
   selector: 'app-prova-header',
   standalone: true,
-  imports: [TimerComponent, UiIconComponent, UiButtonComponent],
+  imports: [TimerComponent, UiIconComponent],
   templateUrl: './prova-header.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -18,13 +17,17 @@ export class ProvaHeaderComponent {
   totalRespondidas = input.required<number>();
   segundos = input.required<number>();
   modo = input.required<ModoProva>();
+  isPaused = input<boolean>(false);
   salvando = input<boolean>(false);
 
   finalizar = output<void>();
-  pausar = output<void>();
+  togglePausar = output<void>();
+  sair = output<void>();
 
   protected readonly pauseIcon = Pause;
-  protected readonly closeIcon = X;
+  protected readonly playIcon = Play;
+  protected readonly arrowLeftIcon = ArrowLeft;
+  protected readonly flagIcon = Flag;
 
   protected readonly progressoPercent = computed(() =>
     this.totalQuestoes() > 0
@@ -33,5 +36,5 @@ export class ProvaHeaderComponent {
   );
 
   protected readonly exibirTimer = computed(() => this.modo() !== 'visualizar');
-  protected readonly exibirPausar = computed(() => this.modo() === 'simulado');
+  protected readonly exibirPausar = computed(() => this.modo() === 'simulado' || this.modo() === 'estudo');
 }

@@ -22,8 +22,8 @@ export class FiltrosProvasComponent {
   protected readonly subtipoOpcoes: Opcao[] = [
     { value: '', label: 'Todos os subtipos' },
     { value: 'N1', label: 'N1' },
-    { value: 'teste_progresso', label: 'Teste de Progresso' },
-    { value: 'N2', label: 'N2 — Integradora' },
+    { value: 'teste_progresso', label: 'TPI' },
+    { value: 'N2', label: 'Integradora' },
   ];
 
   protected readonly periodoOpcoes: Opcao[] = [

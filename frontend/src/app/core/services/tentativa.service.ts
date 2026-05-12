@@ -11,10 +11,36 @@ export class TentativaService {
   private readonly _tentativaAtiva = signal<Tentativa | null>(null);
   private readonly _questoes = signal<QuestaoComAlternativas[]>([]);
   private readonly _respostas = signal<TentativaResposta[]>([]);
+  private readonly _provaNome = signal<string>('');
+  private readonly _lastResultado = signal<ResultadoTentativa | null>(
+    TentativaService.readLastResultadoFromStorage(),
+  );
 
   readonly tentativaAtiva = this._tentativaAtiva.asReadonly();
   readonly questoes = this._questoes.asReadonly();
   readonly respostas = this._respostas.asReadonly();
+  readonly provaNome = this._provaNome.asReadonly();
+  readonly lastResultado = this._lastResultado.asReadonly();
+
+  private static readLastResultadoFromStorage(): ResultadoTentativa | null {
+    try {
+      const raw = sessionStorage.getItem('lastResultado');
+      return raw ? (JSON.parse(raw) as ResultadoTentativa) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  setProvaNome(nome: string): void {
+    this._provaNome.set(nome);
+  }
+
+  setLastResultado(resultado: ResultadoTentativa): void {
+    this._lastResultado.set(resultado);
+    try {
+      sessionStorage.setItem('lastResultado', JSON.stringify(resultado));
+    } catch {}
+  }
 
   async buscarTentativaAtiva(provaId: string): Promise<ProvaResult<Tentativa | null>> {
     try {
@@ -23,6 +49,7 @@ export class TentativaService {
         .select('*')
         .eq('prova_id', provaId)
         .in('status', ['em_andamento', 'pausada'])
+        .neq('modo', 'visualizar')
         .order('criado_em', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -31,6 +58,55 @@ export class TentativaService {
       return { ok: true, data: (data as Tentativa | null) };
     } catch {
       return { ok: false, error: 'Não foi possível verificar tentativas ativas.' };
+    }
+  }
+
+  async prepararVisualizacao(
+    provaId: string,
+  ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('questao')
+        .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+        .eq('prova_id', provaId)
+        .eq('status', 'ativa')
+        .order('ordem_na_prova');
+
+      if (error) throw error;
+
+      type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
+        temas: { tema: import('../models/tema').Tema }[];
+      };
+
+      const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
+        ...q,
+        temas: q.temas.map((qt) => qt.tema),
+      })) as QuestaoComAlternativas[];
+
+      const tentativaSintetica: Tentativa = {
+        id: provaId,
+        user_id: '',
+        prova_id: provaId,
+        modo: 'visualizar',
+        status: 'em_andamento',
+        total_questoes: questoes.length,
+        total_respondidas: 0,
+        acertos: 0,
+        nota: null,
+        iniciada_em: new Date().toISOString(),
+        pausada_em: null,
+        tempo_acumulado_segundos: 0,
+        finalizada_em: null,
+        criado_em: new Date().toISOString(),
+      };
+
+      this._tentativaAtiva.set(tentativaSintetica);
+      this._questoes.set(questoes);
+      this._respostas.set([]);
+
+      return { ok: true, data: { questoes } };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar as questões.' };
     }
   }
 
@@ -119,28 +195,39 @@ export class TentativaService {
     }
   }
 
-  async pausar(tentativaId: string): Promise<ProvaResult<void>> {
+  async pausar(tentativaId: string, tempoSegundos?: number): Promise<ProvaResult<void>> {
+    // Atualização otimista e síncrona — antes do await, para que qualquer
+    // leitura imediata do signal (ex: retorno rápido via smart nav) já
+    // encontre tempo_acumulado_segundos correto.
+    this._tentativaAtiva.update((t) =>
+      t
+        ? {
+            ...t,
+            status: 'pausada',
+            pausada_em: new Date().toISOString(),
+            tempo_acumulado_segundos: tempoSegundos ?? t.tempo_acumulado_segundos,
+          }
+        : t,
+    );
+
     try {
       const { error } = await this.supabase.rpc('pausar_tentativa', {
         p_tentativa_id: tentativaId,
+        p_tempo_segundos: tempoSegundos ?? null,
       });
 
       if (error) throw error;
-
-      this._tentativaAtiva.update((t) =>
-        t ? { ...t, status: 'pausada', pausada_em: new Date().toISOString() } : t,
-      );
-
       return { ok: true, data: undefined };
     } catch {
       return { ok: false, error: 'Não foi possível pausar a tentativa.' };
     }
   }
 
-  async finalizar(tentativaId: string): Promise<ProvaResult<ResultadoTentativa>> {
+  async finalizar(tentativaId: string, tempoSegundos?: number): Promise<ProvaResult<ResultadoTentativa>> {
     try {
       const { data, error } = await this.supabase.rpc('finalizar_tentativa', {
         p_tentativa_id: tentativaId,
+        p_tempo_segundos: tempoSegundos ?? null,
       });
 
       if (error) throw error;
