@@ -1,0 +1,36 @@
+<div class="max-w-md mx-auto text-center space-y-4 py-16 px-4">
+  @if (codigo()) {
+    <div class="flex justify-center">
+      <span [class]="badgeClasses()">
+        {{ codigo() }}
+      </span>
+    </div>
+  }
+
+  @if (icone()) {
+    <div class="flex justify-center text-[var(--color-text-muted)]">
+      <app-ui-icon [icon]="icone()!" [size]="48" />
+    </div>
+  }
+
+  <h1 class="text-2xl font-extrabold text-[var(--color-text)]">{{ titulo() }}</h1>
+
+  <p class="text-base text-[var(--color-text-muted)]">{{ mensagem() }}</p>
+
+  @if (detalhe()) {
+    <p class="text-sm italic text-[var(--color-text-muted)]">{{ detalhe() }}</p>
+  }
+
+  @if (acoes().length > 0) {
+    <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+      @for (acao of acoes(); track acao.tipo) {
+        <app-ui-button
+          [label]="acao.label"
+          [variant]="acao.variant"
+          [fullWidth]="false"
+          (buttonClick)="acaoClick.emit(acao.tipo)"
+        />
+      }
+    </div>
+  }
+</div>
