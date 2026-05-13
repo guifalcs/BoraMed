@@ -1,0 +1,58 @@
+<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-8">
+
+  <!-- Seção 1: Saudação -->
+  <app-greeting-hero
+    [nomeCompleto]="profile()?.nome_completo ?? null"
+    [periodo]="profile()?.periodo ?? null"
+    [temTentativaAtiva]="temTentativaAtiva()"
+    [rotaCta]="provasRoute()"
+  />
+
+  <!-- Seção 2: KPIs -->
+  <div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+    @for (kpi of kpis; track kpi.label) {
+      <app-kpi-card
+        [label]="kpi.label"
+        [valor]="kpi.valor"
+        [sublabel]="kpi.sublabel"
+        [icone]="kpi.icone"
+        [variante]="kpi.variante"
+      />
+    }
+  </div>
+
+  <!-- Seção 3: Trajetória recente -->
+  <div class="mt-8">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-[var(--color-text)]">Trajetória recente</h2>
+      <span
+        class="cursor-not-allowed text-xs text-[var(--color-text-muted)] opacity-40"
+        title="Em breve"
+      >
+        Ver tudo →
+      </span>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
+      @if (tentativasRecentes.length > 0) {
+        @for (t of tentativasRecentes; track t.tentativaId) {
+          <app-tentativa-recente-item
+            [nomeProva]="t.nomeProva"
+            [dataIso]="t.dataIso"
+            [nota]="t.nota"
+            [tentativaId]="t.tentativaId"
+            [provaId]="t.provaId"
+          />
+        }
+      } @else {
+        <app-empty-state
+          titulo="Nenhum simulado ainda"
+          descricao="Faça seu primeiro simulado para acompanhar sua evolução aqui."
+          labelBotao="Começar agora"
+          (acao)="onComecarSimulado()"
+        />
+      }
+    </div>
+  </div>
+
+</div>
