@@ -52,7 +52,7 @@ export const routes: Routes = [
           import('./(dashboard)/suporte/suporte.component').then((m) => m.SuporteComponent),
       },
       {
-        path: 'provas',
+        path: 'simulados',
         loadChildren: () =>
           import('./(dashboard)/provas/provas.routes').then((m) => m.provasRoutes),
       },

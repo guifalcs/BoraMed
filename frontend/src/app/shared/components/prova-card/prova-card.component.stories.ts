@@ -4,15 +4,16 @@ import type { Prova } from '../../../core/models/prova';
 
 const prova: Prova = {
   id: 'prova-1',
-  faculdade_id: 'fac-1',
-  nome: 'Prova Nacional Afya — 1º Período',
+  faculdade_id: null,
+  nome: 'Simulado N1 — 1º Período — Edição 1',
   periodo: 1,
-  ano: 2024,
-  semestre: 1,
+  ano: null,
+  semestre: null,
   tipo: 'nacional',
   subtipo_nacional: 'N1',
   qtd_questoes: 30,
   tempo_sugerido_minutos: 60,
+  edicao: 1,
   criado_em: '2024-01-01T00:00:00Z',
 };
 
@@ -35,7 +36,7 @@ export const TesteProgresso: Story = {
 };
 
 export const N2: Story = {
-  args: { prova: { ...prova, subtipo_nacional: 'N2', nome: 'Prova N2 — Integradora' } },
+  args: { prova: { ...prova, subtipo_nacional: 'N2', nome: 'Simulado N2 — Integradora — Edição 1' } },
 };
 
 export const SemTempo: Story = {

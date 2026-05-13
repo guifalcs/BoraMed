@@ -7,12 +7,12 @@ export const provasRoutes: Routes = [
       import('./provas-home/provas-home.component').then((m) => m.ProvasHomeComponent),
   },
   {
-    path: 'afya/em-breve',
+    path: 'rede-afya/em-breve',
     loadComponent: () =>
       import('./em-breve-page/em-breve-page.component').then((m) => m.EmBrevePageComponent),
   },
   {
-    path: 'afya',
+    path: 'rede-afya',
     loadComponent: () =>
       import('./provas-afya/provas-afya.component').then((m) => m.ProvasAfyaComponent),
   },

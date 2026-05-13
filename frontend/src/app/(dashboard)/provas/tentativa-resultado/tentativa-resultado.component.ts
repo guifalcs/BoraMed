@@ -28,10 +28,17 @@ export class TentativaResultadoComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     const tentativaId = this.route.snapshot.paramMap.get('tentativaId') ?? '';
-    const provaId = this.route.snapshot.paramMap.get('provaId') ?? '';
 
+    // Usa o resultado já armazenado pelo exec (fluxo normal — evita dupla chamada à RPC)
+    const cached = this.tentativaService.lastResultado();
+    if (cached?.tentativa.id === tentativaId) {
+      this.resultado.set(cached);
+      this.isLoading.set(false);
+      return;
+    }
+
+    // Fallback: navegação direta por URL (F5, link compartilhado)
     const result = await this.tentativaService.finalizar(tentativaId);
-
     if (result.ok) {
       this.resultado.set(result.data);
       this.tentativaService.setLastResultado(result.data);

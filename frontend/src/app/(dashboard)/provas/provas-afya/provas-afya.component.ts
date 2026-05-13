@@ -38,7 +38,6 @@ export class ProvasAfyaComponent implements OnInit {
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
-  protected readonly anosFiltro = signal<number[]>([]);
 
   protected readonly subtipoOpcoes: SelectOption[] = [
     { value: 'N1', label: 'N1' },
@@ -51,17 +50,10 @@ export class ProvasAfyaComponent implements OnInit {
     label: `${i + 1}º período`,
   }));
 
-  protected readonly anoOpcoes = computed<SelectOption[]>(() =>
-    [...new Set(this.todasAsProvas().map((p) => p.ano).filter((a): a is number => a != null))]
-      .sort((a, b) => b - a)
-      .map((ano) => ({ value: ano, label: String(ano) })),
-  );
-
   protected readonly provasFiltradas = computed(() => {
     let lista = this.todasAsProvas();
     const subtipos = this.subtiposFiltro();
     const periodos = this.periodosFiltro();
-    const anos = this.anosFiltro();
 
     if (subtipos.length > 0) {
       lista = lista.filter((p) => p.subtipo_nacional && subtipos.includes(p.subtipo_nacional));
@@ -69,17 +61,19 @@ export class ProvasAfyaComponent implements OnInit {
     if (periodos.length > 0) {
       lista = lista.filter((p) => p.periodo != null && periodos.includes(p.periodo));
     }
-    if (anos.length > 0) {
-      lista = lista.filter((p) => p.ano != null && anos.includes(p.ano));
-    }
     return lista;
   });
 
   async ngOnInit(): Promise<void> {
+    await this.carregarProvas();
+  }
+
+  protected async carregarProvas(): Promise<void> {
+    this.erro.set(null);
+    this.isLoading.set(true);
     const result = await this.provaService.listarProvasNacionais({
       subtipo: null,
       periodo: null,
-      ano: null,
     });
     if (result.ok) {
       this.todasAsProvas.set(result.data);
@@ -97,11 +91,7 @@ export class ProvasAfyaComponent implements OnInit {
     this.periodosFiltro.set(values.map(Number));
   }
 
-  protected onAnoChange(values: (string | number)[]): void {
-    this.anosFiltro.set(values.map(Number));
-  }
-
   protected abrirProva(id: string): void {
-    void this.router.navigate(['/dashboard/provas', id]);
+    void this.router.navigate(['/dashboard/simulados', id]);
   }
 }

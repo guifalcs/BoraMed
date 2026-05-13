@@ -1,13 +1,13 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-5xl">
-    <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Provas</h1>
-    <p class="mb-8 text-sm text-[var(--color-text-muted)]">Selecione a origem das provas para começar.</p>
+    <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Simulados</h1>
+    <p class="mb-8 text-sm text-[var(--color-text-muted)]">Selecione a origem dos simulados para começar.</p>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:gap-6">
 
       <!-- Rede Afya — destaque com gradiente -->
       <a
-        routerLink="/dashboard/provas/afya"
+        routerLink="/dashboard/simulados/rede-afya"
         class="group relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
         style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%), linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%);"
       >
@@ -24,7 +24,7 @@
           <!-- Texto -->
           <div>
             <h2 class="text-lg font-bold text-white">Rede Afya</h2>
-            <p class="mt-1 text-sm text-white/75">Provas nacionais, processuais e multiestações de todos os campi</p>
+            <p class="mt-1 text-sm text-white/75">Simulados no padrão das provas nacionais, processuais e multiestações</p>
           </div>
 
           <!-- Badge + seta -->
@@ -41,7 +41,7 @@
 
       <!-- Outras faculdades — placeholder secundário -->
       <a
-        routerLink="/dashboard/provas/afya/em-breve"
+        routerLink="/dashboard/simulados/rede-afya/em-breve"
         [queryParams]="{ tipo: 'outras' }"
         class="flex flex-col gap-3 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-6 opacity-60 cursor-not-allowed"
         (click)="$event.preventDefault()"

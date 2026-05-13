@@ -11,7 +11,7 @@
       @for (item of navItems; track item.route) {
         <a
           class="nav-item"
-          [routerLink]="item.route === '/dashboard/provas' ? provasRoute() : item.route"
+          [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
           routerLinkActive="nav-item--active"
           [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
         >
@@ -76,7 +76,7 @@
     @for (item of navItems; track item.route) {
       <a
         class="bottom-nav-item"
-        [routerLink]="item.route === '/dashboard/provas' ? provasRoute() : item.route"
+        [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
         routerLinkActive="bottom-nav-item--active"
         [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
       >

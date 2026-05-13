@@ -31,14 +31,6 @@ export class FiltrosProvasComponent {
     ...Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}º período` })),
   ];
 
-  protected readonly anoOpcoes: Opcao[] = [
-    { value: '', label: 'Todos os anos' },
-    ...Array.from({ length: 6 }, (_, i) => {
-      const ano = 2024 - i;
-      return { value: String(ano), label: String(ano) };
-    }),
-  ];
-
   protected onSubtipoChange(value: string): void {
     this.filtrosChange.emit({
       ...this.filtros(),
@@ -50,13 +42,6 @@ export class FiltrosProvasComponent {
     this.filtrosChange.emit({
       ...this.filtros(),
       periodo: value ? Number(value) : null,
-    });
-  }
-
-  protected onAnoChange(value: string): void {
-    this.filtrosChange.emit({
-      ...this.filtros(),
-      ano: value ? Number(value) : null,
     });
   }
 }

@@ -6,7 +6,7 @@ const meta: Meta<FiltrosProvasComponent> = {
   component: FiltrosProvasComponent,
   tags: ['autodocs'],
   args: {
-    filtros: { subtipo: null, periodo: null, ano: null },
+    filtros: { subtipo: null, periodo: null },
   },
 };
 
@@ -16,9 +16,9 @@ type Story = StoryObj<FiltrosProvasComponent>;
 export const SemFiltros: Story = {};
 
 export const SubtipoAtivo: Story = {
-  args: { filtros: { subtipo: 'N1', periodo: null, ano: null } },
+  args: { filtros: { subtipo: 'N1', periodo: null } },
 };
 
 export const TodosFiltros: Story = {
-  args: { filtros: { subtipo: 'N2', periodo: 1, ano: 2024 } },
+  args: { filtros: { subtipo: 'N2', periodo: 1 } },
 };

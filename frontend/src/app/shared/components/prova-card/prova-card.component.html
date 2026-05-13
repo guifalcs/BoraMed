@@ -26,7 +26,7 @@
           }
           <span>{{ prova().periodo }}º P</span>
           <span>·</span>
-          <span>{{ prova().ano }}/{{ prova().semestre }}</span>
+          <span>Ed. {{ prova().edicao }}</span>
           <span>·</span>
           <span>{{ prova().qtd_questoes }}q</span>
         </p>
@@ -51,7 +51,7 @@
       <div class="flex flex-col gap-1 min-w-0">
         <span class="truncate text-base font-semibold text-[var(--color-text)]">{{ prova().nome }}</span>
         <span class="text-xs text-[var(--color-text-muted)]">
-          {{ prova().ano }} · {{ prova().semestre }}º semestre · {{ prova().periodo }}º período
+          {{ prova().periodo }}º período · Edição {{ prova().edicao }}
         </span>
       </div>
       @if (subtipoLabel()) {

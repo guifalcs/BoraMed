@@ -39,16 +39,20 @@ export class ProvaVisualizarComponent implements OnInit {
 
   protected readonly backRoute = computed(() =>
     this.tentativaId()
-      ? ['/dashboard/provas', this.provaId(), 'tentativa', this.tentativaId(), 'resultado']
-      : ['/dashboard/provas', this.provaId()],
+      ? ['/dashboard/simulados', this.provaId(), 'tentativa', this.tentativaId(), 'resultado']
+      : ['/dashboard/simulados', this.provaId()],
   );
 
   async ngOnInit(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('provaId') ?? '';
     this.provaId.set(id);
 
+    // Show previous answers only if lastResultado exists for this prova
+    // AND the navigation state indicates coming from resultado
     const lastResultado = this.tentativaService.lastResultado();
-    if (lastResultado?.tentativa.prova_id === id) {
+    const navState = history.state as { fromResultado?: boolean } | null;
+
+    if (lastResultado?.tentativa.prova_id === id && navState?.fromResultado) {
       this.tentativaId.set(lastResultado.tentativa.id);
       const map = new Map<string, string>();
       for (const r of lastResultado.respostas) {

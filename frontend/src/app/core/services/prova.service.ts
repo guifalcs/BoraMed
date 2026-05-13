@@ -37,7 +37,7 @@ export class ProvaService {
         .from('prova')
         .select('*')
         .eq('tipo', 'nacional')
-        .order('ano', { ascending: false })
+        .order('edicao', { ascending: false })
         .order('subtipo_nacional', { ascending: true });
 
       if (filtros.subtipo) {
@@ -45,9 +45,6 @@ export class ProvaService {
       }
       if (filtros.periodo) {
         query = query.eq('periodo', filtros.periodo);
-      }
-      if (filtros.ano) {
-        query = query.eq('ano', filtros.ano);
       }
 
       const { data, error } = await query;
@@ -57,7 +54,7 @@ export class ProvaService {
       this._provas.set(provas);
       return { ok: true, data: provas };
     } catch {
-      return { ok: false, error: 'Não foi possível carregar as provas.' };
+      return { ok: false, error: 'Não foi possível carregar os simulados.' };
     } finally {
       this._isLoading.set(false);
     }
@@ -74,7 +71,7 @@ export class ProvaService {
       if (error) throw error;
       return { ok: true, data: data as ProvaComFaculdade };
     } catch {
-      return { ok: false, error: 'Prova não encontrada.' };
+      return { ok: false, error: 'Simulado não encontrado.' };
     }
   }
 }

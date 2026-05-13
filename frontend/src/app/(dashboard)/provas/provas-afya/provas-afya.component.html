@@ -1,14 +1,14 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-6xl">
 
-    <a routerLink="/dashboard/provas" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
+    <a routerLink="/dashboard/simulados" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
       <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
-      Provas
+      Simulados
     </a>
 
     <div class="mb-6">
       <h1 class="text-2xl font-extrabold text-[var(--color-text)]">Rede Afya — Nacional</h1>
-      <p class="mt-1 text-sm text-[var(--color-text-muted)]">Provas antigas de todos os campi.</p>
+      <p class="mt-1 text-sm text-[var(--color-text-muted)]">Simulados no padrão das provas nacionais.</p>
     </div>
 
     <!-- Card principal -->
@@ -35,19 +35,10 @@
             (valuesChange)="onPeriodoChange($event)"
           />
         </div>
-        <div style="width:7rem;min-width:7rem;max-width:7rem;flex:none">
-          <app-ui-multiselect
-            label="Ano"
-            name="ano"
-            [options]="anoOpcoes()"
-            [values]="anosFiltro()"
-            (valuesChange)="onAnoChange($event)"
-          />
-        </div>
         @if (!isLoading()) {
           <span class="ml-auto hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:inline">
             {{ provasFiltradas().length }}
-            {{ provasFiltradas().length === 1 ? 'prova' : 'provas' }}
+            {{ provasFiltradas().length === 1 ? 'simulado' : 'simulados' }}
           </span>
         }
 
@@ -74,10 +65,10 @@
       @if (!isLoading() && erro()) {
         <div class="px-6 py-12">
           <app-empty-state
-            titulo="Erro ao carregar provas"
+            titulo="Erro ao carregar simulados"
             [descricao]="erro()"
             labelBotao="Tentar novamente"
-            (acao)="ngOnInit()"
+            (acao)="carregarProvas()"
           />
         </div>
       }
@@ -101,8 +92,8 @@
       @if (!isLoading() && !erro() && provasFiltradas().length === 0) {
         <div class="px-6 py-16">
           <app-empty-state
-            titulo="Nenhuma prova encontrada"
-            descricao="Estamos preparando o banco de provas. Em breve você terá acesso ao acervo completo."
+            titulo="Nenhum simulado encontrado"
+            descricao="Estamos preparando novos simulados. Em breve você terá acesso ao acervo completo."
           />
         </div>
       }
@@ -116,7 +107,7 @@
       <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 
         <a
-          routerLink="/dashboard/provas/afya/em-breve"
+          routerLink="/dashboard/simulados/rede-afya/em-breve"
           [queryParams]="{ tipo: 'processual' }"
           class="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)] opacity-60 transition-opacity hover:opacity-80"
         >
@@ -125,7 +116,7 @@
         </a>
 
         <a
-          routerLink="/dashboard/provas/afya/em-breve"
+          routerLink="/dashboard/simulados/rede-afya/em-breve"
           [queryParams]="{ tipo: 'multiestacoes' }"
           class="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)] opacity-60 transition-opacity hover:opacity-80"
         >
@@ -134,7 +125,7 @@
         </a>
 
         <a
-          routerLink="/dashboard/provas/afya/em-breve"
+          routerLink="/dashboard/simulados/rede-afya/em-breve"
           [queryParams]="{ modo: 'simulado-temas' }"
           class="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)] opacity-60 transition-opacity hover:opacity-80"
         >

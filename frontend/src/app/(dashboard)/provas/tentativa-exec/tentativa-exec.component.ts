@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   OnDestroy,
   OnInit,
   inject,
@@ -13,6 +12,7 @@ import { ChevronDown, ChevronUp } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
@@ -33,6 +33,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   private readonly tentativaService = inject(TentativaService);
   private readonly provaService = inject(ProvaService);
   private readonly timer = inject(TimerService);
+  private readonly notifications = inject(NotificationService);
 
   protected readonly tentativa = signal<Tentativa | null>(null);
   protected readonly questoes = signal<QuestaoComAlternativas[]>([]);
@@ -82,30 +83,41 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     const questoesAtivas = this.tentativaService.questoes();
 
     if (tentativaAtiva?.id === tentativaId && questoesAtivas.length > 0) {
-      this.tentativa.set(tentativaAtiva);
-      this.questoes.set(questoesAtivas);
-
-      const respostasMap = new Map<string, string>();
-      for (const r of this.tentativaService.respostas()) {
-        if (r.alternativa_id) {
-          respostasMap.set(r.questao_id, r.alternativa_id);
-        }
-      }
-      this.respostas.set(respostasMap);
-      this.timer.start(tentativaAtiva.tempo_acumulado_segundos);
-
-      if (!this.tentativaService.provaNome()) {
-        const provaResult = await this.provaService.buscarProva(tentativaAtiva.prova_id);
-        if (provaResult.ok) {
-          this.tentativaService.setProvaNome(provaResult.data.nome);
-        }
-      }
-
-      this.isLoading.set(false);
+      await this.carregarDeMemoria(tentativaAtiva.prova_id);
     } else {
-      this.erro.set('Tentativa não encontrada. Volte e tente novamente.');
-      this.isLoading.set(false);
+      // Fallback: F5 ou navegação direta por URL — tenta retomar do servidor
+      const result = await this.tentativaService.retomar(tentativaId);
+      if (result.ok) {
+        await this.carregarDeMemoria(result.data.tentativa.prova_id);
+      } else {
+        this.erro.set('Não foi possível carregar a prova. Volte e tente novamente.');
+        this.isLoading.set(false);
+      }
     }
+  }
+
+  private async carregarDeMemoria(provaId: string): Promise<void> {
+    const tentativaAtiva = this.tentativaService.tentativaAtiva()!;
+    this.tentativa.set(tentativaAtiva);
+    this.questoes.set(this.tentativaService.questoes());
+
+    const respostasMap = new Map<string, string>();
+    for (const r of this.tentativaService.respostas()) {
+      if (r.alternativa_id) {
+        respostasMap.set(r.questao_id, r.alternativa_id);
+      }
+    }
+    this.respostas.set(respostasMap);
+    this.timer.start(tentativaAtiva.tempo_acumulado_segundos);
+
+    if (!this.tentativaService.provaNome()) {
+      const provaResult = await this.provaService.buscarProva(provaId);
+      if (provaResult.ok) {
+        this.tentativaService.setProvaNome(provaResult.data.nome);
+      }
+    }
+
+    this.isLoading.set(false);
   }
 
   ngOnDestroy(): void {
@@ -137,7 +149,22 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       alternativaId,
     );
 
-    if (result.ok && this.modo() === 'estudo') {
+    if (!result.ok) {
+      // Rollback da seleção otimista
+      this.respostas.update((m) => {
+        const next = new Map(m);
+        if (anteriorResposta !== undefined) {
+          next.set(questao.id, anteriorResposta);
+        } else {
+          next.delete(questao.id);
+        }
+        return next;
+      });
+      this.notifications.error('Não foi possível salvar a resposta. Tente novamente.');
+      return;
+    }
+
+    if (this.modo() === 'estudo') {
       const altCorreta = questao.alternativas.find((a) => a.correta)?.id ?? null;
       if (altCorreta) {
         this.respostasCorretas.update((m) => {
@@ -146,7 +173,6 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
           return next;
         });
       }
-
     }
   }
 
@@ -169,7 +195,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected onSair(): void {
     const tentativa = this.tentativa();
     if (tentativa) {
-      void this.router.navigate(['/dashboard/provas', tentativa.prova_id]);
+      void this.router.navigate(['/dashboard/simulados', tentativa.prova_id]);
     }
   }
 
@@ -187,7 +213,6 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     const tentativa = this.tentativa();
     if (!tentativa) return;
 
-    this._finalizado = true;
     this.salvando.set(true);
     this.timer.pause();
 
@@ -196,13 +221,18 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     this.salvando.set(false);
 
     if (result.ok) {
+      this._finalizado = true;
+      this.tentativaService.setLastResultado(result.data);
       void this.router.navigate([
-        '/dashboard/provas',
+        '/dashboard/simulados',
         tentativa.prova_id,
         'tentativa',
         tentativa.id,
         'resultado',
       ]);
+    } else {
+      this.timer.resume();
+      this.notifications.error('Não foi possível finalizar a prova. Tente novamente.');
     }
   }
 }

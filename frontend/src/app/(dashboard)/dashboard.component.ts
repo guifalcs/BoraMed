@@ -38,9 +38,9 @@ export class DashboardComponent {
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
     if (t && t.status !== 'finalizada' && t.modo !== 'visualizar') {
-      return ['/dashboard/provas', t.prova_id, 'tentativa', t.id];
+      return ['/dashboard/simulados', t.prova_id, 'tentativa', t.id];
     }
-    return ['/dashboard/provas'];
+    return ['/dashboard/simulados'];
   });
 
   constructor() {
@@ -67,7 +67,7 @@ export class DashboardComponent {
 
   protected readonly navItems: NavItem[] = [
     { label: 'Início', icon: Home, route: '/dashboard', exact: true },
-    { label: 'Provas', icon: BookOpen, route: '/dashboard/provas' },
+    { label: 'Simulados', icon: BookOpen, route: '/dashboard/simulados' },
     { label: 'Suporte', icon: LifeBuoy, route: '/dashboard/suporte' },
   ];
 }

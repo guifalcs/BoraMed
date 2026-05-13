@@ -53,24 +53,25 @@
     <div class="flex flex-col gap-3 sm:flex-row">
       <a
         class="flex-1"
-        [routerLink]="['/dashboard/provas', provaId(), 'visualizar']"
+        [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
+        [state]="{ fromResultado: true }"
       >
         <app-ui-button label="Revisar questões" variant="primary" />
       </a>
       <a
         class="flex-1"
-        [routerLink]="['/dashboard/provas', provaId()]"
+        [routerLink]="['/dashboard/simulados', provaId()]"
       >
-        <app-ui-button label="Refazer prova" variant="secondary" />
+        <app-ui-button label="Refazer simulado" variant="secondary" />
       </a>
     </div>
 
     <div class="text-center">
       <a
-        routerLink="/dashboard/provas"
+        routerLink="/dashboard/simulados"
         class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
       >
-        ← Todas as provas
+        ← Todos os simulados
       </a>
     </div>
   </div>

@@ -1,8 +1,8 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-3xl">
-    <a routerLink="/dashboard/provas/afya" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
+    <a routerLink="/dashboard/simulados/rede-afya" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
       <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
-      Provas Afya
+      Simulados
     </a>
 
     @if (isLoading()) {
@@ -14,13 +14,13 @@
     }
 
     @if (!isLoading() && erro()) {
-      <app-empty-state titulo="Prova não encontrada" [descricao]="erro()" />
+      <app-empty-state titulo="Simulado não encontrado" [descricao]="erro()" />
     }
 
     @if (!isLoading() && prova()) {
       <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">{{ prova()!.nome }}</h1>
       <p class="mb-6 text-sm text-[var(--color-text-muted)]">
-        {{ prova()!.ano }} · {{ prova()!.semestre }}º semestre · {{ prova()!.periodo }}º período · {{ prova()!.qtd_questoes }} questões
+        {{ prova()!.periodo }}º período · Edição {{ prova()!.edicao }} · {{ prova()!.qtd_questoes }} questões
         @if (prova()!.tempo_sugerido_minutos) {
           · {{ prova()!.tempo_sugerido_minutos }} min sugeridos
         }
@@ -80,7 +80,7 @@
         @if (prova()!.qtd_questoes > 0) {
           <div class="mt-4 border-t border-[var(--color-border)] pt-4">
             <a
-              [routerLink]="['/dashboard/provas', prova()!.id, 'visualizar']"
+              [routerLink]="['/dashboard/simulados', prova()!.id, 'visualizar']"
               class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] underline underline-offset-2"
             >
               Só quero ver as questões e o gabarito

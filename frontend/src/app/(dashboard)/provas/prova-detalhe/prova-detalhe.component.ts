@@ -9,6 +9,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChevronLeft } from 'lucide-angular';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import type { ProvaComFaculdade } from '../../../core/models/prova';
 import type { ModoProva, Tentativa } from '../../../core/models/tentativa';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
@@ -28,6 +29,7 @@ export class ProvaDetalheComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly provaService = inject(ProvaService);
   private readonly tentativaService = inject(TentativaService);
+  private readonly notifications = inject(NotificationService);
 
   protected readonly chevronLeftIcon = ChevronLeft;
 
@@ -72,7 +74,9 @@ export class ProvaDetalheComponent implements OnInit {
 
     if (result.ok) {
       this.tentativaService.setProvaNome(prova.nome);
-      void this.router.navigate(['/dashboard/provas', prova.id, 'tentativa', result.data.tentativa.id]);
+      void this.router.navigate(['/dashboard/simulados', prova.id, 'tentativa', result.data.tentativa.id]);
+    } else {
+      this.notifications.error('Não foi possível iniciar a prova. Tente novamente.');
     }
   }
 
@@ -87,7 +91,9 @@ export class ProvaDetalheComponent implements OnInit {
 
     if (result.ok) {
       this.tentativaService.setProvaNome(prova.nome);
-      void this.router.navigate(['/dashboard/provas', prova.id, 'tentativa', tentativa.id]);
+      void this.router.navigate(['/dashboard/simulados', prova.id, 'tentativa', tentativa.id]);
+    } else {
+      this.notifications.error('Não foi possível retomar a prova. Tente novamente.');
     }
   }
 }

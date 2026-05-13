@@ -10,15 +10,16 @@ import type { Prova } from '../../../core/models/prova';
 function provaFactory(overrides: Partial<Prova> = {}): Prova {
   return {
     id: 'prova-1',
-    faculdade_id: 'fac-1',
-    nome: 'Prova N1 2024 — 1º Período',
+    faculdade_id: null,
+    nome: 'Simulado N1 — 1º Período — Edição 1',
     periodo: 1,
-    ano: 2024,
-    semestre: 1,
+    ano: null,
+    semestre: null,
     tipo: 'nacional',
     subtipo_nacional: 'N1',
     qtd_questoes: 30,
     tempo_sugerido_minutos: 60,
+    edicao: 1,
     criado_em: '2024-01-01T00:00:00Z',
     ...overrides,
   };
@@ -151,39 +152,39 @@ describe('ProvasAfyaComponent', () => {
       expect(filtered.length).toBe(3);
     });
 
-    it('filtra por subtipo N1 ao chamar onSubtipoChange("N1")', () => {
-      (component as any).onSubtipoChange('N1');
+    it('filtra por subtipo N1 ao chamar onSubtipoChange(["N1"])', () => {
+      (component as any).onSubtipoChange(['N1']);
       const filtered = (component as any).provasFiltradas();
       expect(filtered.length).toBe(1);
       expect(filtered[0].subtipo_nacional).toBe('N1');
     });
 
-    it('filtra por subtipo teste_progresso ao chamar onSubtipoChange("teste_progresso")', () => {
-      (component as any).onSubtipoChange('teste_progresso');
+    it('filtra por subtipo teste_progresso ao chamar onSubtipoChange(["teste_progresso"])', () => {
+      (component as any).onSubtipoChange(['teste_progresso']);
       const filtered = (component as any).provasFiltradas();
       expect(filtered.every((p: Prova) => p.subtipo_nacional === 'teste_progresso')).toBe(true);
     });
 
-    it('filtra por período ao chamar onPeriodoChange(1)', () => {
-      (component as any).onPeriodoChange(1);
+    it('filtra por período ao chamar onPeriodoChange([1])', () => {
+      (component as any).onPeriodoChange([1]);
       const filtered = (component as any).provasFiltradas();
       expect(filtered.length).toBe(2);
       expect(filtered.every((p: Prova) => p.periodo === 1)).toBe(true);
     });
 
     it('filtra combinando subtipo e período', () => {
-      (component as any).onSubtipoChange('N1');
-      (component as any).onPeriodoChange(1);
+      (component as any).onSubtipoChange(['N1']);
+      (component as any).onPeriodoChange([1]);
       const filtered = (component as any).provasFiltradas();
       expect(filtered.length).toBe(1);
       expect(filtered[0].id).toBe('1');
     });
 
-    it('retorna todas as provas ao redefinir subtipo para "todas"', () => {
-      (component as any).onSubtipoChange('N1');
+    it('retorna todas as provas ao redefinir subtipo para vazio', () => {
+      (component as any).onSubtipoChange(['N1']);
       expect((component as any).provasFiltradas().length).toBe(1);
 
-      (component as any).onSubtipoChange('');
+      (component as any).onSubtipoChange([]);
       expect((component as any).provasFiltradas().length).toBe(3);
     });
   });
@@ -192,7 +193,7 @@ describe('ProvasAfyaComponent', () => {
 
   describe('erro de carregamento', () => {
     beforeEach(async () => {
-      await setup({ ok: false, error: 'Não foi possível carregar as provas.' });
+      await setup({ ok: false, error: 'Não foi possível carregar os simulados.' });
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();

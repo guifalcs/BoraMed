@@ -17,13 +17,4 @@
       (valueChange)="onPeriodoChange($event?.toString() ?? '')"
     />
   </div>
-  <div class="w-full">
-    <app-ui-select
-      label="Ano"
-      name="ano"
-      [options]="anoOpcoes"
-      [value]="filtros().ano ? filtros().ano!.toString() : ''"
-      (valueChange)="onAnoChange($event?.toString() ?? '')"
-    />
-  </div>
 </div>

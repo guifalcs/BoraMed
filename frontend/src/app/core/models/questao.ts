@@ -23,8 +23,15 @@ export interface Questao {
   vezes_respondida: number;
   vezes_acertada: number;
   taxa_acerto: number | null;
-  status: 'ativa' | 'rascunho' | 'arquivada' | 'em_revisao';
+  status: 'ativa' | 'rascunho' | 'arquivada' | 'em_revisao' | 'publicada';
   revisado: boolean;
+  autor_id: string | null;
+  revisor_id: string | null;
+  aprovada_em: string | null;
+  publicada_em: string | null;
+  origem_geracao: 'manual' | 'ia_assistida';
+  nivel_bloom: number | null;
+  formato_prova: 'N1' | 'N2' | 'nacional' | 'P1' | 'P2' | null;
   criado_em: string;
   atualizado_em: string;
 }

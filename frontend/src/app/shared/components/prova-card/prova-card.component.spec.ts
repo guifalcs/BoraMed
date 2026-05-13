@@ -8,15 +8,16 @@ import type { Prova } from '../../../core/models/prova';
 function provaFactory(overrides: Partial<Prova> = {}): Prova {
   return {
     id: 'prova-1',
-    faculdade_id: 'fac-1',
-    nome: 'Prova N1 2024 — 1º Período',
+    faculdade_id: null,
+    nome: 'Simulado N1 — 1º Período — Edição 1',
     periodo: 1,
-    ano: 2024,
-    semestre: 1,
+    ano: null,
+    semestre: null,
     tipo: 'nacional',
     subtipo_nacional: 'N1',
     qtd_questoes: 30,
     tempo_sugerido_minutos: 60,
+    edicao: 1,
     criado_em: '2024-01-01T00:00:00Z',
     ...overrides,
   };
@@ -52,19 +53,19 @@ describe('ProvaCardComponent', () => {
     });
 
     it('renderiza o nome da prova', () => {
-      expect(el.textContent).toContain('Prova N1 2024 — 1º Período');
+      expect(el.textContent).toContain('Simulado N1 — 1º Período — Edição 1');
     });
 
     it('renderiza o período', () => {
-      expect(el.textContent).toContain('1º período');
+      expect(el.textContent).toContain('1º P');
     });
 
-    it('renderiza o ano', () => {
-      expect(el.textContent).toContain('2024');
+    it('renderiza a edição', () => {
+      expect(el.textContent).toContain('Ed. 1');
     });
 
     it('renderiza a quantidade de questões', () => {
-      expect(el.textContent).toContain('30 questões');
+      expect(el.textContent).toContain('30q');
     });
 
     it('não renderiza o bloco da variante "card"', () => {
@@ -86,7 +87,7 @@ describe('ProvaCardComponent', () => {
     });
 
     it('renderiza o nome da prova', () => {
-      expect(el.textContent).toContain('Prova N1 2024 — 1º Período');
+      expect(el.textContent).toContain('Simulado N1 — 1º Período — Edição 1');
     });
 
     it('renderiza o badge de subtipo', () => {
@@ -133,7 +134,7 @@ describe('ProvaCardComponent', () => {
         'card',
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');
-      expect(badge?.textContent?.trim()).toBe('TP');
+      expect(badge?.textContent?.trim()).toBe('TPI');
     });
   });
 
