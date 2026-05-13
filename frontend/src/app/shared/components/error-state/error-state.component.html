@@ -1,14 +1,14 @@
-<div class="max-w-md mx-auto text-center space-y-4 py-16 px-4">
+<div class="max-w-md mx-auto text-center space-y-4 py-16 px-4" role="alert" aria-live="polite">
   @if (codigo()) {
     <div class="flex justify-center">
-      <span [class]="badgeClasses()">
+      <span [class]="badgeClasses()" [attr.aria-label]="'Erro ' + codigo()">
         {{ codigo() }}
       </span>
     </div>
   }
 
   @if (icone()) {
-    <div class="flex justify-center text-[var(--color-text-muted)]">
+    <div class="flex justify-center text-[var(--color-text-muted)]" aria-hidden="true">
       <app-ui-icon [icon]="icone()!" [size]="48" />
     </div>
   }

@@ -60,7 +60,7 @@ export const routes: Routes = [
     ],
   },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
-  { path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
+{ path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
   { path: 'erro', loadComponent: () => import('./(errors)/erro-servidor/erro-servidor.component').then(m => m.ErroServidorComponent) },
   { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
 ];

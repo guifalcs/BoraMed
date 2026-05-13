@@ -35,9 +35,14 @@ export class SemPermissaoComponent {
 
   onAcaoClick(tipo: string): void {
     if (tipo === 'voltar') {
-      this.location.back();
+      // Se não há histórico (link externo, aba nova), vai para o dashboard
+      if (history.length > 1) {
+        this.location.back();
+      } else {
+        void this.router.navigateByUrl('/dashboard');
+      }
     } else if (tipo === 'suporte') {
-      this.router.navigateByUrl('/dashboard/suporte');
+      void this.router.navigateByUrl('/dashboard/suporte');
     }
   }
 }
