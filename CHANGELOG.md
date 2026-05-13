@@ -8,6 +8,23 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-13 | Feature | 1575d3f
+
+**Páginas de erro — 404, 403 e 500**
+
+Implementação das páginas de erro globais do frontend, com design amigável e tom médico.
+
+### Frontend
+- `ErrorStateComponent` (`shared/components/error-state/`) — componente reutilizável com badge colorido por código, ícone Lucide, título, mensagem, texto de detalhe em itálico e lista de ações configurável; acessível com `role="alert"`, `aria-live` e `aria-hidden` no ícone decorativo
+- Página 404 `/` (wildcard) — "Página não diagnosticada": ícone `FileQuestionMark`, ações para voltar ao início e ver simulados
+- Página 403 `/sem-permissao` — "Acesso restrito": ícone `ShieldAlert`, botão "Voltar" com fallback para `/dashboard` quando não há histórico de navegação
+- Página 500 `/erro` — "Parada no servidor": ícone `ServerCrash`, botão de retry via `window.location.reload()`
+- 404 dentro do shell autenticado (`/dashboard/**`) renderiza com sidebar e bottom-nav preservados
+- Stories Storybook: `Erro404`, `Erro403`, `Erro500`, `SemAcoes`, `SemDetalhe`
+- `app.routes.ts` atualizado — wildcards corrigidos em nível raiz e dentro do dashboard
+
+---
+
 ## 2026-05-11 | Feature | 72146cb
 
 **Módulo de Provas — BoraMed (Rede Afya)**
