@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnDestroy,
   OnInit,
   inject,
@@ -234,6 +235,43 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     } else {
       this.timer.resume();
       this.notifications.error('Não foi possível finalizar a prova. Tente novamente.');
+    }
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  protected onKeydown(event: KeyboardEvent): void {
+    if (this.isLoading() || this.isPaused() || this.salvando() || this._finalizado) return;
+
+    const tag = (event.target as HTMLElement)?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        this.questaoAnterior();
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        this.proximaQuestao();
+        break;
+      default: {
+        const alternativas = this.questaoAtual()?.alternativas;
+        if (!alternativas?.length) return;
+
+        const letraMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3, e: 4 };
+        const numMap: Record<string, number> = { '1': 0, '2': 1, '3': 2, '4': 3, '5': 4 };
+
+        const idx = letraMap[event.key.toLowerCase()] ?? numMap[event.key] ?? -1;
+        if (idx >= 0 && idx < alternativas.length) {
+          event.preventDefault();
+          const sorted = [...alternativas].sort((a, b) => a.ordem - b.ordem);
+          const alt = sorted[idx];
+          if (alt) {
+            void this.onResponder(alt.id);
+          }
+        }
+        break;
+      }
     }
   }
 }
