@@ -37,4 +37,8 @@ export class ProvaHeaderComponent {
 
   protected readonly exibirTimer = computed(() => this.modo() !== 'visualizar');
   protected readonly exibirPausar = computed(() => this.modo() === 'simulado' || this.modo() === 'estudo');
+
+  protected readonly naoRespondidas = computed(() =>
+    this.totalQuestoes() - this.totalRespondidas(),
+  );
 }
