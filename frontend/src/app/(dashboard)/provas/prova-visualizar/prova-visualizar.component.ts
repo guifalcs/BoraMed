@@ -1,16 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
+  PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChevronLeft } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
-import { ProvaService } from '../../../core/services/prova.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
+import type { ProvaVisualizarResolvedData } from '../../../core/resolvers/prova-visualizar.resolver';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -22,10 +23,9 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProvaVisualizarComponent implements OnInit {
+export class ProvaVisualizarComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly tentativaService = inject(TentativaService);
-  private readonly provaService = inject(ProvaService);
 
   protected readonly chevronLeftIcon = ChevronLeft;
 
@@ -43,46 +43,38 @@ export class ProvaVisualizarComponent implements OnInit {
       : ['/dashboard/simulados', this.provaId()],
   );
 
-  async ngOnInit(): Promise<void> {
+  constructor() {
+    const resolved = this.route.snapshot.data['provaVisualizarData'] as ProvaVisualizarResolvedData | undefined;
     const id = this.route.snapshot.paramMap.get('provaId') ?? '';
     this.provaId.set(id);
 
-    // Show previous answers only if lastResultado exists for this prova
-    // AND the navigation state indicates coming from resultado
-    const lastResultado = this.tentativaService.lastResultado();
-    const navState = history.state as { fromResultado?: boolean } | null;
-
-    if (lastResultado?.tentativa.prova_id === id && navState?.fromResultado) {
-      this.tentativaId.set(lastResultado.tentativa.id);
-      const map = new Map<string, string>();
-      for (const r of lastResultado.respostas) {
-        if (r.alternativa_id) {
-          map.set(r.questao_id, r.alternativa_id);
-        }
-      }
-      this.respostasMap.set(map);
+    if (resolved?.provaResult.ok) {
+      this.provaNome.set(resolved.provaResult.data.nome);
     }
 
-    const provaResult = await this.provaService.buscarProva(id);
-
-    if (provaResult.ok) {
-      this.provaNome.set(provaResult.data.nome);
-
-      // Simulados personalizados: questões não pertencem à prova
-      const isPersonalizado = provaResult.data.tipo === 'processual' && provaResult.data.edicao < 0;
-      const loadResult = isPersonalizado
-        ? await this.tentativaService.prepararVisualizacaoPersonalizado(id)
-        : await this.tentativaService.prepararVisualizacao(id);
-
-      if (loadResult.ok) {
-        this.questoes.set(loadResult.data.questoes);
-      } else {
-        this.erro.set(loadResult.error);
-      }
-    } else {
-      this.erro.set('Não foi possível carregar a prova.');
+    if (resolved?.questoesResult.ok) {
+      this.questoes.set(resolved.questoesResult.data);
+    } else if (resolved && !resolved.questoesResult.ok) {
+      this.erro.set(resolved.questoesResult.error);
     }
 
     this.isLoading.set(false);
+
+    // Lê respostas anteriores do lastResultado (browser only — depende de history.state)
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      const lastResultado = this.tentativaService.lastResultado();
+      const navState = history.state as { fromResultado?: boolean } | null;
+
+      if (lastResultado?.tentativa.prova_id === id && navState?.fromResultado) {
+        this.tentativaId.set(lastResultado.tentativa.id);
+        const map = new Map<string, string>();
+        for (const r of lastResultado.respostas) {
+          if (r.alternativa_id) {
+            map.set(r.questao_id, r.alternativa_id);
+          }
+        }
+        this.respostasMap.set(map);
+      }
+    }
   }
 }

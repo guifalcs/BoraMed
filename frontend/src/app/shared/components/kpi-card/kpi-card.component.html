@@ -19,8 +19,10 @@
     >
       {{ valor() }}
     </p>
-    @if (sublabel()) {
-      <p class="mt-1.5 truncate text-xs text-[var(--color-text-muted)]" [title]="sublabel()!">{{ sublabel() }}</p>
-    }
+    <p
+      class="mt-1.5 truncate text-xs text-[var(--color-text-muted)]"
+      [class.invisible]="!sublabel()"
+      [title]="sublabel() ?? ''"
+    >{{ sublabel() ?? '-' }}</p>
   </div>
 </div>

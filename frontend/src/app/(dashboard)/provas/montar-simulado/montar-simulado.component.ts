@@ -1,15 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
   computed,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChevronLeft, Shuffle, Filter } from 'lucide-angular';
-import { TemaService } from '../../../core/services/tema.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import type { MontarSimuladoResolvedData } from '../../../core/resolvers/montar-simulado.resolver';
 import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
@@ -23,9 +22,8 @@ import { ModoSelectorComponent } from '../../../shared/components/modo-selector/
   templateUrl: './montar-simulado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MontarSimuladoComponent implements OnInit {
+export class MontarSimuladoComponent {
   private readonly router = inject(Router);
-  private readonly temaService = inject(TemaService);
   private readonly tentativaService = inject(TentativaService);
 
   protected readonly chevronLeftIcon = ChevronLeft;
@@ -101,12 +99,12 @@ export class MontarSimuladoComponent implements OnInit {
     return 'Gerar simulado';
   });
 
-  async ngOnInit(): Promise<void> {
-    const result = await this.temaService.listarTemasComContagem();
-    if (result.ok) {
-      this.temas.set(result.data);
-    } else {
-      this.loadError.set(result.error);
+  constructor() {
+    const resolved = inject(ActivatedRoute).snapshot.data['montarSimuladoData'] as MontarSimuladoResolvedData | undefined;
+    if (resolved?.temasResult.ok) {
+      this.temas.set(resolved.temasResult.data);
+    } else if (resolved && !resolved.temasResult.ok) {
+      this.loadError.set(resolved.temasResult.error);
     }
     this.isLoadingTemas.set(false);
   }

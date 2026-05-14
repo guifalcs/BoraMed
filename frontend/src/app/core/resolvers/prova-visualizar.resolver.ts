@@ -1,0 +1,122 @@
+import { PLATFORM_ID, TransferState, inject, makeStateKey } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import type { ResolveFn } from '@angular/router';
+import { ProvaService } from '../services/prova.service';
+import { SupabaseService } from '../services/supabase.service';
+import type { ProvaComFaculdade } from '../models/prova';
+import type { QuestaoComAlternativas } from '../models/questao';
+import type { Tema } from '../models/tema';
+
+export interface ProvaVisualizarResolvedData {
+  provaResult: { ok: true; data: ProvaComFaculdade } | { ok: false; error: string };
+  questoesResult: { ok: true; data: QuestaoComAlternativas[] } | { ok: false; error: string };
+}
+
+const PROVA_VISUALIZAR_STATE_KEY = makeStateKey<ProvaVisualizarResolvedData>('prova-visualizar-data');
+
+type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
+  temas: { tema: Tema }[];
+};
+
+export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = async (route) => {
+  const transferState = inject(TransferState);
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  const provaService = inject(ProvaService);
+  const supabase = inject(SupabaseService).client;
+
+  if (isBrowser && transferState.hasKey(PROVA_VISUALIZAR_STATE_KEY)) {
+    const data = transferState.get(PROVA_VISUALIZAR_STATE_KEY, null) as ProvaVisualizarResolvedData;
+    transferState.remove(PROVA_VISUALIZAR_STATE_KEY);
+    return data;
+  }
+
+  const provaId = route.paramMap.get('provaId') ?? '';
+  const provaResult = await provaService.buscarProva(provaId);
+
+  let questoesResult: ProvaVisualizarResolvedData['questoesResult'];
+
+  if (!provaResult.ok) {
+    questoesResult = { ok: false, error: 'Prova não encontrada.' };
+  } else {
+    const isPersonalizado = provaResult.data.tipo === 'processual' && provaResult.data.edicao < 0;
+    questoesResult = isPersonalizado
+      ? await fetchQuestoesPersonalizado(supabase, provaId)
+      : await fetchQuestoesRegulares(supabase, provaId);
+  }
+
+  const resolved: ProvaVisualizarResolvedData = { provaResult, questoesResult };
+
+  if (!isBrowser) {
+    transferState.set(PROVA_VISUALIZAR_STATE_KEY, resolved);
+  }
+
+  return resolved;
+};
+
+async function fetchQuestoesRegulares(
+  supabase: InstanceType<typeof SupabaseService>['client'],
+  provaId: string,
+): Promise<{ ok: true; data: QuestaoComAlternativas[] } | { ok: false; error: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('questao')
+      .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+      .eq('prova_id', provaId)
+      .eq('status', 'ativa')
+      .order('ordem_na_prova');
+
+    if (error) throw error;
+
+    const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
+      ...q,
+      temas: q.temas.map((qt) => qt.tema),
+    })) as QuestaoComAlternativas[];
+
+    return { ok: true, data: questoes };
+  } catch {
+    return { ok: false, error: 'Não foi possível carregar as questões.' };
+  }
+}
+
+async function fetchQuestoesPersonalizado(
+  supabase: InstanceType<typeof SupabaseService>['client'],
+  provaId: string,
+): Promise<{ ok: true; data: QuestaoComAlternativas[] } | { ok: false; error: string }> {
+  try {
+    const { data: tentativaData, error: tentativaError } = await supabase
+      .from('tentativa')
+      .select('id')
+      .eq('prova_id', provaId)
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (tentativaError) throw tentativaError;
+
+    const { data: respostasData, error: respostasError } = await supabase
+      .from('tentativa_resposta')
+      .select('questao_id')
+      .eq('tentativa_id', tentativaData.id);
+
+    if (respostasError) throw respostasError;
+
+    const questaoIds = (respostasData ?? []).map((r) => r.questao_id as string);
+    if (questaoIds.length === 0) return { ok: true, data: [] };
+
+    const { data, error } = await supabase
+      .from('questao')
+      .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+      .in('id', questaoIds);
+
+    if (error) throw error;
+
+    const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
+      ...q,
+      temas: q.temas.map((qt) => qt.tema),
+    })) as QuestaoComAlternativas[];
+
+    return { ok: true, data: questoes };
+  } catch {
+    return { ok: false, error: 'Não foi possível carregar as questões.' };
+  }
+}
