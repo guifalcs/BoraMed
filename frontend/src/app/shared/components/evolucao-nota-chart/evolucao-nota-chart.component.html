@@ -1,0 +1,61 @@
+@if (chartData(); as chart) {
+  <svg [attr.viewBox]="viewBox" class="w-full" preserveAspectRatio="xMidYMid meet">
+    <!-- Grid lines -->
+    @for (line of chart.gridLines; track line.y) {
+      <line
+        [attr.x1]="line.x1" [attr.y1]="line.y"
+        [attr.x2]="line.x2" [attr.y2]="line.y"
+        stroke="var(--color-border)" stroke-width="1" stroke-dasharray="4 4"
+      />
+    }
+
+    <!-- Threshold line at 70% -->
+    <line
+      [attr.x1]="chart.plotLeft" [attr.y1]="chart.thresholdY"
+      [attr.x2]="chart.plotRight" [attr.y2]="chart.thresholdY"
+      stroke="var(--color-success)" stroke-width="1" opacity="0.5"
+    />
+    <text
+      [attr.x]="chart.plotRight + 2" [attr.y]="chart.thresholdY - 4"
+      fill="var(--color-success)" font-size="9" opacity="0.7"
+    >70%</text>
+
+    <!-- Area fill -->
+    <path [attr.d]="chart.areaPath" fill="var(--color-primary)" opacity="0.08" />
+
+    <!-- Line -->
+    <polyline
+      [attr.points]="chart.polyline"
+      fill="none" stroke="var(--color-primary)" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round"
+    />
+
+    <!-- Dots -->
+    @for (pt of chart.points; track $index) {
+      <circle
+        [attr.cx]="pt.x" [attr.cy]="pt.y" r="4"
+        [attr.fill]="pt.nota >= 70 ? 'var(--color-success)' : pt.nota >= 50 ? 'var(--color-warning)' : 'var(--color-danger)'"
+        stroke="var(--color-surface)" stroke-width="2"
+      />
+      <title>{{ pt.nota }}%</title>
+    }
+
+    <!-- Y-axis labels -->
+    @for (yl of chart.yLabels; track yl.value) {
+      <text
+        [attr.x]="chart.plotLeft - 6" [attr.y]="yl.y + 4"
+        text-anchor="end" fill="var(--color-text-muted)" font-size="10"
+      >{{ yl.value }}</text>
+    }
+
+    <!-- X-axis labels -->
+    @for (xl of chart.xLabels; track xl.x) {
+      <text
+        [attr.x]="xl.x" [attr.y]="chart.xLabelY"
+        text-anchor="middle" fill="var(--color-text-muted)" font-size="10"
+      >{{ xl.label }}</text>
+    }
+  </svg>
+} @else {
+  <p class="py-6 text-center text-sm text-[var(--color-text-muted)]">Finalize simulados para ver sua evolução.</p>
+}

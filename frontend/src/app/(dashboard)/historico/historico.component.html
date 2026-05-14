@@ -21,6 +21,44 @@
     }
   </div>
 
+  <!-- Filtros -->
+  <div class="mt-6 flex flex-wrap items-center gap-3">
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs font-medium text-[var(--color-text-muted)]">Período:</span>
+      @for (p of periodosDisponiveis; track p.valor) {
+        <button
+          type="button"
+          class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
+          [class]="filtroPeriodo() === p.valor
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
+          (click)="filtroPeriodo.set(p.valor)"
+        >{{ p.label }}</button>
+      }
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs font-medium text-[var(--color-text-muted)]">Tipo:</span>
+      @for (t of tiposDisponiveis; track t.valor) {
+        <button
+          type="button"
+          class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
+          [class]="filtroTipo() === t.valor
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
+          (click)="filtroTipo.set(t.valor)"
+        >{{ t.label }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- Evolução de Notas -->
+  <div class="mt-8">
+    <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Evolução de Notas</h2>
+    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+      <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
+    </div>
+  </div>
+
   <!-- Desempenho por Tema -->
   <div class="mt-8">
     <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Desempenho por Tema</h2>
@@ -57,18 +95,25 @@
           }
         </div>
       </div>
-    } @else if (tentativas().length === 0) {
+    } @else if (tentativasFiltradas().length === 0) {
       <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-        <app-empty-state
-          titulo="Nenhum simulado concluído"
-          descricao="Finalize um simulado para ver seu histórico aqui."
-          labelBotao="Começar agora"
-          (acao)="onComecarSimulado()"
-        />
+        @if (temFiltroAtivo()) {
+          <app-empty-state
+            titulo="Nenhum resultado para o filtro"
+            descricao="Tente mudar o período ou tipo de prova."
+          />
+        } @else {
+          <app-empty-state
+            titulo="Nenhum simulado concluído"
+            descricao="Finalize um simulado para ver seu histórico aqui."
+            labelBotao="Começar agora"
+            (acao)="onComecarSimulado()"
+          />
+        }
       </div>
     } @else {
       <app-data-table
-        [data]="tentativas()"
+        [data]="tentativasFiltradas()"
         [columns]="tentativasColumns"
         [filterable]="true"
         [filterPlaceholder]="'Buscar prova...'"

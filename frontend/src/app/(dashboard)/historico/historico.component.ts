@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -15,11 +16,16 @@ import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../.
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
 import type { LucideIconData } from 'lucide-angular';
 import type { HistoricoResolvedData } from '../../core/resolvers/historico.resolver';
+import type { PontoEvolucao } from '../../shared/components/evolucao-nota-chart/evolucao-nota-chart.component';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { DesempenhoTemaChartComponent } from '../../shared/components/desempenho-tema-chart/desempenho-tema-chart.component';
+import { EvolucaoNotaChartComponent } from '../../shared/components/evolucao-nota-chart/evolucao-nota-chart.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { DataTableComponent, type DataTableColumn } from '../../shared/components/data-table/data-table.component';
 import { DataTableColumnDirective } from '../../shared/components/data-table/data-table-column.directive';
+
+type FiltroPeriodo = 'todos' | 'semana' | 'mes' | 'semestre';
+type FiltroTipo = 'todos' | 'nacional' | 'processual';
 
 interface KpiData {
   label: string;
@@ -32,7 +38,7 @@ interface KpiData {
 @Component({
   selector: 'app-historico',
   standalone: true,
-  imports: [KpiCardComponent, DesempenhoTemaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective],
+  imports: [KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective],
   templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -46,6 +52,46 @@ export class HistoricoComponent {
   protected readonly kpis = signal<KpiData[]>([]);
   protected readonly temas = signal<DesempenhoTema[]>([]);
   protected readonly tentativas = signal<TentativaHistoricoItem[]>([]);
+
+  protected readonly filtroPeriodo = signal<FiltroPeriodo>('todos');
+  protected readonly filtroTipo = signal<FiltroTipo>('todos');
+
+  protected readonly tentativasFiltradas = computed(() => {
+    let items = this.tentativas();
+    const tipo = this.filtroTipo();
+    if (tipo !== 'todos') {
+      items = items.filter((t) => t.tipo_prova === tipo);
+    }
+    const periodo = this.filtroPeriodo();
+    if (periodo !== 'todos') {
+      const agora = Date.now();
+      const diasMap: Record<string, number> = { semana: 7, mes: 30, semestre: 180 };
+      const corte = agora - (diasMap[periodo] ?? 0) * 86_400_000;
+      items = items.filter((t) => t.finalizada_em && new Date(t.finalizada_em).getTime() >= corte);
+    }
+    return items;
+  });
+
+  protected readonly pontosEvolucao = computed<PontoEvolucao[]>(() =>
+    this.tentativasFiltradas()
+      .filter((t): t is TentativaHistoricoItem & { nota: number; finalizada_em: string } => t.nota !== null && t.finalizada_em !== null)
+      .map((t) => ({ data: t.finalizada_em, nota: t.nota }))
+  );
+
+  protected readonly temFiltroAtivo = computed(() => this.filtroPeriodo() !== 'todos' || this.filtroTipo() !== 'todos');
+
+  protected readonly periodosDisponiveis: { valor: FiltroPeriodo; label: string }[] = [
+    { valor: 'todos', label: 'Todos' },
+    { valor: 'semana', label: 'Última semana' },
+    { valor: 'mes', label: 'Último mês' },
+    { valor: 'semestre', label: 'Último semestre' },
+  ];
+
+  protected readonly tiposDisponiveis: { valor: FiltroTipo; label: string }[] = [
+    { valor: 'todos', label: 'Todos' },
+    { valor: 'nacional', label: 'Provas Afya' },
+    { valor: 'processual', label: 'Simulados' },
+  ];
 
   protected readonly tentativasColumns: DataTableColumn[] = [
     { key: 'prova_nome', header: 'Prova', sortable: true },
