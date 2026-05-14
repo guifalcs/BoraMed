@@ -16,10 +16,17 @@ export class ResultadoSummaryComponent {
   isPersonalizado = input(false);
   backRota = input<string>('/dashboard/simulados');
   backLabel = input<string>('Todos os simulados');
+  notaAnterior = input<number | null>(null);
 
   protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
 
   protected readonly nota = computed(() => this.resultado().tentativa.nota ?? 0);
+
+  protected readonly deltaNota = computed(() => {
+    const anterior = this.notaAnterior();
+    if (anterior === null) return null;
+    return Math.round((this.nota() - anterior) * 10) / 10;
+  });
 
   protected readonly notaClass = computed(() => {
     const n = this.nota();
@@ -44,6 +51,17 @@ export class ResultadoSummaryComponent {
     const m = Math.floor((total % 3600) / 60);
     const s = total % 60;
     if (h > 0) return `${h}h ${m}min`;
+    if (m > 0) return `${m}min ${s}s`;
+    return `${s}s`;
+  });
+
+  protected readonly tempoMedioPorQuestao = computed(() => {
+    const total = this.resultado().tentativa.tempo_acumulado_segundos;
+    const qtd = this.resultado().tentativa.total_questoes;
+    if (qtd === 0 || total === 0) return null;
+    const media = Math.round(total / qtd);
+    const m = Math.floor(media / 60);
+    const s = media % 60;
     if (m > 0) return `${m}min ${s}s`;
     return `${s}s`;
   });

@@ -1,20 +1,27 @@
 <div class="mx-auto max-w-2xl space-y-6 py-8 px-4">
-  <!-- Nota principal -->
+  <!-- Nota principal — hero card limpo -->
   <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-sm">
     <p class="text-sm font-medium text-[var(--color-text-muted)] mb-1">Sua nota</p>
     <p class="text-6xl font-extrabold" [class]="notaClass()">{{ nota() | number:'1.0-1' }}%</p>
-    <p class="mt-2 text-sm text-[var(--color-text-muted)]">{{ notaMensagem() }}</p>
-    <p class="mt-4 text-base font-medium text-[var(--color-text)]">
-      {{ acertos() }} de {{ total() }} questões corretas
-    </p>
-    @if (resultado().tentativa.modo !== 'visualizar' && resultado().tentativa.tempo_acumulado_segundos > 0) {
-      <p class="mt-1 text-sm text-[var(--color-text-muted)]">
-        Tempo total: {{ tempoFormatado() }}
+    @if (deltaNota() !== null) {
+      <p class="mt-1 text-sm font-medium"
+        [class.text-[var(--color-success)]]="deltaNota()! > 0"
+        [class.text-[var(--color-danger)]]="deltaNota()! < 0"
+        [class.text-[var(--color-text-muted)]]="deltaNota()! === 0"
+      >
+        @if (deltaNota()! > 0) {
+          ↑ {{ deltaNota() | number:'1.0-1' }}% vs. anterior
+        } @else if (deltaNota()! < 0) {
+          ↓ {{ -deltaNota()! | number:'1.0-1' }}% vs. anterior
+        } @else {
+          = mesma nota da anterior
+        }
       </p>
     }
+    <p class="mt-2 text-sm text-[var(--color-text-muted)]">{{ notaMensagem() }}</p>
 
     <!-- Barra de progresso -->
-    <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+    <div class="mt-5 h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
       <div
         class="h-full rounded-full transition-all"
         [class.bg-[var(--color-success)]]="nota() >= 70"
@@ -23,6 +30,31 @@
         [style.width.%]="nota()"
       ></div>
     </div>
+  </div>
+
+  <!-- Stats secundários -->
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-center"
+      [class.border-l-4]="true"
+      [class.border-l-[var(--color-success)]]="nota() >= 70"
+      [class.border-l-[var(--color-warning)]]="nota() >= 50 && nota() < 70"
+      [class.border-l-[var(--color-danger)]]="nota() < 50"
+    >
+      <p class="text-2xl font-bold" [class]="notaClass()">{{ acertos() }}<span class="text-base font-normal text-[var(--color-text-muted)]">/{{ total() }}</span></p>
+      <p class="mt-1 text-xs text-[var(--color-text-muted)]">Acertos</p>
+    </div>
+    @if (resultado().tentativa.modo !== 'visualizar' && resultado().tentativa.tempo_acumulado_segundos > 0) {
+      <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-center">
+        <p class="text-2xl font-bold text-[var(--color-text)]">{{ tempoFormatado() }}</p>
+        <p class="mt-1 text-xs text-[var(--color-text-muted)]">Tempo total</p>
+      </div>
+      @if (tempoMedioPorQuestao()) {
+        <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-center">
+          <p class="text-2xl font-bold text-[var(--color-text)]">{{ tempoMedioPorQuestao() }}</p>
+          <p class="mt-1 text-xs text-[var(--color-text-muted)]">Média/questão</p>
+        </div>
+      }
+    }
   </div>
 
   <!-- Distribuição por tema -->
@@ -34,11 +66,19 @@
           <li>
             <div class="mb-1 flex items-center justify-between text-sm">
               <span class="text-[var(--color-text)]">{{ d.tema.nome }}</span>
-              <span class="text-[var(--color-text-muted)]">{{ d.acertos }}/{{ d.total }}</span>
+              <span
+                [class.text-[var(--color-success)]]="d.total > 0 && (d.acertos / d.total) >= 0.7"
+                [class.text-[var(--color-warning)]]="d.total > 0 && (d.acertos / d.total) >= 0.5 && (d.acertos / d.total) < 0.7"
+                [class.text-[var(--color-danger)]]="d.total === 0 || (d.acertos / d.total) < 0.5"
+                class="font-medium"
+              >{{ d.acertos }}/{{ d.total }}</span>
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
               <div
-                class="h-full rounded-full bg-[var(--color-primary)]"
+                class="h-full rounded-full transition-all"
+                [class.bg-[var(--color-success)]]="d.total > 0 && (d.acertos / d.total) >= 0.7"
+                [class.bg-[var(--color-warning)]]="d.total > 0 && (d.acertos / d.total) >= 0.5 && (d.acertos / d.total) < 0.7"
+                [class.bg-[var(--color-danger)]]="d.total === 0 || (d.acertos / d.total) < 0.5"
                 [style.width.%]="d.total > 0 ? (d.acertos / d.total) * 100 : 0"
               ></div>
             </div>

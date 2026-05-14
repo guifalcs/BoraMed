@@ -337,4 +337,25 @@ export class TentativaService {
       return { ok: false, error: msg };
     }
   }
+
+  async buscarNotaAnterior(provaId: string, tentativaAtualId: string): Promise<number | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('tentativa')
+        .select('nota')
+        .eq('prova_id', provaId)
+        .eq('status', 'finalizada')
+        .neq('id', tentativaAtualId)
+        .neq('modo', 'visualizar')
+        .not('nota', 'is', null)
+        .order('finalizada_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return (data as { nota: number }).nota;
+    } catch {
+      return null;
+    }
+  }
 }

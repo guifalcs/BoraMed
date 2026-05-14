@@ -30,6 +30,7 @@ export class TentativaResultadoComponent implements OnInit {
   protected readonly isPersonalizado = signal(false);
   protected readonly backRota = signal('/dashboard/simulados');
   protected readonly backLabel = signal('Todos os simulados');
+  protected readonly notaAnterior = signal<number | null>(null);
 
   async ngOnInit(): Promise<void> {
     const tentativaId = this.route.snapshot.paramMap.get('tentativaId') ?? '';
@@ -64,6 +65,16 @@ export class TentativaResultadoComponent implements OnInit {
       if (provaResult.ok) {
         this.isPersonalizado.set(provaResult.data.tipo === 'processual' && provaResult.data.edicao < 0);
       }
+    }
+
+    // Busca nota da tentativa anterior (não bloqueia loading)
+    const res = this.resultado();
+    if (res) {
+      const anterior = await this.tentativaService.buscarNotaAnterior(
+        res.tentativa.prova_id,
+        res.tentativa.id,
+      );
+      this.notaAnterior.set(anterior);
     }
 
     this.isLoading.set(false);
