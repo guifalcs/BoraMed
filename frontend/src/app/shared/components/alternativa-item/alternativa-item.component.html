@@ -1,8 +1,11 @@
 <button
   type="button"
+  role="radio"
   [class]="classes()"
   (click)="handleClick()"
   [disabled]="estado() === 'desabilitada'"
+  [attr.aria-checked]="estado() === 'selecionada' || estado() === 'correta'"
+  [attr.aria-label]="'Alternativa ' + alternativa().letra + ': ' + alternativa().texto"
 >
   <span [class]="letraClasses()">{{ alternativa().letra }}</span>
   <span class="flex-1">{{ alternativa().texto }}</span>

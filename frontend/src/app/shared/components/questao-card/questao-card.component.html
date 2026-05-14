@@ -43,7 +43,7 @@
   </div>
 
   <!-- Alternativas -->
-  <ul class="flex flex-col gap-2">
+  <ul class="flex flex-col gap-2" role="radiogroup" [attr.aria-label]="'Alternativas da questão ' + numero()">
     @for (alt of questao().alternativas; track alt.id) {
       <li>
         <app-alternativa-item

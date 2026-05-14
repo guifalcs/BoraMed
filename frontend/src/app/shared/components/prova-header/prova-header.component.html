@@ -18,7 +18,7 @@
     <div class="flex flex-col gap-1 flex-1 min-w-0">
       <span class="truncate text-sm font-semibold text-[var(--color-text)]">{{ titulo() }}</span>
       <div class="flex items-center gap-2">
-        <div class="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+        <div class="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-surface-2)]" role="progressbar" [attr.aria-valuenow]="totalRespondidas()" [attr.aria-valuemin]="0" [attr.aria-valuemax]="totalQuestoes()" [attr.aria-label]="'Progresso: ' + totalRespondidas() + ' de ' + totalQuestoes() + ' questões respondidas'">
           <div
             class="h-full rounded-full bg-[var(--color-primary)] transition-all"
             [style.width.%]="progressoPercent()"

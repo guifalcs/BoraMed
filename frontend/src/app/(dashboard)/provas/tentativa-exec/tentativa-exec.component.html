@@ -56,13 +56,19 @@
         </button>
       </div>
 
+      <!-- Anúncio para screen readers -->
+      <div class="sr-only" aria-live="polite" aria-atomic="true">
+        Questão {{ questaoAtualIdx() + 1 }} de {{ questoes().length }}
+      </div>
+
       <!-- Navegação prev/next -->
-      <div class="mt-6 flex items-center justify-between">
+      <nav class="mt-6 flex items-center justify-between" aria-label="Navegação entre questões">
         <button
           type="button"
           class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
           [disabled]="questaoAtualIdx() === 0"
           (click)="questaoAnterior()"
+          [attr.aria-label]="'Ir para questão anterior, questão ' + questaoAtualIdx()"
         >
           ← Anterior
         </button>
@@ -72,6 +78,8 @@
           type="button"
           class="flex items-center gap-1 text-sm text-[var(--color-text-muted)] sm:hidden"
           (click)="mostrarGrade.update(v => !v)"
+          [attr.aria-label]="'Questão ' + (questaoAtualIdx() + 1) + ' de ' + questoes().length + '. Abrir grade de questões'"
+          [attr.aria-expanded]="mostrarGrade()"
         >
           {{ questaoAtualIdx() + 1 }} / {{ questoes().length }}
           <app-ui-icon [icon]="mostrarGrade() ? chevronUpIcon : chevronDownIcon" [size]="14" />
@@ -87,10 +95,11 @@
           class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
           [disabled]="questaoAtualIdx() === questoes().length - 1"
           (click)="proximaQuestao()"
+          [attr.aria-label]="'Ir para próxima questão, questão ' + (questaoAtualIdx() + 2)"
         >
           Próxima →
         </button>
-      </div>
+      </nav>
 
       <!-- Dica de atalhos de teclado -->
       <p class="mt-2 hidden text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:block">
@@ -101,7 +110,7 @@
       <div class="mt-4">
         <!-- Mobile -->
         @if (mostrarGrade()) {
-          <div class="flex flex-wrap gap-2 sm:hidden">
+          <div class="flex flex-wrap gap-2 sm:hidden" role="navigation" aria-label="Grade de questões">
             @for (q of questoes(); track q.id; let i = $index) {
               <button
                 type="button"
@@ -116,6 +125,8 @@
                 [class.bg-[var(--color-surface-2)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
                 [class.text-[var(--color-text-muted)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
                 (click)="irParaQuestao(i); mostrarGrade.set(false)"
+                [attr.aria-label]="'Questão ' + (i + 1) + (marcadas().has(q.id) ? ', marcada para revisão' : '') + (respostas().has(q.id) ? ', respondida' : ', não respondida') + (i === questaoAtualIdx() ? ', atual' : '')"
+                [attr.aria-current]="i === questaoAtualIdx() ? 'step' : null"
               >
                 {{ i + 1 }}
               </button>
@@ -124,7 +135,7 @@
         }
 
         <!-- Desktop -->
-        <div class="hidden flex-wrap gap-2 sm:flex">
+        <div class="hidden flex-wrap gap-2 sm:flex" role="navigation" aria-label="Grade de questões">
           @for (q of questoes(); track q.id; let i = $index) {
             <button
               type="button"
@@ -139,6 +150,8 @@
               [class.bg-[var(--color-surface-2)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
               [class.text-[var(--color-text-muted)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
               (click)="irParaQuestao(i)"
+              [attr.aria-label]="'Questão ' + (i + 1) + (marcadas().has(q.id) ? ', marcada para revisão' : '') + (respostas().has(q.id) ? ', respondida' : ', não respondida') + (i === questaoAtualIdx() ? ', atual' : '')"
+              [attr.aria-current]="i === questaoAtualIdx() ? 'step' : null"
             >
               {{ i + 1 }}
             </button>
