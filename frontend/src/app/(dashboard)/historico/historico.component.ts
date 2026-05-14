@@ -2,11 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
 import {
   TrendingUp,
@@ -14,14 +12,12 @@ import {
   AlertTriangle,
   Award,
 } from 'lucide-angular';
-import { ProfileService } from '../../core/services/profile.service';
-import { TentativaService } from '../../core/services/tentativa.service';
 import { HistoricoService } from '../../core/services/historico.service';
-import type { LucideIconData } from 'lucide-angular';
+import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../../core/models/historico';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
-import type { TentativaHistoricoItem, HistoricoKpis } from '../../core/models/historico';
-import { GreetingHeroComponent } from '../../shared/components/greeting-hero/greeting-hero.component';
+import type { LucideIconData } from 'lucide-angular';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
+import { DesempenhoTemaChartComponent } from '../../shared/components/desempenho-tema-chart/desempenho-tema-chart.component';
 import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 
@@ -34,48 +30,29 @@ interface KpiData {
 }
 
 @Component({
-  selector: 'app-inicio',
+  selector: 'app-historico',
   standalone: true,
-  imports: [
-    RouterLink,
-    GreetingHeroComponent,
-    KpiCardComponent,
-    TentativaRecenteItemComponent,
-    EmptyStateComponent,
-  ],
-  templateUrl: './inicio.component.html',
+  imports: [KpiCardComponent, DesempenhoTemaChartComponent, TentativaRecenteItemComponent, EmptyStateComponent],
+  templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InicioComponent implements OnInit {
-  private readonly profileService = inject(ProfileService);
-  private readonly tentativaService = inject(TentativaService);
+export class HistoricoComponent implements OnInit {
   private readonly historicoService = inject(HistoricoService);
   private readonly router = inject(Router);
 
-  protected readonly profile = this.profileService.profile;
   protected readonly isLoadingKpis = signal(true);
-  protected readonly isLoadingRecentes = signal(true);
-
-  protected readonly provasRoute = computed<string[]>(() => {
-    const t = this.tentativaService.tentativaAtiva();
-    if (t && t.status !== 'finalizada' && t.modo !== 'visualizar') {
-      return ['/dashboard/simulados', t.prova_id, 'tentativa', t.id];
-    }
-    return ['/dashboard/simulados'];
-  });
-
-  protected readonly temTentativaAtiva = computed(() => {
-    const t = this.tentativaService.tentativaAtiva();
-    return !!(t && t.status !== 'finalizada' && t.modo !== 'visualizar');
-  });
+  protected readonly isLoadingTemas = signal(true);
+  protected readonly isLoadingTentativas = signal(true);
 
   protected readonly kpis = signal<KpiData[]>([]);
-  protected readonly tentativasRecentes = signal<TentativaHistoricoItem[]>([]);
+  protected readonly temas = signal<DesempenhoTema[]>([]);
+  protected readonly tentativas = signal<TentativaHistoricoItem[]>([]);
 
   async ngOnInit(): Promise<void> {
-    const [kpisResult, tentativasResult] = await Promise.all([
+    const [kpisResult, temasResult, tentativasResult] = await Promise.all([
       this.historicoService.getKpis(),
-      this.historicoService.listarTentativas(3),
+      this.historicoService.getDesempenhoTemas(),
+      this.historicoService.listarTentativas(),
     ]);
 
     if (kpisResult.ok) {
@@ -83,10 +60,15 @@ export class InicioComponent implements OnInit {
     }
     this.isLoadingKpis.set(false);
 
-    if (tentativasResult.ok) {
-      this.tentativasRecentes.set(tentativasResult.data);
+    if (temasResult.ok) {
+      this.temas.set(temasResult.data);
     }
-    this.isLoadingRecentes.set(false);
+    this.isLoadingTemas.set(false);
+
+    if (tentativasResult.ok) {
+      this.tentativas.set(tentativasResult.data);
+    }
+    this.isLoadingTentativas.set(false);
   }
 
   private buildKpis(k: HistoricoKpis): KpiData[] {
@@ -128,11 +110,23 @@ export class InicioComponent implements OnInit {
       {
         label: 'Última Nota',
         valor: k.ultima_nota !== null ? `${k.ultima_nota}%` : '—',
-        sublabel: null,
+        sublabel: k.ultima_nota_data ? this.dataRelativa(k.ultima_nota_data) : null,
         icone: Award,
         variante: ultimaVariante(),
       },
     ];
+  }
+
+  private dataRelativa(isoDate: string): string {
+    const d = new Date(isoDate);
+    const diffDias = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+    if (diffDias === 0) return 'hoje';
+    if (diffDias === 1) return 'ontem';
+    if (diffDias < 7) return `há ${diffDias} dias`;
+    const semanas = Math.floor(diffDias / 7);
+    if (diffDias < 30) return `há ${semanas} semana${semanas > 1 ? 's' : ''}`;
+    const meses = Math.floor(diffDias / 30);
+    return `há ${meses} mês${meses > 1 ? 'es' : ''}`;
   }
 
   protected onComecarSimulado(): void {

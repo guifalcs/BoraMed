@@ -6,7 +6,12 @@
     <p class="truncate text-sm font-medium text-[var(--color-text)] transition-colors group-hover:text-[var(--color-primary)]">
       {{ nomeProva() }}
     </p>
-    <p class="mt-0.5 text-xs text-[var(--color-text-muted)]">{{ dataRelativa() }}</p>
+    <p class="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+      <span>{{ dataRelativa() }}</span>
+      @if (modoLabel()) {
+        <span class="rounded-full px-1.5 py-px text-xs font-medium" [class]="modoBadgeClass()">{{ modoLabel() }}</span>
+      }
+    </p>
   </div>
 
   <div class="flex shrink-0 items-center gap-2">

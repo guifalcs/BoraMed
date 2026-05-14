@@ -56,6 +56,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./(dashboard)/provas/provas.routes').then((m) => m.provasRoutes),
       },
+      {
+        path: 'historico',
+        loadComponent: () =>
+          import('./(dashboard)/historico/historico.component').then((m) => m.HistoricoComponent),
+      },
       { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
     ],
   },

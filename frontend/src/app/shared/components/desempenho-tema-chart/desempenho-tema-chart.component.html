@@ -1,0 +1,32 @@
+@if (temas().length === 0) {
+  <p class="py-6 text-center text-sm text-[var(--color-text-muted)]">
+    Finalize pelo menos 3 questões de cada tema para ver seu desempenho aqui.
+  </p>
+} @else {
+  <div class="flex flex-col gap-4">
+    @for (tema of temas(); track tema.tema_nome) {
+      <div>
+        <div class="mb-1.5 flex items-center justify-between gap-3">
+          <span class="truncate text-sm font-medium text-[var(--color-text)]">
+            {{ tema.tema_nome }}
+          </span>
+          <span class="shrink-0 text-sm" [class]="taxaClass(tema.taxa)">
+            {{ tema.taxa }}%
+          </span>
+        </div>
+
+        <div class="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+          <div
+            class="h-2 rounded-full transition-all duration-500"
+            [class]="barClass(tema.taxa)"
+            [style.width.%]="tema.taxa"
+          ></div>
+        </div>
+
+        <p class="mt-1 text-xs text-[var(--color-text-muted)]">
+          {{ tema.acertos }}/{{ tema.total }} corretas
+        </p>
+      </div>
+    }
+  </div>
+}

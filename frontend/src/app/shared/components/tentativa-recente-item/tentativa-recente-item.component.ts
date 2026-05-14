@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import type { ModoProva } from '../../../core/models/tentativa';
 
 @Component({
   selector: 'app-tentativa-recente-item',
@@ -14,6 +15,7 @@ export class TentativaRecenteItemComponent {
   nota = input<number | null>(null);
   tentativaId = input.required<string>();
   provaId = input.required<string>();
+  modo = input<ModoProva | null>(null);
 
   protected readonly dataRelativa = computed(() => {
     const d = new Date(this.dataIso());
@@ -38,5 +40,21 @@ export class TentativaRecenteItemComponent {
   protected readonly notaLabel = computed(() => {
     const n = this.nota();
     return n === null ? 'Em andamento' : `${n}%`;
+  });
+
+  protected readonly modoBadgeClass = computed(() => {
+    switch (this.modo()) {
+      case 'estudo':   return 'bg-purple-50 text-purple-700';
+      case 'simulado': return 'bg-blue-50 text-blue-700';
+      default:         return '';
+    }
+  });
+
+  protected readonly modoLabel = computed(() => {
+    switch (this.modo()) {
+      case 'estudo':   return 'Estudo';
+      case 'simulado': return 'Simulado';
+      default:         return null;
+    }
   });
 }
