@@ -49,10 +49,10 @@ export class HistoricoService {
         total_questoes: number;
         acertos: number;
         finalizada_em: string | null;
-        prova: { nome: string } | null;
+        prova: { nome: string }[] | null;
       };
 
-      const items: TentativaHistoricoItem[] = ((data ?? []) as RawRow[]).map((r) => ({
+      const items: TentativaHistoricoItem[] = ((data ?? []) as unknown as RawRow[]).map((r) => ({
         id: r.id,
         prova_id: r.prova_id,
         modo: r.modo,
@@ -60,7 +60,7 @@ export class HistoricoService {
         total_questoes: r.total_questoes,
         acertos: r.acertos,
         finalizada_em: r.finalizada_em,
-        prova_nome: r.prova?.nome ?? 'Prova',
+        prova_nome: r.prova?.[0]?.nome ?? 'Prova',
       }));
 
       return { ok: true, data: items };

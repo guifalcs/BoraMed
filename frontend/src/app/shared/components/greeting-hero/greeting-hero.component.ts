@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { UiButtonComponent } from '../ui/button/ui-button.component';
 
 @Component({
   selector: 'app-greeting-hero',
   standalone: true,
-  imports: [RouterLink, UiButtonComponent],
+  imports: [RouterLink],
   templateUrl: './greeting-hero.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
