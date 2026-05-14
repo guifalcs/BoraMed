@@ -58,10 +58,13 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  cookiesToSet.forEach(({ name, value, options }) => {
+  const cookieHeaders = cookiesToSet.map(({ name, value, options }) => {
     const { name: _n, ...serializeOpts } = options ?? {};
-    res.setHeader('Set-Cookie', serialize(name, value, serializeOpts as CookieSerializeOptions));
+    return serialize(name, value, serializeOpts as CookieSerializeOptions);
   });
+  if (cookieHeaders.length > 0) {
+    res.setHeader('Set-Cookie', cookieHeaders);
+  }
 
   if (error) {
     console.error('[auth/callback] error:', error.message);
