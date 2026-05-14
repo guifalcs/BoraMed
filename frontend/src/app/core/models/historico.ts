@@ -25,4 +25,5 @@ export interface TentativaHistoricoItem {
   acertos: number;
   finalizada_em: string | null;
   prova_nome: string;
+  tipo_prova: string;
 }

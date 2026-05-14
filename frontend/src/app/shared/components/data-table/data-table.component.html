@@ -1,0 +1,97 @@
+<!-- Filter -->
+@if (filterable()) {
+  <div class="mb-4">
+    <input
+      type="text"
+      [placeholder]="filterPlaceholder()"
+      [ngModel]="filterText()"
+      (ngModelChange)="onFilterChange($event)"
+      class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary-light)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-light)] md:max-w-xs"
+    />
+  </div>
+}
+
+<!-- Table -->
+<div class="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr class="border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+        @for (col of resolvedColumns(); track col.key) {
+          <th
+            class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]"
+            [class.cursor-pointer]="col.sortable"
+            [class.select-none]="col.sortable"
+            (click)="onSort(col)"
+          >
+            <span class="inline-flex items-center gap-1">
+              {{ col.header }}
+              @if (col.sortable) {
+                <span class="text-[10px] opacity-60">{{ getSortIcon(col) }}</span>
+              }
+            </span>
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[var(--color-border)]">
+      @for (row of paginatedData(); track $index; let i = $index) {
+        <tr
+          class="transition-colors hover:bg-[var(--color-surface-2)]"
+          [class.cursor-pointer]="clickable()"
+          (click)="onRowClick(row)"
+        >
+          @for (col of resolvedColumns(); track col.key) {
+            <td class="px-4 py-3 text-[var(--color-text)]">
+              @if (getColumnTemplate(col.key); as tmpl) {
+                <ng-container
+                  [ngTemplateOutlet]="tmpl.templateRef"
+                  [ngTemplateOutletContext]="{ $implicit: getCellValue(row, col.key), row: row, index: i }"
+                />
+              } @else {
+                {{ getCellValue(row, col.key) }}
+              }
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="resolvedColumns().length" class="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
+            Nenhum resultado encontrado.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+@if (paginated() && totalPages() > 1) {
+  <div class="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+    <span class="text-xs text-[var(--color-text-muted)]">{{ rangeLabel() }}</span>
+    <div class="flex items-center gap-1">
+      <button
+        type="button"
+        class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
+        [class]="currentPage() === 1 ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-surface-2)]'"
+        [disabled]="currentPage() === 1"
+        (click)="goToPage(currentPage() - 1)"
+      >
+        ← Anterior
+      </button>
+
+      <span class="px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]">
+        {{ currentPage() }} / {{ totalPages() }}
+      </span>
+
+      <button
+        type="button"
+        class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
+        [class]="currentPage() === totalPages() ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-surface-2)]'"
+        [disabled]="currentPage() === totalPages()"
+        (click)="goToPage(currentPage() + 1)"
+      >
+        Próximo →
+      </button>
+    </div>
+  </div>
+}

@@ -17,8 +17,9 @@ import type { LucideIconData } from 'lucide-angular';
 import type { HistoricoResolvedData } from '../../core/resolvers/historico.resolver';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { DesempenhoTemaChartComponent } from '../../shared/components/desempenho-tema-chart/desempenho-tema-chart.component';
-import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { DataTableComponent, type DataTableColumn } from '../../shared/components/data-table/data-table.component';
+import { DataTableColumnDirective } from '../../shared/components/data-table/data-table-column.directive';
 
 interface KpiData {
   label: string;
@@ -31,7 +32,7 @@ interface KpiData {
 @Component({
   selector: 'app-historico',
   standalone: true,
-  imports: [KpiCardComponent, DesempenhoTemaChartComponent, TentativaRecenteItemComponent, EmptyStateComponent],
+  imports: [KpiCardComponent, DesempenhoTemaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective],
   templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -45,6 +46,13 @@ export class HistoricoComponent {
   protected readonly kpis = signal<KpiData[]>([]);
   protected readonly temas = signal<DesempenhoTema[]>([]);
   protected readonly tentativas = signal<TentativaHistoricoItem[]>([]);
+
+  protected readonly tentativasColumns: DataTableColumn[] = [
+    { key: 'prova_nome', header: 'Prova', sortable: true },
+    { key: 'finalizada_em', header: 'Data', sortable: true },
+    { key: 'modo', header: 'Modo', sortable: true },
+    { key: 'nota', header: 'Nota', sortable: true },
+  ];
 
   constructor() {
     const resolved = inject(ActivatedRoute).snapshot.data['historicoData'] as HistoricoResolvedData | undefined;
@@ -125,5 +133,36 @@ export class HistoricoComponent {
 
   protected onComecarSimulado(): void {
     void this.router.navigateByUrl('/dashboard/simulados');
+  }
+
+  protected onTentativaClick(tentativa: TentativaHistoricoItem): void {
+    void this.router.navigate(
+      ['/dashboard/simulados', tentativa.prova_id, 'tentativa', tentativa.id, 'resultado'],
+      { state: { fromHistorico: true } }
+    );
+  }
+
+  protected formatDataRelativa(isoDate: string | null): string {
+    if (!isoDate) return '—';
+    return this.dataRelativa(isoDate);
+  }
+
+  protected getModoLabel(modo: string): string {
+    switch (modo) {
+      case 'estudo': return 'Estudo';
+      case 'simulado': return 'Simulado';
+      default: return modo;
+    }
+  }
+
+  protected getNotaBadgeClass(nota: number | null): string {
+    if (nota === null) return 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]';
+    if (nota >= 70) return 'bg-emerald-50 text-emerald-700';
+    if (nota >= 50) return 'bg-amber-50 text-amber-700';
+    return 'bg-red-50 text-red-700';
+  }
+
+  protected getNotaLabel(nota: number | null): string {
+    return nota === null ? 'Em andamento' : `${nota}%`;
   }
 }

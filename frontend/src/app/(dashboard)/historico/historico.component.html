@@ -43,8 +43,8 @@
   <!-- Tentativas Anteriores -->
   <div class="mt-8">
     <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Tentativas Anteriores</h2>
-    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-      @if (isLoadingTentativas()) {
+    @if (isLoadingTentativas()) {
+      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
         <div class="flex flex-col divide-y divide-[var(--color-border)]">
           @for (_ of [1, 2, 3]; track $index) {
             <div class="flex items-center justify-between gap-3 py-3">
@@ -56,27 +56,50 @@
             </div>
           }
         </div>
-      } @else if (tentativas().length === 0) {
+      </div>
+    } @else if (tentativas().length === 0) {
+      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
         <app-empty-state
           titulo="Nenhum simulado concluído"
           descricao="Finalize um simulado para ver seu histórico aqui."
           labelBotao="Começar agora"
           (acao)="onComecarSimulado()"
         />
-      } @else {
-        @for (t of tentativas(); track t.id) {
-          <app-tentativa-recente-item
-            [nomeProva]="t.prova_nome"
-            [dataIso]="t.finalizada_em ?? ''"
-            [nota]="t.nota"
-            [tentativaId]="t.id"
-            [provaId]="t.prova_id"
-            [modo]="t.modo"
-            [linkState]="{ fromHistorico: true }"
-          />
-        }
-      }
-    </div>
+      </div>
+    } @else {
+      <app-data-table
+        [data]="tentativas()"
+        [columns]="tentativasColumns"
+        [filterable]="true"
+        [filterPlaceholder]="'Buscar prova...'"
+        [filterKeys]="['prova_nome', 'modo']"
+        [paginated]="true"
+        [pageSize]="10"
+        [clickable]="true"
+        (rowClick)="onTentativaClick($event)"
+      >
+        <ng-template appDataTableColumn="prova_nome" header="Prova" [sortable]="true" let-value let-row="row">
+          <span class="block max-w-[200px] truncate font-medium text-[var(--color-text)] md:max-w-[300px]" [title]="value">{{ value }}</span>
+        </ng-template>
+
+        <ng-template appDataTableColumn="finalizada_em" header="Data" [sortable]="true" let-value>
+          <span class="text-[var(--color-text-muted)]">{{ formatDataRelativa(value) }}</span>
+        </ng-template>
+
+        <ng-template appDataTableColumn="modo" header="Modo" [sortable]="true" let-value>
+          <span class="rounded-full px-2 py-0.5 text-xs font-medium"
+            [class]="value === 'estudo' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'">
+            {{ getModoLabel(value) }}
+          </span>
+        </ng-template>
+
+        <ng-template appDataTableColumn="nota" header="Nota" [sortable]="true" let-value let-row="row">
+          <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" [class]="getNotaBadgeClass(row.nota)">
+            {{ getNotaLabel(row.nota) }}
+          </span>
+        </ng-template>
+      </app-data-table>
+    }
   </div>
 
 </div>
