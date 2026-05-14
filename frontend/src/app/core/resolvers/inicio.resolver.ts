@@ -7,6 +7,7 @@ import type { HistoricoKpis, TentativaHistoricoItem } from '../models/historico'
 export interface InicioResolvedData {
   kpisResult: { ok: true; data: HistoricoKpis } | { ok: false; error: string };
   tentativasResult: { ok: true; data: TentativaHistoricoItem[] } | { ok: false; error: string };
+  streakResult: { ok: true; data: number } | { ok: false; error: string };
 }
 
 const INICIO_STATE_KEY = makeStateKey<InicioResolvedData>('inicio-data');
@@ -22,12 +23,13 @@ export const inicioResolver: ResolveFn<InicioResolvedData> = async () => {
     return data;
   }
 
-  const [kpisResult, tentativasResult] = await Promise.all([
+  const [kpisResult, tentativasResult, streakResult] = await Promise.all([
     historicoService.getKpis(),
-    historicoService.listarTentativas(3),
+    historicoService.listarTentativas(10),
+    historicoService.getStreak(),
   ]);
 
-  const resolved: InicioResolvedData = { kpisResult, tentativasResult };
+  const resolved: InicioResolvedData = { kpisResult, tentativasResult, streakResult };
 
   if (!isBrowser) {
     transferState.set(INICIO_STATE_KEY, resolved);

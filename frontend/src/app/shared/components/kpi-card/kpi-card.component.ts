@@ -17,6 +17,26 @@ export class KpiCardComponent {
   sublabel = input<string | null>(null);
   icone = input.required<LucideIconData>();
   variante = input<KpiVariante>('default');
+  sparkline = input<number[]>([]);
+
+  protected readonly sparklinePath = computed(() => {
+    const pts = this.sparkline();
+    if (pts.length < 2) return null;
+    const max = Math.max(...pts);
+    const min = Math.min(...pts);
+    const range = max - min || 1;
+    const w = 80;
+    const h = 24;
+    const step = w / (pts.length - 1);
+    const coords = pts.map((v, i) => `${i * step},${h - ((v - min) / range) * h}`);
+    return { polyline: coords.join(' '), w, h };
+  });
+
+  protected readonly sparklineColor = computed(() => {
+    const pts = this.sparkline();
+    if (pts.length < 2) return '#6366f1';
+    return pts[pts.length - 1] >= pts[0] ? '#10b981' : '#ef4444';
+  });
 
   protected readonly acentoClass = computed(() => {
     switch (this.variante()) {

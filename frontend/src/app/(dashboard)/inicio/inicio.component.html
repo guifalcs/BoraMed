@@ -22,10 +22,26 @@
           [sublabel]="kpi.sublabel"
           [icone]="kpi.icone"
           [variante]="kpi.variante"
+          [sparkline]="kpi.sparkline ?? []"
         />
       }
     }
   </div>
+
+  <!-- Streak de estudo -->
+  @if (streak() > 0) {
+    <div class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+        <app-ui-icon [icon]="streakIcon" [size]="18" />
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-[var(--color-text)]">
+          {{ streak() }} dia{{ streak() > 1 ? 's' : '' }} seguido{{ streak() > 1 ? 's' : '' }}
+        </p>
+        <p class="text-xs text-[var(--color-text-muted)]">Continue assim! Constância é o segredo.</p>
+      </div>
+    </div>
+  }
 
   <!-- Seção 3: Trajetória recente -->
   <div class="mt-8">

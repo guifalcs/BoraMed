@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Award,
+  Flame,
 } from 'lucide-angular';
 import { TentativaService } from '../../core/services/tentativa.service';
 import type { LucideIconData } from 'lucide-angular';
@@ -22,6 +23,7 @@ import { GreetingHeroComponent } from '../../shared/components/greeting-hero/gre
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { ProfileService } from '../../core/services/profile.service';
 
 interface KpiData {
@@ -30,6 +32,7 @@ interface KpiData {
   sublabel: string | null;
   icone: LucideIconData;
   variante: KpiVariante;
+  sparkline?: number[];
 }
 
 @Component({
@@ -41,6 +44,7 @@ interface KpiData {
     KpiCardComponent,
     TentativaRecenteItemComponent,
     EmptyStateComponent,
+    UiIconComponent,
   ],
   templateUrl: './inicio.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +58,10 @@ export class InicioComponent {
   protected readonly isLoadingRecentes = signal(true);
   protected readonly kpis = signal<KpiData[]>([]);
   protected readonly tentativasRecentes = signal<TentativaHistoricoItem[]>([]);
+  protected readonly streak = signal<number>(0);
+  private allTentativas: TentativaHistoricoItem[] = [];
+
+  protected readonly streakIcon = Flame;
 
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
@@ -71,15 +79,20 @@ export class InicioComponent {
   constructor() {
     const resolved = inject(ActivatedRoute).snapshot.data['inicioData'] as InicioResolvedData | undefined;
 
+    if (resolved?.tentativasResult.ok) {
+      this.allTentativas = resolved.tentativasResult.data;
+      this.tentativasRecentes.set(this.allTentativas.slice(0, 3));
+    }
+    this.isLoadingRecentes.set(false);
+
     if (resolved?.kpisResult.ok) {
       this.kpis.set(this.buildKpis(resolved.kpisResult.data));
     }
     this.isLoadingKpis.set(false);
 
-    if (resolved?.tentativasResult.ok) {
-      this.tentativasRecentes.set(resolved.tentativasResult.data);
+    if (resolved?.streakResult?.ok) {
+      this.streak.set(resolved.streakResult.data);
     }
-    this.isLoadingRecentes.set(false);
   }
 
   private buildKpis(k: HistoricoKpis): KpiData[] {
@@ -95,6 +108,12 @@ export class InicioComponent {
       if (k.ultima_nota >= 50) return 'warning';
       return 'danger';
     };
+
+    // Sparkline: notas das últimas tentativas em ordem cronológica (mais antiga → mais recente)
+    const notasSparkline = this.allTentativas
+      .filter((t) => t.nota !== null)
+      .map((t) => t.nota as number)
+      .reverse();
 
     return [
       {
@@ -124,6 +143,7 @@ export class InicioComponent {
         sublabel: null,
         icone: Award,
         variante: ultimaVariante(),
+        sparkline: notasSparkline,
       },
     ];
   }

@@ -74,4 +74,14 @@ export class HistoricoService {
       return { ok: false, error: 'Não foi possível carregar o histórico.' };
     }
   }
+
+  async getStreak(): Promise<HistoricoResult<number>> {
+    try {
+      const { data, error } = await this.supabase.rpc('get_streak_estudo');
+      if (error) throw error;
+      return { ok: true, data: (data as number) ?? 0 };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar o streak.' };
+    }
+  }
 }

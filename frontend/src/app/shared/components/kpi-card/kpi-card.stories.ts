@@ -60,3 +60,25 @@ export const SemSublabel: Story = {
     variante: 'success',
   },
 };
+
+export const ComSparkline: Story = {
+  args: {
+    label: 'Última Nota',
+    valor: '78%',
+    sublabel: 'tendência de alta',
+    icone: Award,
+    variante: 'success',
+    sparkline: [45, 52, 48, 61, 58, 72, 78],
+  },
+};
+
+export const SparklineQueda: Story = {
+  args: {
+    label: 'Última Nota',
+    valor: '42%',
+    sublabel: 'tendência de queda',
+    icone: TrendingUp,
+    variante: 'danger',
+    sparkline: [70, 65, 58, 50, 42],
+  },
+};
