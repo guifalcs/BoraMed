@@ -28,10 +28,18 @@ export class TentativaResultadoComponent implements OnInit {
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
   protected readonly isPersonalizado = signal(false);
+  protected readonly backRota = signal('/dashboard/simulados');
+  protected readonly backLabel = signal('Todos os simulados');
 
   async ngOnInit(): Promise<void> {
     const tentativaId = this.route.snapshot.paramMap.get('tentativaId') ?? '';
     const provaId = this.route.snapshot.paramMap.get('provaId') ?? '';
+
+    const navState = history.state as { fromHistorico?: boolean } | null;
+    if (navState?.fromHistorico) {
+      this.backRota.set('/dashboard/historico');
+      this.backLabel.set('Histórico');
+    }
 
     // Usa o resultado já armazenado pelo exec (fluxo normal — evita dupla chamada à RPC)
     const cached = this.tentativaService.lastResultado();

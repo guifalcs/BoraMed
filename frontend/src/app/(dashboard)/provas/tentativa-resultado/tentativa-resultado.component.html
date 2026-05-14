@@ -16,5 +16,10 @@
 }
 
 @if (!isLoading() && resultado()) {
-  <app-resultado-summary [resultado]="resultado()!" [isPersonalizado]="isPersonalizado()" />
+  <app-resultado-summary
+    [resultado]="resultado()!"
+    [isPersonalizado]="isPersonalizado()"
+    [backRota]="backRota()"
+    [backLabel]="backLabel()"
+  />
 }

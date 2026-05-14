@@ -96,14 +96,14 @@ export class HistoricoComponent implements OnInit {
       {
         label: 'Simulados Concluídos',
         valor: String(k.total_finalizadas),
-        sublabel: k.total_finalizadas > 0 ? null : 'nenhum ainda',
+        sublabel: k.total_finalizadas > 0 ? 'total finalizado' : 'nenhum ainda',
         icone: CheckCircle2,
         variante: k.total_finalizadas > 0 ? 'success' : 'default',
       },
       {
         label: 'Tema Mais Fraco',
-        valor: k.tema_mais_fraco ?? '—',
-        sublabel: k.taxa_tema_fraco !== null ? `${k.taxa_tema_fraco}% de acerto` : 'dados insuficientes',
+        valor: k.taxa_tema_fraco !== null ? `${k.taxa_tema_fraco}%` : '—',
+        sublabel: k.tema_mais_fraco ?? 'dados insuficientes',
         icone: AlertTriangle,
         variante: k.tema_mais_fraco ? 'danger' : 'default',
       },

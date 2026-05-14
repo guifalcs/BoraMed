@@ -14,6 +14,8 @@ import { UiButtonComponent } from '../ui/button/ui-button.component';
 export class ResultadoSummaryComponent {
   resultado = input.required<ResultadoTentativa>();
   isPersonalizado = input(false);
+  backRota = input<string>('/dashboard/simulados');
+  backLabel = input<string>('Todos os simulados');
 
   protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
 

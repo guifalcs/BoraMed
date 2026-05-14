@@ -77,10 +77,10 @@
 
     <div class="text-center">
       <a
-        routerLink="/dashboard/simulados"
-        class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+        [routerLink]="backRota()"
+        class="text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-primary)]"
       >
-        ← Todos os simulados
+        ← {{ backLabel() }}
       </a>
     </div>
   </div>

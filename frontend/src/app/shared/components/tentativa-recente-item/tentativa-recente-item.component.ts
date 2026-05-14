@@ -16,6 +16,7 @@ export class TentativaRecenteItemComponent {
   tentativaId = input.required<string>();
   provaId = input.required<string>();
   modo = input<ModoProva | null>(null);
+  linkState = input<Record<string, unknown> | undefined>(undefined);
 
   protected readonly dataRelativa = computed(() => {
     const d = new Date(this.dataIso());
