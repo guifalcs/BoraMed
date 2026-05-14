@@ -1,13 +1,14 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideMarkdown } from 'ngx-markdown';
 import { AuthService } from './core/services/auth.service';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    provideClientHydration(withEventReplay()),
     provideAppInitializer(() => inject(AuthService).initialize()),
     provideMarkdown(),
   ],
