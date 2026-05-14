@@ -1,10 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/angular';
+import { applicationConfig } from '@storybook/angular';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { EvolucaoNotaChartComponent } from './evolucao-nota-chart.component';
 
 const meta: Meta<EvolucaoNotaChartComponent> = {
   title: 'Shared/EvolucaoNotaChart',
   component: EvolucaoNotaChartComponent,
   tags: ['autodocs'],
+  decorators: [
+    applicationConfig({ providers: [provideCharts(withDefaultRegisterables())] }),
+  ],
 };
 
 export default meta;
