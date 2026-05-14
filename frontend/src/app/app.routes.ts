@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { inicioResolver } from './core/resolvers/inicio.resolver';
+import { historicoResolver } from './core/resolvers/historico.resolver';
 
 export const routes: Routes = [
   {
@@ -40,6 +42,7 @@ export const routes: Routes = [
         path: '',
         loadComponent: () =>
           import('./(dashboard)/inicio/inicio.component').then((m) => m.InicioComponent),
+        resolve: { inicioData: inicioResolver },
       },
       {
         path: 'perfil',
@@ -60,9 +63,15 @@ export const routes: Routes = [
         path: 'historico',
         loadComponent: () =>
           import('./(dashboard)/historico/historico.component').then((m) => m.HistoricoComponent),
+        resolve: { historicoData: historicoResolver },
       },
       { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
     ],
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./(auth)/auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
 { path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
@@ -44,11 +45,13 @@ export class DashboardComponent {
   });
 
   constructor() {
-    effect(() => {
-      if (this.auth.user()) {
-        void this.profileService.loadProfile();
-      }
-    });
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      effect(() => {
+        if (this.auth.user()) {
+          void this.profileService.loadProfile();
+        }
+      });
+    }
   }
 
   protected toggleMenu(): void {

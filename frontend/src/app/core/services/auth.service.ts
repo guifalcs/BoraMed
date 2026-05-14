@@ -1,4 +1,5 @@
-import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Injectable, OnDestroy, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import type { LoginInput, RecoverPasswordInput, ResetPasswordInput, SignupInput } from '../models/auth.schemas';
@@ -17,9 +18,11 @@ export class AuthService implements OnDestroy {
   readonly isReady = this._isReady.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
 
-  private readonly authSubscription: { unsubscribe: () => void };
+  private readonly platformId = inject(PLATFORM_ID);
+  private authSubscription?: { unsubscribe: () => void };
 
   constructor() {
+    if (!isPlatformBrowser(this.platformId)) return;
     const { data } = this.supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
         this._user.set(session?.user ?? null);
@@ -66,7 +69,7 @@ export class AuthService implements OnDestroy {
 
   async recoverPassword(input: RecoverPasswordInput): Promise<AuthResult> {
     const { error } = await this.supabase.auth.resetPasswordForEmail(input.email, {
-      redirectTo: `${window.location.origin}/redefinir-senha`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/redefinir-senha`,
     });
     return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
   }
@@ -79,7 +82,7 @@ export class AuthService implements OnDestroy {
   async signInWithGoogle(): Promise<AuthResult> {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
     });
     return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
   }
@@ -89,7 +92,7 @@ export class AuthService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.authSubscription.unsubscribe();
+    this.authSubscription?.unsubscribe();
   }
 
   private mapError(message: string): AuthErrorCode {

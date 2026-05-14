@@ -1,4 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { SupabaseService } from './supabase.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { QuestaoComAlternativas } from '../models/questao';
@@ -7,20 +8,25 @@ import type { ProvaResult } from './prova.service';
 @Injectable({ providedIn: 'root' })
 export class TentativaService {
   private readonly supabase = inject(SupabaseService).client;
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _tentativaAtiva = signal<Tentativa | null>(null);
   private readonly _questoes = signal<QuestaoComAlternativas[]>([]);
   private readonly _respostas = signal<TentativaResposta[]>([]);
   private readonly _provaNome = signal<string>('');
-  private readonly _lastResultado = signal<ResultadoTentativa | null>(
-    TentativaService.readLastResultadoFromStorage(),
-  );
+  private readonly _lastResultado = signal<ResultadoTentativa | null>(null);
 
   readonly tentativaAtiva = this._tentativaAtiva.asReadonly();
   readonly questoes = this._questoes.asReadonly();
   readonly respostas = this._respostas.asReadonly();
   readonly provaNome = this._provaNome.asReadonly();
   readonly lastResultado = this._lastResultado.asReadonly();
+
+  constructor() {
+    if (this.isBrowser) {
+      this._lastResultado.set(TentativaService.readLastResultadoFromStorage());
+    }
+  }
 
   private static readLastResultadoFromStorage(): ResultadoTentativa | null {
     try {
@@ -37,9 +43,11 @@ export class TentativaService {
 
   setLastResultado(resultado: ResultadoTentativa): void {
     this._lastResultado.set(resultado);
-    try {
-      sessionStorage.setItem('lastResultado', JSON.stringify(resultado));
-    } catch {}
+    if (this.isBrowser) {
+      try {
+        sessionStorage.setItem('lastResultado', JSON.stringify(resultado));
+      } catch {}
+    }
   }
 
   async buscarTentativaAtiva(provaId: string): Promise<ProvaResult<Tentativa | null>> {

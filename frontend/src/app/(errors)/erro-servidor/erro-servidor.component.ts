@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ServerCrash } from 'lucide-angular';
 import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/error-state/error-state.component';
@@ -23,6 +24,7 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
 })
 export class ErroServidorComponent {
   private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly icone = ServerCrash;
 
@@ -33,7 +35,7 @@ export class ErroServidorComponent {
 
   onAcaoClick(tipo: string): void {
     if (tipo === 'retry') {
-      window.location.reload();
+      if (this.isBrowser) window.location.reload();
     } else if (tipo === 'inicio') {
       this.router.navigateByUrl('/dashboard');
     }

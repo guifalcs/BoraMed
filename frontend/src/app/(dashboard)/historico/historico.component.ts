@@ -1,21 +1,20 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
   Award,
 } from 'lucide-angular';
-import { HistoricoService } from '../../core/services/historico.service';
 import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../../core/models/historico';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
 import type { LucideIconData } from 'lucide-angular';
+import type { HistoricoResolvedData } from '../../core/resolvers/historico.resolver';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { DesempenhoTemaChartComponent } from '../../shared/components/desempenho-tema-chart/desempenho-tema-chart.component';
 import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
@@ -36,8 +35,7 @@ interface KpiData {
   templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoricoComponent implements OnInit {
-  private readonly historicoService = inject(HistoricoService);
+export class HistoricoComponent {
   private readonly router = inject(Router);
 
   protected readonly isLoadingKpis = signal(true);
@@ -48,25 +46,21 @@ export class HistoricoComponent implements OnInit {
   protected readonly temas = signal<DesempenhoTema[]>([]);
   protected readonly tentativas = signal<TentativaHistoricoItem[]>([]);
 
-  async ngOnInit(): Promise<void> {
-    const [kpisResult, temasResult, tentativasResult] = await Promise.all([
-      this.historicoService.getKpis(),
-      this.historicoService.getDesempenhoTemas(),
-      this.historicoService.listarTentativas(),
-    ]);
+  constructor() {
+    const resolved = inject(ActivatedRoute).snapshot.data['historicoData'] as HistoricoResolvedData | undefined;
 
-    if (kpisResult.ok) {
-      this.kpis.set(this.buildKpis(kpisResult.data));
+    if (resolved?.kpisResult.ok) {
+      this.kpis.set(this.buildKpis(resolved.kpisResult.data));
     }
     this.isLoadingKpis.set(false);
 
-    if (temasResult.ok) {
-      this.temas.set(temasResult.data);
+    if (resolved?.temasResult.ok) {
+      this.temas.set(resolved.temasResult.data);
     }
     this.isLoadingTemas.set(false);
 
-    if (tentativasResult.ok) {
-      this.tentativas.set(tentativasResult.data);
+    if (resolved?.tentativasResult.ok) {
+      this.tentativas.set(resolved.tentativasResult.data);
     }
     this.isLoadingTentativas.set(false);
   }
