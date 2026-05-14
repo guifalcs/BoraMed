@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { provasAfyaResolver } from '../../core/resolvers/provas-afya.resolver';
 
 export const provasRoutes: Routes = [
   {
@@ -15,6 +16,7 @@ export const provasRoutes: Routes = [
     path: 'rede-afya',
     loadComponent: () =>
       import('./provas-afya/provas-afya.component').then((m) => m.ProvasAfyaComponent),
+    resolve: { provasAfyaData: provasAfyaResolver },
   },
   {
     path: 'montar',

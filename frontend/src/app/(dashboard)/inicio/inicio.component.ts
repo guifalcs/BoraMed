@@ -1,29 +1,28 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
   Award,
 } from 'lucide-angular';
-import { ProfileService } from '../../core/services/profile.service';
 import { TentativaService } from '../../core/services/tentativa.service';
-import { HistoricoService } from '../../core/services/historico.service';
 import type { LucideIconData } from 'lucide-angular';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
 import type { TentativaHistoricoItem, HistoricoKpis } from '../../core/models/historico';
+import type { InicioResolvedData } from '../../core/resolvers/inicio.resolver';
 import { GreetingHeroComponent } from '../../shared/components/greeting-hero/greeting-hero.component';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { ProfileService } from '../../core/services/profile.service';
 
 interface KpiData {
   label: string;
@@ -46,15 +45,15 @@ interface KpiData {
   templateUrl: './inicio.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InicioComponent implements OnInit {
-  private readonly profileService = inject(ProfileService);
+export class InicioComponent {
   private readonly tentativaService = inject(TentativaService);
-  private readonly historicoService = inject(HistoricoService);
   private readonly router = inject(Router);
 
-  protected readonly profile = this.profileService.profile;
+  protected readonly profile = inject(ProfileService).profile;
   protected readonly isLoadingKpis = signal(true);
   protected readonly isLoadingRecentes = signal(true);
+  protected readonly kpis = signal<KpiData[]>([]);
+  protected readonly tentativasRecentes = signal<TentativaHistoricoItem[]>([]);
 
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
@@ -69,22 +68,16 @@ export class InicioComponent implements OnInit {
     return !!(t && t.status !== 'finalizada' && t.modo !== 'visualizar');
   });
 
-  protected readonly kpis = signal<KpiData[]>([]);
-  protected readonly tentativasRecentes = signal<TentativaHistoricoItem[]>([]);
+  constructor() {
+    const resolved = inject(ActivatedRoute).snapshot.data['inicioData'] as InicioResolvedData | undefined;
 
-  async ngOnInit(): Promise<void> {
-    const [kpisResult, tentativasResult] = await Promise.all([
-      this.historicoService.getKpis(),
-      this.historicoService.listarTentativas(3),
-    ]);
-
-    if (kpisResult.ok) {
-      this.kpis.set(this.buildKpis(kpisResult.data));
+    if (resolved?.kpisResult.ok) {
+      this.kpis.set(this.buildKpis(resolved.kpisResult.data));
     }
     this.isLoadingKpis.set(false);
 
-    if (tentativasResult.ok) {
-      this.tentativasRecentes.set(tentativasResult.data);
+    if (resolved?.tentativasResult.ok) {
+      this.tentativasRecentes.set(resolved.tentativasResult.data);
     }
     this.isLoadingRecentes.set(false);
   }

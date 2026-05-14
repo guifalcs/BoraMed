@@ -1,15 +1,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
   computed,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChevronLeft, Stethoscope, FlaskConical, Zap } from 'lucide-angular';
 import { ProvaService } from '../../../core/services/prova.service';
 import type { Prova, SubtipoProva } from '../../../core/models/prova';
+import type { ProvasAfyaResolvedData } from '../../../core/resolvers/provas-afya.resolver';
 import { ProvaCardComponent } from '../../../shared/components/prova-card/prova-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
@@ -23,7 +23,7 @@ import type { SelectOption } from '../../../shared/components/ui/select/ui-selec
   templateUrl: './provas-afya.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProvasAfyaComponent implements OnInit {
+export class ProvasAfyaComponent {
   private readonly provaService = inject(ProvaService);
   private readonly router = inject(Router);
 
@@ -64,8 +64,15 @@ export class ProvasAfyaComponent implements OnInit {
     return lista;
   });
 
-  async ngOnInit(): Promise<void> {
-    await this.carregarProvas();
+  constructor() {
+    const resolved = inject(ActivatedRoute).snapshot.data['provasAfyaData'] as ProvasAfyaResolvedData | undefined;
+    if (resolved?.provasResult.ok) {
+      this.todasAsProvas.set(resolved.provasResult.data);
+      this.isLoading.set(false);
+    } else if (resolved && !resolved.provasResult.ok) {
+      this.erro.set(resolved.provasResult.error);
+      this.isLoading.set(false);
+    }
   }
 
   protected async carregarProvas(): Promise<void> {
