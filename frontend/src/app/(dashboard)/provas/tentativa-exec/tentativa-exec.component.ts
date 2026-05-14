@@ -9,7 +9,7 @@ import {
   computed,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ChevronDown, ChevronUp } from 'lucide-angular';
+import { Bookmark, ChevronDown, ChevronUp } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
@@ -48,9 +48,11 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly isPaused = signal(false);
   protected readonly mostrarGrade = signal(false);
   protected readonly mostrarConfirmacao = signal(false);
+  protected readonly marcadas = signal<Set<string>>(new Set());
 
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly chevronUpIcon = ChevronUp;
+  protected readonly bookmarkIcon = Bookmark;
 
   private _finalizado = false;
 
@@ -66,6 +68,13 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly modo = computed<ModoProva>(() => this.tentativa()?.modo ?? 'simulado');
 
   protected readonly totalRespondidas = computed(() => this.respostas().size);
+
+  protected readonly questaoAtualMarcada = computed(() => {
+    const q = this.questaoAtual();
+    return q ? this.marcadas().has(q.id) : false;
+  });
+
+  protected readonly totalMarcadas = computed(() => this.marcadas().size);
 
   protected readonly respostaSelecionadaAtual = computed(() => {
     const q = this.questaoAtual();
@@ -179,6 +188,20 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected toggleMarcar(): void {
+    const q = this.questaoAtual();
+    if (!q) return;
+    this.marcadas.update((s) => {
+      const next = new Set(s);
+      if (next.has(q.id)) {
+        next.delete(q.id);
+      } else {
+        next.add(q.id);
+      }
+      return next;
+    });
+  }
+
   protected irParaQuestao(idx: number): void {
     this.questaoAtualIdx.set(idx);
   }
@@ -216,6 +239,24 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly questoesNaoRespondidas = computed(() =>
     this.questoes().length - this.respostas().size,
   );
+
+  protected readonly mensagemFinalizacao = computed(() => {
+    const naoResp = this.questoesNaoRespondidas();
+    const marc = this.totalMarcadas();
+    const parts: string[] = [];
+
+    if (naoResp > 0) {
+      parts.push(`${naoResp} ${naoResp === 1 ? 'questão sem resposta' : 'questões sem resposta'}`);
+    }
+    if (marc > 0) {
+      parts.push(`${marc} ${marc === 1 ? 'questão marcada para revisão' : 'questões marcadas para revisão'}`);
+    }
+
+    if (parts.length > 0) {
+      return `Você ainda tem ${parts.join(' e ')}. Deseja finalizar mesmo assim?`;
+    }
+    return 'Todas as questões foram respondidas. Deseja finalizar a prova?';
+  });
 
   protected onFinalizar(): void {
     this.mostrarConfirmacao.set(true);
@@ -268,6 +309,11 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       case 'ArrowRight':
         event.preventDefault();
         this.proximaQuestao();
+        break;
+      case 'm':
+      case 'M':
+        event.preventDefault();
+        this.toggleMarcar();
         break;
       default: {
         const alternativas = this.questaoAtual()?.alternativas;

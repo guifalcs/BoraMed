@@ -467,4 +467,81 @@ describe('TentativaExecComponent — navegação por teclado', () => {
       expect(mockTentativaService.salvarResposta).not.toHaveBeenCalled();
     });
   });
+
+  // ── Marcação para revisão ──────────────────────────────────────────────
+
+  describe('marcação para revisão', () => {
+    it('deve marcar questão atual ao chamar toggleMarcar', () => {
+      expect(component['questaoAtualMarcada']()).toBe(false);
+
+      component['toggleMarcar']();
+      expect(component['questaoAtualMarcada']()).toBe(true);
+      expect(component['marcadas']().has('q-1')).toBe(true);
+    });
+
+    it('deve desmarcar questão ao chamar toggleMarcar novamente', () => {
+      component['toggleMarcar']();
+      expect(component['questaoAtualMarcada']()).toBe(true);
+
+      component['toggleMarcar']();
+      expect(component['questaoAtualMarcada']()).toBe(false);
+      expect(component['marcadas']().has('q-1')).toBe(false);
+    });
+
+    it('deve marcar questão ao pressionar tecla "m"', () => {
+      dispatchKey('m');
+      expect(component['marcadas']().has('q-1')).toBe(true);
+    });
+
+    it('deve marcar questão ao pressionar tecla "M" (maiúscula)', () => {
+      dispatchKey('M');
+      expect(component['marcadas']().has('q-1')).toBe(true);
+    });
+
+    it('deve desmarcar questão ao pressionar "m" duas vezes', () => {
+      dispatchKey('m');
+      expect(component['marcadas']().has('q-1')).toBe(true);
+
+      dispatchKey('m');
+      expect(component['marcadas']().has('q-1')).toBe(false);
+    });
+
+    it('deve manter marcações independentes por questão', () => {
+      dispatchKey('m');
+      expect(component['marcadas']().has('q-1')).toBe(true);
+
+      dispatchKey('ArrowRight');
+      dispatchKey('m');
+      expect(component['marcadas']().has('q-1')).toBe(true);
+      expect(component['marcadas']().has('q-2')).toBe(true);
+      expect(component['totalMarcadas']()).toBe(2);
+    });
+
+    it('deve refletir corretamente questaoAtualMarcada ao navegar', () => {
+      dispatchKey('m');
+      expect(component['questaoAtualMarcada']()).toBe(true);
+
+      dispatchKey('ArrowRight');
+      expect(component['questaoAtualMarcada']()).toBe(false);
+
+      dispatchKey('ArrowLeft');
+      expect(component['questaoAtualMarcada']()).toBe(true);
+    });
+
+    it('deve incluir marcações na mensagem de finalização', () => {
+      component['respostas'].set(new Map([['q-1', 'alt-A'], ['q-2', 'alt-B'], ['q-3', 'alt-C']]));
+      dispatchKey('m');
+
+      const msg = component['mensagemFinalizacao']();
+      expect(msg).toContain('1 questão marcada para revisão');
+    });
+
+    it('deve combinar não respondidas e marcadas na mensagem', () => {
+      dispatchKey('m');
+
+      const msg = component['mensagemFinalizacao']();
+      expect(msg).toContain('questões sem resposta');
+      expect(msg).toContain('questão marcada para revisão');
+    });
+  });
 });
