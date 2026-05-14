@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -39,6 +40,15 @@ export class ProvaDetalheComponent implements OnInit {
   protected readonly modoSelecionado = signal<ModoProva>('simulado');
   protected readonly iniciando = signal(false);
   protected readonly tentativaAtiva = signal<Tentativa | null>(null);
+
+  protected readonly isPersonalizado = computed(() => {
+    const p = this.prova();
+    return p !== null && p.tipo === 'processual' && p.edicao < 0;
+  });
+
+  protected readonly backRoute = computed(() =>
+    this.isPersonalizado() ? '/dashboard/simulados' : '/dashboard/simulados/rede-afya',
+  );
 
   async ngOnInit(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('provaId') ?? '';

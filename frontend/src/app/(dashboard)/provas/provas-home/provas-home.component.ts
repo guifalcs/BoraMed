@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BookOpen, Building2 } from 'lucide-angular';
+import { BookOpen, Building2, Shuffle } from 'lucide-angular';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 
 @Component({
@@ -13,4 +13,5 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
 export class ProvasHomeComponent {
   protected readonly bookOpenIcon = BookOpen;
   protected readonly buildingIcon = Building2;
+  protected readonly shuffleIcon = Shuffle;
 }

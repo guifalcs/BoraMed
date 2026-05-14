@@ -195,7 +195,8 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected onSair(): void {
     const tentativa = this.tentativa();
     if (tentativa) {
-      void this.router.navigate(['/dashboard/simulados', tentativa.prova_id]);
+      // Simulados personalizados não possuem página de detalhe útil
+      void this.router.navigate(['/dashboard/simulados']);
     }
   }
 

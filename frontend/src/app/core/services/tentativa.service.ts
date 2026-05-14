@@ -110,6 +110,64 @@ export class TentativaService {
     }
   }
 
+  /**
+   * Carrega questões de um simulado personalizado via tentativa_resposta,
+   * já que as questões não pertencem à prova (pertencem às provas originais).
+   */
+  async prepararVisualizacaoPersonalizado(
+    provaId: string,
+  ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
+    try {
+      // Busca a tentativa mais recente desta prova
+      const { data: tentativaData, error: tentativaError } = await this.supabase
+        .from('tentativa')
+        .select('id')
+        .eq('prova_id', provaId)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (tentativaError) throw tentativaError;
+
+      // Busca questão IDs via tentativa_resposta
+      const { data: respostasData, error: respostasError } = await this.supabase
+        .from('tentativa_resposta')
+        .select('questao_id')
+        .eq('tentativa_id', tentativaData.id);
+
+      if (respostasError) throw respostasError;
+
+      const questaoIds = (respostasData ?? []).map((r) => r.questao_id as string);
+      if (questaoIds.length === 0) {
+        return { ok: true, data: { questoes: [] } };
+      }
+
+      // Busca questões completas
+      const { data, error } = await this.supabase
+        .from('questao')
+        .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+        .in('id', questaoIds);
+
+      if (error) throw error;
+
+      type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
+        temas: { tema: import('../models/tema').Tema }[];
+      };
+
+      const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
+        ...q,
+        temas: q.temas.map((qt) => qt.tema),
+      })) as QuestaoComAlternativas[];
+
+      this._questoes.set(questoes);
+      this._respostas.set([]);
+
+      return { ok: true, data: { questoes } };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar as questões.' };
+    }
+  }
+
   async iniciar(
     provaId: string,
     modo: ModoProva,
@@ -240,6 +298,35 @@ export class TentativaService {
       return { ok: true, data: resultado };
     } catch {
       return { ok: false, error: 'Não foi possível finalizar a tentativa.' };
+    }
+  }
+
+  async gerarSimuladoPersonalizado(
+    temaIds: string[] | null,
+    qtd: number,
+    modo: ModoProva = 'simulado',
+  ): Promise<ProvaResult<{ prova_id: string; tentativa: Tentativa; questoes: QuestaoComAlternativas[] }>> {
+    try {
+      const { data, error } = await this.supabase.rpc('gerar_simulado_personalizado', {
+        p_tema_ids: temaIds && temaIds.length > 0 ? temaIds : null,
+        p_qtd: qtd,
+        p_modo: modo,
+      });
+
+      if (error) {
+        const msg = error.message || 'Não foi possível gerar o simulado.';
+        return { ok: false, error: msg };
+      }
+
+      const result = data as { prova_id: string; tentativa: Tentativa; questoes: QuestaoComAlternativas[] };
+      this._tentativaAtiva.set(result.tentativa);
+      this._questoes.set(result.questoes);
+      this._respostas.set([]);
+
+      return { ok: true, data: result };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Não foi possível gerar o simulado.';
+      return { ok: false, error: msg };
     }
   }
 }

@@ -58,12 +58,21 @@
       >
         <app-ui-button label="Revisar questões" variant="primary" />
       </a>
-      <a
-        class="flex-1"
-        [routerLink]="['/dashboard/simulados', provaId()]"
-      >
-        <app-ui-button label="Refazer simulado" variant="secondary" />
-      </a>
+      @if (isPersonalizado()) {
+        <a
+          class="flex-1"
+          routerLink="/dashboard/simulados/montar"
+        >
+          <app-ui-button label="Montar novo simulado" variant="secondary" />
+        </a>
+      } @else {
+        <a
+          class="flex-1"
+          [routerLink]="['/dashboard/simulados', provaId()]"
+        >
+          <app-ui-button label="Refazer simulado" variant="secondary" />
+        </a>
+      }
     </div>
 
     <div class="text-center">

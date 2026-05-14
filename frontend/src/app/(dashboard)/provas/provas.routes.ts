@@ -17,6 +17,11 @@ export const provasRoutes: Routes = [
       import('./provas-afya/provas-afya.component').then((m) => m.ProvasAfyaComponent),
   },
   {
+    path: 'montar',
+    loadComponent: () =>
+      import('./montar-simulado/montar-simulado.component').then((m) => m.MontarSimuladoComponent),
+  },
+  {
     path: ':provaId/tentativa/:tentativaId/resultado',
     loadComponent: () =>
       import('./tentativa-resultado/tentativa-resultado.component').then(

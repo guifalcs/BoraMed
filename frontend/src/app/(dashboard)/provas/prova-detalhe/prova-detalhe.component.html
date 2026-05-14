@@ -1,6 +1,6 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-3xl">
-    <a routerLink="/dashboard/simulados/rede-afya" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
+    <a [routerLink]="backRoute()" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
       <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
       Simulados
     </a>
@@ -20,9 +20,13 @@
     @if (!isLoading() && prova()) {
       <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">{{ prova()!.nome }}</h1>
       <p class="mb-6 text-sm text-[var(--color-text-muted)]">
-        {{ prova()!.periodo }}º período · Edição {{ prova()!.edicao }} · {{ prova()!.qtd_questoes }} questões
-        @if (prova()!.tempo_sugerido_minutos) {
-          · {{ prova()!.tempo_sugerido_minutos }} min sugeridos
+        @if (isPersonalizado()) {
+          {{ prova()!.qtd_questoes }} questões · Simulado personalizado
+        } @else {
+          {{ prova()!.periodo }}º período · Edição {{ prova()!.edicao }} · {{ prova()!.qtd_questoes }} questões
+          @if (prova()!.tempo_sugerido_minutos) {
+            · {{ prova()!.tempo_sugerido_minutos }} min sugeridos
+          }
         }
       </p>
 

@@ -13,6 +13,7 @@ import { UiButtonComponent } from '../ui/button/ui-button.component';
 })
 export class ResultadoSummaryComponent {
   resultado = input.required<ResultadoTentativa>();
+  isPersonalizado = input(false);
 
   protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
 

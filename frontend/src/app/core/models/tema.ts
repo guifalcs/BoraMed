@@ -6,3 +6,7 @@ export interface Tema {
   parent_id: string | null;
   criado_em: string;
 }
+
+export interface TemaComContagem extends Tema {
+  qtd_questoes: number;
+}

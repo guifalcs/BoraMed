@@ -16,5 +16,5 @@
 }
 
 @if (!isLoading() && resultado()) {
-  <app-resultado-summary [resultado]="resultado()!" />
+  <app-resultado-summary [resultado]="resultado()!" [isPersonalizado]="isPersonalizado()" />
 }

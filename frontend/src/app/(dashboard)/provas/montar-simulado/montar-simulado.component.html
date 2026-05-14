@@ -1,0 +1,162 @@
+<div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
+  <div class="mx-auto max-w-3xl">
+    <a routerLink="/dashboard/simulados" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
+      <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
+      Simulados
+    </a>
+
+    <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Montar simulado</h1>
+    <p class="mb-8 text-sm text-[var(--color-text-muted)]">Escolha os temas e a quantidade de questões para gerar um simulado personalizado.</p>
+
+    <!-- Erro ao carregar temas -->
+    @if (loadError()) {
+      <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <p class="font-medium">Erro ao carregar temas</p>
+        <p class="mt-1">{{ loadError() }}</p>
+      </div>
+    }
+
+    <!-- Quantidade -->
+    <section class="mb-8">
+      <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Quantidade de questões</h2>
+      <div class="flex flex-wrap gap-2">
+        @for (qtd of opcoesQtd; track qtd) {
+          <button
+            type="button"
+            (click)="setQuantidade(qtd)"
+            [class]="quantidade() === qtd
+              ? 'rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-sm'
+              : 'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'"
+          >
+            {{ qtd }}
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- Temas -->
+    <section class="mb-8">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-[var(--color-text)]">
+          <app-ui-icon [icon]="filterIcon" [size]="14" class="mr-1 inline-block opacity-60" />
+          Filtrar por temas
+          @if (!isLoadingTemas()) {
+            <span class="ml-1 text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+          }
+        </h2>
+        <div class="flex gap-3">
+          @if (temasComQuestoes().length > 0 && temasSelecionados().size === 0) {
+            <button
+              type="button"
+              (click)="selecionarTodosComQuestoes()"
+              class="text-xs text-[var(--color-primary)] hover:underline"
+            >
+              Selecionar com questões
+            </button>
+          }
+          @if (temasSelecionados().size > 0) {
+            <button
+              type="button"
+              (click)="limparTemas()"
+              class="text-xs text-[var(--color-primary)] hover:underline"
+            >
+              Limpar ({{ temasSelecionados().size }})
+            </button>
+          }
+        </div>
+      </div>
+
+      <p class="mb-3 text-xs text-[var(--color-text-muted)]">
+        Deixe vazio para sortear de todos os temas disponíveis.
+      </p>
+
+      @if (isLoadingTemas()) {
+        <div class="space-y-2">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="h-9 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+          }
+        </div>
+      } @else if (temas().length === 0 && !loadError()) {
+        <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center text-sm text-[var(--color-text-muted)]">
+          Nenhum tema cadastrado ainda.
+        </div>
+      } @else {
+        <div class="max-h-64 overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          @for (tema of temas(); track tema.id) {
+            <button
+              type="button"
+              (click)="toggleTema(tema.id)"
+              [class]="temasSelecionados().has(tema.id)
+                ? 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                : tema.qtd_questoes === 0
+                  ? 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] opacity-60'
+                  : 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 hover:bg-[var(--color-surface-2)] text-[var(--color-text)]'"
+            >
+              <span
+                [class]="temasSelecionados().has(tema.id)
+                  ? 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-[var(--color-primary)] bg-[var(--color-primary)] text-white text-xs font-bold'
+                  : 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-[var(--color-border)]'"
+              >
+                @if (temasSelecionados().has(tema.id)) { ✓ }
+              </span>
+              <span class="flex-1 text-sm">{{ tema.nome }}</span>
+              <span
+                [class]="tema.qtd_questoes > 0
+                  ? 'rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]'
+                  : 'rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)] opacity-50'"
+              >
+                {{ tema.qtd_questoes }} {{ tema.qtd_questoes === 1 ? 'questão' : 'questões' }}
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Modo -->
+    <section class="mb-8">
+      <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Como você quer resolver?</h2>
+      <app-modo-selector
+        [modo]="modoSelecionado()"
+        (modoChange)="onModoChange($event)"
+      />
+    </section>
+
+    <!-- Resumo -->
+    <div class="mb-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
+      <p class="text-sm text-[var(--color-text)]">
+        <span class="font-semibold">{{ quantidade() }} questões</span>
+        · {{ resumoTemas() }}
+        · Modo {{ modoSelecionado() }}
+      </p>
+      @if (!isLoadingTemas()) {
+        <p class="mt-1 text-xs text-[var(--color-text-muted)]">
+          {{ questoesDisponiveis() }} questão(ões) disponível(is) no banco
+        </p>
+      }
+    </div>
+
+    <!-- Aviso -->
+    @if (aviso()) {
+      <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        {{ aviso() }}
+      </div>
+    }
+
+    <!-- Erro -->
+    @if (erro()) {
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        {{ erro() }}
+      </div>
+    }
+
+    <!-- Botão gerar -->
+    <app-ui-button
+      [label]="botaoLabel()"
+      [loading]="gerando()"
+      [disabled]="desabilitado()"
+      loadingLabel="Gerando..."
+      (buttonClick)="gerar()"
+    />
+  </div>
+</div>

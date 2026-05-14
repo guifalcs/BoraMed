@@ -63,19 +63,24 @@ export class ProvaVisualizarComponent implements OnInit {
       this.respostasMap.set(map);
     }
 
-    const [questoesResult, provaResult] = await Promise.all([
-      this.tentativaService.prepararVisualizacao(id),
-      this.provaService.buscarProva(id),
-    ]);
+    const provaResult = await this.provaService.buscarProva(id);
 
     if (provaResult.ok) {
       this.provaNome.set(provaResult.data.nome);
-    }
 
-    if (questoesResult.ok) {
-      this.questoes.set(questoesResult.data.questoes);
+      // Simulados personalizados: questões não pertencem à prova
+      const isPersonalizado = provaResult.data.tipo === 'processual' && provaResult.data.edicao < 0;
+      const loadResult = isPersonalizado
+        ? await this.tentativaService.prepararVisualizacaoPersonalizado(id)
+        : await this.tentativaService.prepararVisualizacao(id);
+
+      if (loadResult.ok) {
+        this.questoes.set(loadResult.data.questoes);
+      } else {
+        this.erro.set(loadResult.error);
+      }
     } else {
-      this.erro.set(questoesResult.error);
+      this.erro.set('Não foi possível carregar a prova.');
     }
 
     this.isLoading.set(false);
