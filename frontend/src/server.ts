@@ -6,23 +6,17 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { parse, serialize } from 'cookie';
+import { createServerClient } from '@supabase/ssr';
+import { environment } from './environments/environment';
+import type { Request, Response } from 'express';
+import type { CookieOptionsWithName } from '@supabase/ssr';
+import type { CookieSerializeOptions } from 'cookie';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
-
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
 
 /**
  * Serve static files from /browser
@@ -34,6 +28,51 @@ app.use(
     redirect: false,
   }),
 );
+
+/**
+ * Auth callback — troca o PKCE code por sessão e seta cookie.
+ * Intercepta antes do Angular SSR para que o redirect seja limpo.
+ */
+app.get('/auth/callback', async (req: Request, res: Response) => {
+  const code = req.query['code'] as string | undefined;
+  const next = (req.query['next'] as string | undefined) ?? '/dashboard';
+
+  if (!code) {
+    res.redirect(302, '/erro');
+    return;
+  }
+
+  const cookiesToSet: { name: string; value: string; options: CookieOptionsWithName }[] = [];
+
+  const supabase = createServerClient(environment.supabaseUrl, environment.supabaseAnonKey, {
+    cookies: {
+      getAll: () => {
+        const parsed = parse(req.headers.cookie ?? '');
+        return Object.entries(parsed).map(([name, value]) => ({ name, value }));
+      },
+      setAll: (cookies) => {
+        cookiesToSet.push(...cookies);
+      },
+    },
+  });
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  cookiesToSet.forEach(({ name, value, options }) => {
+    const { name: _n, ...serializeOpts } = options ?? {};
+    res.setHeader('Set-Cookie', serialize(name, value, serializeOpts as CookieSerializeOptions));
+  });
+
+  if (error) {
+    console.error('[auth/callback] error:', error.message);
+    res.redirect(302, '/erro');
+    return;
+  }
+
+  // Garante que next seja uma rota relativa segura
+  const safePath = next.startsWith('/') ? next : '/dashboard';
+  res.redirect(302, safePath);
+});
 
 /**
  * Handle all other requests by rendering the Angular application.

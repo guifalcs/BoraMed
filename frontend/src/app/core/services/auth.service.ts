@@ -39,10 +39,6 @@ export class AuthService implements OnDestroy {
   }
 
   async initialize(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId)) {
-      this._isReady.set(true);
-      return;
-    }
     try {
       const { data } = await this.supabase.auth.getUser();
       this._user.set(data.user);
@@ -73,7 +69,7 @@ export class AuthService implements OnDestroy {
 
   async recoverPassword(input: RecoverPasswordInput): Promise<AuthResult> {
     const { error } = await this.supabase.auth.resetPasswordForEmail(input.email, {
-      redirectTo: `${window.location.origin}/redefinir-senha`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/redefinir-senha`,
     });
     return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
   }
@@ -86,7 +82,7 @@ export class AuthService implements OnDestroy {
   async signInWithGoogle(): Promise<AuthResult> {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
     });
     return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
   }
