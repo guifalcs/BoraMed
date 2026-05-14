@@ -1,0 +1,32 @@
+<!-- Backdrop -->
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+  (click)="cancelar.emit()"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="titulo()"
+>
+  <!-- Dialog -->
+  <div
+    class="mx-4 w-full max-w-sm animate-in rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-lg"
+    (click)="$event.stopPropagation()"
+  >
+    <h2 class="text-lg font-semibold text-[var(--color-text)]">{{ titulo() }}</h2>
+    <p class="mt-2 text-sm text-[var(--color-text-muted)]">{{ mensagem() }}</p>
+
+    <div class="mt-6 flex gap-3">
+      <app-ui-button
+        [label]="labelCancelar()"
+        variant="secondary"
+        [fullWidth]="true"
+        (buttonClick)="cancelar.emit()"
+      />
+      <app-ui-button
+        [label]="labelConfirmar()"
+        [variant]="variante()"
+        [fullWidth]="true"
+        (buttonClick)="confirmar.emit()"
+      />
+    </div>
+  </div>
+</div>

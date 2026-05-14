@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { signal } from '@angular/core';
 import { TentativaExecComponent } from './tentativa-exec.component';
@@ -158,6 +158,10 @@ describe('TentativaExecComponent — navegação por teclado', () => {
 
     fixture = TestBed.createComponent(TentativaExecComponent);
     component = fixture.componentInstance;
+
+    // Stub router.navigate to prevent unhandled rejections
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     // Trigger ngOnInit to load data from memory
     await component.ngOnInit();
@@ -407,6 +411,60 @@ describe('TentativaExecComponent — navegação por teclado', () => {
         'q-1',
         'alt-E',
       );
+    });
+  });
+
+  // ── Confirmação antes de finalizar ─────────────────────────────────────
+
+  describe('confirmação antes de finalizar', () => {
+    it('deve exibir modal de confirmação ao chamar onFinalizar', () => {
+      expect(component['mostrarConfirmacao']()).toBe(false);
+
+      component['onFinalizar']();
+      expect(component['mostrarConfirmacao']()).toBe(true);
+    });
+
+    it('não deve chamar finalizar do service ao abrir modal', () => {
+      component['onFinalizar']();
+      expect(mockTentativaService.finalizar).not.toHaveBeenCalled();
+    });
+
+    it('deve fechar modal ao cancelar', () => {
+      component['onFinalizar']();
+      expect(component['mostrarConfirmacao']()).toBe(true);
+
+      component['cancelarFinalizacao']();
+      expect(component['mostrarConfirmacao']()).toBe(false);
+    });
+
+    it('deve chamar finalizar do service ao confirmar', async () => {
+      mockTentativaService.finalizar.mockResolvedValue({
+        ok: true,
+        data: { nota: 80, acertos: 24, total: 30 },
+      });
+
+      component['onFinalizar']();
+      await component['confirmarFinalizacao']();
+
+      expect(mockTentativaService.finalizar).toHaveBeenCalledWith('tent-1', 0);
+    });
+
+    it('deve calcular questões não respondidas corretamente', () => {
+      expect(component['questoesNaoRespondidas']()).toBe(3);
+
+      component['respostas'].set(new Map([['q-1', 'alt-A'], ['q-2', 'alt-B']]));
+      expect(component['questoesNaoRespondidas']()).toBe(1);
+    });
+
+    it('deve bloquear atalhos de teclado enquanto modal está aberto', () => {
+      component['onFinalizar']();
+      expect(component['mostrarConfirmacao']()).toBe(true);
+
+      dispatchKey('ArrowRight');
+      expect(component['questaoAtualIdx']()).toBe(0);
+
+      dispatchKey('a');
+      expect(mockTentativaService.salvarResposta).not.toHaveBeenCalled();
     });
   });
 });

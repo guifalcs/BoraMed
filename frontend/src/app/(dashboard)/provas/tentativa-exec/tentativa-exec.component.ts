@@ -17,13 +17,14 @@ import { NotificationService } from '../../../core/services/notification.service
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
+import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { ProvaHeaderComponent } from '../../../shared/components/prova-header/prova-header.component';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
-  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent],
+  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent],
   providers: [TimerService],
   templateUrl: './tentativa-exec.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +47,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly erro = signal<string | null>(null);
   protected readonly isPaused = signal(false);
   protected readonly mostrarGrade = signal(false);
+  protected readonly mostrarConfirmacao = signal(false);
 
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly chevronUpIcon = ChevronUp;
@@ -211,7 +213,20 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected async onFinalizar(): Promise<void> {
+  protected readonly questoesNaoRespondidas = computed(() =>
+    this.questoes().length - this.respostas().size,
+  );
+
+  protected onFinalizar(): void {
+    this.mostrarConfirmacao.set(true);
+  }
+
+  protected cancelarFinalizacao(): void {
+    this.mostrarConfirmacao.set(false);
+  }
+
+  protected async confirmarFinalizacao(): Promise<void> {
+    this.mostrarConfirmacao.set(false);
     const tentativa = this.tentativa();
     if (!tentativa) return;
 
@@ -240,7 +255,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(event: KeyboardEvent): void {
-    if (this.isLoading() || this.isPaused() || this.salvando() || this._finalizado) return;
+    if (this.isLoading() || this.isPaused() || this.salvando() || this._finalizado || this.mostrarConfirmacao()) return;
 
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;

@@ -123,4 +123,19 @@
       </div>
     }
   </div>
+
+  <!-- Modal de confirmação de finalização -->
+  @if (mostrarConfirmacao()) {
+    <app-ui-confirm-dialog
+      titulo="Finalizar prova?"
+      [mensagem]="questoesNaoRespondidas() > 0
+        ? 'Você ainda tem ' + questoesNaoRespondidas() + (questoesNaoRespondidas() === 1 ? ' questão sem resposta.' : ' questões sem resposta.') + ' Deseja finalizar mesmo assim?'
+        : 'Todas as questões foram respondidas. Deseja finalizar a prova?'"
+      labelConfirmar="Finalizar"
+      labelCancelar="Voltar"
+      variante="danger"
+      (confirmar)="confirmarFinalizacao()"
+      (cancelar)="cancelarFinalizacao()"
+    />
+  }
 }
