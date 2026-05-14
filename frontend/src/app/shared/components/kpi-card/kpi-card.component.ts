@@ -18,6 +18,15 @@ export class KpiCardComponent {
   icone = input.required<LucideIconData>();
   variante = input<KpiVariante>('default');
 
+  protected readonly acentoClass = computed(() => {
+    switch (this.variante()) {
+      case 'success': return 'bg-emerald-400';
+      case 'warning': return 'bg-amber-400';
+      case 'danger':  return 'bg-red-400';
+      default:        return 'bg-[var(--color-primary-light)]';
+    }
+  });
+
   protected readonly iconeBgClass = computed(() => {
     switch (this.variante()) {
       case 'success': return 'bg-emerald-50 text-emerald-600';

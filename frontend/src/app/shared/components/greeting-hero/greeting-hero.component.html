@@ -1,33 +1,34 @@
-<div class="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-7 shadow-sm md:px-8">
-  <!-- Accent strip no topo -->
-  <div class="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl bg-gradient-to-r from-[var(--color-primary)] via-[var(--color-primary-light)] to-indigo-400"></div>
+<div
+  class="relative overflow-hidden rounded-2xl px-6 py-8 shadow-lg md:px-8 md:py-10"
+  style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%), linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%);"
+>
+  <!-- Círculos decorativos (idênticos ao card Rede Afya) -->
+  <div class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white opacity-5"></div>
+  <div class="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-white opacity-5"></div>
 
-  <!-- Decoração suave -->
-  <div class="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-50 opacity-60 blur-2xl"></div>
-
-  <div class="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+  <div class="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
     <!-- Saudação -->
     <div>
-      <p class="text-sm font-medium text-[var(--color-text-muted)]">{{ saudacao() }},</p>
-      <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-[var(--color-text)]">
+      <p class="text-sm font-medium text-white/70">{{ saudacao() }},</p>
+      <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
         {{ primeiroNome() }}
       </h1>
       @if (contexto()) {
-        <p class="mt-2 flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]"></span>
+        <p class="mt-2 flex items-center gap-2 text-sm text-white/70">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-white/60"></span>
           {{ contexto() }}
         </p>
       }
     </div>
 
-    <!-- CTA -->
+    <!-- CTA — vidro fosco, sem UiButtonComponent (precisa de variante branca) -->
     <div class="shrink-0">
-      <a [routerLink]="rotaCta()">
-        <app-ui-button
-          [label]="labelCta()"
-          [fullWidth]="false"
-          [showArrow]="true"
-        />
+      <a
+        [routerLink]="rotaCta()"
+        class="inline-flex items-center gap-2 rounded-xl bg-white/20 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/30 hover:shadow-md"
+      >
+        {{ labelCta() }}
+        <span class="transition-transform group-hover:translate-x-0.5">→</span>
       </a>
     </div>
   </div>
