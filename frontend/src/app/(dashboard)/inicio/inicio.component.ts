@@ -13,16 +13,19 @@ import {
   AlertTriangle,
   Award,
   Flame,
+  Trophy,
 } from 'lucide-angular';
 import { TentativaService } from '../../core/services/tentativa.service';
 import type { LucideIconData } from 'lucide-angular';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
+import type { GamificacaoStats, MinhaPosicaoRanking, StreakEstudoV2 } from '../../core/models/gamificacao';
 import type { TentativaHistoricoItem, HistoricoKpis } from '../../core/models/historico';
 import type { InicioResolvedData } from '../../core/resolvers/inicio.resolver';
 import { GreetingHeroComponent } from '../../shared/components/greeting-hero/greeting-hero.component';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { RankingStatusBarComponent } from '../../shared/components/ranking-status-bar/ranking-status-bar.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { ProfileService } from '../../core/services/profile.service';
 
@@ -44,6 +47,7 @@ interface KpiData {
     KpiCardComponent,
     TentativaRecenteItemComponent,
     EmptyStateComponent,
+    RankingStatusBarComponent,
     UiIconComponent,
   ],
   templateUrl: './inicio.component.html',
@@ -58,7 +62,9 @@ export class InicioComponent {
   protected readonly isLoadingRecentes = signal(true);
   protected readonly kpis = signal<KpiData[]>([]);
   protected readonly tentativasRecentes = signal<TentativaHistoricoItem[]>([]);
-  protected readonly streak = signal<number>(0);
+  protected readonly streak = signal<StreakEstudoV2 | null>(null);
+  protected readonly gamificacao = signal<GamificacaoStats | null>(null);
+  protected readonly rankingPosicao = signal<MinhaPosicaoRanking | null>(null);
   private allTentativas: TentativaHistoricoItem[] = [];
 
   protected readonly streakIcon = Flame;
@@ -86,16 +92,24 @@ export class InicioComponent {
     this.isLoadingRecentes.set(false);
 
     if (resolved?.kpisResult.ok) {
-      this.kpis.set(this.buildKpis(resolved.kpisResult.data));
+      const gamificacao = resolved.gamificacaoResult.ok ? resolved.gamificacaoResult.data : null;
+      this.gamificacao.set(gamificacao);
+      this.kpis.set(this.buildKpis(
+        resolved.kpisResult.data,
+        gamificacao,
+      ));
     }
     this.isLoadingKpis.set(false);
 
     if (resolved?.streakResult?.ok) {
       this.streak.set(resolved.streakResult.data);
     }
+    if (resolved?.rankingPosicaoResult?.ok) {
+      this.rankingPosicao.set(resolved.rankingPosicaoResult.data);
+    }
   }
 
-  private buildKpis(k: HistoricoKpis): KpiData[] {
+  private buildKpis(k: HistoricoKpis, gamificacao: GamificacaoStats | null): KpiData[] {
     const taxaVariante = (): KpiVariante => {
       if (k.taxa_acerto === null) return 'default';
       if (k.taxa_acerto >= 70) return 'success';
@@ -145,10 +159,21 @@ export class InicioComponent {
         variante: ultimaVariante(),
         sparkline: notasSparkline,
       },
+      {
+        label: 'XP da Semana',
+        valor: formatNumber(gamificacao?.xp_semana_atual ?? 0),
+        sublabel: `nível ${gamificacao?.nivel ?? 0} · ${formatNumber(gamificacao?.xp_total ?? 0)} XP total`,
+        icone: Trophy,
+        variante: (gamificacao?.xp_semana_atual ?? 0) > 0 ? 'success' : 'default',
+      },
     ];
   }
 
   protected onComecarSimulado(): void {
     void this.router.navigateByUrl('/dashboard/simulados');
   }
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('pt-BR').format(value);
 }

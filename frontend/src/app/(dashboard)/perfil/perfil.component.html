@@ -230,6 +230,128 @@
         </section>
       }
 
+      <section class="perfil-section perfil-section--divided" aria-labelledby="competitivo-heading">
+        <h2 class="perfil-section__title" id="competitivo-heading">Competitivo</h2>
+
+        @if (isGamificacaoLoading()) {
+          <div class="perfil-competitivo-grid">
+            @for (_ of [1, 2, 3]; track $index) {
+              <div class="skeleton perfil-competitivo-skeleton"></div>
+            }
+          </div>
+        } @else {
+          <div class="perfil-nivel-card">
+            <div class="perfil-nivel-main">
+              <div class="perfil-nivel-icon">
+                <app-ui-icon [icon]="medalIcon" [size]="26" />
+              </div>
+              <div>
+                <p class="perfil-competitivo-label">Nível atual</p>
+                <p class="perfil-nivel-value">{{ gamificacaoStats().nivel }}</p>
+              </div>
+            </div>
+
+            <div class="perfil-nivel-progress">
+              <div class="perfil-nivel-progress-labels">
+                <span>{{ formatNumber(gamificacaoStats().xp_total) }} XP total</span>
+                <span>{{ formatNumber(xpParaProximoNivel()) }} XP para o próximo nível</span>
+              </div>
+              <div class="perfil-progress-track">
+                <div class="perfil-progress-fill" [style.width.%]="progressoNivel()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="perfil-privacidade-card">
+            <div>
+              <h3>Privacidade no ranking</h3>
+              <p>
+                @if (competirPublico()) {
+                  Seu nome poderá aparecer nos rankings competitivos.
+                } @else {
+                  Você acumula XP normalmente, mas aparecerá como anônimo nos rankings.
+                }
+              </p>
+            </div>
+
+            <label class="perfil-switch">
+              <input
+                type="checkbox"
+                [checked]="competirPublico()"
+                [disabled]="competirPublicoStatus() === 'loading'"
+                (change)="handleCompetirPublicoChange($event)"
+              />
+              <span class="perfil-switch-track">
+                <span class="perfil-switch-thumb"></span>
+              </span>
+              <span class="perfil-switch-label">{{ competirPublico() ? 'Público' : 'Anônimo' }}</span>
+            </label>
+          </div>
+
+          <div class="perfil-competitivo-grid">
+            <article class="perfil-competitivo-card">
+              <div>
+                <p class="perfil-competitivo-label">XP da semana</p>
+                <p class="perfil-competitivo-value">{{ formatNumber(gamificacaoStats().xp_semana_atual) }}</p>
+                <p class="perfil-competitivo-detail">{{ gamificacaoStats().semana_iso ?? 'Semana atual' }}</p>
+              </div>
+              <div class="perfil-competitivo-icon perfil-competitivo-icon--success">
+                <app-ui-icon [icon]="trophyIcon" [size]="17" />
+              </div>
+            </article>
+
+            <article class="perfil-competitivo-card">
+              <div>
+                <p class="perfil-competitivo-label">Sequência atual</p>
+                <p class="perfil-competitivo-value">
+                  {{ gamificacaoStats().streak_atual }} dia{{ gamificacaoStats().streak_atual === 1 ? '' : 's' }}
+                </p>
+                <p class="perfil-competitivo-detail">
+                  Recorde: {{ gamificacaoStats().streak_recorde }} dia{{ gamificacaoStats().streak_recorde === 1 ? '' : 's' }}
+                </p>
+              </div>
+              <div class="perfil-competitivo-icon perfil-competitivo-icon--warning">
+                <app-ui-icon [icon]="flameIcon" [size]="17" />
+              </div>
+            </article>
+
+            <article class="perfil-competitivo-card">
+              <div>
+                <p class="perfil-competitivo-label">Protetores</p>
+                <p class="perfil-competitivo-value">{{ gamificacaoStats().freezes_disponiveis }}</p>
+                <p class="perfil-competitivo-detail">Streak Freeze entra na próxima etapa.</p>
+              </div>
+              <div class="perfil-competitivo-icon perfil-competitivo-icon--info">
+                <app-ui-icon [icon]="shieldIcon" [size]="17" />
+              </div>
+            </article>
+          </div>
+
+          <div class="perfil-conquistas">
+            <div class="perfil-conquistas-header">
+              <app-ui-icon [icon]="awardIcon" [size]="18" />
+              <div>
+                <h3>Conquistas</h3>
+                <p>Catálogo inicial entra depois do XP e streak.</p>
+              </div>
+            </div>
+
+            <div class="perfil-conquistas-grid">
+              @for (conquista of conquistas(); track conquista.id) {
+                <div
+                  class="perfil-conquista-placeholder"
+                  [class.perfil-conquista-placeholder--locked]="!conquista.desbloqueada_em"
+                >
+                  <app-ui-icon [icon]="awardIcon" [size]="17" />
+                  <span>{{ conquista.nome }}</span>
+                  <small>{{ conquista.desbloqueada_em ? '+' + conquista.xp_recompensa + ' XP' : 'Bloqueada' }}</small>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
     }
 
   </div>

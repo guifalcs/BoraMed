@@ -49,6 +49,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./(dashboard)/perfil/perfil.component').then((m) => m.PerfilComponent),
       },
+      { path: 'perfil/competitivo', pathMatch: 'full', redirectTo: 'perfil' },
       {
         path: 'suporte',
         loadComponent: () =>
@@ -59,6 +60,14 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./(dashboard)/provas/provas.routes').then((m) => m.provasRoutes),
       },
+      {
+        path: 'competitivo',
+        loadComponent: () =>
+          import('./(dashboard)/competir/competir-hub.component').then(
+            (m) => m.CompetirHubComponent,
+          ),
+      },
+      { path: 'competir', pathMatch: 'full', redirectTo: 'competitivo' },
       {
         path: 'historico',
         loadComponent: () =>

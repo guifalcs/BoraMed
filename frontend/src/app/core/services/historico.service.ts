@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import type { StreakEstudoV2 } from '../models/gamificacao';
 import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../models/historico';
 import type { ModoProva } from '../models/tentativa';
 
@@ -84,4 +85,32 @@ export class HistoricoService {
       return { ok: false, error: 'Não foi possível carregar o streak.' };
     }
   }
+
+  async getStreakV2(): Promise<HistoricoResult<StreakEstudoV2>> {
+    try {
+      const { data, error } = await this.supabase.rpc('get_streak_estudo_v2');
+      if (error) throw error;
+      return { ok: true, data: parseStreakV2(data) };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar o streak.' };
+    }
+  }
+}
+
+function parseStreakV2(value: unknown): StreakEstudoV2 {
+  const record = value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+
+  return {
+    atual: toNumber(record['atual']),
+    recorde: toNumber(record['recorde']),
+    freezes_disponiveis: toNumber(record['freezes_disponiveis']),
+    freeze_usado_hoje: record['freeze_usado_hoje'] === true,
+    dias_para_proximo_marco: toNumber(record['dias_para_proximo_marco']),
+  };
+}
+
+function toNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }

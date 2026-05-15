@@ -47,6 +47,283 @@
   margin: 0 0 1.5rem;
 }
 
+.perfil-nivel-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-bg-soft);
+}
+
+.perfil-privacidade-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+
+.perfil-privacidade-card h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.perfil-privacidade-card p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.perfil-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.perfil-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.perfil-switch-track {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-border);
+  transition: background 0.13s;
+}
+
+.perfil-switch-thumb {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+  transition: transform 0.13s;
+}
+
+.perfil-switch input:checked + .perfil-switch-track {
+  background: var(--color-action);
+}
+
+.perfil-switch input:checked + .perfil-switch-track .perfil-switch-thumb {
+  transform: translateX(1.25rem);
+}
+
+.perfil-switch input:disabled + .perfil-switch-track {
+  opacity: 0.6;
+}
+
+.perfil-switch-label {
+  min-width: 4.25rem;
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.perfil-nivel-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.perfil-nivel-icon {
+  display: flex;
+  width: 3.75rem;
+  height: 3.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.perfil-nivel-value {
+  margin: 0.25rem 0 0;
+  color: var(--color-text);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.perfil-nivel-progress {
+  flex: 1;
+  max-width: 24rem;
+}
+
+.perfil-nivel-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.perfil-progress-track {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+}
+
+.perfil-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-action);
+}
+
+.perfil-competitivo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.perfil-competitivo-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 7.5rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+
+.perfil-competitivo-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.perfil-competitivo-value {
+  margin: 0.5rem 0 0;
+  color: var(--color-text);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.perfil-competitivo-detail {
+  margin: 0.75rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.perfil-competitivo-icon {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+}
+
+.perfil-competitivo-icon--success {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.perfil-competitivo-icon--warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.perfil-competitivo-icon--info {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.perfil-competitivo-skeleton {
+  height: 7.5rem;
+  border-radius: 0.75rem;
+}
+
+.perfil-conquistas {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-bg-soft);
+}
+
+.perfil-conquistas-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-primary);
+}
+
+.perfil-conquistas-header h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.perfil-conquistas-header p {
+  margin: 0.125rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.perfil-conquistas-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.perfil-conquista-placeholder {
+  display: flex;
+  min-height: 5.75rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 0.5rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.perfil-conquista-placeholder small {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.perfil-conquista-placeholder--locked {
+  opacity: 0.58;
+  filter: grayscale(1);
+}
+
 /* ── Dados Pessoais layout ───────────────────────────── */
 
 .dados-layout {
@@ -277,6 +554,26 @@
   }
 
   .senha-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-nivel-card,
+  .perfil-nivel-progress-labels,
+  .perfil-privacidade-card {
+    flex-direction: column;
+  }
+
+  .perfil-privacidade-card {
+    align-items: stretch;
+  }
+
+  .perfil-nivel-progress {
+    width: 100%;
+    max-width: none;
+  }
+
+  .perfil-competitivo-grid,
+  .perfil-conquistas-grid {
     grid-template-columns: 1fr;
   }
 }

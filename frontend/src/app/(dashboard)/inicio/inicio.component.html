@@ -8,10 +8,19 @@
     [rotaCta]="provasRoute()"
   />
 
+  <div class="mt-4">
+    <app-ranking-status-bar
+      [posicaoGlobal]="rankingPosicao()?.posicao_global ?? null"
+      [posicaoSemana]="rankingPosicao()?.posicao_semana ?? null"
+      [xpSemana]="gamificacao()?.xp_semana_atual ?? 0"
+      [competirPublico]="gamificacao()?.competir_publico ?? true"
+    />
+  </div>
+
   <!-- Seção 2: KPIs -->
-  <div class="mt-4 grid grid-cols-2 gap-3 md:mt-5 md:grid-cols-4 md:gap-4">
+  <div class="mt-4 grid grid-cols-2 gap-3 md:mt-5 md:grid-cols-5 md:gap-4">
     @if (isLoadingKpis()) {
-      @for (_ of [1, 2, 3, 4]; track $index) {
+      @for (_ of [1, 2, 3, 4, 5]; track $index) {
         <div class="h-28 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
       }
     } @else {
@@ -29,18 +38,25 @@
   </div>
 
   <!-- Streak de estudo -->
-  @if (streak() > 0) {
-    <div class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
-      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-        <app-ui-icon [icon]="streakIcon" [size]="18" />
+  @if (streak(); as streakData) {
+    @if (streakData.atual > 0) {
+      <div class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+          <app-ui-icon [icon]="streakIcon" [size]="18" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-[var(--color-text)]">
+            {{ streakData.atual }} dia{{ streakData.atual > 1 ? 's' : '' }} seguido{{ streakData.atual > 1 ? 's' : '' }}
+          </p>
+          <p class="text-xs text-[var(--color-text-muted)]">
+            Recorde: {{ streakData.recorde }} · {{ streakData.freezes_disponiveis }} protetor{{ streakData.freezes_disponiveis === 1 ? '' : 'es' }}
+            @if (streakData.dias_para_proximo_marco > 0) {
+              · {{ streakData.dias_para_proximo_marco }} dia{{ streakData.dias_para_proximo_marco === 1 ? '' : 's' }} para o próximo marco
+            }
+          </p>
+        </div>
       </div>
-      <div>
-        <p class="text-sm font-semibold text-[var(--color-text)]">
-          {{ streak() }} dia{{ streak() > 1 ? 's' : '' }} seguido{{ streak() > 1 ? 's' : '' }}
-        </p>
-        <p class="text-xs text-[var(--color-text-muted)]">Continue assim! Constância é o segredo.</p>
-      </div>
-    </div>
+    }
   }
 
   <!-- Seção 3: Trajetória recente -->

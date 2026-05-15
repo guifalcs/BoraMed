@@ -62,6 +62,26 @@ export class ProfileService {
     }
   }
 
+  async updateCompetirPublico(competirPublico: boolean): Promise<ProfileResult> {
+    const user = this.auth.user();
+    if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .update({ competir_publico: competirPublico })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      this._profile.set(data as Profile);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Não foi possível salvar a privacidade competitiva.' };
+    }
+  }
+
   async uploadAvatar(file: File): Promise<ProfileResult> {
     const user = this.auth.user();
     if (!user) return { ok: false, error: 'Usuário não autenticado.' };

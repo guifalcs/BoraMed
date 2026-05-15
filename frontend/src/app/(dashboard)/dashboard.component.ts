@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, User } from 'lucide-angular';
+import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { AuthService } from '../core/services/auth.service';
@@ -71,6 +71,7 @@ export class DashboardComponent {
   protected readonly navItems: NavItem[] = [
     { label: 'Início', icon: Home, route: '/dashboard', exact: true },
     { label: 'Simulados', icon: BookOpen, route: '/dashboard/simulados' },
+    { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico' },
     { label: 'Suporte', icon: LifeBuoy, route: '/dashboard/suporte' },
   ];

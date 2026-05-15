@@ -1,6 +1,8 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { SupabaseService } from './supabase.service';
+import { GamificacaoService } from './gamificacao.service';
+import { NotificationService } from './notification.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { QuestaoComAlternativas } from '../models/questao';
 import type { ProvaResult } from './prova.service';
@@ -9,6 +11,8 @@ import type { ProvaResult } from './prova.service';
 export class TentativaService {
   private readonly supabase = inject(SupabaseService).client;
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly gamificacao = inject(GamificacaoService);
+  private readonly notifications = inject(NotificationService);
 
   private readonly _tentativaAtiva = signal<Tentativa | null>(null);
   private readonly _questoes = signal<QuestaoComAlternativas[]>([]);
@@ -303,9 +307,22 @@ export class TentativaService {
         t ? { ...t, status: 'finalizada', finalizada_em: new Date().toISOString() } : t,
       );
 
+      await this.registrarXpTentativa(tentativaId);
+
       return { ok: true, data: resultado };
     } catch {
       return { ok: false, error: 'Não foi possível finalizar a tentativa.' };
+    }
+  }
+
+  private async registrarXpTentativa(tentativaId: string): Promise<void> {
+    const result = await this.gamificacao.concederXpTentativa(tentativaId);
+    if (result.ok && result.data.xp_ganho > 0) {
+      this.notifications.success(`+${result.data.xp_ganho} XP conquistados`);
+    }
+    if (result.ok && result.data.novas_conquistas.length > 0) {
+      const primeira = result.data.novas_conquistas[0];
+      this.notifications.success(`Conquista desbloqueada: ${primeira.nome}`);
     }
   }
 

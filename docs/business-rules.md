@@ -28,6 +28,23 @@
 * Exibe gabarito com alternativa correta destacada
 * Histórico visível apenas para o próprio aluno
 
+### Gamificação Competitiva
+
+* XP é concedido somente após tentativa finalizada e nunca no modo `visualizar`
+* Cada tentativa concede XP uma única vez por chave idempotente `tentativa:{tentativa_id}`
+* XP de tentativas tem cap diário de 500 XP por usuário
+* Streak v2 considera dias de atividade com tentativa ou desafio diário
+* Streak atual permanece válido se o último dia ativo foi hoje ou ontem
+* Streak Freeze é consumido automaticamente quando há exatamente 1 dia perdido e o aluno tem protetor disponível
+* Um protetor é ganho a cada 7 dias consecutivos completos, com máximo de 2 armazenados
+* Conquistas MVP: primeira tentativa, streak 3, streak 7, volume 10 e precisão 70
+* Conquistas desbloqueadas são registradas uma única vez por usuário
+* Ranking futuro deve medir atividade por XP, nunca percentual de acerto
+* Dados competitivos públicos exigem opt-out visível para o aluno em Perfil
+* Alunos com opt-out continuam acumulando XP e conquistas, mas devem aparecer como anônimos em rankings
+* Ranking competitivo MVP tem recortes Global (`xp_total`) e Semana (`xp_semana_atual`)
+* Ranking não expõe e-mail; usa nome completo quando público ou `Anônimo` quando privado
+
 ## Fluxos Principais
 
 ### Gerar Simulado Processual ou Laboratório
@@ -72,7 +89,7 @@
 
 * Especificidade Afya: provas processuais e de laboratório não existem em bancos genéricos (QConcursos, Medway, etc.)
 * Personalização granular: aluno monta o simulado exatamente com o que precisa estudar
-* Não competir em volume bruto de questões — competir em relevância
+* Competição por consistência de estudo e XP, sem confronto direto por acurácia
 
 ## Monetização (planejada)
 

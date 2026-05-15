@@ -19,6 +19,7 @@ export interface Profile {
   avatar_url: string | null;
   tipo_usuario: TipoUsuario | null;
   periodo: number | null;
+  competir_publico: boolean;
   atualizado_em: string;
 }
 
