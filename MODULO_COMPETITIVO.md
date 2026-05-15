@@ -2,20 +2,20 @@
 
 ## Contexto
 
-O BoraMed já tem um ciclo funcional de estudos (simulados, tentativas, análise de desempenho). O problema é que não existe gancho de retorno diário — o usuário usa quando lembra, não por hábito. Este módulo adiciona camadas de engajamento (XP, streak aprimorado, Daily Challenge, ligas semanais, conquistas) com foco em **consistência sem ansiedade**, alinhado ao perfil de público de medicina/vestibular que já está sob pressão.
+O BoraMed já tem um ciclo funcional de estudos (simulados, tentativas, análise de desempenho). O problema é que não existe gancho de retorno diário — o usuário usa quando lembra, não por hábito. Este módulo adiciona camadas de engajamento (XP, streak aprimorado, Daily Challenge, ranking global, conquistas) com foco em **valorizar quem mais estuda**, sem confrontos diretos entre usuários.
 
-**Princípios de design (anti-burnout):**
+**Princípios de design:**
 
 | ID | Princípio |
 |---|---|
-| P1 | Múltiplos eixos de progresso (XP, streak, conquistas, liga) |
+| P1 | Múltiplos eixos de progresso (XP, streak, conquistas, ranking) |
 | P2 | Loss-aversion controlada (Streak Freeze automático) |
-| P3 | Matchmaking por hábito, não habilidade |
-| P4 | Opt-out obrigatório para ranking público |
+| P3 | Ranking mede atividade (XP), não habilidade (% acerto) |
+| P4 | Opt-out obrigatório para visibilidade no ranking |
 | P5 | Não punir ausência |
 | P6 | Recompensar consistência, não intensidade |
 
-**Referências:** Duolingo (streaks, ligas, daily quests), Wordle (desafio compartilhado), Strava Local Legend (consistência > talento), AMBOSS (analytics densos para medicina), Anki (spaced repetition sem gamificação agressiva).
+**Referências:** Duolingo (streaks, daily quests), Wordle (desafio compartilhado), Strava (ranking de atividade), AMBOSS (analytics densos para medicina).
 
 ---
 
@@ -50,7 +50,7 @@ xp_total    = base + bonus_nota + bonus_dif + bonus_tempo
 ```sql
 id                uuid PK default gen_random_uuid()
 user_id           uuid FK auth.users
-tipo              text CHECK IN ('tentativa', 'desafio_diario', 'streak_marco', 'conquista', 'liga_promocao')
+tipo              text CHECK IN ('tentativa', 'desafio_diario', 'streak_marco', 'conquista')
 xp                integer
 metadata          jsonb
 idempotency_key   text NOT NULL
@@ -151,53 +151,51 @@ UNIQUE(user_id, data)
 
 ---
 
-## 4. Ligas Semanais
+## 4. Ranking Global
 
-### Tiers (7, nomes do universo médico)
+### Conceito
 
-| Tier | Nome | Promove | Relega |
-|---|---|---|---|
-| 1 | Estagiário | Top 7 | — |
-| 2 | Interno | Top 7 | Bottom 5 |
-| 3 | Residente R1 | Top 7 | Bottom 5 |
-| 4 | Residente R3 | Top 7 | Bottom 5 |
-| 5 | Plantonista | Top 5 | Bottom 5 |
-| 6 | Especialista | Top 5 | Bottom 5 |
-| 7 | Chefe de Clínica | — | Bottom 5 |
+Ranking único, sem divisões ou grupos. Ordena todos os usuários que optaram por participar por **XP total acumulado** — ou seja, quem mais estudou desde que criou a conta. Sem reset, sem rotação.
 
-Usuários entram em Estagiário ao acumular ≥1 evento de XP.
+A exibição é contextual: o usuário vê o top 10 + sua própria posição com os 5 acima e 5 abaixo (para tornar o ranking próximo alcançável).
 
-### Matchmaking por atividade (P3)
+### Dimensões de ranking
 
-Agrupar por `media_xp_4_semanas` (volume de estudo), **nunca por % acerto**. Grupos de ~30 usuários do mesmo tier com hábitos semelhantes.
+Dois recortes disponíveis na UI (tabs):
 
-### Calendário
+| Aba | Ordenação | Janela exibida |
+|---|---|---|
+| **All-time** | `xp_total DESC` | Top 10 + posição do usuário ±5 |
+| **Semana** | `xp_semana_atual DESC` | Top 10 + posição do usuário ±5 |
 
-- Semana: segunda 00:00 → domingo 23:59 BRT
-- Rotação via **`pg_cron`** (job toda segunda 00:05 BRT)
-- Ranking exibe ±5 posições ao redor do usuário — nunca top-100 sem contexto (P1)
+A aba "Semana" reinicia todo domingo 23:59 BRT via trigger/cron — dá chance de novatos aparecerem sem destruir o ranking histórico.
+
+### Privacidade (P4)
+
+- `profiles.competir_publico boolean default true`
+- Usuários opt-out: nome substituído por "Anônimo" no ranking; ainda acumulam XP e conquistas normalmente
+- UI: toggle visível em Perfil + banner no onboarding
 
 ### Schema
 
-```sql
--- liga_temporada
-id uuid PK, semana_iso text UNIQUE, iniciada_em date, terminada_em date, status text
-
--- liga_grupo
-id uuid PK, temporada_id uuid FK, tier smallint CHECK(1..7), nome text
-
--- liga_participante
-id uuid PK, grupo_id uuid FK, user_id uuid FK,
-xp_semana integer default 0, posicao_final smallint,
-acao text CHECK('promovido','mantido','relegado','pendente')
-UNIQUE(grupo_id, user_id)
-```
+Não requer tabela nova — o ranking é calculado diretamente de `user_gamificacao_stats` via RPC.
 
 ### RPCs
 
-- `get_minha_liga()` — grupo atual, tier, XP da semana, dias restantes
-- `get_liga_ranking(janela_acima, janela_abaixo)` — ±5 ao redor do usuário
-- `get_liga_top_grupo(limit 10)` — top do próprio grupo (não global)
+- `get_ranking_global(limite int default 10)` — top N filtrado por `competir_publico = true`, com `nome_display`, `nivel`, `xp_total`, `posicao`
+- `get_ranking_semana(limite int default 10)` — mesmo padrão com `xp_semana_atual`
+- `get_minha_posicao_ranking()` — retorna `{posicao_global, posicao_semana, total_participantes}` para o usuário logado
+
+Todas as RPCs com `SECURITY DEFINER` — nunca expõem dados de usuários opt-out.
+
+### Reset semanal
+
+- Cron simples (`pg_cron` ou Edge Function + Vercel Cron) toda segunda 00:01 BRT:
+  ```sql
+  UPDATE user_gamificacao_stats
+  SET xp_semana_atual = 0, semana_iso = to_char(now(), 'IYYY-"W"IW');
+  ```
+- Não apaga histórico — só o contador da semana corrente.
 
 ---
 
@@ -205,7 +203,7 @@ UNIQUE(grupo_id, user_id)
 
 **Catálogo seed em SQL** (`conquista_catalogo`), avaliado por RPC `verificar_conquistas_usuario()` assincronamente via trigger após cada evento.
 
-### Catálogo inicial (25 conquistas, 5 secretas)
+### Catálogo inicial (22 conquistas, 5 secretas)
 
 | Slug | Categoria | Critério | XP |
 |---|---|---|---|
@@ -214,7 +212,8 @@ UNIQUE(grupo_id, user_id)
 | `volume_10` / `_50` / `_200` / `_500` | volume | tentativas acumuladas | 100/500/2k/5k |
 | `precisao_70` / `_90` / `_100` | precisão | notas altas repetidas | 200/300/500 |
 | `desafio_1` / `_7` / `_30` | desafio | dailies respondidos | 25/200/1k |
-| `liga_promovido` / `_chefe` / `_topo` | liga | progressão de liga | 200/2k/300 |
+| `ranking_top10` | ranking | entrar no top 10 global | 500 |
+| `ranking_1` | ranking | chegar ao 1º lugar (all-time) | 3.000 |
 | `madrugador` *(secreta)* | social | tentativa 5h–7h | 50 |
 | `coruja` *(secreta)* | social | tentativa 23h–1h | 50 |
 | `comeback` *(secreta)* | streak | streak após freeze usado | 100 |
@@ -242,7 +241,7 @@ PK(user_id, conquista_id)
 
 ```
 /dashboard/competir               CompetirHubComponent (tabs)
-/dashboard/competir/liga          LigaComponent
+/dashboard/competir/ranking       RankingComponent
 /dashboard/competir/desafio       DesafioDiarioComponent
 /dashboard/competir/conquistas    ConquistasComponent
 /dashboard/perfil/competicao      PerfilCompeticaoComponent
@@ -258,12 +257,12 @@ PK(user_id, conquista_id)
 ### Tela `/inicio` (sem remover KPIs existentes)
 
 - Card `DailyChallengeCardComponent` acima dos KPIs (status + CTA "Responder agora")
-- Banner `LigaStatusBarComponent` (1 linha): "Tier: Interno · #3 do grupo · 3 dias restantes"
+- Banner `RankingStatusBarComponent` (1 linha): "Você está em #47 no ranking · +230 XP esta semana"
 - 5º KPI: "XP da semana" com sparkline 7 dias
 
 ### Shared components a criar (todos com `.stories.ts`)
 
-`xp-badge`, `streak-flame`, `daily-challenge-card`, `liga-status-bar`, `liga-ranking-row`, `conquista-tile`, `conquista-modal`, `tier-emblem`, `xp-event-toast`, `heatmap-calendar`
+`xp-badge`, `streak-flame`, `daily-challenge-card`, `ranking-status-bar`, `ranking-row`, `conquista-tile`, `conquista-modal`, `xp-event-toast`, `heatmap-calendar`
 
 ### Hook na finalização de tentativa (`tentativa.service.ts`)
 
@@ -278,15 +277,13 @@ Após RPC existente de finalização:
 | Service | Responsabilidade |
 |---|---|
 | `GamificacaoService` | XP, nível, stats — signals `xpTotal`, `nivel`, `xpSemana` |
-| `LigaService` | Liga atual, ranking, histórico de tiers |
+| `RankingService` | Ranking global, semana, posição do usuário |
 | `DesafioService` | Questão do dia, submissão, histórico |
 | `ConquistaService` | Catálogo + desbloqueadas, signal cache |
 
 ---
 
-## 7. Migrations SQL
-
-Ordem de aplicação (uma por bloco coeso):
+## 7. Migrations SQL (9 migrations)
 
 ```
 20260516000001_gamificacao_schema.sql      -- tabelas + trigger denormalização
@@ -297,22 +294,21 @@ Ordem de aplicação (uma por bloco coeso):
 20260516000006_conquistas_rpcs.sql         -- verificar_conquistas_usuario
 20260516000007_desafio_diario_schema.sql   -- questao.apto_desafio_diario + tabelas
 20260516000008_desafio_diario_rpcs.sql
-20260516000009_liga_schema.sql
-20260516000010_liga_rpcs.sql
-20260516000011_liga_cron_jobs.sql          -- habilitar pg_cron + jobs semanais
-20260516000012_inicio_kpis_xp.sql          -- extensão das RPCs de KPI existentes
+20260516000009_ranking_rpcs.sql            -- get_ranking_global, get_ranking_semana, get_minha_posicao_ranking
 ```
+
+Reset semanal via cron simples (não requer tabelas extras de liga).
 
 **RLS — padrões críticos:**
 - `gamificacao_evento`: SELECT apenas próprio; INSERT apenas via RPC `SECURITY DEFINER`
 - Todo cross-user apenas via RPC `SECURITY DEFINER` + filtro `competir_publico = true`
-- Auditar com `supabase db advisors` antes de cada deploy
+- Auditar com `supabase db advisors` antes de deploy
 
 ---
 
 ## 8. Fases de Implementação
 
-### Fase MVP (Sprint 1–2) — Sem features sociais
+### Fase MVP (Sprint 1–2) — XP + Streak
 
 **Objetivo:** provar que XP e streak melhoram retorno diário.
 
@@ -322,39 +318,25 @@ Ordem de aplicação (uma por bloco coeso):
 - Streak Freeze automático
 - KPI "XP da semana" no `/inicio`
 - `/dashboard/perfil/competicao` minimal: nível, XP, 5 conquistas, streak
-- **Sidebar sem item "Competir" ainda** (acesso só pelo perfil)
 
-### Fase V2 (Sprint 3–4) — Daily Challenge
+### Fase V2 (Sprint 3–4) — Daily Challenge + Ranking
 
-**Objetivo:** conteúdo compartilhado diário (maior ROI de DAU, Duolingo +25%).
+**Objetivo:** conteúdo compartilhado diário + ranking global visível.
 
-- Migrations 6–8
+- Migrations 6–9
 - Curadoria de `apto_desafio_diario` em ~200 questões
-- `DesafioService`
+- `DesafioService`, `RankingService`
 - Card de Daily no `/inicio`
-- Rota `/dashboard/competir` com tab "Desafio" (Liga placeholder "Em breve")
-- 20 conquistas restantes ativadas
+- Banner de posição no ranking no `/inicio`
+- Rota `/dashboard/competir` com tabs: Ranking, Desafio, Conquistas
+- 22 conquistas ativadas
 - Heatmap calendar no perfil
 
-*Por que antes de ligas: valida infra multi-usuário com risco menor (sem ranking, sem rotação semanal)*
+### Fase V3 (Pós-lançamento, conforme crescimento)
 
-### Fase V3 (Sprint 5–6) — Ligas Semanais
-
-**Objetivo:** competição social com matchmaking justo.
-
-- Migrations 9–12
-- `LigaService`
-- Tab "Liga" ativa em `/dashboard/competir`
-- Banner de status no `/inicio`
-- pg_cron testado com fast-forward de datas em stage
-- Onboarding banner reforçando opt-out
-- Conquistas de liga ativadas
-
-### Fase V4 (Pós-lançamento)
-
-- A/B test: default `competir_publico = true` vs `false`
+- Sistema de amigos / seguir usuários → ranking entre amigos
 - Conquistas sazonais ("Maratona ENEM 2026")
-- Sistema de seguir amigos + friend streaks
+- Notificações push para streak em risco e daily challenge
 
 ---
 
@@ -365,9 +347,9 @@ Ordem de aplicação (uma por bloco coeso):
 | `src/app/app.routes.ts` | Registrar rotas `/dashboard/competir/**` e `/dashboard/perfil/competicao` |
 | `src/app/(dashboard)/dashboard.component.ts` | Adicionar item "Competir" em `navItems` |
 | `src/app/core/services/tentativa.service.ts` | Hook pós-finalização para XP + toast |
-| `src/app/core/resolvers/inicio.resolver.ts` | Incluir dados de liga, desafio e XP |
+| `src/app/core/resolvers/inicio.resolver.ts` | Incluir posição no ranking, desafio do dia e XP |
 | `src/app/(dashboard)/inicio/inicio.component.ts` | Renderizar novos cards sem remover KPIs existentes |
-| `supabase/migrations/` | 12 novas migrations |
+| `supabase/migrations/` | 9 novas migrations |
 
 ---
 
@@ -375,13 +357,11 @@ Ordem de aplicação (uma por bloco coeso):
 
 | Risco | Severidade | Mitigação |
 |---|---|---|
-| Burnout em público de medicina | Alta | Princípios P1-P6; opt-out fácil; ±5 ranking; sem comparação de % acerto |
+| Ranking desmotiva quem está longe do topo | Média | Exibir sempre posição do usuário ±5; destaque para "subi X posições esta semana" |
 | Farming de XP | Média | Cap 500 XP/dia; somente modos simulado/estudo |
-| Duplicação de XP | Alta | `idempotency_key` + UNIQUE constraint; teste de double-call |
-| Cron de rotação falhar | Alta | Job idempotente; fallback manual via RPC `processar_fim_temporada(semana_iso)` |
-| RLS exposta em ranking | Crítica | Apenas RPCs SECURITY DEFINER para cross-user; auditar com db advisors |
-| pg_cron indisponível no plano Supabase | Média | Fallback: Edge Function + Vercel Cron disparando RPC |
-| Liga com poucos usuários | Média | Merge de tiers adjacentes se grupo < 10; UI "Liga em formação" se < 5 |
+| Duplicação de XP | Alta | `idempotency_key` + UNIQUE constraint |
+| RLS exposta no ranking | Crítica | Apenas RPCs SECURITY DEFINER; filtro `competir_publico = true` |
+| Burnout por comparação | Média | Ranking de atividade (XP), nunca de % acerto; opt-out fácil |
 
 ---
 
@@ -389,7 +369,7 @@ Ordem de aplicação (uma por bloco coeso):
 
 1. Finalizar simulado → toast "+XP" aparece → perfil mostra nível e XP atualizado
 2. Estudar 7 dias consecutivos → freeze concedido → streak não quebra no 8º dia ausente
-3. Responder Daily Challenge → gabarito revelado → estatística coletiva exibida → XP fora do cap diário
-4. Segunda-feira 00:05 → cron rodou → novo grupo de liga atribuído para usuário ativo
-5. Domingo 23:59 → cron fechou semana → promoção/relegação aplicada
-6. Usuário com `competir_publico = false` → nome não aparece em ranking; ainda recebe XP e conquistas
+3. Responder Daily Challenge → gabarito revelado → estatística coletiva exibida
+4. Acessar `/dashboard/competir/ranking` → ver top 10 + posição própria com ±5 vizinhos
+5. Segunda-feira 00:01 → `xp_semana_atual` zerado → ranking da semana reinicia
+6. Usuário opt-out → nome não aparece no ranking; XP e conquistas continuam normalmente
