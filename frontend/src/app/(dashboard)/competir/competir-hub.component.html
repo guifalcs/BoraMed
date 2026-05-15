@@ -1,0 +1,267 @@
+<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
+  <section class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+    <div class="border-b border-[var(--color-border)] px-5 py-5 md:px-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="min-w-0">
+          <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <app-ui-icon [icon]="trophyIcon" [size]="22" />
+          </div>
+          <h1 class="text-2xl font-extrabold tracking-normal text-[var(--color-text)] md:text-3xl">
+            Competitivo
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">
+            Progresso competitivo do BoraMed, começando por XP, sequência e conquistas ligadas aos simulados.
+          </p>
+        </div>
+
+        <a
+          routerLink="/dashboard/simulados"
+          class="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--color-action)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+        >
+          Fazer simulado
+        </a>
+      </div>
+    </div>
+
+    <div class="grid gap-3 p-5 md:grid-cols-3 md:p-6">
+      @if (isLoadingStats()) {
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="h-32 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+        }
+      } @else {
+        @for (metric of metrics(); track metric.label) {
+          <article class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-medium text-[var(--color-text-muted)]">{{ metric.label }}</p>
+                <p class="mt-2 text-2xl font-extrabold leading-none text-[var(--color-text)]">{{ metric.value }}</p>
+              </div>
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" [class]="metricToneClass(metric.tone)">
+                <app-ui-icon [icon]="metric.icon" [size]="17" />
+              </div>
+            </div>
+            <p class="mt-3 text-xs leading-5 text-[var(--color-text-muted)]">{{ metric.detail }}</p>
+          </article>
+        }
+      }
+    </div>
+  </section>
+
+  <!-- Desafio Diário -->
+  <section class="mt-6 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+    <div class="border-b border-[var(--color-border)] px-5 py-4 md:px-6">
+      <div class="flex items-center gap-3">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <app-ui-icon [icon]="calendarIcon" [size]="18" />
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-[var(--color-text)]">Desafio de hoje</h2>
+          <p class="mt-0.5 text-xs text-[var(--color-text-muted)]">Uma questão por dia, compartilhada com todos os usuários.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-5 md:p-6">
+      @switch (desafioEstado()) {
+        @case ('loading') {
+          <div class="space-y-3">
+            <div class="h-4 w-3/4 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
+            <div class="h-4 w-full animate-pulse rounded bg-[var(--color-surface-2)]"></div>
+            <div class="h-4 w-2/3 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
+            <div class="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+              @for (_ of [1, 2, 3, 4]; track $index) {
+                <div class="h-12 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+              }
+            </div>
+          </div>
+        }
+        @case ('unavailable') {
+          <div class="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-8 text-center">
+            <p class="text-sm font-semibold text-[var(--color-text)]">Sem desafio disponível hoje</p>
+            <p class="mt-1 text-xs text-[var(--color-text-muted)]">Volte amanhã para uma nova questão.</p>
+          </div>
+        }
+        @default {
+          @if (desafio(); as d) {
+            <!-- Enunciado -->
+            <div class="mb-4 space-y-2">
+              @if (d.questao?.disciplina) {
+                <span class="inline-block rounded-full bg-[var(--color-bg-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
+                  {{ d.questao!.disciplina }}
+                </span>
+              }
+              <p class="text-sm leading-6 text-[var(--color-text)]">{{ d.questao?.enunciado }}</p>
+            </div>
+
+            <!-- Alternativas -->
+            <div class="grid grid-cols-1 gap-2">
+              @for (alt of d.alternativas; track alt.id) {
+                <button
+                  type="button"
+                  class="flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-all"
+                  [class]="alternativaClass(alt)"
+                  [disabled]="desafioEstado() === 'answered' || desafioEstado() === 'submitting'"
+                  (click)="handleResponder(alt.id)"
+                >
+                  <span class="mt-0.5 shrink-0 text-xs font-extrabold">{{ alt.letra }}.</span>
+                  <span class="leading-5">{{ alt.texto }}</span>
+                  @if (desafioEstado() === 'answered') {
+                    @if (alt.correta === true) {
+                      <app-ui-icon class="ml-auto mt-0.5 shrink-0 text-emerald-600" [icon]="checkCircleIcon" [size]="16" />
+                    } @else if (alt.id === d.minha_resposta?.alternativa_id && !d.minha_resposta?.correta) {
+                      <app-ui-icon class="ml-auto mt-0.5 shrink-0 text-red-500" [icon]="xCircleIcon" [size]="16" />
+                    }
+                  }
+                </button>
+              }
+            </div>
+
+            <!-- Resultado após resposta -->
+            @if (desafioEstado() === 'answered' && d.minha_resposta) {
+              <div class="mt-4 space-y-3">
+                <!-- Badge XP + resultado -->
+                <div class="flex flex-wrap items-center gap-2">
+                  @if (d.minha_resposta.correta) {
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      <app-ui-icon [icon]="checkCircleIcon" [size]="13" />
+                      Resposta correta!
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
+                      <app-ui-icon [icon]="xCircleIcon" [size]="13" />
+                      Resposta incorreta
+                    </span>
+                  }
+                  <span class="rounded-full bg-[var(--color-bg-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
+                    +{{ d.minha_resposta.xp_ganho }} XP
+                  </span>
+                </div>
+
+                <!-- Estatísticas -->
+                @if (d.estatistica.total_responderam > 0) {
+                  <p class="text-xs text-[var(--color-text-muted)]">
+                    {{ d.estatistica.percentual_acerto }}% dos participantes acertaram
+                    ({{ d.estatistica.total_responderam }} {{ d.estatistica.total_responderam === 1 ? 'resposta' : 'respostas' }})
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- Loading overlay durante submit -->
+            @if (desafioEstado() === 'submitting') {
+              <p class="mt-3 text-xs text-[var(--color-text-muted)]">Registrando resposta…</p>
+            }
+          }
+        }
+      }
+    </div>
+  </section>
+
+  <!-- Ranking -->
+  <section class="mt-6 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+    <div class="border-b border-[var(--color-border)] px-5 py-4 md:px-6">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-[var(--color-text)]">Ranking</h2>
+          <p class="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+            Classificação por XP de estudo, com opção de aparecer como anônimo no perfil.
+          </p>
+        </div>
+
+        <div class="inline-flex rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-1">
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+            [class.bg-white]="rankingTab() === 'global'"
+            [class.text-[var(--color-text)]]="rankingTab() === 'global'"
+            [class.text-[var(--color-text-muted)]]="rankingTab() !== 'global'"
+            (click)="setRankingTab('global')"
+          >
+            Global
+          </button>
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+            [class.bg-white]="rankingTab() === 'semana'"
+            [class.text-[var(--color-text)]]="rankingTab() === 'semana'"
+            [class.text-[var(--color-text-muted)]]="rankingTab() !== 'semana'"
+            (click)="setRankingTab('semana')"
+          >
+            Semana
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-5 md:p-6">
+      @if (isLoadingRanking()) {
+        <div class="space-y-2">
+          @for (_ of [1, 2, 3, 4, 5]; track $index) {
+            <div class="h-14 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+          }
+        </div>
+      } @else if (rankingAtual().length > 0) {
+        <div class="divide-y divide-[var(--color-border)] overflow-hidden rounded-lg border border-[var(--color-border)]">
+          @for (row of rankingComGap(); track row.item.user_id) {
+            @if (row.showGap) {
+              <div class="px-4 py-1.5 text-xs text-center text-[var(--color-text-muted)] select-none tracking-widest">···</div>
+            }
+            <div
+              class="flex items-center gap-3 px-4 py-3 transition-colors"
+              [class.bg-blue-50]="row.item.is_me"
+              [class.border-l-2]="row.item.is_me"
+              [class.bg-white]="!row.item.is_me"
+            >
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-sm font-extrabold text-[var(--color-text)]">
+                #{{ row.item.posicao }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-[var(--color-text)]">
+                  {{ row.item.nome_display }}
+                  @if (row.item.is_me) {
+                    <span class="ml-1 text-xs font-normal text-[var(--color-primary)]">(você)</span>
+                  }
+                </p>
+                <p class="text-xs text-[var(--color-text-muted)]">Nível {{ row.item.nivel }}</p>
+              </div>
+              <span class="shrink-0 text-sm font-extrabold text-[var(--color-primary)]">{{ rankingXp(row.item) }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-8 text-center">
+          <p class="text-sm font-semibold text-[var(--color-text)]">Ranking sem participantes ainda</p>
+          <p class="mt-1 text-xs text-[var(--color-text-muted)]">Finalize um simulado para entrar na classificação.</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="mt-6">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-[var(--color-text)]">Ordem de implementação</h2>
+      <span class="text-xs font-medium text-[var(--color-text-muted)]">MVP competitivo</span>
+    </div>
+
+    <div class="grid gap-3 md:grid-cols-2">
+      @for (feature of features; track feature.title) {
+        <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+          <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-[var(--color-primary)]">
+              <app-ui-icon [icon]="feature.icon" [size]="18" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-sm font-semibold text-[var(--color-text)]">{{ feature.title }}</h3>
+                <span class="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                  {{ feature.status }}
+                </span>
+              </div>
+              <p class="mt-1.5 text-sm leading-6 text-[var(--color-text-muted)]">{{ feature.description }}</p>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+</div>
