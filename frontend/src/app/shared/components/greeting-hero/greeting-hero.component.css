@@ -1,0 +1,14 @@
+:host {
+  display: block;
+}
+
+.greeting-hero-bg {
+  background-size: 200% 200% !important;
+  animation: hero-gradient-shift 8s ease infinite;
+}
+
+@keyframes hero-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

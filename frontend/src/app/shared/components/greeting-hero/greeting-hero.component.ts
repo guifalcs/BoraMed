@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [RouterLink],
   templateUrl: './greeting-hero.component.html',
+  styleUrl: './greeting-hero.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GreetingHeroComponent {

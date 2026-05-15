@@ -9,7 +9,15 @@
   color: var(--color-text-inverse);
   background:
     radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.18), transparent 26%),
-    linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
+    linear-gradient(145deg, #1e40af 0%, #2451d8 25%, #6427d9 50%, #2451d8 75%, #1e40af 100%);
+  background-size: 200% 200%;
+  animation: brand-gradient-shift 8s ease infinite;
+}
+
+@keyframes brand-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .brand-panel::after {

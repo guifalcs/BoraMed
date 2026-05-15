@@ -8,12 +8,14 @@
       <!-- Rede Afya — destaque com gradiente -->
       <a
         routerLink="/dashboard/simulados/rede-afya"
-        class="group relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-        style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%), linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%);"
+        class="animate-gradient-shift group relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+        style="background: linear-gradient(145deg, #1E40AF 0%, #2451D8 25%, #6427D9 50%, #2451D8 75%, #1E40AF 100%);"
       >
-        <!-- Círculo decorativo de fundo -->
-        <div class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white opacity-5"></div>
-        <div class="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-white opacity-5"></div>
+        <!-- Radial highlights -->
+        <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%);"></div>
+        <!-- Círculos decorativos -->
+        <div class="animate-float pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white opacity-5"></div>
+        <div class="animate-float-delayed pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-white opacity-5"></div>
 
         <div class="relative flex flex-col gap-4">
           <!-- Ícone -->
