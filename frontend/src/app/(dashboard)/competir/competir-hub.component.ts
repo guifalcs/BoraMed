@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  Award,
   CalendarCheck2,
   CircleCheck,
   CircleX,
-  Flame,
   LucideIconData,
   Medal,
   Shield,
@@ -24,13 +22,6 @@ interface CompetirMetric {
   detail: string;
   icon: LucideIconData;
   tone: 'blue' | 'emerald' | 'amber';
-}
-
-interface CompetirFeature {
-  title: string;
-  description: string;
-  status: string;
-  icon: LucideIconData;
 }
 
 type RankingTab = 'global' | 'semana';
@@ -121,39 +112,6 @@ export class CompetirHubComponent {
       },
     ];
   });
-
-  protected readonly features: CompetirFeature[] = [
-    {
-      title: 'XP e níveis',
-      description: 'Pontuação por tentativa finalizada, com limite diário e eventos idempotentes.',
-      status: 'Ativo',
-      icon: Medal,
-    },
-    {
-      title: 'Streak aprimorado',
-      description: 'Sequência com recorde, protetores automáticos e marcos de recompensa.',
-      status: 'Ativo',
-      icon: Flame,
-    },
-    {
-      title: 'Ranking global',
-      description: 'Ranking por atividade acumulada, com privacidade e recorte semanal.',
-      status: 'Ativo',
-      icon: Trophy,
-    },
-    {
-      title: 'Conquistas',
-      description: 'Badges para consistência, volume, precisão e marcos competitivos.',
-      status: 'Ativo',
-      icon: Award,
-    },
-    {
-      title: 'Desafio diário',
-      description: 'Uma questão compartilhada por dia com estatística coletiva após resposta.',
-      status: 'Em breve',
-      icon: CalendarCheck2,
-    },
-  ];
 
   constructor() {
     void this.loadStats();

@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -72,6 +52,109 @@ export type Database = {
           },
         ]
       }
+      conquista_catalogo: {
+        Row: {
+          ativa: boolean
+          categoria: string
+          criado_em: string
+          descricao: string
+          icone: string
+          id: string
+          nome: string
+          ordem: number
+          secreta: boolean
+          xp_recompensa: number
+        }
+        Insert: {
+          ativa?: boolean
+          categoria: string
+          criado_em?: string
+          descricao: string
+          icone: string
+          id: string
+          nome: string
+          ordem?: number
+          secreta?: boolean
+          xp_recompensa?: number
+        }
+        Update: {
+          ativa?: boolean
+          categoria?: string
+          criado_em?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          secreta?: boolean
+          xp_recompensa?: number
+        }
+        Relationships: []
+      }
+      desafio_diario: {
+        Row: {
+          criado_em: string
+          data: string
+          questao_id: string
+        }
+        Insert: {
+          criado_em?: string
+          data: string
+          questao_id: string
+        }
+        Update: {
+          criado_em?: string
+          data?: string
+          questao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desafio_diario_questao_id_fkey"
+            columns: ["questao_id"]
+            isOneToOne: false
+            referencedRelation: "questao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      desafio_diario_resposta: {
+        Row: {
+          alternativa_id: string | null
+          correta: boolean
+          data: string
+          respondido_em: string
+          tempo_segundos: number | null
+          user_id: string
+          xp_ganho: number
+        }
+        Insert: {
+          alternativa_id?: string | null
+          correta: boolean
+          data: string
+          respondido_em?: string
+          tempo_segundos?: number | null
+          user_id: string
+          xp_ganho?: number
+        }
+        Update: {
+          alternativa_id?: string | null
+          correta?: boolean
+          data?: string
+          respondido_em?: string
+          tempo_segundos?: number | null
+          user_id?: string
+          xp_ganho?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desafio_diario_resposta_alternativa_id_fkey"
+            columns: ["alternativa_id"]
+            isOneToOne: false
+            referencedRelation: "alternativa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faculdade: {
         Row: {
           ativa: boolean
@@ -102,10 +185,41 @@ export type Database = {
         }
         Relationships: []
       }
+      gamificacao_evento: {
+        Row: {
+          criado_em: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          tipo: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json
+          tipo: string
+          user_id: string
+          xp: number
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          tipo?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           atualizado_em: string
           avatar_url: string | null
+          competir_publico: boolean
           criado_em: string
           email: string
           id: string
@@ -116,6 +230,7 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           avatar_url?: string | null
+          competir_publico?: boolean
           criado_em?: string
           email: string
           id: string
@@ -126,6 +241,7 @@ export type Database = {
         Update: {
           atualizado_em?: string
           avatar_url?: string | null
+          competir_publico?: boolean
           criado_em?: string
           email?: string
           id?: string
@@ -137,40 +253,43 @@ export type Database = {
       }
       prova: {
         Row: {
-          ano: number
+          ano: number | null
           criado_em: string
-          faculdade_id: string
+          edicao: number
+          faculdade_id: string | null
           id: string
           nome: string
           periodo: number
           qtd_questoes: number
-          semestre: number
+          semestre: number | null
           subtipo_nacional: string | null
           tempo_sugerido_minutos: number | null
           tipo: string
         }
         Insert: {
-          ano: number
+          ano?: number | null
           criado_em?: string
-          faculdade_id: string
+          edicao?: number
+          faculdade_id?: string | null
           id?: string
           nome: string
           periodo: number
           qtd_questoes?: number
-          semestre: number
+          semestre?: number | null
           subtipo_nacional?: string | null
           tempo_sugerido_minutos?: number | null
           tipo: string
         }
         Update: {
-          ano?: number
+          ano?: number | null
           criado_em?: string
-          faculdade_id?: string
+          edicao?: number
+          faculdade_id?: string | null
           id?: string
           nome?: string
           periodo?: number
           qtd_questoes?: number
-          semestre?: number
+          semestre?: number | null
           subtipo_nacional?: string | null
           tempo_sugerido_minutos?: number | null
           tipo?: string
@@ -187,7 +306,10 @@ export type Database = {
       }
       questao: {
         Row: {
+          aprovada_em: string | null
+          apto_desafio_diario: boolean
           atualizado_em: string
+          autor_id: string | null
           codigo_externo: string | null
           criado_em: string
           dificuldade: number | null
@@ -198,23 +320,31 @@ export type Database = {
           explicacao_alternativas: Json | null
           fonte: string | null
           formato: string
+          formato_prova: string | null
           id: string
           imagem_legenda: string | null
           imagem_url: string | null
+          nivel_bloom: number | null
           ordem_na_prova: number | null
+          origem_geracao: string
           periodo: number | null
           prova_id: string | null
+          publicada_em: string | null
           referencia: string | null
           resposta_correta_texto: string | null
           respostas_aceitas: string[] | null
           revisado: boolean
+          revisor_id: string | null
           status: string
           taxa_acerto: number | null
           vezes_acertada: number
           vezes_respondida: number
         }
         Insert: {
+          aprovada_em?: string | null
+          apto_desafio_diario?: boolean
           atualizado_em?: string
+          autor_id?: string | null
           codigo_externo?: string | null
           criado_em?: string
           dificuldade?: number | null
@@ -225,23 +355,31 @@ export type Database = {
           explicacao_alternativas?: Json | null
           fonte?: string | null
           formato: string
+          formato_prova?: string | null
           id?: string
           imagem_legenda?: string | null
           imagem_url?: string | null
+          nivel_bloom?: number | null
           ordem_na_prova?: number | null
+          origem_geracao?: string
           periodo?: number | null
           prova_id?: string | null
+          publicada_em?: string | null
           referencia?: string | null
           resposta_correta_texto?: string | null
           respostas_aceitas?: string[] | null
           revisado?: boolean
+          revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
           vezes_acertada?: number
           vezes_respondida?: number
         }
         Update: {
+          aprovada_em?: string | null
+          apto_desafio_diario?: boolean
           atualizado_em?: string
+          autor_id?: string | null
           codigo_externo?: string | null
           criado_em?: string
           dificuldade?: number | null
@@ -252,16 +390,21 @@ export type Database = {
           explicacao_alternativas?: Json | null
           fonte?: string | null
           formato?: string
+          formato_prova?: string | null
           id?: string
           imagem_legenda?: string | null
           imagem_url?: string | null
+          nivel_bloom?: number | null
           ordem_na_prova?: number | null
+          origem_geracao?: string
           periodo?: number | null
           prova_id?: string | null
+          publicada_em?: string | null
           referencia?: string | null
           resposta_correta_texto?: string | null
           respostas_aceitas?: string[] | null
           revisado?: boolean
+          revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
           vezes_acertada?: number
@@ -269,24 +412,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "questao_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "questao_prova_id_fkey"
             columns: ["prova_id"]
             isOneToOne: false
             referencedRelation: "prova"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "questao_revisor_id_fkey"
+            columns: ["revisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       questao_tema: {
         Row: {
+          principal: boolean
           questao_id: string
           tema_id: string
         }
         Insert: {
+          principal?: boolean
           questao_id: string
           tema_id: string
         }
         Update: {
+          principal?: boolean
           questao_id?: string
           tema_id?: string
         }
@@ -456,18 +616,142 @@ export type Database = {
           },
         ]
       }
+      user_conquista: {
+        Row: {
+          conquista_id: string
+          desbloqueada_em: string
+          user_id: string
+        }
+        Insert: {
+          conquista_id: string
+          desbloqueada_em?: string
+          user_id: string
+        }
+        Update: {
+          conquista_id?: string
+          desbloqueada_em?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_conquista_conquista_id_fkey"
+            columns: ["conquista_id"]
+            isOneToOne: false
+            referencedRelation: "conquista_catalogo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_gamificacao_stats: {
+        Row: {
+          atualizado_em: string
+          competir_publico: boolean
+          freeze_usado_em: string | null
+          freezes_disponiveis: number
+          nivel: number
+          semana_iso: string | null
+          streak_atual: number
+          streak_recorde: number
+          ultimo_dia_ativo: string | null
+          user_id: string
+          xp_semana_atual: number
+          xp_total: number
+        }
+        Insert: {
+          atualizado_em?: string
+          competir_publico?: boolean
+          freeze_usado_em?: string | null
+          freezes_disponiveis?: number
+          nivel?: number
+          semana_iso?: string | null
+          streak_atual?: number
+          streak_recorde?: number
+          ultimo_dia_ativo?: string | null
+          user_id: string
+          xp_semana_atual?: number
+          xp_total?: number
+        }
+        Update: {
+          atualizado_em?: string
+          competir_publico?: boolean
+          freeze_usado_em?: string | null
+          freezes_disponiveis?: number
+          nivel?: number
+          semana_iso?: string | null
+          streak_atual?: number
+          streak_recorde?: number
+          ultimo_dia_ativo?: string | null
+          user_id?: string
+          xp_semana_atual?: number
+          xp_total?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      finalizar_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
+      conceder_xp_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
+      finalizar_tentativa:
+        | { Args: { p_tentativa_id: string }; Returns: Json }
+        | {
+            Args: { p_tempo_segundos?: number; p_tentativa_id: string }
+            Returns: Json
+          }
+      gerar_simulado_personalizado: {
+        Args: { p_modo?: string; p_qtd?: number; p_tema_ids?: string[] }
+        Returns: Json
+      }
+      get_desafio_diario: { Args: never; Returns: Json }
+      get_desempenho_por_tema: {
+        Args: never
+        Returns: {
+          acertos: number
+          taxa: number
+          tema_nome: string
+          total: number
+        }[]
+      }
+      get_historico_kpis: { Args: never; Returns: Json }
+      get_meu_xp: { Args: never; Returns: Json }
+      get_minha_posicao_ranking: { Args: never; Returns: Json }
+      get_minhas_conquistas: { Args: never; Returns: Json }
+      get_ranking_global: { Args: { p_limite?: number }; Returns: Json }
+      get_ranking_semana: { Args: { p_limite?: number }; Returns: Json }
+      get_streak_estudo: { Args: never; Returns: number }
+      get_streak_estudo_v2: { Args: never; Returns: Json }
       iniciar_tentativa: {
         Args: { p_modo: string; p_prova_id: string }
         Returns: Json
       }
-      pausar_tentativa: { Args: { p_tentativa_id: string }; Returns: undefined }
+      listar_temas_com_contagem: {
+        Args: never
+        Returns: {
+          criado_em: string
+          disciplina: string
+          id: string
+          nome: string
+          parent_id: string
+          periodo: number
+          qtd_questoes: number
+        }[]
+      }
+      pausar_tentativa:
+        | { Args: { p_tentativa_id: string }; Returns: undefined }
+        | {
+            Args: { p_tempo_segundos?: number; p_tentativa_id: string }
+            Returns: undefined
+          }
+      responder_desafio_diario: {
+        Args: { p_alternativa_id: string; p_tempo_segundos?: number }
+        Returns: Json
+      }
       retomar_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
+      verificar_conquistas_usuario: {
+        Args: { p_user_id?: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
@@ -596,9 +880,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

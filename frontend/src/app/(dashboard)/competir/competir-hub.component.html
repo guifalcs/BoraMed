@@ -237,31 +237,4 @@
     </div>
   </section>
 
-  <section class="mt-6">
-    <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-sm font-semibold text-[var(--color-text)]">Ordem de implementação</h2>
-      <span class="text-xs font-medium text-[var(--color-text-muted)]">MVP competitivo</span>
-    </div>
-
-    <div class="grid gap-3 md:grid-cols-2">
-      @for (feature of features; track feature.title) {
-        <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
-          <div class="flex items-start gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-[var(--color-primary)]">
-              <app-ui-icon [icon]="feature.icon" [size]="18" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-sm font-semibold text-[var(--color-text)]">{{ feature.title }}</h3>
-                <span class="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
-                  {{ feature.status }}
-                </span>
-              </div>
-              <p class="mt-1.5 text-sm leading-6 text-[var(--color-text-muted)]">{{ feature.description }}</p>
-            </div>
-          </div>
-        </article>
-      }
-    </div>
-  </section>
 </div>
