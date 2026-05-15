@@ -88,6 +88,12 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     return this.respostasCorretas().get(q.id) ?? null;
   });
 
+  protected errou(questaoId: string): boolean {
+    const correta = this.respostasCorretas().get(questaoId);
+    if (!correta) return false;
+    return this.respostas().get(questaoId) !== correta;
+  }
+
   async ngOnInit(): Promise<void> {
     const tentativaId = this.route.snapshot.paramMap.get('tentativaId') ?? '';
 
@@ -120,6 +126,20 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       }
     }
     this.respostas.set(respostasMap);
+
+    if (tentativaAtiva.modo === 'estudo') {
+      const corretasMap = new Map<string, string>();
+      for (const q of this.questoes()) {
+        if (respostasMap.has(q.id)) {
+          const altCorreta = q.alternativas.find((a) => a.correta)?.id;
+          if (altCorreta) {
+            corretasMap.set(q.id, altCorreta);
+          }
+        }
+      }
+      this.respostasCorretas.set(corretasMap);
+    }
+
     this.timer.start(tentativaAtiva.tempo_acumulado_segundos);
 
     if (!this.tentativaService.provaNome()) {
@@ -145,6 +165,8 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     const tentativa = this.tentativa();
     const questao = this.questaoAtual();
     if (!tentativa || !questao) return;
+
+    if (this.modo() === 'estudo' && this.respostasCorretas().has(questao.id)) return;
 
     const anteriorResposta = this.respostas().get(questao.id);
     if (anteriorResposta === alternativaId) return;

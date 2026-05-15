@@ -28,6 +28,7 @@ function makeRankingItem(posicao: number, isMe = false): RankingItem {
   return {
     user_id: `user-${posicao}`,
     nome_display: `Aluno ${posicao}`,
+    avatar_url: null,
     nivel: 1,
     xp_total: 1000 - posicao * 10,
     xp_semana_atual: 100 - posicao,

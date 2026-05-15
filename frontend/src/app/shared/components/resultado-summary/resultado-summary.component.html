@@ -23,7 +23,7 @@
     <!-- Barra de progresso -->
     <div class="mt-5 h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
       <div
-        class="h-full rounded-full transition-all"
+        class="animate-shimmer-bar h-full rounded-full transition-all"
         [class.bg-[var(--color-success)]]="nota() >= 70"
         [class.bg-[var(--color-warning)]]="nota() >= 50 && nota() < 70"
         [class.bg-[var(--color-danger)]]="nota() < 50"

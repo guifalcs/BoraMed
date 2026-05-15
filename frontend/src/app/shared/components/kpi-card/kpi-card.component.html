@@ -1,8 +1,8 @@
-<div class="relative flex h-full min-h-[120px] flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm transition-shadow hover:shadow-md">
-  <!-- Acento colorido na base -->
-  <div class="absolute inset-x-0 bottom-0 h-[3px]" [class]="acentoClass()"></div>
+<div class="relative flex h-full min-h-[120px] flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-4 pt-4 shadow-sm transition-shadow hover:shadow-md">
+  <!-- Acento colorido no topo -->
+  <div class="animate-shimmer-bar absolute inset-x-0 top-0 h-[3px]" [class]="acentoClass()"></div>
 
-  <div class="flex items-center justify-between gap-2">
+  <div class="mt-2 flex items-center justify-between gap-2">
     <span class="text-xs font-medium leading-tight text-[var(--color-text-muted)]">{{ label() }}</span>
     <div
       class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"

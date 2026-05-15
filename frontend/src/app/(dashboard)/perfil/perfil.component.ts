@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { ConquistaService } from '../../core/services/conquista.service';
 import { NotificationService } from '../../core/services/notification.service';
-import type { TipoUsuario } from '../../core/models/auth.types';
+import type { TipoUsuario, FaculdadeRede } from '../../core/models/auth.types';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -28,6 +28,11 @@ const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i
   value: i + 1,
   label: `${i + 1}º período`,
 }));
+
+const FACULDADE_REDE_OPTIONS: SelectOption<string>[] = [
+  { value: 'rede_afya', label: 'Rede Afya' },
+  { value: 'outros',    label: 'Outros' },
+];
 
 @Component({
   selector: 'app-perfil',
@@ -53,6 +58,7 @@ export class PerfilComponent {
   protected readonly awardIcon: LucideIconData = Award;
   protected readonly tipoUsuarioOptions = TIPO_USUARIO_OPTIONS;
   protected readonly periodoOptions = PERIODO_OPTIONS;
+  protected readonly faculdadeRedeOptions = FACULDADE_REDE_OPTIONS;
 
   // Derived from services
   protected readonly email = computed(() => this.auth.user()?.email ?? '');
@@ -62,6 +68,9 @@ export class PerfilComponent {
   protected readonly isGamificacaoLoading = signal(true);
   protected readonly gamificacaoStats = this.gamificacaoService.stats;
   protected readonly conquistas = this.conquistaService.conquistas;
+  protected readonly conquistasDesbloqueadas = computed(
+    () => this.conquistas().filter(c => c.desbloqueada_em).length,
+  );
   protected readonly progressoNivel = computed(() => {
     const stats = this.gamificacaoStats();
     const xpInicioNivel = stats.nivel * stats.nivel * 100;
@@ -82,9 +91,11 @@ export class PerfilComponent {
   protected readonly nomeCompleto = signal('');
   protected readonly tipoUsuario = signal<TipoUsuario | null>(null);
   protected readonly periodo = signal<number | null>(null);
+  protected readonly faculdadeRede = signal<FaculdadeRede | null>(null);
   protected readonly competirPublico = signal(true);
   protected readonly competirPublicoStatus = signal<FormStatus>('idle');
   protected readonly showPeriodo = computed(() => this.tipoUsuario() === 'estudante_medicina');
+  protected readonly showFaculdade = computed(() => this.tipoUsuario() === 'estudante_medicina');
   protected readonly profileStatus = signal<FormStatus>('idle');
   protected readonly profileFieldErrors = signal<Partial<Record<string, string>>>({});
 
@@ -104,6 +115,9 @@ export class PerfilComponent {
   );
   protected readonly periodoError = computed<string | null>(
     () => this.profileFieldErrors()['periodo'] ?? null,
+  );
+  protected readonly faculdadeRedeError = computed<string | null>(
+    () => this.profileFieldErrors()['faculdade_rede'] ?? null,
   );
 
   // Computed errors — password
@@ -126,6 +140,7 @@ export class PerfilComponent {
         this.nomeCompleto.set(p.nome_completo ?? '');
         this.tipoUsuario.set(p.tipo_usuario);
         this.periodo.set(p.tipo_usuario === 'estudante_medicina' ? p.periodo : null);
+        this.faculdadeRede.set(p.tipo_usuario === 'estudante_medicina' ? p.faculdade_rede : null);
         this.competirPublico.set(p.competir_publico);
       }
     });
@@ -147,6 +162,7 @@ export class PerfilComponent {
       nome_completo: this.nomeCompleto(),
       tipo_usuario: this.tipoUsuario(),
       periodo: this.showPeriodo() ? this.periodo() : null,
+      faculdade_rede: this.showFaculdade() ? this.faculdadeRede() : null,
     });
 
     if (!parsed.success) {
@@ -254,11 +270,16 @@ export class PerfilComponent {
     this.tipoUsuario.set(tipo);
     if (tipo !== 'estudante_medicina') {
       this.periodo.set(null);
+      this.faculdadeRede.set(null);
     }
   }
 
   protected handlePeriodoChange(value: string | number | null): void {
     this.periodo.set(typeof value === 'number' ? value : null);
+  }
+
+  protected handleFaculdadeRedeChange(value: string | number | null): void {
+    this.faculdadeRede.set(typeof value === 'string' ? (value as FaculdadeRede) : null);
   }
 
   protected handleCompetirPublicoChange(event: Event): void {
@@ -282,5 +303,12 @@ export class PerfilComponent {
 
   protected formatNumber(value: number): string {
     return new Intl.NumberFormat('pt-BR').format(value);
+  }
+
+  protected conquistaTier(xp: number): string {
+    if (xp >= 500) return 'legendary';
+    if (xp >= 300) return 'gold';
+    if (xp >= 100) return 'silver';
+    return 'bronze';
   }
 }

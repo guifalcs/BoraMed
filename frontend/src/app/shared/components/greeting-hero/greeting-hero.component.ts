@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 export class GreetingHeroComponent {
   nomeCompleto = input<string | null>(null);
   periodo = input<number | null>(null);
+  faculdadeRede = input<string | null>(null);
   temTentativaAtiva = input(false);
   rotaCta = input<string[]>(['/dashboard/simulados']);
 
@@ -33,6 +34,11 @@ export class GreetingHeroComponent {
 
   protected readonly contexto = computed(() => {
     const p = this.periodo();
-    return p ? `${p}º período · Rede Afya` : null;
+    const f = this.faculdadeRede();
+    const facLabel = f === 'rede_afya' ? 'Rede Afya' : f === 'outros' ? 'Outros' : null;
+    if (p && facLabel) return `${p}º período · ${facLabel}`;
+    if (p) return `${p}º período`;
+    if (facLabel) return facLabel;
+    return null;
   });
 }

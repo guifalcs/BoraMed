@@ -145,6 +145,18 @@
                 />
               }
 
+              @if (showFaculdade()) {
+                <app-ui-select
+                  label="Faculdade"
+                  name="faculdade_rede"
+                  placeholder="Selecione sua rede"
+                  [options]="faculdadeRedeOptions"
+                  [value]="faculdadeRede()"
+                  [error]="faculdadeRedeError()"
+                  (valueChange)="handleFaculdadeRedeChange($event)"
+                />
+              }
+
               <div class="ui-field dados-email-field">
                 <span class="ui-field__label-row">
                   <span class="ui-field__label">E-mail</span>
@@ -329,22 +341,37 @@
 
           <div class="perfil-conquistas">
             <div class="perfil-conquistas-header">
-              <app-ui-icon [icon]="awardIcon" [size]="18" />
+              <app-ui-icon [icon]="awardIcon" [size]="20" />
               <div>
                 <h3>Conquistas</h3>
-                <p>Catálogo inicial entra depois do XP e streak.</p>
+                <p>{{ conquistasDesbloqueadas() }} de {{ conquistas().length }} desbloqueada{{ conquistasDesbloqueadas() === 1 ? '' : 's' }}</p>
+              </div>
+              <div class="perfil-conquistas-progress">
+                <div class="perfil-conquistas-progress-fill" [style.width.%]="conquistas().length ? (conquistasDesbloqueadas() / conquistas().length) * 100 : 0"></div>
               </div>
             </div>
 
             <div class="perfil-conquistas-grid">
               @for (conquista of conquistas(); track conquista.id) {
                 <div
-                  class="perfil-conquista-placeholder"
-                  [class.perfil-conquista-placeholder--locked]="!conquista.desbloqueada_em"
+                  class="perfil-conquista-card"
+                  [class.perfil-conquista-card--locked]="!conquista.desbloqueada_em"
+                  [attr.data-tier]="conquista.desbloqueada_em ? conquistaTier(conquista.xp_recompensa) : null"
+                  [title]="conquista.descricao"
                 >
-                  <app-ui-icon [icon]="awardIcon" [size]="17" />
-                  <span>{{ conquista.nome }}</span>
-                  <small>{{ conquista.desbloqueada_em ? '+' + conquista.xp_recompensa + ' XP' : 'Bloqueada' }}</small>
+                  <div class="perfil-conquista-icon">
+                    <app-ui-icon [icon]="awardIcon" [size]="22" />
+                  </div>
+                  <span class="perfil-conquista-nome">{{ conquista.nome }}</span>
+                  @if (conquista.desbloqueada_em) {
+                    <span class="perfil-conquista-xp">+{{ conquista.xp_recompensa }} XP</span>
+                  } @else {
+                    <span class="perfil-conquista-desc">{{ conquista.descricao }}</span>
+                    <span class="perfil-conquista-status">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Bloqueada
+                    </span>
+                  }
                 </div>
               }
             </div>

@@ -32,6 +32,7 @@ export class DashboardComponent {
 
   protected readonly logOutIcon = LogOut;
   protected readonly userIcon = User;
+  protected readonly lifeBuoyIcon = LifeBuoy;
   protected readonly profile = this.profileService.profile;
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);
@@ -73,6 +74,5 @@ export class DashboardComponent {
     { label: 'Simulados', icon: BookOpen, route: '/dashboard/simulados' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico' },
-    { label: 'Suporte', icon: LifeBuoy, route: '/dashboard/suporte' },
   ];
 }

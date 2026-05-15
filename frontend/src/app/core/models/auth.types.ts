@@ -11,6 +11,9 @@ export const TIPO_USUARIO_VALUES = [
 
 export type TipoUsuario = (typeof TIPO_USUARIO_VALUES)[number];
 
+export const FACULDADE_REDE_VALUES = ['rede_afya', 'outros'] as const;
+export type FaculdadeRede = (typeof FACULDADE_REDE_VALUES)[number];
+
 export interface Profile {
   id: string;
   email: string;
@@ -19,6 +22,7 @@ export interface Profile {
   avatar_url: string | null;
   tipo_usuario: TipoUsuario | null;
   periodo: number | null;
+  faculdade_rede: FaculdadeRede | null;
   competir_publico: boolean;
   atualizado_em: string;
 }

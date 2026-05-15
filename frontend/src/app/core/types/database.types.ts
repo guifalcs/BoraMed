@@ -222,6 +222,7 @@ export type Database = {
           competir_publico: boolean
           criado_em: string
           email: string
+          faculdade_rede: string | null
           id: string
           nome_completo: string | null
           periodo: number | null
@@ -233,6 +234,7 @@ export type Database = {
           competir_publico?: boolean
           criado_em?: string
           email: string
+          faculdade_rede?: string | null
           id: string
           nome_completo?: string | null
           periodo?: number | null
@@ -244,6 +246,7 @@ export type Database = {
           competir_publico?: boolean
           criado_em?: string
           email?: string
+          faculdade_rede?: string | null
           id?: string
           nome_completo?: string | null
           periodo?: number | null

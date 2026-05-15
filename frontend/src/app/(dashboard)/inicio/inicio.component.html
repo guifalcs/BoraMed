@@ -4,6 +4,7 @@
   <app-greeting-hero
     [nomeCompleto]="profile()?.nome_completo ?? null"
     [periodo]="profile()?.periodo ?? null"
+    [faculdadeRede]="profile()?.faculdade_rede ?? null"
     [temTentativaAtiva]="temTentativaAtiva()"
     [rotaCta]="provasRoute()"
   />
@@ -16,6 +17,35 @@
       [competirPublico]="gamificacao()?.competir_publico ?? true"
     />
   </div>
+
+  <!-- Desafio Diário -->
+  @if (desafio(); as d) {
+    @if (d.disponivel) {
+      @if (d.minha_resposta === null) {
+        <a routerLink="/dashboard/competitivo"
+           class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm transition-colors hover:bg-[var(--color-surface-2)]">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-500">
+            <app-ui-icon [icon]="desafioPendenteIcon" [size]="18" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-[var(--color-text)]">Desafio do dia</p>
+            <p class="text-xs text-[var(--color-text-muted)]">Responda a questão diária e ganhe XP</p>
+          </div>
+          <span class="shrink-0 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">Fazer agora →</span>
+        </a>
+      } @else {
+        <div class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
+            <app-ui-icon [icon]="desafioFeitoIcon" [size]="18" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-[var(--color-text)]">✓ Desafio feito hoje</p>
+            <p class="text-xs text-[var(--color-text-muted)]">+{{ d.minha_resposta.xp_ganho }} XP · {{ d.minha_resposta.correta ? 'Acertou!' : 'Errou' }}</p>
+          </div>
+        </div>
+      }
+    }
+  }
 
   <!-- Seção 2: KPIs -->
   <div class="mt-4 grid grid-cols-2 gap-3 md:mt-5 md:grid-cols-5 md:gap-4">

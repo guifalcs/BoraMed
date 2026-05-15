@@ -14,11 +14,13 @@ import {
   Award,
   Flame,
   Trophy,
+  Swords,
+  CircleCheckBig,
 } from 'lucide-angular';
 import { TentativaService } from '../../core/services/tentativa.service';
 import type { LucideIconData } from 'lucide-angular';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
-import type { GamificacaoStats, MinhaPosicaoRanking, StreakEstudoV2 } from '../../core/models/gamificacao';
+import type { GamificacaoStats, MinhaPosicaoRanking, StreakEstudoV2, DesafioDiario } from '../../core/models/gamificacao';
 import type { TentativaHistoricoItem, HistoricoKpis } from '../../core/models/historico';
 import type { InicioResolvedData } from '../../core/resolvers/inicio.resolver';
 import { GreetingHeroComponent } from '../../shared/components/greeting-hero/greeting-hero.component';
@@ -65,9 +67,12 @@ export class InicioComponent {
   protected readonly streak = signal<StreakEstudoV2 | null>(null);
   protected readonly gamificacao = signal<GamificacaoStats | null>(null);
   protected readonly rankingPosicao = signal<MinhaPosicaoRanking | null>(null);
+  protected readonly desafio = signal<DesafioDiario | null>(null);
   private allTentativas: TentativaHistoricoItem[] = [];
 
   protected readonly streakIcon = Flame;
+  protected readonly desafioPendenteIcon = Swords;
+  protected readonly desafioFeitoIcon = CircleCheckBig;
 
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
@@ -106,6 +111,9 @@ export class InicioComponent {
     }
     if (resolved?.rankingPosicaoResult?.ok) {
       this.rankingPosicao.set(resolved.rankingPosicaoResult.data);
+    }
+    if (resolved?.desafioResult?.ok) {
+      this.desafio.set(resolved.desafioResult.data);
     }
   }
 

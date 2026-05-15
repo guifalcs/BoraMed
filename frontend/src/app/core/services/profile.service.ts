@@ -49,6 +49,7 @@ export class ProfileService {
           nome_completo: input.nome_completo,
           tipo_usuario: input.tipo_usuario ?? null,
           periodo: input.periodo ?? null,
+          faculdade_rede: input.faculdade_rede ?? null,
         })
         .eq('id', user.id)
         .select()

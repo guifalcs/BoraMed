@@ -22,20 +22,38 @@
     </nav>
 
     <div class="sidebar-bottom">
-      <a class="user-card" routerLink="/dashboard/perfil" aria-label="Ver perfil">
-        <app-ui-avatar
-          [name]="profile()?.nome_completo ?? user()?.email ?? 'Usuário'"
-          [avatarUrl]="profile()?.avatar_url ?? null"
-          size="sm"
-        />
-        <div class="user-info">
-          <span class="user-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
-          <span class="user-role">Aluno</span>
-        </div>
-      </a>
-      <button class="logout-btn" type="button" aria-label="Sair" (click)="handleSignOut()">
-        <app-ui-icon [icon]="logOutIcon" [size]="18" />
-      </button>
+      <div class="desktop-avatar-wrapper">
+        <button class="user-card" type="button" aria-label="Menu do perfil" (click)="toggleMenu()">
+          <app-ui-avatar
+            [name]="profile()?.nome_completo ?? user()?.email ?? 'Usuário'"
+            [avatarUrl]="profile()?.avatar_url ?? null"
+            size="sm"
+          />
+          <div class="user-info">
+            <span class="user-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
+            <span class="user-role">Aluno</span>
+          </div>
+        </button>
+
+        @if (menuAberto()) {
+          <div class="desktop-menu-backdrop" (click)="fecharMenu()"></div>
+          <div class="desktop-menu" role="menu">
+            <a class="desktop-menu-item" routerLink="/dashboard/perfil" (click)="fecharMenu()" role="menuitem">
+              <app-ui-icon [icon]="userIcon" [size]="18" />
+              <span>Perfil</span>
+            </a>
+            <a class="desktop-menu-item" routerLink="/dashboard/suporte" (click)="fecharMenu()" role="menuitem">
+              <app-ui-icon [icon]="lifeBuoyIcon" [size]="18" />
+              <span>Suporte</span>
+            </a>
+            <div class="desktop-menu-divider"></div>
+            <button class="desktop-menu-item desktop-menu-item--danger" type="button" role="menuitem" (click)="handleSignOut()">
+              <app-ui-icon [icon]="logOutIcon" [size]="18" />
+              <span>Sair</span>
+            </button>
+          </div>
+        }
+      </div>
     </div>
   </aside>
 
@@ -58,6 +76,10 @@
           <a class="mobile-menu-item" routerLink="/dashboard/perfil" (click)="fecharMenu()" role="menuitem">
             <app-ui-icon [icon]="userIcon" [size]="18" />
             <span>Perfil</span>
+          </a>
+          <a class="mobile-menu-item" routerLink="/dashboard/suporte" (click)="fecharMenu()" role="menuitem">
+            <app-ui-icon [icon]="lifeBuoyIcon" [size]="18" />
+            <span>Suporte</span>
           </a>
           <button class="mobile-menu-item mobile-menu-item--danger" type="button" role="menuitem" (click)="handleSignOut()">
             <app-ui-icon [icon]="logOutIcon" [size]="18" />

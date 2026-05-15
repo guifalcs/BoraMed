@@ -27,6 +27,7 @@ Descrição do que foi feito.
 - Perfil ganhou controle de privacidade competitiva público/anônimo, salvo imediatamente
 - Hub competitivo agora exibe ranking Global/Semana com posição do usuário
 - Tela inicial ganhou `RankingStatusBarComponent` com posição global/semanal e XP da semana
+- Tela inicial ganhou card de **Desafio Diário** com 3 estados: oculto (indisponível), CTA pendente, e feito (com XP ganho)
 
 ### Backend
 - Migration `gamificacao_xp_base` com `gamificacao_evento`, `user_gamificacao_stats`, trigger de snapshot, RLS e RPCs `get_meu_xp`/`conceder_xp_tentativa`
