@@ -27,7 +27,8 @@ export class DesafioService {
       const desafio = parseDesafio(data);
       this._desafio.set(desafio);
       return { ok: true, data: desafio };
-    } catch {
+    } catch (err) {
+      console.error('Erro ao carregar desafio:', err);
       return { ok: false, error: 'Não foi possível carregar o desafio de hoje.' };
     }
   }
@@ -43,27 +44,11 @@ export class DesafioService {
       });
       if (error) throw error;
       const result = parseResponderResult(data);
-      // Atualiza o desafio local sem refetch
-      this._desafio.update((d) => {
-        if (!d) return d;
-        const corretaAlt = d.alternativas.find((a) => a.correta === true);
-        return {
-          ...d,
-          alternativas: d.alternativas.map((a) => ({
-            ...a,
-            correta: a.id === (corretaAlt?.id ?? alternativaId) ? a.correta ?? false : a.correta,
-          })),
-          minha_resposta: {
-            alternativa_id: alternativaId,
-            correta: result.correta,
-            xp_ganho: result.xp_ganho,
-            respondido_em: new Date().toISOString(),
-          },
-          estatistica: result.estatistica,
-        };
-      });
+      // Refetch para obter alternativas com campo `correta` (retornado apenas após resposta)
+      await this.carregarDesafio();
       return { ok: true, data: result };
-    } catch {
+    } catch (err) {
+      console.error('Erro ao responder desafio:', err);
       return { ok: false, error: 'Não foi possível registrar sua resposta.' };
     }
   }

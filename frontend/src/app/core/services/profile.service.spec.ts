@@ -31,6 +31,7 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     tipo_usuario: 'medico',
     periodo: null,
     avatar_url: null,
+    competir_publico: true,
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString(),
     ...overrides,

@@ -8,6 +8,55 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-15 | Feature | 32e8198
+
+**Módulo Competitivo — MVP completo**
+
+### Frontend
+- Nova rota autenticada `/dashboard/competitivo`
+- Novo `CompetirHubComponent` com KPIs iniciais do módulo e ordem visual de implementação
+- Sidebar e navegação mobile agora exibem o item `Competitivo` entre Simulados e Histórico
+- Novo `GamificacaoService` com cache em signal para stats de XP
+- Finalização de tentativa chama `conceder_xp_tentativa` e exibe toast de XP quando houver ganho
+- Tela inicial agora exibe o KPI `XP da Semana` com nível e XP total
+- Tela de perfil agora incorpora nível, XP, streak e placeholders de conquistas em uma seção única
+- Rota antiga `/dashboard/perfil/competitivo` redireciona para `/dashboard/perfil`
+- Tela inicial agora consome `get_streak_estudo_v2` e mostra recorde, protetores e próximo marco
+- Perfil agora lista conquistas reais do catálogo MVP e diferencia bloqueadas/desbloqueadas
+- Finalização de tentativa exibe toast quando uma conquista é desbloqueada
+- Perfil ganhou controle de privacidade competitiva público/anônimo, salvo imediatamente
+- Hub competitivo agora exibe ranking Global/Semana com posição do usuário
+- Tela inicial ganhou `RankingStatusBarComponent` com posição global/semanal e XP da semana
+
+### Backend
+- Migration `gamificacao_xp_base` com `gamificacao_evento`, `user_gamificacao_stats`, trigger de snapshot, RLS e RPCs `get_meu_xp`/`conceder_xp_tentativa`
+- XP de tentativa segue cap diário de 500 XP, ignora modo visualização e usa chave idempotente por tentativa
+- Migration `streak_v2_stats` preserva `get_streak_estudo`, adiciona `get_streak_estudo_v2` e atualiza streak/protetores no trigger de eventos
+- Backfill inicial preenche streak atual, recorde e protetores a partir de tentativas já finalizadas
+- Migration `conquistas_mvp` adiciona `conquista_catalogo`, `user_conquista`, seed de 5 conquistas iniciais e RPCs `get_minhas_conquistas`/`verificar_conquistas_usuario`
+- `conceder_xp_tentativa` agora retorna conquistas recém-desbloqueadas
+- Migration `perfil_competitivo_privacidade` adiciona `profiles.competir_publico` e sincroniza o snapshot `user_gamificacao_stats.competir_publico`
+- Migration `ranking_competitivo_mvp` adiciona RPCs `get_ranking_global`, `get_ranking_semana` e `get_minha_posicao_ranking`
+- Migration `ranking_is_me` reescreve `get_ranking_global/semana` com campo `is_me` e auto-inclui o usuário fora do top-N
+- Migration `desafio_diario` cria tabelas `desafio_diario`/`desafio_diario_resposta`, RPCs `get_desafio_diario` e `responder_desafio_diario` com anti-cheat (campo `correta` omitido antes de responder) e XP idempotente
+- Migration `conquistas_expandidas` adiciona 7 badges (streak_14/30, volume_25/50, precisao_80, desafio_diario_1/7) e expande `verificar_conquistas_usuario`
+- Migration `security_perf_fixup` revoga acesso anon de todas as RPCs e adiciona índices nas FKs de `desafio_diario`, `desafio_diario_resposta` e `user_conquista`
+- Migration `desafio_null_guard` adiciona validação de `p_alternativa_id IS NULL` na RPC de resposta
+
+### Frontend (continuação — ranking, desafio e conquistas)
+- Ranking com `is_me` destacado em azul e separador `···` entre posições não-consecutivas
+- Seção "Desafio de hoje" com 4 estados: loading skeleton, indisponível, pendente e respondido (com correta/incorreta e estatística coletiva)
+- `DesafioService` com parser robusto sem `any` e refetch pós-resposta para exibir `correta` nas alternativas
+
+### Testes
+- 33 novos testes (27 arquivos total, 372 testes): `desafio.service.spec.ts` (16), `competir-hub.component.spec.ts` (17)
+- Fix dos mocks de `Profile` em `perfil.component.spec.ts` e `profile.service.spec.ts`
+
+### Docs
+- `docs/business-rules.md` documenta as primeiras regras de gamificação competitiva, Streak Freeze, conquistas MVP, opt-out e ranking
+
+---
+
 ## 2026-05-13 | Feature | 1575d3f
 
 **Páginas de erro — 404, 403 e 500**
