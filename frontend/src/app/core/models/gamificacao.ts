@@ -38,6 +38,7 @@ export interface ConquistaUsuario {
 export interface RankingItem {
   user_id: string;
   nome_display: string;
+  avatar_url: string | null;
   nivel: number;
   xp_total: number;
   xp_semana_atual: number;

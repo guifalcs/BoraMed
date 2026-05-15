@@ -158,6 +158,19 @@ export class CompetirHubComponent {
     }
   }
 
+  protected avatarBgClass(nome: string): string {
+    if (nome === 'Anônimo') return 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]';
+    const palette = [
+      'bg-blue-100 text-blue-700',
+      'bg-emerald-100 text-emerald-700',
+      'bg-amber-100 text-amber-700',
+      'bg-purple-100 text-purple-700',
+      'bg-rose-100 text-rose-700',
+      'bg-cyan-100 text-cyan-700',
+    ];
+    return palette[nome.charCodeAt(0) % palette.length];
+  }
+
   protected async handleResponder(alternativaId: string): Promise<void> {
     if (this.desafioEstado() !== 'pending' || this.isSubmittingDesafio()) return;
     this.alternativaSelecionada.set(alternativaId);

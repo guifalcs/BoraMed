@@ -67,6 +67,7 @@ function parseRankingItem(value: unknown): RankingItem | null {
   return {
     user_id: userId,
     nome_display: nomeDisplay,
+    avatar_url: typeof record['avatar_url'] === 'string' ? record['avatar_url'] : null,
     nivel: toNumber(record['nivel']),
     xp_total: toNumber(record['xp_total']),
     xp_semana_atual: toNumber(record['xp_semana_atual']),

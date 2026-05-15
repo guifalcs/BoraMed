@@ -212,9 +212,31 @@
               [class.border-l-2]="row.item.is_me"
               [class.bg-white]="!row.item.is_me"
             >
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-2)] text-sm font-extrabold text-[var(--color-text)]">
+              <!-- Posição -->
+              <span class="w-6 shrink-0 text-right text-xs font-bold text-[var(--color-text-muted)]">
                 #{{ row.item.posicao }}
+              </span>
+
+              <!-- Avatar -->
+              <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full">
+                @if (row.item.avatar_url) {
+                  <img
+                    [src]="row.item.avatar_url"
+                    [alt]="row.item.nome_display"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                } @else {
+                  <div
+                    class="flex h-full w-full items-center justify-center text-xs font-bold"
+                    [class]="avatarBgClass(row.item.nome_display)"
+                  >
+                    {{ row.item.nome_display.charAt(0).toUpperCase() }}
+                  </div>
+                }
               </div>
+
+              <!-- Nome + nível -->
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-semibold text-[var(--color-text)]">
                   {{ row.item.nome_display }}
@@ -224,6 +246,7 @@
                 </p>
                 <p class="text-xs text-[var(--color-text-muted)]">Nível {{ row.item.nivel }}</p>
               </div>
+
               <span class="shrink-0 text-sm font-extrabold text-[var(--color-primary)]">{{ rankingXp(row.item) }}</span>
             </div>
           }
