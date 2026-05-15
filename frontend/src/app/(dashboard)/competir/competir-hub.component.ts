@@ -99,7 +99,7 @@ export class CompetirHubComponent {
       {
         label: 'XP da semana',
         value: formatNumber(stats.xp_semana_atual),
-        detail: stats.semana_iso ?? 'semana atual',
+        detail: 'esta semana',
         icon: Trophy,
         tone: 'emerald',
       },
