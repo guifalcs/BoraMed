@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
-import { ShieldAlert } from 'lucide-angular';
 import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/error-state/error-state.component';
 
 @Component({
@@ -14,7 +13,7 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
         codigo="403"
         titulo="Acesso restrito"
         mensagem="Você não tem prontuário liberado para acessar essa área."
-        [icone]="icone"
+        ilustracao="illustrations/403.png"
         [acoes]="acoes"
         (acaoClick)="onAcaoClick($event)"
       />
@@ -26,8 +25,6 @@ export class SemPermissaoComponent {
   private readonly location = inject(Location);
   private readonly router = inject(Router);
 
-  readonly icone = ShieldAlert;
-
   readonly acoes: ErrorStateAcao[] = [
     { label: 'Voltar', variant: 'secondary', tipo: 'voltar' },
     { label: 'Falar com suporte', variant: 'primary', tipo: 'suporte' },
@@ -35,7 +32,6 @@ export class SemPermissaoComponent {
 
   onAcaoClick(tipo: string): void {
     if (tipo === 'voltar') {
-      // Se não há histórico (link externo, aba nova), vai para o dashboard
       if (history.length > 1) {
         this.location.back();
       } else {

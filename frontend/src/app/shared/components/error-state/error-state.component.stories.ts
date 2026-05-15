@@ -11,6 +11,20 @@ const meta: Meta<ErrorStateComponent> = {
 export default meta;
 type Story = StoryObj<ErrorStateComponent>;
 
+export const Erro404ComPoloca: Story = {
+  args: {
+    codigo: '404',
+    ilustracao: 'illustrations/404.png',
+    titulo: 'Página não diagnosticada',
+    mensagem: 'A URL que você buscou não consta no prontuário do sistema.',
+    detalhe: 'Anamnese deu negativo.',
+    acoes: [
+      { label: 'Voltar ao início', variant: 'primary', tipo: 'inicio' },
+      { label: 'Ver simulados', variant: 'secondary', tipo: 'simulados' },
+    ],
+  },
+};
+
 export const Erro404: Story = {
   args: {
     codigo: '404',

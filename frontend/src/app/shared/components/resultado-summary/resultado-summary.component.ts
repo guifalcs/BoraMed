@@ -1,7 +1,4 @@
-import {
-  ChangeDetectionStrategy, Component, computed,
-  afterNextRender, input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
@@ -22,6 +19,7 @@ export class ResultadoSummaryComponent {
   notaAnterior = input<number | null>(null);
 
   protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
+
   protected readonly nota = computed(() => this.resultado().tentativa.nota ?? 0);
 
   protected readonly deltaNota = computed(() => {
@@ -39,16 +37,10 @@ export class ResultadoSummaryComponent {
 
   protected readonly notaMensagem = computed(() => {
     const n = this.nota();
-    if (n >= 70) return 'O Poloca te parabeniza. Ótimo desempenho!';
-    if (n >= 50) return 'Continue praticando. Você está no caminho certo.';
-    return 'O Poloca ficou te esperando. Revise os conteúdos e tente novamente.';
+    if (n >= 70) return 'Ótimo desempenho!';
+    if (n >= 50) return 'Desempenho razoável. Continue praticando.';
+    return 'Precisa de mais prática. Revise os conteúdos.';
   });
-
-  protected readonly polocaSrc = computed(() =>
-    this.nota() >= 70
-      ? 'illustrations/poloca-satisfeito.svg'
-      : 'illustrations/poloca-concentrado.svg'
-  );
 
   protected readonly acertos = computed(() => this.resultado().tentativa.acertos);
   protected readonly total = computed(() => this.resultado().tentativa.total_questoes);
@@ -73,19 +65,4 @@ export class ResultadoSummaryComponent {
     if (m > 0) return `${m}min ${s}s`;
     return `${s}s`;
   });
-
-  constructor() {
-    afterNextRender(() => {
-      if (this.nota() < 70) return;
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      import('canvas-confetti').then(({ default: confetti }) => {
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.6 },
-          disableForReducedMotion: true,
-        });
-      });
-    });
-  }
 }

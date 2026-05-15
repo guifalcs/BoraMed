@@ -1,12 +1,6 @@
 <div class="mx-auto max-w-2xl space-y-6 py-8 px-4">
   <!-- Nota principal — hero card limpo -->
   <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-sm">
-    <img
-      [src]="polocaSrc()"
-      alt=""
-      aria-hidden="true"
-      class="mx-auto mb-4 w-24 h-24 object-contain"
-    />
     <p class="text-sm font-medium text-[var(--color-text-muted)] mb-1">Sua nota</p>
     <p class="text-6xl font-extrabold" [class]="notaClass()">{{ nota() | number:'1.0-1' }}%</p>
     @if (deltaNota() !== null) {

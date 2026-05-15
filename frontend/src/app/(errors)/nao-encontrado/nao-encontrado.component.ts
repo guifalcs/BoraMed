@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { FileQuestionMark } from 'lucide-angular';
 import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/error-state/error-state.component';
 
 @Component({
@@ -13,8 +12,7 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
         codigo="404"
         titulo="Página não diagnosticada"
         mensagem="A URL que você buscou não consta no prontuário do sistema."
-        detalhe="Anamnese deu negativo."
-        [icone]="icone"
+ilustracao="illustrations/404.png"
         [acoes]="acoes"
         (acaoClick)="onAcaoClick($event)"
       />
@@ -24,8 +22,6 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
 })
 export class NaoEncontradoComponent {
   private readonly router = inject(Router);
-
-  readonly icone = FileQuestionMark;
 
   readonly acoes: ErrorStateAcao[] = [
     { label: 'Voltar ao início', variant: 'primary', tipo: 'inicio' },

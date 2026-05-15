@@ -37,11 +37,3 @@ export const SemDescricao: Story = {
     labelBotao: 'Tentar novamente',
   },
 };
-
-export const ComPoloca: Story = {
-  args: {
-    titulo: 'Nenhum simulado ainda',
-    descricao: 'O Poloca ficou te esperando. Monte seu primeiro simulado.',
-    ilustracao: 'illustrations/poloca-concentrado.svg',
-  },
-};

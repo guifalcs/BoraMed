@@ -22,6 +22,7 @@ export class ErrorStateComponent {
   mensagem = input.required<string>();
   detalhe = input<string | null>(null);
   icone = input<LucideIconData | null>(null);
+  ilustracao = input<string | null>(null);
   acoes = input<ErrorStateAcao[]>([]);
 
   acaoClick = output<string>();

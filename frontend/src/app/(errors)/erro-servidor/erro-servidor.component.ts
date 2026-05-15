@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { ServerCrash } from 'lucide-angular';
 import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/error-state/error-state.component';
 
 @Component({
@@ -12,9 +11,9 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
     <div class="min-h-screen flex items-center justify-center px-4">
       <app-error-state
         codigo="500"
-        titulo="Parada no servidor"
-        mensagem="Nosso time já está aplicando o desfibrilador."
-        [icone]="icone"
+        titulo="Algo deu errado"
+        mensagem="Ocorreu um erro inesperado. Tente novamente em alguns instantes."
+        ilustracao="illustrations/ErroGenerico.png"
         [acoes]="acoes"
         (acaoClick)="onAcaoClick($event)"
       />
@@ -25,8 +24,6 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
 export class ErroServidorComponent {
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
-  readonly icone = ServerCrash;
 
   readonly acoes: ErrorStateAcao[] = [
     { label: 'Tentar novamente', variant: 'primary', tipo: 'retry' },
