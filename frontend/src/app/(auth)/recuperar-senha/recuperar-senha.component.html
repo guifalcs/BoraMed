@@ -1,21 +1,9 @@
 <main class="auth-page">
-  <section class="brand-panel" aria-label="BoraMed">
-    <div class="brand-top">
-      <a routerLink="/dashboard" aria-label="Ir para início">
-        <img class="brand-logo" src="logo.png" alt="BoraMed" />
-      </a>
-    </div>
-
-    <div class="brand-story">
-      <p class="brand-kicker">Acesso seguro</p>
-      <h1 class="brand-title">Volte para sua rotina de <em>estudos.</em></h1>
-      <p class="brand-description">
-        Enviaremos um link de recuperação para o e-mail usado no seu cadastro.
-      </p>
-    </div>
-
-    <p class="brand-footer">© 2026 BoraMed</p>
-  </section>
+  <app-brand-panel
+    kicker="Acesso seguro"
+    titulo="Volte para sua rotina de <em>estudos.</em>"
+    descricao="Enviaremos um link de recuperação para o e-mail usado no seu cadastro."
+  />
 
   <section class="form-panel">
     <div class="auth-box">

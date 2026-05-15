@@ -1,37 +1,10 @@
 <main class="auth-page">
-  <section class="brand-panel" aria-label="BoraMed">
-    <div class="brand-top">
-      <a routerLink="/dashboard" aria-label="Ir para início">
-        <img class="brand-logo" src="logo.png" alt="BoraMed" />
-      </a>
-    </div>
-
-    <div class="brand-story">
-      <p class="brand-kicker">Para alunos da rede Afya</p>
-      <h1 class="brand-title">Treine com questões feitas pra <em>sua prova.</em></h1>
-      <p class="brand-description">
-        Simulados originais no padrão das avaliações nacionais, processuais (N1/N2) e laboratório (P1/P2).
-        Estude exatamente o que cai.
-      </p>
-
-      <div class="metrics" aria-label="Indicadores da plataforma">
-        <div class="metric">
-          <strong>4.8k+</strong>
-          <span>questões</span>
-        </div>
-        <div class="metric">
-          <strong>12</strong>
-          <span>períodos cobertos</span>
-        </div>
-        <div class="metric">
-          <strong>82%</strong>
-          <span>aprovação N1</span>
-        </div>
-      </div>
-    </div>
-
-    <p class="brand-footer">© 2026 BoraMed</p>
-  </section>
+  <app-brand-panel
+    kicker="Para alunos da rede Afya"
+    titulo="Treine com questões feitas pra <em>sua prova.</em>"
+    descricao="Simulados originais no padrão das avaliações nacionais, processuais (N1/N2) e laboratório (P1/P2). Estude exatamente o que cai."
+    [showMetrics]="true"
+  />
 
   <section class="form-panel">
     <div class="auth-box">

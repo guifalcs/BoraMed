@@ -1,5 +1,12 @@
 <div class="flex flex-col items-center justify-center gap-4 py-16 px-4 text-center">
-  @if (icone()) {
+  @if (ilustracao()) {
+    <img
+      [src]="ilustracao()!"
+      alt=""
+      aria-hidden="true"
+      class="w-28 h-28 object-contain"
+    />
+  } @else if (icone()) {
     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
       <app-ui-icon [icon]="icone()!" [size]="32" />
     </div>

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
+import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-panel.component';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { resetPasswordSchema } from '../../core/models/auth.schemas';
@@ -10,7 +11,7 @@ type RedefinirSenhaState = 'idle' | 'error' | 'loading' | 'success';
 
 @Component({
   selector: 'app-redefinir-senha',
-  imports: [RouterLink, UiButtonComponent, UiInputComponent],
+  imports: [RouterLink, UiButtonComponent, UiInputComponent, BrandPanelComponent],
   templateUrl: './redefinir-senha.component.html',
   styleUrls: ['../auth-layout.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

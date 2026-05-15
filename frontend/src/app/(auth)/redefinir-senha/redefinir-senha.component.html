@@ -1,21 +1,9 @@
 <main class="auth-page">
-  <section class="brand-panel" aria-label="BoraMed">
-    <div class="brand-top">
-      <a routerLink="/dashboard" aria-label="Ir para início">
-        <img class="brand-logo" src="logo.png" alt="BoraMed" />
-      </a>
-    </div>
-
-    <div class="brand-story">
-      <p class="brand-kicker">Nova senha</p>
-      <h1 class="brand-title">Proteja seu histórico de <em>desempenho.</em></h1>
-      <p class="brand-description">
-        Escolha uma senha forte para manter seus simulados e resultados seguros.
-      </p>
-    </div>
-
-    <p class="brand-footer">© 2026 BoraMed</p>
-  </section>
+  <app-brand-panel
+    kicker="Nova senha"
+    titulo="Proteja seu histórico de <em>desempenho.</em>"
+    descricao="Escolha uma senha forte para manter seus simulados e resultados seguros."
+  />
 
   <section class="form-panel">
     <div class="auth-box">

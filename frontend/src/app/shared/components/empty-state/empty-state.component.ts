@@ -14,6 +14,7 @@ export class EmptyStateComponent {
   titulo = input.required<string>();
   descricao = input<string | null>(null);
   icone = input<LucideIconData | null>(null);
+  ilustracao = input<string | null>(null);
   labelBotao = input<string | null>(null);
 
   acao = output<void>();

@@ -1,0 +1,36 @@
+<section class="brand-panel" aria-label="BoraMed">
+  <div class="brand-top">
+    <a routerLink="/dashboard" aria-label="Ir para início">
+      <img class="brand-logo" src="logo.png" alt="BoraMed" />
+    </a>
+  </div>
+
+  <div class="brand-story">
+    <p class="brand-kicker">{{ kicker() }}</p>
+    <h1 class="brand-title" [innerHTML]="titulo()"></h1>
+    <p class="brand-description">{{ descricao() }}</p>
+
+    @if (showMetrics()) {
+      <div class="metrics" aria-label="Indicadores da plataforma">
+        <div class="metric">
+          <strong>4.8k+</strong>
+          <span>questões</span>
+        </div>
+        <div class="metric">
+          <strong>12</strong>
+          <span>períodos cobertos</span>
+        </div>
+        <div class="metric">
+          <strong>82%</strong>
+          <span>aprovação N1</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div #poloca class="brand-poloca" style="opacity: 0" aria-hidden="true">
+    <img src="illustrations/poloca-concentrado.svg" alt="" />
+  </div>
+
+  <p class="brand-footer">© 2026 BoraMed</p>
+</section>

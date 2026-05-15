@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
+import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-panel.component';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { loginSchema } from '../../core/models/auth.schemas';
@@ -11,7 +12,7 @@ type LoginState = 'idle' | 'error' | 'loading';
 
 @Component({
   selector: 'app-login',
-  imports: [RouterLink, UiButtonComponent, UiInputComponent],
+  imports: [RouterLink, UiButtonComponent, UiInputComponent, BrandPanelComponent],
   templateUrl: './login.component.html',
   styleUrls: ['../auth-layout.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

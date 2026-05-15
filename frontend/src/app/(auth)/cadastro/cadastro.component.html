@@ -1,21 +1,9 @@
 <main class="auth-page">
-  <section class="brand-panel" aria-label="BoraMed">
-    <div class="brand-top">
-      <a routerLink="/dashboard" aria-label="Ir para início">
-        <img class="brand-logo" src="logo.png" alt="BoraMed" />
-      </a>
-    </div>
-
-    <div class="brand-story">
-      <p class="brand-kicker">Seu plano de revisão começa aqui</p>
-      <h1 class="brand-title">Monte simulados por tema, formato e <em>período.</em></h1>
-      <p class="brand-description">
-        Organize sua preparação com questões originais alinhadas ao calendário da rede Afya.
-      </p>
-    </div>
-
-    <p class="brand-footer">© 2026 BoraMed</p>
-  </section>
+  <app-brand-panel
+    kicker="Seu plano de revisão começa aqui"
+    titulo="Monte simulados por tema, formato e <em>período.</em>"
+    descricao="Organize sua preparação com questões originais alinhadas ao calendário da rede Afya."
+  />
 
   <section class="form-panel">
     <div class="auth-box">
