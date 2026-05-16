@@ -1,7 +1,11 @@
 {
   "buildCommand": "cd frontend && npm ci && npm run build",
-  "outputDirectory": "frontend/dist/frontend/browser",
+  "functions": {
+    "api/server.mjs": {
+      "includeFiles": "frontend/dist/frontend/**"
+    }
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/api/server" }
   ]
 }
