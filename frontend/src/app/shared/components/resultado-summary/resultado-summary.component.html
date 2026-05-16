@@ -89,6 +89,22 @@
   }
 
   <!-- Ações -->
+  @if (temaPrioritario(); as tema) {
+    <div class="rounded-xl border border-blue-100 bg-blue-50 p-5">
+      <p class="text-sm font-semibold text-blue-800">Próximo treino recomendado</p>
+      <p class="mt-1 text-sm leading-6 text-blue-700">
+        Reforce {{ tema.nome }} agora. Foi o tema com menor aproveitamento nesta tentativa ({{ tema.taxa }}%).
+      </p>
+      <a
+        class="mt-4 block"
+        routerLink="/dashboard/simulados/montar"
+        [queryParams]="{ temaId: tema.id, qtd: 10, modo: 'estudo' }"
+      >
+        <app-ui-button label="Treinar este tema" variant="primary" />
+      </a>
+    </div>
+  }
+
   <div class="flex flex-col gap-3">
     <div class="flex flex-col gap-3 sm:flex-row">
       <a

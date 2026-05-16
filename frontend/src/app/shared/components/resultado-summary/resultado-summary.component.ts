@@ -4,6 +4,12 @@ import { RouterLink } from '@angular/router';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../ui/button/ui-button.component';
 
+interface TemaPrioritario {
+  id: string;
+  nome: string;
+  taxa: number;
+}
+
 @Component({
   selector: 'app-resultado-summary',
   standalone: true,
@@ -64,5 +70,18 @@ export class ResultadoSummaryComponent {
     const s = media % 60;
     if (m > 0) return `${m}min ${s}s`;
     return `${s}s`;
+  });
+
+  protected readonly temaPrioritario = computed<TemaPrioritario | null>(() => {
+    const temas = this.resultado().distribuicao_temas
+      .filter((d) => d.total > 0)
+      .map((d) => ({
+        id: d.tema.id,
+        nome: d.tema.nome,
+        taxa: Math.round((d.acertos / d.total) * 100),
+      }))
+      .sort((a, b) => a.taxa - b.taxa);
+
+    return temas[0] ?? null;
   });
 }

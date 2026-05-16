@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   TrendingUp,
   CheckCircle2,
@@ -38,7 +38,7 @@ interface KpiData {
 @Component({
   selector: 'app-historico',
   standalone: true,
-  imports: [KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective],
+  imports: [RouterLink, KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective],
   templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -77,6 +77,12 @@ export class HistoricoComponent {
       .filter((t): t is TentativaHistoricoItem & { nota: number; finalizada_em: string } => t.nota !== null && t.finalizada_em !== null)
       .map((t) => ({ data: t.finalizada_em, nota: t.nota }))
   );
+
+  protected readonly temaPrioritario = computed<DesempenhoTema | null>(() => {
+    const temas = this.temas().filter((t) => t.total > 0);
+    if (temas.length === 0) return null;
+    return [...temas].sort((a, b) => a.taxa - b.taxa || b.total - a.total)[0];
+  });
 
   protected readonly temFiltroAtivo = computed(() => this.filtroPeriodo() !== 'todos' || this.filtroTipo() !== 'todos');
 

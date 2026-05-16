@@ -27,6 +27,8 @@
 * Nota: % de acertos
 * Exibe gabarito com alternativa correta destacada
 * Histórico visível apenas para o próprio aluno
+* Quando houver distribuição por tema, o sistema sugere um próximo treino focado no tema de menor aproveitamento
+* Treinos recomendados abrem a montagem de simulado com o tema pré-selecionado e modo estudo quando o objetivo for revisão
 
 ### Gamificação Competitiva
 

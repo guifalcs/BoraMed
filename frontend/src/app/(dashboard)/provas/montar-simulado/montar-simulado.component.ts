@@ -23,6 +23,7 @@ import { ModoSelectorComponent } from '../../../shared/components/modo-selector/
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MontarSimuladoComponent {
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
 
@@ -36,6 +37,7 @@ export class MontarSimuladoComponent {
   protected readonly temasSelecionados = signal<Set<string>>(new Set());
   protected readonly quantidade = signal(10);
   protected readonly modoSelecionado = signal<ModoProva>('simulado');
+  protected readonly origemRecomendacao = signal<string | null>(null);
   protected readonly gerando = signal(false);
   protected readonly erro = signal<string | null>(null);
 
@@ -78,7 +80,9 @@ export class MontarSimuladoComponent {
       return 'Os temas selecionados não possuem questões cadastradas. Escolha outros temas.';
     }
     if (disponivel > 0 && disponivel < qtd) {
-      return `Apenas ${disponivel} questão(ões) disponível(is) para os temas selecionados. O simulado será gerado com ${disponivel} questões.`;
+      const questaoLabel = disponivel === 1 ? 'questão disponível' : 'questões disponíveis';
+      const geradoLabel = disponivel === 1 ? '1 questão' : `${disponivel} questões`;
+      return `Apenas ${disponivel} ${questaoLabel} para os temas selecionados. O simulado será gerado com ${geradoLabel}.`;
     }
     return null;
   });
@@ -100,13 +104,41 @@ export class MontarSimuladoComponent {
   });
 
   constructor() {
-    const resolved = inject(ActivatedRoute).snapshot.data['montarSimuladoData'] as MontarSimuladoResolvedData | undefined;
+    const resolved = this.route.snapshot.data['montarSimuladoData'] as MontarSimuladoResolvedData | undefined;
     if (resolved?.temasResult.ok) {
       this.temas.set(resolved.temasResult.data);
+      this.aplicarPreSelecao();
     } else if (resolved && !resolved.temasResult.ok) {
       this.loadError.set(resolved.temasResult.error);
     }
     this.isLoadingTemas.set(false);
+  }
+
+  private aplicarPreSelecao(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const temaId = params.get('temaId');
+    const temaNome = params.get('tema');
+    const qtdParam = Number(params.get('qtd'));
+    const modoParam = params.get('modo');
+
+    if (Number.isFinite(qtdParam) && this.opcoesQtd.includes(qtdParam)) {
+      this.quantidade.set(qtdParam);
+    }
+
+    if (modoParam === 'estudo' || modoParam === 'simulado') {
+      this.modoSelecionado.set(modoParam);
+    }
+
+    const tema = this.temasComQuestoes().find((t) => {
+      if (temaId) return t.id === temaId;
+      if (!temaNome) return false;
+      return normalizarTexto(t.nome) === normalizarTexto(temaNome);
+    });
+
+    if (tema) {
+      this.temasSelecionados.set(new Set([tema.id]));
+      this.origemRecomendacao.set(tema.nome);
+    }
   }
 
   protected toggleTema(temaId: string): void {
@@ -165,4 +197,12 @@ export class MontarSimuladoComponent {
       this.erro.set(result.error);
     }
   }
+}
+
+function normalizarTexto(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 }

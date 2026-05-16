@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { provideRouter } from '@angular/router';
 import { ResultadoSummaryComponent } from './resultado-summary.component';
 import type { ResultadoTentativa, Tentativa, DistribuicaoTema } from '../../../core/models/tentativa';
+import type { Tema } from '../../../core/models/tema';
 
 function tentativaFactory(overrides: Partial<Tentativa> = {}): Tentativa {
   return {
@@ -31,6 +32,30 @@ function resultadoFactory(overrides: Partial<ResultadoTentativa> = {}): Resultad
     respostas: [],
     distribuicao_temas: [],
     ...overrides,
+  };
+}
+
+function temaFactory(id: string, nome: string): Tema {
+  return {
+    id,
+    nome,
+    disciplina: null,
+    periodo: 1,
+    parent_id: null,
+    criado_em: '2024-01-01T00:00:00Z',
+  };
+}
+
+function distribuicaoFactory(
+  temaId: string,
+  nome: string,
+  acertos: number,
+  total: number,
+): DistribuicaoTema {
+  return {
+    tema: temaFactory(temaId, nome),
+    acertos,
+    total,
   };
 }
 
@@ -137,6 +162,37 @@ describe('ResultadoSummaryComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(el.textContent).toContain('Média/questão');
       expect(el.textContent).toContain('1min 0s');
+    });
+  });
+
+  describe('próximo treino recomendado', () => {
+    it('deve selecionar o tema com menor aproveitamento', async () => {
+      await setup(resultadoFactory({
+        distribuicao_temas: [
+          distribuicaoFactory('tema-1', 'Cardiologia', 8, 10),
+          distribuicaoFactory('tema-2', 'Pediatria', 3, 10),
+        ],
+      }));
+
+      expect(component['temaPrioritario']()).toEqual({
+        id: 'tema-2',
+        nome: 'Pediatria',
+        taxa: 30,
+      });
+    });
+
+    it('deve exibir CTA para treinar o tema prioritário', async () => {
+      await setup(resultadoFactory({
+        distribuicao_temas: [
+          distribuicaoFactory('tema-1', 'Cardiologia', 8, 10),
+          distribuicaoFactory('tema-2', 'Pediatria', 3, 10),
+        ],
+      }));
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Próximo treino recomendado');
+      expect(el.textContent).toContain('Pediatria');
+      expect(el.textContent).toContain('Treinar este tema');
     });
   });
 });

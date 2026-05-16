@@ -8,6 +8,15 @@
     <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Montar simulado</h1>
     <p class="mb-8 text-sm text-[var(--color-text-muted)]">Escolha os temas e a quantidade de questões para gerar um simulado personalizado.</p>
 
+    @if (origemRecomendacao()) {
+      <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <p class="text-sm font-semibold text-emerald-800">Treino recomendado</p>
+        <p class="mt-1 text-xs leading-5 text-emerald-700">
+          Pré-selecionamos {{ origemRecomendacao() }} para você reforçar o tema antes da próxima prova.
+        </p>
+      </div>
+    }
+
     <!-- Erro ao carregar temas -->
     @if (loadError()) {
       <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -131,7 +140,7 @@
       </p>
       @if (!isLoadingTemas()) {
         <p class="mt-1 text-xs text-[var(--color-text-muted)]">
-          {{ questoesDisponiveis() }} questão(ões) disponível(is) no banco
+          {{ questoesDisponiveis() }} {{ questoesDisponiveis() === 1 ? 'questão disponível' : 'questões disponíveis' }} no banco
         </p>
       }
     </div>

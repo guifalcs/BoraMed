@@ -68,6 +68,7 @@ export class InicioComponent {
   protected readonly gamificacao = signal<GamificacaoStats | null>(null);
   protected readonly rankingPosicao = signal<MinhaPosicaoRanking | null>(null);
   protected readonly desafio = signal<DesafioDiario | null>(null);
+  protected readonly temaRecomendado = signal<{ nome: string; taxa: number | null } | null>(null);
   private allTentativas: TentativaHistoricoItem[] = [];
 
   protected readonly streakIcon = Flame;
@@ -97,6 +98,12 @@ export class InicioComponent {
     this.isLoadingRecentes.set(false);
 
     if (resolved?.kpisResult.ok) {
+      if (resolved.kpisResult.data.tema_mais_fraco) {
+        this.temaRecomendado.set({
+          nome: resolved.kpisResult.data.tema_mais_fraco,
+          taxa: resolved.kpisResult.data.taxa_tema_fraco,
+        });
+      }
       const gamificacao = resolved.gamificacaoResult.ok ? resolved.gamificacaoResult.data : null;
       this.gamificacao.set(gamificacao);
       this.kpis.set(this.buildKpis(

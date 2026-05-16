@@ -8,6 +8,18 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-16 | Feature | sem commit
+
+**App do aluno — treino recomendado por tema fraco**
+
+- Tela de resultado agora sugere um próximo treino com base no tema de menor aproveitamento da tentativa.
+- Home e Histórico ganharam CTAs para treinar o tema fraco usando os dados de desempenho já carregados.
+- Montagem de simulado aceita `temaId` ou `tema` via query params e pré-seleciona o tema recomendado.
+- Treinos recomendados abrem em modo estudo com 10 questões por padrão.
+- `docs/business-rules.md` documenta a regra de sugestão de treino após resultado.
+
+---
+
 ## 2026-05-16 | Fix | sem commit
 
 **Admin sidebar — footer estável**
