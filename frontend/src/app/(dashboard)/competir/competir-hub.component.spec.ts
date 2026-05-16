@@ -61,6 +61,10 @@ function makeDesafioPendente(): DesafioDiario {
 function makeDesafioRespondido(correta: boolean): DesafioDiario {
   return {
     ...makeDesafioPendente(),
+    questao: {
+      ...makeDesafioPendente().questao!,
+      explicacao: 'A alternativa A está correta porque resolve o achado central.',
+    },
     alternativas: [
       { id: 'a1', letra: 'A', texto: 'Alt A', ordem: 0, correta: true },
       { id: 'a2', letra: 'B', texto: 'Alt B', ordem: 1, correta: false },
@@ -285,6 +289,18 @@ describe('CompetirHubComponent', () => {
   });
 
   // ── rankingXp ────────────────────────────────────────────────────────────────
+
+  describe('explicação do desafio', () => {
+    it('exibe explicação após resposta quando a questão possui explicação', async () => {
+      desafioSignal.set(makeDesafioRespondido(true));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Explicação');
+      expect(el.textContent).toContain('A alternativa A está correta');
+    });
+  });
 
   describe('rankingXp', () => {
     const rankXp = (item: RankingItem) =>

@@ -10,6 +10,17 @@ Descrição do que foi feito.
 
 ## 2026-05-16 | Feature | sem commit
 
+**Desafio diário — explicação após resposta**
+
+- Hub competitivo agora exibe a explicação pedagógica da questão após o aluno responder o desafio diário.
+- A explicação usa Markdown, mantendo o mesmo padrão visual das explicações de questões em modo estudo.
+- Teste do `CompetirHubComponent` cobre a exibição da explicação quando o desafio respondido possui `explicacao`.
+- `docs/business-rules.md` documenta a regra de explicação pós-resposta no desafio diário.
+
+---
+
+## 2026-05-16 | Feature | sem commit
+
 **App do aluno — treino recomendado por tema fraco**
 
 - Tela de resultado agora sugere um próximo treino com base no tema de menor aproveitamento da tentativa.

@@ -46,6 +46,7 @@
 * Alunos com opt-out continuam acumulando XP e conquistas, mas devem aparecer como anônimos em rankings
 * Ranking competitivo MVP tem recortes Global (`xp_total`) e Semana (`xp_semana_atual`)
 * Ranking não expõe e-mail; usa nome completo quando público ou `Anônimo` quando privado
+* Desafio diário deve exibir explicação pedagógica após a resposta quando a questão possuir `explicacao`
 
 ## Fluxos Principais
 

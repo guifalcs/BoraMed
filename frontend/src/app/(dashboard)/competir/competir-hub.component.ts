@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MarkdownComponent } from 'ngx-markdown';
 import {
   CalendarCheck2,
   CircleCheck,
@@ -29,7 +30,7 @@ type RankingTab = 'global' | 'semana';
 @Component({
   selector: 'app-competir-hub',
   standalone: true,
-  imports: [RouterLink, UiIconComponent],
+  imports: [RouterLink, UiIconComponent, MarkdownComponent],
   templateUrl: './competir-hub.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
