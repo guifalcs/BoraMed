@@ -24,6 +24,17 @@ Descrição do que foi feito.
 
 ## 2026-05-16 | Fix | sem commit
 
+**Histórico com estados vazios e erros mais úteis**
+
+- Histórico agora diferencia ausência de tentativas, filtros sem resultado e falhas de carregamento.
+- KPIs, evolução e desempenho por tema exibem empty states acionáveis com CTA para começar simulado, limpar filtros ou tentar novamente.
+- Filtros e insights só aparecem quando fazem sentido, evitando uma tela ambígua para quem ainda não concluiu tentativas.
+- `docs/business-rules.md` documenta a necessidade de estados explícitos no histórico do aluno.
+
+---
+
+## 2026-05-16 | Fix | sem commit
+
 **Continuidade de tentativa em andamento**
 
 - `TentativaService` agora hidrata a tentativa ativa mais recente do usuário ao entrar no dashboard, mesmo após recarregar a página.

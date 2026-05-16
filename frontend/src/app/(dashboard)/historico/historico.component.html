@@ -8,6 +8,24 @@
       @for (_ of [1, 2, 3, 4]; track $index) {
         <div class="h-28 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
       }
+    } @else if (kpisError()) {
+      <div class="col-span-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+        <app-empty-state
+          titulo="Não foi possível carregar seus indicadores"
+          [descricao]="kpisError()"
+          labelBotao="Tentar novamente"
+          (acao)="onTentarNovamente()"
+        />
+      </div>
+    } @else if (!temHistorico()) {
+      <div class="col-span-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+        <app-empty-state
+          titulo="Seu histórico começa no primeiro simulado"
+          descricao="Assim que você concluir uma tentativa, seus indicadores e evolução aparecem aqui."
+          labelBotao="Começar agora"
+          (acao)="onComecarSimulado()"
+        />
+      </div>
     } @else {
       @for (kpi of kpis(); track kpi.label) {
         <app-kpi-card
@@ -22,6 +40,7 @@
   </div>
 
   <!-- Filtros -->
+  @if (mostrarInsights()) {
   <div class="mt-6 flex flex-wrap items-center gap-3">
     <div class="flex items-center gap-1.5">
       <span class="text-xs font-medium text-[var(--color-text-muted)]">Período:</span>
@@ -50,16 +69,38 @@
       }
     </div>
   </div>
+  }
 
   <!-- Evolução de Notas -->
+  @if (mostrarInsights()) {
   <div class="mt-8">
     <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Evolução de Notas</h2>
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
-      <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
+      @if (tentativasError()) {
+        <app-empty-state
+          titulo="Não foi possível montar sua evolução"
+          [descricao]="tentativasError()"
+          labelBotao="Tentar novamente"
+          (acao)="onTentarNovamente()"
+        />
+      } @else if (!temEvolucao()) {
+        <app-empty-state
+          titulo="Sem notas para este recorte"
+          [descricao]="temFiltroAtivo()
+            ? 'Tente remover os filtros para ver sua evolução completa.'
+            : 'Conclua simulados para acompanhar sua curva de desempenho.'"
+          [labelBotao]="temFiltroAtivo() ? 'Limpar filtros' : 'Começar agora'"
+          (acao)="temFiltroAtivo() ? onLimparFiltros() : onComecarSimulado()"
+        />
+      } @else {
+        <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
+      }
     </div>
   </div>
+  }
 
   <!-- Desempenho por Tema -->
+  @if (mostrarInsights()) {
   <div class="mt-8">
     <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Desempenho por Tema</h2>
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
@@ -72,6 +113,22 @@
             </div>
           }
         </div>
+      } @else if (temasError()) {
+        <app-empty-state
+          titulo="Não foi possível carregar o desempenho por tema"
+          [descricao]="temasError()"
+          labelBotao="Tentar novamente"
+          (acao)="onTentarNovamente()"
+        />
+      } @else if (!temTemas()) {
+        <app-empty-state
+          titulo="Sem desempenho por tema ainda"
+          [descricao]="temFiltroAtivo()
+            ? 'Tente remover os filtros para revisar o desempenho acumulado.'
+            : 'Quando você responder simulados, esta área mostra onde vale revisar mais.'"
+          [labelBotao]="temFiltroAtivo() ? 'Limpar filtros' : 'Começar agora'"
+          (acao)="temFiltroAtivo() ? onLimparFiltros() : onComecarSimulado()"
+        />
       } @else {
         <app-desempenho-tema-chart [temas]="temas()" />
       }
@@ -91,6 +148,7 @@
       </a>
     }
   </div>
+  }
 
   <!-- Tentativas Anteriores -->
   <div class="mt-8">
@@ -109,17 +167,28 @@
           }
         </div>
       </div>
+    } @else if (tentativasError()) {
+      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
+        <app-empty-state
+          titulo="Não foi possível carregar seu histórico"
+          [descricao]="tentativasError()"
+          labelBotao="Tentar novamente"
+          (acao)="onTentarNovamente()"
+        />
+      </div>
     } @else if (tentativasFiltradas().length === 0) {
       <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
         @if (temFiltroAtivo()) {
           <app-empty-state
             titulo="Nenhum resultado para o filtro"
             descricao="Tente mudar o período ou tipo de prova."
+            labelBotao="Limpar filtros"
+            (acao)="onLimparFiltros()"
           />
         } @else {
           <app-empty-state
             titulo="Nenhum simulado concluído"
-            descricao="Finalize um simulado para ver seu histórico aqui."
+            descricao="Conclua o primeiro simulado para liberar histórico, evolução de notas e desempenho por tema."
             labelBotao="Começar agora"
             (acao)="onComecarSimulado()"
           />

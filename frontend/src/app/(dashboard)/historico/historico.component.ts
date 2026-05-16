@@ -1,10 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   TrendingUp,
@@ -44,6 +46,7 @@ interface KpiData {
 })
 export class HistoricoComponent {
   private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly isLoadingKpis = signal(true);
   protected readonly isLoadingTemas = signal(true);
@@ -52,6 +55,9 @@ export class HistoricoComponent {
   protected readonly kpis = signal<KpiData[]>([]);
   protected readonly temas = signal<DesempenhoTema[]>([]);
   protected readonly tentativas = signal<TentativaHistoricoItem[]>([]);
+  protected readonly kpisError = signal<string | null>(null);
+  protected readonly temasError = signal<string | null>(null);
+  protected readonly tentativasError = signal<string | null>(null);
 
   protected readonly filtroPeriodo = signal<FiltroPeriodo>('todos');
   protected readonly filtroTipo = signal<FiltroTipo>('todos');
@@ -85,6 +91,10 @@ export class HistoricoComponent {
   });
 
   protected readonly temFiltroAtivo = computed(() => this.filtroPeriodo() !== 'todos' || this.filtroTipo() !== 'todos');
+  protected readonly temHistorico = computed(() => this.tentativas().length > 0);
+  protected readonly temEvolucao = computed(() => this.pontosEvolucao().length > 0);
+  protected readonly temTemas = computed(() => this.temas().some((tema) => tema.total > 0));
+  protected readonly mostrarInsights = computed(() => this.temHistorico() || this.temFiltroAtivo());
 
   protected readonly periodosDisponiveis: { valor: FiltroPeriodo; label: string }[] = [
     { valor: 'todos', label: 'Todos' },
@@ -111,16 +121,22 @@ export class HistoricoComponent {
 
     if (resolved?.kpisResult.ok) {
       this.kpis.set(this.buildKpis(resolved.kpisResult.data));
+    } else if (resolved && !resolved.kpisResult.ok) {
+      this.kpisError.set(resolved.kpisResult.error);
     }
     this.isLoadingKpis.set(false);
 
     if (resolved?.temasResult.ok) {
       this.temas.set(resolved.temasResult.data);
+    } else if (resolved && !resolved.temasResult.ok) {
+      this.temasError.set(resolved.temasResult.error);
     }
     this.isLoadingTemas.set(false);
 
     if (resolved?.tentativasResult.ok) {
       this.tentativas.set(resolved.tentativasResult.data);
+    } else if (resolved && !resolved.tentativasResult.ok) {
+      this.tentativasError.set(resolved.tentativasResult.error);
     }
     this.isLoadingTentativas.set(false);
   }
@@ -185,6 +201,17 @@ export class HistoricoComponent {
 
   protected onComecarSimulado(): void {
     void this.router.navigateByUrl('/dashboard/simulados');
+  }
+
+  protected onLimparFiltros(): void {
+    this.filtroPeriodo.set('todos');
+    this.filtroTipo.set('todos');
+  }
+
+  protected onTentarNovamente(): void {
+    if (this.isBrowser) {
+      window.location.reload();
+    }
   }
 
   protected onTentativaClick(tentativa: TentativaHistoricoItem): void {
