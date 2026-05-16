@@ -20,6 +20,9 @@
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-text-inverse: #ffffff;
+  --gradient-brand: linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
+  --gradient-brand-highlight: radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.18), transparent 26%);
+  --gradient-brand-accent: radial-gradient(circle at 20% 85%, rgba(13, 148, 136, 0.22), transparent 28%);
 }
 
 html,

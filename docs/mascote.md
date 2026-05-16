@@ -136,6 +136,9 @@ Mudar **uma coisa por vez** entre gerações. Sempre salvar o prompt que gerou o
 ## Arquivos
 
 ```
+frontend/public/illustrations/
+  funny.png                     # onboarding MVP, raster com estetoscópio
+
 frontend/src/assets/illustrations/
   poloca-concentrado.svg        # expressão default
   poloca-satisfeito.svg         # resultado ≥70%
@@ -144,4 +147,4 @@ frontend/src/assets/illustrations/
   poloca-icon.svg               # versão 32px (só corpo + olhos)
 ```
 
-Nomenclatura: sempre `poloca-[contexto].svg`. Não usar PNG salvo exceção documentada.
+Nomenclatura ideal: sempre `poloca-[contexto].svg`. Exceção documentada: onboarding MVP usa `funny.png` raster porque a versão vetorial ficou abaixo do padrão visual esperado.

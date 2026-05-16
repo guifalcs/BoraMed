@@ -17,9 +17,9 @@ type Story = StoryObj<BrandPanelComponent>;
 
 export const Login: Story = {
   args: {
-    kicker: 'Para alunos da rede Afya',
-    titulo: 'Treine com questões feitas pra <em>sua prova.</em>',
-    descricao: 'Simulados originais no padrão das avaliações nacionais, processuais (N1/N2) e laboratório (P1/P2). Estude exatamente o que cai.',
+    kicker: 'Foco inicial em alunos da rede Afya',
+    titulo: 'Treine com questões autorais no <em>modelo da sua prova.</em>',
+    descricao: 'Simulados independentes no estilo das avaliações nacionais, processuais (N1/N2) e laboratório (P1/P2). Estude com foco no formato que você encontra na rotina.',
     showMetrics: true,
   },
 };
@@ -28,7 +28,7 @@ export const Cadastro: Story = {
   args: {
     kicker: 'Seu plano de revisão começa aqui',
     titulo: 'Monte simulados por tema, formato e <em>período.</em>',
-    descricao: 'Organize sua preparação com questões originais alinhadas ao calendário da rede Afya.',
+    descricao: 'Organize sua preparação com questões autorais, alinhadas ao calendário e ao estilo das avaliações que você enfrenta.',
     showMetrics: false,
   },
 };

@@ -2,6 +2,7 @@
 
   <!-- Seção 1: Hero de saudação -->
   <app-greeting-hero
+    data-onboarding-target="inicio-hero"
     [nomeCompleto]="profile()?.nome_completo ?? null"
     [periodo]="profile()?.periodo ?? null"
     [faculdadeRede]="profile()?.faculdade_rede ?? null"

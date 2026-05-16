@@ -1,6 +1,6 @@
 # Design System — BoraMed
 
-Direção visual: plataforma educacional médica com aparência institucional, limpa e confiante. A base deve combinar uma experiência de estudo objetiva com momentos de marca mais fortes, usando azul Afya/medicina como cor principal e acentos violetas apenas em gradientes de marca.
+Direção visual: plataforma educacional médica com aparência institucional, limpa e confiante. A base deve combinar uma experiência de estudo objetiva com momentos de marca mais fortes, usando azul médico/institucional como cor principal e acentos violetas apenas em gradientes de marca.
 
 ## Cores
 
@@ -112,7 +112,7 @@ Elementos:
 Exemplo de tom:
 
 ```text
-Treine com questões feitas pra sua prova.
+Treine com questões autorais no modelo da sua prova.
 ```
 
 ## Componentes Base
@@ -300,6 +300,22 @@ Mobile: bottom navigation com ícones.
 Usar Lucide quando biblioteca de ícones estiver instalada. Tamanho padrão: `20px`.
 
 Enquanto a biblioteca não estiver instalada, ícones simples podem ser CSS-only ou texto, desde que mantenham o mesmo espaço visual e acessibilidade com `aria-label`.
+
+## Onboarding
+
+O onboarding usa uma camada curta de ativação, não uma tela de marketing.
+
+Padrões:
+
+* Welcome e final podem usar Poloca com o gradiente institucional.
+* Coachmarks desktop usam spotlight sobre alvos com `data-onboarding-target` e card de até `392px`.
+* Mobile usa bottom sheet; não usar popover pequeno preso ao bottom nav.
+* Fallback central obrigatório quando o alvo não existe na rota atual.
+* Card com `border-radius: 8px`, borda `--color-border`, superfície branca e sombra forte o bastante para separar do scrim.
+* Header usa `--gradient-brand-highlight` + `--gradient-brand`.
+* Texto deve ser curto: título de uma linha quando possível, descrição de até duas linhas em desktop.
+* Sempre oferecer ação secundária para pular.
+* Respeitar `prefers-reduced-motion`; animações devem ser sutis e removíveis.
 
 ## Admin Analytics
 

@@ -8,6 +8,20 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-16 | Feature | sem commit
+
+**Onboarding de novos usuários — tour inicial do dashboard**
+
+- Nova tabela `user_onboarding_state` persiste status do onboarding por usuário, fluxo e versão com RLS e grants explícitos.
+- Novo `OnboardingService` controla carregamento, avanço, retorno, pulo e conclusão do fluxo `dashboard_intro`.
+- Novo `OnboardingTourComponent` compartilhado renderiza welcome com Poloca, spotlight desktop, bottom sheet mobile e fallback central.
+- Welcome/final usam o Poloca raster (`funny.png`) em vez da versão vetorial inicial.
+- Dashboard passou a orquestrar o onboarding e expõe alvos estáveis para Início, Simulados, Competitivo, Histórico e Perfil.
+- CTA final direciona o aluno para o inicio do modulo de simulados, onde ele escolhe o tipo de treino.
+- Storybook, testes unitários, docs de onboarding, design system, arquitetura, regras de negócio e inventário do Poloca atualizados.
+
+---
+
 ## 2026-05-16 | Fix | sem commit
 
 **Revisão de simulado personalizado — ordem das questões**
@@ -136,13 +150,13 @@ Implementação das páginas de erro globais do frontend, com design amigável e
 
 ## 2026-05-11 | Feature | 72146cb
 
-**Módulo de Provas — BoraMed (Rede Afya)**
+**Módulo de Simulados — BoraMed (modelo Afya)**
 
-Implementação completa do módulo central da plataforma: alunos acessam provas antigas da rede Afya para treinar.
+Implementação completa do módulo central da plataforma: alunos acessam simulados autorais inspirados no modelo de avaliações médicas, com foco inicial em alunos da rede Afya.
 
 ### Frontend
 - Página `/dashboard/provas` com cards por instituição
-- Página `/dashboard/provas/afya` com listagem de provas nacionais, filtros por tipo, período e ano (selects com truncamento)
+- Página `/dashboard/provas/afya` com listagem de simulados nacionais, filtros por tipo, período e ano (selects com truncamento)
 - Página `/dashboard/provas/:id` (detalhe da prova) com contagem de questões e botão de iniciar
 - Página `/dashboard/provas/:id/tentativa` (execução) com navegação entre questões, timer e pausa
 - Página `/dashboard/provas/:id/resultado` com resumo de acertos, nota e distribuição por tema

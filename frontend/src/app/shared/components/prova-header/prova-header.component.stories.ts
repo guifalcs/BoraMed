@@ -6,7 +6,7 @@ const meta: Meta<ProvaHeaderComponent> = {
   component: ProvaHeaderComponent,
   tags: ['autodocs'],
   args: {
-    titulo: 'Prova Nacional Afya — N1 · 2024',
+    titulo: 'Simulado nacional modelo Afya — N1 · 2024',
     totalQuestoes: 30,
     totalRespondidas: 0,
     segundos: 3600,

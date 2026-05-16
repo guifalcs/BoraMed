@@ -45,9 +45,9 @@ docs/                # documentação de domínio
 
 ## Módulos MVP
 
-1. **Provas Nacionais** — provas antigas Afya, exibição e gabarito.
-2. **Simulados Processuais** — filtro por tema + qtd, geração aleatória server-side.
-3. **Simulados de Laboratório** — questões com imagens de lâminas/peças.
+1. **Treinos Nacionais** — simulados autorais no modelo das avaliações nacionais, com foco inicial em alunos da rede Afya.
+2. **Simulados Processuais** — questões autorais por tema + qtd, geração aleatória server-side.
+3. **Simulados de Laboratório** — questões autorais com imagens de lâminas/peças.
 
 ## Regras Críticas
 
@@ -55,6 +55,7 @@ docs/                # documentação de domínio
 * NUNCA fazer `db push` para produção manualmente.
 * NUNCA expor service role key no frontend.
 * RLS obrigatório em toda tabela nova.
+* Nunca sugerir parceria, vínculo oficial ou acervo de questões/provas da Afya. Posicionamento correto: plataforma independente, questões autorais no modelo das avaliações.
 * Questões de laboratório exigem `imagem_url`.
 * Sorteio de questões: Supabase RPC ou Edge Function — nunca lógica no cliente.
   Sempre que criar uma funcionalidade, atualizar docs + changelog necessárias do sistema para refletir o estado atual

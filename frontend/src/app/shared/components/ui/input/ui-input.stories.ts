@@ -9,7 +9,7 @@ const meta: Meta<UiInputComponent> = {
   args: {
     label: 'E-mail',
     name: 'email',
-    value: 'arthur@afya.edu.br',
+    value: 'arthur@boramed.com.br',
     type: 'email',
     autocomplete: 'email',
     placeholder: '',
@@ -57,7 +57,7 @@ export const PasswordStrength: Story = {
   args: {
     label: 'Senha',
     name: 'newPassword',
-    value: 'Afya2026!',
+    value: 'BoraMed2026!',
     type: 'password',
     autocomplete: 'new-password',
     showPasswordToggle: true,

@@ -95,7 +95,7 @@ export class HistoricoComponent {
 
   protected readonly tiposDisponiveis: { valor: FiltroTipo; label: string }[] = [
     { valor: 'todos', label: 'Todos' },
-    { valor: 'nacional', label: 'Provas Afya' },
+    { valor: 'nacional', label: 'Modelo Afya' },
     { valor: 'processual', label: 'Simulados' },
   ];
 

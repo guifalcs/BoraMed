@@ -1,0 +1,54 @@
+@if (isVisible() && activeStep(); as step) {
+  <div class="onboarding-layer" role="dialog" aria-modal="true" [attr.aria-label]="step.titulo">
+    <button class="onboarding-scrim" type="button" aria-label="Pular onboarding" (click)="pular.emit()"></button>
+
+    @if (hasTarget()) {
+      <div class="onboarding-spotlight" [ngStyle]="spotlightStyle()" aria-hidden="true"></div>
+    }
+
+    <section
+      class="onboarding-card"
+      [class.onboarding-card--center]="isCenterStep() || !hasTarget()"
+      [class.onboarding-card--mobile]="isMobile()"
+      [ngStyle]="cardStyle()"
+    >
+      <header class="onboarding-card__header">
+        <div class="onboarding-card__badge" aria-hidden="true">
+          <app-ui-icon [icon]="step.id === 'final' ? doneIcon : sparklesIcon" [size]="18" />
+        </div>
+        <div class="onboarding-card__meta">
+          <span>{{ flow().titulo }}</span>
+          <strong>{{ progressLabel() }}</strong>
+        </div>
+        <button class="onboarding-card__close" type="button" aria-label="Pular onboarding" (click)="pular.emit()">
+          <app-ui-icon [icon]="closeIcon" [size]="18" />
+        </button>
+      </header>
+
+      <div class="onboarding-card__body">
+        @if (isCenterStep()) {
+          <img class="onboarding-card__mascot" src="illustrations/funny.png" alt="Poloca" />
+        }
+        <h2>{{ step.titulo }}</h2>
+        <p>{{ step.descricao }}</p>
+      </div>
+
+      <footer class="onboarding-card__footer">
+        <button class="onboarding-link" type="button" (click)="pular.emit()">Pular por enquanto</button>
+
+        <div class="onboarding-actions">
+          @if (canGoBack()) {
+            <button class="onboarding-icon-button" type="button" aria-label="Voltar" (click)="voltar.emit()">
+              <app-ui-icon [icon]="backIcon" [size]="18" />
+            </button>
+          }
+
+          <button class="onboarding-primary" type="button" (click)="handlePrimaryAction()">
+            <span>{{ primaryLabel() }}</span>
+            <app-ui-icon [icon]="step.id === 'final' ? doneIcon : nextIcon" [size]="18" />
+          </button>
+        </div>
+      </footer>
+    </section>
+  </div>
+}

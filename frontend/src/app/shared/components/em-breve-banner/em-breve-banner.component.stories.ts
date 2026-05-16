@@ -7,8 +7,8 @@ const meta: Meta<EmBreveBannerComponent> = {
   component: EmBreveBannerComponent,
   tags: ['autodocs'],
   args: {
-    titulo: 'Provas Processuais',
-    descricao: 'Estamos organizando o acervo de provas processuais da Rede Afya. Esta funcionalidade estará disponível em breve.',
+    titulo: 'Treinos Processuais',
+    descricao: 'Estamos preparando questões autorais no modelo das avaliações processuais. Esta funcionalidade estará disponível em breve.',
   },
 };
 
@@ -25,8 +25,8 @@ export const ComIcone: Story = {
 
 export const Multiestacoes: Story = {
   args: {
-    titulo: 'Provas Multiestações',
-    descricao: 'Questões de laboratório com imagens de lâminas e peças anatômicas.',
+    titulo: 'Treinos Multiestações',
+    descricao: 'Questões autorais de laboratório com imagens de lâminas e peças anatômicas.',
     icone: FlaskConical,
   },
 };

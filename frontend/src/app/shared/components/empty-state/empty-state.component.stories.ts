@@ -7,8 +7,8 @@ const meta: Meta<EmptyStateComponent> = {
   component: EmptyStateComponent,
   tags: ['autodocs'],
   args: {
-    titulo: 'Nenhuma prova encontrada',
-    descricao: 'Estamos preparando o banco de provas. Em breve você terá acesso ao acervo completo.',
+    titulo: 'Nenhum simulado encontrado',
+    descricao: 'Estamos preparando novos treinos autorais para este filtro.',
   },
 };
 

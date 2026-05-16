@@ -41,7 +41,7 @@ Tratar como regras concretas, não como tom geral:
 
 ### 4.1 Fase 0 — Exploração de conceito do mascote (NÃO PULAR)
 
-Mascote errado = semanas perdidas redesenhando assets. Antes de produzir qualquer asset final, gerar **3 direções de conceito** e o **Arthur decide** (CLAUDE.md: Arthur é fonte de verdade em conteúdo médico e identidade Afya).
+Mascote errado = semanas perdidas redesenhando assets. Antes de produzir qualquer asset final, gerar **3 direções de conceito** e o **Arthur decide** (CLAUDE.md: Arthur é referência interna em conteúdo médico e rotina acadêmica do público inicial).
 
 Três territórios a explorar (1 board de referência cada, ~6 imagens):
 
@@ -132,7 +132,7 @@ Lista concreta do que precisa de ilustração/animação (base: estrutura atual 
 |---|---|---|---|
 | BrandPanel auth (login, cadastro, recuperar/redefinir senha) | Hero com mascote | GSAP draw-on / entrada suave | P0 |
 | Callback de auth | — | Loader de marca | P1 |
-| Onboarding (futuro) | Mascote em 2–3 cenas | Lottie/SVG sequencial | P1 |
+| Onboarding MVP | `funny.png` em welcome/final | PNG raster + spotlight/bottom sheet | P0 |
 | `empty-state` (componente compartilhado) | Ilustração por contexto | Entrada leve | P0 |
 | `em-breve-banner` / `em-breve-page` (provas) | Mascote "em construção" | Sutil | P1 |
 | Histórico vazio | Ilustração | — | P1 |
@@ -192,4 +192,4 @@ Custo do plano em modo default: **R$ 0**.
 2. **Nome do mascote/elenco** — Arthur.
 3. ~~**Gamificação persiste no banco?**~~ **DECIDIDO:** Gamificação cortada deste ciclo. Foco em ilustração + animação.
 4. **Orçar Rive (US$9/mês) no futuro?** — Guilherme, decisão de produto, não bloqueia nada agora.
-5. **Onboarding existe no roadmap?** Várias telas P1 dependem disso — confirmar.
+5. ~~**Onboarding existe no roadmap?**~~ **DECIDIDO:** onboarding MVP implementado como tour próprio no dashboard.

@@ -2,9 +2,9 @@
 
 ## Visão Geral
 
-Plataforma de simulados para estudantes de medicina da rede Afya.
+Plataforma independente de simulados para estudantes de medicina, com foco inicial em alunos da rede Afya.
 
-* **Arthur Barata** : sócio, estudante Afya — fonte de verdade sobre conteúdo médico e calendário Afya.
+* **Arthur Barata** : sócio, estudante Afya — referência interna sobre rotina acadêmica, temas e calendário observado.
 * **Guilherme** : sócio, dev/produto — decisor técnico.
 
 ## Stack
@@ -51,14 +51,15 @@ projeto-med/
 
 ## Módulos MVP
 
-1. **Provas Nacionais** — provas antigas Afya, exibição e gabarito.
-2. **Simulados Processuais** — filtro por tema + qtd, geração aleatória.
-3. **Simulados de Laboratório** — questões com imagens de lâminas/peças.
+1. **Treinos Nacionais** — simulados autorais no modelo das avaliações nacionais, com foco inicial em alunos da rede Afya.
+2. **Simulados Processuais** — questões autorais por tema + qtd, geração aleatória.
+3. **Simulados de Laboratório** — questões autorais com imagens de lâminas/peças.
 
 ## Regras Críticas
 
 * NUNCA rodar `supabase db push` contra o project ref de produção diretamente.
 * NUNCA editar migrations já aplicadas — apenas criar novas.
+* NUNCA sugerir parceria, vínculo oficial ou acervo de questões/provas da Afya. O BoraMed é independente e usa conteúdo autoral inspirado no modelo das avaliações.
 * Questões de laboratório sempre têm `imagem_url` obrigatório.
 * Auth: login/senha simples (Supabase Auth email/password).
 * Lógica de sorteio de questões: server-side via Supabase (RPC ou Edge Function).
@@ -70,7 +71,7 @@ projeto-med/
 * Código: apenas diff/linhas alteradas. Nunca reescrever arquivo inteiro salvo solicitação explícita.
 * Decisões de produto: opinião direta, sem "depende".
 * Dado faltando: assumir default mais provável, sinalizar em uma linha, seguir.
-* Arthur = fonte de verdade em conteúdo médico e calendário Afya.
+* Arthur = referência interna em conteúdo médico, rotina acadêmica e calendário observado.
 * Guilherme = decisor técnico/produto.
 
 ## Referências

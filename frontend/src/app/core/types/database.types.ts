@@ -254,6 +254,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding_state: {
+        Row: {
+          atualizado_em: string
+          completed_at: string | null
+          criado_em: string
+          current_step: string | null
+          flow_key: string
+          flow_version: number
+          metadata: Json
+          skipped_at: string | null
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          completed_at?: string | null
+          criado_em?: string
+          current_step?: string | null
+          flow_key: string
+          flow_version?: number
+          metadata?: Json
+          skipped_at?: string | null
+          started_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          completed_at?: string | null
+          criado_em?: string
+          current_step?: string | null
+          flow_key?: string
+          flow_version?: number
+          metadata?: Json
+          skipped_at?: string | null
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prova: {
         Row: {
           ano: number | null

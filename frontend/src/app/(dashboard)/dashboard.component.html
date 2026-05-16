@@ -14,6 +14,7 @@
           [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
           routerLinkActive="nav-item--active"
           [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+          [attr.data-onboarding-target]="item.onboardingTarget ?? null"
         >
           <app-ui-icon [icon]="item.icon" [size]="20" />
           <span>{{ item.label }}</span>
@@ -23,7 +24,7 @@
 
     <div class="sidebar-bottom">
       <div class="desktop-avatar-wrapper">
-        <button class="user-card" type="button" aria-label="Menu do perfil" (click)="toggleMenu()">
+        <button class="user-card" type="button" aria-label="Menu do perfil" data-onboarding-target="profile-menu" (click)="toggleMenu()">
           <app-ui-avatar
             [name]="profile()?.nome_completo ?? user()?.email ?? 'Usuário'"
             [avatarUrl]="profile()?.avatar_url ?? null"
@@ -69,7 +70,7 @@
       <img src="logotipo.png" alt="BoraMed" class="mobile-logo" />
     </a>
     <div class="mobile-avatar-wrapper">
-      <button class="mobile-avatar-btn" type="button" aria-label="Menu do perfil" (click)="toggleMenu()">
+      <button class="mobile-avatar-btn" type="button" aria-label="Menu do perfil" data-onboarding-target="profile-menu" (click)="toggleMenu()">
         <app-ui-avatar
           [name]="profile()?.nome_completo ?? user()?.email ?? 'Usuário'"
           [avatarUrl]="profile()?.avatar_url ?? null"
@@ -114,11 +115,24 @@
         [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
         routerLinkActive="bottom-nav-item--active"
         [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+        [attr.data-onboarding-target]="item.onboardingTarget ?? null"
       >
         <app-ui-icon [icon]="item.icon" [size]="22" />
         <span>{{ item.label }}</span>
       </a>
     }
   </nav>
+
+  <app-onboarding-tour
+    [flow]="onboarding.flow"
+    [activeStep]="onboarding.activeStep()"
+    [progressLabel]="onboarding.progressLabel()"
+    [canGoBack]="onboarding.canGoBack()"
+    [isVisible]="onboarding.isVisible()"
+    (avancar)="handleOnboardingNext()"
+    (voltar)="handleOnboardingBack()"
+    (pular)="handleOnboardingSkip()"
+    (finalizar)="handleOnboardingComplete()"
+  />
 
 </div>

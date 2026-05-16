@@ -4,7 +4,7 @@
 
 Restrição confirmada: **mascote é um animal ou ser não-humano**, podendo ter elementos médicos (estetoscópio, jaleco, etc.) como acessórios.
 
-Critério de decisão: qual personagem um estudante Afya acharia **"esse app entende minha vida"** ao invés de **"que fofo mas não é pra mim"**?
+Critério de decisão: qual personagem um estudante de medicina do público inicial acharia **"esse app entende minha vida"** ao invés de **"que fofo mas não é pra mim"**?
 
 **Coruja está descartada.** É o Duolingo. Qualquer semelhança vai prejudicar a identidade.
 
@@ -70,7 +70,7 @@ Dashboard, empty-states (tentáculos carregando livros/questões), resultado, br
 **Mais memorável e "ownable" das três.** Nenhum app de medicina usa polvo. A conexão científica (sistema nervoso complexo) é um easter egg que estudantes de medicina vão apreciar — transforma o mascote em mnemônico. Forma naturalmente arredondada = amigável sem esforço. Fácil de animar (tentáculos ondulam suavemente = animação infinita de idle).
 
 ### Risco
-Pode parecer aleatório para quem não conhece a neurobiologia do polvo. Precisa de um contexto inicial de apresentação ("Conheça o Pulpo, o ser mais inteligente do oceano — e seu companheiro de estudos"). Arthur valida se a escolha vai ressoar com os estudantes Afya.
+Pode parecer aleatório para quem não conhece a neurobiologia do polvo. Precisa de um contexto inicial de apresentação ("Conheça o Pulpo, o ser mais inteligente do oceano — e seu companheiro de estudos"). Arthur valida se a escolha vai ressoar com os estudantes de medicina do público inicial.
 
 ### Prompt de referência (para geração com IA)
 ```

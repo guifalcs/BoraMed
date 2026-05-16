@@ -31,22 +31,22 @@ export class EmBrevePageComponent {
 
     if (tipo === 'processual') {
       return {
-        titulo: 'Provas Processuais',
-        descricao: 'Estamos organizando o acervo de provas processuais da Rede Afya. Disponível em breve.',
+        titulo: 'Treinos Processuais',
+        descricao: 'Estamos preparando questões autorais no modelo das avaliações processuais. Disponível em breve.',
         icone: Stethoscope,
       };
     }
     if (tipo === 'multiestacoes') {
       return {
-        titulo: 'Provas Multiestações',
-        descricao: 'Questões de laboratório com imagens de lâminas e peças anatômicas. Disponível em breve.',
+        titulo: 'Treinos Multiestações',
+        descricao: 'Questões autorais de laboratório com imagens de lâminas e peças anatômicas. Disponível em breve.',
         icone: FlaskConical,
       };
     }
     if (tipo === 'outras') {
       return {
         titulo: 'Outras Faculdades',
-        descricao: 'Em breve você poderá acessar provas de outras instituições de ensino médico.',
+        descricao: 'Em breve você poderá treinar com modelos de outras instituições de ensino médico.',
         icone: Building2,
       };
     }

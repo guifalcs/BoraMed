@@ -6,10 +6,10 @@
 ### Questão
 
 * Tipos: `nacional` | `processual` | `laboratorio`
-* Período: 1 a 12 (semestres do curso médico Afya)
+* Período: 1 a 12 (semestres do curso médico; foco inicial em alunos da rede Afya)
 * Questões de laboratório SEMPRE têm `imagem_url`
 * Questões têm exatamente 5 alternativas, 1 correta
-* Questões processuais e de laboratório são elaboradas por professores Afya — conteúdo coletado e reescrito pelos sócios (não cópia literal das provas originais)
+* Questões são autorais, criadas pelo time a partir dos temas, objetivos pedagógicos e formato das avaliações observadas. Não copiar enunciados, alternativas, imagens, gabaritos ou materiais oficiais de instituições.
 
 ### Simulado
 
@@ -51,6 +51,15 @@
 
 ## Fluxos Principais
 
+### Onboarding de Novos Usuários
+
+* O onboarding aparece apenas para usuários autenticados que ainda não concluíram nem pularam o fluxo ativo.
+* O estado é privado por aluno e persistido por `flow_key` + `flow_version`.
+* O usuário pode pular o onboarding a qualquer momento.
+* Onboarding não concede XP, conquista, streak ou qualquer recompensa competitiva.
+* Falha ao carregar ou salvar onboarding não bloqueia o dashboard.
+* O CTA final do fluxo inicial direciona o aluno para o inicio do modulo de simulados, onde ele escolhe o tipo de treino.
+
 ### Gerar Simulado Processual ou Laboratório
 
 1. Aluno seleciona tipo (processual ou laboratório)
@@ -61,14 +70,16 @@
 6. Aluno responde na ordem apresentada
 7. Ao finalizar: exibe resultado com gabarito
 
-### Provas Nacionais
+### Treinos Nacionais no Modelo Afya
 
-1. Aluno navega pela lista de provas disponíveis
+1. Aluno navega pela lista de simulados autorais disponíveis
 2. Filtra por período e ano
-3. Abre a prova e responde
+3. Abre o simulado e responde
 4. Ao finalizar: exibe resultado com gabarito
 
-## Calendário de Provas Afya (todos os campi)
+## Calendário de Referência (Foco Inicial Afya)
+
+Uso interno como referência de produto. Não apresentar como calendário oficial, parceria ou representação da Afya.
 
 * **N1** (processual): semana 4–5 do semestre
 * **P1** (laboratório): semana 6
@@ -85,19 +96,19 @@
 
 ## Público-Alvo
 
-* **Primário** : alunos do 1º período Afya
-* **Secundário** : demais períodos da rede Afya (mesmo calendário)
-* Todas as unidades Afya do Brasil seguem o mesmo calendário e tipos de prova
+* **Primário** : alunos de medicina do 1º período em instituições da rede Afya
+* **Secundário** : demais períodos de medicina da rede Afya
+* **Expansão** : outras instituições de ensino médico após validação do MVP
 
 ## Diferencial Competitivo
 
-* Especificidade Afya: provas processuais e de laboratório não existem em bancos genéricos (QConcursos, Medway, etc.)
+* Foco em formatos de avaliação pouco atendidos por bancos genéricos (processuais, laboratório e multiestações)
 * Personalização granular: aluno monta o simulado exatamente com o que precisa estudar
 * Competição por consistência de estudo e XP, sem confronto direto por acurácia
 
 ## Monetização (planejada)
 
-* Freemium: Provas Nacionais gratuitas, Processuais e Laboratório pagos
+* Freemium: treinos nacionais gratuitos, processuais e laboratório pagos
 * Preço alvo: R$19–39/mês ou R$99–199/semestre
 * Definição final pendente
 
@@ -105,7 +116,7 @@
 
 ### 1º Período — fonte: Arthur Barata (a preencher)
 
-Temas das provas processuais e de laboratório do 1º semestre Afya.
+Temas cobrados em avaliações processuais e de laboratório do 1º semestre.
 Arthur deve fornecer lista de temas por tipo de prova (N1, P1, N2, P2).
 
 ### 2º–12º Períodos
