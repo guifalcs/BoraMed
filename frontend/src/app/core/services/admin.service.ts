@@ -27,6 +27,59 @@ export interface AdminQuestao {
   prova?: { nome: string } | null;
 }
 
+export interface AdminAlternativa {
+  id?: string;
+  questao_id?: string;
+  letra: string;
+  texto: string;
+  correta: boolean;
+  ordem: number;
+}
+
+export interface AdminQuestaoCompleta {
+  id: string;
+  enunciado: string;
+  enunciado_apoio: string | null;
+  formato: string;
+  status: string;
+  dificuldade: number | null;
+  disciplina: string | null;
+  periodo: number | null;
+  prova_id: string | null;
+  ordem_na_prova: number | null;
+  explicacao: string | null;
+  referencia: string | null;
+  fonte: string | null;
+  resposta_correta_texto: string | null;
+  revisado: boolean;
+  apto_desafio_diario: boolean;
+  criado_em: string;
+  alternativas: AdminAlternativa[];
+  temas: string[];
+  prova?: { nome: string } | null;
+}
+
+export interface QuestaoPayload {
+  enunciado: string;
+  enunciado_apoio?: string | null;
+  formato: string;
+  status: string;
+  dificuldade?: number | null;
+  disciplina?: string | null;
+  periodo?: number | null;
+  prova_id?: string | null;
+  ordem_na_prova?: number | null;
+  explicacao?: string | null;
+  referencia?: string | null;
+  fonte?: string | null;
+  resposta_correta_texto?: string | null;
+  revisado?: boolean;
+  apto_desafio_diario?: boolean;
+  autor_id?: string | null;
+}
+
+export type AlternativaPayload = Omit<AdminAlternativa, 'id' | 'questao_id'>;
+
 export interface AdminProva {
   id: string;
   nome: string;
@@ -114,6 +167,84 @@ export class AdminService {
     return { ok: true, data: { questoes: (data ?? []) as unknown as AdminQuestao[], total: count ?? 0 } };
   }
 
+  async buscarQuestaoCompleta(id: string): Promise<ServiceResult<AdminQuestaoCompleta>> {
+    const [q, alts, temas] = await Promise.all([
+      this.supabase.from('questao').select('*,prova(nome)').eq('id', id).single(),
+      this.supabase.from('alternativa').select('id,letra,texto,correta,ordem').eq('questao_id', id).order('ordem'),
+      this.supabase.from('questao_tema').select('tema_id').eq('questao_id', id),
+    ]);
+    if (q.error) return { ok: false, error: q.error.message };
+    return {
+      ok: true,
+      data: {
+        ...(q.data as AdminQuestaoCompleta),
+        alternativas: (alts.data ?? []) as AdminAlternativa[],
+        temas: ((temas.data ?? []) as { tema_id: string }[]).map((t) => t.tema_id),
+      },
+    };
+  }
+
+  async criarQuestaoCompleta(
+    questao: QuestaoPayload,
+    alternativas: AlternativaPayload[],
+    temaIds: string[],
+  ): Promise<ServiceResult<string>> {
+    const { data, error } = await this.supabase
+      .from('questao')
+      .insert(questao)
+      .select('id')
+      .single();
+    if (error) return { ok: false, error: error.message };
+    const id = (data as { id: string }).id;
+
+    if (alternativas.length > 0) {
+      const { error: ae } = await this.supabase
+        .from('alternativa')
+        .insert(alternativas.map((a, i) => ({ ...a, questao_id: id, ordem: i + 1 })));
+      if (ae) {
+        await this.supabase.from('questao').delete().eq('id', id);
+        return { ok: false, error: ae.message };
+      }
+    }
+
+    if (temaIds.length > 0) {
+      const { error: te } = await this.supabase
+        .from('questao_tema')
+        .insert(temaIds.map((tema_id) => ({ questao_id: id, tema_id })));
+      if (te) return { ok: false, error: te.message };
+    }
+
+    return { ok: true, data: id };
+  }
+
+  async atualizarQuestaoCompleta(
+    id: string,
+    questao: Partial<QuestaoPayload>,
+    alternativas: AlternativaPayload[],
+    temaIds: string[],
+  ): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.from('questao').update(questao).eq('id', id);
+    if (error) return { ok: false, error: error.message };
+
+    await this.supabase.from('alternativa').delete().eq('questao_id', id);
+    if (alternativas.length > 0) {
+      const { error: ae } = await this.supabase
+        .from('alternativa')
+        .insert(alternativas.map((a, i) => ({ ...a, questao_id: id, ordem: i + 1 })));
+      if (ae) return { ok: false, error: ae.message };
+    }
+
+    await this.supabase.from('questao_tema').delete().eq('questao_id', id);
+    if (temaIds.length > 0) {
+      const { error: te } = await this.supabase
+        .from('questao_tema')
+        .insert(temaIds.map((tema_id) => ({ questao_id: id, tema_id })));
+      if (te) return { ok: false, error: te.message };
+    }
+
+    return { ok: true, data: undefined };
+  }
+
   async criarQuestao(input: Partial<AdminQuestao>): Promise<ServiceResult<AdminQuestao>> {
     const { data, error } = await this.supabase
       .from('questao')
@@ -165,6 +296,15 @@ export class AdminService {
     const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: { provas: (data ?? []) as unknown as AdminProva[], total: count ?? 0 } };
+  }
+
+  async listarProvasSimples(): Promise<ServiceResult<{ id: string; nome: string; ano: number }[]>> {
+    const { data, error } = await this.supabase
+      .from('prova')
+      .select('id,nome,ano')
+      .order('ano', { ascending: false });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as { id: string; nome: string; ano: number }[] };
   }
 
   async deletarProva(id: string): Promise<ServiceResult<void>> {

@@ -1,8 +1,13 @@
+<!-- ── Cabeçalho da página ── -->
 <div class="page-header">
-  <h1 class="page-title">Questões</h1>
-  <p class="page-subtitle">{{ total() }} no total</p>
+  <div>
+    <h1 class="page-title">Questões</h1>
+    <p class="page-subtitle">{{ total() }} no total</p>
+  </div>
+  <button class="btn btn--primary" (click)="abrirCriar()">+ Nova questão</button>
 </div>
 
+<!-- ── Toolbar de filtros ── -->
 <div class="toolbar">
   <input
     class="search-input"
@@ -26,6 +31,7 @@
   <button class="btn btn--primary" (click)="aplicarFiltros()">Filtrar</button>
 </div>
 
+<!-- ── Tabela ── -->
 @if (isLoading()) {
   <p class="loading-text">Carregando…</p>
 } @else {
@@ -33,7 +39,7 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th style="width:45%">Enunciado</th>
+          <th style="width:42%">Enunciado</th>
           <th>Formato</th>
           <th>Status</th>
           <th>Acerto</th>
@@ -45,7 +51,7 @@
         @for (q of questoes(); track q.id) {
           <tr>
             <td>
-              <span class="enunciado-text">{{ q.enunciado | slice:0:120 }}{{ q.enunciado.length > 120 ? '…' : '' }}</span>
+              <span class="enunciado-text">{{ q.enunciado | slice:0:110 }}{{ q.enunciado.length > 110 ? '…' : '' }}</span>
             </td>
             <td><span class="format-badge">{{ q.formato }}</span></td>
             <td>
@@ -63,7 +69,14 @@
             </td>
             <td>{{ q.taxa_acerto != null ? (q.taxa_acerto + '%') : '—' }}</td>
             <td>{{ q.prova?.nome ?? '—' }}</td>
-            <td>
+            <td class="actions-cell">
+              <button
+                class="btn btn--sm btn--outline"
+                [disabled]="!!processando()"
+                (click)="abrirEditar(q)"
+              >
+                Editar
+              </button>
               <button
                 class="btn btn--sm btn--danger"
                 [disabled]="!!processando()"
@@ -85,90 +98,513 @@
   </div>
 }
 
+<!-- ── Drawer de criação/edição ── -->
+@if (modoDrawer() !== 'fechado') {
+  <div class="drawer-backdrop" (click)="fecharDrawer()"></div>
+
+  <aside class="drawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">
+        {{ modoDrawer() === 'criar' ? 'Nova questão' : 'Editar questão' }}
+      </h2>
+      <button class="drawer-close" (click)="fecharDrawer()" aria-label="Fechar">✕</button>
+    </div>
+
+    @if (carregandoForm()) {
+      <div class="drawer-loading">Carregando…</div>
+    } @else {
+      <div class="drawer-body">
+
+        <!-- Seção: Conteúdo -->
+        <section class="form-section">
+          <h3 class="section-label">Conteúdo</h3>
+
+          <div class="field">
+            <label class="field-label">Enunciado <span class="req">*</span></label>
+            <textarea
+              class="form-textarea"
+              rows="5"
+              placeholder="Texto da questão…"
+              [ngModel]="fEnunciado()"
+              (ngModelChange)="fEnunciado.set($event)"
+            ></textarea>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Enunciado de apoio</label>
+            <textarea
+              class="form-textarea"
+              rows="2"
+              placeholder="Caso clínico, texto motivador…"
+              [ngModel]="fEnunciadoApoio()"
+              (ngModelChange)="fEnunciadoApoio.set($event)"
+            ></textarea>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Formato <span class="req">*</span></label>
+              <select
+                class="form-select"
+                [ngModel]="fFormato()"
+                (ngModelChange)="onFormatoChange($event)"
+              >
+                <option value="multipla_escolha">Múltipla escolha</option>
+                <option value="verdadeiro_falso">Verdadeiro / Falso</option>
+                <option value="discursiva">Discursiva</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Status</label>
+              <select
+                class="form-select"
+                [ngModel]="fStatus()"
+                (ngModelChange)="fStatus.set($event)"
+              >
+                <option value="rascunho">Rascunho</option>
+                <option value="ativa">Ativa</option>
+                <option value="em_revisao">Em revisão</option>
+                <option value="arquivada">Arquivada</option>
+              </select>
+            </div>
+
+            <div class="field field--narrow">
+              <label class="field-label">Dificuldade</label>
+              <select
+                class="form-select"
+                [ngModel]="fDificuldade()"
+                (ngModelChange)="fDificuldade.set($event ? +$event : null)"
+              >
+                <option [value]="null">—</option>
+                <option value="1">1 – Muito fácil</option>
+                <option value="2">2 – Fácil</option>
+                <option value="3">3 – Médio</option>
+                <option value="4">4 – Difícil</option>
+                <option value="5">5 – Muito difícil</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Seção: Alternativas (múltipla escolha / V-F) -->
+        @if (mostrarAlternativas()) {
+          <section class="form-section">
+            <h3 class="section-label">Alternativas</h3>
+            <p class="section-hint">
+              @if (fFormato() === 'verdadeiro_falso') {
+                Selecione qual opção é a correta.
+              } @else {
+                Marque a alternativa correta. Preencha ao menos 2 alternativas.
+              }
+            </p>
+
+            <div class="alternativas-list">
+              @for (alt of fAlternativas(); track alt.letra; let i = $index) {
+                <div class="alt-row" [class.alt-row--correta]="alt.correta">
+                  <input
+                    type="radio"
+                    class="alt-radio"
+                    name="correta"
+                    [checked]="alt.correta"
+                    (change)="marcarCorreta(i)"
+                  />
+                  <span class="alt-letra">{{ alt.letra }}</span>
+                  @if (fFormato() === 'verdadeiro_falso') {
+                    <span class="alt-texto-fixo">{{ alt.texto }}</span>
+                  } @else {
+                    <textarea
+                      class="alt-textarea"
+                      rows="2"
+                      [placeholder]="'Texto da alternativa ' + alt.letra + '…'"
+                      [value]="alt.texto"
+                      (input)="atualizarTextoAlternativa(i, $any($event.target).value)"
+                    ></textarea>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Seção: Resposta correta (discursiva) -->
+        @if (fFormato() === 'discursiva') {
+          <section class="form-section">
+            <h3 class="section-label">Resposta esperada</h3>
+            <div class="field">
+              <textarea
+                class="form-textarea"
+                rows="3"
+                placeholder="Resposta padrão ou gabarito comentado…"
+                [ngModel]="fRespostaCorreta()"
+                (ngModelChange)="fRespostaCorreta.set($event)"
+              ></textarea>
+            </div>
+          </section>
+        }
+
+        <!-- Seção: Explicação -->
+        <section class="form-section">
+          <h3 class="section-label">Explicação e referências</h3>
+
+          <div class="field">
+            <label class="field-label">Explicação do gabarito</label>
+            <textarea
+              class="form-textarea"
+              rows="3"
+              placeholder="Por que a resposta está correta? Dica de revisão…"
+              [ngModel]="fExplicacao()"
+              (ngModelChange)="fExplicacao.set($event)"
+            ></textarea>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Referência bibliográfica</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="Ex: Harrison, Cap. 12, p. 340"
+                [ngModel]="fReferencia()"
+                (ngModelChange)="fReferencia.set($event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Fonte</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="Ex: Revalida 2023"
+                [ngModel]="fFonte()"
+                (ngModelChange)="fFonte.set($event)"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Seção: Classificação -->
+        <section class="form-section">
+          <h3 class="section-label">Classificação</h3>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Disciplina</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="Ex: Clínica Médica"
+                [ngModel]="fDisciplina()"
+                (ngModelChange)="fDisciplina.set($event)"
+              />
+            </div>
+            <div class="field field--narrow">
+              <label class="field-label">Período</label>
+              <input
+                type="number"
+                class="form-input"
+                min="1"
+                max="12"
+                placeholder="1–12"
+                [ngModel]="fPeriodo()"
+                (ngModelChange)="fPeriodo.set($event ? +$event : null)"
+              />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Prova</label>
+              <select
+                class="form-select"
+                [ngModel]="fProvaId()"
+                (ngModelChange)="fProvaId.set($event || null)"
+              >
+                <option value="">Nenhuma</option>
+                @for (p of provasDisponiveis(); track p.id) {
+                  <option [value]="p.id">{{ p.nome }} ({{ p.ano }})</option>
+                }
+              </select>
+            </div>
+            @if (fProvaId()) {
+              <div class="field field--narrow">
+                <label class="field-label">Ordem na prova</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  min="1"
+                  placeholder="Nº"
+                  [ngModel]="fOrdemNaProva()"
+                  (ngModelChange)="fOrdemNaProva.set($event ? +$event : null)"
+                />
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Seção: Temas -->
+        <section class="form-section">
+          <h3 class="section-label">
+            Temas
+            @if (fTemas().length > 0) {
+              <span class="temas-badge">{{ fTemas().length }} selecionado{{ fTemas().length > 1 ? 's' : '' }}</span>
+            }
+          </h3>
+
+          <input
+            type="search"
+            class="form-input temas-busca"
+            placeholder="Filtrar temas…"
+            [ngModel]="fTemaBusca()"
+            (ngModelChange)="fTemaBusca.set($event)"
+          />
+
+          <div class="temas-grid">
+            @for (tema of temasVisiveis(); track tema.id) {
+              <label class="tema-item" [class.tema-item--selected]="isTemaSelected(tema.id)">
+                <input
+                  type="checkbox"
+                  [checked]="isTemaSelected(tema.id)"
+                  (change)="toggleTema(tema.id)"
+                />
+                <span>{{ tema.nome }}</span>
+                @if (tema.disciplina) {
+                  <em>{{ tema.disciplina }}</em>
+                }
+              </label>
+            }
+            @if (temasVisiveis().length === 0) {
+              <p class="temas-empty">Nenhum tema encontrado.</p>
+            }
+          </div>
+        </section>
+
+        <!-- Seção: Opções -->
+        <section class="form-section">
+          <h3 class="section-label">Opções</h3>
+          <div class="opcoes-row">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [ngModel]="fRevisado()"
+                (ngModelChange)="fRevisado.set($event)"
+              />
+              Revisado
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [ngModel]="fAptoDesafio()"
+                (ngModelChange)="fAptoDesafio.set($event)"
+              />
+              Apto para desafio diário
+            </label>
+          </div>
+        </section>
+
+      </div><!-- /drawer-body -->
+
+      <div class="drawer-footer">
+        <button class="btn btn--outline" [disabled]="salvando()" (click)="fecharDrawer()">
+          Cancelar
+        </button>
+        <button class="btn btn--primary" [disabled]="salvando()" (click)="salvar()">
+          {{ salvando() ? 'Salvando…' : (modoDrawer() === 'criar' ? 'Criar questão' : 'Salvar alterações') }}
+        </button>
+      </div>
+    }
+  </aside>
+}
+
 <style>
-  .page-header { margin-bottom: 1.5rem; }
-  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  /* ── Página ── */
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
   .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
 
+  /* ── Toolbar ── */
   .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
   .search-input, .filter-select {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 0.5rem 0.875rem;
-    color: #f1f5f9;
-    font-size: 0.875rem;
-    outline: none;
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.5rem 0.875rem; color: #1e293b; font-size: 0.875rem; outline: none;
   }
   .search-input { flex: 1; min-width: 200px; max-width: 320px; }
-  .search-input:focus, .filter-select:focus { border-color: #6366f1; }
-
+  .search-input:focus, .filter-select:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
-  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #334155; margin-bottom: 1rem; }
+  /* ── Tabela ── */
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th {
-    background: #1e293b;
-    padding: 0.75rem 1rem;
-    text-align: left;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
-    border-bottom: 1px solid #334155;
+    background: #f8fafc; padding: 0.75rem 1rem; text-align: left;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0;
   }
   .data-table td {
-    padding: 0.75rem 1rem;
-    font-size: 0.8rem;
-    color: #cbd5e1;
-    border-bottom: 1px solid #1e293b;
-    background: #0f172a;
+    padding: 0.75rem 1rem; font-size: 0.8rem; color: #334155;
+    border-bottom: 1px solid #f1f5f9; background: #ffffff;
   }
   .data-table tr:last-child td { border-bottom: none; }
-
-  .enunciado-text { color: #cbd5e1; line-height: 1.4; }
+  .enunciado-text { color: #475569; line-height: 1.4; }
+  .actions-cell { white-space: nowrap; }
   .format-badge {
-    font-size: 0.7rem;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 4px;
-    padding: 0.15rem 0.4rem;
-    color: #94a3b8;
-    white-space: nowrap;
+    font-size: 0.7rem; background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 4px; padding: 0.15rem 0.4rem; color: #64748b; white-space: nowrap;
   }
   .status-select {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 4px;
-    padding: 0.2rem 0.4rem;
-    color: #f1f5f9;
-    font-size: 0.75rem;
-    outline: none;
-    cursor: pointer;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;
+    padding: 0.2rem 0.4rem; color: #334155; font-size: 0.75rem; outline: none; cursor: pointer;
   }
-
   .pagination { display: flex; align-items: center; gap: 1rem; }
   .pagination-info { font-size: 0.8rem; color: #64748b; }
 
+  /* ── Botões ── */
   .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.4rem 0.875rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    transition: opacity 0.15s;
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    padding: 0.4rem 0.875rem; border-radius: 6px; font-size: 0.875rem;
+    font-weight: 500; border: none; cursor: pointer; transition: opacity 0.15s;
+    white-space: nowrap;
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; }
-  .btn--primary { background: #6366f1; color: #fff; }
-  .btn--primary:hover:not(:disabled) { background: #4f46e5; }
-  .btn--outline { background: transparent; border: 1px solid #6366f1; color: #818cf8; }
-  .btn--outline:hover:not(:disabled) { background: rgba(99,102,241,0.1); }
-  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #f87171; }
-  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+  .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; margin-right: 0.25rem; }
+  .btn--primary { background: #7c3aed; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #6d28d9; }
+  .btn--outline { background: transparent; border: 1px solid #7c3aed; color: #7c3aed; }
+  .btn--outline:hover:not(:disabled) { background: rgba(124,58,237,0.08); }
+  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.08); }
+
+  /* ── Drawer ── */
+  .drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 1000; animation: fadeIn 0.15s ease;
+  }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; width: 700px; max-width: 97vw;
+    height: 100dvh; background: #ffffff;
+    box-shadow: -6px 0 32px rgba(0,0,0,0.14);
+    display: flex; flex-direction: column; z-index: 1001;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
+
+  .drawer-header {
+    flex-shrink: 0; padding: 1.125rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fafbfc;
+  }
+  .drawer-title { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0; }
+  .drawer-close {
+    background: none; border: none; font-size: 1rem; color: #94a3b8;
+    cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; line-height: 1;
+  }
+  .drawer-close:hover { color: #1e293b; background: #f1f5f9; }
+
+  .drawer-loading {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: #64748b; font-size: 0.875rem;
+  }
+
+  .drawer-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0; }
+
+  .drawer-footer {
+    flex-shrink: 0; padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex; justify-content: flex-end; gap: 0.75rem;
+    background: #fafbfc;
+  }
+
+  /* ── Seções do formulário ── */
+  .form-section {
+    padding-bottom: 1.5rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .form-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .section-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #7c3aed; margin: 0 0 0.875rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-hint { font-size: 0.8rem; color: #64748b; margin: -0.5rem 0 0.75rem; }
+
+  /* ── Campos ── */
+  .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .field-row .field { flex: 1; min-width: 160px; margin-bottom: 0; }
+  .field--narrow { flex: 0 0 120px !important; min-width: 80px !important; }
+  .field-label { font-size: 0.75rem; font-weight: 600; color: #475569; }
+  .req { color: #ef4444; }
+
+  .form-input, .form-select, .form-textarea {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.5rem 0.75rem; color: #1e293b; font-size: 0.875rem;
+    outline: none; width: 100%; box-sizing: border-box; font-family: inherit;
+  }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12);
+  }
+
+  /* ── Alternativas ── */
+  .alternativas-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .alt-row {
+    display: flex; align-items: flex-start; gap: 0.625rem;
+    padding: 0.625rem; border-radius: 8px;
+    border: 1px solid #e2e8f0; background: #f8fafc;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .alt-row--correta { border-color: #7c3aed; background: #faf5ff; }
+  .alt-radio { margin-top: 0.45rem; flex-shrink: 0; accent-color: #7c3aed; cursor: pointer; }
+  .alt-letra {
+    flex-shrink: 0; width: 1.5rem; height: 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+    background: #e2e8f0; border-radius: 50%; font-size: 0.75rem;
+    font-weight: 700; color: #475569; margin-top: 0.2rem;
+  }
+  .alt-row--correta .alt-letra { background: #7c3aed; color: #fff; }
+  .alt-textarea {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-size: 0.875rem; color: #1e293b; resize: none; font-family: inherit;
+    line-height: 1.4; padding: 0; min-height: 2.5rem;
+  }
+  .alt-texto-fixo { flex: 1; font-size: 0.875rem; color: #1e293b; padding-top: 0.1rem; }
+
+  /* ── Temas ── */
+  .temas-badge {
+    font-size: 0.65rem; background: #ede9fe; color: #6d28d9;
+    padding: 0.15rem 0.45rem; border-radius: 10px; font-weight: 600;
+    text-transform: none; letter-spacing: 0;
+  }
+  .temas-busca { margin-bottom: 0.75rem; }
+  .temas-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.375rem; max-height: 220px; overflow-y: auto;
+    border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.625rem;
+    background: #f8fafc;
+  }
+  .tema-item {
+    display: flex; align-items: baseline; gap: 0.375rem;
+    font-size: 0.8rem; color: #334155; cursor: pointer;
+    padding: 0.3rem 0.5rem; border-radius: 6px;
+    border: 1px solid transparent;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .tema-item:hover { background: #f1f5f9; }
+  .tema-item--selected { background: #ede9fe; border-color: #ddd6fe; color: #5b21b6; }
+  .tema-item em { font-style: normal; font-size: 0.7rem; color: #94a3b8; }
+  .tema-item input { flex-shrink: 0; accent-color: #7c3aed; }
+  .temas-empty { font-size: 0.8rem; color: #94a3b8; margin: 0; text-align: center; padding: 0.5rem; }
+
+  /* ── Opções ── */
+  .opcoes-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .checkbox-label {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.875rem; color: #334155; cursor: pointer;
+  }
+  .checkbox-label input { accent-color: #7c3aed; }
 </style>
