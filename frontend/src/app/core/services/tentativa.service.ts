@@ -144,12 +144,19 @@ export class TentativaService {
       // Busca questão IDs via tentativa_resposta
       const { data: respostasData, error: respostasError } = await this.supabase
         .from('tentativa_resposta')
-        .select('questao_id')
-        .eq('tentativa_id', tentativaData.id);
+        .select('questao_id, ordem_na_tentativa')
+        .eq('tentativa_id', tentativaData.id)
+        .order('ordem_na_tentativa', { ascending: true })
+        .order('id', { ascending: true });
 
       if (respostasError) throw respostasError;
 
-      const questaoIds = (respostasData ?? []).map((r) => r.questao_id as string);
+      type TentativaRespostaOrdem = {
+        questao_id: string;
+        ordem_na_tentativa: number | null;
+      };
+
+      const questaoIds = ((respostasData ?? []) as TentativaRespostaOrdem[]).map((r) => r.questao_id);
       if (questaoIds.length === 0) {
         return { ok: true, data: { questoes: [] } };
       }
@@ -166,10 +173,15 @@ export class TentativaService {
         temas: { tema: import('../models/tema').Tema }[];
       };
 
+      const ordemPorQuestao = new Map(questaoIds.map((id, index) => [id, index]));
       const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
         ...q,
         temas: q.temas.map((qt) => qt.tema),
       })) as QuestaoComAlternativas[];
+
+      questoes.sort(
+        (a, b) => (ordemPorQuestao.get(a.id) ?? 0) - (ordemPorQuestao.get(b.id) ?? 0),
+      );
 
       this._questoes.set(questoes);
       this._respostas.set([]);

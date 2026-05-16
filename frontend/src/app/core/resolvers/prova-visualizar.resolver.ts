@@ -18,6 +18,11 @@ type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
   temas: { tema: Tema }[];
 };
 
+type TentativaRespostaOrdem = {
+  questao_id: string;
+  ordem_na_tentativa: number | null;
+};
+
 export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = async (route) => {
   const transferState = inject(TransferState);
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -95,12 +100,14 @@ async function fetchQuestoesPersonalizado(
 
     const { data: respostasData, error: respostasError } = await supabase
       .from('tentativa_resposta')
-      .select('questao_id')
-      .eq('tentativa_id', tentativaData.id);
+      .select('questao_id, ordem_na_tentativa')
+      .eq('tentativa_id', tentativaData.id)
+      .order('ordem_na_tentativa', { ascending: true })
+      .order('id', { ascending: true });
 
     if (respostasError) throw respostasError;
 
-    const questaoIds = (respostasData ?? []).map((r) => r.questao_id as string);
+    const questaoIds = ((respostasData ?? []) as TentativaRespostaOrdem[]).map((r) => r.questao_id);
     if (questaoIds.length === 0) return { ok: true, data: [] };
 
     const { data, error } = await supabase
@@ -110,10 +117,15 @@ async function fetchQuestoesPersonalizado(
 
     if (error) throw error;
 
+    const ordemPorQuestao = new Map(questaoIds.map((id, index) => [id, index]));
     const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
       ...q,
       temas: q.temas.map((qt) => qt.tema),
     })) as QuestaoComAlternativas[];
+
+    questoes.sort(
+      (a, b) => (ordemPorQuestao.get(a.id) ?? 0) - (ordemPorQuestao.get(b.id) ?? 0),
+    );
 
     return { ok: true, data: questoes };
   } catch {

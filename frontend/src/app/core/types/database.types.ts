@@ -569,6 +569,7 @@ export type Database = {
           alternativa_id: string | null
           correta: boolean | null
           id: string
+          ordem_na_tentativa: number | null
           questao_id: string
           respondida_em: string | null
           resposta_texto: string | null
@@ -579,6 +580,7 @@ export type Database = {
           alternativa_id?: string | null
           correta?: boolean | null
           id?: string
+          ordem_na_tentativa?: number | null
           questao_id: string
           respondida_em?: string | null
           resposta_texto?: string | null
@@ -589,6 +591,7 @@ export type Database = {
           alternativa_id?: string | null
           correta?: boolean | null
           id?: string
+          ordem_na_tentativa?: number | null
           questao_id?: string
           respondida_em?: string | null
           resposta_texto?: string | null

@@ -17,6 +17,7 @@
 * Configuração: tipo de questão + tema(s) + quantidade
 * Quantidades disponíveis: 5, 10, 15, 20, 30
 * Ordem das questões: sempre aleatória
+* A ordem sorteada deve ser persistida em `tentativa_resposta.ordem_na_tentativa` para que a revisão mantenha a mesma sequência da tentativa
 * Uma vez iniciado, o tempo corre
 * Pode ser pausado e retomado (estado salvo no banco)
 * Não pode ser refeito com as mesmas questões na mesma ordem

@@ -29,6 +29,7 @@ export interface TentativaResposta {
   resposta_texto: string | null;
   correta: boolean | null;
   tempo_gasto_segundos: number | null;
+  ordem_na_tentativa: number | null;
   respondida_em: string | null;
 }
 

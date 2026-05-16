@@ -8,6 +8,18 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-16 | Fix | sem commit
+
+**Revisão de simulado personalizado — ordem das questões**
+
+- Nova migration adiciona `tentativa_resposta.ordem_na_tentativa` para persistir a sequência sorteada das questões.
+- RPC `gerar_simulado_personalizado` agora grava a ordem de cada questão usando `WITH ORDINALITY`.
+- Visualização de simulado personalizado reordena as questões completas conforme a sequência da tentativa antes de renderizar a revisão.
+- `database.types.ts` atualizado com a nova coluna.
+- `docs/business-rules.md` documenta a regra de preservação da ordem sorteada na revisão.
+
+---
+
 ## 2026-05-16 | Feature | sem commit
 
 **Desafio diário — explicação após resposta**
