@@ -58,6 +58,7 @@ export class DashboardComponent {
         if (this.auth.user()) {
           void this.profileService.loadProfile();
           void this.onboarding.load();
+          void this.tentativaService.hidratarTentativaAtiva();
         }
       });
     }

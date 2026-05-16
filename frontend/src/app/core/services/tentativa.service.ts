@@ -13,6 +13,7 @@ export class TentativaService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly gamificacao = inject(GamificacaoService);
   private readonly notifications = inject(NotificationService);
+  private hydrationPromise: Promise<void> | null = null;
 
   private readonly _tentativaAtiva = signal<Tentativa | null>(null);
   private readonly _questoes = signal<QuestaoComAlternativas[]>([]);
@@ -54,6 +55,29 @@ export class TentativaService {
     }
   }
 
+  async hidratarTentativaAtiva(): Promise<void> {
+    const tentativaAtual = this._tentativaAtiva();
+    if (!this.isBrowser) return;
+    if (tentativaAtual && tentativaAtual.status !== 'finalizada' && tentativaAtual.modo !== 'visualizar') {
+      return;
+    }
+    if (this.hydrationPromise) {
+      return this.hydrationPromise;
+    }
+
+    this.hydrationPromise = this.buscarTentativaAtivaRecente()
+      .then((result) => {
+        if (result.ok) {
+          this._tentativaAtiva.set(result.data);
+        }
+      })
+      .finally(() => {
+        this.hydrationPromise = null;
+      });
+
+    return this.hydrationPromise;
+  }
+
   async buscarTentativaAtiva(provaId: string): Promise<ProvaResult<Tentativa | null>> {
     try {
       const { data, error } = await this.supabase
@@ -70,6 +94,24 @@ export class TentativaService {
       return { ok: true, data: (data as Tentativa | null) };
     } catch {
       return { ok: false, error: 'Não foi possível verificar tentativas ativas.' };
+    }
+  }
+
+  async buscarTentativaAtivaRecente(): Promise<ProvaResult<Tentativa | null>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('tentativa')
+        .select('*')
+        .in('status', ['em_andamento', 'pausada'])
+        .neq('modo', 'visualizar')
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return { ok: true, data: (data as Tentativa | null) };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar a tentativa em andamento.' };
     }
   }
 

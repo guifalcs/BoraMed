@@ -18,6 +18,7 @@
 * Quantidades disponíveis: 5, 10, 15, 20, 30
 * Ordem das questões: sempre aleatória
 * A ordem sorteada deve ser persistida em `tentativa_resposta.ordem_na_tentativa` para que a revisão mantenha a mesma sequência da tentativa
+* Se existir tentativa com status `em_andamento` ou `pausada`, a home e a área de simulados devem priorizar um CTA de continuidade para levar o aluno direto de volta à execução
 * Uma vez iniciado, o tempo corre
 * Pode ser pausado e retomado (estado salvo no banco)
 * Não pode ser refeito com as mesmas questões na mesma ordem

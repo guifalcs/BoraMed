@@ -24,6 +24,17 @@ Descrição do que foi feito.
 
 ## 2026-05-16 | Fix | sem commit
 
+**Continuidade de tentativa em andamento**
+
+- `TentativaService` agora hidrata a tentativa ativa mais recente do usuário ao entrar no dashboard, mesmo após recarregar a página.
+- Home e entrada de simulados passam a destacar um CTA de continuidade com progresso da tentativa em andamento ou pausada.
+- Novo teste cobre a exibição do card de continuidade em `ProvasHomeComponent`.
+- `docs/business-rules.md` documenta a priorização do fluxo de retomada.
+
+---
+
+## 2026-05-16 | Fix | sem commit
+
 **Revisão de simulado personalizado — ordem das questões**
 
 - Nova migration adiciona `tentativa_resposta.ordem_na_tentativa` para persistir a sequência sorteada das questões.

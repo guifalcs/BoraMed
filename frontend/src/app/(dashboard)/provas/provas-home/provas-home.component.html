@@ -3,6 +3,24 @@
     <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Simulados</h1>
     <p class="mb-8 text-sm text-[var(--color-text-muted)]">Escolha o tipo de treino para começar.</p>
 
+    @if (resumoTentativaAtiva()) {
+      <a
+        [routerLink]="rotaTentativaAtiva()"
+        class="mb-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
+      >
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600">
+          <app-ui-icon [icon]="playCircleIcon" [size]="22" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold">Retome seu simulado</p>
+          <p class="text-xs text-amber-800">{{ resumoTentativaAtiva() }}</p>
+        </div>
+        <span class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700">
+          Continuar
+        </span>
+      </a>
+    }
+
     <div class="grid gap-4 sm:grid-cols-2 lg:gap-6">
 
       <!-- Modelo Afya — destaque com gradiente -->

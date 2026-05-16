@@ -88,6 +88,16 @@ export class InicioComponent {
     return !!(t && t.status !== 'finalizada' && t.modo !== 'visualizar');
   });
 
+  protected readonly resumoTentativaAtiva = computed(() => {
+    const tentativa = this.tentativaService.tentativaAtiva();
+    if (!tentativa || tentativa.status === 'finalizada' || tentativa.modo === 'visualizar') {
+      return null;
+    }
+
+    const status = tentativa.status === 'pausada' ? 'pausado' : 'em andamento';
+    return `${tentativa.total_respondidas} de ${tentativa.total_questoes} questões respondidas · ${status}`;
+  });
+
   constructor() {
     const resolved = inject(ActivatedRoute).snapshot.data['inicioData'] as InicioResolvedData | undefined;
 
