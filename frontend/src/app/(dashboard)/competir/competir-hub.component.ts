@@ -16,6 +16,7 @@ import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
 import { NotificationService } from '../../core/services/notification.service';
 import type { DesafioAlternativa, RankingItem } from '../../core/models/gamificacao';
+import { currentWeekRange } from '../../shared/utils/current-week-range';
 
 interface CompetirMetric {
   label: string;
@@ -218,21 +219,4 @@ export class CompetirHubComponent {
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('pt-BR').format(value);
-}
-
-function currentWeekRange(): string {
-  const now = new Date();
-  const dow = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  const month = (d: Date) =>
-    d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-
-  if (monday.getMonth() === sunday.getMonth()) {
-    return `${monday.getDate()}–${sunday.getDate()} de ${month(monday)}`;
-  }
-  return `${monday.getDate()} ${month(monday)} – ${sunday.getDate()} ${month(sunday)}`;
 }

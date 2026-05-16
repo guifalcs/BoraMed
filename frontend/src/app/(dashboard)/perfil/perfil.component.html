@@ -305,7 +305,7 @@
               <div>
                 <p class="perfil-competitivo-label">XP da semana</p>
                 <p class="perfil-competitivo-value">{{ formatNumber(gamificacaoStats().xp_semana_atual) }}</p>
-                <p class="perfil-competitivo-detail">{{ gamificacaoStats().semana_iso ?? 'Semana atual' }}</p>
+                <p class="perfil-competitivo-detail">{{ currentWeekRange() }}</p>
               </div>
               <div class="perfil-competitivo-icon perfil-competitivo-icon--success">
                 <app-ui-icon [icon]="trophyIcon" [size]="17" />

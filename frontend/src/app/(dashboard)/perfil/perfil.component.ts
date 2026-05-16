@@ -12,6 +12,7 @@ import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { ConquistaService } from '../../core/services/conquista.service';
 import { NotificationService } from '../../core/services/notification.service';
 import type { TipoUsuario, FaculdadeRede } from '../../core/models/auth.types';
+import { currentWeekRange } from '../../shared/utils/current-week-range';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -303,6 +304,10 @@ export class PerfilComponent {
 
   protected formatNumber(value: number): string {
     return new Intl.NumberFormat('pt-BR').format(value);
+  }
+
+  protected currentWeekRange(): string {
+    return currentWeekRange();
   }
 
   protected conquistaTier(xp: number): string {
