@@ -31,7 +31,7 @@
           />
           <div class="user-info">
             <span class="user-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
-            <span class="user-role">Aluno</span>
+            <span class="user-role">{{ isAdmin() ? 'Admin' : 'Aluno' }}</span>
           </div>
         </button>
 
@@ -46,6 +46,13 @@
               <app-ui-icon [icon]="lifeBuoyIcon" [size]="18" />
               <span>Suporte</span>
             </a>
+            @if (isAdmin()) {
+              <div class="desktop-menu-divider"></div>
+              <a class="desktop-menu-item desktop-menu-item--admin" routerLink="/admin" (click)="fecharMenu()" role="menuitem">
+                <app-ui-icon [icon]="settingsIcon" [size]="18" />
+                <span>Painel Admin</span>
+              </a>
+            }
             <div class="desktop-menu-divider"></div>
             <button class="desktop-menu-item desktop-menu-item--danger" type="button" role="menuitem" (click)="handleSignOut()">
               <app-ui-icon [icon]="logOutIcon" [size]="18" />
@@ -81,6 +88,12 @@
             <app-ui-icon [icon]="lifeBuoyIcon" [size]="18" />
             <span>Suporte</span>
           </a>
+          @if (isAdmin()) {
+            <a class="mobile-menu-item mobile-menu-item--admin" routerLink="/admin" (click)="fecharMenu()" role="menuitem">
+              <app-ui-icon [icon]="settingsIcon" [size]="18" />
+              <span>Painel Admin</span>
+            </a>
+          }
           <button class="mobile-menu-item mobile-menu-item--danger" type="button" role="menuitem" (click)="handleSignOut()">
             <app-ui-icon [icon]="logOutIcon" [size]="18" />
             <span>Sair</span>

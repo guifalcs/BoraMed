@@ -1,0 +1,79 @@
+<div class="page-header">
+  <h1 class="page-title">Dashboard</h1>
+  <p class="page-subtitle">Visão geral da plataforma</p>
+</div>
+
+@if (isLoading()) {
+  <div class="cards-grid">
+    @for (i of [1,2,3,4,5,6,7,8,9]; track i) {
+      <div class="stat-card stat-card--skeleton"></div>
+    }
+  </div>
+} @else if (stats(); as s) {
+  <div class="cards-grid">
+    <div class="stat-card">
+      <span class="stat-label">Usuários</span>
+      <span class="stat-value">{{ s.total_usuarios }}</span>
+      <span class="stat-sub">+{{ s.usuarios_hoje }} hoje</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Questões</span>
+      <span class="stat-value">{{ s.total_questoes }}</span>
+      <span class="stat-sub">{{ s.questoes_ativas }} ativas</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Rascunhos</span>
+      <span class="stat-value">{{ s.questoes_rascunho }}</span>
+      <span class="stat-sub">aguardando revisão</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Provas</span>
+      <span class="stat-value">{{ s.total_provas }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Temas</span>
+      <span class="stat-value">{{ s.total_temas }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Tentativas</span>
+      <span class="stat-value">{{ s.total_tentativas }}</span>
+      <span class="stat-sub">+{{ s.tentativas_hoje }} hoje</span>
+    </div>
+  </div>
+}
+
+<style>
+  .page-header { margin-bottom: 2rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .stat-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .stat-card--skeleton {
+    height: 100px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+  .stat-value { font-size: 2rem; font-weight: 700; color: #f1f5f9; line-height: 1.1; }
+  .stat-sub { font-size: 0.75rem; color: #4ade80; }
+</style>

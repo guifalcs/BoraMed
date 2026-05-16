@@ -157,6 +157,18 @@
   background: #fee2e2;
 }
 
+.desktop-menu-item--admin {
+  color: #6366f1;
+}
+
+.desktop-menu-item--admin:hover {
+  background: #eef2ff;
+}
+
+.mobile-menu-item--admin {
+  color: #6366f1;
+}
+
 .desktop-menu-divider {
   height: 1px;
   background: var(--color-border);

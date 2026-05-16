@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, Trophy, User } from 'lucide-angular';
+import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { AuthService } from '../core/services/auth.service';
@@ -33,6 +33,8 @@ export class DashboardComponent {
   protected readonly logOutIcon = LogOut;
   protected readonly userIcon = User;
   protected readonly lifeBuoyIcon = LifeBuoy;
+  protected readonly settingsIcon = Settings;
+  protected readonly isAdmin = computed(() => this.profileService.profile()?.papel === 'admin');
   protected readonly profile = this.profileService.profile;
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);

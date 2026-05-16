@@ -1,0 +1,174 @@
+<div class="page-header">
+  <h1 class="page-title">Questões</h1>
+  <p class="page-subtitle">{{ total() }} no total</p>
+</div>
+
+<div class="toolbar">
+  <input
+    class="search-input"
+    type="search"
+    placeholder="Buscar por enunciado…"
+    [ngModel]="busca()"
+    (ngModelChange)="busca.set($event)"
+    (keyup.enter)="aplicarFiltros()"
+  />
+  <select
+    class="filter-select"
+    [ngModel]="filtroStatus()"
+    (ngModelChange)="filtroStatus.set($event); aplicarFiltros()"
+  >
+    <option value="">Todos os status</option>
+    <option value="ativa">Ativa</option>
+    <option value="rascunho">Rascunho</option>
+    <option value="em_revisao">Em revisão</option>
+    <option value="arquivada">Arquivada</option>
+  </select>
+  <button class="btn btn--primary" (click)="aplicarFiltros()">Filtrar</button>
+</div>
+
+@if (isLoading()) {
+  <p class="loading-text">Carregando…</p>
+} @else {
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:45%">Enunciado</th>
+          <th>Formato</th>
+          <th>Status</th>
+          <th>Acerto</th>
+          <th>Prova</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (q of questoes(); track q.id) {
+          <tr>
+            <td>
+              <span class="enunciado-text">{{ q.enunciado | slice:0:120 }}{{ q.enunciado.length > 120 ? '…' : '' }}</span>
+            </td>
+            <td><span class="format-badge">{{ q.formato }}</span></td>
+            <td>
+              <select
+                class="status-select"
+                [ngModel]="q.status"
+                [disabled]="processando() === q.id"
+                (ngModelChange)="alterarStatus(q, $event)"
+              >
+                <option value="ativa">ativa</option>
+                <option value="rascunho">rascunho</option>
+                <option value="em_revisao">em_revisao</option>
+                <option value="arquivada">arquivada</option>
+              </select>
+            </td>
+            <td>{{ q.taxa_acerto != null ? (q.taxa_acerto + '%') : '—' }}</td>
+            <td>{{ q.prova?.nome ?? '—' }}</td>
+            <td>
+              <button
+                class="btn btn--sm btn--danger"
+                [disabled]="!!processando()"
+                (click)="deletar(q)"
+              >
+                Deletar
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button class="btn btn--sm btn--outline" [disabled]="pagina() === 0" (click)="paginaAnterior()">← Anterior</button>
+    <span class="pagination-info">{{ paginaAtual }} / {{ totalPaginas }}</span>
+    <button class="btn btn--sm btn--outline" [disabled]="paginaAtual >= totalPaginas" (click)="proximaPagina()">Próxima →</button>
+  </div>
+}
+
+<style>
+  .page-header { margin-bottom: 1.5rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+
+  .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .search-input, .filter-select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    outline: none;
+  }
+  .search-input { flex: 1; min-width: 200px; max-width: 320px; }
+  .search-input:focus, .filter-select:focus { border-color: #6366f1; }
+
+  .loading-text { color: #64748b; font-size: 0.875rem; }
+
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #334155; margin-bottom: 1rem; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: #1e293b;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    border-bottom: 1px solid #334155;
+  }
+  .data-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    border-bottom: 1px solid #1e293b;
+    background: #0f172a;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .enunciado-text { color: #cbd5e1; line-height: 1.4; }
+  .format-badge {
+    font-size: 0.7rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+  .status-select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    color: #f1f5f9;
+    font-size: 0.75rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .pagination { display: flex; align-items: center; gap: 1rem; }
+  .pagination-info { font-size: 0.8rem; color: #64748b; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4rem 0.875rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; }
+  .btn--primary { background: #6366f1; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #4f46e5; }
+  .btn--outline { background: transparent; border: 1px solid #6366f1; color: #818cf8; }
+  .btn--outline:hover:not(:disabled) { background: rgba(99,102,241,0.1); }
+  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #f87171; }
+  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+</style>

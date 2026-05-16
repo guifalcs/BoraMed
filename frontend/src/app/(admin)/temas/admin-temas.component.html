@@ -1,0 +1,172 @@
+<div class="page-header">
+  <h1 class="page-title">Temas</h1>
+  <p class="page-subtitle">{{ temas().length }} cadastrados</p>
+</div>
+
+<div class="create-form">
+  <h2 class="section-title">Novo tema</h2>
+  <div class="form-row">
+    <input
+      class="form-input"
+      type="text"
+      placeholder="Nome do tema *"
+      [ngModel]="novoNome()"
+      (ngModelChange)="novoNome.set($event)"
+    />
+    <input
+      class="form-input"
+      type="text"
+      placeholder="Disciplina"
+      [ngModel]="novaDisciplina()"
+      (ngModelChange)="novaDisciplina.set($event)"
+    />
+    <input
+      class="form-input form-input--narrow"
+      type="number"
+      placeholder="Período"
+      min="1"
+      max="12"
+      [ngModel]="novoPeriodo()"
+      (ngModelChange)="novoPeriodo.set($event ? +$event : null)"
+    />
+    <button
+      class="btn btn--primary"
+      [disabled]="criando() || !novoNome().trim()"
+      (click)="criar()"
+    >
+      {{ criando() ? 'Criando…' : 'Criar' }}
+    </button>
+  </div>
+</div>
+
+@if (isLoading()) {
+  <p class="loading-text">Carregando…</p>
+} @else {
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Disciplina</th>
+          <th>Período</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of temas(); track t.id) {
+          <tr>
+            <td>
+              @if (editandoId() === t.id) {
+                <input class="inline-input" [ngModel]="editNome()" (ngModelChange)="editNome.set($event)" />
+              } @else {
+                {{ t.nome }}
+              }
+            </td>
+            <td>
+              @if (editandoId() === t.id) {
+                <input class="inline-input" [ngModel]="editDisciplina()" (ngModelChange)="editDisciplina.set($event)" placeholder="Disciplina" />
+              } @else {
+                {{ t.disciplina ?? '—' }}
+              }
+            </td>
+            <td>{{ t.periodo ?? '—' }}</td>
+            <td>
+              @if (editandoId() === t.id) {
+                <button class="btn btn--sm btn--primary" [disabled]="processando() === t.id" (click)="salvarEdicao(t)">Salvar</button>
+                <button class="btn btn--sm btn--outline" (click)="editandoId.set(null)">Cancelar</button>
+              } @else {
+                <button class="btn btn--sm btn--outline" [disabled]="!!processando()" (click)="iniciarEdicao(t)">Editar</button>
+                <button class="btn btn--sm btn--danger" [disabled]="!!processando()" (click)="deletar(t)">Deletar</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<style>
+  .page-header { margin-bottom: 1.5rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+
+  .create-form {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-title { font-size: 0.9rem; font-weight: 600; color: #94a3b8; margin: 0 0 0.875rem; }
+  .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .form-input {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    outline: none;
+    flex: 1;
+    min-width: 160px;
+  }
+  .form-input--narrow { flex: 0 0 100px; min-width: 80px; }
+  .form-input:focus { border-color: #6366f1; }
+
+  .loading-text { color: #64748b; font-size: 0.875rem; }
+
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #334155; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: #1e293b;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    border-bottom: 1px solid #334155;
+  }
+  .data-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #cbd5e1;
+    border-bottom: 1px solid #1e293b;
+    background: #0f172a;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .inline-input {
+    background: #1e293b;
+    border: 1px solid #6366f1;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    outline: none;
+    width: 100%;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4rem 0.875rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; margin-right: 0.25rem; }
+  .btn--primary { background: #6366f1; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #4f46e5; }
+  .btn--outline { background: transparent; border: 1px solid #6366f1; color: #818cf8; }
+  .btn--outline:hover:not(:disabled) { background: rgba(99,102,241,0.1); }
+  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #f87171; }
+  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+</style>

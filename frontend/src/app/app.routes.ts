@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { adminGuard } from './core/guards/admin.guard';
 import { inicioResolver } from './core/resolvers/inicio.resolver';
 import { historicoResolver } from './core/resolvers/historico.resolver';
 
@@ -82,8 +83,16 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./(auth)/auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./(admin)/admin.component').then((m) => m.AdminComponent),
+    loadChildren: () =>
+      import('./(admin)/admin.routes').then((m) => m.adminRoutes),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
-{ path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
+  { path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
   { path: 'erro', loadComponent: () => import('./(errors)/erro-servidor/erro-servidor.component').then(m => m.ErroServidorComponent) },
   { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
 ];
