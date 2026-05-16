@@ -1,0 +1,392 @@
+<div class="page-header">
+  <h1 class="page-title">Importar questões</h1>
+  <p class="page-subtitle">Cole o markdown gerado por IA ou carregue um arquivo .md</p>
+</div>
+
+<!-- ── Etapa: input ── -->
+@if (etapa() === 'input') {
+
+  <!-- Prompt para IA -->
+  <div class="prompt-card">
+    <div class="prompt-header" (click)="promptAberto.set(!promptAberto())">
+      <div class="prompt-header-left">
+        <span class="prompt-icon">🤖</span>
+        <div>
+          <p class="prompt-title">Prompt para converter PDF com IA</p>
+          <p class="prompt-sub">Cole esse prompt no ChatGPT ou Claude, anexe o PDF e cole o resultado abaixo</p>
+        </div>
+      </div>
+      <div class="prompt-actions">
+        <button class="btn btn--sm btn--outline" (click)="copiarPrompt(); $event.stopPropagation()">
+          {{ promptCopiado() ? '✓ Copiado' : 'Copiar prompt' }}
+        </button>
+        <span class="chevron" [class.chevron--open]="promptAberto()">▾</span>
+      </div>
+    </div>
+    @if (promptAberto()) {
+      <pre class="prompt-body">{{ prompt }}</pre>
+    }
+  </div>
+
+  <!-- Área de input -->
+  <div class="input-card">
+    <div class="input-toolbar">
+      <span class="section-label">Conteúdo em markdown</span>
+      <label class="btn btn--sm btn--outline file-btn">
+        📎 Carregar arquivo
+        <input type="file" accept=".md,.txt" (change)="onArquivo($event)" hidden />
+      </label>
+    </div>
+
+    <textarea
+      class="markdown-input"
+      placeholder="Cole aqui o markdown gerado pela IA...
+
+---
+ENUNCIADO
+Paciente de 45 anos apresenta dor torácica em repouso...
+
+ALTERNATIVAS
+A) Angina estável
+B) Infarto agudo do miocárdio ✓
+C) Pericardite
+D) Dissecção aórtica
+E) TEP
+
+GABARITO: B
+DISCIPLINA: SOI I
+EXPLICACAO: O infarto agudo se caracteriza por...
+---"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      rows="18"
+    ></textarea>
+
+    <div class="input-footer">
+      <span class="hint">Separe cada questão com <code>---</code> em uma linha própria</span>
+      <button class="btn btn--primary" [disabled]="!texto().trim()" (click)="processar()">
+        Processar →
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ── Etapa: preview ── -->
+@if (etapa() === 'preview') {
+  <div class="summary-bar">
+    <span class="badge badge--ok">{{ validas() }} válida{{ validas() !== 1 ? 's' : '' }}</span>
+    @if (invalidas() > 0) {
+      <span class="badge badge--err">{{ invalidas() }} com erro</span>
+    }
+    <span class="summary-total">{{ questoes().length }} total</span>
+    <div class="summary-actions">
+      <button class="btn btn--sm btn--outline" (click)="voltar()">← Voltar</button>
+      <button
+        class="btn btn--primary"
+        [disabled]="validas() === 0"
+        (click)="importar()"
+      >
+        Importar {{ validas() }} questão{{ validas() !== 1 ? 'ões' : '' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:2rem">#</th>
+          <th>Enunciado</th>
+          <th>Formato</th>
+          <th>Gabarito</th>
+          <th>Disciplina</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (q of questoes(); track $index; let i = $index) {
+          <tr
+            class="questao-row"
+            [class.questao-row--invalida]="!q.valida"
+            [class.questao-row--expanded]="expandido() === i"
+            (click)="toggleExpand(i)"
+          >
+            <td class="num-cell">{{ i + 1 }}</td>
+            <td class="enunciado-cell">{{ enunciadoCurto(q.enunciado) }}</td>
+            <td>
+              <span class="format-badge format-badge--{{ q.formato }}">
+                {{ q.formato === 'multipla_escolha' ? 'Múltipla' : 'V/F' }}
+              </span>
+            </td>
+            <td><span class="gabarito-badge">{{ gabaritoLabel(q) }}</span></td>
+            <td>{{ q.disciplinaDisplay }}</td>
+            <td>
+              @if (q.valida) {
+                <span class="status-ok">✓ OK</span>
+              } @else {
+                <span class="status-err" [title]="q.erros.join(', ')">✗ Erro</span>
+              }
+            </td>
+          </tr>
+
+          <!-- Detalhe expandido -->
+          @if (expandido() === i) {
+            <tr class="detail-row">
+              <td colspan="6">
+                <div class="detail-body">
+
+                  @if (!q.valida) {
+                    <div class="erros-list">
+                      @for (e of q.erros; track e) {
+                        <span class="erro-item">⚠ {{ e }}</span>
+                      }
+                    </div>
+                  }
+
+                  <p class="detail-enunciado">{{ q.enunciado }}</p>
+
+                  <div class="detail-alts">
+                    @for (a of q.alternativas; track a.letra) {
+                      <div class="detail-alt" [class.detail-alt--correta]="a.correta">
+                        <span class="alt-letra">{{ a.letra }})</span>
+                        <span>{{ a.texto }}</span>
+                        @if (a.correta) { <span class="correta-marker">✓</span> }
+                      </div>
+                    }
+                  </div>
+
+                  @if (q.explicacao) {
+                    <p class="detail-meta"><strong>Explicação:</strong> {{ q.explicacao }}</p>
+                  }
+                  @if (q.fonte) {
+                    <p class="detail-meta"><strong>Fonte:</strong> {{ q.fonte }}</p>
+                  }
+
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- ── Etapa: importando ── -->
+@if (etapa() === 'importando') {
+  <div class="progress-card">
+    <p class="progress-label">Importando {{ progresso() }} de {{ totalImportar() }}…</p>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" [style.width.%]="progressoPct()"></div>
+    </div>
+    <p class="progress-pct">{{ progressoPct() }}%</p>
+  </div>
+}
+
+<!-- ── Etapa: concluído ── -->
+@if (etapa() === 'concluido') {
+  <div class="done-card">
+    <div class="done-icon">✓</div>
+    <h2 class="done-title">Importação concluída</h2>
+    <div class="done-stats">
+      <div class="done-stat">
+        <span class="done-num done-num--ok">{{ importados() }}</span>
+        <span class="done-desc">importada{{ importados() !== 1 ? 's' : '' }}</span>
+      </div>
+      @if (errosImport() > 0) {
+        <div class="done-stat">
+          <span class="done-num done-num--err">{{ errosImport() }}</span>
+          <span class="done-desc">com erro</span>
+        </div>
+      }
+    </div>
+    <p class="done-hint">As questões foram criadas com status <strong>Rascunho</strong>. Revise e publique em /admin/questoes.</p>
+    <button class="btn btn--primary" (click)="novaImportacao()">Nova importação</button>
+  </div>
+}
+
+<style>
+  .page-header { margin-bottom: 1.5rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
+  .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+
+  /* ── Prompt card ── */
+  .prompt-card {
+    background: #faf5ff; border: 1px solid #ddd6fe; border-radius: 10px;
+    margin-bottom: 1.25rem; overflow: hidden;
+  }
+  .prompt-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem; cursor: pointer; user-select: none;
+    gap: 1rem;
+  }
+  .prompt-header:hover { background: #f3e8ff; }
+  .prompt-header-left { display: flex; align-items: center; gap: 0.75rem; }
+  .prompt-icon { font-size: 1.25rem; }
+  .prompt-title { font-size: 0.875rem; font-weight: 600; color: #5b21b6; margin: 0; }
+  .prompt-sub { font-size: 0.75rem; color: #7c3aed; margin: 0.1rem 0 0; }
+  .prompt-actions { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+  .chevron { font-size: 1rem; color: #7c3aed; transition: transform 0.2s; }
+  .chevron--open { transform: rotate(180deg); }
+  .prompt-body {
+    margin: 0; padding: 1rem 1.25rem; font-size: 0.8rem; line-height: 1.6;
+    color: #374151; background: #f5f3ff; border-top: 1px solid #ddd6fe;
+    white-space: pre-wrap; font-family: 'Courier New', monospace;
+    max-height: 340px; overflow-y: auto;
+  }
+
+  /* ── Input card ── */
+  .input-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .input-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .section-label { font-size: 0.875rem; font-weight: 600; color: #475569; }
+  .file-btn { cursor: pointer; }
+  .markdown-input {
+    width: 100%; box-sizing: border-box; background: #f8fafc;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.75rem 1rem; font-size: 0.8125rem; color: #1e293b;
+    font-family: 'Courier New', monospace; line-height: 1.6;
+    resize: vertical; outline: none;
+  }
+  .markdown-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+  .input-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 0.75rem;
+  }
+  .hint { font-size: 0.75rem; color: #94a3b8; }
+  .hint code {
+    background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 4px;
+    font-family: monospace; color: #475569;
+  }
+
+  /* ── Summary bar ── */
+  .summary-bar {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-flex; align-items: center; padding: 0.25rem 0.625rem;
+    border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+  }
+  .badge--ok { background: #d1fae5; color: #065f46; }
+  .badge--err { background: #fee2e2; color: #991b1b; }
+  .summary-total { font-size: 0.8rem; color: #64748b; }
+  .summary-actions { margin-left: auto; display: flex; gap: 0.5rem; }
+
+  /* ── Table ── */
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: #f8fafc; padding: 0.75rem 1rem; text-align: left;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0;
+  }
+  .data-table td {
+    padding: 0.65rem 1rem; font-size: 0.8125rem; color: #334155;
+    border-bottom: 1px solid #f1f5f9; background: #fff;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .questao-row { cursor: pointer; transition: background 0.1s; }
+  .questao-row:hover td { background: #f8fafc; }
+  .questao-row--invalida td { background: #fff7f7; }
+  .questao-row--invalida:hover td { background: #fff1f1; }
+  .questao-row--expanded td { background: #faf5ff; }
+
+  .num-cell { color: #94a3b8; font-size: 0.75rem; text-align: center; }
+  .enunciado-cell { max-width: 400px; }
+
+  .format-badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    padding: 0.15rem 0.5rem; border-radius: 4px;
+  }
+  .format-badge--multipla_escolha { background: #dbeafe; color: #1d4ed8; }
+  .format-badge--verdadeiro_falso { background: #fef9c3; color: #92400e; }
+
+  .gabarito-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    background: #ede9fe; color: #5b21b6; font-weight: 700; font-size: 0.75rem;
+  }
+
+  .status-ok { color: #059669; font-size: 0.8rem; font-weight: 600; }
+  .status-err { color: #dc2626; font-size: 0.8rem; font-weight: 600; cursor: help; }
+
+  /* ── Detalhe expandido ── */
+  .detail-row td { padding: 0; background: #faf5ff !important; border-bottom: 2px solid #ddd6fe; }
+  .detail-body { padding: 1rem 1.25rem; }
+  .erros-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .erro-item {
+    background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+    font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;
+  }
+  .detail-enunciado {
+    font-size: 0.875rem; color: #1e293b; line-height: 1.6;
+    margin: 0 0 0.875rem; white-space: pre-wrap;
+  }
+  .detail-alts { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
+  .detail-alt {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    font-size: 0.8125rem; color: #334155; padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+  }
+  .detail-alt--correta { background: #d1fae5; color: #065f46; font-weight: 600; }
+  .alt-letra { font-weight: 700; flex-shrink: 0; }
+  .correta-marker { margin-left: auto; flex-shrink: 0; }
+  .detail-meta { font-size: 0.8rem; color: #475569; margin: 0.25rem 0 0; }
+
+  /* ── Progress ── */
+  .progress-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 2.5rem; text-align: center; max-width: 480px; margin: 2rem auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .progress-label { font-size: 0.9rem; color: #475569; margin: 0 0 1rem; }
+  .progress-bar-track {
+    height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: #7c3aed; border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+  .progress-pct { font-size: 0.75rem; color: #94a3b8; margin: 0.5rem 0 0; }
+
+  /* ── Done ── */
+  .done-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 3rem 2rem; text-align: center; max-width: 440px; margin: 2rem auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .done-icon {
+    width: 3.5rem; height: 3.5rem; background: #d1fae5; color: #059669;
+    font-size: 1.5rem; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; margin: 0 auto 1rem;
+  }
+  .done-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0 0 1.25rem; }
+  .done-stats { display: flex; justify-content: center; gap: 2rem; margin-bottom: 1.25rem; }
+  .done-stat { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+  .done-num { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .done-num--ok { color: #059669; }
+  .done-num--err { color: #dc2626; }
+  .done-desc { font-size: 0.75rem; color: #64748b; }
+  .done-hint { font-size: 0.8125rem; color: #64748b; margin: 0 0 1.5rem; line-height: 1.5; }
+
+  /* ── Shared buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.875rem;
+    font-weight: 500; border: none; cursor: pointer; transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; }
+  .btn--primary { background: #7c3aed; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #6d28d9; }
+  .btn--outline { background: transparent; border: 1px solid #7c3aed; color: #7c3aed; }
+  .btn--outline:hover:not(:disabled) { background: rgba(124,58,237,0.08); }
+</style>

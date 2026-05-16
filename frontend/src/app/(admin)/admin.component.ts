@@ -9,6 +9,7 @@ import {
   LogOut,
   Settings,
   Tag,
+  Upload,
   Users,
 } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
@@ -50,6 +51,7 @@ export class AdminComponent {
     { label: 'Provas', icon: BookOpen, route: '/admin/provas' },
     { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },
     { label: 'Temas', icon: Tag, route: '/admin/temas' },
+    { label: 'Importar', icon: Upload, route: '/admin/importar' },
   ];
 
   protected toggleMenu(): void {

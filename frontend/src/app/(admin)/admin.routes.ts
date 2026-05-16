@@ -43,4 +43,11 @@ export const adminRoutes: Routes = [
         (m) => m.AdminDisciplinasComponent,
       ),
   },
+  {
+    path: 'importar',
+    loadComponent: () =>
+      import('./importar/admin-importar.component').then(
+        (m) => m.AdminImportarComponent,
+      ),
+  },
 ];
