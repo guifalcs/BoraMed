@@ -300,3 +300,15 @@ Mobile: bottom navigation com ícones.
 Usar Lucide quando biblioteca de ícones estiver instalada. Tamanho padrão: `20px`.
 
 Enquanto a biblioteca não estiver instalada, ícones simples podem ser CSS-only ou texto, desde que mantenham o mesmo espaço visual e acessibilidade com `aria-label`.
+
+## Admin Analytics
+
+O dashboard administrativo usa `ng2-charts`/Chart.js, já instalados no frontend, para visualizações operacionais sem adicionar nova dependência.
+
+Padrões:
+
+* KPIs em cards compactos com ícones Lucide, `border-radius: 8px` e acentos por categoria.
+* Gráfico de barras para volume total da plataforma.
+* Doughnut para composição do banco de questões por status.
+* Barras menores para movimento do dia.
+* Sinais operacionais derivados das estatísticas existentes, sem buscar dados sensíveis adicionais no cliente.

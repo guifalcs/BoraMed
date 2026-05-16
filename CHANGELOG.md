@@ -8,6 +8,30 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-16 | Fix | sem commit
+
+**Admin sidebar — footer estável**
+
+- Corrigido o shell do admin para ocupar `100dvh` com overflow controlado.
+- Sidebar agora mantém o footer (`Voltar ao app` e `Sair`) fixo dentro do viewport, enquanto o conteúdo principal rola separadamente.
+
+---
+
+## 2026-05-16 | Tweak | sem commit
+
+**Admin Dashboard — visualização analítica**
+
+### Frontend
+- Dashboard admin redesenhado com KPIs compactos, ícones Lucide e layout responsivo.
+- Uso de `ng2-charts`/Chart.js já instalados no app para gráficos de volume da plataforma, status das questões e movimento do dia.
+- Novos sinais operacionais derivados do RPC `admin_get_stats`, incluindo banco publicado, fila editorial, tentativas por usuário e questões por prova.
+- Painel de prioridades exibe alertas e sinais úteis para acompanhamento editorial e uso diário.
+
+### Docs
+- `docs/design-system.md` documenta o padrão de Admin Analytics.
+
+---
+
 ## 2026-05-15 | Feature | 32e8198
 
 **Módulo Competitivo — MVP completo**

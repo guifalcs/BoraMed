@@ -1,79 +1,161 @@
 <div class="page-header">
-  <h1 class="page-title">Dashboard</h1>
-  <p class="page-subtitle">Visão geral da plataforma</p>
+  <div>
+    <span class="page-eyebrow">Operação</span>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Visão geral da plataforma, conteúdo e uso do dia.</p>
+  </div>
+
+  @if (stats(); as s) {
+    <div class="header-summary">
+      <app-ui-icon [icon]="activityIcon" [size]="18" />
+      <span>{{ formatNumber(s.tentativas_hoje) }} tentativas hoje</span>
+    </div>
+  }
 </div>
 
 @if (isLoading()) {
-  <div class="cards-grid">
-    @for (i of [1,2,3,4,5,6,7,8,9]; track i) {
-      <div class="stat-card stat-card--skeleton"></div>
+  <div class="kpi-grid">
+    @for (i of [1, 2, 3, 4, 5]; track i) {
+      <div class="skeleton kpi-skeleton"></div>
     }
   </div>
-} @else if (stats(); as s) {
-  <div class="cards-grid">
-    <div class="stat-card">
-      <span class="stat-label">Usuários</span>
-      <span class="stat-value">{{ s.total_usuarios }}</span>
-      <span class="stat-sub">+{{ s.usuarios_hoje }} hoje</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Questões</span>
-      <span class="stat-value">{{ s.total_questoes }}</span>
-      <span class="stat-sub">{{ s.questoes_ativas }} ativas</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Rascunhos</span>
-      <span class="stat-value">{{ s.questoes_rascunho }}</span>
-      <span class="stat-sub">aguardando revisão</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Provas</span>
-      <span class="stat-value">{{ s.total_provas }}</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Temas</span>
-      <span class="stat-value">{{ s.total_temas }}</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Tentativas</span>
-      <span class="stat-value">{{ s.total_tentativas }}</span>
-      <span class="stat-sub">+{{ s.tentativas_hoje }} hoje</span>
-    </div>
+
+  <div class="dashboard-grid">
+    <div class="skeleton panel-skeleton panel-skeleton--wide"></div>
+    <div class="skeleton panel-skeleton"></div>
+    <div class="skeleton panel-skeleton"></div>
   </div>
+} @else if (stats(); as s) {
+  <section class="kpi-grid" aria-label="Indicadores principais">
+    @for (kpi of kpis(); track kpi.label) {
+      <article class="kpi-card" [ngClass]="'tone-' + kpi.tone">
+        <div class="kpi-icon">
+          <app-ui-icon [icon]="kpi.icon" [size]="20" />
+        </div>
+        <div>
+          <span class="kpi-label">{{ kpi.label }}</span>
+          <strong class="kpi-value">{{ formatNumber(kpi.value) }}</strong>
+          <span class="kpi-sub">{{ kpi.sub }}</span>
+        </div>
+      </article>
+    }
+  </section>
+
+  <section class="dashboard-grid" aria-label="Análises">
+    <article class="panel panel--wide">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Volume da plataforma</h2>
+          <p class="panel-subtitle">Totais de cadastro, conteúdo e prática.</p>
+        </div>
+        <span class="panel-badge">Histórico</span>
+      </div>
+
+      <div class="chart chart--bar">
+        <canvas
+          baseChart
+          type="bar"
+          [data]="platformVolumeData()"
+          [options]="barOptions"
+        ></canvas>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Questões por status</h2>
+          <p class="panel-subtitle">{{ formatNumber(s.total_questoes) }} questões no banco.</p>
+        </div>
+      </div>
+
+      <div class="donut-wrap">
+        <div class="chart chart--donut">
+          <canvas
+            baseChart
+            type="doughnut"
+            [data]="questionStatusData()"
+            [options]="doughnutOptions"
+          ></canvas>
+        </div>
+        <div class="donut-center">
+          <strong>{{ formatNumber(s.questoes_ativas) }}</strong>
+          <span>ativas</span>
+        </div>
+      </div>
+
+      <div class="legend-list" aria-label="Legenda de status das questões">
+        <span><i class="dot dot--emerald"></i>Ativas</span>
+        <span><i class="dot dot--amber"></i>Rascunhos</span>
+        <span><i class="dot dot--slate"></i>Outras</span>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Movimento de hoje</h2>
+          <p class="panel-subtitle">Entradas novas e tentativas registradas.</p>
+        </div>
+        <span class="panel-badge panel-badge--live">Hoje</span>
+      </div>
+
+      <div class="chart chart--small-bar">
+        <canvas
+          baseChart
+          type="bar"
+          [data]="todayActivityData()"
+          [options]="barOptions"
+        ></canvas>
+      </div>
+    </article>
+  </section>
+
+  <section class="insights-grid" aria-label="Sinais operacionais">
+    @for (insight of insights(); track insight.label) {
+      <article class="insight-card" [ngClass]="'tone-' + insight.tone">
+        <div class="insight-top">
+          <span>{{ insight.label }}</span>
+          <strong>{{ insight.value }}</strong>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <span class="progress-fill" [style.width.%]="insight.progress"></span>
+        </div>
+        <p>{{ insight.detail }}</p>
+      </article>
+    }
+  </section>
+
+  <section class="priority-panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Prioridades</h2>
+        <p class="panel-subtitle">Sinais calculados a partir das estatísticas atuais.</p>
+      </div>
+    </div>
+
+    <div class="priority-list">
+      @for (priority of priorities(); track priority.title) {
+        <article class="priority-item" [ngClass]="'tone-' + priority.tone">
+          <div class="priority-icon">
+            <app-ui-icon [icon]="priority.icon" [size]="18" />
+          </div>
+          <div>
+            <strong>{{ priority.title }}</strong>
+            <span>{{ priority.description }}</span>
+          </div>
+        </article>
+      } @empty {
+        <article class="priority-item tone-emerald">
+          <div class="priority-icon">
+            <app-ui-icon [icon]="checkIcon" [size]="18" />
+          </div>
+          <div>
+            <strong>Sem alertas</strong>
+            <span>Não há sinais operacionais pendentes no momento.</span>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
 }
-
-<style>
-  .page-header { margin-bottom: 2rem; }
-  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
-  .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
-
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-  }
-
-  .stat-card {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 10px;
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .stat-card--skeleton {
-    height: 100px;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
-  .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
-  .stat-value { font-size: 2rem; font-weight: 700; color: #f1f5f9; line-height: 1.1; }
-  .stat-sub { font-size: 0.75rem; color: #4ade80; }
-</style>
