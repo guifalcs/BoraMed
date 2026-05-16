@@ -40,8 +40,8 @@ export class AuthService implements OnDestroy {
 
   async initialize(): Promise<void> {
     try {
-      const { data } = await this.supabase.auth.getUser();
-      this._user.set(data.user);
+      const { data } = await this.supabase.auth.getSession();
+      this._user.set(data.session?.user ?? null);
     } catch {
       this._user.set(null);
     } finally {

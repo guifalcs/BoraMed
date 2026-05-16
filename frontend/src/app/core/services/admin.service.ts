@@ -2,6 +2,15 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import type { Profile } from '../models/auth.types';
 
+export interface AdminDisciplina {
+  id: string;
+  sigla: string;
+  nome: string | null;
+  periodo: number;
+  ativa: boolean;
+  criado_em: string;
+}
+
 export interface AdminStats {
   total_usuarios: number;
   usuarios_hoje: number;
@@ -20,7 +29,7 @@ export interface AdminQuestao {
   formato: string;
   status: string;
   dificuldade: number | null;
-  disciplina: string | null;
+  disciplina_id: string | null;
   taxa_acerto: number | null;
   vezes_respondida: number;
   criado_em: string;
@@ -43,8 +52,7 @@ export interface AdminQuestaoCompleta {
   formato: string;
   status: string;
   dificuldade: number | null;
-  disciplina: string | null;
-  periodo: number | null;
+  disciplina_id: string | null;
   prova_id: string | null;
   ordem_na_prova: number | null;
   explicacao: string | null;
@@ -65,8 +73,7 @@ export interface QuestaoPayload {
   formato: string;
   status: string;
   dificuldade?: number | null;
-  disciplina?: string | null;
-  periodo?: number | null;
+  disciplina_id?: string | null;
   prova_id?: string | null;
   ordem_na_prova?: number | null;
   explicacao?: string | null;
@@ -95,8 +102,7 @@ export interface AdminProva {
 export interface AdminTema {
   id: string;
   nome: string;
-  disciplina: string | null;
-  periodo: number | null;
+  disciplina_id: string | null;
   parent_id: string | null;
   criado_em: string;
 }
@@ -153,7 +159,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,status,dificuldade,disciplina,taxa_acerto,vezes_respondida,criado_em,prova(nome)', {
+      .select('id,enunciado,formato,status,dificuldade,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova(nome)', {
         count: 'exact',
       })
       .order('criado_em', { ascending: false })
@@ -287,6 +293,7 @@ export class AdminService {
       .select('id,nome,tipo,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)', {
         count: 'exact',
       })
+      .gt('periodo', 0)
       .order('ano', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
@@ -302,6 +309,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('prova')
       .select('id,nome,ano')
+      .gt('periodo', 0)
       .order('ano', { ascending: false });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as { id: string; nome: string; ano: number }[] };
@@ -318,36 +326,80 @@ export class AdminService {
   async listarTemas(): Promise<ServiceResult<AdminTema[]>> {
     const { data, error } = await this.supabase
       .from('tema')
-      .select('*')
+      .select('id,nome,disciplina_id,parent_id,criado_em')
       .order('nome');
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: (data ?? []) as AdminTema[] };
+    return { ok: true, data: (data ?? []) as unknown as AdminTema[] };
   }
 
   async criarTema(
-    input: Pick<AdminTema, 'nome' | 'disciplina' | 'periodo' | 'parent_id'>,
+    input: Pick<AdminTema, 'nome' | 'disciplina_id' | 'parent_id'>,
   ): Promise<ServiceResult<AdminTema>> {
     const { data, error } = await this.supabase
       .from('tema')
-      .insert(input)
-      .select()
+      .insert({ nome: input.nome, disciplina_id: input.disciplina_id, parent_id: input.parent_id })
+      .select('id,nome,disciplina_id,parent_id,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: data as AdminTema };
+    return { ok: true, data: data as unknown as AdminTema };
   }
 
   async atualizarTema(
     id: string,
-    input: Partial<Pick<AdminTema, 'nome' | 'disciplina' | 'periodo'>>,
+    input: Partial<Pick<AdminTema, 'nome' | 'disciplina_id'>>,
   ): Promise<ServiceResult<AdminTema>> {
     const { data, error } = await this.supabase
       .from('tema')
       .update(input)
       .eq('id', id)
+      .select('id,nome,disciplina_id,parent_id,criado_em')
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminTema };
+  }
+
+  // ---- Disciplinas ----
+
+  async listarDisciplinas(): Promise<ServiceResult<AdminDisciplina[]>> {
+    const { data, error } = await this.supabase
+      .from('disciplina')
+      .select('*')
+      .order('periodo')
+      .order('sigla');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminDisciplina[] };
+  }
+
+  async criarDisciplina(
+    input: Pick<AdminDisciplina, 'sigla' | 'nome' | 'periodo'>,
+  ): Promise<ServiceResult<AdminDisciplina>> {
+    const { data, error } = await this.supabase
+      .from('disciplina')
+      .insert(input)
       .select()
       .single();
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: data as AdminTema };
+    return { ok: true, data: data as AdminDisciplina };
+  }
+
+  async atualizarDisciplina(
+    id: string,
+    input: Partial<Pick<AdminDisciplina, 'sigla' | 'nome' | 'periodo' | 'ativa'>>,
+  ): Promise<ServiceResult<AdminDisciplina>> {
+    const { data, error } = await this.supabase
+      .from('disciplina')
+      .update(input)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminDisciplina };
+  }
+
+  async deletarDisciplina(id: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.from('disciplina').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
   }
 
   async deletarTema(id: string): Promise<ServiceResult<void>> {

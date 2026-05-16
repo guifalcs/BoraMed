@@ -17,17 +17,15 @@
     (ngModelChange)="busca.set($event)"
     (keyup.enter)="aplicarFiltros()"
   />
-  <select
-    class="filter-select"
-    [ngModel]="filtroStatus()"
-    (ngModelChange)="filtroStatus.set($event); aplicarFiltros()"
-  >
-    <option value="">Todos os status</option>
-    <option value="ativa">Ativa</option>
-    <option value="rascunho">Rascunho</option>
-    <option value="em_revisao">Em revisão</option>
-    <option value="arquivada">Arquivada</option>
-  </select>
+  <div class="toolbar-filter">
+    <app-ui-select
+      label="Status"
+      name="filtro-status"
+      [options]="opcoesStatusFiltro"
+      [value]="filtroStatus()"
+      (valueChange)="filtroStatus.set($any($event) ?? ''); aplicarFiltros()"
+    />
+  </div>
   <button class="btn btn--primary" (click)="aplicarFiltros()">Filtrar</button>
 </div>
 
@@ -53,19 +51,16 @@
             <td>
               <span class="enunciado-text">{{ q.enunciado | slice:0:110 }}{{ q.enunciado.length > 110 ? '…' : '' }}</span>
             </td>
-            <td><span class="format-badge">{{ q.formato }}</span></td>
-            <td>
-              <select
-                class="status-select"
-                [ngModel]="q.status"
+            <td><span class="format-badge format-badge--{{ q.formato }}">{{ formatoLabel(q.formato) }}</span></td>
+            <td class="status-td">
+              <app-ui-select
+                label=""
+                name="status-inline"
+                [options]="opcoesStatusForm"
+                [value]="q.status"
                 [disabled]="processando() === q.id"
-                (ngModelChange)="alterarStatus(q, $event)"
-              >
-                <option value="ativa">ativa</option>
-                <option value="rascunho">rascunho</option>
-                <option value="em_revisao">em_revisao</option>
-                <option value="arquivada">arquivada</option>
-              </select>
+                (valueChange)="alterarStatus(q, $any($event))"
+              />
             </td>
             <td>{{ q.taxa_acerto != null ? (q.taxa_acerto + '%') : '—' }}</td>
             <td>{{ q.prova?.nome ?? '—' }}</td>
@@ -80,7 +75,7 @@
               <button
                 class="btn btn--sm btn--danger"
                 [disabled]="!!processando()"
-                (click)="deletar(q)"
+                (click)="solicitarDelete(q)"
               >
                 Deletar
               </button>
@@ -96,6 +91,18 @@
     <span class="pagination-info">{{ paginaAtual }} / {{ totalPaginas }}</span>
     <button class="btn btn--sm btn--outline" [disabled]="paginaAtual >= totalPaginas" (click)="proximaPagina()">Próxima →</button>
   </div>
+}
+
+<!-- ── Modal de confirmação de deleção ── -->
+@if (questaoParaDeletar()) {
+  <app-ui-confirm-dialog
+    titulo="Deletar questão"
+    mensagem="Esta ação é irreversível. A questão será permanentemente removida."
+    labelConfirmar="Deletar"
+    variante="danger"
+    (confirmar)="confirmarDelete()"
+    (cancelar)="cancelarDelete()"
+  />
 }
 
 <!-- ── Drawer de criação/edição ── -->
@@ -143,46 +150,35 @@
 
           <div class="field-row">
             <div class="field">
-              <label class="field-label">Formato <span class="req">*</span></label>
-              <select
-                class="form-select"
-                [ngModel]="fFormato()"
-                (ngModelChange)="onFormatoChange($event)"
-              >
-                <option value="multipla_escolha">Múltipla escolha</option>
-                <option value="verdadeiro_falso">Verdadeiro / Falso</option>
-                <option value="discursiva">Discursiva</option>
-              </select>
+              <app-ui-select
+                label="Formato"
+                name="formato"
+                [options]="opcoesFormato"
+                [value]="fFormato()"
+                [required]="true"
+                (valueChange)="onFormatoChange($any($event))"
+              />
             </div>
 
             <div class="field">
-              <label class="field-label">Status</label>
-              <select
-                class="form-select"
-                [ngModel]="fStatus()"
-                (ngModelChange)="fStatus.set($event)"
-              >
-                <option value="rascunho">Rascunho</option>
-                <option value="ativa">Ativa</option>
-                <option value="em_revisao">Em revisão</option>
-                <option value="arquivada">Arquivada</option>
-              </select>
+              <app-ui-select
+                label="Status"
+                name="status-form"
+                [options]="opcoesStatusForm"
+                [value]="fStatus()"
+                (valueChange)="fStatus.set($any($event) ?? 'rascunho')"
+              />
             </div>
 
             <div class="field field--narrow">
-              <label class="field-label">Dificuldade</label>
-              <select
-                class="form-select"
-                [ngModel]="fDificuldade()"
-                (ngModelChange)="fDificuldade.set($event ? +$event : null)"
-              >
-                <option [value]="null">—</option>
-                <option value="1">1 – Muito fácil</option>
-                <option value="2">2 – Fácil</option>
-                <option value="3">3 – Médio</option>
-                <option value="4">4 – Difícil</option>
-                <option value="5">5 – Muito difícil</option>
-              </select>
+              <app-ui-select
+                label="Dificuldade"
+                name="dificuldade"
+                [options]="opcoesDificuldade"
+                [value]="fDificuldade()"
+                placeholder="—"
+                (valueChange)="fDificuldade.set($event != null && $event !== '' ? +$event : null)"
+              />
             </div>
           </div>
         </section>
@@ -223,22 +219,6 @@
                   }
                 </div>
               }
-            </div>
-          </section>
-        }
-
-        <!-- Seção: Resposta correta (discursiva) -->
-        @if (fFormato() === 'discursiva') {
-          <section class="form-section">
-            <h3 class="section-label">Resposta esperada</h3>
-            <div class="field">
-              <textarea
-                class="form-textarea"
-                rows="3"
-                placeholder="Resposta padrão ou gabarito comentado…"
-                [ngModel]="fRespostaCorreta()"
-                (ngModelChange)="fRespostaCorreta.set($event)"
-              ></textarea>
             </div>
           </section>
         }
@@ -288,42 +268,26 @@
 
           <div class="field-row">
             <div class="field">
-              <label class="field-label">Disciplina</label>
-              <input
-                type="text"
-                class="form-input"
-                placeholder="Ex: Clínica Médica"
-                [ngModel]="fDisciplina()"
-                (ngModelChange)="fDisciplina.set($event)"
-              />
-            </div>
-            <div class="field field--narrow">
-              <label class="field-label">Período</label>
-              <input
-                type="number"
-                class="form-input"
-                min="1"
-                max="12"
-                placeholder="1–12"
-                [ngModel]="fPeriodo()"
-                (ngModelChange)="fPeriodo.set($event ? +$event : null)"
+              <app-ui-select
+                label="Disciplina"
+                name="disciplina"
+                [options]="opcoesDisciplina()"
+                [value]="fDisciplinaId() ?? ''"
+                placeholder="Sem disciplina"
+                (valueChange)="fDisciplinaId.set($any($event) || null)"
               />
             </div>
           </div>
 
-          <div class="field-row">
+          <div class="field-row" style="align-items: flex-end">
             <div class="field">
-              <label class="field-label">Prova</label>
-              <select
-                class="form-select"
-                [ngModel]="fProvaId()"
-                (ngModelChange)="fProvaId.set($event || null)"
-              >
-                <option value="">Nenhuma</option>
-                @for (p of provasDisponiveis(); track p.id) {
-                  <option [value]="p.id">{{ p.nome }} ({{ p.ano }})</option>
-                }
-              </select>
+              <app-ui-select
+                label="Prova"
+                name="prova"
+                [options]="opcoesProva()"
+                [value]="fProvaId() ?? ''"
+                (valueChange)="fProvaId.set($any($event) || null)"
+              />
             </div>
             @if (fProvaId()) {
               <div class="field field--narrow">
@@ -367,8 +331,8 @@
                   (change)="toggleTema(tema.id)"
                 />
                 <span>{{ tema.nome }}</span>
-                @if (tema.disciplina) {
-                  <em>{{ tema.disciplina }}</em>
+                @if (disciplinaSiglaFor(tema.disciplina_id)) {
+                  <em>{{ disciplinaSiglaFor(tema.disciplina_id) }}</em>
                 }
               </label>
             }
@@ -422,13 +386,14 @@
   .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
 
   /* ── Toolbar ── */
-  .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-  .search-input, .filter-select {
-    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
-    padding: 0.5rem 0.875rem; color: #1e293b; font-size: 0.875rem; outline: none;
+  .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: flex-end; }
+  .search-input {
+    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px;
+    padding: 0.5rem 0.875rem; color: var(--color-text); font-size: 0.875rem; outline: none;
+    flex: 1; min-width: 200px; max-width: 320px; height: 3rem; font-family: inherit;
   }
-  .search-input { flex: 1; min-width: 200px; max-width: 320px; }
-  .search-input:focus, .filter-select:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+  .search-input:focus { border-color: var(--color-primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+  .toolbar-filter { min-width: 180px; }
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
   /* ── Tabela ── */
@@ -447,12 +412,20 @@
   .enunciado-text { color: #475569; line-height: 1.4; }
   .actions-cell { white-space: nowrap; }
   .format-badge {
-    font-size: 0.7rem; background: #f1f5f9; border: 1px solid #e2e8f0;
-    border-radius: 4px; padding: 0.15rem 0.4rem; color: #64748b; white-space: nowrap;
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    border-radius: 4px; padding: 0.2rem 0.5rem; white-space: nowrap;
+    border: 1px solid transparent;
   }
-  .status-select {
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;
-    padding: 0.2rem 0.4rem; color: #334155; font-size: 0.75rem; outline: none; cursor: pointer;
+  .format-badge--multipla_escolha { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+  .format-badge--verdadeiro_falso { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+  .format-badge--discursiva { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  /* ── Status select inline (UiSelectComponent compacto) ── */
+  .status-td { min-width: 140px; }
+  .status-td ::ng-deep .ui-field__label-row { display: none; }
+  .status-td ::ng-deep .ui-select__trigger {
+    min-height: 2rem; height: 2rem;
+    padding: 0 2rem 0 0.625rem;
+    font-size: 0.75rem; border-radius: 9999px;
   }
   .pagination { display: flex; align-items: center; gap: 1rem; }
   .pagination-info { font-size: 0.8rem; color: #64748b; }
@@ -540,13 +513,13 @@
   .field-label { font-size: 0.75rem; font-weight: 600; color: #475569; }
   .req { color: #ef4444; }
 
-  .form-input, .form-select, .form-textarea {
+  .form-input, .form-textarea {
     background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
     padding: 0.5rem 0.75rem; color: #1e293b; font-size: 0.875rem;
     outline: none; width: 100%; box-sizing: border-box; font-family: inherit;
   }
   .form-textarea { resize: vertical; min-height: 80px; }
-  .form-input:focus, .form-select:focus, .form-textarea:focus {
+  .form-input:focus, .form-textarea:focus {
     border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12);
   }
 

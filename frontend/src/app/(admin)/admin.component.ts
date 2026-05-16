@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   BookOpen,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   LucideIconData,
   LogOut,
@@ -47,6 +48,7 @@ export class AdminComponent {
     { label: 'Usuários', icon: Users, route: '/admin/usuarios' },
     { label: 'Questões', icon: FileText, route: '/admin/questoes' },
     { label: 'Provas', icon: BookOpen, route: '/admin/provas' },
+    { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },
     { label: 'Temas', icon: Tag, route: '/admin/temas' },
   ];
 

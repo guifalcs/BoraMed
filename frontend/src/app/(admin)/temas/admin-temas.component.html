@@ -13,22 +13,16 @@
       [ngModel]="novoNome()"
       (ngModelChange)="novoNome.set($event)"
     />
-    <input
-      class="form-input"
-      type="text"
-      placeholder="Disciplina"
-      [ngModel]="novaDisciplina()"
-      (ngModelChange)="novaDisciplina.set($event)"
-    />
-    <input
-      class="form-input form-input--narrow"
-      type="number"
-      placeholder="Período"
-      min="1"
-      max="12"
-      [ngModel]="novoPeriodo()"
-      (ngModelChange)="novoPeriodo.set($event ? +$event : null)"
-    />
+    <div class="select-wrapper">
+      <app-ui-select
+        label=""
+        name="nova-disciplina"
+        [options]="opcoesDisciplina()"
+        [value]="novaDisciplinaId() ?? ''"
+        placeholder="Disciplina"
+        (valueChange)="novaDisciplinaId.set($any($event) || null)"
+      />
+    </div>
     <button
       class="btn btn--primary"
       [disabled]="criando() || !novoNome().trim()"
@@ -48,7 +42,6 @@
         <tr>
           <th>Nome</th>
           <th>Disciplina</th>
-          <th>Período</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -62,21 +55,27 @@
                 {{ t.nome }}
               }
             </td>
-            <td>
+            <td class="disciplina-td">
               @if (editandoId() === t.id) {
-                <input class="inline-input" [ngModel]="editDisciplina()" (ngModelChange)="editDisciplina.set($event)" placeholder="Disciplina" />
+                <app-ui-select
+                  label=""
+                  name="edit-disciplina"
+                  [options]="opcoesDisciplina()"
+                  [value]="editDisciplinaId() ?? ''"
+                  placeholder="Disciplina"
+                  (valueChange)="editDisciplinaId.set($any($event) || null)"
+                />
               } @else {
-                {{ t.disciplina ?? '—' }}
+                {{ disciplinaSiglaFor(t.disciplina_id) }}
               }
             </td>
-            <td>{{ t.periodo ?? '—' }}</td>
             <td>
               @if (editandoId() === t.id) {
                 <button class="btn btn--sm btn--primary" [disabled]="processando() === t.id" (click)="salvarEdicao(t)">Salvar</button>
                 <button class="btn btn--sm btn--outline" (click)="editandoId.set(null)">Cancelar</button>
               } @else {
                 <button class="btn btn--sm btn--outline" [disabled]="!!processando()" (click)="iniciarEdicao(t)">Editar</button>
-                <button class="btn btn--sm btn--danger" [disabled]="!!processando()" (click)="deletar(t)">Deletar</button>
+                <button class="btn btn--sm btn--danger" [disabled]="!!processando()" (click)="solicitarDelete(t)">Deletar</button>
               }
             </td>
           </tr>
@@ -86,40 +85,52 @@
   </div>
 }
 
+@if (temaParaDeletar()) {
+  <app-ui-confirm-dialog
+    titulo="Deletar tema"
+    [mensagem]="'Deletar &quot;' + temaParaDeletar()!.nome + '&quot;? Temas com questões vinculadas não podem ser removidos.'"
+    labelConfirmar="Deletar"
+    variante="danger"
+    (confirmar)="confirmarDelete()"
+    (cancelar)="cancelarDelete()"
+  />
+}
+
 <style>
   .page-header { margin-bottom: 1.5rem; }
-  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
   .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
 
   .create-form {
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
-  .section-title { font-size: 0.9rem; font-weight: 600; color: #94a3b8; margin: 0 0 0.875rem; }
+  .section-title { font-size: 0.9rem; font-weight: 600; color: #7c3aed; margin: 0 0 0.875rem; }
   .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
   .form-input {
-    background: #0f172a;
-    border: 1px solid #334155;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0.5rem 0.875rem;
-    color: #f1f5f9;
+    color: #1e293b;
     font-size: 0.875rem;
     outline: none;
     flex: 1;
     min-width: 160px;
   }
   .form-input--narrow { flex: 0 0 100px; min-width: 80px; }
-  .form-input:focus { border-color: #6366f1; }
+  .form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
 
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
-  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #334155; }
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th {
-    background: #1e293b;
+    background: #f8fafc;
     padding: 0.75rem 1rem;
     text-align: left;
     font-size: 0.75rem;
@@ -127,27 +138,37 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #64748b;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid #e2e8f0;
   }
   .data-table td {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
-    color: #cbd5e1;
-    border-bottom: 1px solid #1e293b;
-    background: #0f172a;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
   }
   .data-table tr:last-child td { border-bottom: none; }
 
   .inline-input {
-    background: #1e293b;
-    border: 1px solid #6366f1;
+    background: #ffffff;
+    border: 1px solid #7c3aed;
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
-    color: #f1f5f9;
+    color: #1e293b;
     font-size: 0.875rem;
     outline: none;
     width: 100%;
   }
+
+  /* ── Select inline na tabela (sem label) ── */
+  .disciplina-td { min-width: 180px; }
+  .disciplina-td ::ng-deep .ui-field__label-row { display: none; }
+  .disciplina-td ::ng-deep .ui-select__trigger { min-height: 2.25rem; font-size: 0.875rem; }
+
+  /* ── Select wrapper no form de criação ── */
+  .select-wrapper { flex: 1; min-width: 160px; }
+  .select-wrapper ::ng-deep .ui-field__label-row { display: none; }
+  .select-wrapper ::ng-deep .ui-select__trigger { min-height: 2.625rem; font-size: 0.875rem; }
 
   .btn {
     display: inline-flex;
@@ -163,10 +184,10 @@
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; margin-right: 0.25rem; }
-  .btn--primary { background: #6366f1; color: #fff; }
-  .btn--primary:hover:not(:disabled) { background: #4f46e5; }
-  .btn--outline { background: transparent; border: 1px solid #6366f1; color: #818cf8; }
-  .btn--outline:hover:not(:disabled) { background: rgba(99,102,241,0.1); }
-  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #f87171; }
-  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+  .btn--primary { background: #7c3aed; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #6d28d9; }
+  .btn--outline { background: transparent; border: 1px solid #7c3aed; color: #7c3aed; }
+  .btn--outline:hover:not(:disabled) { background: rgba(124,58,237,0.08); }
+  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.08); }
 </style>

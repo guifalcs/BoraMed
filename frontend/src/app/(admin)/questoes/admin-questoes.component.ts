@@ -12,11 +12,14 @@ import {
   AdminService,
   AdminQuestao,
   AdminTema,
+  AdminDisciplina,
   AlternativaPayload,
   QuestaoPayload,
 } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
+import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 
 interface AlternativaForm {
   letra: string;
@@ -42,7 +45,7 @@ function alternativasIniciais(formato: string): AlternativaForm[] {
 @Component({
   selector: 'app-admin-questoes',
   standalone: true,
-  imports: [FormsModule, SlicePipe],
+  imports: [FormsModule, SlicePipe, UiSelectComponent, UiConfirmDialogComponent],
   templateUrl: './admin-questoes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -73,8 +76,7 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fFormato = signal('multipla_escolha');
   protected readonly fStatus = signal('rascunho');
   protected readonly fDificuldade = signal<number | null>(null);
-  protected readonly fDisciplina = signal('');
-  protected readonly fPeriodo = signal<number | null>(null);
+  protected readonly fDisciplinaId = signal<string | null>(null);
   protected readonly fProvaId = signal<string | null>(null);
   protected readonly fOrdemNaProva = signal<number | null>(null);
   protected readonly fExplicacao = signal('');
@@ -90,10 +92,56 @@ export class AdminQuestoesComponent implements OnInit {
   // ---- Dados para selects ----
   protected readonly provasDisponiveis = signal<{ id: string; nome: string; ano: number }[]>([]);
   protected readonly temasDisponiveis = signal<AdminTema[]>([]);
+  protected readonly disciplinasDisponiveis = signal<AdminDisciplina[]>([]);
+
+  // ---- Opções dos selects ----
+  protected readonly opcoesStatusFiltro: SelectOption[] = [
+    { value: '', label: 'Todos os status' },
+    { value: 'ativa', label: 'Ativa' },
+    { value: 'rascunho', label: 'Rascunho' },
+    { value: 'em_revisao', label: 'Em revisão' },
+    { value: 'arquivada', label: 'Arquivada' },
+  ];
+
+  protected readonly opcoesFormato: SelectOption[] = [
+    { value: 'multipla_escolha', label: 'Múltipla escolha' },
+    { value: 'verdadeiro_falso', label: 'Verdadeiro / Falso' },
+  ];
+
+  protected readonly opcoesStatusForm: SelectOption[] = [
+    { value: 'rascunho', label: 'Rascunho' },
+    { value: 'ativa', label: 'Ativa' },
+    { value: 'em_revisao', label: 'Em revisão' },
+    { value: 'arquivada', label: 'Arquivada' },
+  ];
+
+  protected readonly opcoesDisciplina = computed<SelectOption[]>(() => [
+    { value: '', label: 'Sem disciplina' },
+    ...this.disciplinasDisponiveis().map((d) => ({
+      value: d.id,
+      label: `${d.sigla}${d.nome ? ' — ' + d.nome : ''} (P${d.periodo})`,
+    })),
+  ]);
+
+  protected readonly opcoesDificuldade: SelectOption[] = [
+    { value: 1, label: '1 – Muito fácil' },
+    { value: 2, label: '2 – Fácil' },
+    { value: 3, label: '3 – Médio' },
+    { value: 4, label: '4 – Difícil' },
+    { value: 5, label: '5 – Muito difícil' },
+  ];
+
+  // ---- Confirm dialog ----
+  protected readonly questaoParaDeletar = signal<AdminQuestao | null>(null);
 
   protected readonly mostrarAlternativas = computed(
     () => this.fFormato() === 'multipla_escolha' || this.fFormato() === 'verdadeiro_falso',
   );
+
+  protected readonly opcoesProva = computed(() => [
+    { value: '', label: 'Nenhuma' },
+    ...this.provasDisponiveis().map((p) => ({ value: p.id, label: `${p.nome} (${p.ano})` })),
+  ]);
 
   protected readonly temasVisiveis = computed(() => {
     const q = this.fTemaBusca().toLowerCase();
@@ -106,12 +154,14 @@ export class AdminQuestoesComponent implements OnInit {
   }
 
   private async carregarDropdowns(): Promise<void> {
-    const [provasRes, temasRes] = await Promise.all([
+    const [provasRes, temasRes, disciplinasRes] = await Promise.all([
       this.adminService.listarProvasSimples(),
       this.adminService.listarTemas(),
+      this.adminService.listarDisciplinas(),
     ]);
     if (provasRes.ok) this.provasDisponiveis.set(provasRes.data);
     if (temasRes.ok) this.temasDisponiveis.set(temasRes.data);
+    if (disciplinasRes.ok) this.disciplinasDisponiveis.set(disciplinasRes.data);
   }
 
   // ---- Operações da lista ----
@@ -163,8 +213,18 @@ export class AdminQuestoesComponent implements OnInit {
     this.processando.set(null);
   }
 
-  async deletar(questao: AdminQuestao): Promise<void> {
-    if (!confirm('Deletar questão? Esta ação é irreversível.')) return;
+  protected solicitarDelete(questao: AdminQuestao): void {
+    this.questaoParaDeletar.set(questao);
+  }
+
+  protected cancelarDelete(): void {
+    this.questaoParaDeletar.set(null);
+  }
+
+  async confirmarDelete(): Promise<void> {
+    const questao = this.questaoParaDeletar();
+    if (!questao) return;
+    this.questaoParaDeletar.set(null);
     const result = await this.adminService.deletarQuestao(questao.id);
     if (result.ok) {
       this.questoes.update((lista) => lista.filter((q) => q.id !== questao.id));
@@ -173,6 +233,20 @@ export class AdminQuestoesComponent implements OnInit {
     } else {
       this.toast.error('Erro ao deletar questão.');
     }
+  }
+
+  protected formatoLabel(formato: string): string {
+    const map: Record<string, string> = {
+      multipla_escolha: 'Múltipla',
+      verdadeiro_falso: 'V / F',
+      discursiva: 'Discursiva',
+    };
+    return map[formato] ?? formato;
+  }
+
+  protected disciplinaSiglaFor(id: string | null | undefined): string {
+    if (!id) return '';
+    return this.disciplinasDisponiveis().find((d) => d.id === id)?.sigla ?? '';
   }
 
   protected get totalPaginas(): number {
@@ -211,8 +285,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.fFormato.set(d.formato ?? 'multipla_escolha');
     this.fStatus.set(d.status ?? 'rascunho');
     this.fDificuldade.set(d.dificuldade ?? null);
-    this.fDisciplina.set(d.disciplina ?? '');
-    this.fPeriodo.set(d.periodo ?? null);
+    this.fDisciplinaId.set(d.disciplina_id ?? null);
     this.fProvaId.set(d.prova_id ?? null);
     this.fOrdemNaProva.set(d.ordem_na_prova ?? null);
     this.fExplicacao.set(d.explicacao ?? '');
@@ -290,8 +363,7 @@ export class AdminQuestoesComponent implements OnInit {
       formato: this.fFormato(),
       status: this.fStatus(),
       dificuldade: this.fDificuldade(),
-      disciplina: this.fDisciplina().trim() || null,
-      periodo: this.fPeriodo(),
+      disciplina_id: this.fDisciplinaId() || null,
       prova_id: this.fProvaId() || null,
       ordem_na_prova: this.fOrdemNaProva(),
       explicacao: this.fExplicacao().trim() || null,
@@ -344,8 +416,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.fFormato.set('multipla_escolha');
     this.fStatus.set('rascunho');
     this.fDificuldade.set(null);
-    this.fDisciplina.set('');
-    this.fPeriodo.set(null);
+    this.fDisciplinaId.set(null);
     this.fProvaId.set(null);
     this.fOrdemNaProva.set(null);
     this.fExplicacao.set('');

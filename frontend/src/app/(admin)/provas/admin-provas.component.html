@@ -12,16 +12,15 @@
     (ngModelChange)="busca.set($event)"
     (keyup.enter)="aplicarFiltros()"
   />
-  <select
-    class="filter-select"
-    [ngModel]="filtroTipo()"
-    (ngModelChange)="filtroTipo.set($event); aplicarFiltros()"
-  >
-    <option value="">Todos os tipos</option>
-    <option value="nacional">Nacional</option>
-    <option value="processual">Processual</option>
-    <option value="multiestacoes">Multiestações</option>
-  </select>
+  <div class="toolbar-filter">
+    <app-ui-select
+      label="Tipo"
+      name="filtro-tipo"
+      [options]="opcoesTipo"
+      [value]="filtroTipo()"
+      (valueChange)="filtroTipo.set($any($event) ?? ''); aplicarFiltros()"
+    />
+  </div>
   <button class="btn btn--primary" (click)="aplicarFiltros()">Filtrar</button>
 </div>
 
@@ -49,7 +48,7 @@
             <td>{{ p.ano }}/{{ p.semestre }}</td>
             <td>{{ p.qtd_questoes }}</td>
             <td>
-              <button class="btn btn--sm btn--danger" (click)="deletar(p)">
+              <button class="btn btn--sm btn--danger" (click)="solicitarDelete(p)">
                 Deletar
               </button>
             </td>
@@ -66,30 +65,43 @@
   </div>
 }
 
+@if (provaParaDeletar()) {
+  <app-ui-confirm-dialog
+    titulo="Deletar prova"
+    [mensagem]="'Deletar &quot;' + provaParaDeletar()!.nome + '&quot;? Esta ação é irreversível.'"
+    labelConfirmar="Deletar"
+    variante="danger"
+    (confirmar)="confirmarDelete()"
+    (cancelar)="cancelarDelete()"
+  />
+}
+
 <style>
   .page-header { margin-bottom: 1.5rem; }
-  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
   .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
 
-  .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-  .search-input, .filter-select {
-    background: #1e293b;
-    border: 1px solid #334155;
+  .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: flex-end; }
+  .search-input {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 0.5rem 0.875rem;
-    color: #f1f5f9;
+    color: var(--color-text);
     font-size: 0.875rem;
+    font-family: inherit;
     outline: none;
+    flex: 1; min-width: 200px; max-width: 300px; height: 3rem;
   }
-  .search-input { flex: 1; min-width: 200px; max-width: 300px; }
-  .search-input:focus, .filter-select:focus { border-color: #6366f1; }
+  .search-input:focus { border-color: var(--color-primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+  .toolbar-filter { min-width: 180px; }
 
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
-  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #334155; margin-bottom: 1rem; }
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th {
-    background: #1e293b;
+    background: #f8fafc;
     padding: 0.75rem 1rem;
     text-align: left;
     font-size: 0.75rem;
@@ -97,24 +109,24 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #64748b;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid #e2e8f0;
   }
   .data-table td {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
-    color: #cbd5e1;
-    border-bottom: 1px solid #1e293b;
-    background: #0f172a;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
   }
   .data-table tr:last-child td { border-bottom: none; }
 
   .type-badge {
     font-size: 0.7rem;
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: #ede9fe;
+    border: 1px solid #ddd6fe;
     border-radius: 4px;
     padding: 0.15rem 0.4rem;
-    color: #94a3b8;
+    color: #6d28d9;
   }
 
   .pagination { display: flex; align-items: center; gap: 1rem; }
@@ -133,10 +145,10 @@
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; }
-  .btn--primary { background: #6366f1; color: #fff; }
-  .btn--primary:hover:not(:disabled) { background: #4f46e5; }
-  .btn--outline { background: transparent; border: 1px solid #6366f1; color: #818cf8; }
-  .btn--outline:hover:not(:disabled) { background: rgba(99,102,241,0.1); }
-  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #f87171; }
-  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+  .btn--primary { background: #7c3aed; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #6d28d9; }
+  .btn--outline { background: transparent; border: 1px solid #7c3aed; color: #7c3aed; }
+  .btn--outline:hover:not(:disabled) { background: rgba(124,58,237,0.08); }
+  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.08); }
 </style>

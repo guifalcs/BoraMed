@@ -2,17 +2,20 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminService, AdminTema } from '../../core/services/admin.service';
+import { AdminService, AdminTema, AdminDisciplina } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
+import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 
 @Component({
   selector: 'app-admin-temas',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, UiConfirmDialogComponent, UiSelectComponent],
   templateUrl: './admin-temas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -26,15 +29,30 @@ export class AdminTemasComponent implements OnInit {
   protected readonly processando = signal<string | null>(null);
 
   protected readonly novoNome = signal('');
-  protected readonly novaDisciplina = signal('');
-  protected readonly novoPeriodo = signal<number | null>(null);
+  protected readonly novaDisciplinaId = signal<string | null>(null);
+
+  protected readonly disciplinasDisponiveis = signal<AdminDisciplina[]>([]);
+
+  protected readonly opcoesDisciplina = computed<SelectOption[]>(() => [
+    { value: '', label: 'Sem disciplina' },
+    ...this.disciplinasDisponiveis().map((d) => ({
+      value: d.id,
+      label: `${d.sigla} (P${d.periodo})`,
+    })),
+  ]);
 
   protected readonly editandoId = signal<string | null>(null);
   protected readonly editNome = signal('');
-  protected readonly editDisciplina = signal('');
+  protected readonly editDisciplinaId = signal<string | null>(null);
+  protected readonly temaParaDeletar = signal<AdminTema | null>(null);
 
   async ngOnInit(): Promise<void> {
-    await this.carregar();
+    await Promise.all([this.carregar(), this.carregarDisciplinas()]);
+  }
+
+  private async carregarDisciplinas(): Promise<void> {
+    const result = await this.adminService.listarDisciplinas();
+    if (result.ok) this.disciplinasDisponiveis.set(result.data);
   }
 
   async carregar(): Promise<void> {
@@ -53,15 +71,13 @@ export class AdminTemasComponent implements OnInit {
     this.criando.set(true);
     const result = await this.adminService.criarTema({
       nome: this.novoNome().trim(),
-      disciplina: this.novaDisciplina().trim() || null,
-      periodo: this.novoPeriodo(),
+      disciplina_id: this.novaDisciplinaId(),
       parent_id: null,
     });
     if (result.ok) {
       this.temas.update((lista) => [result.data, ...lista]);
       this.novoNome.set('');
-      this.novaDisciplina.set('');
-      this.novoPeriodo.set(null);
+      this.novaDisciplinaId.set(null);
       this.toast.success('Tema criado.');
     } else {
       this.toast.error('Erro ao criar tema.');
@@ -72,7 +88,7 @@ export class AdminTemasComponent implements OnInit {
   iniciarEdicao(tema: AdminTema): void {
     this.editandoId.set(tema.id);
     this.editNome.set(tema.nome);
-    this.editDisciplina.set(tema.disciplina ?? '');
+    this.editDisciplinaId.set(tema.disciplina_id ?? null);
   }
 
   async salvarEdicao(tema: AdminTema): Promise<void> {
@@ -80,7 +96,7 @@ export class AdminTemasComponent implements OnInit {
     this.processando.set(tema.id);
     const result = await this.adminService.atualizarTema(tema.id, {
       nome: this.editNome().trim(),
-      disciplina: this.editDisciplina().trim() || null,
+      disciplina_id: this.editDisciplinaId(),
     });
     if (result.ok) {
       this.temas.update((lista) =>
@@ -94,8 +110,23 @@ export class AdminTemasComponent implements OnInit {
     this.processando.set(null);
   }
 
-  async deletar(tema: AdminTema): Promise<void> {
-    if (!confirm(`Deletar tema "${tema.nome}"?`)) return;
+  protected solicitarDelete(tema: AdminTema): void {
+    this.temaParaDeletar.set(tema);
+  }
+
+  protected cancelarDelete(): void {
+    this.temaParaDeletar.set(null);
+  }
+
+  disciplinaSiglaFor(id: string | null): string {
+    if (!id) return '—';
+    return this.disciplinasDisponiveis().find((d) => d.id === id)?.sigla ?? '—';
+  }
+
+  async confirmarDelete(): Promise<void> {
+    const tema = this.temaParaDeletar();
+    if (!tema) return;
+    this.temaParaDeletar.set(null);
     const result = await this.adminService.deletarTema(tema.id);
     if (result.ok) {
       this.temas.update((lista) => lista.filter((t) => t.id !== tema.id));

@@ -1,6 +1,7 @@
 export interface Tema {
   id: string;
   nome: string;
+  disciplina_id?: string | null;
   disciplina: string | null;
   periodo: number | null;
   parent_id: string | null;

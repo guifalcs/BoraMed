@@ -37,7 +37,7 @@
               </div>
             </td>
             <td>{{ u.tipo_usuario ?? '—' }}</td>
-            <td>{{ u.criado_em | slice:0:10 }}</td>
+            <td>{{ u.criado_em | date:'dd/MM/yyyy' }}</td>
             <td>
               <span class="badge" [class.badge--admin]="u.papel === 'admin'">
                 {{ u.papel }}
@@ -55,8 +55,9 @@
               } @else {
                 <button
                   class="btn btn--sm btn--danger"
-                  [disabled]="processando() === u.id"
-                  (click)="alterarPapel(u, 'aluno')"
+                  [disabled]="processando() === u.id || u.id === currentUserId"
+                  [title]="u.id === currentUserId ? 'Não é possível revogar seu próprio papel' : ''"
+                  (click)="solicitarRevogar(u)"
                 >
                   Revogar admin
                 </button>
@@ -69,31 +70,42 @@
   </div>
 }
 
+@if (usuarioParaRevogar()) {
+  <app-ui-confirm-dialog
+    titulo="Revogar acesso admin"
+    [mensagem]="'Remover privilégios de administrador de ' + (usuarioParaRevogar()!.nome_completo ?? usuarioParaRevogar()!.email) + '?'"
+    labelConfirmar="Revogar"
+    variante="danger"
+    (confirmar)="confirmarRevogar()"
+    (cancelar)="cancelarRevogar()"
+  />
+}
+
 <style>
   .page-header { margin-bottom: 1.5rem; }
-  .page-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.25rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
   .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
 
   .toolbar { margin-bottom: 1.25rem; }
   .search-input {
     width: 100%;
     max-width: 360px;
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0.5rem 0.875rem;
-    color: #f1f5f9;
+    color: #1e293b;
     font-size: 0.875rem;
     outline: none;
   }
-  .search-input:focus { border-color: #6366f1; }
+  .search-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
 
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
-  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #334155; }
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th {
-    background: #1e293b;
+    background: #f8fafc;
     padding: 0.75rem 1rem;
     text-align: left;
     font-size: 0.75rem;
@@ -101,20 +113,20 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #64748b;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid #e2e8f0;
   }
   .data-table td {
     padding: 0.875rem 1rem;
     font-size: 0.875rem;
-    color: #cbd5e1;
-    border-bottom: 1px solid #1e293b;
-    background: #0f172a;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
   }
   .data-table tr:last-child td { border-bottom: none; }
 
   .user-cell { display: flex; flex-direction: column; gap: 2px; }
-  .user-name { font-weight: 500; color: #f1f5f9; }
-  .user-email { font-size: 0.75rem; color: #64748b; }
+  .user-name { font-weight: 500; color: #1e293b; }
+  .user-email { font-size: 0.75rem; color: #94a3b8; }
 
   .badge {
     display: inline-block;
@@ -123,10 +135,10 @@
     font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    background: #334155;
-    color: #94a3b8;
+    background: #f1f5f9;
+    color: #64748b;
   }
-  .badge--admin { background: #312e81; color: #c7d2fe; }
+  .badge--admin { background: #ede9fe; color: #6d28d9; }
 
   .btn {
     display: inline-flex;
@@ -142,8 +154,8 @@
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; }
-  .btn--outline { background: transparent; border: 1px solid #6366f1; color: #818cf8; }
-  .btn--outline:hover:not(:disabled) { background: rgba(99,102,241,0.1); }
-  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #f87171; }
-  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+  .btn--outline { background: transparent; border: 1px solid #7c3aed; color: #7c3aed; }
+  .btn--outline:hover:not(:disabled) { background: rgba(124,58,237,0.08); }
+  .btn--danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+  .btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.08); }
 </style>

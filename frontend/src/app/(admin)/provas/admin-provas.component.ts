@@ -8,11 +8,13 @@ import {
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminProva } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
+import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 
 @Component({
   selector: 'app-admin-provas',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, UiSelectComponent, UiConfirmDialogComponent],
   templateUrl: './admin-provas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -26,8 +28,16 @@ export class AdminProvasComponent implements OnInit {
   protected readonly pagina = signal(0);
   protected readonly filtroTipo = signal('');
   protected readonly busca = signal('');
+  protected readonly provaParaDeletar = signal<AdminProva | null>(null);
 
   protected readonly porPagina = 50;
+
+  protected readonly opcoesTipo: SelectOption[] = [
+    { value: '', label: 'Todos os tipos' },
+    { value: 'nacional', label: 'Nacional' },
+    { value: 'processual', label: 'Processual' },
+    { value: 'multiestacoes', label: 'Multiestações' },
+  ];
 
   async ngOnInit(): Promise<void> {
     await this.carregar();
@@ -65,8 +75,18 @@ export class AdminProvasComponent implements OnInit {
     await this.carregar();
   }
 
-  async deletar(prova: AdminProva): Promise<void> {
-    if (!confirm(`Deletar "${prova.nome}"? Isso é irreversível.`)) return;
+  protected solicitarDelete(prova: AdminProva): void {
+    this.provaParaDeletar.set(prova);
+  }
+
+  protected cancelarDelete(): void {
+    this.provaParaDeletar.set(null);
+  }
+
+  async confirmarDelete(): Promise<void> {
+    const prova = this.provaParaDeletar();
+    if (!prova) return;
+    this.provaParaDeletar.set(null);
     const result = await this.adminService.deletarProva(prova.id);
     if (result.ok) {
       this.provas.update((lista) => lista.filter((p) => p.id !== prova.id));

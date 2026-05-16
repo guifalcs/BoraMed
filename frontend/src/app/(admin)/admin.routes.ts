@@ -36,4 +36,11 @@ export const adminRoutes: Routes = [
         (m) => m.AdminTemasComponent,
       ),
   },
+  {
+    path: 'disciplinas',
+    loadComponent: () =>
+      import('./disciplinas/admin-disciplinas.component').then(
+        (m) => m.AdminDisciplinasComponent,
+      ),
+  },
 ];
