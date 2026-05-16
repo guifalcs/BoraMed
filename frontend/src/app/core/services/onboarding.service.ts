@@ -36,7 +36,7 @@ const DASHBOARD_ONBOARDING_FLOW: IOnboardingFlow = {
     },
     {
       id: 'competitivo',
-      titulo: 'Use competicao como constancia',
+      titulo: 'Use competição como constância',
       descricao: 'O Competitivo mostra XP, ranking e desafio diário sem expor seu desempenho privado. A privacidade fica no Perfil.',
       target: 'nav-competitivo',
       placement: 'sidebar',
@@ -51,7 +51,7 @@ const DASHBOARD_ONBOARDING_FLOW: IOnboardingFlow = {
     {
       id: 'perfil',
       titulo: 'Ajustes, privacidade e suporte',
-      descricao: 'No menu do perfil ficam dados pessoais, privacidade competitiva, suporte e saida da conta.',
+      descricao: 'No menu do perfil ficam dados pessoais, privacidade competitiva, suporte e saída da conta.',
       target: 'profile-menu',
       placement: 'sidebar',
     },
@@ -124,7 +124,7 @@ export class OnboardingService {
       this.loadedForUserId = user.id;
       this.applyState(state);
     } catch {
-      this._error.set('Nao foi possivel carregar o onboarding.');
+      this._error.set('Não foi possível carregar o onboarding.');
       this._isVisible.set(false);
     } finally {
       this._isLoading.set(false);
@@ -204,7 +204,7 @@ export class OnboardingService {
       if (error) throw error;
       this.applyState(this.mapRowToState(data as OnboardingStateRow));
     } catch {
-      this._error.set('Nao foi possivel salvar o onboarding.');
+      this._error.set('Não foi possível salvar o onboarding.');
     }
   }
 
