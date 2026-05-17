@@ -80,9 +80,13 @@ export class TentativaService {
 
   async buscarTentativaAtiva(provaId: string): Promise<ProvaResult<Tentativa | null>> {
     try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) return { ok: true, data: null };
+
       const { data, error } = await this.supabase
         .from('tentativa')
         .select('*')
+        .eq('user_id', user.id)
         .eq('prova_id', provaId)
         .in('status', ['em_andamento', 'pausada'])
         .neq('modo', 'visualizar')
@@ -99,9 +103,13 @@ export class TentativaService {
 
   async buscarTentativaAtivaRecente(): Promise<ProvaResult<Tentativa | null>> {
     try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) return { ok: true, data: null };
+
       const { data, error } = await this.supabase
         .from('tentativa')
         .select('*')
+        .eq('user_id', user.id)
         .in('status', ['em_andamento', 'pausada'])
         .neq('modo', 'visualizar')
         .order('criado_em', { ascending: false })
