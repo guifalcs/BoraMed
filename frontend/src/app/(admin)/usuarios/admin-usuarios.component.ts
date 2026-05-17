@@ -68,6 +68,22 @@ export class AdminUsuariosComponent implements OnInit {
     await this.alterarPapel(usuario, 'aluno');
   }
 
+  protected tipoUsuarioLabel(tipo: string | null): string {
+    const labels: Record<string, string> = {
+      estudante_medicina: 'Estudante de Medicina',
+      medico: 'Médico',
+      residente: 'Residente',
+      cursinho: 'Cursinho',
+      ensino_medio: 'Ensino Médio',
+      outro: 'Outro',
+    };
+    return tipo ? (labels[tipo] ?? tipo) : '—';
+  }
+
+  protected papelLabel(papel: string): string {
+    return papel === 'admin' ? 'Admin' : 'Aluno';
+  }
+
   async alterarPapel(usuario: Profile, papel: 'aluno' | 'admin'): Promise<void> {
     if (this.processando()) return;
     this.processando.set(usuario.id);

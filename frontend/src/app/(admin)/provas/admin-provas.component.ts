@@ -97,6 +97,10 @@ export class AdminProvasComponent implements OnInit {
     }
   }
 
+  protected tipoLabel(tipo: string): string {
+    return this.opcoesTipo.find((o) => o.value === tipo)?.label ?? tipo;
+  }
+
   protected get totalPaginas(): number {
     return Math.ceil(this.total() / this.porPagina);
   }

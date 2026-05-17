@@ -36,11 +36,11 @@
                 <span class="user-email">{{ u.email }}</span>
               </div>
             </td>
-            <td>{{ u.tipo_usuario ?? '—' }}</td>
+            <td>{{ tipoUsuarioLabel(u.tipo_usuario) }}</td>
             <td>{{ u.criado_em | date:'dd/MM/yyyy' }}</td>
             <td>
               <span class="badge" [class.badge--admin]="u.papel === 'admin'">
-                {{ u.papel }}
+                {{ papelLabel(u.papel) }}
               </span>
             </td>
             <td>

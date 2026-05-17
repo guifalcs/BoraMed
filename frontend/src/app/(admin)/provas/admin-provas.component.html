@@ -43,7 +43,7 @@
         @for (p of provas(); track p.id) {
           <tr>
             <td>{{ p.nome }}</td>
-            <td><span class="type-badge">{{ p.tipo }}</span></td>
+            <td><span class="type-badge">{{ tipoLabel(p.tipo) }}</span></td>
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
             <td>{{ p.ano }}/{{ p.semestre }}</td>
             <td>{{ p.qtd_questoes }}</td>
