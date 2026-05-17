@@ -63,7 +63,10 @@ describe('ProvaDetalheComponent', () => {
   };
 
   const mockActivatedRoute = {
-    snapshot: { paramMap: { get: () => 'prova-1' } },
+    snapshot: {
+      paramMap: { get: () => 'prova-1' },
+      queryParamMap: { get: () => null },
+    },
   };
 
   async function setup(
@@ -178,6 +181,13 @@ describe('ProvaDetalheComponent', () => {
     it('não exibe banner de tentativa ativa', () => {
       expect(el.textContent).not.toContain('em andamento');
       expect(el.textContent).not.toContain('Retomar');
+    });
+
+    it('pré-seleciona modo estudo via query param', async () => {
+      mockActivatedRoute.snapshot.queryParamMap.get = () => 'estudo';
+      await setup({ ok: true, data: provaFactory() });
+      expect((fixture.componentInstance as any).modoSelecionado()).toBe('estudo');
+      mockActivatedRoute.snapshot.queryParamMap.get = () => null;
     });
   });
 

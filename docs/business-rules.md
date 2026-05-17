@@ -18,6 +18,7 @@
 * Quantidades disponíveis: 5, 10, 15, 20, 30
 * Ordem das questões: sempre aleatória
 * A ordem sorteada deve ser persistida em `tentativa_resposta.ordem_na_tentativa` para que a revisão mantenha a mesma sequência da tentativa
+* A retomada de qualquer tentativa deve remontar as questões a partir de `tentativa_resposta`, pois simulados personalizados não têm questões vinculadas diretamente à prova sintética
 * Se existir tentativa com status `em_andamento` ou `pausada`, a home e a área de simulados devem priorizar um CTA de continuidade para levar o aluno direto de volta à execução
 * Uma vez iniciado, o tempo corre
 * Pode ser pausado e retomado (estado salvo no banco)
@@ -31,7 +32,9 @@
 * Histórico visível apenas para o próprio aluno
 * Histórico deve deixar explícito quando ainda não há tentativas concluídas, quando filtros zeram os resultados e quando houve falha de carregamento
 * Quando houver distribuição por tema, o sistema sugere um próximo treino focado no tema de menor aproveitamento
+* Quando múltiplos temas tiverem o mesmo menor aproveitamento, o resultado deve comunicar o conjunto de temas críticos sem eleger arbitrariamente um único pior tema
 * Treinos recomendados abrem a montagem de simulado com o tema pré-selecionado e modo estudo quando o objetivo for revisão
+* Ao finalizar uma tentativa, a tela de resultado deve oferecer próximos passos objetivos, incluindo a revisão dos erros e o refazer em modo estudo
 
 ### Gamificação Competitiva
 

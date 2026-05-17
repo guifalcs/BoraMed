@@ -274,15 +274,24 @@ export class TentativaService {
       const { data: respostasData, error: respostasError } = await this.supabase
         .from('tentativa_resposta')
         .select('*')
-        .eq('tentativa_id', tentativaId);
+        .eq('tentativa_id', tentativaId)
+        .order('ordem_na_tentativa', { ascending: true })
+        .order('id', { ascending: true });
 
       if (!respostasError) {
         this._respostas.set((respostasData ?? []) as TentativaResposta[]);
       }
 
       return { ok: true, data: result };
-    } catch {
-      return { ok: false, error: 'Não foi possível retomar a tentativa.' };
+    } catch (e: unknown) {
+      const message = getErrorMessage(e);
+      if (message.includes('Tentativa já finalizada')) {
+        return { ok: false, error: 'Esta tentativa já foi finalizada. Abra o resultado pelo histórico.' };
+      }
+      if (message.includes('Tentativa não encontrada') || message.includes('sem permissão')) {
+        return { ok: false, error: 'Tentativa não encontrada ou sem permissão para acesso.' };
+      }
+      return { ok: false, error: 'Não foi possível retomar a tentativa. Tente novamente em instantes.' };
     }
   }
 
@@ -429,4 +438,13 @@ export class TentativaService {
       return null;
     }
   }
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error !== null && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : '';
+  }
+  return '';
 }

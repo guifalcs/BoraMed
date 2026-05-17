@@ -52,6 +52,12 @@ export class ProvaDetalheComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('provaId') ?? '';
+    const modoParam = this.route.snapshot.queryParamMap?.get('modo');
+
+    if (modoParam === 'estudo' || modoParam === 'simulado') {
+      this.modoSelecionado.set(modoParam);
+    }
+
     const [provaResult, tentativaResult] = await Promise.all([
       this.provaService.buscarProva(id),
       this.tentativaService.buscarTentativaAtiva(id),

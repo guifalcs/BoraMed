@@ -108,7 +108,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       if (result.ok) {
         await this.carregarDeMemoria(result.data.tentativa.prova_id);
       } else {
-        this.erro.set('Não foi possível carregar a prova. Volte e tente novamente.');
+        this.erro.set(result.error);
         this.isLoading.set(false);
       }
     }

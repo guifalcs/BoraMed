@@ -24,6 +24,30 @@ Descrição do que foi feito.
 
 ## 2026-05-16 | Fix | sem commit
 
+**Retomada de simulado personalizado e streak v2**
+
+- Nova migration recria `retomar_tentativa` para remontar questões pela tabela `tentativa_resposta`, cobrindo provas regulares e simulados personalizados.
+- `retomar_tentativa` preserva a ordem da tentativa com `ordem_na_tentativa` quando disponível.
+- `get_streak_estudo_v2` foi recriada de forma mais defensiva para evitar falha ao inicializar estatísticas do usuário.
+- Frontend ordena respostas retomadas pela ordem persistida da tentativa.
+- Tela de execução passa a exibir a mensagem real de falha da retomada, em vez de sempre mostrar erro genérico de carregamento da prova.
+
+---
+
+## 2026-05-16 | Fix | sem commit
+
+**Resultado pós-simulado com próximos passos de revisão**
+
+- Tela de resultado agora destaca ações objetivas para revisar os erros, refazer em modo estudo e treinar o tema de menor aproveitamento.
+- Empates entre temas com o menor aproveitamento agora são tratados como um conjunto de temas críticos, sem eleger um único tema arbitrariamente.
+- Revisão aceita filtro `erros` e mostra apenas as questões respondidas incorretamente quando acionada a partir do resultado.
+- Detalhe da prova passa a aceitar `modo=estudo` por query param para reduzir atrito no refazer guiado.
+- `docs/business-rules.md` documenta a obrigatoriedade de próximos passos acionáveis após finalizar a tentativa.
+
+---
+
+## 2026-05-16 | Fix | sem commit
+
 **Histórico com estados vazios e erros mais úteis**
 
 - Histórico agora diferencia ausência de tentativas, filtros sem resultado e falhas de carregamento.

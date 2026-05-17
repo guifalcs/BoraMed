@@ -7,8 +7,14 @@
     {{ tentativaId() ? 'Voltar para o resultado' : 'Voltar para a prova' }}
   </a>
 
-  @if (provaNome()) {
-    <h1 class="mb-6 text-xl font-extrabold text-[var(--color-text)]">{{ provaNome() }}</h1>
+  @if (tituloPagina()) {
+    <h1 class="mb-2 text-xl font-extrabold text-[var(--color-text)]">{{ tituloPagina() }}</h1>
+  }
+
+  @if (descricaoFiltro()) {
+    <p class="mb-6 text-sm text-[var(--color-text-muted)]">{{ descricaoFiltro() }}</p>
+  } @else if (tituloPagina()) {
+    <div class="mb-6"></div>
   }
 
   @if (isLoading()) {
@@ -30,16 +36,34 @@
 
   @if (!isLoading() && !erro()) {
     <div class="space-y-6">
-      @for (q of questoes(); track q.id; let i = $index) {
-        <app-questao-card
-          [questao]="q"
-          [numero]="i + 1"
-          modo="visualizar"
-          [respostaSelecionada]="respostasMap().get(q.id) ?? null"
-          [alternativaCorreta]="null"
-          [gabaritioVisivel]="true"
-          (responder)="$event"
-        />
+      @if (questoesFiltradas().length === 0) {
+        <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <app-empty-state
+            titulo="Nenhum erro nesta tentativa"
+            descricao="Você acertou todas as questões desta tentativa."
+          />
+          <div class="pb-6 text-center">
+            <a
+              [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
+              [state]="{ fromResultado: true }"
+              class="text-sm font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
+            >
+              Ver revisão completa
+            </a>
+          </div>
+        </div>
+      } @else {
+        @for (q of questoesFiltradas(); track q.id; let i = $index) {
+          <app-questao-card
+            [questao]="q"
+            [numero]="i + 1"
+            modo="visualizar"
+            [respostaSelecionada]="respostasMap().get(q.id) ?? null"
+            [alternativaCorreta]="null"
+            [gabaritioVisivel]="true"
+            (responder)="$event"
+          />
+        }
       }
     </div>
   }

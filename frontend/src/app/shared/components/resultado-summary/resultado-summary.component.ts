@@ -84,4 +84,87 @@ export class ResultadoSummaryComponent {
 
     return temas[0] ?? null;
   });
+
+  protected readonly temasPrioritarios = computed<TemaPrioritario[]>(() => {
+    const temaPrincipal = this.temaPrioritario();
+    if (!temaPrincipal) return [];
+
+    return this.resultado().distribuicao_temas
+      .filter((d) => d.total > 0)
+      .map((d) => ({
+        id: d.tema.id,
+        nome: d.tema.nome,
+        taxa: Math.round((d.acertos / d.total) * 100),
+      }))
+      .filter((tema) => tema.taxa === temaPrincipal.taxa)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  });
+
+  protected readonly temEmpateEntreTemasPrioritarios = computed(() => this.temasPrioritarios().length > 1);
+
+  protected readonly resumoTemasPrioritarios = computed(() => {
+    const temas = this.temasPrioritarios().map((tema) => tema.nome);
+    if (temas.length <= 2) {
+      return temas.join(' e ');
+    }
+    return `${temas.slice(0, -1).join(', ')} e ${temas[temas.length - 1]}`;
+  });
+
+  protected readonly rotuloTemasPrioritarios = computed(() => {
+    const temas = this.temasPrioritarios();
+    if (temas.length === 0) return '';
+    if (temas.length === 1) return temas[0].nome;
+    return `${temas.length} temas com menor aproveitamento`;
+  });
+
+  protected readonly tituloTemasPrioritarios = computed(() =>
+    this.temasPrioritarios().map((tema) => tema.nome).join(', '),
+  );
+
+  protected readonly questoesErradas = computed(() =>
+    this.resultado().respostas.filter((resposta) => resposta.correta === false).length,
+  );
+
+  protected readonly temQuestoesErradas = computed(() => this.questoesErradas() > 0);
+
+  protected readonly rotaRefazerEstudo = computed(() =>
+    this.isPersonalizado()
+      ? ['/dashboard/simulados/montar']
+      : ['/dashboard/simulados', this.provaId()],
+  );
+
+  protected readonly queryParamsRefazerEstudo = computed(() => {
+    if (this.isPersonalizado()) {
+      const params: Record<string, string | number> = {
+        qtd: this.total(),
+        modo: 'estudo',
+      };
+
+      const tema = this.temaPrioritario();
+      if (tema && !this.temEmpateEntreTemasPrioritarios()) {
+        params['temaId'] = tema.id;
+      }
+
+      return params;
+    }
+
+    return { modo: 'estudo' };
+  });
+
+  protected readonly labelRefazerEstudo = computed(() =>
+    this.isPersonalizado() ? 'Montar treino no modo estudo' : 'Refazer em modo estudo',
+  );
+
+  protected readonly labelTreinoPrioritario = computed(() =>
+    this.temEmpateEntreTemasPrioritarios() ? 'Revisar temas críticos' : 'Revisar tema crítico',
+  );
+
+  protected readonly queryParamsTreinoPrioritario = computed(() => {
+    const params: Record<string, string | number> = { qtd: 10, modo: 'estudo' };
+    const tema = this.temaPrioritario();
+    if (tema && !this.temEmpateEntreTemasPrioritarios()) {
+      params['temaId'] = tema.id;
+    }
+    return params;
+  });
 }
