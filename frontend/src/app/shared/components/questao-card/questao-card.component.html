@@ -13,21 +13,21 @@
 
   <!-- Imagem -->
   @if (questao().imagem_url) {
-    <div class="mb-4">
+    <figure class="mb-4 flex flex-col items-center gap-1">
       @if (!imgCarregada()) {
-        <div class="aspect-video w-full max-w-lg mx-auto animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+        <div class="w-full max-w-lg h-48 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
       }
       <img
         [src]="questao().imagem_url!"
         [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
-        class="max-w-lg w-full mx-auto rounded-lg block"
+        class="max-w-full max-h-[60vh] w-auto h-auto rounded-lg object-contain"
         [class.hidden]="!imgCarregada()"
         (load)="onImgLoad()"
       />
       @if (questao().imagem_legenda && imgCarregada()) {
-        <p class="mt-1 mb-4 text-center text-xs text-gray-400">{{ questao().imagem_legenda }}</p>
+        <figcaption class="text-center text-xs text-gray-400">{{ questao().imagem_legenda }}</figcaption>
       }
-    </div>
+    </figure>
   }
 
   <!-- Enunciado de apoio -->

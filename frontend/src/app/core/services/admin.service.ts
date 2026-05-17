@@ -49,6 +49,8 @@ export interface AdminQuestaoCompleta {
   id: string;
   enunciado: string;
   enunciado_apoio: string | null;
+  imagem_url: string | null;
+  imagem_legenda: string | null;
   formato: string;
   status: string;
   dificuldade: number | null;
@@ -70,6 +72,8 @@ export interface AdminQuestaoCompleta {
 export interface QuestaoPayload {
   enunciado: string;
   enunciado_apoio?: string | null;
+  imagem_url?: string | null;
+  imagem_legenda?: string | null;
   formato: string;
   status: string;
   dificuldade?: number | null;
@@ -406,5 +410,13 @@ export class AdminService {
     const { error } = await this.supabase.from('tema').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };
+  }
+
+  async deletarArquivoStorage(url: string, bucket = 'questao-imagens'): Promise<void> {
+    const marker = `/object/public/${bucket}/`;
+    const idx = url.indexOf(marker);
+    if (idx === -1) return;
+    const path = url.substring(idx + marker.length);
+    await this.supabase.storage.from(bucket).remove([path]);
   }
 }

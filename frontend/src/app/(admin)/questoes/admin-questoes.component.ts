@@ -18,8 +18,11 @@ import {
 } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ChevronLeft, ChevronRight, X } from 'lucide-angular';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 
 interface AlternativaForm {
   letra: string;
@@ -45,7 +48,7 @@ function alternativasIniciais(formato: string): AlternativaForm[] {
 @Component({
   selector: 'app-admin-questoes',
   standalone: true,
-  imports: [FormsModule, SlicePipe, UiSelectComponent, UiConfirmDialogComponent],
+  imports: [FormsModule, SlicePipe, UiSelectComponent, UiConfirmDialogComponent, UiIconComponent, ImageUploadComponent],
   templateUrl: './admin-questoes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -86,6 +89,8 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fAptoDesafio = signal(true);
   protected readonly fRespostaCorreta = signal('');
   protected readonly fAlternativas = signal<AlternativaForm[]>(alternativasIniciais('multipla_escolha'));
+  protected readonly fImagemUrl = signal<string | null>(null);
+  protected readonly fImagemLegenda = signal('');
   protected readonly fTemas = signal<string[]>([]);
   protected readonly fTemaBusca = signal('');
 
@@ -130,6 +135,13 @@ export class AdminQuestoesComponent implements OnInit {
     { value: 4, label: '4 – Difícil' },
     { value: 5, label: '5 – Muito difícil' },
   ];
+
+  protected readonly iconChevronLeft = ChevronLeft;
+  protected readonly iconChevronRight = ChevronRight;
+  protected readonly iconX = X;
+
+  /** URL original da imagem ao abrir o drawer; usada para limpeza no storage */
+  private _urlAntesDeEditar: string | null = null;
 
   // ---- Confirm dialog ----
   protected readonly questaoParaDeletar = signal<AdminQuestao | null>(null);
@@ -261,6 +273,7 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected abrirCriar(): void {
     this.resetForm();
+    this._urlAntesDeEditar = null;
     this.questaoEditandoId.set(null);
     this.modoDrawer.set('criar');
   }
@@ -294,6 +307,9 @@ export class AdminQuestoesComponent implements OnInit {
     this.fRevisado.set(d.revisado ?? false);
     this.fAptoDesafio.set(d.apto_desafio_diario ?? true);
     this.fRespostaCorreta.set(d.resposta_correta_texto ?? '');
+    this.fImagemUrl.set(d.imagem_url ?? null);
+    this._urlAntesDeEditar = d.imagem_url ?? null;
+    this.fImagemLegenda.set(d.imagem_legenda ?? '');
     this.fTemas.set(d.temas ?? []);
 
     if (d.alternativas.length > 0) {
@@ -309,6 +325,11 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected fecharDrawer(): void {
     if (this.salvando()) return;
+    // Apaga upload de sessão se o usuário cancelou com imagem diferente da original
+    const sessionUrl = this.fImagemUrl();
+    if (sessionUrl && sessionUrl !== this._urlAntesDeEditar) {
+      this.adminService.deletarArquivoStorage(sessionUrl);
+    }
     this.modoDrawer.set('fechado');
   }
 
@@ -360,6 +381,8 @@ export class AdminQuestoesComponent implements OnInit {
     const questaoPayload: QuestaoPayload = {
       enunciado: this.fEnunciado().trim(),
       enunciado_apoio: this.fEnunciadoApoio().trim() || null,
+      imagem_url: this.fImagemUrl(),
+      imagem_legenda: this.fImagemUrl() ? (this.fImagemLegenda().trim() || null) : null,
       formato: this.fFormato(),
       status: this.fStatus(),
       dificuldade: this.fDificuldade(),
@@ -398,6 +421,11 @@ export class AdminQuestoesComponent implements OnInit {
     }
 
     if (result.ok) {
+      // Apaga arquivo original do storage se foi substituído ou removido
+      const urlSalva = this.fImagemUrl();
+      if (this._urlAntesDeEditar && this._urlAntesDeEditar !== urlSalva) {
+        this.adminService.deletarArquivoStorage(this._urlAntesDeEditar);
+      }
       this.toast.success(modo === 'criar' ? 'Questão criada.' : 'Questão atualizada.');
       this.modoDrawer.set('fechado');
       await this.carregar();
@@ -426,6 +454,8 @@ export class AdminQuestoesComponent implements OnInit {
     this.fAptoDesafio.set(true);
     this.fRespostaCorreta.set('');
     this.fAlternativas.set(alternativasIniciais('multipla_escolha'));
+    this.fImagemUrl.set(null);
+    this.fImagemLegenda.set('');
     this.fTemas.set([]);
     this.fTemaBusca.set('');
   }

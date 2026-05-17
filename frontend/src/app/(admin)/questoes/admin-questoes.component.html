@@ -87,9 +87,9 @@
   </div>
 
   <div class="pagination">
-    <button class="btn btn--sm btn--outline" [disabled]="pagina() === 0" (click)="paginaAnterior()">← Anterior</button>
+    <button class="btn btn--sm btn--outline" [disabled]="pagina() === 0" (click)="paginaAnterior()"><app-ui-icon [icon]="iconChevronLeft" [size]="14" /> Anterior</button>
     <span class="pagination-info">{{ paginaAtual }} / {{ totalPaginas }}</span>
-    <button class="btn btn--sm btn--outline" [disabled]="paginaAtual >= totalPaginas" (click)="proximaPagina()">Próxima →</button>
+    <button class="btn btn--sm btn--outline" [disabled]="paginaAtual >= totalPaginas" (click)="proximaPagina()">Próxima <app-ui-icon [icon]="iconChevronRight" [size]="14" /></button>
   </div>
 }
 
@@ -114,7 +114,7 @@
       <h2 class="drawer-title">
         {{ modoDrawer() === 'criar' ? 'Nova questão' : 'Editar questão' }}
       </h2>
-      <button class="drawer-close" (click)="fecharDrawer()" aria-label="Fechar">✕</button>
+      <button class="drawer-close" (click)="fecharDrawer()" aria-label="Fechar"><app-ui-icon [icon]="iconX" [size]="18" /></button>
     </div>
 
     @if (carregandoForm()) {
@@ -181,6 +181,31 @@
               />
             </div>
           </div>
+        </section>
+
+        <!-- Seção: Imagem -->
+        <section class="form-section">
+          <h3 class="section-label">Imagem</h3>
+
+          <div class="field">
+            <app-image-upload
+              [currentUrl]="fImagemUrl()"
+              (urlChange)="fImagemUrl.set($event)"
+            />
+          </div>
+
+          @if (fImagemUrl()) {
+            <div class="field">
+              <label class="field-label">Legenda da imagem</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="Descrição breve da imagem…"
+                [ngModel]="fImagemLegenda()"
+                (ngModelChange)="fImagemLegenda.set($event)"
+              />
+            </div>
+          }
         </section>
 
         <!-- Seção: Alternativas (múltipla escolha / V-F) -->
