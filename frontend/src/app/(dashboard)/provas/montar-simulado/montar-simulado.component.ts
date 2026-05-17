@@ -35,6 +35,7 @@ export class MontarSimuladoComponent {
   protected readonly isLoadingTemas = signal(true);
   protected readonly loadError = signal<string | null>(null);
   protected readonly temasSelecionados = signal<Set<string>>(new Set());
+  protected readonly buscaTema = signal('');
   protected readonly quantidade = signal(10);
   protected readonly modoSelecionado = signal<ModoProva>('simulado');
   protected readonly origemRecomendacao = signal<string | null>(null);
@@ -60,6 +61,13 @@ export class MontarSimuladoComponent {
   protected readonly temasComQuestoes = computed(() =>
     this.temas().filter((t) => t.qtd_questoes > 0),
   );
+
+  /** Temas filtrados pelo campo de busca */
+  protected readonly temasFiltrados = computed(() => {
+    const busca = normalizarTexto(this.buscaTema());
+    if (!busca) return this.temas();
+    return this.temas().filter((t) => normalizarTexto(t.nome).includes(busca));
+  });
 
   /** Resumo textual dos temas selecionados */
   protected readonly resumoTemas = computed(() => {
