@@ -5,10 +5,13 @@
 }
 
 @if (!isLoading() && erro()) {
-  <div class="px-4 py-8 text-center">
-    <p class="text-sm text-[var(--color-danger)]">{{ erro() }}</p>
-    <a routerLink="/dashboard/simulados" class="mt-4 inline-block text-sm text-[var(--color-primary)] underline">Voltar para simulados</a>
-  </div>
+  <app-empty-state
+    titulo="Tentativa não encontrada"
+    [descricao]="erro()"
+    [icone]="fileXIcon"
+    labelBotao="Voltar para simulados"
+    (acao)="voltarParaSimulados()"
+  />
 }
 
 @if (!isLoading() && !erro() && tentativa()) {

@@ -9,7 +9,7 @@ import {
   computed,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Bookmark, ChevronDown, ChevronUp } from 'lucide-angular';
+import { Bookmark, ChevronDown, ChevronUp, FileX } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
@@ -20,11 +20,12 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
 import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { ProvaHeaderComponent } from '../../../shared/components/prova-header/prova-header.component';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
-  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent],
+  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent],
   providers: [TimerService],
   templateUrl: './tentativa-exec.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +54,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly chevronUpIcon = ChevronUp;
   protected readonly bookmarkIcon = Bookmark;
+  protected readonly fileXIcon = FileX;
 
   private _finalizado = false;
 
@@ -238,6 +240,10 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     if (this.questaoAtualIdx() > 0) {
       this.questaoAtualIdx.update((i) => i - 1);
     }
+  }
+
+  protected voltarParaSimulados(): void {
+    void this.router.navigate(['/dashboard/simulados']);
   }
 
   protected onSair(): void {
