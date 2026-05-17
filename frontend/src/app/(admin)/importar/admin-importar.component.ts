@@ -8,12 +8,16 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  AlertTriangle, ArrowLeft, ArrowRight, Bot, Check, ChevronDown, Image, Paperclip, X,
+} from 'lucide-angular';
+import {
   AdminService,
   AdminDisciplina,
   QuestaoPayload,
   AlternativaPayload,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 
 interface AlternativaParseada {
   letra: string;
@@ -158,13 +162,22 @@ function parseBloco(bloco: string, disciplinas: AdminDisciplina[]): QuestaoParse
 @Component({
   selector: 'app-admin-importar',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, UiIconComponent],
   templateUrl: './admin-importar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminImportarComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly toast = inject(NotificationService);
+
+  protected readonly iconBot = Bot;
+  protected readonly iconPaperclip = Paperclip;
+  protected readonly iconArrowRight = ArrowRight;
+  protected readonly iconArrowLeft = ArrowLeft;
+  protected readonly iconChevronDown = ChevronDown;
+  protected readonly iconCheck = Check;
+  protected readonly iconX = X;
+  protected readonly iconAlertTriangle = AlertTriangle;
 
   protected readonly etapa = signal<'input' | 'preview' | 'importando' | 'concluido'>('input');
   protected readonly texto = signal('');

@@ -10,7 +10,7 @@
   <div class="prompt-card">
     <div class="prompt-header" (click)="promptAberto.set(!promptAberto())">
       <div class="prompt-header-left">
-        <span class="prompt-icon">🤖</span>
+        <span class="prompt-icon"><app-ui-icon [icon]="iconBot" [size]="20" /></span>
         <div>
           <p class="prompt-title">Prompt para converter PDF com IA</p>
           <p class="prompt-sub">Cole esse prompt no ChatGPT ou Claude, anexe o PDF e cole o resultado abaixo</p>
@@ -18,9 +18,13 @@
       </div>
       <div class="prompt-actions">
         <button class="btn btn--sm btn--outline" (click)="copiarPrompt(); $event.stopPropagation()">
-          {{ promptCopiado() ? '✓ Copiado' : 'Copiar prompt' }}
+          @if (promptCopiado()) {
+            <app-ui-icon [icon]="iconCheck" [size]="12" /> Copiado
+          } @else {
+            Copiar prompt
+          }
         </button>
-        <span class="chevron" [class.chevron--open]="promptAberto()">▾</span>
+        <span class="chevron" [class.chevron--open]="promptAberto()"><app-ui-icon [icon]="iconChevronDown" [size]="16" /></span>
       </div>
     </div>
     @if (promptAberto()) {
@@ -33,7 +37,7 @@
     <div class="input-toolbar">
       <span class="section-label">Conteúdo em markdown</span>
       <label class="btn btn--sm btn--outline file-btn">
-        📎 Carregar arquivo
+        <app-ui-icon [icon]="iconPaperclip" [size]="14" /> Carregar arquivo
         <input type="file" accept=".md,.txt" (change)="onArquivo($event)" hidden />
       </label>
     </div>
@@ -65,7 +69,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
     <div class="input-footer">
       <span class="hint">Separe cada questão com <code>---</code> em uma linha própria</span>
       <button class="btn btn--primary" [disabled]="!texto().trim()" (click)="processar()">
-        Processar →
+        Processar <app-ui-icon [icon]="iconArrowRight" [size]="14" />
       </button>
     </div>
   </div>
@@ -80,7 +84,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
     }
     <span class="summary-total">{{ questoes().length }} total</span>
     <div class="summary-actions">
-      <button class="btn btn--sm btn--outline" (click)="voltar()">← Voltar</button>
+      <button class="btn btn--sm btn--outline" (click)="voltar()"><app-ui-icon [icon]="iconArrowLeft" [size]="14" /> Voltar</button>
       <button
         class="btn btn--primary"
         [disabled]="validas() === 0"
@@ -122,9 +126,9 @@ EXPLICACAO: O infarto agudo se caracteriza por...
             <td>{{ q.disciplinaDisplay }}</td>
             <td>
               @if (q.valida) {
-                <span class="status-ok">✓ OK</span>
+                <span class="status-ok"><app-ui-icon [icon]="iconCheck" [size]="13" /> OK</span>
               } @else {
-                <span class="status-err" [title]="q.erros.join(', ')">✗ Erro</span>
+                <span class="status-err" [title]="q.erros.join(', ')"><app-ui-icon [icon]="iconX" [size]="13" /> Erro</span>
               }
             </td>
           </tr>
@@ -138,7 +142,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
                   @if (!q.valida) {
                     <div class="erros-list">
                       @for (e of q.erros; track e) {
-                        <span class="erro-item">⚠ {{ e }}</span>
+                        <span class="erro-item"><app-ui-icon [icon]="iconAlertTriangle" [size]="12" /> {{ e }}</span>
                       }
                     </div>
                   }
@@ -150,7 +154,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
                       <div class="detail-alt" [class.detail-alt--correta]="a.correta">
                         <span class="alt-letra">{{ a.letra }})</span>
                         <span>{{ a.texto }}</span>
-                        @if (a.correta) { <span class="correta-marker">✓</span> }
+                        @if (a.correta) { <span class="correta-marker"><app-ui-icon [icon]="iconCheck" [size]="14" /></span> }
                       </div>
                     }
                   </div>
@@ -186,7 +190,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
 <!-- ── Etapa: concluído ── -->
 @if (etapa() === 'concluido') {
   <div class="done-card">
-    <div class="done-icon">✓</div>
+    <div class="done-icon"><app-ui-icon [icon]="iconCheck" [size]="28" /></div>
     <h2 class="done-title">Importação concluída</h2>
     <div class="done-stats">
       <div class="done-stat">
