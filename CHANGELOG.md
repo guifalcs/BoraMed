@@ -8,6 +8,16 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-16 | Infra | sem commit
+
+**Histórico de migrations alinhado ao Supabase remoto**
+
+- `supabase/migrations` foi sincronizado com o histórico real registrado no projeto remoto.
+- Migrations locais duplicadas com timestamps antigos foram removidas do diretório ativo para evitar reaplicação indevida.
+- `supabase db push --linked --dry-run` voltou a retornar `Remote database is up to date`.
+
+---
+
 ## 2026-05-16 | Feature | sem commit
 
 **Onboarding de novos usuários — tour inicial do dashboard**
