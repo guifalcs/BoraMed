@@ -43,7 +43,12 @@
           [avatarUrl]="profile()?.avatar_url ?? null"
           size="sm"
         />
-        <span class="admin-topbar-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
+        <div class="admin-topbar-user">
+          <span class="admin-topbar-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
+          @if (profile()?.nome_completo) {
+            <span class="admin-topbar-email">{{ user()?.email }}</span>
+          }
+        </div>
       </div>
     </header>
 
