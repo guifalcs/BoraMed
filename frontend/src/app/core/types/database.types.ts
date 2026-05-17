@@ -740,6 +740,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      alterar_papel_usuario: {
+        Args: { p_papel: string; p_user_id: string }
+        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+      }
       conceder_xp_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
       finalizar_tentativa:
         | { Args: { p_tentativa_id: string }; Returns: Json }

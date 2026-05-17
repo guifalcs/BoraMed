@@ -8,6 +8,17 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-16 | Fix | sem commit
+
+**Persistência do papel de administrador**
+
+- Nova RPC `alterar_papel_usuario` centraliza a promoção e revogação de administradores.
+- A alteração de papel deixa de depender de `UPDATE` direto em `profiles`, que era bloqueado pelo RLS e atualizava zero linhas sem erro visível.
+- A tela de usuários passa a usar o perfil retornado pelo banco após a persistência.
+- A regra de acesso documenta que papéis devem ser alterados pela RPC e que administradores não podem revogar o próprio acesso.
+
+---
+
 ## 2026-05-16 | Infra | sem commit
 
 **Histórico de migrations alinhado ao Supabase remoto**

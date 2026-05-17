@@ -98,6 +98,8 @@ Uso interno como referência de produto. Não apresentar como calendário oficia
 * Cadastro: manual por ora
 * Dados de desempenho: privados por aluno
 * Admin: Arthur e Guilherme têm acesso total
+* Alterações de papel (`aluno`/`admin`) devem passar pela RPC `alterar_papel_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.
+* Apenas administradores podem alterar papéis, e um administrador não pode revogar o próprio acesso.
 
 ## Público-Alvo
 

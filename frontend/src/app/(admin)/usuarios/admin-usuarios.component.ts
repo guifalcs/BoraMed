@@ -90,7 +90,7 @@ export class AdminUsuariosComponent implements OnInit {
     const result = await this.adminService.alterarPapelUsuario(usuario.id, papel);
     if (result.ok) {
       this.usuarios.update((lista) =>
-        lista.map((u) => (u.id === usuario.id ? { ...u, papel } : u)),
+        lista.map((u) => (u.id === usuario.id ? result.data : u)),
       );
       this.toast.success(`Papel de ${usuario.nome_completo ?? usuario.email} atualizado.`);
     } else {

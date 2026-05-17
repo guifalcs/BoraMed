@@ -141,13 +141,13 @@ export class AdminService {
   async alterarPapelUsuario(
     userId: string,
     papel: 'aluno' | 'admin',
-  ): Promise<ServiceResult<void>> {
-    const { error } = await this.supabase
-      .from('profiles')
-      .update({ papel })
-      .eq('id', userId);
+  ): Promise<ServiceResult<Profile>> {
+    const { data, error } = await this.supabase.rpc('alterar_papel_usuario', {
+      p_user_id: userId,
+      p_papel: papel,
+    });
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: undefined };
+    return { ok: true, data: data as Profile };
   }
 
   // ---- Questões ----
