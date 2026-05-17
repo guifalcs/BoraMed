@@ -85,6 +85,14 @@ export class ResultadoSummaryComponent {
     return temas[0] ?? null;
   });
 
+  // Só expõe tema prioritário quando há aproveitamento abaixo de 70% (limiar de sucesso).
+  // Evita classificar como "crítico" um tema em que o aluno foi bem.
+  protected readonly temaPrioritarioParaRevisar = computed<TemaPrioritario | null>(() => {
+    const tema = this.temaPrioritario();
+    if (!tema || tema.taxa >= 70) return null;
+    return tema;
+  });
+
   protected readonly temasPrioritarios = computed<TemaPrioritario[]>(() => {
     const temaPrincipal = this.temaPrioritario();
     if (!temaPrincipal) return [];
@@ -155,9 +163,18 @@ export class ResultadoSummaryComponent {
     this.isPersonalizado() ? 'Montar treino no modo estudo' : 'Refazer em modo estudo',
   );
 
-  protected readonly labelTreinoPrioritario = computed(() =>
-    this.temEmpateEntreTemasPrioritarios() ? 'Revisar temas críticos' : 'Revisar tema crítico',
-  );
+  protected readonly labelTreinoPrioritario = computed(() => {
+    const taxa = this.temaPrioritario()?.taxa ?? 100;
+    const plural = this.temEmpateEntreTemasPrioritarios();
+    if (taxa < 50) return plural ? 'Revisar temas críticos' : 'Revisar tema crítico';
+    return plural ? 'Revisar temas para melhorar' : 'Revisar tema para melhorar';
+  });
+
+  protected readonly descricaoTreinoPrioritario = computed(() => {
+    const taxa = this.temaPrioritario()?.taxa ?? 0;
+    if (taxa < 50) return `${taxa}% de acertos — tema que precisa de atenção urgente.`;
+    return `${taxa}% de acertos — vale reforçar na próxima revisão.`;
+  });
 
   protected readonly queryParamsTreinoPrioritario = computed(() => {
     const params: Record<string, string | number> = { qtd: 10, modo: 'estudo' };
