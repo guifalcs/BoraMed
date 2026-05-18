@@ -24,8 +24,13 @@ export class AuthService implements OnDestroy {
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     const { data } = this.supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        this._user.set(session?.user ?? null);
+      async (event: AuthChangeEvent, session: Session | null) => {
+        if (session) {
+          const { data: authData } = await this.supabase.auth.getUser();
+          this._user.set(authData.user ?? null);
+        } else {
+          this._user.set(null);
+        }
 
         if (event === 'SIGNED_OUT') {
           void this.router.navigate(['/login']);
@@ -40,8 +45,8 @@ export class AuthService implements OnDestroy {
 
   async initialize(): Promise<void> {
     try {
-      const { data } = await this.supabase.auth.getSession();
-      this._user.set(data.session?.user ?? null);
+      const { data } = await this.supabase.auth.getUser();
+      this._user.set(data.user ?? null);
     } catch {
       this._user.set(null);
     } finally {
