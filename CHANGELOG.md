@@ -8,6 +8,39 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-18 | Feature | sem commit
+
+**Importacao de questoes com temas cadastrados**
+
+- Prompt de questoes passa a incluir as disciplinas e temas cadastrados no banco para orientar a IA com opcoes reais.
+- Importacao de questoes passa a aceitar `TEMA:`/`TEMAS:` e validar o nome contra os temas existentes, usando a disciplina para desambiguar quando informada.
+- Questoes importadas com tema valido agora criam o vinculo em `questao_tema`, inclusive no fluxo de criar prova.
+- Regras de negocio documentam que disciplina e tema seguem opcionais, mas nao devem ser inventados pela IA.
+
+---
+
+## 2026-05-18 | Fix | sem commit
+
+**Ajustes visuais na criacao de provas**
+
+- Corrigida a altura do botao Buscar na etapa de selecao de questoes do fluxo administrativo de provas.
+- Removida a largura total do botao Concluir no rodape do drawer, mantendo o padrao dos demais botoes do sistema.
+
+---
+
+## 2026-05-18 | Fix | sem commit
+
+**Travas de relacionamento e delecao administrativa**
+
+- Nova migration bloqueia delecoes silenciosas de disciplinas, temas e questoes vinculadas por FKs `RESTRICT`.
+- `tentativa_resposta.ordem_na_tentativa` passa a ser garantida e usada nas RPCs de iniciar, retomar, finalizar e gerar simulado personalizado.
+- RPCs de tentativa voltam a usar `disciplina_id` e `prova_questao`, evitando referencias a colunas antigas removidas.
+- Leituras regulares de questoes de prova no frontend passam a usar `prova_questao` como fonte canonica.
+- Admin antecipa bloqueios de delecao com mensagens especificas para disciplina, tema, questao e prova.
+- Regras de negocio documentam as travas de integridade esperadas.
+
+---
+
 ## 2026-05-18 | Fix | sem commit
 
 **Sparkline da última nota no início**
