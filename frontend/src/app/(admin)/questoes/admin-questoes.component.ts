@@ -243,7 +243,7 @@ export class AdminQuestoesComponent implements OnInit {
       this.total.update((t) => t - 1);
       this.toast.success('Questão deletada.');
     } else {
-      this.toast.error('Erro ao deletar questão.');
+      this.toast.error(result.error);
     }
   }
 
@@ -254,6 +254,12 @@ export class AdminQuestoesComponent implements OnInit {
       discursiva: 'Discursiva',
     };
     return map[formato] ?? formato;
+  }
+
+  protected taxaAcertoClass(taxa: number): string {
+    if (taxa < 40) return 'taxa-badge--baixa';
+    if (taxa < 70) return 'taxa-badge--media';
+    return 'taxa-badge--alta';
   }
 
   protected disciplinaSiglaFor(id: string | null | undefined): string {
