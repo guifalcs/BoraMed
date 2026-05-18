@@ -103,6 +103,36 @@ export interface AdminProva {
   faculdade?: { nome: string; sigla: string } | null;
 }
 
+export interface AdminFaculdade {
+  id: string;
+  nome: string;
+  sigla: string;
+  rede: string;
+  ativa: boolean;
+}
+
+export interface ProvaInput {
+  nome: string;
+  tipo: string;
+  faculdade_id: string;
+  periodo: number;
+  ano?: number | null;
+  semestre?: number | null;
+  subtipo_nacional?: string | null;
+  edicao?: number | null;
+  tempo_sugerido_minutos?: number | null;
+}
+
+export interface AdminQuestaoSimples {
+  id: string;
+  enunciado: string;
+  formato: string;
+  status: string;
+  disciplina_id: string | null;
+  dificuldade: number | null;
+  criado_em: string;
+}
+
 export interface AdminTema {
   id: string;
   nome: string;
@@ -323,6 +353,67 @@ export class AdminService {
     const { error } = await this.supabase.from('prova').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };
+  }
+
+  async listarFaculdades(): Promise<ServiceResult<AdminFaculdade[]>> {
+    const { data, error } = await this.supabase
+      .from('faculdade')
+      .select('id,nome,sigla,rede,ativa')
+      .eq('ativa', true)
+      .order('nome');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminFaculdade[] };
+  }
+
+  async criarProva(input: ProvaInput): Promise<ServiceResult<AdminProva>> {
+    const payload: Record<string, unknown> = { qtd_questoes: 0 };
+    for (const [k, v] of Object.entries(input)) {
+      if (v !== null && v !== undefined) payload[k] = v;
+    }
+    const { data, error } = await this.supabase
+      .from('prova')
+      .insert(payload)
+      .select('id,nome,tipo,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminProva };
+  }
+
+  async vincularQuestoesAProva(
+    prova_id: string,
+    questoes: { questao_id: string; ordem: number }[],
+  ): Promise<ServiceResult<void>> {
+    if (questoes.length === 0) return { ok: true, data: undefined };
+    const { error } = await this.supabase
+      .from('prova_questao')
+      .insert(questoes.map((q) => ({ prova_id, questao_id: q.questao_id, ordem: q.ordem })));
+    if (error) return { ok: false, error: error.message };
+    const { count } = await this.supabase
+      .from('prova_questao')
+      .select('questao_id', { count: 'exact', head: true })
+      .eq('prova_id', prova_id);
+    await this.supabase
+      .from('prova')
+      .update({ qtd_questoes: count ?? questoes.length })
+      .eq('id', prova_id);
+    return { ok: true, data: undefined };
+  }
+
+  async listarQuestoesParaVincular(
+    pagina = 0,
+    porPagina = 30,
+    filtros: { busca?: string; status?: string } = {},
+  ): Promise<ServiceResult<{ questoes: AdminQuestaoSimples[]; total: number }>> {
+    let query = this.supabase
+      .from('questao')
+      .select('id,enunciado,formato,status,disciplina_id,dificuldade,criado_em', { count: 'exact' })
+      .order('criado_em', { ascending: false })
+      .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
+    if (filtros.status) query = query.eq('status', filtros.status);
+    if (filtros.busca?.trim()) query = query.ilike('enunciado', `%${filtros.busca}%`);
+    const { data, error, count } = await query;
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: { questoes: (data ?? []) as AdminQuestaoSimples[], total: count ?? 0 } };
   }
 
   // ---- Temas ----
