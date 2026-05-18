@@ -8,7 +8,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Bookmark, ChevronDown, ChevronUp, FileX } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
@@ -25,7 +25,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
-  imports: [RouterLink, ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent],
+  imports: [ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent],
   providers: [TimerService],
   templateUrl: './tentativa-exec.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
