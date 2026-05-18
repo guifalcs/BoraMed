@@ -193,7 +193,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,status,dificuldade,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova(nome)', {
+      .select('id,enunciado,formato,status,dificuldade,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova!questao_prova_id_fkey(nome)', {
         count: 'exact',
       })
       .order('criado_em', { ascending: false })
@@ -209,7 +209,7 @@ export class AdminService {
 
   async buscarQuestaoCompleta(id: string): Promise<ServiceResult<AdminQuestaoCompleta>> {
     const [q, alts, temas] = await Promise.all([
-      this.supabase.from('questao').select('*,prova(nome)').eq('id', id).single(),
+      this.supabase.from('questao').select('*,prova!questao_prova_id_fkey(nome)').eq('id', id).single(),
       this.supabase.from('alternativa').select('id,letra,texto,correta,ordem').eq('questao_id', id).order('ordem'),
       this.supabase.from('questao_tema').select('tema_id').eq('questao_id', id),
     ]);
