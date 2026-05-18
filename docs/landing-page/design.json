@@ -1,0 +1,350 @@
+{
+  "name": "BoraMed landing page",
+  "version": "2026-05-17",
+  "source_reference": {
+    "site": "https://salte.app/",
+    "analysis_date": "2026-05-17",
+    "purpose": "Use the reference as a layout and interaction benchmark only. Do not copy brand, assets, copy, code, proprietary illustrations, or exact visual identity.",
+    "observed_structure": [
+      "Sticky header with compact navigation and primary CTA.",
+      "Hero with large editorial headline, email form, feature ticker and product mosaic.",
+      "Audience/use-case section with three cards.",
+      "Solution section with tab-like categories and product UI mockups.",
+      "Step-by-step access timeline.",
+      "High-impact intelligence/agent section with layered visuals.",
+      "Assistant/module cards showing specialized workflows.",
+      "Capabilities section explaining perception, context and action.",
+      "FAQ section and final CTA."
+    ],
+    "observed_style": {
+      "tone": "Premium, clean, technology-forward, high whitespace, soft shadows, rounded product surfaces.",
+      "layout": "Long-form landing page with alternating narrative sections and dense UI mockups.",
+      "typography": "Large display headlines, compact UI labels, high contrast body text.",
+      "color_notes": "Reference uses strong blue accents, light surfaces and pastel highlights. BoraMed must use its own institutional blue and controlled blue-to-violet gradient.",
+      "motion_notes": "Subtle fade-up, moving borders, scrolling feature rows and product mosaic movement are appropriate if reduced-motion is respected."
+    }
+  },
+  "brand": {
+    "product": "BoraMed",
+    "positioning": "Plataforma independente de treino medico com questoes autorais no modelo das avaliacoes nacionais.",
+    "forbidden_claims": [
+      "Do not suggest official partnership, endorsement or affiliation with Afya.",
+      "Do not claim to use official Afya question banks, exams or proprietary materials.",
+      "Do not imply BoraMed has an official archive of real exams."
+    ],
+    "approved_claims": [
+      "Questoes autorais.",
+      "Treinos no modelo das avaliacoes nacionais.",
+      "Foco inicial em alunos da rede Afya, without implying affiliation.",
+      "Sorteio e montagem de simulados server-side.",
+      "Laboratory simulations require image-based questions."
+    ]
+  },
+  "design_tokens": {
+    "colors": {
+      "primary": "#1E40AF",
+      "primary_light": "#3B82F6",
+      "primary_dark": "#1E3A8A",
+      "action": "#2554DC",
+      "success": "#059669",
+      "danger": "#DC2626",
+      "warning": "#D97706",
+      "background": "#F8FAFC",
+      "background_soft": "#FBFBFC",
+      "surface": "#FFFFFF",
+      "surface_2": "#F1F5F9",
+      "border": "#E2E8F0",
+      "text": "#0F172A",
+      "text_muted": "#64748B",
+      "text_inverse": "#FFFFFF",
+      "teal_accent": "#0D9488",
+      "violet_accent": "#6427D9"
+    },
+    "gradients": {
+      "brand": "linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%)",
+      "brand_highlight": "radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.18), transparent 26%)",
+      "brand_accent": "radial-gradient(circle at 20% 85%, rgba(13, 148, 136, 0.22), transparent 28%)"
+    },
+    "typography": {
+      "ui_font": "Inter",
+      "display_font": "Playfair Display",
+      "body_fallback": "Inter, Segoe UI, sans-serif",
+      "hero": {
+        "font_family": "Inter",
+        "font_weight": 800,
+        "desktop_size": "clamp(2.25rem, 5.5vw, 4.5rem)",
+        "mobile_size": "clamp(2.25rem, 10vw, 3.4rem)",
+        "line_height": "1.08",
+        "letter_spacing": "0"
+      },
+      "section_title": {
+        "font_family": "Inter",
+        "font_weight": 800,
+        "desktop_size": "clamp(1.75rem, 4vw, 3rem)",
+        "mobile_size": "1.75rem",
+        "line_height": "1.12",
+        "letter_spacing": "0"
+      },
+      "body": {
+        "font_family": "Inter",
+        "font_weight": 400,
+        "size": "1rem",
+        "line_height": "1.65"
+      }
+    },
+    "shape": {
+      "section_max_width": "1180px",
+      "card_radius": "8px",
+      "large_panel_radius": "16px",
+      "button_radius": "8px",
+      "input_radius": "8px",
+      "border": "1px solid #E2E8F0",
+      "shadow_soft": "0 16px 48px rgba(15, 23, 42, 0.10)",
+      "shadow_card": "0 1px 3px rgba(15, 23, 42, 0.06)"
+    }
+  },
+  "seo": {
+    "title": "BoraMed | Simulados medicos com questoes autorais",
+    "description": "Treine para avaliacoes nacionais com simulados medicos autorais, revisao por desempenho e questoes no modelo das provas.",
+    "canonical": "https://boramed.com.br/",
+    "locale": "pt_BR",
+    "keywords": [
+      "simulado medicina",
+      "questoes medicina",
+      "treino medico",
+      "avaliacoes nacionais medicina",
+      "simulado laboratorio",
+      "questoes autorais medicina"
+    ],
+    "structured_data": {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "BoraMed",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "description": "Plataforma independente de simulados medicos com questoes autorais."
+    }
+  },
+  "assets": {
+    "logo": {
+      "path": "/logo.png",
+      "alt": "BoraMed"
+    },
+    "placeholders": [
+      {
+        "id": "hero-product-dashboard",
+        "type": "image",
+        "path": "/landing-page/heroImage.png",
+        "alt": "Previa visual da experiencia BoraMed para estudo medico"
+      },
+      {
+        "id": "training-mode-icon",
+        "type": "inline_visual",
+        "path": "inline-icon-card",
+        "alt": "Card visual abstrato para modo de treino"
+      },
+      {
+        "id": "lab-slide",
+        "type": "image",
+        "path": "/landing/placeholders/lab-slide.webp",
+        "alt": "Questao de laboratorio com imagem de lamina"
+      },
+      {
+        "id": "mascot-or-illustration",
+        "type": "illustration",
+        "path": "/landing-page/ilustraçãoInstitucional.png",
+        "alt": "Ilustracao institucional BoraMed"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "header",
+      "type": "navigation",
+      "content": {
+        "links": ["Inicio", "Treinos", "Simulados", "Laboratorio", "FAQ"],
+        "primary_cta": "Comecar agora",
+        "secondary_cta": "Entrar"
+      },
+      "design": {
+        "position": "sticky top-0 z-50",
+        "background": "rgba(255, 255, 255, 0.86)",
+        "backdrop_filter": "blur(18px)",
+        "border_bottom": "1px solid rgba(226, 232, 240, 0.85)",
+        "height": "72px"
+      }
+    },
+    {
+      "id": "hero",
+      "type": "hero_signup",
+      "content": {
+        "eyebrow": "Simulados medicos autorais",
+        "headline": "Treine para a prova. Revise com direcao.",
+        "subheadline": "O BoraMed organiza treinos nacionais, simulados por tema e questoes de laboratorio para estudantes de medicina que precisam estudar com foco.",
+        "primary_cta": "Comecar agora",
+        "secondary_cta": "Conhecer os modulos",
+        "trust_note": "Plataforma independente. Questoes autorais no modelo das avaliacoes."
+      },
+      "visual": {
+        "layout": "Large headline centered, CTAs below, and heroImage.png inside a macOS-style browser frame occupying the lower hero area.",
+        "components": ["hero_image_inside_browser_frame", "feature_ticker"],
+        "feature_ticker_items": ["Treinos nacionais", "Simulados por tema", "Questoes autorais", "Revisao guiada", "Historico", "Laboratorio", "Streak de estudo"]
+      }
+    },
+    {
+      "id": "audiences",
+      "type": "audience_cards",
+      "content": {
+        "eyebrow": "Para diferentes momentos do curso",
+        "headline": "Do treino nacional a revisao por tema.",
+        "description": "Monte uma rotina de estudo com simulados que respeitam seu objetivo, seu tempo e seu historico.",
+        "cards": [
+          {
+            "title": "Treinos Nacionais",
+            "description": "Simulados autorais no modelo das avaliacoes nacionais, com foco inicial em alunos da rede Afya.",
+            "visual": "training-mode-icon"
+          },
+          {
+            "title": "Simulados Processuais",
+            "description": "Escolha temas e quantidade de questoes. A montagem aleatoria acontece no servidor.",
+            "visual": "hero-product-dashboard"
+          },
+          {
+            "title": "Laboratorio",
+            "description": "Questoes autorais com imagem de laminas ou pecas para treinar reconhecimento e raciocinio visual.",
+            "visual": "lab-slide"
+          }
+        ]
+      }
+    },
+    {
+      "id": "solution",
+      "type": "feature_tabs",
+      "content": {
+        "eyebrow": "Solucao",
+        "headline": "Um sistema de estudo para simulado, revisao e evolucao.",
+        "description": "Tudo que voce precisa para transformar tentativa em diagnostico e diagnostico em proximo treino.",
+        "tabs": [
+          {
+            "label": "Treinar",
+            "title": "Simulados com montagem inteligente",
+            "features": ["Questoes autorais", "Sorteio server-side", "Timer e progresso", "Modo estudo", "Retomar tentativa"]
+          },
+          {
+            "label": "Revisar",
+            "title": "Erros viram rota de revisao",
+            "features": ["Resumo da nota", "Temas criticos", "Revisao de erros", "Explicacao por questao", "Refazer em modo estudo"]
+          },
+          {
+            "label": "Acompanhar",
+            "title": "Historico para medir consistencia",
+            "features": ["Historico", "Evolucao da nota", "Desempenho por tema", "Conquistas discretas", "Ranking controlado"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "steps",
+      "type": "timeline",
+      "content": {
+        "eyebrow": "Passo a passo",
+        "headline": "Comece pequeno, revise melhor e aumente a dificuldade.",
+        "items": [
+          {"label": "Hoje", "title": "Crie sua conta", "points": ["Informe seus dados", "Escolha seu objetivo", "Entre no dashboard"]},
+          {"label": "Primeiro treino", "title": "Monte um simulado", "points": ["Escolha prova, tema ou laboratorio", "Defina quantidade", "Responda com timer"]},
+          {"label": "Depois", "title": "Revise pelo diagnostico", "points": ["Veja nota e temas criticos", "Revise erros", "Refaca em modo estudo"]}
+        ]
+      }
+    },
+    {
+      "id": "intelligence",
+      "type": "brand_feature",
+      "content": {
+        "eyebrow": "Inteligencia de estudo",
+        "headline": "A plataforma transforma desempenho em proximo passo.",
+        "description": "Use dados do simulado para entender prioridade de revisao, progresso por tema e pontos de atencao antes da proxima tentativa.",
+        "cta": "Ver como funciona"
+      }
+    },
+    {
+      "id": "modules",
+      "type": "module_cards",
+      "content": {
+        "eyebrow": "Modulos",
+        "headline": "Tres frentes para treinar melhor.",
+        "cards": [
+          {"title": "Nacional", "badge": "Modelo nacional", "description": "Treinos autorais organizados para simular ritmo, extensao e cobranca das avaliacoes."},
+          {"title": "Processual", "badge": "Por tema", "description": "Monte baterias focadas para revisar conteudos especificos antes ou depois das provas."},
+          {"title": "Laboratorio", "badge": "Com imagem", "description": "Pratique leitura visual com questoes que reservam espaco obrigatorio para imagem."}
+        ]
+      }
+    },
+    {
+      "id": "capabilities",
+      "type": "capability_grid",
+      "content": {
+        "eyebrow": "Capacidades",
+        "headline": "Menos tentativa solta. Mais rotina de estudo.",
+        "items": [
+          {"title": "Diagnosticar", "description": "Veja aproveitamento por tema, historico e padroes de erro."},
+          {"title": "Direcionar", "description": "Volte direto para revisao de erros e temas com menor aproveitamento."},
+          {"title": "Treinar", "description": "Gere novas tentativas com regras consistentes e montagem no servidor."}
+        ]
+      }
+    },
+    {
+      "id": "faq",
+      "type": "faq",
+      "content": {
+        "eyebrow": "Duvidas",
+        "headline": "Perguntas frequentes",
+        "items": [
+          {"question": "O BoraMed tem vinculo oficial com alguma instituicao?", "answer": "Nao. O BoraMed e uma plataforma independente com questoes autorais no modelo das avaliacoes."},
+          {"question": "As questoes sao oficiais?", "answer": "Nao. As questoes sao autorais e criadas para treinar raciocinio e formato de prova sem usar acervo oficial."},
+          {"question": "Como os simulados sao montados?", "answer": "A montagem e o sorteio das questoes acontecem no servidor, preservando regras consistentes e evitando logica sensivel no cliente."},
+          {"question": "Existe simulado de laboratorio?", "answer": "Sim. Questoes de laboratorio usam imagem como parte obrigatoria do enunciado."},
+          {"question": "Consigo revisar meus erros?", "answer": "Sim. Apos finalizar, voce pode revisar erros, temas criticos e refazer em modo estudo."}
+        ]
+      }
+    },
+    {
+      "id": "final_cta",
+      "type": "cta",
+      "content": {
+        "headline": "Estude com simulados autorais e revise com direcao.",
+        "description": "Entre na lista ou crie sua conta para acompanhar os proximos modulos do BoraMed.",
+        "primary_cta": "Comecar agora",
+        "secondary_cta": "Conhecer os modulos"
+      }
+    },
+    {
+      "id": "footer",
+      "type": "footer",
+      "content": {
+        "links": ["Termos", "Privacidade", "Contato"],
+        "legal": "BoraMed. Plataforma independente de estudo medico."
+      }
+    }
+  ],
+  "implementation_notes": {
+    "framework": "Angular 18+ standalone components, TypeScript strict, Tailwind.",
+    "responsive_rules": [
+      "Mobile first with single column below 768px.",
+      "Use max-width 1180px on desktop sections.",
+      "Hero must show the product in the first viewport and hint at the next section.",
+      "Use explicit aspect-ratio for product mockups and images."
+    ],
+    "accessibility": [
+      "All buttons and icon-only controls need accessible labels.",
+      "Animations must respect prefers-reduced-motion.",
+      "Text contrast must meet WCAG AA.",
+      "FAQ must be keyboard accessible."
+    ],
+    "copy_guardrails": [
+      "Never say 'provas Afya oficiais'.",
+      "Never say 'banco de questoes Afya'.",
+      "Use 'modelo das avaliacoes' and 'questoes autorais'.",
+      "For laboratory, ensure every example has an image placeholder."
+    ]
+  }
+}
