@@ -79,6 +79,13 @@ describe('KpiCardComponent', () => {
       expect(polyline).not.toBeNull();
     });
 
+    it('deve usar escala fixa de 0 a 100 para notas', async () => {
+      await setup({ sparkline: [90, 91] });
+      const polyline = fixture.nativeElement.querySelector('polyline') as SVGPolylineElement;
+
+      expect(polyline.getAttribute('points')).toBe('2,4 78,3.8');
+    });
+
     it('deve usar cor verde quando tendência sobe', async () => {
       await setup({ sparkline: [40, 60, 80] });
       const polyline = fixture.nativeElement.querySelector('polyline');

@@ -323,6 +323,7 @@ O dashboard administrativo usa `ng2-charts`/Chart.js, já instalados no frontend
 
 Padrões:
 
+* Sparklines de notas em cards devem usar escala percentual fixa de 0 a 100, com padding interno, para não exagerar pequenas variações.
 * KPIs em cards compactos com ícones Lucide, `border-radius: 8px` e acentos por categoria.
 * Gráfico de barras para volume total da plataforma.
 * Doughnut para composição do banco de questões por status.

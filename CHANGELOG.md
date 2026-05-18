@@ -8,6 +8,16 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-18 | Fix | sem commit
+
+**Sparkline da última nota no início**
+
+- Card de última nota passa a desenhar o sparkline em escala fixa de 0 a 100, evitando distorção visual quando as notas variam pouco.
+- Linha usa apenas as notas recentes do histórico da tela inicial, em ordem cronológica.
+- Design system documenta que sparklines de nota devem seguir escala percentual fixa.
+
+---
+
 ## 2026-05-16 | Fix | sem commit
 
 **Persistência do papel de administrador**
