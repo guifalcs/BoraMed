@@ -1,6 +1,25 @@
 <div class="page-header">
-  <h1 class="page-title">Importar questões</h1>
+  <h1 class="page-title">Importar dados</h1>
   <p class="page-subtitle">Cole o markdown gerado por IA ou carregue um arquivo .md</p>
+</div>
+
+<!-- ── Seletor de entidade ── -->
+<div class="tipo-tabs">
+  <button
+    class="tipo-tab"
+    [class.tipo-tab--active]="tipoImportacao() === 'questoes'"
+    (click)="setTipo('questoes')"
+  >Questões</button>
+  <button
+    class="tipo-tab"
+    [class.tipo-tab--active]="tipoImportacao() === 'disciplinas'"
+    (click)="setTipo('disciplinas')"
+  >Disciplinas</button>
+  <button
+    class="tipo-tab"
+    [class.tipo-tab--active]="tipoImportacao() === 'temas'"
+    (click)="setTipo('temas')"
+  >Temas</button>
 </div>
 
 <!-- ── Etapa: input ── -->
@@ -12,8 +31,8 @@
       <div class="prompt-header-left">
         <span class="prompt-icon"><app-ui-icon [icon]="iconBot" [size]="20" /></span>
         <div>
-          <p class="prompt-title">Prompt para converter PDF com IA</p>
-          <p class="prompt-sub">Cole esse prompt no ChatGPT ou Claude, anexe o PDF e cole o resultado abaixo</p>
+          <p class="prompt-title">{{ promptTitulo() }}</p>
+          <p class="prompt-sub">{{ promptSub() }}</p>
         </div>
       </div>
       <div class="prompt-actions">
@@ -28,7 +47,7 @@
       </div>
     </div>
     @if (promptAberto()) {
-      <pre class="prompt-body">{{ prompt }}</pre>
+      <pre class="prompt-body">{{ promptAtual() }}</pre>
     }
   </div>
 
@@ -44,30 +63,14 @@
 
     <textarea
       class="markdown-input"
-      placeholder="Cole aqui o markdown gerado pela IA...
-
----
-ENUNCIADO
-Paciente de 45 anos apresenta dor torácica em repouso...
-
-ALTERNATIVAS
-A) Angina estável
-B) Infarto agudo do miocárdio ✓
-C) Pericardite
-D) Dissecção aórtica
-E) TEP
-
-GABARITO: B
-DISCIPLINA: SOI I
-EXPLICACAO: O infarto agudo se caracteriza por...
----"
+      [placeholder]="placeholderTexto()"
       [ngModel]="texto()"
       (ngModelChange)="texto.set($event)"
       rows="18"
     ></textarea>
 
     <div class="input-footer">
-      <span class="hint">Separe cada questão com <code>---</code> em uma linha própria</span>
+      <span class="hint">Separe cada item com <code>---</code> em uma linha própria</span>
       <button class="btn btn--primary" [disabled]="!texto().trim()" (click)="processar()">
         Processar <app-ui-icon [icon]="iconArrowRight" [size]="14" />
       </button>
@@ -82,98 +85,180 @@ EXPLICACAO: O infarto agudo se caracteriza por...
     @if (invalidas() > 0) {
       <span class="badge badge--err">{{ invalidas() }} com erro</span>
     }
-    <span class="summary-total">{{ questoes().length }} total</span>
+    <span class="summary-total">{{ itensParseados().length }} total</span>
     <div class="summary-actions">
       <button class="btn btn--sm btn--outline" (click)="voltar()"><app-ui-icon [icon]="iconArrowLeft" [size]="14" /> Voltar</button>
       <button
         class="btn btn--primary"
         [disabled]="validas() === 0"
         (click)="importar()"
-      >
-        Importar {{ validas() }} questão{{ validas() !== 1 ? 'ões' : '' }}
-      </button>
+      >{{ labelImportar() }}</button>
     </div>
   </div>
 
-  <div class="table-wrapper">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th style="width:2rem">#</th>
-          <th>Enunciado</th>
-          <th>Formato</th>
-          <th>Gabarito</th>
-          <th>Disciplina</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (q of questoes(); track $index; let i = $index) {
-          <tr
-            class="questao-row"
-            [class.questao-row--invalida]="!q.valida"
-            [class.questao-row--expanded]="expandido() === i"
-            (click)="toggleExpand(i)"
-          >
-            <td class="num-cell">{{ i + 1 }}</td>
-            <td class="enunciado-cell">{{ enunciadoCurto(q.enunciado) }}</td>
-            <td>
-              <span class="format-badge format-badge--{{ q.formato }}">
-                {{ q.formato === 'multipla_escolha' ? 'Múltipla' : 'V/F' }}
-              </span>
-            </td>
-            <td><span class="gabarito-badge">{{ gabaritoLabel(q) }}</span></td>
-            <td>{{ q.disciplinaDisplay }}</td>
-            <td>
-              @if (q.valida) {
-                <span class="status-ok"><app-ui-icon [icon]="iconCheck" [size]="13" /> OK</span>
-              } @else {
-                <span class="status-err" [title]="q.erros.join(', ')"><app-ui-icon [icon]="iconX" [size]="13" /> Erro</span>
-              }
-            </td>
+  <!-- Preview: Questões -->
+  @if (tipoImportacao() === 'questoes') {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:2rem">#</th>
+            <th>Enunciado</th>
+            <th>Formato</th>
+            <th>Gabarito</th>
+            <th>Disciplina</th>
+            <th>Status</th>
           </tr>
+        </thead>
+        <tbody>
+          @for (q of questoes(); track $index; let i = $index) {
+            <tr
+              class="questao-row"
+              [class.questao-row--invalida]="!q.valida"
+              [class.questao-row--expanded]="expandido() === i"
+              (click)="toggleExpand(i)"
+            >
+              <td class="num-cell">{{ i + 1 }}</td>
+              <td class="enunciado-cell">{{ enunciadoCurto(q.enunciado) }}</td>
+              <td>
+                <span class="format-badge format-badge--{{ q.formato }}">
+                  {{ q.formato === 'multipla_escolha' ? 'Múltipla' : 'V/F' }}
+                </span>
+              </td>
+              <td><span class="gabarito-badge">{{ gabaritoLabel(q) }}</span></td>
+              <td>{{ q.disciplinaDisplay }}</td>
+              <td>
+                @if (q.valida) {
+                  <span class="status-ok"><app-ui-icon [icon]="iconCheck" [size]="13" /> OK</span>
+                } @else {
+                  <span class="status-err" [title]="q.erros.join(', ')"><app-ui-icon [icon]="iconX" [size]="13" /> Erro</span>
+                }
+              </td>
+            </tr>
 
-          <!-- Detalhe expandido -->
-          @if (expandido() === i) {
-            <tr class="detail-row">
-              <td colspan="6">
-                <div class="detail-body">
-
-                  @if (!q.valida) {
-                    <div class="erros-list">
-                      @for (e of q.erros; track e) {
-                        <span class="erro-item"><app-ui-icon [icon]="iconAlertTriangle" [size]="12" /> {{ e }}</span>
-                      }
-                    </div>
-                  }
-
-                  <p class="detail-enunciado">{{ q.enunciado }}</p>
-
-                  <div class="detail-alts">
-                    @for (a of q.alternativas; track a.letra) {
-                      <div class="detail-alt" [class.detail-alt--correta]="a.correta">
-                        <span class="alt-letra">{{ a.letra }})</span>
-                        <span>{{ a.texto }}</span>
-                        @if (a.correta) { <span class="correta-marker"><app-ui-icon [icon]="iconCheck" [size]="14" /></span> }
+            @if (expandido() === i) {
+              <tr class="detail-row">
+                <td colspan="6">
+                  <div class="detail-body">
+                    @if (!q.valida) {
+                      <div class="erros-list">
+                        @for (e of q.erros; track e) {
+                          <span class="erro-item"><app-ui-icon [icon]="iconAlertTriangle" [size]="12" /> {{ e }}</span>
+                        }
                       </div>
                     }
+                    <p class="detail-enunciado">{{ q.enunciado }}</p>
+                    <div class="detail-alts">
+                      @for (a of q.alternativas; track a.letra) {
+                        <div class="detail-alt" [class.detail-alt--correta]="a.correta">
+                          <span class="alt-letra">{{ a.letra }})</span>
+                          <span>{{ a.texto }}</span>
+                          @if (a.correta) { <span class="correta-marker"><app-ui-icon [icon]="iconCheck" [size]="14" /></span> }
+                        </div>
+                      }
+                    </div>
+                    @if (q.explicacao) {
+                      <p class="detail-meta"><strong>Explicação:</strong> {{ q.explicacao }}</p>
+                    }
+                    @if (q.fonte) {
+                      <p class="detail-meta"><strong>Fonte:</strong> {{ q.fonte }}</p>
+                    }
                   </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 
-                  @if (q.explicacao) {
-                    <p class="detail-meta"><strong>Explicação:</strong> {{ q.explicacao }}</p>
-                  }
-                  @if (q.fonte) {
-                    <p class="detail-meta"><strong>Fonte:</strong> {{ q.fonte }}</p>
-                  }
-
-                </div>
+  <!-- Preview: Disciplinas -->
+  @if (tipoImportacao() === 'disciplinas') {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:2rem">#</th>
+            <th>Sigla</th>
+            <th>Nome</th>
+            <th>Período</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of disciplinasParseadas(); track $index; let i = $index) {
+            <tr class="questao-row" [class.questao-row--invalida]="!d.valida">
+              <td class="num-cell">{{ i + 1 }}</td>
+              <td><strong>{{ d.sigla || '—' }}</strong></td>
+              <td class="enunciado-cell">{{ d.nome || '—' }}</td>
+              <td>
+                @if (d.periodo !== null) {
+                  <span class="periodo-badge">{{ d.periodo }}º</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td>
+                @if (!d.valida) {
+                  <span class="status-err" [title]="d.erros.join(', ')"><app-ui-icon [icon]="iconX" [size]="13" /> Erro</span>
+                } @else if (d.duplicada) {
+                  <span class="status-warn" title="Sigla já existe — será criada mesmo assim"><app-ui-icon [icon]="iconAlertTriangle" [size]="13" /> Duplicada</span>
+                } @else {
+                  <span class="status-ok"><app-ui-icon [icon]="iconCheck" [size]="13" /> OK</span>
+                }
               </td>
             </tr>
           }
-        }
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Preview: Temas -->
+  @if (tipoImportacao() === 'temas') {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:2rem">#</th>
+            <th>Nome</th>
+            <th>Disciplina</th>
+            <th>Tema pai</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of temasParseados(); track $index; let i = $index) {
+            <tr class="questao-row" [class.questao-row--invalida]="!t.valida">
+              <td class="num-cell">{{ i + 1 }}</td>
+              <td class="enunciado-cell">{{ t.nome || '—' }}</td>
+              <td>{{ t.disciplinaDisplay }}</td>
+              <td>
+                @if (t.parentNome) {
+                  <span [class.text-muted]="t.parentNaoEncontrado" [title]="t.parentNaoEncontrado ? 'Não encontrado agora — será resolvido se o pai aparecer antes no lote' : ''">
+                    {{ t.parentDisplay }}
+                    @if (t.parentNaoEncontrado) { <app-ui-icon [icon]="iconAlertTriangle" [size]="11" /> }
+                  </span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td>
+                @if (!t.valida) {
+                  <span class="status-err" [title]="t.erros.join(', ')"><app-ui-icon [icon]="iconX" [size]="13" /> Erro</span>
+                } @else if (t.parentNaoEncontrado) {
+                  <span class="status-warn" title="Tema pai não encontrado — importado sem pai"><app-ui-icon [icon]="iconAlertTriangle" [size]="13" /> Aviso</span>
+                } @else {
+                  <span class="status-ok"><app-ui-icon [icon]="iconCheck" [size]="13" /> OK</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 }
 
 <!-- ── Etapa: importando ── -->
@@ -204,15 +289,29 @@ EXPLICACAO: O infarto agudo se caracteriza por...
         </div>
       }
     </div>
-    <p class="done-hint">As questões foram criadas com status <strong>Rascunho</strong>. Revise e publique em /admin/questoes.</p>
+    <p class="done-hint">{{ doneHint() }}</p>
     <button class="btn btn--primary" (click)="novaImportacao()">Nova importação</button>
   </div>
 }
 
 <style>
-  .page-header { margin-bottom: 1.5rem; }
+  .page-header { margin-bottom: 1rem; }
   .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
   .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+
+  /* ── Tipo tabs ── */
+  .tipo-tabs {
+    display: flex; gap: 0.25rem; margin-bottom: 1.25rem;
+    background: #f1f5f9; border-radius: 8px; padding: 0.25rem;
+    width: fit-content;
+  }
+  .tipo-tab {
+    padding: 0.35rem 1rem; border-radius: 6px; font-size: 0.8125rem;
+    font-weight: 500; border: none; cursor: pointer; color: #64748b;
+    background: transparent; font-family: inherit; transition: all 0.15s;
+  }
+  .tipo-tab:hover { color: #1e293b; background: rgba(255,255,255,0.6); }
+  .tipo-tab--active { background: #fff; color: #7c3aed; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
   /* ── Prompt card ── */
   .prompt-card {
@@ -304,6 +403,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
 
   .num-cell { color: #94a3b8; font-size: 0.75rem; text-align: center; }
   .enunciado-cell { max-width: 400px; }
+  .text-muted { color: #94a3b8; }
 
   .format-badge {
     display: inline-block; font-size: 0.7rem; font-weight: 600;
@@ -318,8 +418,15 @@ EXPLICACAO: O infarto agudo se caracteriza por...
     background: #ede9fe; color: #5b21b6; font-weight: 700; font-size: 0.75rem;
   }
 
-  .status-ok { color: #059669; font-size: 0.8rem; font-weight: 600; }
-  .status-err { color: #dc2626; font-size: 0.8rem; font-weight: 600; cursor: help; }
+  .periodo-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.15rem 0.5rem; border-radius: 4px;
+    background: #e0e7ff; color: #3730a3; font-size: 0.75rem; font-weight: 600;
+  }
+
+  .status-ok { display: inline-flex; align-items: center; gap: 0.25rem; color: #059669; font-size: 0.8rem; font-weight: 600; }
+  .status-err { display: inline-flex; align-items: center; gap: 0.25rem; color: #dc2626; font-size: 0.8rem; font-weight: 600; cursor: help; }
+  .status-warn { display: inline-flex; align-items: center; gap: 0.25rem; color: #d97706; font-size: 0.8rem; font-weight: 600; cursor: help; }
 
   /* ── Detalhe expandido ── */
   .detail-row td { padding: 0; background: #faf5ff !important; border-bottom: 2px solid #ddd6fe; }
@@ -328,6 +435,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
   .erro-item {
     background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
     font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;
+    display: inline-flex; align-items: center; gap: 0.25rem;
   }
   .detail-enunciado {
     font-size: 0.875rem; color: #1e293b; line-height: 1.6;
