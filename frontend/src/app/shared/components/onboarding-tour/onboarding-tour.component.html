@@ -27,7 +27,11 @@
 
       <div class="onboarding-card__body">
         @if (isCenterStep()) {
-          <img class="onboarding-card__mascot" src="illustrations/funny.png" alt="Poloca" />
+          <img
+            class="onboarding-card__mascot"
+            [src]="step.id === 'final' ? 'illustrations/celebracao.png' : 'illustrations/funny.png'"
+            [alt]="step.id === 'final' ? 'Celebração' : 'Poloca'"
+          />
         }
         <h2>{{ step.titulo }}</h2>
         <p>{{ step.descricao }}</p>

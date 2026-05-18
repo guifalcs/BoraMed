@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BookOpen, Building2, PlayCircle, Shuffle } from 'lucide-angular';
+import { BookOpen, PlayCircle, Shuffle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 
@@ -15,7 +15,6 @@ export class ProvasHomeComponent {
   private readonly tentativaService = inject(TentativaService);
 
   protected readonly bookOpenIcon = BookOpen;
-  protected readonly buildingIcon = Building2;
   protected readonly shuffleIcon = Shuffle;
   protected readonly playCircleIcon = PlayCircle;
 

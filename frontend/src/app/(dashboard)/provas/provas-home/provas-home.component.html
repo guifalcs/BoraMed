@@ -59,24 +59,6 @@
         </div>
       </a>
 
-      <!-- Outras faculdades — placeholder secundário -->
-      <a
-        routerLink="/dashboard/simulados/rede-afya/em-breve"
-        [queryParams]="{ tipo: 'outras' }"
-        class="flex flex-col gap-3 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-6 opacity-60 cursor-not-allowed"
-        (click)="$event.preventDefault()"
-      >
-        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
-          <app-ui-icon [icon]="buildingIcon" [size]="24" />
-        </div>
-        <div>
-          <h2 class="text-lg font-semibold text-[var(--color-text)]">Outras faculdades</h2>
-          <p class="mt-1 text-sm text-[var(--color-text-muted)]">ENADE, residências e outras instituições</p>
-        </div>
-        <span class="inline-flex w-fit rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
-          Em breve
-        </span>
-      </a>
 
       <!-- Montar Simulado -->
       <a
