@@ -120,7 +120,7 @@ export class AdminDisciplinasComponent implements OnInit {
       this.disciplinas.update((lista) => lista.filter((item) => item.id !== d.id));
       this.toast.success('Disciplina deletada.');
     } else {
-      this.toast.error('Erro ao deletar. Pode ter temas ou questões vinculados.');
+      this.toast.error(result.error);
     }
   }
 }

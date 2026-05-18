@@ -1,6 +1,6 @@
 import type { Faculdade } from './faculdade';
 
-export type TipoProva = 'nacional' | 'processual' | 'multiestacoes';
+export type TipoProva = 'nacional' | 'processual' | 'multiestacoes' | 'autoral';
 export type SubtipoProva = 'N1' | 'teste_progresso' | 'N2';
 
 export type OrigemGeracao = 'manual' | 'ia_assistida';

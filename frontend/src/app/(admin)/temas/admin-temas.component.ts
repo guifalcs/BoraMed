@@ -132,7 +132,7 @@ export class AdminTemasComponent implements OnInit {
       this.temas.update((lista) => lista.filter((t) => t.id !== tema.id));
       this.toast.success('Tema deletado.');
     } else {
-      this.toast.error('Erro ao deletar tema. Pode ter questões vinculadas.');
+      this.toast.error(result.error);
     }
   }
 }

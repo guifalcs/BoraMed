@@ -5,7 +5,17 @@ import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { QuestaoComAlternativas } from '../models/questao';
+import type { Tema } from '../models/tema';
 import type { ProvaResult } from './prova.service';
+
+type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
+  temas: { tema: Tema }[];
+};
+
+type RawProvaQuestao = {
+  ordem: number;
+  questao: RawQuestao | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class TentativaService {
@@ -128,22 +138,22 @@ export class TentativaService {
   ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
     try {
       const { data, error } = await this.supabase
-        .from('questao')
-        .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+        .from('prova_questao')
+        .select('ordem, questao:questao_id!inner(*, alternativas:alternativa(*), temas:questao_tema(tema(*)))')
         .eq('prova_id', provaId)
-        .eq('status', 'ativa')
-        .order('ordem_na_prova');
+        .eq('questao.status', 'ativa')
+        .order('ordem');
 
       if (error) throw error;
 
-      type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
-        temas: { tema: import('../models/tema').Tema }[];
-      };
-
-      const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
-        ...q,
-        temas: q.temas.map((qt) => qt.tema),
-      })) as QuestaoComAlternativas[];
+      const questoes = ((data ?? []) as unknown as RawProvaQuestao[])
+        .filter((row): row is RawProvaQuestao & { questao: RawQuestao } => row.questao !== null)
+        .map((row) => ({
+          ...row.questao,
+          prova_id: provaId,
+          ordem_na_prova: row.ordem,
+          temas: row.questao.temas.map((qt) => qt.tema),
+        })) as QuestaoComAlternativas[];
 
       const tentativaSintetica: Tentativa = {
         id: provaId,

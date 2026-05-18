@@ -310,6 +310,35 @@ export class AdminService {
   }
 
   async deletarQuestao(id: string): Promise<ServiceResult<void>> {
+    const [
+      respostas,
+      desafios,
+      provas,
+    ] = await Promise.all([
+      this.supabase
+        .from('tentativa_resposta')
+        .select('id', { count: 'exact', head: true })
+        .eq('questao_id', id),
+      this.supabase
+        .from('desafio_diario')
+        .select('data', { count: 'exact', head: true })
+        .eq('questao_id', id),
+      this.supabase
+        .from('prova_questao')
+        .select('prova_id', { count: 'exact', head: true })
+        .eq('questao_id', id),
+    ]);
+
+    if ((respostas.count ?? 0) > 0) {
+      return { ok: false, error: 'Esta questao ja possui respostas em tentativas e nao pode ser deletada.' };
+    }
+    if ((desafios.count ?? 0) > 0) {
+      return { ok: false, error: 'Esta questao ja foi usada em desafio diario e nao pode ser deletada.' };
+    }
+    if ((provas.count ?? 0) > 0) {
+      return { ok: false, error: 'Esta questao esta vinculada a uma prova. Remova o vinculo antes de deletar.' };
+    }
+
     const { error } = await this.supabase.from('questao').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };
@@ -350,6 +379,15 @@ export class AdminService {
   }
 
   async deletarProva(id: string): Promise<ServiceResult<void>> {
+    const { count: tentativas } = await this.supabase
+      .from('tentativa')
+      .select('id', { count: 'exact', head: true })
+      .eq('prova_id', id);
+
+    if ((tentativas ?? 0) > 0) {
+      return { ok: false, error: 'Esta prova possui tentativas vinculadas e nao pode ser deletada.' };
+    }
+
     const { error } = await this.supabase.from('prova').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };
@@ -492,12 +530,45 @@ export class AdminService {
   }
 
   async deletarDisciplina(id: string): Promise<ServiceResult<void>> {
+    const [questoes, temas] = await Promise.all([
+      this.supabase
+        .from('questao')
+        .select('id', { count: 'exact', head: true })
+        .eq('disciplina_id', id),
+      this.supabase
+        .from('tema')
+        .select('id', { count: 'exact', head: true })
+        .eq('disciplina_id', id),
+    ]);
+
+    if ((questoes.count ?? 0) > 0 || (temas.count ?? 0) > 0) {
+      return { ok: false, error: 'Esta disciplina possui temas ou questoes vinculadas. Desative-a ou remova os vinculos antes de deletar.' };
+    }
+
     const { error } = await this.supabase.from('disciplina').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };
   }
 
   async deletarTema(id: string): Promise<ServiceResult<void>> {
+    const [questoes, filhos] = await Promise.all([
+      this.supabase
+        .from('questao_tema')
+        .select('questao_id', { count: 'exact', head: true })
+        .eq('tema_id', id),
+      this.supabase
+        .from('tema')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_id', id),
+    ]);
+
+    if ((questoes.count ?? 0) > 0) {
+      return { ok: false, error: 'Este tema possui questoes vinculadas e nao pode ser deletado.' };
+    }
+    if ((filhos.count ?? 0) > 0) {
+      return { ok: false, error: 'Este tema possui subtemas e nao pode ser deletado.' };
+    }
+
     const { error } = await this.supabase.from('tema').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };

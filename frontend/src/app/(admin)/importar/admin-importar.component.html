@@ -107,6 +107,7 @@
             <th>Formato</th>
             <th>Gabarito</th>
             <th>Disciplina</th>
+            <th>Tema</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -127,6 +128,7 @@
               </td>
               <td><span class="gabarito-badge">{{ gabaritoLabel(q) }}</span></td>
               <td>{{ q.disciplinaDisplay }}</td>
+              <td>{{ q.temasDisplay }}</td>
               <td>
                 @if (q.valida) {
                   <span class="status-ok"><app-ui-icon [icon]="iconCheck" [size]="13" /> OK</span>
@@ -138,7 +140,7 @@
 
             @if (expandido() === i) {
               <tr class="detail-row">
-                <td colspan="6">
+                <td colspan="7">
                   <div class="detail-body">
                     @if (!q.valida) {
                       <div class="erros-list">
@@ -159,6 +161,9 @@
                     </div>
                     @if (q.explicacao) {
                       <p class="detail-meta"><strong>Explicação:</strong> {{ q.explicacao }}</p>
+                    }
+                    @if (q.tema_ids.length > 0) {
+                      <p class="detail-meta"><strong>Tema:</strong> {{ q.temasDisplay }}</p>
                     }
                     @if (q.fonte) {
                       <p class="detail-meta"><strong>Fonte:</strong> {{ q.fonte }}</p>

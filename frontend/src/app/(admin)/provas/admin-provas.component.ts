@@ -5,13 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { Check, X, ArrowLeft, ArrowRight, AlertTriangle, Bot, Copy } from 'lucide-angular';
 import {
   AdminService, AdminProva, AdminFaculdade, AdminDisciplina,
-  AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload,
+  AdminTema, AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
-import { PROMPT_QUESTOES } from '../importar/admin-importar.component';
+import { montarPromptQuestoes } from '../importar/admin-importar.component';
 
 // Reuse same parse types and logic as admin-importar
 interface AlternativaParseada { letra: string; texto: string; correta: boolean; }
@@ -21,6 +21,8 @@ interface QuestaoParseada {
   formato: 'multipla_escolha' | 'verdadeiro_falso';
   disciplina_id: string | null;
   disciplinaDisplay: string;
+  tema_ids: string[];
+  temasDisplay: string;
   explicacao: string | null;
   fonte: string | null;
   valida: boolean;
@@ -30,11 +32,11 @@ interface QuestaoParseada {
 type Etapa = 'detalhes' | 'metodo' | 'importar_input' | 'importar_preview' | 'importando' | 'selecionar' | 'vinculando' | 'concluido';
 
 // Same parse functions as admin-importar (copy them here)
-function parseBlocos(markdown: string, disciplinas: AdminDisciplina[]): QuestaoParseada[] {
-  return markdown.split(/^---$/m).map((b) => b.trim()).filter((b) => b.length > 0).map((b) => parseQuestaoBloco(b, disciplinas));
+function parseBlocos(markdown: string, disciplinas: AdminDisciplina[], temas: AdminTema[]): QuestaoParseada[] {
+  return markdown.split(/^---$/m).map((b) => b.trim()).filter((b) => b.length > 0).map((b) => parseQuestaoBloco(b, disciplinas, temas));
 }
 
-function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): QuestaoParseada {
+function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[], temas: AdminTema[]): QuestaoParseada {
   const erros: string[] = [];
   const linhas = bloco.split('\n');
   type Secao = 'nenhuma' | 'enunciado' | 'alternativas' | 'explicacao';
@@ -43,6 +45,7 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): Quest
   const alternativaLinhas: string[] = [];
   let gabaritoLetra: string | null = null;
   let disciplinaSigla: string | null = null;
+  let temaLinha: string | null = null;
   const explicacaoLinhas: string[] = [];
   let fonte: string | null = null;
   for (const linha of linhas) {
@@ -53,6 +56,8 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): Quest
     if (mGabarito) { gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue; }
     const mDisciplina = t.match(/^DISCIPLINA:\s*(.+)/i);
     if (mDisciplina) { disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue; }
+    const mTema = t.match(/^TEMAS?:\s*(.+)/i);
+    if (mTema) { temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue; }
     const mFonte = t.match(/^FONTE:\s*(.+)/i);
     if (mFonte) { fonte = mFonte[1].trim(); secao = 'nenhuma'; continue; }
     const mExplicacao = t.match(/^EXPLICACAO:\s*(.*)/i);
@@ -74,7 +79,40 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): Quest
   const isVF = alternativas.length === 2 && alternativas.some((a) => /^verdadeiro$/i.test(a.texto)) && alternativas.some((a) => /^falso$/i.test(a.texto));
   const disciplinaObj = disciplinaSigla ? (disciplinas.find((d) => d.sigla.toLowerCase() === disciplinaSigla!.toLowerCase()) ?? null) : null;
   if (disciplinaSigla && !disciplinaObj) erros.push(`Disciplina "${disciplinaSigla}" não encontrada`);
-  return { enunciado, alternativas, formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha', disciplina_id: disciplinaObj?.id ?? null, disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—', explicacao: explicacaoLinhas.join('\n').trim() || null, fonte, valida: erros.length === 0, erros };
+  const temasResolvidos = resolverTemasQuestao(temaLinha, temas, disciplinaObj?.id ?? null);
+  erros.push(...temasResolvidos.erros);
+  return { enunciado, alternativas, formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha', disciplina_id: disciplinaObj?.id ?? null, disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—', tema_ids: temasResolvidos.ids, temasDisplay: temasResolvidos.display, explicacao: explicacaoLinhas.join('\n').trim() || null, fonte, valida: erros.length === 0, erros };
+}
+
+function resolverTemasQuestao(
+  temaLinha: string | null,
+  temas: AdminTema[],
+  disciplinaId: string | null,
+): { ids: string[]; display: string; erros: string[] } {
+  if (!temaLinha) return { ids: [], display: '—', erros: [] };
+  const nomes = temaLinha.split(';').map((nome) => nome.trim().replace(/^\[[^\]]+\]\s*/, '')).filter((nome) => nome.length > 0);
+  const ids: string[] = [];
+  const displays: string[] = [];
+  const erros: string[] = [];
+  for (const nome of nomes) {
+    const candidatos = temas.filter((t) => t.nome.toLowerCase() === nome.toLowerCase());
+    const candidatosDaDisciplina = disciplinaId ? candidatos.filter((t) => t.disciplina_id === disciplinaId) : candidatos;
+    const matches = candidatosDaDisciplina.length > 0 ? candidatosDaDisciplina : candidatos;
+    if (matches.length === 0) {
+      erros.push(`Tema "${nome}" não encontrado`);
+      displays.push(nome);
+      continue;
+    }
+    if (matches.length > 1 && !disciplinaId) {
+      erros.push(`Tema "${nome}" é ambíguo; informe a disciplina`);
+      displays.push(nome);
+      continue;
+    }
+    const tema = matches[0];
+    if (!ids.includes(tema.id)) ids.push(tema.id);
+    displays.push(tema.nome);
+  }
+  return { ids, display: displays.length > 0 ? displays.join('; ') : '—', erros };
 }
 
 @Component({
@@ -116,6 +154,7 @@ export class AdminProvasComponent implements OnInit {
   // ── Step 1: Prova form ──
   protected readonly faculdades = signal<AdminFaculdade[]>([]);
   protected readonly disciplinas = signal<AdminDisciplina[]>([]);
+  protected readonly temasExistentes = signal<AdminTema[]>([]);
   protected readonly fNome = signal('');
   protected readonly fTipo = signal('autoral');
   protected readonly fFaculdadeId = signal('');
@@ -193,12 +232,14 @@ export class AdminProvasComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.carregar();
     // Pre-load faculdades and disciplinas for drawer
-    const [facRes, discRes] = await Promise.all([
+    const [facRes, discRes, temasRes] = await Promise.all([
       this.adminService.listarFaculdades(),
       this.adminService.listarDisciplinas(),
+      this.adminService.listarTemas(),
     ]);
     if (facRes.ok) this.faculdades.set(facRes.data);
     if (discRes.ok) this.disciplinas.set(discRes.data);
+    if (temasRes.ok) this.temasExistentes.set(temasRes.data);
   }
 
   // ── List methods ──
@@ -226,7 +267,7 @@ export class AdminProvasComponent implements OnInit {
     this.provaParaDeletar.set(null);
     const result = await this.adminService.deletarProva(prova.id);
     if (result.ok) { this.provas.update((lista) => lista.filter((p) => p.id !== prova.id)); this.total.update((t) => t - 1); this.toast.success('Prova deletada.'); }
-    else this.toast.error('Erro ao deletar prova.');
+    else this.toast.error(result.error);
   }
 
   // ── Drawer methods ──
@@ -303,7 +344,7 @@ export class AdminProvasComponent implements OnInit {
   protected processarMarkdown(): void {
     const t = this.textoImport().trim();
     if (!t) { this.toast.error('Cole o conteúdo antes de continuar.'); return; }
-    const parsed = parseBlocos(t, this.disciplinas());
+    const parsed = parseBlocos(t, this.disciplinas(), this.temasExistentes());
     if (parsed.length === 0) { this.toast.error('Nenhuma questão encontrada. Verifique o formato.'); return; }
     this.questoesParseadas.set(parsed);
     this.expandido.set(null);
@@ -329,7 +370,7 @@ export class AdminProvasComponent implements OnInit {
       const q = validas[i];
       const payload: QuestaoPayload = { enunciado: q.enunciado, formato: q.formato, status: 'ativa', disciplina_id: q.disciplina_id, explicacao: q.explicacao, fonte: q.fonte };
       const alternativas: AlternativaPayload[] = q.alternativas.map((a, idx) => ({ letra: a.letra, texto: a.texto, correta: a.correta, ordem: idx + 1 }));
-      const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, []);
+      const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, q.tema_ids);
       if (res.ok) { questoesParaVincular.push({ questao_id: res.data, ordem: i + 1 }); this.importados.update((n) => n + 1); }
       else this.errosImportCount.update((n) => n + 1);
       this.progresso.update((n) => n + 1);
@@ -413,10 +454,10 @@ export class AdminProvasComponent implements OnInit {
   protected get totalPaginasQuestoes(): number { return Math.ceil(this.totalQuestoesBanco() / this.porPaginaQuestoes); }
   protected get paginaAtualQuestoes(): number { return this.paginaQuestoes() + 1; }
 
-  protected readonly promptQuestoes = PROMPT_QUESTOES;
+  protected readonly promptQuestoes = computed(() => montarPromptQuestoes(this.disciplinas(), this.temasExistentes()));
 
   async copiarPrompt(): Promise<void> {
-    await navigator.clipboard.writeText(this.promptQuestoes);
+    await navigator.clipboard.writeText(this.promptQuestoes());
     this.promptCopiado.set(true);
     setTimeout(() => this.promptCopiado.set(false), 2000);
   }

@@ -34,6 +34,8 @@ interface QuestaoParseada {
   formato: 'multipla_escolha' | 'verdadeiro_falso';
   disciplina_id: string | null;
   disciplinaDisplay: string;
+  tema_ids: string[];
+  temasDisplay: string;
   explicacao: string | null;
   fonte: string | null;
   valida: boolean;
@@ -69,7 +71,25 @@ type TipoImportacao = 'questoes' | 'disciplinas' | 'temas';
 
 // ──── Prompts ────
 
-export const PROMPT_QUESTOES = `Você vai converter questões médicas de um arquivo para um formato de importação na plataforma BoraMed. Siga o template exatamente — o sistema lê esse formato automaticamente.
+export function montarPromptQuestoes(
+  disciplinas: AdminDisciplina[],
+  temas: AdminTema[],
+): string {
+  const listaDisciplinas = disciplinas.length > 0
+    ? disciplinas.map((d) => `- ${d.sigla}${d.nome ? `: ${d.nome}` : ''}`).join('\n')
+    : '- Nenhuma disciplina cadastrada foi carregada. Omita DISCIPLINA.';
+
+  const disciplinaById = new Map(disciplinas.map((d) => [d.id, d.sigla]));
+  const listaTemas = temas.length > 0
+    ? temas
+        .map((t) => {
+          const sigla = t.disciplina_id ? disciplinaById.get(t.disciplina_id) : null;
+          return `- ${sigla ? `[${sigla}] ` : ''}${t.nome}`;
+        })
+        .join('\n')
+    : '- Nenhum tema cadastrado foi carregado. Omita TEMA.';
+
+  return `Você vai converter questões médicas de um arquivo para um formato de importação na plataforma BoraMed. Siga o template exatamente — o sistema lê esse formato automaticamente.
 
 FORMATO — separe cada questão com ---
 
@@ -85,17 +105,30 @@ D) [texto da alternativa D]
 E) [texto da alternativa E]
 
 GABARITO: [letra correta, ex: B]
-DISCIPLINA: [SOI I | HAM I | IESC I | MCM I — omita se não souber]
+DISCIPLINA: [sigla exata da lista abaixo — omita se não souber]
+TEMA: [nome exato de um tema da lista abaixo — omita se não souber]
 EXPLICACAO: [explicação do gabarito, se disponível no documento]
 FONTE: [ex: Afya P1 2024.1 — omita se não souber]
 ---
+
+DISCIPLINAS CADASTRADAS:
+${listaDisciplinas}
+
+TEMAS CADASTRADOS:
+${listaTemas}
 
 REGRAS:
 • Copie o enunciado exatamente, sem resumir ou alterar
 • GABARITO deve ser apenas a letra (A, B, C, D ou E)
 • Questões de verdadeiro/falso: use A) Verdadeiro e B) Falso como alternativas
-• DISCIPLINA, EXPLICACAO e FONTE são campos opcionais
+• DISCIPLINA, TEMA, EXPLICACAO e FONTE são campos opcionais
+• Se preencher DISCIPLINA ou TEMA, use exatamente uma opção cadastrada nas listas acima
+• Em TEMA, escreva apenas o nome do tema; o prefixo [DISCIPLINA] na lista serve só para contexto
+• Se não tiver confiança na classificação, omita DISCIPLINA e/ou TEMA em vez de inventar
 • Retorne apenas o markdown formatado, sem texto adicional antes ou depois`;
+}
+
+export const PROMPT_QUESTOES = montarPromptQuestoes([], []);
 
 export const PROMPT_DISCIPLINAS = `Você vai converter uma lista de disciplinas para importação na plataforma BoraMed. Siga o template exatamente.
 
@@ -132,15 +165,23 @@ REGRAS:
 
 // ──── Parsers ────
 
-function parseBlocos(markdown: string, disciplinas: AdminDisciplina[]): QuestaoParseada[] {
+function parseBlocos(
+  markdown: string,
+  disciplinas: AdminDisciplina[],
+  temas: AdminTema[],
+): QuestaoParseada[] {
   return markdown
     .split(/^---$/m)
     .map((b) => b.trim())
     .filter((b) => b.length > 0)
-    .map((b) => parseQuestaoBloco(b, disciplinas));
+    .map((b) => parseQuestaoBloco(b, disciplinas, temas));
 }
 
-function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): QuestaoParseada {
+function parseQuestaoBloco(
+  bloco: string,
+  disciplinas: AdminDisciplina[],
+  temas: AdminTema[],
+): QuestaoParseada {
   const erros: string[] = [];
   const linhas = bloco.split('\n');
 
@@ -151,6 +192,7 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): Quest
   const alternativaLinhas: string[] = [];
   let gabaritoLetra: string | null = null;
   let disciplinaSigla: string | null = null;
+  let temaLinha: string | null = null;
   const explicacaoLinhas: string[] = [];
   let fonte: string | null = null;
 
@@ -165,6 +207,9 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): Quest
 
     const mDisciplina = t.match(/^DISCIPLINA:\s*(.+)/i);
     if (mDisciplina) { disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue; }
+
+    const mTema = t.match(/^TEMAS?:\s*(.+)/i);
+    if (mTema) { temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue; }
 
     const mFonte = t.match(/^FONTE:\s*(.+)/i);
     if (mFonte) { fonte = mFonte[1].trim(); secao = 'nenhuma'; continue; }
@@ -213,17 +258,65 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[]): Quest
     erros.push(`Disciplina "${disciplinaSigla}" não encontrada`);
   }
 
+  const temasResolvidos = resolverTemasQuestao(temaLinha, temas, disciplinaObj?.id ?? null);
+  erros.push(...temasResolvidos.erros);
+
   return {
     enunciado,
     alternativas,
     formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha',
     disciplina_id: disciplinaObj?.id ?? null,
     disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—',
+    tema_ids: temasResolvidos.ids,
+    temasDisplay: temasResolvidos.display,
     explicacao: explicacaoLinhas.join('\n').trim() || null,
     fonte,
     valida: erros.length === 0,
     erros,
   };
+}
+
+function resolverTemasQuestao(
+  temaLinha: string | null,
+  temas: AdminTema[],
+  disciplinaId: string | null,
+): { ids: string[]; display: string; erros: string[] } {
+  if (!temaLinha) return { ids: [], display: '—', erros: [] };
+
+  const nomes = temaLinha
+    .split(';')
+    .map((nome) => nome.trim().replace(/^\[[^\]]+\]\s*/, ''))
+    .filter((nome) => nome.length > 0);
+
+  const ids: string[] = [];
+  const displays: string[] = [];
+  const erros: string[] = [];
+
+  for (const nome of nomes) {
+    const candidatos = temas.filter((t) => t.nome.toLowerCase() === nome.toLowerCase());
+    const candidatosDaDisciplina = disciplinaId
+      ? candidatos.filter((t) => t.disciplina_id === disciplinaId)
+      : candidatos;
+    const matches = candidatosDaDisciplina.length > 0 ? candidatosDaDisciplina : candidatos;
+
+    if (matches.length === 0) {
+      erros.push(`Tema "${nome}" não encontrado`);
+      displays.push(nome);
+      continue;
+    }
+
+    if (matches.length > 1 && !disciplinaId) {
+      erros.push(`Tema "${nome}" é ambíguo; informe a disciplina`);
+      displays.push(nome);
+      continue;
+    }
+
+    const tema = matches[0];
+    if (!ids.includes(tema.id)) ids.push(tema.id);
+    displays.push(tema.nome);
+  }
+
+  return { ids, display: displays.length > 0 ? displays.join('; ') : '—', erros };
 }
 
 function parseDisciplinasBlocos(markdown: string, existentes: AdminDisciplina[]): DisciplinaParseada[] {
@@ -377,7 +470,7 @@ export class AdminImportarComponent implements OnInit {
 
   protected readonly promptAtual = computed(() => {
     switch (this.tipoImportacao()) {
-      case 'questoes': return PROMPT_QUESTOES;
+      case 'questoes': return montarPromptQuestoes(this.disciplinas(), this.temasExistentes());
       case 'disciplinas': return PROMPT_DISCIPLINAS;
       case 'temas': return PROMPT_TEMAS;
     }
@@ -416,6 +509,7 @@ E) TEP
 
 GABARITO: B
 DISCIPLINA: SOI I
+TEMA: Infarto agudo do miocárdio
 EXPLICACAO: O infarto agudo se caracteriza por...
 ---`;
       case 'disciplinas': return `Cole aqui o markdown gerado pela IA...
@@ -488,7 +582,7 @@ PARENT: Semiologia Cardiovascular
 
     switch (this.tipoImportacao()) {
       case 'questoes': {
-        const parsed = parseBlocos(t, this.disciplinas());
+        const parsed = parseBlocos(t, this.disciplinas(), this.temasExistentes());
         if (parsed.length === 0) { this.toast.error('Nenhuma questão encontrada. Verifique o formato.'); return; }
         this.questoes.set(parsed);
         break;
@@ -561,7 +655,7 @@ PARENT: Semiologia Cardiovascular
         ordem: i + 1,
       }));
 
-      const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, []);
+      const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, q.tema_ids);
       if (res.ok) this.importados.update((n) => n + 1);
       else this.errosImport.update((n) => n + 1);
       this.progresso.update((n) => n + 1);
