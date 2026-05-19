@@ -227,7 +227,7 @@
             <input
               class="form-input"
               type="number"
-              placeholder="2024"
+              [placeholder]="anoAtual"
               [ngModel]="fAno()"
               (ngModelChange)="fAno.set($event)"
             />

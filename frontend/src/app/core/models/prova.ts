@@ -1,6 +1,6 @@
 import type { Faculdade } from './faculdade';
 
-export type TipoProva = 'autoral' | 'faculdade' | 'nacional' | 'processual' | 'multiestacoes';
+export type TipoProva = 'autoral' | 'faculdade';
 export type OrigemProva = 'autoral' | 'faculdade' | 'personalizado';
 export type FormatoProva = 'nacional' | 'processual' | 'laboratorio' | 'multiestacoes';
 export type SubtipoProva = 'N1' | 'teste_progresso' | 'N2' | 'P1' | 'P2';
@@ -15,16 +15,16 @@ export interface Prova {
   ano: number | null;
   semestre: number | null;
   tipo: TipoProva;
-  origem?: OrigemProva;
-  formato?: FormatoProva | null;
-  rede?: string | null;
-  subtipo?: SubtipoProva | null;
+  origem: OrigemProva;
+  formato: FormatoProva | null;
+  rede: string | null;
+  subtipo: SubtipoProva | null;
   subtipo_nacional: SubtipoProva | null;
   qtd_questoes: number;
   tempo_sugerido_minutos: number | null;
   edicao: number;
-  publicada?: boolean;
-  arquivada?: boolean;
+  publicada: boolean;
+  arquivada: boolean;
   criado_em: string;
 }
 

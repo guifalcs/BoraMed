@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { Stethoscope, FlaskConical, Zap, Building2, ChevronLeft } from 'lucide-angular';
+import { Stethoscope, Zap, Building2, ChevronLeft } from 'lucide-angular';
 import { EmBreveBannerComponent } from '../../../shared/components/em-breve-banner/em-breve-banner.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import type { LucideIconData } from 'lucide-angular';
@@ -34,13 +34,6 @@ export class EmBrevePageComponent {
         titulo: 'Treinos Processuais',
         descricao: 'Estamos preparando questões autorais no modelo das avaliações processuais. Disponível em breve.',
         icone: Stethoscope,
-      };
-    }
-    if (tipo === 'multiestacoes') {
-      return {
-        titulo: 'Treinos Multiestações',
-        descricao: 'Questões autorais de laboratório com imagens de lâminas e peças anatômicas. Disponível em breve.',
-        icone: FlaskConical,
       };
     }
     if (tipo === 'outras') {

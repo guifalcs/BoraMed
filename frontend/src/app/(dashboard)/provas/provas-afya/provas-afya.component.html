@@ -91,7 +91,7 @@
 
     <div class="mt-8">
       <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Formatos Afya</p>
-      <div class="grid grid-cols-1 gap-2 sm:grid-cols-4">
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <a
           routerLink="/dashboard/simulados/rede-afya"
           [queryParams]="{ tipo: 'nacional' }"
@@ -116,16 +116,7 @@
           class="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3 text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
         >
           <app-ui-icon [icon]="flaskIcon" [size]="16" />
-          <span class="text-sm font-medium">Laboratorio</span>
-        </a>
-
-        <a
-          routerLink="/dashboard/simulados/rede-afya"
-          [queryParams]="{ tipo: 'multiestacoes' }"
-          class="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3 text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-        >
-          <app-ui-icon [icon]="zapIcon" [size]="16" />
-          <span class="text-sm font-medium">Multiestacoes</span>
+          <span class="text-sm font-medium">Laboratório</span>
         </a>
       </div>
     </div>

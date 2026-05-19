@@ -129,7 +129,6 @@ export class ProvasAfyaComponent {
     switch (this.formatoAtual()) {
       case 'processual': return 'Processual no modelo Afya';
       case 'laboratorio': return 'Laboratório no modelo Afya';
-      case 'multiestacoes': return 'Multiestações no modelo Afya';
       default: return 'Nacional no modelo Afya';
     }
   });
@@ -138,13 +137,12 @@ export class ProvasAfyaComponent {
     switch (this.formatoAtual()) {
       case 'processual': return 'Simulados autorais inspirados no formato das avaliações processuais. BoraMed é independente e não representa a Afya.';
       case 'laboratorio': return 'Questões autorais com imagens de lâminas e peças no modelo de laboratório. BoraMed é independente e não representa a Afya.';
-      case 'multiestacoes': return 'Treinos autorais no modelo multiestações. BoraMed é independente e não representa a Afya.';
       default: return 'Simulados autorais inspirados no formato das avaliações nacionais. BoraMed é independente e não representa a Afya.';
     }
   });
 }
 
 function parseFormato(value: string | null): FormatoProva {
-  if (value === 'processual' || value === 'laboratorio' || value === 'multiestacoes') return value;
+  if (value === 'processual' || value === 'laboratorio') return value;
   return 'nacional';
 }

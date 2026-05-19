@@ -126,6 +126,8 @@ export class AdminProvasComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly toast = inject(NotificationService);
 
+  protected readonly anoAtual = new Date().getFullYear().toString();
+
   protected readonly iconCheck = Check;
   protected readonly iconX = X;
   protected readonly iconArrowLeft = ArrowLeft;
@@ -200,7 +202,6 @@ export class AdminProvasComponent implements OnInit {
     { value: 'nacional', label: 'Nacional' },
     { value: 'processual', label: 'Processual' },
     { value: 'laboratorio', label: 'Laboratório' },
-    { value: 'multiestacoes', label: 'Multiestações' },
   ];
 
   // ── Select options — drawer (form) ──
@@ -213,7 +214,6 @@ export class AdminProvasComponent implements OnInit {
     { value: 'nacional', label: 'Nacional' },
     { value: 'processual', label: 'Processual' },
     { value: 'laboratorio', label: 'Laboratório' },
-    { value: 'multiestacoes', label: 'Multiestações' },
   ];
 
   protected readonly opcoesRedeForm: SelectOption[] = [
