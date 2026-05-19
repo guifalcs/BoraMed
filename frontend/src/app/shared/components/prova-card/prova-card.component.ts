@@ -7,16 +7,12 @@ const SUBTIPO_LABEL: Record<SubtipoProva, string> = {
   N1: 'N1',
   teste_progresso: 'TPI',
   N2: 'N2',
-  P1: 'P1',
-  P2: 'P2',
 };
 
 const SUBTIPO_LABEL_FULL: Record<SubtipoProva, string> = {
   N1: 'N1',
   teste_progresso: 'TPI',
   N2: 'Integradora',
-  P1: 'P1',
-  P2: 'P2',
 };
 
 @Component({
@@ -46,8 +42,6 @@ export class ProvaCardComponent {
     if (s === 'N1') return 'bg-blue-100 text-blue-700';
     if (s === 'teste_progresso') return 'bg-violet-100 text-violet-700';
     if (s === 'N2') return 'bg-teal-100 text-teal-700';
-    if (s === 'P1') return 'bg-cyan-100 text-cyan-700';
-    if (s === 'P2') return 'bg-emerald-100 text-emerald-700';
     return 'bg-gray-100 text-gray-600';
   });
 }

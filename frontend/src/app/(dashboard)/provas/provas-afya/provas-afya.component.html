@@ -12,15 +12,17 @@
 
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
       <div class="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">
-        <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
-          <app-ui-multiselect
-            label="Subtipo"
-            name="subtipo"
-            [options]="subtipoOpcoes"
-            [values]="subtiposFiltro()"
-            (valuesChange)="onSubtipoChange($event)"
-          />
-        </div>
+        @if (subtipoOpcoes().length > 0) {
+          <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
+            <app-ui-multiselect
+              label="Subtipo"
+              name="subtipo"
+              [options]="subtipoOpcoes()"
+              [values]="subtiposFiltro()"
+              (valuesChange)="onSubtipoChange($event)"
+            />
+          </div>
+        }
         <div style="width:9rem;min-width:9rem;max-width:9rem;flex:none">
           <app-ui-multiselect
             label="Periodo"

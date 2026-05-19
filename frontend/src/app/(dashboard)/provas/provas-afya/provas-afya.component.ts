@@ -41,13 +41,15 @@ export class ProvasAfyaComponent {
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
 
-  protected readonly subtipoOpcoes: SelectOption[] = [
-    { value: 'N1', label: 'N1' },
-    { value: 'teste_progresso', label: 'TPI' },
-    { value: 'N2', label: 'Integradora' },
-    { value: 'P1', label: 'P1' },
-    { value: 'P2', label: 'P2' },
-  ];
+  protected readonly subtipoOpcoes = computed<SelectOption[]>(() =>
+    this.formatoAtual() === 'nacional'
+      ? [
+          { value: 'N1', label: 'N1' },
+          { value: 'teste_progresso', label: 'TPI' },
+          { value: 'N2', label: 'Integradora' },
+        ]
+      : [],
+  );
 
   protected readonly periodoOpcoes: SelectOption[] = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,

@@ -156,7 +156,7 @@
           <input
             class="form-input"
             type="text"
-            placeholder="Ex: P1 — Medicina 2024.1"
+            placeholder="Ex: N1 — Clínica Médica 2025.1"
             [ngModel]="fNome()"
             (ngModelChange)="fNome.set($event)"
           />
@@ -196,7 +196,7 @@
               [options]="opcoesFormatoForm"
               [value]="fFormato()"
               [required]="true"
-              (valueChange)="fFormato.set($any($event) ?? 'nacional')"
+              (valueChange)="onFormatoChange($any($event))"
             />
           </div>
 
@@ -244,12 +244,12 @@
           </div>
         </div>
 
-        @if (fFormato()) {
+        @if (opcoesSubtipoForm().length > 0) {
           <div class="form-section">
             <app-ui-select
               label="Subtipo"
               name="subtipo"
-              [options]="opcoesSubtipoNacionalForm"
+              [options]="opcoesSubtipoForm()"
               [value]="fSubtipoNacional()"
               (valueChange)="fSubtipoNacional.set($any($event) ?? '')"
             />

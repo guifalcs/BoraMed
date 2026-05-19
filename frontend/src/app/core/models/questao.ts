@@ -32,7 +32,7 @@ export interface Questao {
   publicada_em: string | null;
   origem_geracao: 'manual' | 'ia_assistida';
   nivel_bloom: number | null;
-  formato_prova: 'N1' | 'N2' | 'nacional' | 'P1' | 'P2' | null;
+  formato_prova: 'N1' | 'N2' | 'nacional' | null;
   criado_em: string;
   atualizado_em: string;
 }

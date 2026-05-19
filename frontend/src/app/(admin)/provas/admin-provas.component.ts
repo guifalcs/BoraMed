@@ -4,7 +4,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Check, X, ArrowLeft, ArrowRight, AlertTriangle, Bot, Copy } from 'lucide-angular';
 import {
-  AdminService, AdminProva, AdminFaculdade, AdminDisciplina,
+  AdminService, AdminProva, AdminProvaDetalhe, AdminFaculdade, AdminDisciplina,
   AdminTema, AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -152,6 +152,10 @@ export class AdminProvasComponent implements OnInit {
   protected readonly salvando = signal(false);
   protected readonly provaId = signal<string | null>(null);
   protected readonly promptCopiado = signal(false);
+  protected readonly modoEdicao = signal(false);
+  protected readonly carregandoEdicao = signal(false);
+  protected readonly fPublicada = signal(false);
+  protected readonly fArquivada = signal(false);
 
   // ── Step 1: Prova form ──
   protected readonly faculdades = signal<AdminFaculdade[]>([]);
@@ -227,14 +231,16 @@ export class AdminProvasComponent implements OnInit {
     { value: '2', label: '2º semestre' },
   ];
 
-  protected readonly opcoesSubtipoNacionalForm: SelectOption[] = [
-    { value: '', label: 'Nenhum' },
-    { value: 'N1', label: 'N1' },
-    { value: 'N2', label: 'N2' },
-    { value: 'P1', label: 'P1' },
-    { value: 'P2', label: 'P2' },
-    { value: 'teste_progresso', label: 'Teste de Progresso' },
-  ];
+  protected readonly opcoesSubtipoForm = computed<SelectOption[]>(() =>
+    this.fFormato() === 'nacional'
+      ? [
+          { value: '', label: 'Nenhum' },
+          { value: 'N1', label: 'N1' },
+          { value: 'N2', label: 'Integradora' },
+          { value: 'teste_progresso', label: 'TPI' },
+        ]
+      : [],
+  );
 
   protected readonly opcoesFaculdadeForm = computed<SelectOption[]>(() => [
     { value: '', label: 'Selecione uma faculdade…' },
@@ -288,6 +294,11 @@ export class AdminProvasComponent implements OnInit {
     else this.toast.error(result.error);
   }
 
+  protected onFormatoChange(valor: string): void {
+    this.fFormato.set(valor || 'nacional');
+    this.fSubtipoNacional.set('');
+  }
+
   // ── Drawer methods ──
   protected abrirDrawer(): void {
     this.resetDrawer();
@@ -301,6 +312,8 @@ export class AdminProvasComponent implements OnInit {
   private resetDrawer(): void {
     this.etapa.set('detalhes');
     this.provaId.set(null);
+    this.modoEdicao.set(false);
+    this.carregandoEdicao.set(false);
     this.fNome.set('');
     this.fTipo.set('autoral');
     this.fFormato.set('nacional');
@@ -312,6 +325,8 @@ export class AdminProvasComponent implements OnInit {
     this.fEdicao.set('1');
     this.fSubtipoNacional.set('');
     this.fTempoSugerido.set('');
+    this.fPublicada.set(false);
+    this.fArquivada.set(false);
     this.textoImport.set('');
     this.questoesParseadas.set([]);
     this.progresso.set(0);

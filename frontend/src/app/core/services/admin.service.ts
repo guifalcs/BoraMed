@@ -112,6 +112,13 @@ export interface AdminProva {
   faculdade?: { nome: string; sigla: string } | null;
 }
 
+export interface AdminProvaDetalhe extends AdminProva {
+  faculdade_id: string | null;
+  edicao: number;
+  tempo_sugerido_minutos: number | null;
+  subtipo_nacional: string | null;
+}
+
 export interface AdminFaculdade {
   id: string;
   nome: string;
@@ -427,6 +434,31 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('prova')
       .insert(payload)
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminProva };
+  }
+
+  async buscarProvaParaEdicao(id: string): Promise<ServiceResult<AdminProvaDetalhe>> {
+    const { data, error } = await this.supabase
+      .from('prova')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,subtipo_nacional,publicada,arquivada,ano,semestre,periodo,qtd_questoes,edicao,tempo_sugerido_minutos,faculdade_id,criado_em,faculdade(nome,sigla)')
+      .eq('id', id)
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminProvaDetalhe };
+  }
+
+  async atualizarProva(id: string, input: Partial<ProvaInput>): Promise<ServiceResult<AdminProva>> {
+    const payload: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(input)) {
+      if (v !== undefined) payload[k] = v;
+    }
+    const { data, error } = await this.supabase
+      .from('prova')
+      .update(payload)
+      .eq('id', id)
       .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
       .single();
     if (error) return { ok: false, error: error.message };
