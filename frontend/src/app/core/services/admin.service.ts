@@ -485,6 +485,32 @@ export class AdminService {
     return { ok: true, data: undefined };
   }
 
+  async listarIdsQuestoesVinculadas(prova_id: string): Promise<ServiceResult<string[]>> {
+    const { data, error } = await this.supabase
+      .from('prova_questao')
+      .select('questao_id')
+      .eq('prova_id', prova_id)
+      .order('ordem');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []).map((r: { questao_id: string }) => r.questao_id) };
+  }
+
+  async sincronizarQuestoesProva(
+    prova_id: string,
+    questoes: { questao_id: string; ordem: number }[],
+  ): Promise<ServiceResult<void>> {
+    const { error: de } = await this.supabase.from('prova_questao').delete().eq('prova_id', prova_id);
+    if (de) return { ok: false, error: de.message };
+    if (questoes.length > 0) {
+      const { error } = await this.supabase
+        .from('prova_questao')
+        .insert(questoes.map((q) => ({ prova_id, questao_id: q.questao_id, ordem: q.ordem })));
+      if (error) return { ok: false, error: error.message };
+    }
+    await this.supabase.from('prova').update({ qtd_questoes: questoes.length }).eq('id', prova_id);
+    return { ok: true, data: undefined };
+  }
+
   async listarQuestoesParaVincular(
     pagina = 0,
     porPagina = 30,

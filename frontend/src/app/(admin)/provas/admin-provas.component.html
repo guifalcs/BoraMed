@@ -53,10 +53,10 @@
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
             <td>{{ p.ano }}/{{ p.semestre }}</td>
             <td>{{ p.qtd_questoes }}</td>
-            <td>
-              <button class="btn btn--sm btn--danger" (click)="solicitarDelete(p)">
-                Deletar
-              </button>
+            <td class="actions-cell">
+              <button class="btn btn--sm btn--ghost" (click)="abrirDrawerEdicao(p)">Editar</button>
+              <button class="btn btn--sm btn--ghost btn--ghost-purple" (click)="abrirDrawerQuestoes(p)">Questões</button>
+              <button class="btn btn--sm btn--danger" (click)="solicitarDelete(p)">Deletar</button>
             </td>
           </tr>
         }
@@ -96,7 +96,7 @@
     <!-- ── Drawer header ── -->
     <div class="drawer-header">
       <div class="drawer-header-left">
-        @if (etapa() === 'importar_input' || etapa() === 'importar_preview' || etapa() === 'selecionar') {
+        @if (!modoQuestoes() && (etapa() === 'importar_input' || etapa() === 'selecionar')) {
           <button class="btn-icon" (click)="etapa.set('metodo')" title="Voltar">
             <app-ui-icon [icon]="iconArrowLeft" [size]="18" />
           </button>
@@ -107,15 +107,19 @@
           </button>
         }
         <span class="drawer-title">
-          @switch (etapa()) {
-            @case ('detalhes') { Nova Prova }
-            @case ('metodo') { Adicionar Questões }
-            @case ('importar_input') { Importar em Lote }
-            @case ('importar_preview') { Pré-visualização }
-            @case ('importando') { Importando… }
-            @case ('selecionar') { Selecionar Questões }
-            @case ('vinculando') { Vinculando… }
-            @case ('concluido') { Concluído }
+          @if (modoQuestoes()) {
+            Questões da Prova
+          } @else {
+            @switch (etapa()) {
+              @case ('detalhes') { @if (modoEdicao()) { Editar Prova } @else { Nova Prova } }
+              @case ('metodo') { Adicionar Questões }
+              @case ('importar_input') { Importar em Lote }
+              @case ('importar_preview') { Pré-visualização }
+              @case ('importando') { Importando… }
+              @case ('selecionar') { Selecionar Questões }
+              @case ('vinculando') { Vinculando… }
+              @case ('concluido') { Concluído }
+            }
           }
         </span>
       </div>
@@ -125,7 +129,7 @@
     </div>
 
     <!-- ── Step indicator ── -->
-    @if (etapa() !== 'importando' && etapa() !== 'vinculando' && etapa() !== 'concluido') {
+    @if (!modoEdicao() && !modoQuestoes() && etapa() !== 'importando' && etapa() !== 'vinculando' && etapa() !== 'concluido') {
       <div class="drawer-steps">
         <div class="step" [class.step--active]="etapa() === 'detalhes'" [class.step--done]="etapa() !== 'detalhes'">
           <span class="step-num">1</span>
@@ -151,6 +155,9 @@
            ETAPA: detalhes
       ════════════════════════════════════ -->
       @if (etapa() === 'detalhes') {
+        @if (carregandoEdicao()) {
+          <p class="loading-text">Carregando dados da prova…</p>
+        } @else {
         <div class="form-section">
           <label class="form-label">Nome da prova <span class="required">*</span></label>
           <input
@@ -282,6 +289,32 @@
           </div>
         </div>
 
+        @if (modoEdicao()) {
+          <div class="form-row toggles-row">
+            <label class="toggle-card">
+              <div class="toggle-switch">
+                <input type="checkbox" [checked]="fPublicada()" (change)="fPublicada.set(!fPublicada())" />
+                <span class="toggle-track"></span>
+              </div>
+              <div>
+                <p class="toggle-name">Publicada</p>
+                <p class="toggle-desc">Visível para os alunos</p>
+              </div>
+            </label>
+            <label class="toggle-card">
+              <div class="toggle-switch">
+                <input type="checkbox" [checked]="fArquivada()" (change)="fArquivada.set(!fArquivada())" />
+                <span class="toggle-track"></span>
+              </div>
+              <div>
+                <p class="toggle-name">Arquivada</p>
+                <p class="toggle-desc">Oculta da listagem</p>
+              </div>
+            </label>
+          </div>
+        }
+
+        } <!-- /else carregandoEdicao -->
       }
 
       <!-- ════════════════════════════════════
@@ -462,6 +495,9 @@ EXPLICACAO: O infarto agudo se caracteriza por...
            ETAPA: selecionar
       ════════════════════════════════════ -->
       @if (etapa() === 'selecionar') {
+        @if (carregandoEdicao()) {
+          <p class="loading-text">Carregando questões da prova…</p>
+        } @else {
         <div class="select-toolbar">
           <input
             class="form-input"
@@ -529,6 +565,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
             >Próxima →</button>
           </div>
         }
+        } <!-- /else carregandoEdicao (selecionar) -->
       }
 
       <!-- ════════════════════════════════════
@@ -588,7 +625,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
             [disabled]="salvando()"
             (click)="salvarDetalhes()"
           >
-            @if (salvando()) { Salvando… } @else { Criar Prova <app-ui-icon [icon]="iconArrowRight" [size]="14" /> }
+            @if (salvando()) { Salvando… } @else if (modoEdicao()) { Salvar Alterações } @else { Criar Prova <app-ui-icon [icon]="iconArrowRight" [size]="14" /> }
           </button>
         }
         @case ('importar_input') {
@@ -616,16 +653,27 @@ EXPLICACAO: O infarto agudo se caracteriza por...
           </button>
         }
         @case ('selecionar') {
-          <button class="btn btn--outline" (click)="etapa.set('metodo')">
-            <app-ui-icon [icon]="iconArrowLeft" [size]="14" /> Voltar
-          </button>
-          <button
-            class="btn btn--primary"
-            [disabled]="totalSelecionadas() === 0"
-            (click)="vincularSelecionadas()"
-          >
-            Vincular {{ totalSelecionadas() }} quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }}
-          </button>
+          @if (modoQuestoes()) {
+            <button class="btn btn--outline" (click)="fecharDrawer()">Cancelar</button>
+            <button
+              class="btn btn--primary"
+              [disabled]="sincronizandoQuestoes()"
+              (click)="sincronizarQuestoes()"
+            >
+              @if (sincronizandoQuestoes()) { Salvando… } @else { Salvar {{ totalSelecionadas() }} quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }} }
+            </button>
+          } @else {
+            <button class="btn btn--outline" (click)="etapa.set('metodo')">
+              <app-ui-icon [icon]="iconArrowLeft" [size]="14" /> Voltar
+            </button>
+            <button
+              class="btn btn--primary"
+              [disabled]="totalSelecionadas() === 0"
+              (click)="vincularSelecionadas()"
+            >
+              Vincular {{ totalSelecionadas() }} quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }}
+            </button>
+          }
         }
         @case ('concluido') {
           <button class="btn btn--primary" (click)="concluir()">
@@ -701,6 +749,39 @@ EXPLICACAO: O infarto agudo se caracteriza por...
   .btn--outline:hover:not(:disabled) { background: #6d28d9; border-color: #6d28d9; }
   .btn--danger { background: #ef4444; border: 1px solid #ef4444; color: #fff; }
   .btn--danger:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
+  .btn--ghost { background: transparent; border: 1px solid #e2e8f0; color: #475569; }
+  .btn--ghost:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+  .btn--ghost-purple { border-color: #ddd6fe; color: #7c3aed; }
+  .btn--ghost-purple:hover:not(:disabled) { background: #f5f3ff; border-color: #c4b5fd; }
+
+  .actions-cell { display: flex; gap: 0.375rem; align-items: center; }
+
+  /* ── Toggle switch ── */
+  .toggles-row { margin-top: 0.5rem; }
+  .toggle-card {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;
+    cursor: pointer; background: #fafafa; transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .toggle-card:hover { border-color: #c4b5fd; background: #faf5ff; }
+  .toggle-switch { position: relative; width: 2.25rem; height: 1.25rem; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 999px;
+    background: #e2e8f0; transition: background 0.2s; cursor: pointer;
+  }
+  .toggle-track::before {
+    content: ''; position: absolute;
+    width: 1rem; height: 1rem; left: 0.125rem; bottom: 0.125rem;
+    border-radius: 50%; background: #fff;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch input:checked + .toggle-track { background: #7c3aed; }
+  .toggle-switch input:checked + .toggle-track::before { transform: translateX(1rem); }
+  .toggle-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
+  .toggle-desc { font-size: 0.75rem; color: #64748b; margin: 0; }
 
   .btn-icon {
     display: inline-flex; align-items: center; justify-content: center;

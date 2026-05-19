@@ -8,12 +8,43 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChevronLeft, Shuffle, Filter } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { TemaService } from '../../../core/services/tema.service';
 import type { MontarSimuladoResolvedData } from '../../../core/resolvers/montar-simulado.resolver';
 import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
+
+type FormatoSimulado = 'nacional' | 'processual' | 'laboratorio';
+
+interface OpcaoFormato {
+  value: FormatoSimulado;
+  label: string;
+  descricao: string;
+  tipoQuestao: 'geral' | 'laboratorio';
+}
+
+const FORMATOS: OpcaoFormato[] = [
+  {
+    value: 'nacional',
+    label: 'Nacional',
+    descricao: 'Questões de múltipla escolha no estilo N1, TPI e Integradora',
+    tipoQuestao: 'geral',
+  },
+  {
+    value: 'processual',
+    label: 'Processual',
+    descricao: 'Questões aplicadas em contexto clínico e raciocínio diagnóstico',
+    tipoQuestao: 'geral',
+  },
+  {
+    value: 'laboratorio',
+    label: 'Laboratório',
+    descricao: 'Questões com imagens de lâminas e peças anatômicas',
+    tipoQuestao: 'laboratorio',
+  },
+];
 
 @Component({
   selector: 'app-montar-simulado',
@@ -26,11 +57,15 @@ export class MontarSimuladoComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
+  private readonly temaService = inject(TemaService);
 
   protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly shuffleIcon = Shuffle;
   protected readonly filterIcon = Filter;
 
+  protected readonly formatos = FORMATOS;
+
+  protected readonly formatoSelecionado = signal<FormatoSimulado>('nacional');
   protected readonly temas = signal<TemaComContagem[]>([]);
   protected readonly isLoadingTemas = signal(true);
   protected readonly loadError = signal<string | null>(null);
@@ -44,12 +79,14 @@ export class MontarSimuladoComponent {
 
   protected readonly opcoesQtd = [5, 10, 15, 20, 30];
 
-  /** Total de questões disponíveis considerando os temas selecionados */
+  protected readonly formatoAtual = computed(() =>
+    FORMATOS.find((f) => f.value === this.formatoSelecionado())!,
+  );
+
   protected readonly questoesDisponiveis = computed(() => {
     const selecionados = this.temasSelecionados();
     const allTemas = this.temas();
     if (selecionados.size === 0) {
-      // Sem filtro → total geral (soma sem duplicatas estimada)
       return allTemas.reduce((sum, t) => sum + t.qtd_questoes, 0);
     }
     return allTemas
@@ -57,19 +94,16 @@ export class MontarSimuladoComponent {
       .reduce((sum, t) => sum + t.qtd_questoes, 0);
   });
 
-  /** Temas que possuem pelo menos 1 questão */
   protected readonly temasComQuestoes = computed(() =>
     this.temas().filter((t) => t.qtd_questoes > 0),
   );
 
-  /** Temas filtrados pelo campo de busca */
   protected readonly temasFiltrados = computed(() => {
     const busca = normalizarTexto(this.buscaTema());
     if (!busca) return this.temas();
     return this.temas().filter((t) => normalizarTexto(t.nome).includes(busca));
   });
 
-  /** Resumo textual dos temas selecionados */
   protected readonly resumoTemas = computed(() => {
     const selecionados = this.temasSelecionados();
     if (selecionados.size === 0) return 'Todos os temas';
@@ -80,12 +114,11 @@ export class MontarSimuladoComponent {
     return `${nomes.slice(0, 3).join(', ')} e mais ${nomes.length - 3}`;
   });
 
-  /** Mensagem de aviso (não impede envio, apenas avisa) */
   protected readonly aviso = computed<string | null>(() => {
     const disponivel = this.questoesDisponiveis();
     const qtd = this.quantidade();
     if (disponivel === 0 && this.temasSelecionados().size > 0) {
-      return 'Os temas selecionados não possuem questões cadastradas. Escolha outros temas.';
+      return 'Os temas selecionados não possuem questões cadastradas para este formato. Escolha outros temas.';
     }
     if (disponivel > 0 && disponivel < qtd) {
       const questaoLabel = disponivel === 1 ? 'questão disponível' : 'questões disponíveis';
@@ -95,7 +128,6 @@ export class MontarSimuladoComponent {
     return null;
   });
 
-  /** Se o botão deve ficar desabilitado */
   protected readonly desabilitado = computed(() => {
     if (this.gerando()) return true;
     if (this.isLoadingTemas()) return true;
@@ -104,7 +136,6 @@ export class MontarSimuladoComponent {
     return false;
   });
 
-  /** Label do botão */
   protected readonly botaoLabel = computed(() => {
     if (this.gerando()) return 'Gerando...';
     if (this.desabilitado() && !this.gerando()) return 'Selecione temas com questões';
@@ -128,13 +159,16 @@ export class MontarSimuladoComponent {
     const temaNome = params.get('tema');
     const qtdParam = Number(params.get('qtd'));
     const modoParam = params.get('modo');
+    const formatoParam = params.get('formato') as FormatoSimulado | null;
 
     if (Number.isFinite(qtdParam) && this.opcoesQtd.includes(qtdParam)) {
       this.quantidade.set(qtdParam);
     }
-
     if (modoParam === 'estudo' || modoParam === 'simulado') {
       this.modoSelecionado.set(modoParam);
+    }
+    if (formatoParam && FORMATOS.some((f) => f.value === formatoParam)) {
+      this.formatoSelecionado.set(formatoParam);
     }
 
     const tema = this.temasComQuestoes().find((t) => {
@@ -149,15 +183,33 @@ export class MontarSimuladoComponent {
     }
   }
 
+  protected async selecionarFormato(formato: FormatoSimulado): Promise<void> {
+    if (formato === this.formatoSelecionado()) return;
+    this.formatoSelecionado.set(formato);
+    this.temasSelecionados.set(new Set());
+    this.erro.set(null);
+    await this.recarregarTemas();
+  }
+
+  private async recarregarTemas(): Promise<void> {
+    this.isLoadingTemas.set(true);
+    this.loadError.set(null);
+    const tipoQuestao = this.formatoAtual().tipoQuestao;
+    const result = await this.temaService.listarTemasComContagem(tipoQuestao);
+    if (result.ok) {
+      this.temas.set(result.data);
+    } else {
+      this.loadError.set(result.error);
+    }
+    this.isLoadingTemas.set(false);
+  }
+
   protected toggleTema(temaId: string): void {
     this.erro.set(null);
     this.temasSelecionados.update((set) => {
       const next = new Set(set);
-      if (next.has(temaId)) {
-        next.delete(temaId);
-      } else {
-        next.add(temaId);
-      }
+      if (next.has(temaId)) next.delete(temaId);
+      else next.add(temaId);
       return next;
     });
   }
@@ -184,7 +236,6 @@ export class MontarSimuladoComponent {
 
   protected async gerar(): Promise<void> {
     if (this.desabilitado()) return;
-
     this.gerando.set(true);
     this.erro.set(null);
 
@@ -193,13 +244,14 @@ export class MontarSimuladoComponent {
       temaIds.length > 0 ? temaIds : null,
       this.quantidade(),
       this.modoSelecionado(),
+      this.formatoSelecionado(),
     );
 
     this.gerando.set(false);
 
     if (result.ok) {
       const { prova_id, tentativa } = result.data;
-      this.tentativaService.setProvaNome('Simulado personalizado');
+      this.tentativaService.setProvaNome(`Simulado ${this.formatoAtual().label}`);
       void this.router.navigate(['/dashboard/simulados', prova_id, 'tentativa', tentativa.id]);
     } else {
       this.erro.set(result.error);
@@ -210,7 +262,7 @@ export class MontarSimuladoComponent {
 function normalizarTexto(value: string): string {
   return value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .trim()
     .toLowerCase();
 }

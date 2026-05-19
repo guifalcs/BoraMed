@@ -153,7 +153,9 @@ export class AdminProvasComponent implements OnInit {
   protected readonly provaId = signal<string | null>(null);
   protected readonly promptCopiado = signal(false);
   protected readonly modoEdicao = signal(false);
+  protected readonly modoQuestoes = signal(false);
   protected readonly carregandoEdicao = signal(false);
+  protected readonly sincronizandoQuestoes = signal(false);
   protected readonly fPublicada = signal(false);
   protected readonly fArquivada = signal(false);
 
@@ -313,7 +315,9 @@ export class AdminProvasComponent implements OnInit {
     this.etapa.set('detalhes');
     this.provaId.set(null);
     this.modoEdicao.set(false);
+    this.modoQuestoes.set(false);
     this.carregandoEdicao.set(false);
+    this.sincronizandoQuestoes.set(false);
     this.fNome.set('');
     this.fTipo.set('autoral');
     this.fFormato.set('nacional');
@@ -360,9 +364,20 @@ export class AdminProvasComponent implements OnInit {
       subtipo: this.fSubtipoNacional() || null,
       subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
       tempo_sugerido_minutos: this.fTempoSugerido() ? Number(this.fTempoSugerido()) : null,
-      publicada: false,
-      arquivada: false,
+      publicada: this.fPublicada(),
+      arquivada: this.fArquivada(),
     };
+    if (this.modoEdicao()) {
+      const id = this.provaId();
+      if (!id) return;
+      const res = await this.adminService.atualizarProva(id, input);
+      this.salvando.set(false);
+      if (!res.ok) { this.toast.error(this.traduzirErroProva(res.error)); return; }
+      this.provas.update((lista) => lista.map((p) => (p.id === id ? { ...p, ...res.data } : p)));
+      this.toast.success('Prova atualizada.');
+      this.fecharDrawer();
+      return;
+    }
     const res = await this.adminService.criarProva(input);
     this.salvando.set(false);
     if (!res.ok) {
@@ -372,6 +387,66 @@ export class AdminProvasComponent implements OnInit {
     }
     this.provaId.set(res.data.id);
     this.etapa.set('metodo');
+  }
+
+  async abrirDrawerEdicao(prova: AdminProva): Promise<void> {
+    this.resetDrawer();
+    this.modoEdicao.set(true);
+    this.carregandoEdicao.set(true);
+    this.drawerAberto.set(true);
+    this.provaId.set(prova.id);
+    const res = await this.adminService.buscarProvaParaEdicao(prova.id);
+    this.carregandoEdicao.set(false);
+    if (!res.ok) { this.toast.error('Não foi possível carregar os dados da prova.'); this.fecharDrawer(); return; }
+    const p: AdminProvaDetalhe = res.data;
+    this.fNome.set(p.nome);
+    this.fTipo.set(p.origem);
+    this.fFormato.set(p.formato ?? 'nacional');
+    this.fRede.set(p.rede ?? '');
+    this.fFaculdadeId.set(p.faculdade_id ?? '');
+    this.fPeriodo.set(String(p.periodo));
+    this.fAno.set(p.ano ? String(p.ano) : '');
+    this.fSemestre.set(p.semestre ? String(p.semestre) : '');
+    this.fEdicao.set(String(p.edicao));
+    this.fSubtipoNacional.set(p.subtipo_nacional ?? '');
+    this.fTempoSugerido.set(p.tempo_sugerido_minutos ? String(p.tempo_sugerido_minutos) : '');
+    this.fPublicada.set(p.publicada);
+    this.fArquivada.set(p.arquivada);
+  }
+
+  async abrirDrawerQuestoes(prova: AdminProva): Promise<void> {
+    this.resetDrawer();
+    this.modoQuestoes.set(true);
+    this.carregandoEdicao.set(true);
+    this.drawerAberto.set(true);
+    this.provaId.set(prova.id);
+    const [questoesRes, bancaoRes] = await Promise.all([
+      this.adminService.listarIdsQuestoesVinculadas(prova.id),
+      this.adminService.listarQuestoesParaVincular(0, this.porPaginaQuestoes, {}),
+    ]);
+    this.carregandoEdicao.set(false);
+    if (questoesRes.ok) {
+      this.selecionadas.set(new Set(questoesRes.data));
+    }
+    if (bancaoRes.ok) {
+      this.questoesBanco.set(bancaoRes.data.questoes);
+      this.totalQuestoesBanco.set(bancaoRes.data.total);
+    }
+    this.etapa.set('selecionar');
+  }
+
+  async sincronizarQuestoes(): Promise<void> {
+    const provaId = this.provaId();
+    if (!provaId) return;
+    this.sincronizandoQuestoes.set(true);
+    const ids = Array.from(this.selecionadas());
+    const questoes = ids.map((id, i) => ({ questao_id: id, ordem: i + 1 }));
+    const res = await this.adminService.sincronizarQuestoesProva(provaId, questoes);
+    this.sincronizandoQuestoes.set(false);
+    if (!res.ok) { this.toast.error('Não foi possível salvar as questões. Tente novamente.'); return; }
+    this.provas.update((lista) => lista.map((p) => (p.id === provaId ? { ...p, qtd_questoes: ids.length } : p)));
+    this.toast.success('Questões atualizadas.');
+    this.fecharDrawer();
   }
 
   protected escolherImportar(): void {

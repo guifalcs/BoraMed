@@ -805,10 +805,11 @@ export type Database = {
         Returns: Json
       }
       listar_temas_com_contagem: {
-        Args: never
+        Args: { p_tipo_questao?: string }
         Returns: {
           criado_em: string
           disciplina: string
+          disciplina_id: string
           id: string
           nome: string
           parent_id: string
