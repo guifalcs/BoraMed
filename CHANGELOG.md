@@ -8,6 +8,16 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-18 | Docs | sem commit
+
+**Plano de adaptacao para tipos de provas**
+
+- Adicionado plano em `docs/plano-adaptacao-tipos-provas.md` para adaptar o app aos formatos Nacional, Processual e Laboratorio.
+- Plano separa origem, formato pedagogico e instituicao/rede para manter compatibilidade futura com outros formatos da Afya e outras faculdades.
+- Documento lista fases de schema, admin, laboratorio, experiencia do aluno, RPCs, testes e criterios de pronto.
+
+---
+
 ## 2026-05-18 | Feature | sem commit
 
 **Importacao de questoes com temas cadastrados**
