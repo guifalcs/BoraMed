@@ -6,7 +6,7 @@ import {
   computed,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ChevronLeft, Shuffle, Filter } from 'lucide-angular';
+import { ChevronLeft, Shuffle, Filter, LoaderCircle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
 import type { MontarSimuladoResolvedData } from '../../../core/resolvers/montar-simulado.resolver';
@@ -62,12 +62,14 @@ export class MontarSimuladoComponent {
   protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly shuffleIcon = Shuffle;
   protected readonly filterIcon = Filter;
+  protected readonly loaderIcon = LoaderCircle;
 
   protected readonly formatos = FORMATOS;
 
   protected readonly formatoSelecionado = signal<FormatoSimulado>('nacional');
   protected readonly temas = signal<TemaComContagem[]>([]);
   protected readonly isLoadingTemas = signal(true);
+  protected readonly isRecarregandoFormato = signal(false);
   protected readonly loadError = signal<string | null>(null);
   protected readonly temasSelecionados = signal<Set<string>>(new Set());
   protected readonly buscaTema = signal('');
@@ -81,6 +83,12 @@ export class MontarSimuladoComponent {
 
   protected readonly formatoAtual = computed(() =>
     FORMATOS.find((f) => f.value === this.formatoSelecionado())!,
+  );
+
+  protected readonly loadingTemasLabel = computed(() =>
+    this.isRecarregandoFormato()
+      ? `Carregando temas para ${this.formatoAtual().label.toLowerCase()}...`
+      : 'Carregando temas...',
   );
 
   protected readonly questoesDisponiveis = computed(() => {
@@ -185,23 +193,31 @@ export class MontarSimuladoComponent {
 
   protected async selecionarFormato(formato: FormatoSimulado): Promise<void> {
     if (formato === this.formatoSelecionado()) return;
+    if (this.isLoadingTemas()) return;
     this.formatoSelecionado.set(formato);
     this.temasSelecionados.set(new Set());
+    this.buscaTema.set('');
     this.erro.set(null);
     await this.recarregarTemas();
   }
 
   private async recarregarTemas(): Promise<void> {
     this.isLoadingTemas.set(true);
+    this.isRecarregandoFormato.set(true);
     this.loadError.set(null);
-    const tipoQuestao = this.formatoAtual().tipoQuestao;
-    const result = await this.temaService.listarTemasComContagem(tipoQuestao);
-    if (result.ok) {
-      this.temas.set(result.data);
-    } else {
-      this.loadError.set(result.error);
+    try {
+      const tipoQuestao = this.formatoAtual().tipoQuestao;
+      const result = await this.temaService.listarTemasComContagem(tipoQuestao);
+      if (result.ok) {
+        this.temas.set(result.data);
+      } else {
+        this.temas.set([]);
+        this.loadError.set(result.error);
+      }
+    } finally {
+      this.isLoadingTemas.set(false);
+      this.isRecarregandoFormato.set(false);
     }
-    this.isLoadingTemas.set(false);
   }
 
   protected toggleTema(temaId: string): void {

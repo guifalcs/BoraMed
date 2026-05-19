@@ -33,14 +33,22 @@
           <button
             type="button"
             (click)="selecionarFormato(f.value)"
+            [disabled]="isLoadingTemas()"
+            [attr.aria-busy]="isRecarregandoFormato() && formatoSelecionado() === f.value"
             [class]="formatoSelecionado() === f.value
-              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 p-4 text-left transition-all'
-              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)]'"
+              ? 'flex min-h-32 flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 p-4 text-left transition-all disabled:cursor-wait disabled:opacity-80'
+              : 'flex min-h-32 flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)] disabled:cursor-wait disabled:opacity-60'"
           >
             <span class="text-sm font-semibold" [class]="formatoSelecionado() === f.value ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'">
               {{ f.label }}
             </span>
             <span class="text-xs leading-relaxed text-[var(--color-text-muted)]">{{ f.descricao }}</span>
+            @if (isRecarregandoFormato() && formatoSelecionado() === f.value) {
+              <span class="mt-auto inline-flex items-center gap-1 pt-2 text-xs font-semibold text-[var(--color-primary)]">
+                <app-ui-icon [icon]="loaderIcon" [size]="14" class="animate-spin" />
+                Atualizando temas
+              </span>
+            }
           </button>
         }
       </div>
@@ -75,7 +83,7 @@
           }
         </h2>
         <div class="flex gap-3">
-          @if (temasComQuestoes().length > 0 && temasSelecionados().size === 0) {
+          @if (!isLoadingTemas() && temasComQuestoes().length > 0 && temasSelecionados().size === 0) {
             <button
               type="button"
               (click)="selecionarTodosComQuestoes()"
@@ -111,10 +119,20 @@
       }
 
       @if (isLoadingTemas()) {
-        <div class="space-y-2">
+        <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]" aria-live="polite" aria-busy="true">
+          <div class="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-3 text-sm font-medium text-[var(--color-text)]">
+            <app-ui-icon [icon]="loaderIcon" [size]="16" class="animate-spin text-[var(--color-primary)]" />
+            {{ loadingTemasLabel() }}
+          </div>
+          <div class="space-y-2 p-3">
           @for (i of [1, 2, 3, 4, 5]; track i) {
-            <div class="h-9 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+            <div class="flex h-10 animate-pulse items-center gap-3 rounded-lg bg-[var(--color-surface-2)] px-3">
+              <span class="h-5 w-5 rounded border border-[var(--color-border)] bg-[var(--color-surface)]"></span>
+              <span class="h-3 flex-1 rounded bg-[var(--color-border)]"></span>
+              <span class="h-5 w-20 rounded-full bg-[var(--color-border)]"></span>
+            </div>
           }
+          </div>
         </div>
       } @else if (temas().length === 0 && !loadError()) {
         <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center text-sm text-[var(--color-text-muted)]">

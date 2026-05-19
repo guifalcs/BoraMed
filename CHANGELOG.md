@@ -8,6 +8,17 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-19 | Fix | sem commit
+
+**Loading ao trocar formato no montar simulado**
+
+- Tela de montar simulado passa a exibir estado de carregamento específico ao alternar entre Nacional, Processual e Laboratório.
+- Lista de temas mostra skeleton com mensagem contextual enquanto a contagem por formato recarrega.
+- Ações sobre formatos e temas ficam bloqueadas durante a recarga para evitar interação com dados antigos.
+- Regras de negócio documentam o comportamento esperado da recarga de temas por formato.
+
+---
+
 ## 2026-05-18 | Feature | sem commit
 
 **Formatos de provas extensiveis**
