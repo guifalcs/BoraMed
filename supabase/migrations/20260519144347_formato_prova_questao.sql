@@ -1,12 +1,12 @@
 -- Change tipo_questao from 'geral'|'laboratorio' to 'nacional'|'processual'|'laboratorio',
 -- expand formato_prova CHECK, and update gerar_simulado_personalizado.
 
--- 1. Migrate existing 'geral' data to 'nacional' (default for untagged)
-UPDATE public.questao SET tipo_questao = 'nacional' WHERE tipo_questao = 'geral';
-
--- 2. Replace tipo_questao CHECK constraint
+-- 1. Drop old tipo_questao CHECK constraint before migrating values
 ALTER TABLE public.questao
   DROP CONSTRAINT IF EXISTS questao_tipo_questao_check;
+
+-- 2. Migrate existing 'geral' data to 'nacional' (default for untagged)
+UPDATE public.questao SET tipo_questao = 'nacional' WHERE tipo_questao = 'geral';
 
 ALTER TABLE public.questao
   ADD CONSTRAINT questao_tipo_questao_check

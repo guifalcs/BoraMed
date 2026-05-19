@@ -37,7 +37,7 @@ begin
     raise exception 'Quantidade deve ser entre 1 e 50' using errcode = 'P0006';
   end if;
 
-  if p_tipo_questao is not null and p_tipo_questao not in ('geral', 'laboratorio') then
+  if p_tipo_questao is not null and p_tipo_questao not in ('nacional', 'processual', 'laboratorio') then
     raise exception 'Tipo de questao invalido: %', p_tipo_questao using errcode = 'P0007';
   end if;
 
