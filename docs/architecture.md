@@ -62,3 +62,8 @@
  **Data** : 2026-05
  **Decisão** : O onboarding de novos usuários será implementado como componente Angular próprio, orquestrado pelo shell do dashboard e persistido em tabela Supabase `user_onboarding_state` por usuário, fluxo e versão.
  **Motivo** : O BoraMed precisa de uma experiência integrada ao design system, responsiva para sidebar/bottom-nav e segura por RLS. Ferramentas externas de product tour ficam para uma fase futura, quando houver necessidade real de edição no-code, segmentação avançada ou analytics de growth.
+## ADR-011: Provas separadas por origem, formato e instituicao
+
+ **Data** : 2026-05
+ **DecisÃ£o** : A modelagem de provas passa a separar origem (`autoral`, `faculdade`, `personalizado`), formato pedagogico (`nacional`, `processual`, `laboratorio`, `multiestacoes`) e contexto institucional (`rede`, `faculdade_id`, `subtipo`). `prova.tipo` permanece apenas como campo legado de compatibilidade.
+ **Motivo** : O produto precisa atender os formatos iniciais no modelo Afya sem travar o banco a uma unica rede. Separar as dimensoes permite cadastrar novos formatos da Afya e, futuramente, outras faculdades sem reescrever fluxos de admin, listagem e tentativa.

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import type { Faculdade } from '../models/faculdade';
-import type { Prova, ProvaComFaculdade, FiltrosProvas } from '../models/prova';
+import type { FormatoProva, Prova, ProvaComFaculdade, FiltrosProvas } from '../models/prova';
 
 export type ProvaResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -31,17 +31,29 @@ export class ProvaService {
   }
 
   async listarProvasNacionais(filtros: FiltrosProvas): Promise<ProvaResult<Prova[]>> {
+    return this.listarProvasPorFormato('nacional', filtros);
+  }
+
+  async listarProvasPorFormato(
+    formato: FormatoProva,
+    filtros: FiltrosProvas = { subtipo: null, periodo: null },
+  ): Promise<ProvaResult<Prova[]>> {
     this._isLoading.set(true);
     try {
       let query = this.supabase
         .from('prova')
         .select('*')
-        .eq('tipo', 'nacional')
+        .eq('formato', formato)
+        .eq('arquivada', false)
         .order('edicao', { ascending: false })
-        .order('subtipo_nacional', { ascending: true });
+        .order('subtipo', { ascending: true });
+
+      if (filtros.rede) {
+        query = query.eq('rede', filtros.rede);
+      }
 
       if (filtros.subtipo) {
-        query = query.eq('subtipo_nacional', filtros.subtipo);
+        query = query.eq('subtipo', filtros.subtipo);
       }
       if (filtros.periodo) {
         query = query.eq('periodo', filtros.periodo);

@@ -63,7 +63,7 @@ export class TentativaResultadoComponent implements OnInit {
     if (provaId) {
       const provaResult = await this.provaService.buscarProva(provaId);
       if (provaResult.ok) {
-        this.isPersonalizado.set(provaResult.data.tipo === 'processual' && provaResult.data.edicao < 0);
+        this.isPersonalizado.set(provaResult.data.origem === 'personalizado' || provaResult.data.edicao < 0);
       }
     }
 

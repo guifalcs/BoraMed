@@ -302,11 +302,17 @@ export type Database = {
           criado_em: string
           edicao: number
           faculdade_id: string | null
+          arquivada: boolean
+          formato: string | null
           id: string
           nome: string
+          origem: string
           periodo: number
+          publicada: boolean
           qtd_questoes: number
+          rede: string | null
           semestre: number | null
+          subtipo: string | null
           subtipo_nacional: string | null
           tempo_sugerido_minutos: number | null
           tipo: string
@@ -316,11 +322,17 @@ export type Database = {
           criado_em?: string
           edicao?: number
           faculdade_id?: string | null
+          arquivada?: boolean
+          formato?: string | null
           id?: string
           nome: string
+          origem?: string
           periodo: number
+          publicada?: boolean
           qtd_questoes?: number
+          rede?: string | null
           semestre?: number | null
+          subtipo?: string | null
           subtipo_nacional?: string | null
           tempo_sugerido_minutos?: number | null
           tipo: string
@@ -330,11 +342,17 @@ export type Database = {
           criado_em?: string
           edicao?: number
           faculdade_id?: string | null
+          arquivada?: boolean
+          formato?: string | null
           id?: string
           nome?: string
+          origem?: string
           periodo?: number
+          publicada?: boolean
           qtd_questoes?: number
+          rede?: string | null
           semestre?: number | null
+          subtipo?: string | null
           subtipo_nacional?: string | null
           tempo_sugerido_minutos?: number | null
           tipo?: string
@@ -382,6 +400,7 @@ export type Database = {
           revisor_id: string | null
           status: string
           taxa_acerto: number | null
+          tipo_questao: string
           vezes_acertada: number
           vezes_respondida: number
         }
@@ -417,6 +436,7 @@ export type Database = {
           revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
+          tipo_questao?: string
           vezes_acertada?: number
           vezes_respondida?: number
         }
@@ -452,6 +472,7 @@ export type Database = {
           revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
+          tipo_questao?: string
           vezes_acertada?: number
           vezes_respondida?: number
         }
@@ -752,7 +773,13 @@ export type Database = {
             Returns: Json
           }
       gerar_simulado_personalizado: {
-        Args: { p_modo?: string; p_qtd?: number; p_tema_ids?: string[] }
+        Args: {
+          p_formato?: string
+          p_modo?: string
+          p_qtd?: number
+          p_tema_ids?: string[]
+          p_tipo_questao?: string
+        }
         Returns: Json
       }
       get_desafio_diario: { Args: never; Returns: Json }

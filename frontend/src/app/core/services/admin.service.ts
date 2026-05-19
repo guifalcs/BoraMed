@@ -27,6 +27,7 @@ export interface AdminQuestao {
   id: string;
   enunciado: string;
   formato: string;
+  tipo_questao: 'geral' | 'laboratorio';
   status: string;
   dificuldade: number | null;
   disciplina_id: string | null;
@@ -52,6 +53,7 @@ export interface AdminQuestaoCompleta {
   imagem_url: string | null;
   imagem_legenda: string | null;
   formato: string;
+  tipo_questao: 'geral' | 'laboratorio';
   status: string;
   dificuldade: number | null;
   disciplina_id: string | null;
@@ -75,6 +77,7 @@ export interface QuestaoPayload {
   imagem_url?: string | null;
   imagem_legenda?: string | null;
   formato: string;
+  tipo_questao?: 'geral' | 'laboratorio';
   status: string;
   dificuldade?: number | null;
   disciplina_id?: string | null;
@@ -95,8 +98,14 @@ export interface AdminProva {
   id: string;
   nome: string;
   tipo: string;
-  ano: number;
-  semestre: number;
+  origem: string;
+  formato: string | null;
+  rede: string | null;
+  subtipo: string | null;
+  publicada: boolean;
+  arquivada: boolean;
+  ano: number | null;
+  semestre: number | null;
   periodo: number;
   qtd_questoes: number;
   criado_em: string;
@@ -114,6 +123,12 @@ export interface AdminFaculdade {
 export interface ProvaInput {
   nome: string;
   tipo: string;
+  origem?: string;
+  formato?: string | null;
+  rede?: string | null;
+  subtipo?: string | null;
+  publicada?: boolean;
+  arquivada?: boolean;
   faculdade_id: string;
   periodo: number;
   ano?: number | null;
@@ -127,6 +142,7 @@ export interface AdminQuestaoSimples {
   id: string;
   enunciado: string;
   formato: string;
+  tipo_questao: 'geral' | 'laboratorio';
   status: string;
   disciplina_id: string | null;
   dificuldade: number | null;
@@ -193,7 +209,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,status,dificuldade,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova!questao_prova_id_fkey(nome)', {
+      .select('id,enunciado,formato,tipo_questao,status,dificuldade,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova!questao_prova_id_fkey(nome)', {
         count: 'exact',
       })
       .order('criado_em', { ascending: false })
@@ -349,18 +365,18 @@ export class AdminService {
   async listarProvas(
     pagina = 0,
     porPagina = 50,
-    filtros: { tipo?: string; busca?: string } = {},
+    filtros: { formato?: string; busca?: string } = {},
   ): Promise<ServiceResult<{ provas: AdminProva[]; total: number }>> {
     let query = this.supabase
       .from('prova')
-      .select('id,nome,tipo,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)', {
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)', {
         count: 'exact',
       })
       .gt('periodo', 0)
       .order('ano', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
-    if (filtros.tipo) query = query.eq('tipo', filtros.tipo);
+    if (filtros.formato) query = query.eq('formato', filtros.formato);
     if (filtros.busca?.trim()) query = query.ilike('nome', `%${filtros.busca}%`);
 
     const { data, error, count } = await query;
@@ -411,7 +427,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('prova')
       .insert(payload)
-      .select('id,nome,tipo,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminProva };
@@ -440,14 +456,15 @@ export class AdminService {
   async listarQuestoesParaVincular(
     pagina = 0,
     porPagina = 30,
-    filtros: { busca?: string; status?: string } = {},
+    filtros: { busca?: string; status?: string; tipo_questao?: 'geral' | 'laboratorio' } = {},
   ): Promise<ServiceResult<{ questoes: AdminQuestaoSimples[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,status,disciplina_id,dificuldade,criado_em', { count: 'exact' })
+      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,dificuldade,criado_em', { count: 'exact' })
       .order('criado_em', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
     if (filtros.status) query = query.eq('status', filtros.status);
+    if (filtros.tipo_questao) query = query.eq('tipo_questao', filtros.tipo_questao);
     if (filtros.busca?.trim()) query = query.ilike('enunciado', `%${filtros.busca}%`);
     const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };

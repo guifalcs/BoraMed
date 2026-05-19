@@ -9,6 +9,7 @@ export interface Questao {
   imagem_url: string | null;
   imagem_legenda: string | null;
   formato: 'multipla_escolha' | 'resposta_aberta_curta' | 'verdadeiro_falso' | 'associacao';
+  tipo_questao?: 'geral' | 'laboratorio';
   resposta_correta_texto: string | null;
   respostas_aceitas: string[] | null;
   explicacao: string | null;

@@ -16,7 +16,7 @@
   />
   <div class="toolbar-filter">
     <app-ui-select
-      label="Tipo"
+      label="Formato"
       name="filtro-tipo"
       [options]="opcoesTipo"
       [value]="filtroTipo()"
@@ -36,7 +36,8 @@
       <thead>
         <tr>
           <th>Nome</th>
-          <th>Tipo</th>
+          <th>Formato</th>
+          <th>Origem</th>
           <th>Faculdade</th>
           <th>Ano</th>
           <th>Questões</th>
@@ -47,7 +48,8 @@
         @for (p of provas(); track p.id) {
           <tr>
             <td>{{ p.nome }}</td>
-            <td><span class="type-badge">{{ tipoLabel(p.tipo) }}</span></td>
+            <td><span class="type-badge">{{ tipoLabel(p.formato) }}</span></td>
+            <td><span class="type-badge">{{ p.origem }}</span></td>
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
             <td>{{ p.ano }}/{{ p.semestre }}</td>
             <td>{{ p.qtd_questoes }}</td>
@@ -163,7 +165,7 @@
         <div class="form-row">
           <div class="form-section">
             <app-ui-select
-              label="Tipo"
+              label="Origem"
               name="tipo"
               [options]="opcoesTipoForm"
               [value]="fTipo()"
@@ -182,6 +184,29 @@
               placeholder="1"
               [ngModel]="fPeriodo()"
               (ngModelChange)="fPeriodo.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-section">
+            <app-ui-select
+              label="Formato"
+              name="formato"
+              [options]="opcoesFormatoForm"
+              [value]="fFormato()"
+              [required]="true"
+              (valueChange)="fFormato.set($any($event) ?? 'nacional')"
+            />
+          </div>
+
+          <div class="form-section">
+            <app-ui-select
+              label="Rede"
+              name="rede"
+              [options]="opcoesRedeForm"
+              [value]="fRede()"
+              (valueChange)="fRede.set($any($event) ?? '')"
             />
           </div>
         </div>
@@ -219,7 +244,7 @@
           </div>
         </div>
 
-        @if (fTipo() === 'faculdade') {
+        @if (fFormato()) {
           <div class="form-section">
             <app-ui-select
               label="Subtipo"

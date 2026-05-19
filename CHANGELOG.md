@@ -8,6 +8,20 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-18 | Feature | sem commit
+
+**Formatos de provas extensiveis**
+
+- Nova migration adiciona `origem`, `formato`, `rede`, `subtipo`, `publicada` e `arquivada` em `prova`, mantendo `tipo` como legado.
+- Questoes passam a ter `tipo_questao`, com regra de banco exigindo `imagem_url` para laboratorio.
+- Bucket `questao-imagens` e policies de storage foram formalizados para upload administrativo.
+- RPC de simulado personalizado passa a gravar `origem = 'personalizado'` e filtrar por tipo de questao.
+- Admin de provas passa a separar origem, formato, rede e subtipo, permitindo Nacional, Processual, Laboratorio e Multiestacoes.
+- Admin de questoes permite marcar questao como Laboratorio e exige imagem nesse caso.
+- Listagem de simulados no modelo Afya passa a alternar por formato via query param.
+
+---
+
 ## 2026-05-18 | Docs | sem commit
 
 **Plano de adaptacao para tipos de provas**

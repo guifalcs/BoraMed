@@ -157,6 +157,8 @@ export class AdminProvasComponent implements OnInit {
   protected readonly temasExistentes = signal<AdminTema[]>([]);
   protected readonly fNome = signal('');
   protected readonly fTipo = signal('autoral');
+  protected readonly fFormato = signal('nacional');
+  protected readonly fRede = signal('afya');
   protected readonly fFaculdadeId = signal('');
   protected readonly fPeriodo = signal('1');
   protected readonly fAno = signal('');
@@ -194,15 +196,29 @@ export class AdminProvasComponent implements OnInit {
 
   // ── Select options — lista (toolbar) ──
   protected readonly opcoesTipo: SelectOption[] = [
-    { value: '', label: 'Todos os tipos' },
-    { value: 'autoral', label: 'Autoral' },
-    { value: 'faculdade', label: 'De faculdade' },
+    { value: '', label: 'Todos os formatos' },
+    { value: 'nacional', label: 'Nacional' },
+    { value: 'processual', label: 'Processual' },
+    { value: 'laboratorio', label: 'Laboratório' },
+    { value: 'multiestacoes', label: 'Multiestações' },
   ];
 
   // ── Select options — drawer (form) ──
   protected readonly opcoesTipoForm: SelectOption[] = [
     { value: 'autoral', label: 'Autoral' },
-    { value: 'faculdade', label: 'De faculdade' },
+    { value: 'faculdade', label: 'Modelo de faculdade/rede' },
+  ];
+
+  protected readonly opcoesFormatoForm: SelectOption[] = [
+    { value: 'nacional', label: 'Nacional' },
+    { value: 'processual', label: 'Processual' },
+    { value: 'laboratorio', label: 'Laboratório' },
+    { value: 'multiestacoes', label: 'Multiestações' },
+  ];
+
+  protected readonly opcoesRedeForm: SelectOption[] = [
+    { value: '', label: 'Sem rede' },
+    { value: 'afya', label: 'Afya' },
   ];
 
   protected readonly opcoesSemestreForm: SelectOption[] = [
@@ -215,6 +231,8 @@ export class AdminProvasComponent implements OnInit {
     { value: '', label: 'Nenhum' },
     { value: 'N1', label: 'N1' },
     { value: 'N2', label: 'N2' },
+    { value: 'P1', label: 'P1' },
+    { value: 'P2', label: 'P2' },
     { value: 'teste_progresso', label: 'Teste de Progresso' },
   ];
 
@@ -246,7 +264,7 @@ export class AdminProvasComponent implements OnInit {
   async carregar(): Promise<void> {
     this.isLoading.set(true);
     const result = await this.adminService.listarProvas(this.pagina(), this.porPagina, {
-      tipo: this.filtroTipo() || undefined,
+      formato: this.filtroTipo() || undefined,
       busca: this.busca() || undefined,
     });
     if (result.ok) { this.provas.set(result.data.provas); this.total.set(result.data.total); }
@@ -285,6 +303,8 @@ export class AdminProvasComponent implements OnInit {
     this.provaId.set(null);
     this.fNome.set('');
     this.fTipo.set('autoral');
+    this.fFormato.set('nacional');
+    this.fRede.set('afya');
     this.fFaculdadeId.set(this.faculdades()[0]?.id ?? '');
     this.fPeriodo.set('1');
     this.fAno.set('');
@@ -313,14 +333,20 @@ export class AdminProvasComponent implements OnInit {
     this.salvando.set(true);
     const input: ProvaInput = {
       nome: this.fNome().trim(),
-      tipo: this.fTipo(),
+      tipo: this.fTipo() === 'faculdade' ? 'faculdade' : 'autoral',
+      origem: this.fTipo(),
+      formato: this.fFormato(),
+      rede: this.fRede() || null,
       faculdade_id: this.fFaculdadeId(),
       periodo: Number(this.fPeriodo()),
       ano: this.fAno() ? Number(this.fAno()) : null,
       semestre: this.fSemestre() ? Number(this.fSemestre()) : null,
       edicao: this.fEdicao() ? Number(this.fEdicao()) : null,
-      subtipo_nacional: this.fSubtipoNacional() || null,
+      subtipo: this.fSubtipoNacional() || null,
+      subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
       tempo_sugerido_minutos: this.fTempoSugerido() ? Number(this.fTempoSugerido()) : null,
+      publicada: false,
+      arquivada: false,
     };
     const res = await this.adminService.criarProva(input);
     this.salvando.set(false);
@@ -333,7 +359,13 @@ export class AdminProvasComponent implements OnInit {
     this.etapa.set('metodo');
   }
 
-  protected escolherImportar(): void { this.etapa.set('importar_input'); }
+  protected escolherImportar(): void {
+    if (this.fFormato() === 'laboratorio') {
+      this.toast.error('Questões de laboratório exigem imagem. Cadastre as questões em Questões e depois vincule aqui.');
+      return;
+    }
+    this.etapa.set('importar_input');
+  }
 
   protected escolherSelecionar(): void {
     this.etapa.set('selecionar');
@@ -368,7 +400,15 @@ export class AdminProvasComponent implements OnInit {
     const questoesParaVincular: { questao_id: string; ordem: number }[] = [];
     for (let i = 0; i < validas.length; i++) {
       const q = validas[i];
-      const payload: QuestaoPayload = { enunciado: q.enunciado, formato: q.formato, status: 'ativa', disciplina_id: q.disciplina_id, explicacao: q.explicacao, fonte: q.fonte };
+      const payload: QuestaoPayload = {
+        enunciado: q.enunciado,
+        formato: q.formato,
+        tipo_questao: this.fFormato() === 'laboratorio' ? 'laboratorio' : 'geral',
+        status: 'ativa',
+        disciplina_id: q.disciplina_id,
+        explicacao: q.explicacao,
+        fonte: q.fonte,
+      };
       const alternativas: AlternativaPayload[] = q.alternativas.map((a, idx) => ({ letra: a.letra, texto: a.texto, correta: a.correta, ordem: idx + 1 }));
       const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, q.tema_ids);
       if (res.ok) { questoesParaVincular.push({ questao_id: res.data, ordem: i + 1 }); this.importados.update((n) => n + 1); }
@@ -387,6 +427,7 @@ export class AdminProvasComponent implements OnInit {
     const res = await this.adminService.listarQuestoesParaVincular(this.paginaQuestoes(), this.porPaginaQuestoes, {
       busca: this.buscaQuestoes() || undefined,
       status: this.statusFiltro() || undefined,
+      tipo_questao: this.fFormato() === 'laboratorio' ? 'laboratorio' : undefined,
     });
     if (res.ok) { this.questoesBanco.set(res.data.questoes); this.totalQuestoesBanco.set(res.data.total); }
     this.carregandoQuestoes.set(false);
@@ -445,7 +486,7 @@ export class AdminProvasComponent implements OnInit {
     return 'Não foi possível criar a prova. Tente novamente.';
   }
 
-  protected tipoLabel(tipo: string): string { return this.opcoesTipo.find((o) => o.value === tipo)?.label ?? tipo; }
+  protected tipoLabel(tipo: string | null): string { return this.opcoesTipo.find((o) => o.value === tipo)?.label ?? tipo ?? '—'; }
   protected enunciadoCurto(texto: string): string { return texto.length > 100 ? texto.slice(0, 100) + '…' : texto; }
   protected gabaritoLabel(q: QuestaoParseada): string { return q.alternativas.find((a) => a.correta)?.letra ?? '—'; }
 

@@ -39,6 +39,7 @@
         <tr>
           <th style="width:42%">Enunciado</th>
           <th>Formato</th>
+          <th>Tipo</th>
           <th>Status</th>
           <th>Acerto</th>
           <th>Prova</th>
@@ -52,6 +53,9 @@
               <span class="enunciado-text">{{ q.enunciado | slice:0:110 }}{{ q.enunciado.length > 110 ? '…' : '' }}</span>
             </td>
             <td><span class="format-badge format-badge--{{ q.formato }}">{{ formatoLabel(q.formato) }}</span></td>
+            <td>
+              <span class="format-badge format-badge--{{ q.tipo_questao }}">{{ q.tipo_questao === 'laboratorio' ? 'Laboratório' : 'Geral' }}</span>
+            </td>
             <td class="status-td">
               <app-ui-select
                 label=""
@@ -163,6 +167,17 @@
                 [value]="fFormato()"
                 [required]="true"
                 (valueChange)="onFormatoChange($any($event))"
+              />
+            </div>
+
+            <div class="field">
+              <app-ui-select
+                label="Tipo da questão"
+                name="tipo-questao"
+                [options]="opcoesTipoQuestao"
+                [value]="fTipoQuestao()"
+                [required]="true"
+                (valueChange)="fTipoQuestao.set($any($event) || 'geral')"
               />
             </div>
 
@@ -450,6 +465,8 @@
   .format-badge--multipla_escolha { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
   .format-badge--verdadeiro_falso { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
   .format-badge--discursiva { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .format-badge--geral { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+  .format-badge--laboratorio { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
 
   /* ── Taxa de acerto com cores ── */
   .taxa-badge {

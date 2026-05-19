@@ -77,6 +77,7 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fEnunciado = signal('');
   protected readonly fEnunciadoApoio = signal('');
   protected readonly fFormato = signal('multipla_escolha');
+  protected readonly fTipoQuestao = signal<'geral' | 'laboratorio'>('geral');
   protected readonly fStatus = signal('rascunho');
   protected readonly fDificuldade = signal<number | null>(null);
   protected readonly fDisciplinaId = signal<string | null>(null);
@@ -111,6 +112,11 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly opcoesFormato: SelectOption[] = [
     { value: 'multipla_escolha', label: 'Múltipla escolha' },
     { value: 'verdadeiro_falso', label: 'Verdadeiro / Falso' },
+  ];
+
+  protected readonly opcoesTipoQuestao: SelectOption[] = [
+    { value: 'geral', label: 'Geral' },
+    { value: 'laboratorio', label: 'Laboratório' },
   ];
 
   protected readonly opcoesStatusForm: SelectOption[] = [
@@ -302,6 +308,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.fEnunciado.set(d.enunciado ?? '');
     this.fEnunciadoApoio.set(d.enunciado_apoio ?? '');
     this.fFormato.set(d.formato ?? 'multipla_escolha');
+    this.fTipoQuestao.set(d.tipo_questao ?? 'geral');
     this.fStatus.set(d.status ?? 'rascunho');
     this.fDificuldade.set(d.dificuldade ?? null);
     this.fDisciplinaId.set(d.disciplina_id ?? null);
@@ -381,6 +388,10 @@ export class AdminQuestoesComponent implements OnInit {
       this.toast.error('Marque ao menos uma alternativa como correta.');
       return;
     }
+    if (this.fTipoQuestao() === 'laboratorio' && !this.fImagemUrl()) {
+      this.toast.error('Questões de laboratório exigem imagem.');
+      return;
+    }
 
     this.salvando.set(true);
 
@@ -390,6 +401,7 @@ export class AdminQuestoesComponent implements OnInit {
       imagem_url: this.fImagemUrl(),
       imagem_legenda: this.fImagemUrl() ? (this.fImagemLegenda().trim() || null) : null,
       formato: this.fFormato(),
+      tipo_questao: this.fTipoQuestao(),
       status: this.fStatus(),
       dificuldade: this.fDificuldade(),
       disciplina_id: this.fDisciplinaId() || null,
@@ -448,6 +460,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.fEnunciado.set('');
     this.fEnunciadoApoio.set('');
     this.fFormato.set('multipla_escolha');
+    this.fTipoQuestao.set('geral');
     this.fStatus.set('rascunho');
     this.fDificuldade.set(null);
     this.fDisciplinaId.set(null);

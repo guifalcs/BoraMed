@@ -34,7 +34,7 @@ export class HistoricoService {
     try {
       const { data, error } = await this.supabase
         .from('tentativa')
-        .select('id, prova_id, modo, nota, total_questoes, acertos, finalizada_em, prova:prova_id(nome, tipo)')
+        .select('id, prova_id, modo, nota, total_questoes, acertos, finalizada_em, prova:prova_id(nome, tipo, origem, formato)')
         .eq('status', 'finalizada')
         .neq('modo', 'visualizar')
         .order('finalizada_em', { ascending: false })
@@ -50,13 +50,16 @@ export class HistoricoService {
         total_questoes: number;
         acertos: number;
         finalizada_em: string | null;
-        prova: { nome: string; tipo: string } | { nome: string; tipo: string }[] | null;
+        prova:
+          | { nome: string; tipo: string; origem: string | null; formato: string | null }
+          | { nome: string; tipo: string; origem: string | null; formato: string | null }[]
+          | null;
       };
 
       const items: TentativaHistoricoItem[] = ((data ?? []) as unknown as RawRow[]).map((r) => {
         const prova = Array.isArray(r.prova) ? r.prova[0] : r.prova;
-        const tipo = prova?.tipo ?? 'nacional';
-        const nome = tipo === 'processual' ? 'Simulado Personalizado' : (prova?.nome ?? 'Prova');
+        const tipo = prova?.formato ?? prova?.tipo ?? 'nacional';
+        const nome = prova?.origem === 'personalizado' ? 'Simulado Personalizado' : (prova?.nome ?? 'Prova');
         return {
           id: r.id,
           prova_id: r.prova_id,

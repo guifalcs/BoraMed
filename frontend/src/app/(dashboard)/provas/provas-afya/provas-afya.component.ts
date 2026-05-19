@@ -8,7 +8,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChevronLeft, Stethoscope, FlaskConical, Zap } from 'lucide-angular';
 import { ProvaService } from '../../../core/services/prova.service';
-import type { Prova, SubtipoProva } from '../../../core/models/prova';
+import type { FormatoProva, Prova, SubtipoProva } from '../../../core/models/prova';
 import type { ProvasAfyaResolvedData } from '../../../core/resolvers/provas-afya.resolver';
 import { ProvaCardComponent } from '../../../shared/components/prova-card/prova-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -24,6 +24,7 @@ import type { SelectOption } from '../../../shared/components/ui/select/ui-selec
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProvasAfyaComponent {
+  private readonly route = inject(ActivatedRoute);
   private readonly provaService = inject(ProvaService);
   private readonly router = inject(Router);
 
@@ -35,6 +36,7 @@ export class ProvasAfyaComponent {
   protected readonly todasAsProvas = signal<Prova[]>([]);
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
+  protected readonly formatoAtual = signal<FormatoProva>('nacional');
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
@@ -43,6 +45,8 @@ export class ProvasAfyaComponent {
     { value: 'N1', label: 'N1' },
     { value: 'teste_progresso', label: 'TPI' },
     { value: 'N2', label: 'Integradora' },
+    { value: 'P1', label: 'P1' },
+    { value: 'P2', label: 'P2' },
   ];
 
   protected readonly periodoOpcoes: SelectOption[] = Array.from({ length: 12 }, (_, i) => ({
@@ -56,7 +60,10 @@ export class ProvasAfyaComponent {
     const periodos = this.periodosFiltro();
 
     if (subtipos.length > 0) {
-      lista = lista.filter((p) => p.subtipo_nacional && subtipos.includes(p.subtipo_nacional));
+      lista = lista.filter((p) => {
+        const subtipo = p.subtipo ?? p.subtipo_nacional;
+        return subtipo !== null && subtipos.includes(subtipo);
+      });
     }
     if (periodos.length > 0) {
       lista = lista.filter((p) => p.periodo != null && periodos.includes(p.periodo));
@@ -65,7 +72,10 @@ export class ProvasAfyaComponent {
   });
 
   constructor() {
-    const resolved = inject(ActivatedRoute).snapshot.data['provasAfyaData'] as ProvasAfyaResolvedData | undefined;
+    const resolved = this.route.snapshot.data['provasAfyaData'] as ProvasAfyaResolvedData | undefined;
+    const formatoInicial = parseFormato(this.route.snapshot.queryParamMap.get('tipo'));
+    this.formatoAtual.set(formatoInicial);
+
     if (resolved?.provasResult.ok) {
       this.todasAsProvas.set(resolved.provasResult.data);
       this.isLoading.set(false);
@@ -73,14 +83,27 @@ export class ProvasAfyaComponent {
       this.erro.set(resolved.provasResult.error);
       this.isLoading.set(false);
     }
+
+    if (formatoInicial !== 'nacional') {
+      void this.carregarProvas();
+    }
+
+    this.route.queryParamMap.subscribe((params) => {
+      const formato = parseFormato(params.get('tipo'));
+      if (formato === this.formatoAtual()) return;
+      this.formatoAtual.set(formato);
+      this.subtiposFiltro.set([]);
+      void this.carregarProvas();
+    });
   }
 
   protected async carregarProvas(): Promise<void> {
     this.erro.set(null);
     this.isLoading.set(true);
-    const result = await this.provaService.listarProvasNacionais({
+    const result = await this.provaService.listarProvasPorFormato(this.formatoAtual(), {
       subtipo: null,
       periodo: null,
+      rede: 'afya',
     });
     if (result.ok) {
       this.todasAsProvas.set(result.data);
@@ -101,4 +124,27 @@ export class ProvasAfyaComponent {
   protected abrirProva(id: string): void {
     void this.router.navigate(['/dashboard/simulados', id]);
   }
+
+  protected readonly titulo = computed(() => {
+    switch (this.formatoAtual()) {
+      case 'processual': return 'Processual no modelo Afya';
+      case 'laboratorio': return 'Laboratório no modelo Afya';
+      case 'multiestacoes': return 'Multiestações no modelo Afya';
+      default: return 'Nacional no modelo Afya';
+    }
+  });
+
+  protected readonly descricao = computed(() => {
+    switch (this.formatoAtual()) {
+      case 'processual': return 'Simulados autorais inspirados no formato das avaliações processuais. BoraMed é independente e não representa a Afya.';
+      case 'laboratorio': return 'Questões autorais com imagens de lâminas e peças no modelo de laboratório. BoraMed é independente e não representa a Afya.';
+      case 'multiestacoes': return 'Treinos autorais no modelo multiestações. BoraMed é independente e não representa a Afya.';
+      default: return 'Simulados autorais inspirados no formato das avaliações nacionais. BoraMed é independente e não representa a Afya.';
+    }
+  });
+}
+
+function parseFormato(value: string | null): FormatoProva {
+  if (value === 'processual' || value === 'laboratorio' || value === 'multiestacoes') return value;
+  return 'nacional';
 }
