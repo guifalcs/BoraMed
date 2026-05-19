@@ -7,7 +7,7 @@ import type { ProvaResult } from './prova.service';
 export class TemaService {
   private readonly supabase = inject(SupabaseService).client;
 
-  async listarTemasComContagem(tipoQuestao?: 'geral' | 'laboratorio'): Promise<ProvaResult<TemaComContagem[]>> {
+  async listarTemasComContagem(tipoQuestao?: 'nacional' | 'processual' | 'laboratorio' | null): Promise<ProvaResult<TemaComContagem[]>> {
     try {
       const { data, error } = await this.supabase.rpc('listar_temas_com_contagem', {
         p_tipo_questao: tipoQuestao ?? null,

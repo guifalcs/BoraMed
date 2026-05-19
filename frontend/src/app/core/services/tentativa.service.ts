@@ -411,16 +411,16 @@ export class TentativaService {
     temaIds: string[] | null,
     qtd: number,
     modo: ModoProva = 'simulado',
-    formato: 'nacional' | 'processual' | 'laboratorio' = 'nacional',
+    formato: 'todos' | 'nacional' | 'processual' | 'laboratorio' = 'todos',
   ): Promise<ProvaResult<{ prova_id: string; tentativa: Tentativa; questoes: QuestaoComAlternativas[] }>> {
-    const tipoQuestao = formato === 'laboratorio' ? 'laboratorio' : 'geral';
+    const tipoQuestao = formato === 'todos' ? null : formato;
     try {
       const { data, error } = await this.supabase.rpc('gerar_simulado_personalizado', {
         p_tema_ids: temaIds && temaIds.length > 0 ? temaIds : null,
         p_qtd: qtd,
         p_modo: modo,
         p_tipo_questao: tipoQuestao,
-        p_formato: formato,
+        p_formato: formato === 'todos' ? null : formato,
       });
 
       if (error) {

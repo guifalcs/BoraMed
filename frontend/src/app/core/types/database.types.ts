@@ -383,7 +383,7 @@ export type Database = {
           explicacao_alternativas: Json | null
           fonte: string | null
           formato: string
-          formato_prova: string | null
+          formato_prova: 'N1' | 'N2' | 'teste_progresso' | null
           id: string
           imagem_legenda: string | null
           imagem_url: string | null
@@ -419,7 +419,7 @@ export type Database = {
           explicacao_alternativas?: Json | null
           fonte?: string | null
           formato: string
-          formato_prova?: string | null
+          formato_prova?: 'N1' | 'N2' | 'teste_progresso' | null
           id?: string
           imagem_legenda?: string | null
           imagem_url?: string | null
@@ -455,7 +455,7 @@ export type Database = {
           explicacao_alternativas?: Json | null
           fonte?: string | null
           formato?: string
-          formato_prova?: string | null
+          formato_prova?: 'N1' | 'N2' | 'teste_progresso' | null
           id?: string
           imagem_legenda?: string | null
           imagem_url?: string | null
@@ -774,11 +774,11 @@ export type Database = {
           }
       gerar_simulado_personalizado: {
         Args: {
-          p_formato?: string
+          p_formato?: string | null
           p_modo?: string
           p_qtd?: number
           p_tema_ids?: string[]
-          p_tipo_questao?: string
+          p_tipo_questao?: string | null
         }
         Returns: Json
       }
@@ -805,7 +805,7 @@ export type Database = {
         Returns: Json
       }
       listar_temas_com_contagem: {
-        Args: { p_tipo_questao?: string }
+        Args: { p_tipo_questao?: string | null }
         Returns: {
           criado_em: string
           disciplina: string

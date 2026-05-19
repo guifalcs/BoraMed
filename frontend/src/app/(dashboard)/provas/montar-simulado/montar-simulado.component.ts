@@ -16,27 +16,33 @@ import { UiButtonComponent } from '../../../shared/components/ui/button/ui-butto
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
 
-type FormatoSimulado = 'nacional' | 'processual' | 'laboratorio';
+type FormatoSimulado = 'todos' | 'nacional' | 'processual' | 'laboratorio';
 
 interface OpcaoFormato {
   value: FormatoSimulado;
   label: string;
   descricao: string;
-  tipoQuestao: 'geral' | 'laboratorio';
+  tipoQuestao: 'nacional' | 'processual' | 'laboratorio' | null;
 }
 
 const FORMATOS: OpcaoFormato[] = [
   {
+    value: 'todos',
+    label: 'Todos',
+    descricao: 'Sorteio sem filtrar por tipo de prova',
+    tipoQuestao: null,
+  },
+  {
     value: 'nacional',
     label: 'Nacional',
     descricao: 'Questões de múltipla escolha no estilo N1, TPI e Integradora',
-    tipoQuestao: 'geral',
+    tipoQuestao: 'nacional',
   },
   {
     value: 'processual',
     label: 'Processual',
     descricao: 'Questões aplicadas em contexto clínico e raciocínio diagnóstico',
-    tipoQuestao: 'geral',
+    tipoQuestao: 'processual',
   },
   {
     value: 'laboratorio',
@@ -66,7 +72,7 @@ export class MontarSimuladoComponent {
 
   protected readonly formatos = FORMATOS;
 
-  protected readonly formatoSelecionado = signal<FormatoSimulado>('nacional');
+  protected readonly formatoSelecionado = signal<FormatoSimulado>('todos');
   protected readonly temas = signal<TemaComContagem[]>([]);
   protected readonly isLoadingTemas = signal(true);
   protected readonly isRecarregandoFormato = signal(false);
@@ -267,7 +273,10 @@ export class MontarSimuladoComponent {
 
     if (result.ok) {
       const { prova_id, tentativa } = result.data;
-      this.tentativaService.setProvaNome(`Simulado ${this.formatoAtual().label}`);
+      const nomeProva = this.formatoSelecionado() === 'todos'
+        ? 'Simulado personalizado'
+        : `Simulado ${this.formatoAtual().label}`;
+      this.tentativaService.setProvaNome(nomeProva);
       void this.router.navigate(['/dashboard/simulados', prova_id, 'tentativa', tentativa.id]);
     } else {
       this.erro.set(result.error);

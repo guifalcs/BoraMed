@@ -77,7 +77,8 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fEnunciado = signal('');
   protected readonly fEnunciadoApoio = signal('');
   protected readonly fFormato = signal('multipla_escolha');
-  protected readonly fTipoQuestao = signal<'geral' | 'laboratorio'>('geral');
+  protected readonly fTipoQuestao = signal<'nacional' | 'processual' | 'laboratorio'>('nacional');
+  protected readonly fFormatoProva = signal<string | null>(null);
   protected readonly fStatus = signal('rascunho');
   protected readonly fDificuldade = signal<number | null>(null);
   protected readonly fDisciplinaId = signal<string | null>(null);
@@ -115,7 +116,8 @@ export class AdminQuestoesComponent implements OnInit {
   ];
 
   protected readonly opcoesTipoQuestao: SelectOption[] = [
-    { value: 'geral', label: 'Geral' },
+    { value: 'nacional', label: 'Nacional' },
+    { value: 'processual', label: 'Processual' },
     { value: 'laboratorio', label: 'Laboratório' },
   ];
 
@@ -133,6 +135,18 @@ export class AdminQuestoesComponent implements OnInit {
       label: `${d.sigla}${d.nome ? ' — ' + d.nome : ''} (P${d.periodo})`,
     })),
   ]);
+
+  protected readonly opcoesFormatoProva = computed<SelectOption[]>(() => {
+    if (this.fTipoQuestao() === 'nacional') {
+      return [
+        { value: '', label: 'Sem subtipo' },
+        { value: 'N1', label: 'N1' },
+        { value: 'N2', label: 'N2' },
+        { value: 'teste_progresso', label: 'Teste de Progresso' },
+      ];
+    }
+    return [];
+  });
 
   protected readonly opcoesDificuldade: SelectOption[] = [
     { value: 1, label: '1 – Muito fácil' },
@@ -308,7 +322,8 @@ export class AdminQuestoesComponent implements OnInit {
     this.fEnunciado.set(d.enunciado ?? '');
     this.fEnunciadoApoio.set(d.enunciado_apoio ?? '');
     this.fFormato.set(d.formato ?? 'multipla_escolha');
-    this.fTipoQuestao.set(d.tipo_questao ?? 'geral');
+    this.fTipoQuestao.set(d.tipo_questao ?? 'nacional');
+    this.fFormatoProva.set(d.formato_prova ?? null);
     this.fStatus.set(d.status ?? 'rascunho');
     this.fDificuldade.set(d.dificuldade ?? null);
     this.fDisciplinaId.set(d.disciplina_id ?? null);
@@ -351,6 +366,10 @@ export class AdminQuestoesComponent implements OnInit {
   protected onFormatoChange(formato: string): void {
     this.fFormato.set(formato);
     this.fAlternativas.set(alternativasIniciais(formato));
+  }
+
+  protected onTipoQuestaoChange(tipo: string): void {
+    this.fFormatoProva.set(tipo === 'laboratorio' ? 'laboratorio' : null);
   }
 
   protected marcarCorreta(index: number): void {
@@ -402,6 +421,7 @@ export class AdminQuestoesComponent implements OnInit {
       imagem_legenda: this.fImagemUrl() ? (this.fImagemLegenda().trim() || null) : null,
       formato: this.fFormato(),
       tipo_questao: this.fTipoQuestao(),
+      formato_prova: this.fFormatoProva() || null,
       status: this.fStatus(),
       dificuldade: this.fDificuldade(),
       disciplina_id: this.fDisciplinaId() || null,
@@ -460,7 +480,8 @@ export class AdminQuestoesComponent implements OnInit {
     this.fEnunciado.set('');
     this.fEnunciadoApoio.set('');
     this.fFormato.set('multipla_escolha');
-    this.fTipoQuestao.set('geral');
+    this.fTipoQuestao.set('nacional');
+    this.fFormatoProva.set(null);
     this.fStatus.set('rascunho');
     this.fDificuldade.set(null);
     this.fDisciplinaId.set(null);

@@ -8,6 +8,17 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-19 | Feature | sem commit
+
+**Simulado sem tipo de prova**
+
+- Montagem de simulado ganha a opção Todos para sortear questões sem filtrar por tipo de prova.
+- RPC `gerar_simulado_personalizado` passa a aceitar `p_tipo_questao` e `p_formato` nulos como ausência de filtro.
+- Contagem de temas reaproveita o carregamento geral quando a opção Todos está selecionada.
+- Regras de negócio documentam que o tipo de prova é opcional na montagem do simulado.
+
+---
+
 ## 2026-05-19 | Fix | sem commit
 
 **Loading ao trocar formato no montar simulado**

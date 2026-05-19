@@ -17,7 +17,7 @@
 ### Simulado
 
 * Gerado sob demanda pelo aluno
-* Configuração: tipo de questão + tema(s) + quantidade
+* Configuração: tipo de prova opcional + tema(s) + quantidade
 * Quantidades disponíveis: 5, 10, 15, 20, 30
 * Ordem das questões: sempre aleatória
 * Provas regulares usam `prova_questao` como fonte canônica de vínculo e ordem das questões.
@@ -25,6 +25,7 @@
 * A retomada de qualquer tentativa deve remontar as questões a partir de `tentativa_resposta`, pois simulados personalizados não têm questões vinculadas diretamente à prova sintética
 * Se existir tentativa com status `em_andamento` ou `pausada`, a home e a área de simulados devem priorizar um CTA de continuidade para levar o aluno direto de volta à execução
 * Ao trocar o formato na montagem de simulado, a lista de temas deve entrar em estado de carregamento e bloquear ações sobre temas até a nova contagem ser retornada
+* A montagem de simulado deve permitir a opção sem tipo de prova, sorteando questões ativas de todos os formatos disponíveis
 * Uma vez iniciado, o tempo corre
 * Pode ser pausado e retomado (estado salvo no banco)
 * Não pode ser refeito com as mesmas questões na mesma ordem

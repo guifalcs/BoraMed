@@ -27,7 +27,8 @@ export interface AdminQuestao {
   id: string;
   enunciado: string;
   formato: string;
-  tipo_questao: 'geral' | 'laboratorio';
+  tipo_questao: 'nacional' | 'processual' | 'laboratorio';
+  formato_prova: string | null;
   status: string;
   dificuldade: number | null;
   disciplina_id: string | null;
@@ -53,7 +54,8 @@ export interface AdminQuestaoCompleta {
   imagem_url: string | null;
   imagem_legenda: string | null;
   formato: string;
-  tipo_questao: 'geral' | 'laboratorio';
+  tipo_questao: 'nacional' | 'processual' | 'laboratorio';
+  formato_prova: string | null;
   status: string;
   dificuldade: number | null;
   disciplina_id: string | null;
@@ -77,7 +79,7 @@ export interface QuestaoPayload {
   imagem_url?: string | null;
   imagem_legenda?: string | null;
   formato: string;
-  tipo_questao?: 'geral' | 'laboratorio';
+  tipo_questao?: 'nacional' | 'processual' | 'laboratorio';
   status: string;
   dificuldade?: number | null;
   disciplina_id?: string | null;
@@ -89,6 +91,7 @@ export interface QuestaoPayload {
   resposta_correta_texto?: string | null;
   revisado?: boolean;
   apto_desafio_diario?: boolean;
+  formato_prova?: string | null;
   autor_id?: string | null;
 }
 
@@ -149,7 +152,7 @@ export interface AdminQuestaoSimples {
   id: string;
   enunciado: string;
   formato: string;
-  tipo_questao: 'geral' | 'laboratorio';
+  tipo_questao: 'nacional' | 'processual' | 'laboratorio';
   status: string;
   disciplina_id: string | null;
   dificuldade: number | null;
@@ -514,7 +517,7 @@ export class AdminService {
   async listarQuestoesParaVincular(
     pagina = 0,
     porPagina = 30,
-    filtros: { busca?: string; status?: string; tipo_questao?: 'geral' | 'laboratorio' } = {},
+    filtros: { busca?: string; status?: string; tipo_questao?: 'nacional' | 'processual' | 'laboratorio' } = {},
   ): Promise<ServiceResult<{ questoes: AdminQuestaoSimples[]; total: number }>> {
     let query = this.supabase
       .from('questao')

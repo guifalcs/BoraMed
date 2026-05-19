@@ -54,7 +54,7 @@
             </td>
             <td><span class="format-badge format-badge--{{ q.formato }}">{{ formatoLabel(q.formato) }}</span></td>
             <td>
-              <span class="format-badge format-badge--{{ q.tipo_questao }}">{{ q.tipo_questao === 'laboratorio' ? 'Laboratório' : 'Geral' }}</span>
+              <span class="format-badge format-badge--{{ q.tipo_questao }}">{{ q.tipo_questao === 'laboratorio' ? 'Laboratório' : q.tipo_questao === 'processual' ? 'Processual' : 'Nacional' }}</span>
             </td>
             <td class="status-td">
               <app-ui-select
@@ -177,9 +177,21 @@
                 [options]="opcoesTipoQuestao"
                 [value]="fTipoQuestao()"
                 [required]="true"
-                (valueChange)="fTipoQuestao.set($any($event) || 'geral')"
+                (valueChange)="fTipoQuestao.set($any($event) || 'nacional'); onTipoQuestaoChange($any($event))"
               />
             </div>
+
+            @if (opcoesFormatoProva().length > 0) {
+              <div class="field">
+                <app-ui-select
+                  label="Subtipo da prova"
+                  name="formato-prova"
+                  [options]="opcoesFormatoProva()"
+                  [value]="fFormatoProva() ?? ''"
+                  (valueChange)="fFormatoProva.set($any($event) || null)"
+                />
+              </div>
+            }
 
             <div class="field">
               <app-ui-select
@@ -465,7 +477,8 @@
   .format-badge--multipla_escolha { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
   .format-badge--verdadeiro_falso { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
   .format-badge--discursiva { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-  .format-badge--geral { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+  .format-badge--nacional { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+  .format-badge--processual { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
   .format-badge--laboratorio { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
 
   /* ── Taxa de acerto com cores ── */

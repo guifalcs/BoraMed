@@ -493,7 +493,7 @@ export class AdminProvasComponent implements OnInit {
       const payload: QuestaoPayload = {
         enunciado: q.enunciado,
         formato: q.formato,
-        tipo_questao: this.fFormato() === 'laboratorio' ? 'laboratorio' : 'geral',
+        tipo_questao: this.fFormato() === 'laboratorio' ? 'laboratorio' : 'nacional',
         status: 'ativa',
         disciplina_id: q.disciplina_id,
         explicacao: q.explicacao,
