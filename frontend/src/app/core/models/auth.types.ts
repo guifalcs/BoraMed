@@ -14,7 +14,7 @@ export type TipoUsuario = (typeof TIPO_USUARIO_VALUES)[number];
 export const FACULDADE_REDE_VALUES = ['rede_afya', 'outros'] as const;
 export type FaculdadeRede = (typeof FACULDADE_REDE_VALUES)[number];
 
-export type PapelUsuario = 'aluno' | 'admin';
+export type PapelUsuario = 'aluno' | 'admin' | 'super_admin';
 
 export interface Profile {
   id: string;

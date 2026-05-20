@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const ownerEmail = Deno.env.get('BORAMED_OWNER_EMAIL') ?? '';
 
   // Verificar identidade do chamador via JWT
   const callerClient = createClient(supabaseUrl, anonKey, {
@@ -37,17 +36,20 @@ Deno.serve(async (req) => {
   const caller = callerData.user;
 
   // Usar service role para operações admin
-  const admin = createClient(supabaseUrl, serviceKey, {
+  const adminClient = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Verificar papel do chamador
-  const { data: callerProfile } = await admin
+  // Verificar papel do chamador (admin ou super_admin)
+  const { data: callerProfile } = await adminClient
     .from('profiles')
     .select('papel')
     .eq('id', caller.id)
     .single();
-  if (callerProfile?.papel !== 'admin') return json({ error: 'forbidden' }, 403);
+  const callerPapel = callerProfile?.papel as string | undefined;
+  if (callerPapel !== 'admin' && callerPapel !== 'super_admin') {
+    return json({ error: 'forbidden' }, 403);
+  }
 
   // Validar body
   let body: { target_user_id?: string };
@@ -65,26 +67,29 @@ Deno.serve(async (req) => {
   }
 
   // Buscar usuário alvo
-  const { data: targetUserData, error: targetError } = await admin.auth.admin.getUserById(targetUserId);
+  const { data: targetUserData, error: targetError } = await adminClient.auth.admin.getUserById(targetUserId);
   if (targetError || !targetUserData.user) return json({ error: 'target user not found' }, 404);
   const targetUser = targetUserData.user;
 
-  // Proteções adicionais
-  if (ownerEmail && targetUser.email === ownerEmail) {
-    return json({ error: 'cannot impersonate owner' }, 403);
-  }
-
-  const { data: targetProfile } = await admin
+  // Buscar perfil do alvo
+  const { data: targetProfile } = await adminClient
     .from('profiles')
     .select('papel, nome_completo')
     .eq('id', targetUserId)
     .single();
-  if (targetProfile?.papel === 'admin') {
+  const targetPapel = targetProfile?.papel as string | undefined;
+
+  // super_admin é irrepresentável
+  if (targetPapel === 'super_admin') {
+    return json({ error: 'cannot impersonate super_admin account' }, 403);
+  }
+  // admin só pode impersonar alunos; super_admin pode impersonar admins também
+  if (targetPapel === 'admin' && callerPapel !== 'super_admin') {
     return json({ error: 'cannot impersonate admin account' }, 403);
   }
 
   // Gerar magic link
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+  const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
     type: 'magiclink',
     email: targetUser.email!,
   });
@@ -94,7 +99,7 @@ Deno.serve(async (req) => {
   if (!tokenHash) return json({ error: 'failed to extract token' }, 500);
 
   // Registrar audit log (não bloqueia em caso de erro)
-  admin
+  adminClient
     .from('admin_impersonation_log')
     .insert({
       admin_id: caller.id,

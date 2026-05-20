@@ -39,20 +39,26 @@
             <td>{{ tipoUsuarioLabel(u.tipo_usuario) }}</td>
             <td>{{ u.criado_em | date:'dd/MM/yyyy' }}</td>
             <td>
-              <span class="badge" [class.badge--admin]="u.papel === 'admin'">
+              <span class="badge"
+                [class.badge--admin]="u.papel === 'admin'"
+                [class.badge--super-admin]="u.papel === 'super_admin'">
                 {{ papelLabel(u.papel) }}
               </span>
             </td>
             <td>
               <div class="action-cell">
-                @if (u.papel === 'aluno') {
-                  <button
-                    class="btn btn--sm btn--outline"
-                    [disabled]="processando() === u.id || impersonando()"
-                    (click)="alterarPapel(u, 'admin')"
-                  >
-                    Tornar admin
-                  </button>
+                @if (u.papel === 'super_admin') {
+                  <span class="no-action">—</span>
+                } @else if (u.papel === 'aluno') {
+                  @if (isSuperAdmin()) {
+                    <button
+                      class="btn btn--sm btn--outline"
+                      [disabled]="processando() === u.id || impersonando()"
+                      (click)="alterarPapel(u, 'admin')"
+                    >
+                      Tornar admin
+                    </button>
+                  }
                   <button
                     class="btn btn--sm btn--ghost"
                     [disabled]="impersonando()"
@@ -61,14 +67,24 @@
                     Entrar como
                   </button>
                 } @else {
-                  <button
-                    class="btn btn--sm btn--danger"
-                    [disabled]="processando() === u.id || u.id === currentUserId"
-                    [title]="u.id === currentUserId ? 'Não é possível revogar seu próprio papel' : ''"
-                    (click)="solicitarRevogar(u)"
-                  >
-                    Revogar admin
-                  </button>
+                  @if (isSuperAdmin()) {
+                    <button
+                      class="btn btn--sm btn--ghost"
+                      [disabled]="impersonando()"
+                      (click)="solicitarImpersonar(u)"
+                    >
+                      Entrar como
+                    </button>
+                    <button
+                      class="btn btn--sm btn--danger"
+                      [disabled]="processando() === u.id"
+                      (click)="solicitarRevogar(u)"
+                    >
+                      Revogar admin
+                    </button>
+                  } @else {
+                    <span class="no-action">—</span>
+                  }
                 }
               </div>
             </td>
@@ -159,6 +175,8 @@
     color: #64748b;
   }
   .badge--admin { background: #ede9fe; color: #6d28d9; }
+  .badge--super-admin { background: #fef3c7; color: #92400e; }
+  .no-action { font-size: 0.75rem; color: #94a3b8; }
 
   .btn {
     display: inline-flex;

@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -30,6 +31,7 @@ export class AdminUsuariosComponent implements OnInit {
   private readonly profileService = inject(ProfileService);
 
   protected readonly currentUserId = this.auth.user()?.id;
+  protected readonly isSuperAdmin = computed(() => this.profileService.profile()?.papel === 'super_admin');
 
   protected readonly usuarios = signal<Profile[]>([]);
   protected readonly isLoading = signal(true);
@@ -126,7 +128,9 @@ export class AdminUsuariosComponent implements OnInit {
   }
 
   protected papelLabel(papel: string): string {
-    return papel === 'admin' ? 'Admin' : 'Aluno';
+    if (papel === 'super_admin') return 'Super Admin';
+    if (papel === 'admin') return 'Admin';
+    return 'Aluno';
   }
 
   async alterarPapel(usuario: Profile, papel: 'aluno' | 'admin'): Promise<void> {
