@@ -8,6 +8,19 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-20 | Feature | 90dcc17
+
+**Impersonação de usuário pelo admin ("Entrar como")**
+
+- Admins podem logar como qualquer aluno diretamente pela lista de usuários.
+- Edge Function `admin-impersonate` verifica papel admin via JWT, gera magic link com service role, e protege o email do owner contra impersonação.
+- Audit log (`admin_impersonation_log`) registra todas as impersonações com IP, user agent, admin e alvo — visível apenas para admins via RLS.
+- Sessão admin é salva no `sessionStorage` antes da troca; restaurada ao clicar "Voltar para minha conta".
+- Banner âmbar visível em todo o dashboard durante impersonação, com nome do usuário e botão de retorno.
+- Corrige bugs em migrations pré-existentes que impediam `db reset` local.
+
+---
+
 ## 2026-05-20 | Tweak | sem commit
 
 **Checkbox visual no admin**
