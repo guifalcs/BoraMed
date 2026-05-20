@@ -3,7 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import type { LoginInput, RecoverPasswordInput, ResetPasswordInput, SignupInput } from '../models/auth.schemas';
-import type { AuthErrorCode, AuthResult } from '../models/auth.types';
+import type { AuthErrorCode, AuthResult, ImpersonacaoInfo } from '../models/auth.types';
 import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
@@ -17,6 +17,10 @@ export class AuthService implements OnDestroy {
   readonly user = this._user.asReadonly();
   readonly isReady = this._isReady.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
+
+  private readonly ADMIN_SESSION_KEY = 'boramed_admin_session';
+  private readonly _impersonando = signal<ImpersonacaoInfo | null>(null);
+  readonly impersonando = this._impersonando.asReadonly();
 
   private readonly platformId = inject(PLATFORM_ID);
   private authSubscription?: { unsubscribe: () => void };
@@ -42,6 +46,16 @@ export class AuthService implements OnDestroy {
     try {
       const { data } = await this.supabase.auth.getUser();
       this._user.set(data.user ?? null);
+      if (isPlatformBrowser(this.platformId) && data.user) {
+        try {
+          const saved = sessionStorage.getItem(this.ADMIN_SESSION_KEY);
+          if (saved) {
+            const backup = JSON.parse(saved);
+            const targetName = data.user.user_metadata?.['full_name'] ?? data.user.email ?? 'Usuário';
+            this._impersonando.set({ adminName: backup.adminName, targetName });
+          }
+        } catch { /* ignorar */ }
+      }
     } catch {
       this._user.set(null);
     } finally {
@@ -88,7 +102,81 @@ export class AuthService implements OnDestroy {
   }
 
   async signOut(): Promise<void> {
+    if (isPlatformBrowser(this.platformId)) {
+      sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+      this._impersonando.set(null);
+    }
     await this.supabase.auth.signOut();
+  }
+
+  async impersonar(
+    tokenHash: string,
+    targetName: string | null,
+    adminName: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    if (!isPlatformBrowser(this.platformId)) return { ok: false, error: 'SSR' };
+
+    const { data: sessionData } = await this.supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return { ok: false, error: 'Sem sessão ativa' };
+
+    try {
+      sessionStorage.setItem(
+        this.ADMIN_SESSION_KEY,
+        JSON.stringify({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          adminName,
+        }),
+      );
+    } catch {
+      return { ok: false, error: 'Erro ao salvar sessão' };
+    }
+
+    const { error } = await this.supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: 'magiclink',
+    });
+
+    if (error) {
+      sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+      return { ok: false, error: error.message };
+    }
+
+    this._impersonando.set({ adminName, targetName: targetName ?? 'Usuário' });
+    void this.router.navigate(['/dashboard']);
+    return { ok: true };
+  }
+
+  async voltarParaAdmin(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    let backup: { access_token: string; refresh_token: string; adminName: string } | null = null;
+    try {
+      const raw = sessionStorage.getItem(this.ADMIN_SESSION_KEY);
+      if (raw) backup = JSON.parse(raw);
+    } catch { /* ignorar */ }
+
+    if (!backup) {
+      this._impersonando.set(null);
+      void this.router.navigate(['/login']);
+      return;
+    }
+
+    const { error } = await this.supabase.auth.setSession({
+      access_token: backup.access_token,
+      refresh_token: backup.refresh_token,
+    });
+
+    sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+    this._impersonando.set(null);
+
+    if (error) {
+      await this.supabase.auth.signOut();
+      return;
+    }
+
+    void this.router.navigate(['/admin']);
   }
 
   ngOnDestroy(): void {

@@ -169,6 +169,12 @@ export interface AdminTema {
 
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+export interface ImpersonacaoResult {
+  token_hash: string;
+  target_email: string;
+  target_name: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private readonly supabase = inject(SupabaseService).client;
@@ -208,6 +214,14 @@ export class AdminService {
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as Profile };
+  }
+
+  async gerarTokenImpersonacao(targetUserId: string): Promise<ServiceResult<ImpersonacaoResult>> {
+    const { data, error } = await this.supabase.functions.invoke('admin-impersonate', {
+      body: { target_user_id: targetUserId },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as ImpersonacaoResult };
   }
 
   // ---- Questões ----

@@ -137,6 +137,7 @@ END;
 $function$;
 
 -- 9. Recriar listar_temas_com_contagem (com disciplina_id no retorno)
+DROP FUNCTION IF EXISTS public.listar_temas_com_contagem();
 CREATE OR REPLACE FUNCTION public.listar_temas_com_contagem()
  RETURNS TABLE(id uuid, nome text, disciplina_id uuid, disciplina text, periodo integer, parent_id uuid, criado_em timestamp with time zone, qtd_questoes bigint)
  LANGUAGE sql STABLE SECURITY INVOKER SET search_path TO 'public', 'pg_temp'

@@ -5,6 +5,7 @@ import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, Settings, Tr
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
+import { ImpersonationBannerComponent } from '../shared/components/impersonation-banner/impersonation-banner.component';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { ProfileService } from '../core/services/profile.service';
@@ -22,7 +23,7 @@ interface NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +44,7 @@ export class DashboardComponent {
   protected readonly profile = this.profileService.profile;
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);
+  protected readonly impersonando = this.auth.impersonando;
 
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
@@ -70,6 +72,10 @@ export class DashboardComponent {
 
   protected fecharMenu(): void {
     this.menuAberto.set(false);
+  }
+
+  protected async handleVoltarParaAdmin(): Promise<void> {
+    await this.auth.voltarParaAdmin();
   }
 
   protected async handleSignOut(): Promise<void> {

@@ -41,4 +41,15 @@ export type AuthErrorCode =
   | 'NETWORK_ERROR'
   | 'UNKNOWN';
 
+export interface AdminSessionBackup {
+  access_token: string;
+  refresh_token: string;
+  adminName: string;
+}
+
+export interface ImpersonacaoInfo {
+  adminName: string;
+  targetName: string;
+}
+
 export type { User };

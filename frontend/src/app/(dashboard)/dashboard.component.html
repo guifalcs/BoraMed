@@ -105,6 +105,12 @@
   </header>
 
   <main class="main-content">
+    @if (impersonando(); as info) {
+      <app-impersonation-banner
+        [nomeUsuario]="info.targetName"
+        (voltar)="handleVoltarParaAdmin()"
+      />
+    }
     <router-outlet />
   </main>
 
