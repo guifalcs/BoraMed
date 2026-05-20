@@ -40,7 +40,16 @@ export class DashboardComponent {
   protected readonly userIcon = User;
   protected readonly lifeBuoyIcon = LifeBuoy;
   protected readonly settingsIcon = Settings;
-  protected readonly isAdmin = computed(() => this.profileService.profile()?.papel === 'admin');
+  protected readonly isAdmin = computed(() => {
+    const papel = this.profileService.profile()?.papel;
+    return papel === 'admin' || papel === 'super_admin';
+  });
+  protected readonly roleLabel = computed(() => {
+    const papel = this.profileService.profile()?.papel;
+    if (papel === 'super_admin') return 'Super Admin';
+    if (papel === 'admin') return 'Admin';
+    return 'Aluno';
+  });
   protected readonly profile = this.profileService.profile;
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);

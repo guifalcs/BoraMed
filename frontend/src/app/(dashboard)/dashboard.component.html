@@ -32,7 +32,7 @@
           />
           <div class="user-info">
             <span class="user-name">{{ profile()?.nome_completo ?? user()?.email }}</span>
-            <span class="user-role">{{ isAdmin() ? 'Admin' : 'Aluno' }}</span>
+            <span class="user-role">{{ roleLabel() }}</span>
           </div>
         </button>
 
