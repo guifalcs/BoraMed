@@ -39,7 +39,6 @@
           <th>Formato</th>
           <th>Origem</th>
           <th>Faculdade</th>
-          <th>Ano</th>
           <th>Questões</th>
           <th>Ações</th>
         </tr>
@@ -51,7 +50,6 @@
             <td><span class="type-badge">{{ tipoLabel(p.formato) }}</span></td>
             <td><span class="type-badge">{{ p.origem }}</span></td>
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
-            <td>{{ p.ano }}/{{ p.semestre }}</td>
             <td>{{ p.qtd_questoes }}</td>
             <td class="actions-cell">
               <button class="btn btn--sm btn--icon btn--ghost" aria-label="Editar prova" (click)="abrirDrawerEdicao(p)">
@@ -234,29 +232,6 @@
           />
         </div>
 
-        <div class="form-row">
-          <div class="form-section">
-            <label class="form-label">Ano</label>
-            <input
-              class="form-input"
-              type="number"
-              [placeholder]="anoAtual"
-              [ngModel]="fAno()"
-              (ngModelChange)="fAno.set($event)"
-            />
-          </div>
-
-          <div class="form-section">
-            <app-ui-select
-              label="Semestre"
-              name="semestre"
-              [options]="opcoesSemestreForm"
-              [value]="fSemestre()"
-              (valueChange)="fSemestre.set($any($event) ?? '')"
-            />
-          </div>
-        </div>
-
         @if (opcoesSubtipoForm().length > 0) {
           <div class="form-section">
             <app-ui-select
@@ -268,32 +243,6 @@
             />
           </div>
         }
-
-        <div class="form-row">
-          <div class="form-section">
-            <label class="form-label">Edição <span class="form-hint">(número)</span></label>
-            <input
-              class="form-input"
-              type="number"
-              min="1"
-              placeholder="1"
-              [ngModel]="fEdicao()"
-              (ngModelChange)="fEdicao.set($event)"
-            />
-          </div>
-
-          <div class="form-section">
-            <label class="form-label">Tempo sugerido <span class="form-hint">(min)</span></label>
-            <input
-              class="form-input"
-              type="number"
-              min="1"
-              placeholder="120"
-              [ngModel]="fTempoSugerido()"
-              (ngModelChange)="fTempoSugerido.set($event)"
-            />
-          </div>
-        </div>
 
         @if (modoEdicao()) {
           <div class="form-row toggles-row">

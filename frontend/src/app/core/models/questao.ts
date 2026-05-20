@@ -15,7 +15,6 @@ export interface Questao {
   explicacao: string | null;
   explicacao_alternativas: Record<string, string> | null;
   referencia: string | null;
-  dificuldade: number | null;
   disciplina: string | null;
   periodo: number | null;
   prova_id: string | null;

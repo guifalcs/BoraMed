@@ -103,7 +103,6 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fTipoQuestao = signal<'nacional' | 'processual' | 'laboratorio'>('nacional');
   protected readonly fFormatoProva = signal<string | null>(null);
   protected readonly fStatus = signal('rascunho');
-  protected readonly fDificuldade = signal<number | null>(null);
   protected readonly fDisciplinaId = signal<string | null>(null);
   protected readonly fProvaId = signal<string | null>(null);
   protected readonly fOrdemNaProva = signal<number | null>(null);
@@ -120,7 +119,7 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fTemaBusca = signal('');
 
   // ---- Dados para selects ----
-  protected readonly provasDisponiveis = signal<{ id: string; nome: string; ano: number }[]>([]);
+  protected readonly provasDisponiveis = signal<{ id: string; nome: string }[]>([]);
   protected readonly temasDisponiveis = signal<AdminTema[]>([]);
   protected readonly disciplinasDisponiveis = signal<AdminDisciplina[]>([]);
 
@@ -171,14 +170,6 @@ export class AdminQuestoesComponent implements OnInit {
     return [];
   });
 
-  protected readonly opcoesDificuldade: SelectOption[] = [
-    { value: 1, label: '1 – Muito fácil' },
-    { value: 2, label: '2 – Fácil' },
-    { value: 3, label: '3 – Médio' },
-    { value: 4, label: '4 – Difícil' },
-    { value: 5, label: '5 – Muito difícil' },
-  ];
-
   protected readonly iconChevronLeft = ChevronLeft;
   protected readonly iconChevronRight = ChevronRight;
   protected readonly iconEye = Eye;
@@ -221,7 +212,6 @@ export class AdminQuestoesComponent implements OnInit {
       explicacao: questao.explicacao ?? null,
       explicacao_alternativas: questao.explicacao_alternativas ?? null,
       referencia: questao.referencia ?? null,
-      dificuldade: questao.dificuldade ?? null,
       disciplina: disciplina?.sigla ?? null,
       periodo: disciplina?.periodo ?? null,
       prova_id: questao.prova_id ?? null,
@@ -278,7 +268,6 @@ export class AdminQuestoesComponent implements OnInit {
       { label: 'Tipo', valor: this.tipoQuestaoLabel(questao.tipo_questao) },
       { label: 'Formato', valor: this.formatoLabel(questao.formato) },
       { label: 'Subtipo', valor: questao.formato_prova || 'Sem subtipo' },
-      { label: 'Dificuldade', valor: this.dificuldadeLabel(questao.dificuldade) },
       { label: 'Disciplina', valor: this.disciplinaDisplay(questao.disciplina_id) },
       { label: 'Temas', valor: this.temasVisualizacao() },
       { label: 'Prova vinculada', valor: questao.prova?.nome ?? 'Nenhuma' },
@@ -297,7 +286,7 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected readonly opcoesProva = computed(() => [
     { value: '', label: 'Nenhuma' },
-    ...this.provasDisponiveis().map((p) => ({ value: p.id, label: `${p.nome} (${p.ano})` })),
+    ...this.provasDisponiveis().map((p) => ({ value: p.id, label: p.nome })),
   ]);
 
   protected readonly temasVisiveis = computed(() => {
@@ -425,11 +414,6 @@ export class AdminQuestoesComponent implements OnInit {
       publicada: 'Publicada',
     };
     return map[status] ?? status;
-  }
-
-  protected dificuldadeLabel(dificuldade: number | null): string {
-    if (dificuldade == null) return 'Sem dificuldade';
-    return this.opcoesDificuldade.find((opcao) => opcao.value === dificuldade)?.label ?? String(dificuldade);
   }
 
   protected disciplinaSiglaFor(id: string | null | undefined): string {
@@ -571,7 +555,6 @@ export class AdminQuestoesComponent implements OnInit {
     this.fTipoQuestao.set(d.tipo_questao ?? 'nacional');
     this.fFormatoProva.set(d.formato_prova ?? null);
     this.fStatus.set(d.status ?? 'rascunho');
-    this.fDificuldade.set(d.dificuldade ?? null);
     this.fDisciplinaId.set(d.disciplina_id ?? null);
     this.fProvaId.set(d.prova_id ?? null);
     this.fOrdemNaProva.set(d.ordem_na_prova ?? null);
@@ -669,7 +652,6 @@ export class AdminQuestoesComponent implements OnInit {
       tipo_questao: this.fTipoQuestao(),
       formato_prova: this.fFormatoProva() || null,
       status: this.fStatus(),
-      dificuldade: this.fDificuldade(),
       disciplina_id: this.fDisciplinaId() || null,
       prova_id: this.fProvaId() || null,
       ordem_na_prova: this.fOrdemNaProva(),
@@ -729,7 +711,6 @@ export class AdminQuestoesComponent implements OnInit {
     this.fTipoQuestao.set('nacional');
     this.fFormatoProva.set(null);
     this.fStatus.set('rascunho');
-    this.fDificuldade.set(null);
     this.fDisciplinaId.set(null);
     this.fProvaId.set(null);
     this.fOrdemNaProva.set(null);

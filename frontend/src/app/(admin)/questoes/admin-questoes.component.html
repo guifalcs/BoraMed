@@ -263,16 +263,6 @@
               />
             </div>
 
-            <div class="field field--narrow">
-              <app-ui-select
-                label="Dificuldade"
-                name="dificuldade"
-                [options]="opcoesDificuldade"
-                [value]="fDificuldade()"
-                placeholder="—"
-                (valueChange)="fDificuldade.set($event != null && $event !== '' ? +$event : null)"
-              />
-            </div>
           </div>
         </section>
 

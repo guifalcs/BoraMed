@@ -48,7 +48,7 @@ export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = a
   if (!provaResult.ok) {
     questoesResult = { ok: false, error: 'Prova não encontrada.' };
   } else {
-    const isPersonalizado = provaResult.data.origem === 'personalizado' || provaResult.data.edicao < 0;
+    const isPersonalizado = provaResult.data.origem === 'personalizado';
     questoesResult = isPersonalizado
       ? await fetchQuestoesPersonalizado(supabase, provaId)
       : await fetchQuestoesRegulares(supabase, provaId);

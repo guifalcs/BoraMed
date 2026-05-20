@@ -11,8 +11,6 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
     faculdade_id: null,
     nome: 'Simulado N1 — 1º Período — Edição 1',
     periodo: 1,
-    ano: null,
-    semestre: null,
     tipo: 'autoral',
     origem: 'autoral',
     formato: 'nacional',
@@ -22,8 +20,6 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
     publicada: true,
     arquivada: false,
     qtd_questoes: 30,
-    tempo_sugerido_minutos: 60,
-    edicao: 1,
     criado_em: '2024-01-01T00:00:00Z',
     ...overrides,
   };

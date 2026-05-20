@@ -30,7 +30,6 @@ export interface AdminQuestao {
   tipo_questao: 'nacional' | 'processual' | 'laboratorio';
   formato_prova: string | null;
   status: string;
-  dificuldade: number | null;
   disciplina_id: string | null;
   taxa_acerto: number | null;
   vezes_respondida: number;
@@ -58,7 +57,6 @@ export interface AdminQuestaoCompleta {
   tipo_questao: 'nacional' | 'processual' | 'laboratorio';
   formato_prova: string | null;
   status: string;
-  dificuldade: number | null;
   disciplina_id: string | null;
   prova_id: string | null;
   ordem_na_prova: number | null;
@@ -94,7 +92,6 @@ export interface QuestaoPayload {
   formato: string;
   tipo_questao?: 'nacional' | 'processual' | 'laboratorio';
   status: string;
-  dificuldade?: number | null;
   disciplina_id?: string | null;
   prova_id?: string | null;
   ordem_na_prova?: number | null;
@@ -120,8 +117,6 @@ export interface AdminProva {
   subtipo: string | null;
   publicada: boolean;
   arquivada: boolean;
-  ano: number | null;
-  semestre: number | null;
   periodo: number;
   qtd_questoes: number;
   criado_em: string;
@@ -130,8 +125,6 @@ export interface AdminProva {
 
 export interface AdminProvaDetalhe extends AdminProva {
   faculdade_id: string | null;
-  edicao: number;
-  tempo_sugerido_minutos: number | null;
   subtipo_nacional: string | null;
 }
 
@@ -154,11 +147,7 @@ export interface ProvaInput {
   arquivada?: boolean;
   faculdade_id: string;
   periodo: number;
-  ano?: number | null;
-  semestre?: number | null;
   subtipo_nacional?: string | null;
-  edicao?: number | null;
-  tempo_sugerido_minutos?: number | null;
 }
 
 export interface AdminQuestaoSimples {
@@ -168,7 +157,6 @@ export interface AdminQuestaoSimples {
   tipo_questao: 'nacional' | 'processual' | 'laboratorio';
   status: string;
   disciplina_id: string | null;
-  dificuldade: number | null;
   criado_em: string;
 }
 
@@ -246,7 +234,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,tipo_questao,status,dificuldade,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova!questao_prova_id_fkey(nome)', {
+      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova!questao_prova_id_fkey(nome)', {
         count: 'exact',
       })
       .order('criado_em', { ascending: false })
@@ -406,11 +394,11 @@ export class AdminService {
   ): Promise<ServiceResult<{ provas: AdminProva[]; total: number }>> {
     let query = this.supabase
       .from('prova')
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)', {
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)', {
         count: 'exact',
       })
       .gt('periodo', 0)
-      .order('ano', { ascending: false })
+      .order('criado_em', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
     if (filtros.formato) query = query.eq('formato', filtros.formato);
@@ -421,14 +409,14 @@ export class AdminService {
     return { ok: true, data: { provas: (data ?? []) as unknown as AdminProva[], total: count ?? 0 } };
   }
 
-  async listarProvasSimples(): Promise<ServiceResult<{ id: string; nome: string; ano: number }[]>> {
+  async listarProvasSimples(): Promise<ServiceResult<{ id: string; nome: string }[]>> {
     const { data, error } = await this.supabase
       .from('prova')
-      .select('id,nome,ano')
+      .select('id,nome')
       .gt('periodo', 0)
-      .order('ano', { ascending: false });
+      .order('nome', { ascending: true });
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: (data ?? []) as { id: string; nome: string; ano: number }[] };
+    return { ok: true, data: (data ?? []) as { id: string; nome: string }[] };
   }
 
   async deletarProva(id: string): Promise<ServiceResult<void>> {
@@ -464,7 +452,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('prova')
       .insert(payload)
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminProva };
@@ -473,7 +461,7 @@ export class AdminService {
   async buscarProvaParaEdicao(id: string): Promise<ServiceResult<AdminProvaDetalhe>> {
     const { data, error } = await this.supabase
       .from('prova')
-      .select('id,nome,tipo,origem,formato,rede,subtipo,subtipo_nacional,publicada,arquivada,ano,semestre,periodo,qtd_questoes,edicao,tempo_sugerido_minutos,faculdade_id,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,subtipo_nacional,publicada,arquivada,periodo,qtd_questoes,faculdade_id,criado_em,faculdade(nome,sigla)')
       .eq('id', id)
       .single();
     if (error) return { ok: false, error: error.message };
@@ -489,7 +477,7 @@ export class AdminService {
       .from('prova')
       .update(payload)
       .eq('id', id)
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,ano,semestre,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminProva };
@@ -548,7 +536,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ questoes: AdminQuestaoSimples[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,dificuldade,criado_em', { count: 'exact' })
+      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,criado_em', { count: 'exact' })
       .order('criado_em', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
     if (filtros.status) query = query.eq('status', filtros.status);

@@ -127,8 +127,6 @@ export class AdminProvasComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly toast = inject(NotificationService);
 
-  protected readonly anoAtual = new Date().getFullYear().toString();
-
   protected readonly iconCheck = Check;
   protected readonly iconX = X;
   protected readonly iconArrowLeft = ArrowLeft;
@@ -173,11 +171,7 @@ export class AdminProvasComponent implements OnInit {
   protected readonly fRede = signal('afya');
   protected readonly fFaculdadeId = signal('');
   protected readonly fPeriodo = signal('1');
-  protected readonly fAno = signal('');
-  protected readonly fSemestre = signal('');
-  protected readonly fEdicao = signal('1');
   protected readonly fSubtipoNacional = signal('');
-  protected readonly fTempoSugerido = signal('');
 
   // ── Import flow ──
   protected readonly textoImport = signal('');
@@ -229,12 +223,6 @@ export class AdminProvasComponent implements OnInit {
   protected readonly opcoesRedeForm: SelectOption[] = [
     { value: '', label: 'Sem rede' },
     { value: 'afya', label: 'Afya' },
-  ];
-
-  protected readonly opcoesSemestreForm: SelectOption[] = [
-    { value: '', label: '—' },
-    { value: '1', label: '1º semestre' },
-    { value: '2', label: '2º semestre' },
   ];
 
   protected readonly opcoesSubtipoForm = computed<SelectOption[]>(() =>
@@ -328,11 +316,7 @@ export class AdminProvasComponent implements OnInit {
     this.fRede.set('afya');
     this.fFaculdadeId.set(this.faculdades()[0]?.id ?? '');
     this.fPeriodo.set('1');
-    this.fAno.set('');
-    this.fSemestre.set('');
-    this.fEdicao.set('1');
     this.fSubtipoNacional.set('');
-    this.fTempoSugerido.set('');
     this.fPublicada.set(false);
     this.fArquivada.set(false);
     this.textoImport.set('');
@@ -362,12 +346,8 @@ export class AdminProvasComponent implements OnInit {
       rede: this.fRede() || null,
       faculdade_id: this.fFaculdadeId(),
       periodo: Number(this.fPeriodo()),
-      ano: this.fAno() ? Number(this.fAno()) : null,
-      semestre: this.fSemestre() ? Number(this.fSemestre()) : null,
-      edicao: this.fEdicao() ? Number(this.fEdicao()) : null,
       subtipo: this.fSubtipoNacional() || null,
       subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
-      tempo_sugerido_minutos: this.fTempoSugerido() ? Number(this.fTempoSugerido()) : null,
       publicada: this.fPublicada(),
       arquivada: this.fArquivada(),
     };
@@ -409,11 +389,7 @@ export class AdminProvasComponent implements OnInit {
     this.fRede.set(p.rede ?? '');
     this.fFaculdadeId.set(p.faculdade_id ?? '');
     this.fPeriodo.set(String(p.periodo));
-    this.fAno.set(p.ano ? String(p.ano) : '');
-    this.fSemestre.set(p.semestre ? String(p.semestre) : '');
-    this.fEdicao.set(String(p.edicao));
     this.fSubtipoNacional.set(p.subtipo_nacional ?? '');
-    this.fTempoSugerido.set(p.tempo_sugerido_minutos ? String(p.tempo_sugerido_minutos) : '');
     this.fPublicada.set(p.publicada);
     this.fArquivada.set(p.arquivada);
   }

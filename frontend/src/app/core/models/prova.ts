@@ -12,8 +12,6 @@ export interface Prova {
   faculdade_id: string | null;
   nome: string;
   periodo: number;
-  ano: number | null;
-  semestre: number | null;
   tipo: TipoProva;
   origem: OrigemProva;
   formato: FormatoProva | null;
@@ -21,8 +19,6 @@ export interface Prova {
   subtipo: SubtipoProva | null;
   subtipo_nacional: SubtipoProva | null;
   qtd_questoes: number;
-  tempo_sugerido_minutos: number | null;
-  edicao: number;
   publicada: boolean;
   arquivada: boolean;
   criado_em: string;
