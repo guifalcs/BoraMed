@@ -8,6 +8,15 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-20 | Tweak | sem commit
+
+**Tabela de questões sem coluna de prova**
+
+- Removida a coluna Prova da listagem administrativa de questões para reduzir ruído visual.
+- O vínculo com prova permanece disponível no drawer de criação/edição da questão.
+
+---
+
 ## 2026-05-20 | Feature | 90dcc17
 
 **Impersonação de usuário pelo admin ("Entrar como")**
