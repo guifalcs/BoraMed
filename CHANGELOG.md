@@ -8,6 +8,17 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-20 | Tweak | sem commit
+
+**Checkbox visual no admin**
+
+- Criado o componente compartilhado `app-ui-checkbox` com visual próprio, foco acessível e variante de card.
+- Admin de questões passa a usar o novo checkbox em temas e opções do formulário.
+- Admin de provas passa a usar o novo checkbox nas opções de publicação/arquivamento e seleção de questões.
+- Design system documenta o padrão de checkbox do sistema.
+
+---
+
 ## 2026-05-19 | Feature | sem commit
 
 **Simulado sem tipo de prova**

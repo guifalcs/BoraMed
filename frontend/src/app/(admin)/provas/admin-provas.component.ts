@@ -11,6 +11,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-checkbox.component';
 import { montarPromptQuestoes } from '../importar/admin-importar.component';
 
 // Reuse same parse types and logic as admin-importar
@@ -118,7 +119,7 @@ function resolverTemasQuestao(
 @Component({
   selector: 'app-admin-provas',
   standalone: true,
-  imports: [FormsModule, UiSelectComponent, UiConfirmDialogComponent, UiIconComponent],
+  imports: [FormsModule, UiSelectComponent, UiConfirmDialogComponent, UiIconComponent, UiCheckboxComponent],
   templateUrl: './admin-provas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

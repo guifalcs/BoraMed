@@ -1,0 +1,27 @@
+<label
+  class="ui-checkbox"
+  [class.ui-checkbox--checked]="checked()"
+  [class.ui-checkbox--disabled]="disabled()"
+  [class.ui-checkbox--card]="variant() === 'card'"
+  [class.ui-checkbox--compact]="compact()"
+  [class.ui-checkbox--start]="align() === 'start'"
+>
+  <input
+    class="ui-checkbox__input"
+    type="checkbox"
+    [name]="name()"
+    [value]="value()"
+    [checked]="checked()"
+    [disabled]="disabled()"
+    [attr.aria-label]="ariaLabel()"
+    (change)="handleChange($event)"
+  />
+  <span class="ui-checkbox__box" aria-hidden="true">
+    <svg class="ui-checkbox__mark" viewBox="0 0 16 16" focusable="false">
+      <path d="M3.3 8.2 6.6 11.5 12.9 4.5" />
+    </svg>
+  </span>
+  <span class="ui-checkbox__content">
+    <ng-content />
+  </span>
+</label>

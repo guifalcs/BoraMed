@@ -382,17 +382,18 @@
 
           <div class="temas-grid">
             @for (tema of temasVisiveis(); track tema.id) {
-              <label class="tema-item" [class.tema-item--selected]="isTemaSelected(tema.id)">
-                <input
-                  type="checkbox"
-                  [checked]="isTemaSelected(tema.id)"
-                  (change)="toggleTema(tema.id)"
-                />
+              <app-ui-checkbox
+                class="tema-item"
+                variant="card"
+                [compact]="true"
+                [checked]="isTemaSelected(tema.id)"
+                (checkedChange)="toggleTema(tema.id)"
+              >
                 <span>{{ tema.nome }}</span>
                 @if (disciplinaSiglaFor(tema.disciplina_id)) {
                   <em>{{ disciplinaSiglaFor(tema.disciplina_id) }}</em>
                 }
-              </label>
+              </app-ui-checkbox>
             }
             @if (temasVisiveis().length === 0) {
               <p class="temas-empty">Nenhum tema encontrado.</p>
@@ -404,22 +405,18 @@
         <section class="form-section">
           <h3 class="section-label">Opções</h3>
           <div class="opcoes-row">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [ngModel]="fRevisado()"
-                (ngModelChange)="fRevisado.set($event)"
-              />
+            <app-ui-checkbox
+              [checked]="fRevisado()"
+              (checkedChange)="fRevisado.set($event)"
+            >
               Revisado
-            </label>
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [ngModel]="fAptoDesafio()"
-                (ngModelChange)="fAptoDesafio.set($event)"
-              />
+            </app-ui-checkbox>
+            <app-ui-checkbox
+              [checked]="fAptoDesafio()"
+              (checkedChange)="fAptoDesafio.set($event)"
+            >
               Apto para desafio diário
-            </label>
+            </app-ui-checkbox>
           </div>
         </section>
 
@@ -632,24 +629,10 @@
     border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.625rem;
     background: #f8fafc;
   }
-  .tema-item {
-    display: flex; align-items: baseline; gap: 0.375rem;
-    font-size: 0.8rem; color: #334155; cursor: pointer;
-    padding: 0.3rem 0.5rem; border-radius: 6px;
-    border: 1px solid transparent;
-    transition: background 0.1s, border-color 0.1s;
-  }
-  .tema-item:hover { background: #f1f5f9; }
-  .tema-item--selected { background: #ede9fe; border-color: #ddd6fe; color: #5b21b6; }
+  .tema-item { width: 100%; color: #334155; }
   .tema-item em { font-style: normal; font-size: 0.7rem; color: #94a3b8; }
-  .tema-item input { flex-shrink: 0; accent-color: #7c3aed; }
   .temas-empty { font-size: 0.8rem; color: #94a3b8; margin: 0; text-align: center; padding: 0.5rem; }
 
   /* ── Opções ── */
   .opcoes-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-  .checkbox-label {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-size: 0.875rem; color: #334155; cursor: pointer;
-  }
-  .checkbox-label input { accent-color: #7c3aed; }
 </style>

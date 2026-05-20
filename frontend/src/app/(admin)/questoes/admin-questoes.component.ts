@@ -22,6 +22,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-angular';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-checkbox.component';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 
 interface AlternativaForm {
@@ -48,7 +49,15 @@ function alternativasIniciais(formato: string): AlternativaForm[] {
 @Component({
   selector: 'app-admin-questoes',
   standalone: true,
-  imports: [FormsModule, SlicePipe, UiSelectComponent, UiConfirmDialogComponent, UiIconComponent, ImageUploadComponent],
+  imports: [
+    FormsModule,
+    SlicePipe,
+    UiSelectComponent,
+    UiConfirmDialogComponent,
+    UiIconComponent,
+    UiCheckboxComponent,
+    ImageUploadComponent,
+  ],
   templateUrl: './admin-questoes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

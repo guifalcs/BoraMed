@@ -157,6 +157,17 @@ Estados:
 * Erro: borda `--color-danger` e texto inline abaixo do campo.
 * Erros nunca devem aparecer em alert/modal para formulários.
 
+### Checkbox
+
+Checkboxes usam o componente standalone `app-ui-checkbox`, com input nativo preservado para acessibilidade e visual próprio alinhado ao azul institucional.
+
+Estados:
+
+* Marcado: preenchimento `--color-action`, check branco e halo azul suave.
+* Foco: outline `--color-primary-light` no controle visual.
+* Variante `card`: usada em listas selecionáveis e opções administrativas, com borda, hover e estado selecionado.
+* Variante compacta: usada em grades densas de filtros e temas.
+
 ### AuthTabs
 
 ```css
