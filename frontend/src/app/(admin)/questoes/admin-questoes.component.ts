@@ -11,24 +11,33 @@ import { FormsModule } from '@angular/forms';
 import {
   AdminService,
   AdminQuestao,
+  AdminQuestaoCompleta,
   AdminTema,
   AdminDisciplina,
   AlternativaPayload,
   QuestaoPayload,
 } from '../../core/services/admin.service';
+import type { Questao, QuestaoComAlternativas } from '../../core/models/questao';
+import type { Tema } from '../../core/models/tema';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ChevronLeft, ChevronRight, X } from 'lucide-angular';
+import { ChevronLeft, ChevronRight, Eye, Pencil, Trash2, X } from 'lucide-angular';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-checkbox.component';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
+import { QuestaoCardComponent } from '../../shared/components/questao-card/questao-card.component';
 
 interface AlternativaForm {
   letra: string;
   texto: string;
   correta: boolean;
+}
+
+interface QuestaoMetaItem {
+  label: string;
+  valor: string;
 }
 
 const LETRAS_MC = ['A', 'B', 'C', 'D', 'E'];
@@ -57,6 +66,7 @@ function alternativasIniciais(formato: string): AlternativaForm[] {
     UiIconComponent,
     UiCheckboxComponent,
     ImageUploadComponent,
+    QuestaoCardComponent,
   ],
   templateUrl: './admin-questoes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,6 +91,10 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly questaoEditandoId = signal<string | null>(null);
   protected readonly salvando = signal(false);
   protected readonly carregandoForm = signal(false);
+
+  // ---- Visualização ----
+  protected readonly questaoVisualizada = signal<AdminQuestaoCompleta | null>(null);
+  protected readonly carregandoVisualizacao = signal(false);
 
   // ---- Campos do formulário ----
   protected readonly fEnunciado = signal('');
@@ -167,10 +181,14 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected readonly iconChevronLeft = ChevronLeft;
   protected readonly iconChevronRight = ChevronRight;
+  protected readonly iconEye = Eye;
+  protected readonly iconPencil = Pencil;
+  protected readonly iconTrash = Trash2;
   protected readonly iconX = X;
 
   /** URL original da imagem ao abrir o drawer; usada para limpeza no storage */
   private _urlAntesDeEditar: string | null = null;
+  private visualizacaoRequestId = 0;
 
   // ---- Confirm dialog ----
   protected readonly questaoParaDeletar = signal<AdminQuestao | null>(null);
@@ -178,6 +196,104 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly mostrarAlternativas = computed(
     () => this.fFormato() === 'multipla_escolha' || this.fFormato() === 'verdadeiro_falso',
   );
+
+  protected readonly visualizacaoAberta = computed(
+    () => this.carregandoVisualizacao() || this.questaoVisualizada() !== null,
+  );
+
+  protected readonly questaoPreview = computed<QuestaoComAlternativas | null>(() => {
+    const questao = this.questaoVisualizada();
+    if (!questao) return null;
+
+    const disciplina = this.disciplinasDisponiveis().find((d) => d.id === questao.disciplina_id);
+
+    return {
+      id: questao.id,
+      codigo_externo: questao.codigo_externo ?? null,
+      enunciado_apoio: questao.enunciado_apoio ?? null,
+      enunciado: questao.enunciado,
+      imagem_url: questao.imagem_url ?? null,
+      imagem_legenda: questao.imagem_legenda ?? null,
+      formato: this.questaoFormato(questao.formato),
+      tipo_questao: questao.tipo_questao,
+      resposta_correta_texto: questao.resposta_correta_texto ?? null,
+      respostas_aceitas: questao.respostas_aceitas ?? null,
+      explicacao: questao.explicacao ?? null,
+      explicacao_alternativas: questao.explicacao_alternativas ?? null,
+      referencia: questao.referencia ?? null,
+      dificuldade: questao.dificuldade ?? null,
+      disciplina: disciplina?.sigla ?? null,
+      periodo: disciplina?.periodo ?? null,
+      prova_id: questao.prova_id ?? null,
+      ordem_na_prova: questao.ordem_na_prova ?? null,
+      fonte: questao.fonte ?? null,
+      vezes_respondida: questao.vezes_respondida ?? 0,
+      vezes_acertada: questao.vezes_acertada ?? 0,
+      taxa_acerto: questao.taxa_acerto ?? null,
+      status: this.questaoStatus(questao.status),
+      revisado: questao.revisado ?? false,
+      autor_id: questao.autor_id ?? null,
+      revisor_id: questao.revisor_id ?? null,
+      aprovada_em: questao.aprovada_em ?? null,
+      publicada_em: questao.publicada_em ?? null,
+      origem_geracao: questao.origem_geracao ?? 'manual',
+      nivel_bloom: questao.nivel_bloom ?? null,
+      formato_prova: this.questaoFormatoProva(questao.formato_prova),
+      criado_em: questao.criado_em,
+      atualizado_em: questao.atualizado_em,
+      alternativas: questao.alternativas.map((alternativa, index) => ({
+        id: alternativa.id ?? `${questao.id}-alternativa-${index}`,
+        questao_id: questao.id,
+        letra: alternativa.letra,
+        texto: alternativa.texto,
+        correta: alternativa.correta,
+        ordem: alternativa.ordem,
+        imagem_url: null,
+      })),
+      temas: this.temasDaQuestao(questao.temas),
+    };
+  });
+
+  protected readonly temasVisualizacao = computed(() => {
+    const questao = this.questaoVisualizada();
+    if (!questao || questao.temas.length === 0) return 'Sem temas vinculados';
+    return this.temasDaQuestao(questao.temas).map((tema) => tema.nome).join(', ');
+  });
+
+  protected readonly gabaritoVisualizacao = computed(() => {
+    const questao = this.questaoVisualizada();
+    if (!questao) return '—';
+    const corretas = questao.alternativas
+      .filter((alternativa) => alternativa.correta)
+      .map((alternativa) => alternativa.letra);
+    return corretas.length > 0 ? corretas.join(', ') : questao.resposta_correta_texto || 'Sem gabarito';
+  });
+
+  protected readonly metadadosVisualizacao = computed<QuestaoMetaItem[]>(() => {
+    const questao = this.questaoVisualizada();
+    if (!questao) return [];
+
+    return [
+      { label: 'Status', valor: this.statusLabel(questao.status) },
+      { label: 'Tipo', valor: this.tipoQuestaoLabel(questao.tipo_questao) },
+      { label: 'Formato', valor: this.formatoLabel(questao.formato) },
+      { label: 'Subtipo', valor: questao.formato_prova || 'Sem subtipo' },
+      { label: 'Dificuldade', valor: this.dificuldadeLabel(questao.dificuldade) },
+      { label: 'Disciplina', valor: this.disciplinaDisplay(questao.disciplina_id) },
+      { label: 'Temas', valor: this.temasVisualizacao() },
+      { label: 'Prova vinculada', valor: questao.prova?.nome ?? 'Nenhuma' },
+      { label: 'Ordem na prova', valor: questao.ordem_na_prova != null ? String(questao.ordem_na_prova) : '—' },
+      { label: 'Gabarito', valor: this.gabaritoVisualizacao() },
+      { label: 'Revisada', valor: questao.revisado ? 'Sim' : 'Não' },
+      { label: 'Apta para desafio diário', valor: questao.apto_desafio_diario ? 'Sim' : 'Não' },
+      { label: 'Taxa de acerto', valor: questao.taxa_acerto != null ? `${questao.taxa_acerto}%` : 'Sem dados' },
+      { label: 'Respostas', valor: String(questao.vezes_respondida ?? 0) },
+      { label: 'Fonte', valor: questao.fonte || '—' },
+      { label: 'Referência', valor: questao.referencia || '—' },
+      { label: 'Criada em', valor: this.dataLabel(questao.criado_em) },
+      { label: 'Atualizada em', valor: this.dataLabel(questao.atualizado_em) },
+    ];
+  });
 
   protected readonly opcoesProva = computed(() => [
     { value: '', label: 'Nenhuma' },
@@ -291,9 +407,106 @@ export class AdminQuestoesComponent implements OnInit {
     return 'taxa-badge--alta';
   }
 
+  protected tipoQuestaoLabel(tipo: string): string {
+    const map: Record<string, string> = {
+      nacional: 'Nacional',
+      processual: 'Processual',
+      laboratorio: 'Laboratório',
+    };
+    return map[tipo] ?? tipo;
+  }
+
+  protected statusLabel(status: string): string {
+    const map: Record<string, string> = {
+      ativa: 'Ativa',
+      rascunho: 'Rascunho',
+      em_revisao: 'Em revisão',
+      arquivada: 'Arquivada',
+      publicada: 'Publicada',
+    };
+    return map[status] ?? status;
+  }
+
+  protected dificuldadeLabel(dificuldade: number | null): string {
+    if (dificuldade == null) return 'Sem dificuldade';
+    return this.opcoesDificuldade.find((opcao) => opcao.value === dificuldade)?.label ?? String(dificuldade);
+  }
+
   protected disciplinaSiglaFor(id: string | null | undefined): string {
     if (!id) return '';
     return this.disciplinasDisponiveis().find((d) => d.id === id)?.sigla ?? '';
+  }
+
+  protected disciplinaDisplay(id: string | null | undefined): string {
+    if (!id) return 'Sem disciplina';
+    const disciplina = this.disciplinasDisponiveis().find((d) => d.id === id);
+    if (!disciplina) return 'Disciplina não encontrada';
+    return `${disciplina.sigla}${disciplina.nome ? ' — ' + disciplina.nome : ''} (P${disciplina.periodo})`;
+  }
+
+  protected dataLabel(data: string | null | undefined): string {
+    if (!data) return '—';
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date(data));
+  }
+
+  private temasDaQuestao(ids: string[]): Tema[] {
+    return ids
+      .map((id) => this.temasDisponiveis().find((tema) => tema.id === id))
+      .filter((tema): tema is AdminTema => tema !== undefined)
+      .map((tema) => {
+        const disciplina = this.disciplinasDisponiveis().find((d) => d.id === tema.disciplina_id);
+        return {
+          id: tema.id,
+          nome: tema.nome,
+          disciplina_id: tema.disciplina_id,
+          disciplina: disciplina?.sigla ?? null,
+          periodo: disciplina?.periodo ?? null,
+          parent_id: null,
+          criado_em: tema.criado_em,
+        };
+      });
+  }
+
+  private questaoFormato(formato: string): Questao['formato'] {
+    if (
+      formato === 'multipla_escolha' ||
+      formato === 'resposta_aberta_curta' ||
+      formato === 'verdadeiro_falso' ||
+      formato === 'associacao'
+    ) {
+      return formato;
+    }
+    return 'multipla_escolha';
+  }
+
+  private questaoStatus(status: string): Questao['status'] {
+    if (
+      status === 'ativa' ||
+      status === 'rascunho' ||
+      status === 'arquivada' ||
+      status === 'em_revisao' ||
+      status === 'publicada'
+    ) {
+      return status;
+    }
+    return 'rascunho';
+  }
+
+  private questaoFormatoProva(formato: string | null): Questao['formato_prova'] {
+    if (
+      formato === 'N1' ||
+      formato === 'N2' ||
+      formato === 'teste_progresso' ||
+      formato === 'nacional' ||
+      formato === 'processual' ||
+      formato === 'laboratorio'
+    ) {
+      return formato;
+    }
+    return null;
   }
 
   protected get totalPaginas(): number {
@@ -311,6 +524,30 @@ export class AdminQuestoesComponent implements OnInit {
     this._urlAntesDeEditar = null;
     this.questaoEditandoId.set(null);
     this.modoDrawer.set('criar');
+  }
+
+  protected async abrirVisualizar(q: AdminQuestao): Promise<void> {
+    const requestId = ++this.visualizacaoRequestId;
+    this.questaoVisualizada.set(null);
+    this.carregandoVisualizacao.set(true);
+
+    const result = await this.adminService.buscarQuestaoCompleta(q.id);
+    if (requestId !== this.visualizacaoRequestId) return;
+
+    if (!result.ok) {
+      this.toast.error('Erro ao carregar visualização da questão.');
+      this.carregandoVisualizacao.set(false);
+      return;
+    }
+
+    this.questaoVisualizada.set(result.data);
+    this.carregandoVisualizacao.set(false);
+  }
+
+  protected fecharVisualizacao(): void {
+    this.visualizacaoRequestId++;
+    this.carregandoVisualizacao.set(false);
+    this.questaoVisualizada.set(null);
   }
 
   protected async abrirEditar(q: AdminQuestao): Promise<void> {

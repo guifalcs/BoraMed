@@ -13,6 +13,7 @@
 * Na importação administrativa por IA, `DISCIPLINA` e `TEMA` são opcionais, mas quando informados devem corresponder exatamente a registros cadastrados. O prompt deve incluir as disciplinas e temas existentes para evitar classificação inventada pela IA.
 * Questões importadas com `TEMA` válido devem ser vinculadas em `questao_tema`; sem tema, continuam válidas para provas, mas não entram em filtros de simulado por tema.
 * Questões vinculadas a tentativas, desafios diários ou provas não devem ser deletadas diretamente; usar arquivamento/status quando for preciso remover da experiência do aluno.
+* A visualização administrativa de questão deve reutilizar a mesma renderização do aluno e exibir abaixo um panorama com status, classificação, vínculos, gabarito, revisão e métricas.
 
 ### Simulado
 

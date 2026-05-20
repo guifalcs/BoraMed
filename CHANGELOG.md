@@ -10,6 +10,28 @@ Descrição do que foi feito.
 
 ## 2026-05-20 | Tweak | sem commit
 
+**Ícones nas ações dos CRUDs admin**
+
+- Ações de visualizar, editar e deletar nas tabelas administrativas passam a usar ícones em vez de texto.
+- Admin de questões usa `Eye`, `Pencil` e `Trash2` nas ações de linha.
+- Admin de provas, disciplinas e temas usam botões compactos com ícones para ações repetidas.
+- Design system documenta o padrão de ações por ícone em tabelas.
+
+---
+
+## 2026-05-20 | Feature | sem commit
+
+**Visualização de questão no admin**
+
+- Admin de questões ganha ação Visualizar em cada linha da listagem.
+- A visualização reutiliza o `app-questao-card`, preservando a renderização vista pelo aluno.
+- Abaixo da questão, a modal exibe panorama administrativo com status, tipo, formato, disciplina, temas, vínculo de prova, gabarito, revisão e métricas.
+- Regras de negócio documentam que a visualização administrativa deve reaproveitar a experiência do aluno.
+
+---
+
+## 2026-05-20 | Tweak | sem commit
+
 **Tabela de questões sem coluna de prova**
 
 - Removida a coluna Prova da listagem administrativa de questões para reduzir ruído visual.

@@ -54,9 +54,15 @@
             <td>{{ p.ano }}/{{ p.semestre }}</td>
             <td>{{ p.qtd_questoes }}</td>
             <td class="actions-cell">
-              <button class="btn btn--sm btn--ghost" (click)="abrirDrawerEdicao(p)">Editar</button>
-              <button class="btn btn--sm btn--ghost btn--ghost-purple" (click)="abrirDrawerQuestoes(p)">Questões</button>
-              <button class="btn btn--sm btn--danger" (click)="solicitarDelete(p)">Deletar</button>
+              <button class="btn btn--sm btn--icon btn--ghost" aria-label="Editar prova" (click)="abrirDrawerEdicao(p)">
+                <app-ui-icon [icon]="iconPencil" [size]="15" />
+              </button>
+              <button class="btn btn--sm btn--icon btn--ghost btn--ghost-purple" aria-label="Gerenciar questões da prova" (click)="abrirDrawerQuestoes(p)">
+                <app-ui-icon [icon]="iconListChecks" [size]="15" />
+              </button>
+              <button class="btn btn--sm btn--icon btn--danger" aria-label="Deletar prova" (click)="solicitarDelete(p)">
+                <app-ui-icon [icon]="iconTrash" [size]="15" />
+              </button>
             </td>
           </tr>
         }
@@ -745,6 +751,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; }
+  .btn--icon { width: 2rem; height: 2rem; justify-content: center; padding: 0; }
   .btn--primary { background: #7c3aed; color: #fff; }
   .btn--primary:hover:not(:disabled) { background: #6d28d9; }
   .btn--outline { background: #7c3aed; border: 1px solid #7c3aed; color: #fff; }

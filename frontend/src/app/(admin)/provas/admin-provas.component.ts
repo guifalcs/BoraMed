@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, Component, OnInit, computed, inject, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Check, X, ArrowLeft, ArrowRight, AlertTriangle, Bot, Copy } from 'lucide-angular';
+import { Check, X, ArrowLeft, ArrowRight, AlertTriangle, Bot, Copy, ListChecks, Pencil, Trash2 } from 'lucide-angular';
 import {
   AdminService, AdminProva, AdminProvaDetalhe, AdminFaculdade, AdminDisciplina,
   AdminTema, AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload,
@@ -136,6 +136,9 @@ export class AdminProvasComponent implements OnInit {
   protected readonly iconAlertTriangle = AlertTriangle;
   protected readonly iconBot = Bot;
   protected readonly iconCopy = Copy;
+  protected readonly iconListChecks = ListChecks;
+  protected readonly iconPencil = Pencil;
+  protected readonly iconTrash = Trash2;
 
   // ── List state ──
   protected readonly provas = signal<AdminProva[]>([]);

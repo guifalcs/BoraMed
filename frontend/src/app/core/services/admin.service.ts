@@ -49,6 +49,7 @@ export interface AdminAlternativa {
 
 export interface AdminQuestaoCompleta {
   id: string;
+  codigo_externo: string | null;
   enunciado: string;
   enunciado_apoio: string | null;
   imagem_url: string | null;
@@ -62,12 +63,24 @@ export interface AdminQuestaoCompleta {
   prova_id: string | null;
   ordem_na_prova: number | null;
   explicacao: string | null;
+  explicacao_alternativas: Record<string, string> | null;
   referencia: string | null;
   fonte: string | null;
   resposta_correta_texto: string | null;
+  respostas_aceitas: string[] | null;
   revisado: boolean;
   apto_desafio_diario: boolean;
+  vezes_respondida: number;
+  vezes_acertada: number;
+  taxa_acerto: number | null;
+  autor_id: string | null;
+  revisor_id: string | null;
+  aprovada_em: string | null;
+  publicada_em: string | null;
+  origem_geracao: 'manual' | 'ia_assistida';
+  nivel_bloom: number | null;
   criado_em: string;
+  atualizado_em: string;
   alternativas: AdminAlternativa[];
   temas: string[];
   prova?: { nome: string } | null;

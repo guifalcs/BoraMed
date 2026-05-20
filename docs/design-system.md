@@ -168,6 +168,16 @@ Estados:
 * Variante `card`: usada em listas selecionáveis e opções administrativas, com borda, hover e estado selecionado.
 * Variante compacta: usada em grades densas de filtros e temas.
 
+### Ações Em Tabelas
+
+Tabelas administrativas devem usar botões quadrados com ícones para ações repetidas de linha.
+
+* Visualizar: ícone `Eye`.
+* Editar: ícone `Pencil`.
+* Deletar: ícone `Trash2`, mantendo a cor de perigo.
+* Sempre manter `aria-label` para preservar acessibilidade sem exibir texto visual.
+* Usar texto apenas em ações de fluxo ou comandos pouco óbvios, como salvar, cancelar, filtrar e iniciar processos.
+
 ### AuthTabs
 
 ```css
