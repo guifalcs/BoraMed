@@ -1,0 +1,20 @@
+<button
+  type="button"
+  class="h-8 w-8 rounded text-xs font-medium transition-colors"
+  [class.bg-[var(--color-primary)]]="isAtual() && !isMarcada()"
+  [class.text-white]="isAtual()"
+  [class.bg-amber-500]="isAtual() && isMarcada()"
+  [class.bg-amber-100]="!isAtual() && isMarcada()"
+  [class.text-amber-700]="!isAtual() && isMarcada()"
+  [class.bg-emerald-100]="!isAtual() && !isMarcada() && respondida() && !errou()"
+  [class.text-emerald-700]="!isAtual() && !isMarcada() && respondida() && !errou()"
+  [class.bg-red-100]="!isAtual() && !isMarcada() && respondida() && errou()"
+  [class.text-red-700]="!isAtual() && !isMarcada() && respondida() && errou()"
+  [class.bg-[var(--color-surface-2)]]="!isAtual() && !isMarcada() && !respondida()"
+  [class.text-[var(--color-text-muted)]]="!isAtual() && !isMarcada() && !respondida()"
+  (click)="navegarPara.emit()"
+  [attr.aria-label]="'Questão ' + numero() + (isMarcada() ? ', marcada para revisão' : '') + (respondida() ? ', respondida' : ', não respondida') + (isAtual() ? ', atual' : '')"
+  [attr.aria-current]="isAtual() ? 'step' : null"
+>
+  {{ numero() }}
+</button>

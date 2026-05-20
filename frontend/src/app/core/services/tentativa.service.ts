@@ -1,6 +1,7 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { SupabaseService } from './supabase.service';
+import { AuthService } from './auth.service';
 import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
@@ -20,6 +21,7 @@ type RawProvaQuestao = {
 @Injectable({ providedIn: 'root' })
 export class TentativaService {
   private readonly supabase = inject(SupabaseService).client;
+  private readonly auth = inject(AuthService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly gamificacao = inject(GamificacaoService);
   private readonly notifications = inject(NotificationService);
@@ -90,7 +92,7 @@ export class TentativaService {
 
   async buscarTentativaAtiva(provaId: string): Promise<ProvaResult<Tentativa | null>> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const user = this.auth.user();
       if (!user) return { ok: true, data: null };
 
       const { data, error } = await this.supabase
@@ -113,7 +115,7 @@ export class TentativaService {
 
   async buscarTentativaAtivaRecente(): Promise<ProvaResult<Tentativa | null>> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const user = this.auth.user();
       if (!user) return { ok: true, data: null };
 
       const { data, error } = await this.supabase

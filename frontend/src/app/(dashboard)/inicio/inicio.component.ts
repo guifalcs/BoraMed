@@ -200,6 +200,8 @@ export class InicioComponent {
   }
 }
 
+const NUMBER_FMT = new Intl.NumberFormat('pt-BR');
+
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat('pt-BR').format(value);
+  return NUMBER_FMT.format(value);
 }

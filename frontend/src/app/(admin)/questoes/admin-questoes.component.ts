@@ -29,6 +29,8 @@ import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-chec
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { QuestaoCardComponent } from '../../shared/components/questao-card/questao-card.component';
 
+const DATE_FMT = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
 interface AlternativaForm {
   letra: string;
   texto: string;
@@ -430,10 +432,7 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected dataLabel(data: string | null | undefined): string {
     if (!data) return '—';
-    return new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(new Date(data));
+    return DATE_FMT.format(new Date(data));
   }
 
   private temasDaQuestao(ids: string[]): Tema[] {
