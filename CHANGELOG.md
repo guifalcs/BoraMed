@@ -8,6 +8,19 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-20 | Feature | sem commit
+
+**Priorização de questões inéditas no montar simulado**
+
+- RPC `gerar_simulado_personalizado` passa a consultar o histórico do usuário em `tentativa_resposta` antes do sorteio.
+- Questões ainda não entregues ao usuário são priorizadas dentro dos filtros de formato e tema.
+- Quando as questões inéditas acabam, o sorteio completa a quantidade com questões já vistas em ordem aleatória.
+- Adicionado índice em `tentativa` para acelerar a leitura do histórico por usuário.
+- Geração da prova sintética do simulado ganhou retry para evitar colisão de `edicao` em gerações muito próximas.
+- Regras de negócio documentam a política de anti-repetição em simulados personalizados.
+
+---
+
 ## 2026-05-20 | Tweak | sem commit
 
 **Ícones nas ações dos CRUDs admin**
