@@ -25,7 +25,6 @@ const questaoBase: QuestaoComAlternativas = {
   explicacao: 'O choque anafilático requer adrenalina 0,3mg IM no vasto lateral da coxa como primeira medida.',
   explicacao_alternativas: null,
   referencia: 'Medicina de Urgência, 2ª ed., cap. 14',
-  dificuldade: 3,
   disciplina: 'MCM',
   periodo: 1,
   prova_id: 'prova-1',
