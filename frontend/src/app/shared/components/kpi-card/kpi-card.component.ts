@@ -20,15 +20,24 @@ export class KpiCardComponent {
   sparkline = input<number[]>([]);
 
   protected readonly sparklinePath = computed(() => {
-    const pts = this.sparkline();
+    const pts = this.sparkline()
+      .filter((value) => Number.isFinite(value))
+      .map((value) => Math.max(0, Math.min(100, value)));
+
     if (pts.length < 2) return null;
-    const max = Math.max(...pts);
-    const min = Math.min(...pts);
-    const range = max - min || 1;
+
     const w = 80;
     const h = 24;
-    const step = w / (pts.length - 1);
-    const coords = pts.map((v, i) => `${i * step},${h - ((v - min) / range) * h}`);
+    const padding = 2;
+    const innerW = w - padding * 2;
+    const innerH = h - padding * 2;
+    const step = innerW / (pts.length - 1);
+    const coords = pts.map((v, i) => {
+      const x = padding + i * step;
+      const y = padding + ((100 - v) / 100) * innerH;
+      return `${x},${y}`;
+    });
+
     return { polyline: coords.join(' '), w, h };
   });
 

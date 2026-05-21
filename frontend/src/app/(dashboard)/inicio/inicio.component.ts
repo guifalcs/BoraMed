@@ -148,9 +148,10 @@ export class InicioComponent {
       return 'danger';
     };
 
-    // Sparkline: notas das últimas tentativas em ordem cronológica (mais antiga → mais recente)
+    // Sparkline: últimas notas em ordem cronológica (mais antiga → mais recente).
     const notasSparkline = this.allTentativas
       .filter((t) => t.nota !== null)
+      .slice(0, 8)
       .map((t) => t.nota as number)
       .reverse();
 
@@ -199,6 +200,8 @@ export class InicioComponent {
   }
 }
 
+const NUMBER_FMT = new Intl.NumberFormat('pt-BR');
+
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat('pt-BR').format(value);
+  return NUMBER_FMT.format(value);
 }

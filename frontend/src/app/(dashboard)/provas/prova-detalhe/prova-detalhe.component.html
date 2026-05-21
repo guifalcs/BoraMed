@@ -23,10 +23,7 @@
         @if (isPersonalizado()) {
           {{ prova()!.qtd_questoes }} questões · Simulado personalizado
         } @else {
-          {{ prova()!.periodo }}º período · Edição {{ prova()!.edicao }} · {{ prova()!.qtd_questoes }} questões
-          @if (prova()!.tempo_sugerido_minutos) {
-            · {{ prova()!.tempo_sugerido_minutos }} min sugeridos
-          }
+          {{ prova()!.periodo }}º período · {{ prova()!.qtd_questoes }} questões
         }
       </p>
 

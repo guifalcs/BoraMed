@@ -29,6 +29,175 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-21 | Fix | sem commit
+
+**Isolamento de dados em sessão impersonada**
+
+- Histórico passa a filtrar tentativas explicitamente pelo `user_id` do usuário autenticado.
+- Fluxos de tentativa personalizada e nota anterior também passam a restringir leituras ao usuário atual.
+- Salvamento de resposta passa pela RPC `salvar_resposta_tentativa`, que valida o dono da tentativa antes de atualizar `tentativa_resposta`.
+- Impersonação valida que a sessão trocada corresponde ao usuário alvo antes de exibir o banner de acesso incorporado.
+- Regras de negócio documentam o escopo obrigatório das telas de aluno em impersonação.
+
+---
+
+## 2026-05-20 | Feature | sem commit
+
+**Priorização de questões inéditas no montar simulado**
+
+- RPC `gerar_simulado_personalizado` passa a consultar o histórico do usuário em `tentativa_resposta` antes do sorteio.
+- Questões ainda não entregues ao usuário são priorizadas dentro dos filtros de formato e tema.
+- Quando as questões inéditas acabam, o sorteio completa a quantidade com questões já vistas em ordem aleatória.
+- Adicionado índice em `tentativa` para acelerar a leitura do histórico por usuário.
+- Geração da prova sintética do simulado ganhou retry para evitar colisão de `edicao` em gerações muito próximas.
+- Regras de negócio documentam a política de anti-repetição em simulados personalizados.
+
+---
+
+## 2026-05-20 | Tweak | sem commit
+
+**Ícones nas ações dos CRUDs admin**
+
+- Ações de visualizar, editar e deletar nas tabelas administrativas passam a usar ícones em vez de texto.
+- Admin de questões usa `Eye`, `Pencil` e `Trash2` nas ações de linha.
+- Admin de provas, disciplinas e temas usam botões compactos com ícones para ações repetidas.
+- Design system documenta o padrão de ações por ícone em tabelas.
+
+---
+
+## 2026-05-20 | Feature | sem commit
+
+**Visualização de questão no admin**
+
+- Admin de questões ganha ação Visualizar em cada linha da listagem.
+- A visualização reutiliza o `app-questao-card`, preservando a renderização vista pelo aluno.
+- Abaixo da questão, a modal exibe panorama administrativo com status, tipo, formato, disciplina, temas, vínculo de prova, gabarito, revisão e métricas.
+- Regras de negócio documentam que a visualização administrativa deve reaproveitar a experiência do aluno.
+
+---
+
+## 2026-05-20 | Tweak | sem commit
+
+**Tabela de questões sem coluna de prova**
+
+- Removida a coluna Prova da listagem administrativa de questões para reduzir ruído visual.
+- O vínculo com prova permanece disponível no drawer de criação/edição da questão.
+
+---
+
+## 2026-05-20 | Feature | 90dcc17
+
+**Impersonação de usuário pelo admin ("Entrar como")**
+
+- Admins podem logar como qualquer aluno diretamente pela lista de usuários.
+- Edge Function `admin-impersonate` verifica papel admin via JWT, gera magic link com service role, e protege o email do owner contra impersonação.
+- Audit log (`admin_impersonation_log`) registra todas as impersonações com IP, user agent, admin e alvo — visível apenas para admins via RLS.
+- Sessão admin é salva no `sessionStorage` antes da troca; restaurada ao clicar "Voltar para minha conta".
+- Banner âmbar visível em todo o dashboard durante impersonação, com nome do usuário e botão de retorno.
+- Corrige bugs em migrations pré-existentes que impediam `db reset` local.
+
+---
+
+## 2026-05-20 | Tweak | sem commit
+
+**Checkbox visual no admin**
+
+- Criado o componente compartilhado `app-ui-checkbox` com visual próprio, foco acessível e variante de card.
+- Admin de questões passa a usar o novo checkbox em temas e opções do formulário.
+- Admin de provas passa a usar o novo checkbox nas opções de publicação/arquivamento e seleção de questões.
+- Design system documenta o padrão de checkbox do sistema.
+
+---
+
+## 2026-05-19 | Feature | sem commit
+
+**Simulado sem tipo de prova**
+
+- Montagem de simulado ganha a opção Todos para sortear questões sem filtrar por tipo de prova.
+- RPC `gerar_simulado_personalizado` passa a aceitar `p_tipo_questao` e `p_formato` nulos como ausência de filtro.
+- Contagem de temas reaproveita o carregamento geral quando a opção Todos está selecionada.
+- Regras de negócio documentam que o tipo de prova é opcional na montagem do simulado.
+
+---
+
+## 2026-05-19 | Fix | sem commit
+
+**Loading ao trocar formato no montar simulado**
+
+- Tela de montar simulado passa a exibir estado de carregamento específico ao alternar entre Nacional, Processual e Laboratório.
+- Lista de temas mostra skeleton com mensagem contextual enquanto a contagem por formato recarrega.
+- Ações sobre formatos e temas ficam bloqueadas durante a recarga para evitar interação com dados antigos.
+- Regras de negócio documentam o comportamento esperado da recarga de temas por formato.
+
+---
+
+## 2026-05-18 | Feature | sem commit
+
+**Formatos de provas extensiveis**
+
+- Nova migration adiciona `origem`, `formato`, `rede`, `subtipo`, `publicada` e `arquivada` em `prova`, mantendo `tipo` como legado.
+- Questoes passam a ter `tipo_questao`, com regra de banco exigindo `imagem_url` para laboratorio.
+- Bucket `questao-imagens` e policies de storage foram formalizados para upload administrativo.
+- RPC de simulado personalizado passa a gravar `origem = 'personalizado'` e filtrar por tipo de questao.
+- Admin de provas passa a separar origem, formato, rede e subtipo, permitindo Nacional, Processual, Laboratorio e Multiestacoes.
+- Admin de questoes permite marcar questao como Laboratorio e exige imagem nesse caso.
+- Listagem de simulados no modelo Afya passa a alternar por formato via query param.
+
+---
+
+## 2026-05-18 | Docs | sem commit
+
+**Plano de adaptacao para tipos de provas**
+
+- Adicionado plano em `docs/plano-adaptacao-tipos-provas.md` para adaptar o app aos formatos Nacional, Processual e Laboratorio.
+- Plano separa origem, formato pedagogico e instituicao/rede para manter compatibilidade futura com outros formatos da Afya e outras faculdades.
+- Documento lista fases de schema, admin, laboratorio, experiencia do aluno, RPCs, testes e criterios de pronto.
+
+---
+
+## 2026-05-18 | Feature | sem commit
+
+**Importacao de questoes com temas cadastrados**
+
+- Prompt de questoes passa a incluir as disciplinas e temas cadastrados no banco para orientar a IA com opcoes reais.
+- Importacao de questoes passa a aceitar `TEMA:`/`TEMAS:` e validar o nome contra os temas existentes, usando a disciplina para desambiguar quando informada.
+- Questoes importadas com tema valido agora criam o vinculo em `questao_tema`, inclusive no fluxo de criar prova.
+- Regras de negocio documentam que disciplina e tema seguem opcionais, mas nao devem ser inventados pela IA.
+
+---
+
+## 2026-05-18 | Fix | sem commit
+
+**Ajustes visuais na criacao de provas**
+
+- Corrigida a altura do botao Buscar na etapa de selecao de questoes do fluxo administrativo de provas.
+- Removida a largura total do botao Concluir no rodape do drawer, mantendo o padrao dos demais botoes do sistema.
+
+---
+
+## 2026-05-18 | Fix | sem commit
+
+**Travas de relacionamento e delecao administrativa**
+
+- Nova migration bloqueia delecoes silenciosas de disciplinas, temas e questoes vinculadas por FKs `RESTRICT`.
+- `tentativa_resposta.ordem_na_tentativa` passa a ser garantida e usada nas RPCs de iniciar, retomar, finalizar e gerar simulado personalizado.
+- RPCs de tentativa voltam a usar `disciplina_id` e `prova_questao`, evitando referencias a colunas antigas removidas.
+- Leituras regulares de questoes de prova no frontend passam a usar `prova_questao` como fonte canonica.
+- Admin antecipa bloqueios de delecao com mensagens especificas para disciplina, tema, questao e prova.
+- Regras de negocio documentam as travas de integridade esperadas.
+
+---
+
+## 2026-05-18 | Fix | sem commit
+
+**Sparkline da última nota no início**
+
+- Card de última nota passa a desenhar o sparkline em escala fixa de 0 a 100, evitando distorção visual quando as notas variam pouco.
+- Linha usa apenas as notas recentes do histórico da tela inicial, em ordem cronológica.
+- Design system documenta que sparklines de nota devem seguir escala percentual fixa.
+
+---
+
 ## 2026-05-16 | Fix | sem commit
 
 **Persistência do papel de administrador**

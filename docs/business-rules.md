@@ -10,16 +10,25 @@
 * Questões de laboratório SEMPRE têm `imagem_url`
 * Questões têm exatamente 5 alternativas, 1 correta
 * Questões são autorais, criadas pelo time a partir dos temas, objetivos pedagógicos e formato das avaliações observadas. Não copiar enunciados, alternativas, imagens, gabaritos ou materiais oficiais de instituições.
+* Na importação administrativa por IA, `DISCIPLINA` e `TEMA` são opcionais, mas quando informados devem corresponder exatamente a registros cadastrados. O prompt deve incluir as disciplinas e temas existentes para evitar classificação inventada pela IA.
+* Questões importadas com `TEMA` válido devem ser vinculadas em `questao_tema`; sem tema, continuam válidas para provas, mas não entram em filtros de simulado por tema.
+* Questões vinculadas a tentativas, desafios diários ou provas não devem ser deletadas diretamente; usar arquivamento/status quando for preciso remover da experiência do aluno.
+* A visualização administrativa de questão deve reutilizar a mesma renderização do aluno e exibir abaixo um panorama com status, classificação, vínculos, gabarito, revisão e métricas.
 
 ### Simulado
 
 * Gerado sob demanda pelo aluno
-* Configuração: tipo de questão + tema(s) + quantidade
+* Configuração: tipo de prova opcional + tema(s) + quantidade
 * Quantidades disponíveis: 5, 10, 15, 20, 30
 * Ordem das questões: sempre aleatória
+* Provas regulares usam `prova_questao` como fonte canônica de vínculo e ordem das questões.
 * A ordem sorteada deve ser persistida em `tentativa_resposta.ordem_na_tentativa` para que a revisão mantenha a mesma sequência da tentativa
 * A retomada de qualquer tentativa deve remontar as questões a partir de `tentativa_resposta`, pois simulados personalizados não têm questões vinculadas diretamente à prova sintética
 * Se existir tentativa com status `em_andamento` ou `pausada`, a home e a área de simulados devem priorizar um CTA de continuidade para levar o aluno direto de volta à execução
+* Ao trocar o formato na montagem de simulado, a lista de temas deve entrar em estado de carregamento e bloquear ações sobre temas até a nova contagem ser retornada
+* A montagem de simulado deve permitir a opção sem tipo de prova, sorteando questões ativas de todos os formatos disponíveis
+* Ao montar simulado, o sorteio deve priorizar questões ainda não entregues ao usuário dentro dos filtros escolhidos; questões já vistas só entram aleatoriamente quando as inéditas acabam.
+* O histórico de questões já entregues ao usuário é derivado de `tentativa_resposta` vinculada às tentativas do próprio usuário, excluindo modo `visualizar`.
 * Uma vez iniciado, o tempo corre
 * Pode ser pausado e retomado (estado salvo no banco)
 * Não pode ser refeito com as mesmas questões na mesma ordem
@@ -100,6 +109,15 @@ Uso interno como referência de produto. Não apresentar como calendário oficia
 * Admin: Arthur e Guilherme têm acesso total
 * Alterações de papel (`aluno`/`admin`) devem passar pela RPC `alterar_papel_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.
 * Apenas administradores podem alterar papéis, e um administrador não pode revogar o próprio acesso.
+* Telas de aluno acessadas por impersonação devem usar o usuário autenticado efetivo como escopo; consultas de histórico/tentativas devem filtrar `user_id` explicitamente e gravações em `tentativa_resposta` devem passar por RPC que valida o dono da tentativa.
+
+## Integridade de Dados
+
+* Disciplina com temas ou questões vinculadas não pode ser deletada. Para retirar da operação, usar `ativa=false`.
+* Tema com questões ou subtemas vinculados não pode ser deletado.
+* Questão com respostas, desafio diário ou vínculo com prova não pode ser deletada.
+* Prova com tentativas vinculadas não pode ser deletada.
+* Deleções administrativas devem ser bloqueadas no banco por FK `RESTRICT` e antecipadas no app com mensagem clara.
 
 ## Público-Alvo
 

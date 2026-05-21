@@ -44,6 +44,10 @@ export class QuestaoCardComponent {
     () => this.gabaritioVisivel() && this.respostaSelecionada() === null,
   );
 
+  protected readonly alternativasMap = computed(
+    () => new Map(this.questao().alternativas.map((a) => [a.id, a])),
+  );
+
   protected estadoAlternativa(altId: string): EstadoAlternativa {
     const selecionada = this.respostaSelecionada();
     const corretaId = this.alternativaCorreta();
@@ -51,14 +55,14 @@ export class QuestaoCardComponent {
     const modo = this.modo();
 
     if (modo === 'visualizar' || gabarito) {
-      const alt = this.questao().alternativas.find((a) => a.id === altId);
+      const alt = this.alternativasMap().get(altId);
       if (alt?.correta) return 'correta';
       if (altId === selecionada) return 'errada';
       return 'desabilitada';
     }
 
     if (modo === 'estudo' && corretaId !== null) {
-      const alt = this.questao().alternativas.find((a) => a.id === altId);
+      const alt = this.alternativasMap().get(altId);
       if (alt?.correta) return 'correta';
       if (altId === selecionada) return 'errada';
       return 'desabilitada';

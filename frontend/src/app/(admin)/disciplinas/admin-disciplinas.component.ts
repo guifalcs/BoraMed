@@ -9,11 +9,13 @@ import { FormsModule } from '@angular/forms';
 import { AdminService, AdminDisciplina } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { Pencil, Trash2 } from 'lucide-angular';
 
 @Component({
   selector: 'app-admin-disciplinas',
   standalone: true,
-  imports: [FormsModule, UiConfirmDialogComponent],
+  imports: [FormsModule, UiConfirmDialogComponent, UiIconComponent],
   templateUrl: './admin-disciplinas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -36,6 +38,8 @@ export class AdminDisciplinasComponent implements OnInit {
   protected readonly editPeriodo = signal<number | null>(null);
 
   protected readonly disciplinaParaDeletar = signal<AdminDisciplina | null>(null);
+  protected readonly iconPencil = Pencil;
+  protected readonly iconTrash = Trash2;
 
   async ngOnInit(): Promise<void> {
     await this.carregar();
@@ -120,7 +124,7 @@ export class AdminDisciplinasComponent implements OnInit {
       this.disciplinas.update((lista) => lista.filter((item) => item.id !== d.id));
       this.toast.success('Disciplina deletada.');
     } else {
-      this.toast.error('Erro ao deletar. Pode ter temas ou questões vinculados.');
+      this.toast.error(result.error);
     }
   }
 }

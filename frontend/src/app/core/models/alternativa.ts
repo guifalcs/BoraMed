@@ -1,7 +1,7 @@
 export interface Alternativa {
   id: string;
   questao_id: string;
-  letra: 'A' | 'B' | 'C' | 'D' | 'E';
+  letra: string;
   texto: string;
   correta: boolean;
   ordem: number;

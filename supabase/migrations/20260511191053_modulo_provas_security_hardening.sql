@@ -91,5 +91,5 @@ revoke execute on function public.retomar_tentativa(uuid) from anon;
 revoke execute on function public.pausar_tentativa(uuid) from anon;
 revoke execute on function public.finalizar_tentativa(uuid) from anon;
 
-drop policy "avatars_select_own" on "storage"."objects";
+drop policy if exists "avatars_select_own" on "storage"."objects";
 create policy "avatars_select_own" on "storage"."objects" as permissive for select to authenticated using (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text)));;

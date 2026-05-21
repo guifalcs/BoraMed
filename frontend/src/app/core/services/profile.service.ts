@@ -17,6 +17,10 @@ export class ProfileService {
   readonly profile = this._profile.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
 
+  clear(): void {
+    this._profile.set(null);
+  }
+
   async loadProfile(): Promise<void> {
     const user = this.auth.user();
     if (!user) return;

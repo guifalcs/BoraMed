@@ -14,7 +14,7 @@ export type TipoUsuario = (typeof TIPO_USUARIO_VALUES)[number];
 export const FACULDADE_REDE_VALUES = ['rede_afya', 'outros'] as const;
 export type FaculdadeRede = (typeof FACULDADE_REDE_VALUES)[number];
 
-export type PapelUsuario = 'aluno' | 'admin';
+export type PapelUsuario = 'aluno' | 'admin' | 'super_admin';
 
 export interface Profile {
   id: string;
@@ -40,5 +40,16 @@ export type AuthErrorCode =
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN';
+
+export interface AdminSessionBackup {
+  access_token: string;
+  refresh_token: string;
+  adminName: string;
+}
+
+export interface ImpersonacaoInfo {
+  adminName: string;
+  targetName: string;
+}
 
 export type { User };

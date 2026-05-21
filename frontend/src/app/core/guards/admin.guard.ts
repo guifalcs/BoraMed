@@ -16,7 +16,8 @@ export const adminGuard: CanActivateFn = async () => {
     await profileService.loadProfile();
   }
 
-  if (profileService.profile()?.papel === 'admin') {
+  const papel = profileService.profile()?.papel;
+  if (papel === 'admin' || papel === 'super_admin') {
     return true;
   }
 

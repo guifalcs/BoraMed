@@ -37,11 +37,11 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th style="width:42%">Enunciado</th>
+          <th style="width:48%">Enunciado</th>
           <th>Formato</th>
+          <th>Tipo</th>
           <th>Status</th>
           <th>Acerto</th>
-          <th>Prova</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -52,6 +52,9 @@
               <span class="enunciado-text">{{ q.enunciado | slice:0:110 }}{{ q.enunciado.length > 110 ? '…' : '' }}</span>
             </td>
             <td><span class="format-badge format-badge--{{ q.formato }}">{{ formatoLabel(q.formato) }}</span></td>
+            <td>
+              <span class="format-badge format-badge--{{ q.tipo_questao }}">{{ q.tipo_questao === 'laboratorio' ? 'Laboratório' : q.tipo_questao === 'processual' ? 'Processual' : 'Nacional' }}</span>
+            </td>
             <td class="status-td">
               <app-ui-select
                 label=""
@@ -62,22 +65,37 @@
                 (valueChange)="alterarStatus(q, $any($event))"
               />
             </td>
-            <td>{{ q.taxa_acerto != null ? (q.taxa_acerto + '%') : '—' }}</td>
-            <td>{{ q.prova?.nome ?? '—' }}</td>
+            <td>
+              @if (q.taxa_acerto != null) {
+                <span class="taxa-badge" [class]="taxaAcertoClass(q.taxa_acerto)">{{ q.taxa_acerto }}%</span>
+              } @else {
+                <span class="taxa-badge taxa-badge--none">—</span>
+              }
+            </td>
             <td class="actions-cell">
               <button
-                class="btn btn--sm btn--outline"
+                class="btn btn--sm btn--icon btn--ghost"
                 [disabled]="!!processando()"
-                (click)="abrirEditar(q)"
+                aria-label="Visualizar questão"
+                (click)="abrirVisualizar(q)"
               >
-                Editar
+                <app-ui-icon [icon]="iconEye" [size]="15" />
               </button>
               <button
-                class="btn btn--sm btn--danger"
+                class="btn btn--sm btn--icon btn--outline"
                 [disabled]="!!processando()"
+                aria-label="Editar questão"
+                (click)="abrirEditar(q)"
+              >
+                <app-ui-icon [icon]="iconPencil" [size]="15" />
+              </button>
+              <button
+                class="btn btn--sm btn--icon btn--danger"
+                [disabled]="!!processando()"
+                aria-label="Deletar questão"
                 (click)="solicitarDelete(q)"
               >
-                Deletar
+                <app-ui-icon [icon]="iconTrash" [size]="15" />
               </button>
             </td>
           </tr>
@@ -103,6 +121,58 @@
     (confirmar)="confirmarDelete()"
     (cancelar)="cancelarDelete()"
   />
+}
+
+<!-- ── Modal de visualização ── -->
+@if (visualizacaoAberta()) {
+  <div class="drawer-backdrop" (click)="fecharVisualizacao()"></div>
+
+  <aside class="preview-modal" role="dialog" aria-modal="true" aria-label="Visualizar questão">
+    <div class="drawer-header">
+      <h2 class="drawer-title">Visualizar questão</h2>
+      <button class="drawer-close" (click)="fecharVisualizacao()" aria-label="Fechar"><app-ui-icon [icon]="iconX" [size]="18" /></button>
+    </div>
+
+    @if (carregandoVisualizacao()) {
+      <div class="drawer-loading">Carregando visualização…</div>
+    } @else if (questaoPreview(); as preview) {
+      <div class="preview-body">
+        <div class="preview-question">
+            <app-questao-card
+              [questao]="preview"
+              [numero]="1"
+              modo="simulado"
+              [respostaSelecionada]="null"
+              [alternativaCorreta]="null"
+              [gabaritioVisivel]="false"
+            />
+        </div>
+
+        <section class="preview-specs" aria-labelledby="preview-specs-title">
+          <div class="preview-specs__header">
+            <h3 id="preview-specs-title">Panorama da questão</h3>
+            <p>Especificações administrativas, vínculos e dados de uso.</p>
+          </div>
+
+          <dl class="preview-specs__grid">
+            @for (item of metadadosVisualizacao(); track item.label) {
+              <div class="preview-spec">
+                <dt>{{ item.label }}</dt>
+                <dd>{{ item.valor }}</dd>
+              </div>
+            }
+          </dl>
+
+          @if (questaoVisualizada()?.explicacao) {
+            <div class="preview-text-block">
+              <h4>Explicação</h4>
+              <p>{{ questaoVisualizada()?.explicacao }}</p>
+            </div>
+          }
+        </section>
+      </div>
+    }
+  </aside>
 }
 
 <!-- ── Drawer de criação/edição ── -->
@@ -162,6 +232,29 @@
 
             <div class="field">
               <app-ui-select
+                label="Tipo da questão"
+                name="tipo-questao"
+                [options]="opcoesTipoQuestao"
+                [value]="fTipoQuestao()"
+                [required]="true"
+                (valueChange)="fTipoQuestao.set($any($event) || 'nacional'); onTipoQuestaoChange($any($event))"
+              />
+            </div>
+
+            @if (opcoesFormatoProva().length > 0) {
+              <div class="field">
+                <app-ui-select
+                  label="Subtipo da prova"
+                  name="formato-prova"
+                  [options]="opcoesFormatoProva()"
+                  [value]="fFormatoProva() ?? ''"
+                  (valueChange)="fFormatoProva.set($any($event) || null)"
+                />
+              </div>
+            }
+
+            <div class="field">
+              <app-ui-select
                 label="Status"
                 name="status-form"
                 [options]="opcoesStatusForm"
@@ -170,16 +263,6 @@
               />
             </div>
 
-            <div class="field field--narrow">
-              <app-ui-select
-                label="Dificuldade"
-                name="dificuldade"
-                [options]="opcoesDificuldade"
-                [value]="fDificuldade()"
-                placeholder="—"
-                (valueChange)="fDificuldade.set($event != null && $event !== '' ? +$event : null)"
-              />
-            </div>
           </div>
         </section>
 
@@ -349,17 +432,18 @@
 
           <div class="temas-grid">
             @for (tema of temasVisiveis(); track tema.id) {
-              <label class="tema-item" [class.tema-item--selected]="isTemaSelected(tema.id)">
-                <input
-                  type="checkbox"
-                  [checked]="isTemaSelected(tema.id)"
-                  (change)="toggleTema(tema.id)"
-                />
+              <app-ui-checkbox
+                class="tema-item"
+                variant="card"
+                [compact]="true"
+                [checked]="isTemaSelected(tema.id)"
+                (checkedChange)="toggleTema(tema.id)"
+              >
                 <span>{{ tema.nome }}</span>
                 @if (disciplinaSiglaFor(tema.disciplina_id)) {
                   <em>{{ disciplinaSiglaFor(tema.disciplina_id) }}</em>
                 }
-              </label>
+              </app-ui-checkbox>
             }
             @if (temasVisiveis().length === 0) {
               <p class="temas-empty">Nenhum tema encontrado.</p>
@@ -371,22 +455,18 @@
         <section class="form-section">
           <h3 class="section-label">Opções</h3>
           <div class="opcoes-row">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [ngModel]="fRevisado()"
-                (ngModelChange)="fRevisado.set($event)"
-              />
+            <app-ui-checkbox
+              [checked]="fRevisado()"
+              (checkedChange)="fRevisado.set($event)"
+            >
               Revisado
-            </label>
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [ngModel]="fAptoDesafio()"
-                (ngModelChange)="fAptoDesafio.set($event)"
-              />
+            </app-ui-checkbox>
+            <app-ui-checkbox
+              [checked]="fAptoDesafio()"
+              (checkedChange)="fAptoDesafio.set($event)"
+            >
               Apto para desafio diário
-            </label>
+            </app-ui-checkbox>
           </div>
         </section>
 
@@ -435,7 +515,12 @@
   }
   .data-table tr:last-child td { border-bottom: none; }
   .enunciado-text { color: #475569; line-height: 1.4; }
-  .actions-cell { white-space: nowrap; }
+  .actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+  }
   .format-badge {
     display: inline-block; font-size: 0.7rem; font-weight: 600;
     border-radius: 4px; padding: 0.2rem 0.5rem; white-space: nowrap;
@@ -444,6 +529,20 @@
   .format-badge--multipla_escolha { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
   .format-badge--verdadeiro_falso { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
   .format-badge--discursiva { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .format-badge--nacional { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+  .format-badge--processual { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+  .format-badge--laboratorio { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+
+  /* ── Taxa de acerto com cores ── */
+  .taxa-badge {
+    display: inline-block; font-size: 0.75rem; font-weight: 600;
+    border-radius: 9999px; padding: 0.2rem 0.6rem; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .taxa-badge--baixa { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+  .taxa-badge--media { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .taxa-badge--alta { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+  .taxa-badge--none { color: #94a3b8; }
   /* ── Status select inline (UiSelectComponent compacto) ── */
   .status-td { min-width: 140px; }
   .status-td ::ng-deep .ui-field__label-row { display: none; }
@@ -464,14 +563,17 @@
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; margin-right: 0.25rem; }
+  .btn--icon { width: 2rem; height: 2rem; justify-content: center; padding: 0; margin-right: 0; }
   .btn--primary { background: #7c3aed; color: #fff; }
   .btn--primary:hover:not(:disabled) { background: #6d28d9; }
   .btn--outline { background: #7c3aed; border: 1px solid #7c3aed; color: #fff; }
   .btn--outline:hover:not(:disabled) { background: #6d28d9; border-color: #6d28d9; }
   .btn--danger { background: #ef4444; border: 1px solid #ef4444; color: #fff; }
   .btn--danger:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
+  .btn--ghost { background: #fff; border: 1px solid #e2e8f0; color: #475569; }
+  .btn--ghost:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
 
-  /* ── Drawer ── */
+  /* ── Drawer / modal ── */
   .drawer-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.4);
     z-index: 1000; animation: fadeIn 0.15s ease;
@@ -513,6 +615,64 @@
     border-top: 1px solid #e2e8f0;
     display: flex; justify-content: flex-end; gap: 0.75rem;
     background: #fafbfc;
+  }
+
+  .preview-modal {
+    position: fixed; top: 3vh; left: 50%; transform: translateX(-50%);
+    width: min(980px, calc(100vw - 2rem)); max-height: 94vh;
+    background: #ffffff; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    display: flex; flex-direction: column; z-index: 1001;
+    animation: fadeIn 0.15s ease;
+  }
+  .preview-body {
+    flex: 1; overflow-y: auto; padding: 1.5rem;
+    background: #f8fafc;
+  }
+  .preview-question {
+    max-width: 48rem; margin: 0 auto 1rem;
+  }
+  .preview-specs {
+    max-width: 48rem; margin: 0 auto;
+    border: 1px solid #e2e8f0; border-radius: 10px;
+    background: #ffffff; padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  }
+  .preview-specs__header {
+    margin-bottom: 1rem; padding-bottom: 0.875rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .preview-specs__header h3 {
+    margin: 0 0 0.25rem; font-size: 1rem; font-weight: 700; color: #1e293b;
+  }
+  .preview-specs__header p {
+    margin: 0; font-size: 0.8125rem; color: #64748b;
+  }
+  .preview-specs__grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem; margin: 0;
+  }
+  .preview-spec {
+    min-width: 0; border: 1px solid #f1f5f9; border-radius: 8px;
+    padding: 0.75rem; background: #fbfdff;
+  }
+  .preview-spec dt {
+    margin-bottom: 0.25rem; font-size: 0.68rem; font-weight: 700;
+    color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .preview-spec dd {
+    margin: 0; color: #1e293b; font-size: 0.875rem; line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .preview-text-block {
+    margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1rem;
+  }
+  .preview-text-block h4 {
+    margin: 0 0 0.375rem; color: #1e293b; font-size: 0.875rem; font-weight: 700;
+  }
+  .preview-text-block p {
+    margin: 0; color: #475569; font-size: 0.875rem; line-height: 1.5;
+    white-space: pre-line;
   }
 
   /* ── Seções do formulário ── */
@@ -585,24 +745,10 @@
     border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.625rem;
     background: #f8fafc;
   }
-  .tema-item {
-    display: flex; align-items: baseline; gap: 0.375rem;
-    font-size: 0.8rem; color: #334155; cursor: pointer;
-    padding: 0.3rem 0.5rem; border-radius: 6px;
-    border: 1px solid transparent;
-    transition: background 0.1s, border-color 0.1s;
-  }
-  .tema-item:hover { background: #f1f5f9; }
-  .tema-item--selected { background: #ede9fe; border-color: #ddd6fe; color: #5b21b6; }
+  .tema-item { width: 100%; color: #334155; }
   .tema-item em { font-style: normal; font-size: 0.7rem; color: #94a3b8; }
-  .tema-item input { flex-shrink: 0; accent-color: #7c3aed; }
   .temas-empty { font-size: 0.8rem; color: #94a3b8; margin: 0; text-align: center; padding: 0.5rem; }
 
   /* ── Opções ── */
   .opcoes-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-  .checkbox-label {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-size: 0.875rem; color: #334155; cursor: pointer;
-  }
-  .checkbox-label input { accent-color: #7c3aed; }
 </style>

@@ -18,6 +18,11 @@ type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
   temas: { tema: Tema }[];
 };
 
+type RawProvaQuestao = {
+  ordem: number;
+  questao: RawQuestao | null;
+};
+
 type TentativaRespostaOrdem = {
   questao_id: string;
   ordem_na_tentativa: number | null;
@@ -43,7 +48,7 @@ export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = a
   if (!provaResult.ok) {
     questoesResult = { ok: false, error: 'Prova não encontrada.' };
   } else {
-    const isPersonalizado = provaResult.data.tipo === 'processual' && provaResult.data.edicao < 0;
+    const isPersonalizado = provaResult.data.origem === 'personalizado';
     questoesResult = isPersonalizado
       ? await fetchQuestoesPersonalizado(supabase, provaId)
       : await fetchQuestoesRegulares(supabase, provaId);
@@ -64,18 +69,22 @@ async function fetchQuestoesRegulares(
 ): Promise<{ ok: true; data: QuestaoComAlternativas[] } | { ok: false; error: string }> {
   try {
     const { data, error } = await supabase
-      .from('questao')
-      .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+      .from('prova_questao')
+      .select('ordem, questao:questao_id!inner(*, alternativas:alternativa(*), temas:questao_tema(tema(*)))')
       .eq('prova_id', provaId)
-      .eq('status', 'ativa')
-      .order('ordem_na_prova');
+      .eq('questao.status', 'ativa')
+      .order('ordem');
 
     if (error) throw error;
 
-    const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
-      ...q,
-      temas: q.temas.map((qt) => qt.tema),
-    })) as QuestaoComAlternativas[];
+    const questoes = ((data ?? []) as unknown as RawProvaQuestao[])
+      .filter((row): row is RawProvaQuestao & { questao: RawQuestao } => row.questao !== null)
+      .map((row) => ({
+        ...row.questao,
+        prova_id: provaId,
+        ordem_na_prova: row.ordem,
+        temas: row.questao.temas.map((qt) => qt.tema),
+      })) as QuestaoComAlternativas[];
 
     return { ok: true, data: questoes };
   } catch {

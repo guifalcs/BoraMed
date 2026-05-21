@@ -157,6 +157,27 @@ Estados:
 * Erro: borda `--color-danger` e texto inline abaixo do campo.
 * Erros nunca devem aparecer em alert/modal para formulários.
 
+### Checkbox
+
+Checkboxes usam o componente standalone `app-ui-checkbox`, com input nativo preservado para acessibilidade e visual próprio alinhado ao azul institucional.
+
+Estados:
+
+* Marcado: preenchimento `--color-action`, check branco e halo azul suave.
+* Foco: outline `--color-primary-light` no controle visual.
+* Variante `card`: usada em listas selecionáveis e opções administrativas, com borda, hover e estado selecionado.
+* Variante compacta: usada em grades densas de filtros e temas.
+
+### Ações Em Tabelas
+
+Tabelas administrativas devem usar botões quadrados com ícones para ações repetidas de linha.
+
+* Visualizar: ícone `Eye`.
+* Editar: ícone `Pencil`.
+* Deletar: ícone `Trash2`, mantendo a cor de perigo.
+* Sempre manter `aria-label` para preservar acessibilidade sem exibir texto visual.
+* Usar texto apenas em ações de fluxo ou comandos pouco óbvios, como salvar, cancelar, filtrar e iniciar processos.
+
 ### AuthTabs
 
 ```css
@@ -323,6 +344,7 @@ O dashboard administrativo usa `ng2-charts`/Chart.js, já instalados no frontend
 
 Padrões:
 
+* Sparklines de notas em cards devem usar escala percentual fixa de 0 a 100, com padding interno, para não exagerar pequenas variações.
 * KPIs em cards compactos com ícones Lucide, `border-radius: 8px` e acentos por categoria.
 * Gráfico de barras para volume total da plataforma.
 * Doughnut para composição do banco de questões por status.

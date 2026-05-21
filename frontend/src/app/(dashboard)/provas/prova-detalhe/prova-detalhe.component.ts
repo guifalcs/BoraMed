@@ -43,7 +43,7 @@ export class ProvaDetalheComponent implements OnInit {
 
   protected readonly isPersonalizado = computed(() => {
     const p = this.prova();
-    return p !== null && p.tipo === 'processual' && p.edicao < 0;
+    return p !== null && p.origem === 'personalizado';
   });
 
   protected readonly backRoute = computed(() =>

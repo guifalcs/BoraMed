@@ -23,9 +23,9 @@ export const ComIcone: Story = {
   },
 };
 
-export const Multiestacoes: Story = {
+export const Laboratorio: Story = {
   args: {
-    titulo: 'Treinos Multiestações',
+    titulo: 'Treinos de Laboratório',
     descricao: 'Questões autorais de laboratório com imagens de lâminas e peças anatômicas.',
     icone: FlaskConical,
   },

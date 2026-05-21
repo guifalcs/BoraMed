@@ -28,17 +28,17 @@ export class ProvaCardComponent {
   abrirProva = output<string>();
 
   protected readonly subtipoLabel = computed(() => {
-    const s = this.prova().subtipo_nacional;
+    const s = this.prova().subtipo ?? this.prova().subtipo_nacional;
     return s ? SUBTIPO_LABEL[s] : null;
   });
 
   protected readonly subtipoLabelFull = computed(() => {
-    const s = this.prova().subtipo_nacional;
+    const s = this.prova().subtipo ?? this.prova().subtipo_nacional;
     return s ? SUBTIPO_LABEL_FULL[s] : null;
   });
 
   protected readonly badgeClass = computed(() => {
-    const s = this.prova().subtipo_nacional;
+    const s = this.prova().subtipo ?? this.prova().subtipo_nacional;
     if (s === 'N1') return 'bg-blue-100 text-blue-700';
     if (s === 'teste_progresso') return 'bg-violet-100 text-violet-700';
     if (s === 'N2') return 'bg-teal-100 text-teal-700';

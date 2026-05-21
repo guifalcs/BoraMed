@@ -14,7 +14,7 @@ const DASHBOARD_ONBOARDING_FLOW: IOnboardingFlow = {
   steps: [
     {
       id: 'welcome',
-      titulo: 'Seu treino no modelo Afya em um só lugar',
+      titulo: 'O treino para a Rede Afya em um só lugar',
       descricao: 'Em menos de um minuto você entende onde começar, como acompanhar sua evolução e onde ajustar sua privacidade.',
       target: null,
       placement: 'center',
@@ -58,7 +58,7 @@ const DASHBOARD_ONBOARDING_FLOW: IOnboardingFlow = {
     {
       id: 'final',
       titulo: 'Agora escolha seu primeiro treino',
-      descricao: 'Abra Simulados e escolha o caminho que faz mais sentido: modelo nacional, personalizado por temas ou formatos em breve.',
+      descricao: 'Abra Simulados e escolha o caminho: modelo nacional, personalizado por temas ou formatos de prova em breve.',
       target: null,
       placement: 'center',
       ctaLabel: 'Escolher treino',

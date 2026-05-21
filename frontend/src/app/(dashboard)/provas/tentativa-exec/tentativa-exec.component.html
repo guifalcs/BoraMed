@@ -115,26 +115,14 @@
         @if (mostrarGrade()) {
           <div class="flex flex-wrap gap-2 sm:hidden" role="navigation" aria-label="Grade de questões">
             @for (q of questoes(); track q.id; let i = $index) {
-              <button
-                type="button"
-                class="h-8 w-8 rounded text-xs font-medium transition-colors"
-                [class.bg-[var(--color-primary)]]="i === questaoAtualIdx() && !marcadas().has(q.id)"
-                [class.text-white]="i === questaoAtualIdx()"
-                [class.bg-amber-500]="i === questaoAtualIdx() && marcadas().has(q.id)"
-                [class.bg-amber-100]="i !== questaoAtualIdx() && marcadas().has(q.id)"
-                [class.text-amber-700]="i !== questaoAtualIdx() && marcadas().has(q.id)"
-                [class.bg-emerald-100]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && !errou(q.id)"
-                [class.text-emerald-700]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && !errou(q.id)"
-                [class.bg-red-100]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && errou(q.id)"
-                [class.text-red-700]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && errou(q.id)"
-                [class.bg-[var(--color-surface-2)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
-                [class.text-[var(--color-text-muted)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
-                (click)="irParaQuestao(i); mostrarGrade.set(false)"
-                [attr.aria-label]="'Questão ' + (i + 1) + (marcadas().has(q.id) ? ', marcada para revisão' : '') + (respostas().has(q.id) ? ', respondida' : ', não respondida') + (i === questaoAtualIdx() ? ', atual' : '')"
-                [attr.aria-current]="i === questaoAtualIdx() ? 'step' : null"
-              >
-                {{ i + 1 }}
-              </button>
+              <app-grade-item
+                [numero]="i + 1"
+                [isAtual]="i === questaoAtualIdx()"
+                [isMarcada]="marcadas().has(q.id)"
+                [respondida]="respostas().has(q.id)"
+                [errou]="errou(q.id)"
+                (navegarPara)="irParaQuestao(i); mostrarGrade.set(false)"
+              />
             }
           </div>
         }
@@ -142,26 +130,14 @@
         <!-- Desktop -->
         <div class="hidden flex-wrap gap-2 sm:flex" role="navigation" aria-label="Grade de questões">
           @for (q of questoes(); track q.id; let i = $index) {
-            <button
-              type="button"
-              class="h-8 w-8 rounded text-xs font-medium transition-colors"
-              [class.bg-[var(--color-primary)]]="i === questaoAtualIdx() && !marcadas().has(q.id)"
-              [class.text-white]="i === questaoAtualIdx()"
-              [class.bg-amber-500]="i === questaoAtualIdx() && marcadas().has(q.id)"
-              [class.bg-amber-100]="i !== questaoAtualIdx() && marcadas().has(q.id)"
-              [class.text-amber-700]="i !== questaoAtualIdx() && marcadas().has(q.id)"
-              [class.bg-emerald-100]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && !errou(q.id)"
-              [class.text-emerald-700]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && !errou(q.id)"
-              [class.bg-red-100]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && errou(q.id)"
-              [class.text-red-700]="i !== questaoAtualIdx() && !marcadas().has(q.id) && respostas().has(q.id) && errou(q.id)"
-              [class.bg-[var(--color-surface-2)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
-              [class.text-[var(--color-text-muted)]]="i !== questaoAtualIdx() && !marcadas().has(q.id) && !respostas().has(q.id)"
-              (click)="irParaQuestao(i)"
-              [attr.aria-label]="'Questão ' + (i + 1) + (marcadas().has(q.id) ? ', marcada para revisão' : '') + (respostas().has(q.id) ? ', respondida' : ', não respondida') + (i === questaoAtualIdx() ? ', atual' : '')"
-              [attr.aria-current]="i === questaoAtualIdx() ? 'step' : null"
-            >
-              {{ i + 1 }}
-            </button>
+            <app-grade-item
+              [numero]="i + 1"
+              [isAtual]="i === questaoAtualIdx()"
+              [isMarcada]="marcadas().has(q.id)"
+              [respondida]="respostas().has(q.id)"
+              [errou]="errou(q.id)"
+              (navegarPara)="irParaQuestao(i)"
+            />
           }
         </div>
       </div>

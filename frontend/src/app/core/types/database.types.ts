@@ -7,13 +7,69 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
+      admin_impersonation_log: {
+        Row: {
+          admin_email: string
+          admin_id: string | null
+          criado_em: string
+          id: string
+          ip: string | null
+          target_email: string
+          target_id: string | null
+          target_name: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          admin_email: string
+          admin_id?: string | null
+          criado_em?: string
+          id?: string
+          ip?: string | null
+          target_email: string
+          target_id?: string | null
+          target_name?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          admin_email?: string
+          admin_id?: string | null
+          criado_em?: string
+          id?: string
+          ip?: string | null
+          target_email?: string
+          target_id?: string | null
+          target_name?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       alternativa: {
         Row: {
           correta: boolean
@@ -155,6 +211,33 @@ export type Database = {
           },
         ]
       }
+      disciplina: {
+        Row: {
+          ativa: boolean
+          criado_em: string
+          id: string
+          nome: string | null
+          periodo: number
+          sigla: string
+        }
+        Insert: {
+          ativa?: boolean
+          criado_em?: string
+          id?: string
+          nome?: string | null
+          periodo: number
+          sigla: string
+        }
+        Update: {
+          ativa?: boolean
+          criado_em?: string
+          id?: string
+          nome?: string | null
+          periodo?: number
+          sigla?: string
+        }
+        Relationships: []
+      }
       faculdade: {
         Row: {
           ativa: boolean
@@ -217,126 +300,81 @@ export type Database = {
       }
       profiles: {
         Row: {
-          atualizado_em: string
-          avatar_url: string | null
           competir_publico: boolean
           criado_em: string
           email: string
           faculdade_rede: string | null
           id: string
-          nome_completo: string | null
-          periodo: number | null
+          papel: string
           tipo_usuario: string | null
         }
         Insert: {
-          atualizado_em?: string
-          avatar_url?: string | null
           competir_publico?: boolean
           criado_em?: string
           email: string
           faculdade_rede?: string | null
           id: string
-          nome_completo?: string | null
-          periodo?: number | null
+          papel?: string
           tipo_usuario?: string | null
         }
         Update: {
-          atualizado_em?: string
-          avatar_url?: string | null
           competir_publico?: boolean
           criado_em?: string
           email?: string
           faculdade_rede?: string | null
           id?: string
-          nome_completo?: string | null
-          periodo?: number | null
+          papel?: string
           tipo_usuario?: string | null
-        }
-        Relationships: []
-      }
-      user_onboarding_state: {
-        Row: {
-          atualizado_em: string
-          completed_at: string | null
-          criado_em: string
-          current_step: string | null
-          flow_key: string
-          flow_version: number
-          metadata: Json
-          skipped_at: string | null
-          started_at: string | null
-          status: string
-          user_id: string
-        }
-        Insert: {
-          atualizado_em?: string
-          completed_at?: string | null
-          criado_em?: string
-          current_step?: string | null
-          flow_key: string
-          flow_version?: number
-          metadata?: Json
-          skipped_at?: string | null
-          started_at?: string | null
-          status?: string
-          user_id: string
-        }
-        Update: {
-          atualizado_em?: string
-          completed_at?: string | null
-          criado_em?: string
-          current_step?: string | null
-          flow_key?: string
-          flow_version?: number
-          metadata?: Json
-          skipped_at?: string | null
-          started_at?: string | null
-          status?: string
-          user_id?: string
         }
         Relationships: []
       }
       prova: {
         Row: {
-          ano: number | null
+          arquivada: boolean
           criado_em: string
-          edicao: number
           faculdade_id: string | null
+          formato: string | null
           id: string
           nome: string
+          origem: string
           periodo: number
+          publicada: boolean
           qtd_questoes: number
-          semestre: number | null
+          rede: string | null
+          subtipo: string | null
           subtipo_nacional: string | null
-          tempo_sugerido_minutos: number | null
           tipo: string
         }
         Insert: {
-          ano?: number | null
+          arquivada?: boolean
           criado_em?: string
-          edicao?: number
           faculdade_id?: string | null
+          formato?: string | null
           id?: string
           nome: string
+          origem?: string
           periodo: number
+          publicada?: boolean
           qtd_questoes?: number
-          semestre?: number | null
+          rede?: string | null
+          subtipo?: string | null
           subtipo_nacional?: string | null
-          tempo_sugerido_minutos?: number | null
           tipo: string
         }
         Update: {
-          ano?: number | null
+          arquivada?: boolean
           criado_em?: string
-          edicao?: number
           faculdade_id?: string | null
+          formato?: string | null
           id?: string
           nome?: string
+          origem?: string
           periodo?: number
+          publicada?: boolean
           qtd_questoes?: number
-          semestre?: number | null
+          rede?: string | null
+          subtipo?: string | null
           subtipo_nacional?: string | null
-          tempo_sugerido_minutos?: number | null
           tipo?: string
         }
         Relationships: [
@@ -349,6 +387,39 @@ export type Database = {
           },
         ]
       }
+      prova_questao: {
+        Row: {
+          ordem: number
+          prova_id: string
+          questao_id: string
+        }
+        Insert: {
+          ordem?: number
+          prova_id: string
+          questao_id: string
+        }
+        Update: {
+          ordem?: number
+          prova_id?: string
+          questao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prova_questao_prova_id_fkey"
+            columns: ["prova_id"]
+            isOneToOne: false
+            referencedRelation: "prova"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prova_questao_questao_id_fkey"
+            columns: ["questao_id"]
+            isOneToOne: false
+            referencedRelation: "questao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questao: {
         Row: {
           aprovada_em: string | null
@@ -357,8 +428,7 @@ export type Database = {
           autor_id: string | null
           codigo_externo: string | null
           criado_em: string
-          dificuldade: number | null
-          disciplina: string | null
+          disciplina_id: string | null
           enunciado: string
           enunciado_apoio: string | null
           explicacao: string | null
@@ -372,7 +442,6 @@ export type Database = {
           nivel_bloom: number | null
           ordem_na_prova: number | null
           origem_geracao: string
-          periodo: number | null
           prova_id: string | null
           publicada_em: string | null
           referencia: string | null
@@ -382,6 +451,7 @@ export type Database = {
           revisor_id: string | null
           status: string
           taxa_acerto: number | null
+          tipo_questao: string
           vezes_acertada: number
           vezes_respondida: number
         }
@@ -392,8 +462,7 @@ export type Database = {
           autor_id?: string | null
           codigo_externo?: string | null
           criado_em?: string
-          dificuldade?: number | null
-          disciplina?: string | null
+          disciplina_id?: string | null
           enunciado: string
           enunciado_apoio?: string | null
           explicacao?: string | null
@@ -407,7 +476,6 @@ export type Database = {
           nivel_bloom?: number | null
           ordem_na_prova?: number | null
           origem_geracao?: string
-          periodo?: number | null
           prova_id?: string | null
           publicada_em?: string | null
           referencia?: string | null
@@ -417,6 +485,7 @@ export type Database = {
           revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
+          tipo_questao?: string
           vezes_acertada?: number
           vezes_respondida?: number
         }
@@ -427,8 +496,7 @@ export type Database = {
           autor_id?: string | null
           codigo_externo?: string | null
           criado_em?: string
-          dificuldade?: number | null
-          disciplina?: string | null
+          disciplina_id?: string | null
           enunciado?: string
           enunciado_apoio?: string | null
           explicacao?: string | null
@@ -442,7 +510,6 @@ export type Database = {
           nivel_bloom?: number | null
           ordem_na_prova?: number | null
           origem_geracao?: string
-          periodo?: number | null
           prova_id?: string | null
           publicada_em?: string | null
           referencia?: string | null
@@ -452,6 +519,7 @@ export type Database = {
           revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
+          tipo_questao?: string
           vezes_acertada?: number
           vezes_respondida?: number
         }
@@ -461,6 +529,13 @@ export type Database = {
             columns: ["autor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questao_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplina"
             referencedColumns: ["id"]
           },
           {
@@ -515,29 +590,33 @@ export type Database = {
       tema: {
         Row: {
           criado_em: string
-          disciplina: string | null
+          disciplina_id: string | null
           id: string
           nome: string
           parent_id: string | null
-          periodo: number | null
         }
         Insert: {
           criado_em?: string
-          disciplina?: string | null
+          disciplina_id?: string | null
           id?: string
           nome: string
           parent_id?: string | null
-          periodo?: number | null
         }
         Update: {
           criado_em?: string
-          disciplina?: string | null
+          disciplina_id?: string | null
           id?: string
           nome?: string
           parent_id?: string | null
-          periodo?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tema_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplina"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tema_parent_id_fkey"
             columns: ["parent_id"]
@@ -735,24 +814,85 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding_state: {
+        Row: {
+          atualizado_em: string
+          completed_at: string | null
+          criado_em: string
+          current_step: string | null
+          flow_key: string
+          flow_version: number
+          metadata: Json
+          skipped_at: string | null
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          completed_at?: string | null
+          criado_em?: string
+          current_step?: string | null
+          flow_key: string
+          flow_version?: number
+          metadata?: Json
+          skipped_at?: string | null
+          started_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          completed_at?: string | null
+          criado_em?: string
+          current_step?: string | null
+          flow_key?: string
+          flow_version?: number
+          metadata?: Json
+          skipped_at?: string | null
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_get_stats: { Args: never; Returns: Json }
       alterar_papel_usuario: {
         Args: { p_papel: string; p_user_id: string }
-        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+        Returns: {
+          competir_publico: boolean
+          criado_em: string
+          email: string
+          faculdade_rede: string | null
+          id: string
+          papel: string
+          tipo_usuario: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       conceder_xp_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
-      finalizar_tentativa:
-        | { Args: { p_tentativa_id: string }; Returns: Json }
-        | {
-            Args: { p_tempo_segundos?: number; p_tentativa_id: string }
-            Returns: Json
-          }
+      finalizar_tentativa: {
+        Args: { p_tempo_segundos?: number; p_tentativa_id: string }
+        Returns: Json
+      }
       gerar_simulado_personalizado: {
-        Args: { p_modo?: string; p_qtd?: number; p_tema_ids?: string[] }
+        Args: {
+          p_formato?: string
+          p_modo?: string
+          p_qtd?: number
+          p_tema_ids?: string[]
+          p_tipo_questao?: string
+        }
         Returns: Json
       }
       get_desafio_diario: { Args: never; Returns: Json }
@@ -777,11 +917,14 @@ export type Database = {
         Args: { p_modo: string; p_prova_id: string }
         Returns: Json
       }
+      is_admin: { Args: { uid?: string }; Returns: boolean }
+      is_super_admin: { Args: { uid?: string }; Returns: boolean }
       listar_temas_com_contagem: {
-        Args: never
+        Args: { p_tipo_questao?: string }
         Returns: {
           criado_em: string
           disciplina: string
+          disciplina_id: string
           id: string
           nome: string
           parent_id: string
@@ -789,12 +932,6 @@ export type Database = {
           qtd_questoes: number
         }[]
       }
-      pausar_tentativa:
-        | { Args: { p_tentativa_id: string }; Returns: undefined }
-        | {
-            Args: { p_tempo_segundos?: number; p_tentativa_id: string }
-            Returns: undefined
-          }
       responder_desafio_diario: {
         Args: { p_alternativa_id: string; p_tempo_segundos?: number }
         Returns: Json
@@ -932,7 +1069,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
 } as const
+

@@ -6,7 +6,7 @@
     </a>
 
     <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Montar simulado</h1>
-    <p class="mb-8 text-sm text-[var(--color-text-muted)]">Escolha os temas e a quantidade de questões para gerar um simulado personalizado.</p>
+    <p class="mb-8 text-sm text-[var(--color-text-muted)]">Escolha o formato, os temas e a quantidade de questões para gerar um simulado personalizado.</p>
 
     @if (origemRecomendacao()) {
       <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
@@ -24,6 +24,35 @@
         <p class="mt-1">{{ loadError() }}</p>
       </div>
     }
+
+    <!-- Formato -->
+    <section class="mb-8">
+      <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Formato da prova</h2>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        @for (f of formatos; track f.value) {
+          <button
+            type="button"
+            (click)="selecionarFormato(f.value)"
+            [disabled]="isLoadingTemas()"
+            [attr.aria-busy]="isRecarregandoFormato() && formatoSelecionado() === f.value"
+            [class]="formatoSelecionado() === f.value
+              ? 'flex min-h-32 flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 p-4 text-left transition-all disabled:cursor-wait disabled:opacity-80'
+              : 'flex min-h-32 flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)] disabled:cursor-wait disabled:opacity-60'"
+          >
+            <span class="text-sm font-semibold" [class]="formatoSelecionado() === f.value ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'">
+              {{ f.label }}
+            </span>
+            <span class="text-xs leading-relaxed text-[var(--color-text-muted)]">{{ f.descricao }}</span>
+            @if (isRecarregandoFormato() && formatoSelecionado() === f.value) {
+              <span class="mt-auto inline-flex items-center gap-1 pt-2 text-xs font-semibold text-[var(--color-primary)]">
+                <app-ui-icon [icon]="loaderIcon" [size]="14" class="animate-spin" />
+                Atualizando temas
+              </span>
+            }
+          </button>
+        }
+      </div>
+    </section>
 
     <!-- Quantidade -->
     <section class="mb-8">
@@ -54,7 +83,7 @@
           }
         </h2>
         <div class="flex gap-3">
-          @if (temasComQuestoes().length > 0 && temasSelecionados().size === 0) {
+          @if (!isLoadingTemas() && temasComQuestoes().length > 0 && temasSelecionados().size === 0) {
             <button
               type="button"
               (click)="selecionarTodosComQuestoes()"
@@ -90,14 +119,24 @@
       }
 
       @if (isLoadingTemas()) {
-        <div class="space-y-2">
+        <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]" aria-live="polite" aria-busy="true">
+          <div class="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-3 text-sm font-medium text-[var(--color-text)]">
+            <app-ui-icon [icon]="loaderIcon" [size]="16" class="animate-spin text-[var(--color-primary)]" />
+            {{ loadingTemasLabel() }}
+          </div>
+          <div class="space-y-2 p-3">
           @for (i of [1, 2, 3, 4, 5]; track i) {
-            <div class="h-9 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+            <div class="flex h-10 animate-pulse items-center gap-3 rounded-lg bg-[var(--color-surface-2)] px-3">
+              <span class="h-5 w-5 rounded border border-[var(--color-border)] bg-[var(--color-surface)]"></span>
+              <span class="h-3 flex-1 rounded bg-[var(--color-border)]"></span>
+              <span class="h-5 w-20 rounded-full bg-[var(--color-border)]"></span>
+            </div>
           }
+          </div>
         </div>
       } @else if (temas().length === 0 && !loadError()) {
         <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center text-sm text-[var(--color-text-muted)]">
-          Nenhum tema cadastrado ainda.
+          Nenhum tema com questões cadastradas para este formato.
         </div>
       } @else {
         <div class="max-h-64 overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -148,12 +187,13 @@
     <div class="mb-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
       <p class="text-sm text-[var(--color-text)]">
         <span class="font-semibold">{{ quantidade() }} questões</span>
+        · {{ formatoAtual().label }}
         · {{ resumoTemas() }}
         · Modo {{ modoSelecionado() }}
       </p>
       @if (!isLoadingTemas()) {
         <p class="mt-1 text-xs text-[var(--color-text-muted)]">
-          {{ questoesDisponiveis() }} {{ questoesDisponiveis() === 1 ? 'questão disponível' : 'questões disponíveis' }} no banco
+          {{ questoesDisponiveis() }} {{ questoesDisponiveis() === 1 ? 'questão disponível' : 'questões disponíveis' }} no banco para este formato
         </p>
       }
     </div>

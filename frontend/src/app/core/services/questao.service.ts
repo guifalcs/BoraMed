@@ -1,7 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import type { QuestaoComAlternativas } from '../models/questao';
+import type { Tema } from '../models/tema';
 import type { ProvaResult } from './prova.service';
+
+type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
+  temas: { tema: Tema }[];
+};
+
+type RawProvaQuestao = {
+  ordem: number;
+  questao: RawQuestao | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class QuestaoService {
@@ -10,22 +20,29 @@ export class QuestaoService {
   async listarPorProva(provaId: string): Promise<ProvaResult<QuestaoComAlternativas[]>> {
     try {
       const { data, error } = await this.supabase
-        .from('questao')
+        .from('prova_questao')
         .select(`
-          *,
-          alternativas:alternativa(*),
-          temas:questao_tema(tema(*))
+          ordem,
+          questao:questao_id!inner(
+            *,
+            alternativas:alternativa(*),
+            temas:questao_tema(tema(*))
+          )
         `)
         .eq('prova_id', provaId)
-        .eq('status', 'ativa')
-        .order('ordem_na_prova', { ascending: true });
+        .eq('questao.status', 'ativa')
+        .order('ordem', { ascending: true });
 
       if (error) throw error;
 
-      const questoes = (data ?? []).map((q: Record<string, unknown>) => ({
-        ...q,
-        temas: ((q['temas'] as Array<{ tema: unknown }>) ?? []).map((qt) => qt.tema),
-      })) as QuestaoComAlternativas[];
+      const questoes = ((data ?? []) as unknown as RawProvaQuestao[])
+        .filter((row): row is RawProvaQuestao & { questao: RawQuestao } => row.questao !== null)
+        .map((row) => ({
+          ...row.questao,
+          prova_id: provaId,
+          ordem_na_prova: row.ordem,
+          temas: row.questao.temas.map((qt) => qt.tema),
+        })) as QuestaoComAlternativas[];
 
       return { ok: true, data: questoes };
     } catch {

@@ -11,11 +11,13 @@ import { AdminService, AdminTema, AdminDisciplina } from '../../core/services/ad
 import { NotificationService } from '../../core/services/notification.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { Pencil, Trash2 } from 'lucide-angular';
 
 @Component({
   selector: 'app-admin-temas',
   standalone: true,
-  imports: [FormsModule, UiConfirmDialogComponent, UiSelectComponent],
+  imports: [FormsModule, UiConfirmDialogComponent, UiSelectComponent, UiIconComponent],
   templateUrl: './admin-temas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -45,6 +47,8 @@ export class AdminTemasComponent implements OnInit {
   protected readonly editNome = signal('');
   protected readonly editDisciplinaId = signal<string | null>(null);
   protected readonly temaParaDeletar = signal<AdminTema | null>(null);
+  protected readonly iconPencil = Pencil;
+  protected readonly iconTrash = Trash2;
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.carregar(), this.carregarDisciplinas()]);
@@ -132,7 +136,7 @@ export class AdminTemasComponent implements OnInit {
       this.temas.update((lista) => lista.filter((t) => t.id !== tema.id));
       this.toast.success('Tema deletado.');
     } else {
-      this.toast.error('Erro ao deletar tema. Pode ter questões vinculadas.');
+      this.toast.error(result.error);
     }
   }
 }

@@ -1,15 +1,27 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { SupabaseService } from './supabase.service';
+import { AuthService } from './auth.service';
 import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { QuestaoComAlternativas } from '../models/questao';
+import type { Tema } from '../models/tema';
 import type { ProvaResult } from './prova.service';
+
+type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
+  temas: { tema: Tema }[];
+};
+
+type RawProvaQuestao = {
+  ordem: number;
+  questao: RawQuestao | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class TentativaService {
   private readonly supabase = inject(SupabaseService).client;
+  private readonly auth = inject(AuthService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly gamificacao = inject(GamificacaoService);
   private readonly notifications = inject(NotificationService);
@@ -80,7 +92,7 @@ export class TentativaService {
 
   async buscarTentativaAtiva(provaId: string): Promise<ProvaResult<Tentativa | null>> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const user = this.auth.user();
       if (!user) return { ok: true, data: null };
 
       const { data, error } = await this.supabase
@@ -103,7 +115,7 @@ export class TentativaService {
 
   async buscarTentativaAtivaRecente(): Promise<ProvaResult<Tentativa | null>> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const user = this.auth.user();
       if (!user) return { ok: true, data: null };
 
       const { data, error } = await this.supabase
@@ -128,22 +140,22 @@ export class TentativaService {
   ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
     try {
       const { data, error } = await this.supabase
-        .from('questao')
-        .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
+        .from('prova_questao')
+        .select('ordem, questao:questao_id!inner(*, alternativas:alternativa(*), temas:questao_tema(tema(*)))')
         .eq('prova_id', provaId)
-        .eq('status', 'ativa')
-        .order('ordem_na_prova');
+        .eq('questao.status', 'ativa')
+        .order('ordem');
 
       if (error) throw error;
 
-      type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
-        temas: { tema: import('../models/tema').Tema }[];
-      };
-
-      const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
-        ...q,
-        temas: q.temas.map((qt) => qt.tema),
-      })) as QuestaoComAlternativas[];
+      const questoes = ((data ?? []) as unknown as RawProvaQuestao[])
+        .filter((row): row is RawProvaQuestao & { questao: RawQuestao } => row.questao !== null)
+        .map((row) => ({
+          ...row.questao,
+          prova_id: provaId,
+          ordem_na_prova: row.ordem,
+          temas: row.questao.temas.map((qt) => qt.tema),
+        })) as QuestaoComAlternativas[];
 
       const tentativaSintetica: Tentativa = {
         id: provaId,
@@ -180,10 +192,14 @@ export class TentativaService {
     provaId: string,
   ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
     try {
+      const user = this.auth.user();
+      if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
       // Busca a tentativa mais recente desta prova
       const { data: tentativaData, error: tentativaError } = await this.supabase
         .from('tentativa')
         .select('id')
+        .eq('user_id', user.id)
         .eq('prova_id', provaId)
         .order('criado_em', { ascending: false })
         .limit(1)
@@ -310,12 +326,11 @@ export class TentativaService {
   ): Promise<ProvaResult<TentativaResposta>> {
     try {
       const { data, error } = await this.supabase
-        .from('tentativa_resposta')
-        .update({ alternativa_id: alternativaId, respondida_em: new Date().toISOString() })
-        .eq('tentativa_id', tentativaId)
-        .eq('questao_id', questaoId)
-        .select()
-        .single();
+        .rpc('salvar_resposta_tentativa', {
+          p_tentativa_id: tentativaId,
+          p_questao_id: questaoId,
+          p_alternativa_id: alternativaId,
+        });
 
       if (error) throw error;
 
@@ -401,12 +416,16 @@ export class TentativaService {
     temaIds: string[] | null,
     qtd: number,
     modo: ModoProva = 'simulado',
+    formato: 'todos' | 'nacional' | 'processual' | 'laboratorio' = 'todos',
   ): Promise<ProvaResult<{ prova_id: string; tentativa: Tentativa; questoes: QuestaoComAlternativas[] }>> {
+    const tipoQuestao = formato === 'todos' ? null : formato;
     try {
       const { data, error } = await this.supabase.rpc('gerar_simulado_personalizado', {
         p_tema_ids: temaIds && temaIds.length > 0 ? temaIds : null,
         p_qtd: qtd,
         p_modo: modo,
+        p_tipo_questao: tipoQuestao,
+        p_formato: formato === 'todos' ? null : formato,
       });
 
       if (error) {
@@ -428,9 +447,13 @@ export class TentativaService {
 
   async buscarNotaAnterior(provaId: string, tentativaAtualId: string): Promise<number | null> {
     try {
+      const user = this.auth.user();
+      if (!user) return null;
+
       const { data, error } = await this.supabase
         .from('tentativa')
         .select('nota')
+        .eq('user_id', user.id)
         .eq('prova_id', provaId)
         .eq('status', 'finalizada')
         .neq('id', tentativaAtualId)
