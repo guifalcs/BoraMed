@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-05-21 | Tweak | sem commit
+
+**Logo menor na sidebar logada**
+
+- Reduzida a logo da sidebar desktop da area logada para `2.25rem`.
+- Marca da sidebar alinhada a esquerda no topo com recuo discreto.
+- Ajustado o espacamento inicial da navegacao para manter a sidebar compacta.
+- Design system atualizado com a escala atual da logo na navegacao desktop.
+
+---
+
 ## 2026-05-17 | Docs | sem commit
 
 **Landing page BoraMed**

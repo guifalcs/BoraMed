@@ -299,6 +299,8 @@ position: sticky;
 top: 0;
 ```
 
+Logo: `height: 2.25rem`, alinhada a esquerda no topo com recuo discreto, mantendo proporcao original e espaco compacto antes da lista.
+
 Itens:
 
 * Provas Nacionais
