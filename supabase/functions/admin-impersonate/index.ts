@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
 
   return json({
     token_hash: tokenHash,
+    target_user_id: targetUserId,
     target_email: targetUser.email,
     target_name: targetProfile?.nome_completo ?? null,
   });

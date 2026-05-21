@@ -111,6 +111,7 @@ export class AuthService implements OnDestroy {
 
   async impersonar(
     tokenHash: string,
+    targetUserId: string,
     targetName: string | null,
     adminName: string,
   ): Promise<{ ok: boolean; error?: string }> {
@@ -143,6 +144,18 @@ export class AuthService implements OnDestroy {
       return { ok: false, error: error.message };
     }
 
+    const { data: userData, error: userError } = await this.supabase.auth.getUser();
+    if (userError || userData.user?.id !== targetUserId) {
+      await this.supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+      sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+      this._impersonando.set(null);
+      return { ok: false, error: 'Sessão incorporada não corresponde ao usuário selecionado.' };
+    }
+
+    this._user.set(userData.user);
     this._impersonando.set({ adminName, targetName: targetName ?? 'Usuário' });
     void this.router.navigate(['/dashboard']);
     return { ok: true };

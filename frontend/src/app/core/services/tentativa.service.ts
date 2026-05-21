@@ -192,10 +192,14 @@ export class TentativaService {
     provaId: string,
   ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
     try {
+      const user = this.auth.user();
+      if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
       // Busca a tentativa mais recente desta prova
       const { data: tentativaData, error: tentativaError } = await this.supabase
         .from('tentativa')
         .select('id')
+        .eq('user_id', user.id)
         .eq('prova_id', provaId)
         .order('criado_em', { ascending: false })
         .limit(1)
@@ -322,12 +326,11 @@ export class TentativaService {
   ): Promise<ProvaResult<TentativaResposta>> {
     try {
       const { data, error } = await this.supabase
-        .from('tentativa_resposta')
-        .update({ alternativa_id: alternativaId, respondida_em: new Date().toISOString() })
-        .eq('tentativa_id', tentativaId)
-        .eq('questao_id', questaoId)
-        .select()
-        .single();
+        .rpc('salvar_resposta_tentativa', {
+          p_tentativa_id: tentativaId,
+          p_questao_id: questaoId,
+          p_alternativa_id: alternativaId,
+        });
 
       if (error) throw error;
 
@@ -444,9 +447,13 @@ export class TentativaService {
 
   async buscarNotaAnterior(provaId: string, tentativaAtualId: string): Promise<number | null> {
     try {
+      const user = this.auth.user();
+      if (!user) return null;
+
       const { data, error } = await this.supabase
         .from('tentativa')
         .select('nota')
+        .eq('user_id', user.id)
         .eq('prova_id', provaId)
         .eq('status', 'finalizada')
         .neq('id', tentativaAtualId)

@@ -105,6 +105,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.profileService.clear();
     const impResult = await this.auth.impersonar(
       result.data.token_hash,
+      result.data.target_user_id,
       result.data.target_name,
       adminName,
     );

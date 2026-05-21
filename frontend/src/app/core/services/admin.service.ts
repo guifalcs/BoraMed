@@ -172,6 +172,7 @@ export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: strin
 
 export interface ImpersonacaoResult {
   token_hash: string;
+  target_user_id: string;
   target_email: string;
   target_name: string | null;
 }

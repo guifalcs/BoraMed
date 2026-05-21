@@ -8,6 +8,18 @@
 Descrição do que foi feito.
 -->
 
+## 2026-05-21 | Fix | sem commit
+
+**Isolamento de dados em sessão impersonada**
+
+- Histórico passa a filtrar tentativas explicitamente pelo `user_id` do usuário autenticado.
+- Fluxos de tentativa personalizada e nota anterior também passam a restringir leituras ao usuário atual.
+- Salvamento de resposta passa pela RPC `salvar_resposta_tentativa`, que valida o dono da tentativa antes de atualizar `tentativa_resposta`.
+- Impersonação valida que a sessão trocada corresponde ao usuário alvo antes de exibir o banner de acesso incorporado.
+- Regras de negócio documentam o escopo obrigatório das telas de aluno em impersonação.
+
+---
+
 ## 2026-05-20 | Feature | sem commit
 
 **Priorização de questões inéditas no montar simulado**
