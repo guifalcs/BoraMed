@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-05-21 | Tweak | sem commit
+
+**Logo menor na sidebar logada**
+
+- Reduzida a logo da sidebar desktop da area logada para `2.25rem`.
+- Marca da sidebar alinhada a esquerda no topo com recuo discreto.
+- Ajustado o espacamento inicial da navegacao para manter a sidebar compacta.
+- Design system atualizado com a escala atual da logo na navegacao desktop.
+
+---
+
+## 2026-05-17 | Docs | sem commit
+
+**Landing page BoraMed**
+
+- Criado `docs/landing-page/design.json` com analise estrutural da landing de referencia da Salte e traducao para a identidade BoraMed.
+- Criado `docs/landing-page/boramed-landing-agent-prompt.md` com prompt pronto para gerar uma landing responsiva, com SEO, placeholders de imagem e guardrails de posicionamento.
+- Implementada landing publica na rota raiz com hero, mockup de produto, secoes de treinos, tabs de solucao, timeline, FAQ, CTA final e SEO.
+- Aplicadas as imagens adicionadas em `frontend/public/landing-page` no card de Treinos Nacionais e no bloco institucional da landing.
+- Hero principal usa um frame de janela estilo macOS com mockup limpo em HTML/CSS, evitando reaproveitar a foto de estudo como imagem principal.
+- Removido o formulario/lista de e-mails da hero; CTA principal agora direciona direto para cadastro.
+- Ajustado layout da hero para texto centralizado com largura confortavel e mockup abaixo em largura ampla.
+- Landing deixa de usar Playfair Display na hero e passa a usar Inter em toda a pagina.
+- Reduzida a escala dos headings da landing para melhorar legibilidade e ritmo visual.
+- Headline da hero reformulada em duas linhas curtas para melhorar leitura acima da dobra.
+- Removida a imagem de estudante do card inicial de Treinos Nacionais para impedir que ela seja percebida como imagem da hero.
+- Hero passa a renderizar `/landing-page/heroImage.png` dentro do frame estilo janela do macOS.
+- Orçamento de CSS por componente no build foi ajustado para acomodar a landing completa sem forçar cortes visuais artificiais.
+- A especificacao reforca que o BoraMed e plataforma independente, com questoes autorais no modelo das avaliacoes, sem sugerir vinculo oficial ou acervo Afya.
+
+---
+
 > Registro de todas as alterações do projeto.
 > Atualizado automaticamente ao final de cada feature, fix ou tweak.
 

@@ -1,0 +1,426 @@
+<main class="landing-page" id="inicio">
+  <header class="site-header" [class.is-scrolled]="isScrolled()">
+    <nav class="nav-shell" aria-label="Navegação principal">
+      <a class="brand-link" routerLink="/" aria-label="BoraMed - início">
+        <img src="/logo.png" alt="BoraMed" class="brand-logo" />
+      </a>
+
+      <div class="desktop-nav">
+        @for (item of navItems; track item.href) {
+          <a [href]="item.href">{{ item.label }}</a>
+        }
+      </div>
+
+      <div class="desktop-actions">
+        <a class="link-button" routerLink="/login">Entrar</a>
+        <a class="primary-button" routerLink="/cadastro">Começar agora</a>
+      </div>
+
+      <button
+        class="menu-button"
+        type="button"
+        aria-label="Abrir menu"
+        [attr.aria-expanded]="isMenuOpen()"
+        (click)="toggleMenu()"
+      >
+        <app-ui-icon [icon]="isMenuOpen() ? closeIcon : menuIcon" [size]="22" />
+      </button>
+    </nav>
+
+    @if (isMenuOpen()) {
+      <div class="mobile-nav">
+        @for (item of navItems; track item.href) {
+          <a [href]="item.href" (click)="closeMenu()">{{ item.label }}</a>
+        }
+        <a routerLink="/login" (click)="closeMenu()">Entrar</a>
+        <a class="primary-button" routerLink="/cadastro" (click)="closeMenu()">Começar agora</a>
+      </div>
+    }
+  </header>
+
+  <section class="hero-section" [class.hero-ready]="heroReady()">
+    <div class="hero-shell">
+      <div class="hero-copy">
+        <span class="eyebrow">Simulados médicos autorais</span>
+        <h1>
+          Treine para a prova.<br />
+          Revise com direção.
+        </h1>
+        <p>
+          O BoraMed organiza treinos nacionais, simulados por tema e questões de laboratório
+          para estudantes de medicina que precisam estudar com foco.
+        </p>
+
+        <div class="hero-actions" aria-label="Ações principais">
+          <a class="primary-button" routerLink="/cadastro">Começar agora</a>
+          <a class="secondary-button" href="#modulos">Conhecer os módulos</a>
+        </div>
+
+        <p class="trust-note">
+          Plataforma independente. Questões autorais no modelo das avaliações.
+        </p>
+      </div>
+
+      <div class="hero-product" aria-label="Prévia da interface BoraMed">
+        <div class="float-card float-card--score" aria-hidden="true">
+          <span class="float-label">Desempenho</span>
+          <strong class="float-value">82%</strong>
+          <div class="float-bar"><i style="--w: 82%"></i></div>
+          <span class="float-sub">acertos nesta tentativa</span>
+        </div>
+
+        <div class="float-card float-card--badge" aria-hidden="true">
+          <span class="float-dot"></span>
+          Questão inédita
+        </div>
+
+        <div class="float-card float-card--topics" aria-hidden="true">
+          <span class="float-label">Temas críticos</span>
+          <div class="float-topic">
+            <span>Cardiovascular</span>
+            <div class="float-bar"><i style="--w: 58%"></i></div>
+          </div>
+          <div class="float-topic">
+            <span>Farmacologia</span>
+            <div class="float-bar"><i style="--w: 71%"></i></div>
+          </div>
+        </div>
+
+        <div class="hero-window">
+          <div class="window-top" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <figure class="hero-window-image">
+            <img
+              src="/landing-page/heroImage.png"
+              alt="Prévia visual da experiência BoraMed para estudo médico"
+              width="1448"
+              height="1086"
+              fetchpriority="high"
+            />
+          </figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker" aria-label="Recursos do BoraMed">
+      <div class="ticker-track">
+        @for (item of tickerItems; track item) {
+          <span>{{ item }}</span>
+        }
+        @for (item of tickerItems; track item + '-copy') {
+          <span>{{ item }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="stats-shell">
+      @for (stat of stats; track stat.label; let last = $last) {
+        <div class="stat-item">
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.label }}</span>
+        </div>
+        @if (!last) { <div class="stat-divider"></div> }
+      }
+    </div>
+  </section>
+
+  <section class="section-shell modes-section" id="treinos">
+    <div class="section-heading">
+      <span class="eyebrow">Para diferentes momentos do curso</span>
+      <h2>Do treino nacional à revisão por tema.</h2>
+      <p>Monte uma rotina de estudo com simulados que respeitam seu objetivo, seu tempo e seu histórico.</p>
+    </div>
+
+    <div class="mode-grid">
+      @for (mode of trainingModes; track mode.title) {
+        <article class="mode-card" [class]="'mode-card ' + mode.variant">
+          @if (mode.image; as image) {
+            <figure class="mode-image">
+              <img
+                [src]="image.src"
+                [alt]="image.alt"
+                [width]="image.width"
+                [height]="image.height"
+                loading="lazy"
+              />
+            </figure>
+          } @else {
+            <div class="mode-visual">
+              <app-ui-icon [icon]="mode.icon" [size]="30" />
+              <span>{{ mode.badge }}</span>
+            </div>
+          }
+          <h3>{{ mode.title }}</h3>
+          <p>{{ mode.description }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="section-shell solution-section" id="solucao">
+    <div class="section-heading left">
+      <span class="eyebrow">Solução</span>
+      <h2>Um sistema de estudo para simulado, revisão e evolução.</h2>
+      <p>Tudo que você precisa para transformar tentativa em diagnóstico e diagnóstico em próximo treino.</p>
+    </div>
+
+    <div class="solution-layout">
+      <div class="tab-list" role="tablist" aria-label="Fluxos do BoraMed">
+        @for (tab of solutionTabs; track tab.id) {
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeTab() === tab.id"
+            [class.is-active]="activeTab() === tab.id"
+            (click)="setActiveTab(tab.id)"
+          >
+            <app-ui-icon [icon]="tab.icon" [size]="17" />
+            <span>{{ tab.label }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="solution-panel" role="tabpanel">
+        <div class="solution-copy">
+          <h3>{{ selectedTab().title }}</h3>
+          <p>{{ selectedTab().description }}</p>
+          <ul>
+            @for (feature of selectedTab().features; track feature) {
+              <li>{{ feature }}</li>
+            }
+          </ul>
+        </div>
+
+        <div class="product-panel">
+          <div class="panel-header">
+            <span>{{ selectedTab().label }}</span>
+            <strong>BoraMed</strong>
+          </div>
+
+          @if (activeTab() === 'treinar') {
+            <div class="preview-block">
+              <div class="preview-timer-row">
+                <span class="preview-label">Tempo restante</span>
+                <strong class="preview-timer-value">12:45</strong>
+              </div>
+              <div class="preview-meta-row">
+                <span>Questão 8 de 20</span>
+                <span class="preview-pct">40%</span>
+              </div>
+              <div class="preview-bar-track"><i style="--w: 40%"></i></div>
+              <div class="preview-kpis">
+                <div class="preview-kpi-item">
+                  <strong>20</strong>
+                  <span>questões</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong>7</strong>
+                  <span>respondidas</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong>1</strong>
+                  <span>em branco</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (activeTab() === 'revisar') {
+            <div class="preview-block">
+              <span class="preview-label">Temas com menor acerto</span>
+              @for (topic of reviewTopics; track topic.name) {
+                <div class="preview-topic-row">
+                  <div class="preview-meta-row">
+                    <span>{{ topic.name }}</span>
+                    <span class="preview-pct">{{ topic.pct }}%</span>
+                  </div>
+                  <div class="preview-bar-track">
+                    <i [style.--w]="topic.pct + '%'"></i>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (activeTab() === 'acompanhar') {
+            <div class="preview-block">
+              <span class="preview-label">Constância — últimas 2 semanas</span>
+              <div class="preview-streak">
+                @for (active of streakDays; track $index) {
+                  <span [class]="active ? 'streak-dot streak-dot--on' : 'streak-dot'"></span>
+                }
+              </div>
+              <div class="preview-kpis">
+                <div class="preview-kpi-item">
+                  <strong>82%</strong>
+                  <span>acertos</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong class="preview-trend-up">↑ 12%</strong>
+                  <span>esta semana</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong>9</strong>
+                  <span>tentativas</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell steps-section">
+    <div class="section-heading">
+      <span class="eyebrow">Passo a passo</span>
+      <h2>Comece pequeno, revise melhor e aumente a dificuldade.</h2>
+    </div>
+
+    <div class="timeline">
+      @for (step of steps; track step.label; let index = $index) {
+        <article class="timeline-card">
+          <div class="timeline-icon-wrap">
+            <app-ui-icon [icon]="step.icon" [size]="20" />
+            <span class="step-number">{{ index + 1 }}</span>
+          </div>
+          <small>{{ step.label }}</small>
+          <h3>{{ step.title }}</h3>
+          <ul>
+            @for (point of step.points; track point) {
+              <li>{{ point }}</li>
+            }
+          </ul>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="intelligence-section">
+    <div class="intelligence-shell">
+      <div class="intelligence-copy">
+        <span class="eyebrow inverse">Inteligência de estudo</span>
+        <h2>A plataforma transforma desempenho em próximo passo.</h2>
+        <p>
+          Use dados do simulado para entender prioridade de revisão, progresso por tema e
+          pontos de atenção antes da próxima tentativa.
+        </p>
+        <a class="inverse-button" href="#solucao">Ver como funciona</a>
+      </div>
+
+      <div class="insight-stack" aria-label="Resumo de desempenho BoraMed">
+        <div class="insight-card summary">
+          <app-ui-icon [icon]="activityIcon" [size]="22" />
+          <span>Diagnóstico</span>
+          <strong>Foque em cardio e anatomia.</strong>
+        </div>
+        <div class="insight-card topic">
+          <span>Cardiovascular</span>
+          <i style="--bar: 58%"></i>
+        </div>
+        <div class="insight-card topic">
+          <span>Laboratório</span>
+          <i style="--bar: 74%"></i>
+        </div>
+        <img
+          src="/landing-page/ilustracaoPerformance.png"
+          alt="Ilustração de desempenho e progresso de estudos BoraMed"
+          width="800"
+          height="600"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell modules-section" id="modulos">
+    <div class="section-heading">
+      <span class="eyebrow">Módulos</span>
+      <h2>Três frentes para treinar melhor.</h2>
+    </div>
+
+    <div class="module-grid">
+      @for (mode of trainingModes; track mode.title) {
+        <article class="module-card">
+          <span [class]="'module-badge ' + mode.variant">{{ mode.badge }}</span>
+          <h3>{{ mode.title }}</h3>
+          <p>{{ mode.description }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="section-shell capability-section">
+    <div class="section-heading">
+      <span class="eyebrow">Capacidades</span>
+      <h2>Menos tentativa solta. Mais rotina de estudo.</h2>
+    </div>
+
+    <div class="capability-grid">
+      @for (capability of capabilities; track capability.title) {
+        <article>
+          <div class="capability-icon">
+            <app-ui-icon [icon]="capability.icon" [size]="20" />
+          </div>
+          <h3>{{ capability.title }}</h3>
+          <p>{{ capability.description }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="section-shell faq-section" id="faq">
+    <div class="section-heading">
+      <span class="eyebrow">Dúvidas</span>
+      <h2>Perguntas frequentes</h2>
+    </div>
+
+    <div class="faq-list">
+      @for (faq of faqs; track faq.question; let index = $index) {
+        <article class="faq-item">
+          <button
+            type="button"
+            [attr.aria-expanded]="openFaq() === index"
+            [attr.aria-controls]="'faq-panel-' + index"
+            (click)="toggleFaq(index)"
+          >
+            <span>{{ faq.question }}</span>
+            <app-ui-icon [icon]="chevronIcon" [size]="20" />
+          </button>
+          @if (openFaq() === index) {
+            <p [id]="'faq-panel-' + index">{{ faq.answer }}</p>
+          }
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <div class="final-cta-shell">
+      <span class="eyebrow inverse">BoraMed</span>
+      <h2>Estude com simulados autorais e revise com direção.</h2>
+      <p>Entre na lista ou crie sua conta para acompanhar os próximos módulos do BoraMed.</p>
+      <div>
+        <a class="inverse-button" routerLink="/cadastro">Começar agora</a>
+        <a class="ghost-inverse-button" href="#modulos">Conhecer os módulos</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <a class="brand-link" routerLink="/">
+      <img src="/logo.png" alt="BoraMed" class="brand-logo" />
+    </a>
+    <nav aria-label="Links legais">
+      <a href="mailto:contato@boramed.com.br">Contato</a>
+      <a href="#faq">Privacidade</a>
+      <a href="#faq">Termos</a>
+    </nav>
+    <p>BoraMed. Plataforma independente de estudo médico.</p>
+  </footer>
+</main>
