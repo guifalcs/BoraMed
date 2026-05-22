@@ -1,5 +1,13 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  NgZone,
+  OnDestroy,
+  afterNextRender,
+  inject,
+  signal,
+} from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import {
@@ -55,6 +63,7 @@ interface TimelineStep {
   readonly label: string;
   readonly title: string;
   readonly points: readonly string[];
+  readonly icon: LucideIconData;
 }
 
 interface Capability {
@@ -76,10 +85,12 @@ interface FaqItem {
   styleUrl: './landing.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LandingComponent {
+export class LandingComponent implements OnDestroy {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
+  private readonly zone = inject(NgZone);
+  private scrollListener: (() => void) | null = null;
 
   protected readonly menuIcon = Menu;
   protected readonly closeIcon = X;
@@ -90,6 +101,8 @@ export class LandingComponent {
   protected readonly sparklesIcon = Sparkles;
   protected readonly shieldIcon = ShieldCheck;
 
+  protected readonly heroReady = signal(false);
+  protected readonly isScrolled = signal(false);
   protected readonly isMenuOpen = signal(false);
   protected readonly activeTab = signal<SolutionTab['id']>('treinar');
   protected readonly openFaq = signal<number | null>(0);
@@ -101,6 +114,12 @@ export class LandingComponent {
     { label: 'Laboratório', href: '#modulos' },
     { label: 'FAQ', href: '#faq' },
   ];
+
+  protected readonly stats = [
+    { value: '+2.400', label: 'questões autorais' },
+    { value: '3', label: 'módulos de treino' },
+    { value: '100%', label: 'conteúdo autoral' },
+  ] as const;
 
   protected readonly tickerItems = [
     'Treinos nacionais',
@@ -120,6 +139,12 @@ export class LandingComponent {
         'Simulados autorais no modelo das avaliações nacionais, com foco inicial em alunos da rede Afya.',
       icon: Stethoscope,
       variant: 'national',
+      image: {
+        src: '/landing-page/modoNacional.png',
+        alt: 'Interface de treino nacional BoraMed com questões e score',
+        width: 800,
+        height: 450,
+      },
     },
     {
       title: 'Simulados Processuais',
@@ -128,6 +153,12 @@ export class LandingComponent {
         'Escolha temas e quantidade de questões. A montagem aleatória acontece no servidor.',
       icon: ClipboardList,
       variant: 'process',
+      image: {
+        src: '/landing-page/modoProcessual.png',
+        alt: 'Seleção de temas médicos para simulado processual',
+        width: 800,
+        height: 450,
+      },
     },
     {
       title: 'Laboratório',
@@ -136,6 +167,12 @@ export class LandingComponent {
         'Questões autorais com imagem de lâminas ou peças para treinar reconhecimento e raciocínio visual.',
       icon: FlaskConical,
       variant: 'lab',
+      image: {
+        src: '/landing-page/modoLaboratorio.png',
+        alt: 'Questão de laboratório com lâmina histológica',
+        width: 800,
+        height: 450,
+      },
     },
   ];
 
@@ -174,16 +211,19 @@ export class LandingComponent {
       label: 'Hoje',
       title: 'Crie sua conta',
       points: ['Informe seus dados', 'Escolha seu objetivo', 'Entre no dashboard'],
+      icon: Sparkles,
     },
     {
       label: 'Primeiro treino',
       title: 'Monte um simulado',
       points: ['Escolha prova, tema ou laboratório', 'Defina quantidade', 'Responda com timer'],
+      icon: BookOpenCheck,
     },
     {
       label: 'Depois',
       title: 'Revise pelo diagnóstico',
       points: ['Veja nota e temas críticos', 'Revise erros', 'Refaça em modo estudo'],
+      icon: Activity,
     },
   ];
 
@@ -204,6 +244,17 @@ export class LandingComponent {
       icon: Brain,
     },
   ];
+
+  protected readonly reviewTopics = [
+    { name: 'Cardiovascular', pct: 58 },
+    { name: 'Farmacologia', pct: 71 },
+    { name: 'Anatomia', pct: 43 },
+  ] as const;
+
+  protected readonly streakDays = [
+    true, true, false, true, true, true, false,
+    true, true, true, false, false, true, true,
+  ] as const;
 
   protected readonly faqs: readonly FaqItem[] = [
     {
@@ -234,6 +285,21 @@ export class LandingComponent {
 
   constructor() {
     this.configureSeo();
+    afterNextRender(() => {
+      requestAnimationFrame(() => this.heroReady.set(true));
+
+      this.zone.runOutsideAngular(() => {
+        this.scrollListener = () => {
+          const scrolled = window.scrollY > 20;
+          if (scrolled !== this.isScrolled()) this.isScrolled.set(scrolled);
+        };
+        window.addEventListener('scroll', this.scrollListener, { passive: true });
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.scrollListener) window.removeEventListener('scroll', this.scrollListener);
   }
 
   protected selectedTab(): SolutionTab {

@@ -1,5 +1,5 @@
 <main class="landing-page" id="inicio">
-  <header class="site-header">
+  <header class="site-header" [class.is-scrolled]="isScrolled()">
     <nav class="nav-shell" aria-label="Navegação principal">
       <a class="brand-link" routerLink="/" aria-label="BoraMed - início">
         <img src="/logo.png" alt="BoraMed" class="brand-logo" />
@@ -38,7 +38,7 @@
     }
   </header>
 
-  <section class="hero-section">
+  <section class="hero-section" [class.hero-ready]="heroReady()">
     <div class="hero-shell">
       <div class="hero-copy">
         <span class="eyebrow">Simulados médicos autorais</span>
@@ -62,6 +62,30 @@
       </div>
 
       <div class="hero-product" aria-label="Prévia da interface BoraMed">
+        <div class="float-card float-card--score" aria-hidden="true">
+          <span class="float-label">Desempenho</span>
+          <strong class="float-value">82%</strong>
+          <div class="float-bar"><i style="--w: 82%"></i></div>
+          <span class="float-sub">acertos nesta tentativa</span>
+        </div>
+
+        <div class="float-card float-card--badge" aria-hidden="true">
+          <span class="float-dot"></span>
+          Questão inédita
+        </div>
+
+        <div class="float-card float-card--topics" aria-hidden="true">
+          <span class="float-label">Temas críticos</span>
+          <div class="float-topic">
+            <span>Cardiovascular</span>
+            <div class="float-bar"><i style="--w: 58%"></i></div>
+          </div>
+          <div class="float-topic">
+            <span>Farmacologia</span>
+            <div class="float-bar"><i style="--w: 71%"></i></div>
+          </div>
+        </div>
+
         <div class="hero-window">
           <div class="window-top" aria-hidden="true">
             <span></span>
@@ -90,6 +114,18 @@
           <span>{{ item }}</span>
         }
       </div>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="stats-shell">
+      @for (stat of stats; track stat.label; let last = $last) {
+        <div class="stat-item">
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.label }}</span>
+        </div>
+        @if (!last) { <div class="stat-divider"></div> }
+      }
     </div>
   </section>
 
@@ -143,7 +179,7 @@
             [class.is-active]="activeTab() === tab.id"
             (click)="setActiveTab(tab.id)"
           >
-            <app-ui-icon [icon]="tab.icon" [size]="20" />
+            <app-ui-icon [icon]="tab.icon" [size]="17" />
             <span>{{ tab.label }}</span>
           </button>
         }
@@ -165,15 +201,76 @@
             <span>{{ selectedTab().label }}</span>
             <strong>BoraMed</strong>
           </div>
-          <div class="panel-kpis">
-            <span><strong>82%</strong> acertos</span>
-            <span><strong>3</strong> temas críticos</span>
-          </div>
-          <div class="panel-question">
-            <span>Revisão recomendada</span>
-            <strong>Sistema cardiovascular</strong>
-            <i style="--bar: 72%"></i>
-          </div>
+
+          @if (activeTab() === 'treinar') {
+            <div class="preview-block">
+              <div class="preview-timer-row">
+                <span class="preview-label">Tempo restante</span>
+                <strong class="preview-timer-value">12:45</strong>
+              </div>
+              <div class="preview-meta-row">
+                <span>Questão 8 de 20</span>
+                <span class="preview-pct">40%</span>
+              </div>
+              <div class="preview-bar-track"><i style="--w: 40%"></i></div>
+              <div class="preview-kpis">
+                <div class="preview-kpi-item">
+                  <strong>20</strong>
+                  <span>questões</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong>7</strong>
+                  <span>respondidas</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong>1</strong>
+                  <span>em branco</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (activeTab() === 'revisar') {
+            <div class="preview-block">
+              <span class="preview-label">Temas com menor acerto</span>
+              @for (topic of reviewTopics; track topic.name) {
+                <div class="preview-topic-row">
+                  <div class="preview-meta-row">
+                    <span>{{ topic.name }}</span>
+                    <span class="preview-pct">{{ topic.pct }}%</span>
+                  </div>
+                  <div class="preview-bar-track">
+                    <i [style.--w]="topic.pct + '%'"></i>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (activeTab() === 'acompanhar') {
+            <div class="preview-block">
+              <span class="preview-label">Constância — últimas 2 semanas</span>
+              <div class="preview-streak">
+                @for (active of streakDays; track $index) {
+                  <span [class]="active ? 'streak-dot streak-dot--on' : 'streak-dot'"></span>
+                }
+              </div>
+              <div class="preview-kpis">
+                <div class="preview-kpi-item">
+                  <strong>82%</strong>
+                  <span>acertos</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong class="preview-trend-up">↑ 12%</strong>
+                  <span>esta semana</span>
+                </div>
+                <div class="preview-kpi-item">
+                  <strong>9</strong>
+                  <span>tentativas</span>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -188,7 +285,10 @@
     <div class="timeline">
       @for (step of steps; track step.label; let index = $index) {
         <article class="timeline-card">
-          <span class="step-number">{{ index + 1 }}</span>
+          <div class="timeline-icon-wrap">
+            <app-ui-icon [icon]="step.icon" [size]="20" />
+            <span class="step-number">{{ index + 1 }}</span>
+          </div>
           <small>{{ step.label }}</small>
           <h3>{{ step.title }}</h3>
           <ul>
@@ -228,10 +328,10 @@
           <i style="--bar: 74%"></i>
         </div>
         <img
-          src="/landing-page/ilustra%C3%A7%C3%A3oInstitucional.png"
-          alt="Ilustração institucional BoraMed sobre estudo médico e progresso"
-          width="1254"
-          height="1254"
+          src="/landing-page/ilustracaoPerformance.png"
+          alt="Ilustração de desempenho e progresso de estudos BoraMed"
+          width="800"
+          height="600"
           loading="lazy"
         />
       </div>
