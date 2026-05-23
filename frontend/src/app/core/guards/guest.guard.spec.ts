@@ -6,7 +6,10 @@ import { AuthService } from '../services/auth.service';
 
 describe('guestGuard', () => {
   function setup(isAuthenticated: boolean) {
-    const authMock = { isAuthenticated: vi.fn().mockReturnValue(isAuthenticated) };
+    const authMock = {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
+    };
     const routerMock = { createUrlTree: vi.fn().mockReturnValue('/dashboard-tree') };
 
     TestBed.configureTestingModule({
@@ -19,20 +22,22 @@ describe('guestGuard', () => {
     return { authMock, routerMock };
   }
 
-  it('deve permitir acesso quando não autenticado', () => {
-    setup(false);
-    const result = TestBed.runInInjectionContext(() =>
+  it('deve permitir acesso quando não autenticado', async () => {
+    const { authMock } = setup(false);
+    const result = await TestBed.runInInjectionContext(() =>
       guestGuard({} as never, {} as never),
     );
     expect(result).toBe(true);
+    expect(authMock.initialize).toHaveBeenCalled();
   });
 
-  it('deve redirecionar para /dashboard quando autenticado', () => {
-    const { routerMock } = setup(true);
-    const result = TestBed.runInInjectionContext(() =>
+  it('deve redirecionar para /dashboard quando autenticado', async () => {
+    const { authMock, routerMock } = setup(true);
+    const result = await TestBed.runInInjectionContext(() =>
       guestGuard({} as never, {} as never),
     );
     expect(result).toBe('/dashboard-tree');
+    expect(authMock.initialize).toHaveBeenCalled();
     expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/dashboard']);
   });
 });

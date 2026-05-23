@@ -91,6 +91,7 @@ export class LandingComponent implements OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly zone = inject(NgZone);
   private scrollListener: (() => void) | null = null;
+  private scrollFrame = 0;
 
   protected readonly menuIcon = Menu;
   protected readonly closeIcon = X;
@@ -290,8 +291,12 @@ export class LandingComponent implements OnDestroy {
 
       this.zone.runOutsideAngular(() => {
         this.scrollListener = () => {
-          const scrolled = window.scrollY > 20;
-          if (scrolled !== this.isScrolled()) this.isScrolled.set(scrolled);
+          if (this.scrollFrame) return;
+          this.scrollFrame = requestAnimationFrame(() => {
+            this.scrollFrame = 0;
+            const scrolled = window.scrollY > 20;
+            if (scrolled !== this.isScrolled()) this.isScrolled.set(scrolled);
+          });
         };
         window.addEventListener('scroll', this.scrollListener, { passive: true });
       });
@@ -300,6 +305,7 @@ export class LandingComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.scrollListener) window.removeEventListener('scroll', this.scrollListener);
+    if (this.scrollFrame) cancelAnimationFrame(this.scrollFrame);
   }
 
   protected selectedTab(): SolutionTab {

@@ -6,7 +6,10 @@ import { AuthService } from '../services/auth.service';
 
 describe('authGuard', () => {
   function setup(isAuthenticated: boolean) {
-    const authMock = { isAuthenticated: vi.fn().mockReturnValue(isAuthenticated) };
+    const authMock = {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
+    };
     const routerMock = { createUrlTree: vi.fn().mockReturnValue('/login-tree') };
 
     TestBed.configureTestingModule({
@@ -19,20 +22,22 @@ describe('authGuard', () => {
     return { authMock, routerMock };
   }
 
-  it('deve permitir acesso quando autenticado', () => {
-    setup(true);
-    const result = TestBed.runInInjectionContext(() =>
+  it('deve permitir acesso quando autenticado', async () => {
+    const { authMock } = setup(true);
+    const result = await TestBed.runInInjectionContext(() =>
       authGuard({} as never, {} as never),
     );
     expect(result).toBe(true);
+    expect(authMock.initialize).toHaveBeenCalled();
   });
 
-  it('deve redirecionar para /login quando não autenticado', () => {
-    const { routerMock } = setup(false);
-    const result = TestBed.runInInjectionContext(() =>
+  it('deve redirecionar para /login quando não autenticado', async () => {
+    const { authMock, routerMock } = setup(false);
+    const result = await TestBed.runInInjectionContext(() =>
       authGuard({} as never, {} as never),
     );
     expect(result).toBe('/login-tree');
+    expect(authMock.initialize).toHaveBeenCalled();
     expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/login']);
   });
 });

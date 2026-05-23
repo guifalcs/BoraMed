@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
-import { guestGuard } from './core/guards/guest.guard';
-import { adminGuard } from './core/guards/admin.guard';
-import { inicioResolver } from './core/resolvers/inicio.resolver';
-import { historicoResolver } from './core/resolvers/historico.resolver';
+import {
+  lazyAdminGuard,
+  lazyAuthGuard,
+  lazyGuestGuard,
+} from './core/guards/lazy-route-guards';
 
 export const routes: Routes = [
   {
@@ -14,19 +14,19 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    canActivate: [guestGuard],
+    canActivate: [lazyGuestGuard],
     loadComponent: () =>
       import('./(auth)/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'cadastro',
-    canActivate: [guestGuard],
+    canActivate: [lazyGuestGuard],
     loadComponent: () =>
       import('./(auth)/cadastro/cadastro.component').then((m) => m.CadastroComponent),
   },
   {
     path: 'recuperar-senha',
-    canActivate: [guestGuard],
+    canActivate: [lazyGuestGuard],
     loadComponent: () =>
       import('./(auth)/recuperar-senha/recuperar-senha.component').then(
         (m) => m.RecuperarSenhaComponent,
@@ -41,48 +41,11 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [authGuard],
+    canActivate: [lazyAuthGuard],
     loadComponent: () =>
       import('./(dashboard)/dashboard.component').then((m) => m.DashboardComponent),
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./(dashboard)/inicio/inicio.component').then((m) => m.InicioComponent),
-        resolve: { inicioData: inicioResolver },
-      },
-      {
-        path: 'perfil',
-        loadComponent: () =>
-          import('./(dashboard)/perfil/perfil.component').then((m) => m.PerfilComponent),
-      },
-      { path: 'perfil/competitivo', pathMatch: 'full', redirectTo: 'perfil' },
-      {
-        path: 'suporte',
-        loadComponent: () =>
-          import('./(dashboard)/suporte/suporte.component').then((m) => m.SuporteComponent),
-      },
-      {
-        path: 'simulados',
-        loadChildren: () =>
-          import('./(dashboard)/provas/provas.routes').then((m) => m.provasRoutes),
-      },
-      {
-        path: 'competitivo',
-        loadComponent: () =>
-          import('./(dashboard)/competir/competir-hub.component').then(
-            (m) => m.CompetirHubComponent,
-          ),
-      },
-      { path: 'competir', pathMatch: 'full', redirectTo: 'competitivo' },
-      {
-        path: 'historico',
-        loadComponent: () =>
-          import('./(dashboard)/historico/historico.component').then((m) => m.HistoricoComponent),
-        resolve: { historicoData: historicoResolver },
-      },
-      { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
-    ],
+    loadChildren: () =>
+      import('./(dashboard)/dashboard.routes').then((m) => m.dashboardRoutes),
   },
   {
     path: 'auth/callback',
@@ -91,7 +54,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    canActivate: [adminGuard],
+    canActivate: [lazyAdminGuard],
     loadComponent: () =>
       import('./(admin)/admin.component').then((m) => m.AdminComponent),
     loadChildren: () =>

@@ -73,3 +73,15 @@
  **Data** : 2026-05
  **Decisao** : Dependencias pesadas de renderizacao, como Markdown e Chart.js/ng2-charts, devem ser providas nos componentes ou rotas que as usam, evitando registro global no bootstrap principal.
  **Motivo** : A primeira carga atende landing, auth e shell do aluno. Isolar Markdown e graficos em chunks lazy reduz o bundle inicial e melhora o tempo ate a primeira interacao sem remover recursos das telas de questoes, historico, competitivo e admin.
+
+## ADR-013: Auth e dashboard carregados sob demanda
+
+ **Data** : 2026-05
+ **Decisao** : O bootstrap principal nao deve inicializar AuthService/Supabase globalmente. Guards de auth, guest e admin carregam a sessao sob demanda, e as rotas internas do dashboard ficam em arquivo lazy separado.
+ **Motivo** : Landing e rotas publicas nao precisam carregar Supabase Auth, resolvers do dashboard ou telas logadas na primeira renderizacao. Deixar auth e dashboard em chunks sob demanda reduz o bundle inicial e mantem a protecao das rotas privadas no ponto de navegacao.
+
+## ADR-014: Performance visual sem decoracao cara
+
+ **Data** : 2026-05
+ **Decisao** : Componentes publicos devem respeitar o budget de CSS por componente e evitar texturas SVG inline, fundos decorativos animados e listeners de scroll sem limitacao por frame. Imagens abaixo da dobra devem usar carregamento/decodificacao nao bloqueante.
+ **Motivo** : A landing e a primeira experiencia publica do produto. Reduzir CSS, trabalho de pintura e callbacks de scroll melhora carregamento e fluidez sem retirar funcionalidades centrais para o usuario.

@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-05-23 | Tweak | sem commit
+
+**Landing e SSR com menos custo de renderizacao**
+
+- CSS da landing foi reduzida abaixo do budget de 20 kB por componente.
+- Removidas texturas SVG inline e animacoes decorativas continuas que nao traziam valor direto ao usuario.
+- Listener de scroll da landing passou a usar `requestAnimationFrame`, reduzindo trabalho em eventos frequentes.
+- Imagens da landing ganharam `decoding="async"` para reduzir bloqueios de decodificacao.
+- Header mobile do dashboard deixou de carregar `logotipo.png` de ~2 MB, passou a reutilizar `logo.png`, e o asset antigo foi removido do deploy.
+- `SupabaseService` deixou de importar diretamente o pacote CommonJS `cookie`; o aviso restante vem do `@supabase/ssr`.
+
+---
+
+## 2026-05-23 | Tweak | sem commit
+
+**Bundle inicial com auth e dashboard lazy**
+
+- Bootstrap do Angular deixou de inicializar AuthService/Supabase antes da primeira rota protegida.
+- Guards de auth, guest e admin passam a carregar a sessao sob demanda e de forma idempotente.
+- Rotas internas do dashboard foram movidas para `dashboard.routes.ts`, mantendo resolvers e telas protegidas fora do chunk inicial.
+- Bundle inicial do build de producao caiu de 638.85 kB para 396.21 kB, removendo o warning de budget inicial de 500 kB.
+- Build e suite unitaria passaram apos a mudanca, com 393 testes executados.
+
+---
+
 ## 2026-05-23 | Fix | sem commit
 
 **Carregamento da lista de provas**

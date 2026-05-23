@@ -8,6 +8,8 @@ export const adminGuard: CanActivateFn = async () => {
   const profileService = inject(ProfileService);
   const router = inject(Router);
 
+  await auth.initialize();
+
   if (!auth.isAuthenticated()) {
     return router.createUrlTree(['/login']);
   }

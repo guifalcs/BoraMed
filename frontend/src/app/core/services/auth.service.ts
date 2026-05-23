@@ -24,6 +24,7 @@ export class AuthService implements OnDestroy {
 
   private readonly platformId = inject(PLATFORM_ID);
   private authSubscription?: { unsubscribe: () => void };
+  private initializePromise: Promise<void> | null = null;
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -43,6 +44,17 @@ export class AuthService implements OnDestroy {
   }
 
   async initialize(): Promise<void> {
+    if (this._isReady()) return;
+    if (this.initializePromise) return this.initializePromise;
+
+    this.initializePromise = this.loadInitialSession().finally(() => {
+      this.initializePromise = null;
+    });
+
+    return this.initializePromise;
+  }
+
+  private async loadInitialSession(): Promise<void> {
     try {
       const { data } = await this.supabase.auth.getUser();
       this._user.set(data.user ?? null);
