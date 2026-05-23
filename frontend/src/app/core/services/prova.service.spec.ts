@@ -119,6 +119,18 @@ describe('ProvaService', () => {
       expect(eqMock).toHaveBeenCalledWith('subtipo', 'N1');
     });
 
+    it('ordena por colunas existentes no schema atual', async () => {
+      const builder = makeQueryBuilder({ data: [provaMock], error: null });
+      mockFrom.mockReturnValue(builder);
+
+      await service.listarProvasNacionais({ subtipo: null, periodo: null });
+
+      const orderMock = builder['order'] as ReturnType<typeof vi.fn>;
+      expect(orderMock).toHaveBeenCalledWith('criado_em', { ascending: false });
+      expect(orderMock).toHaveBeenCalledWith('subtipo', { ascending: true });
+      expect(orderMock).not.toHaveBeenCalledWith('edicao', expect.anything());
+    });
+
     it('aplica filtro de periodo quando fornecido', async () => {
       const builder = makeQueryBuilder({ data: [provaMock], error: null });
       mockFrom.mockReturnValue(builder);

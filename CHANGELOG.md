@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-23 | Fix | sem commit
+
+**Carregamento da lista de provas**
+
+- Corrigida a query de listagem de provas para deixar de ordenar pela coluna removida `edicao`.
+- Listagem passa a ordenar por `criado_em` e `subtipo`, ambos existentes no schema atual.
+- Adicionado teste em `ProvaService` para impedir regressao com ordenacao por coluna removida.
+
+---
+
 ## 2026-05-23 | Tweak | sem commit
 
 **Melhorias de performance, historico e testes**

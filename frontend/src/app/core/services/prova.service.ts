@@ -45,7 +45,7 @@ export class ProvaService {
         .select('*')
         .eq('formato', formato)
         .eq('arquivada', false)
-        .order('edicao', { ascending: false })
+        .order('criado_em', { ascending: false })
         .order('subtipo', { ascending: true });
 
       if (filtros.rede) {
