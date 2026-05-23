@@ -109,3 +109,9 @@
  **Data** : 2026-05
  **Decisao** : O frontend carrega apenas Inter como familia externa global. Titulos e paineis devem reutilizar Inter ou fontes do sistema, salvo justificativa forte de marca.
  **Motivo** : Cada familia adicional de fonte aumenta requisicoes, bytes e risco de troca visual tardia. Como Playfair Display era usada em apenas um titulo, o custo de carregamento era maior que o ganho de experiencia.
+
+## ADR-017: Allowlist explicita para CommonJS auditado
+
+ **Data** : 2026-05
+ **Decisao** : O build Angular permite explicitamente o pacote `cookie` como dependencia CommonJS conhecida.
+ **Motivo** : `cookie` e usado internamente por `@supabase/ssr@0.10.3`, versao mais recente disponivel no momento da decisao. O allowlist remove ruido de build para esse caso auditado sem desativar alertas para novos pacotes CommonJS.

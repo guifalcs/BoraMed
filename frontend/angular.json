@@ -32,6 +32,7 @@
               }
             ],
             "styles": ["src/styles.css"],
+            "allowedCommonJsDependencies": ["cookie"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {

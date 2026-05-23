@@ -2,6 +2,16 @@
 
 ## 2026-05-23 | Tweak | sem commit
 
+**Warning CommonJS do Supabase SSR**
+
+- `cookie` foi adicionado ao allowlist de CommonJS do build Angular.
+- O pacote e usado internamente por `@supabase/ssr@0.10.3`, que ja esta na versao mais recente disponivel.
+- O build passa a alertar apenas novos CommonJS nao auditados, mantendo este caso conhecido documentado.
+
+---
+
+## 2026-05-23 | Tweak | sem commit
+
 **Fonte externa simplificada**
 
 - Import global de fontes passou a carregar apenas Inter.
