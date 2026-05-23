@@ -134,7 +134,7 @@
       {
         "id": "hero-product-dashboard",
         "type": "image",
-        "path": "/landing-page/heroImage.png",
+        "path": "/landing-page/hero-image.jpg",
         "alt": "Previa visual da experiencia BoraMed para estudo medico"
       },
       {
@@ -148,12 +148,6 @@
         "type": "image",
         "path": "/landing/placeholders/lab-slide.webp",
         "alt": "Questao de laboratorio com imagem de lamina"
-      },
-      {
-        "id": "mascot-or-illustration",
-        "type": "illustration",
-        "path": "/landing-page/ilustraçãoInstitucional.png",
-        "alt": "Ilustracao institucional BoraMed"
       }
     ]
   },
@@ -186,7 +180,7 @@
         "trust_note": "Plataforma independente. Questoes autorais no modelo das avaliacoes."
       },
       "visual": {
-        "layout": "Large headline centered, CTAs below, and heroImage.png inside a macOS-style browser frame occupying the lower hero area.",
+        "layout": "Large headline centered, CTAs below, and hero-image.jpg inside a macOS-style browser frame occupying the lower hero area.",
         "components": ["hero_image_inside_browser_frame", "feature_ticker"],
         "feature_ticker_items": ["Treinos nacionais", "Simulados por tema", "Questoes autorais", "Revisao guiada", "Historico", "Laboratorio", "Streak de estudo"]
       }

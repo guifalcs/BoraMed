@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-05-23 | Feat | sem commit
+
+**Sistema de notificacoes e avisos broadcast**
+
+- Migration `20260523000001_sistema_notificacoes.sql`: tabelas `notificacoes`, `avisos` e `avisos_vistos` com RLS, indices e RPCs.
+- Storage bucket `avisos` (publico, limite 5 MB, JPEG/PNG/WebP/GIF) com policies de leitura publica e escrita restrita a admin.
+- RPCs: `buscar_avisos_pendentes`, `marcar_aviso_visto`, `buscar_notificacoes`, `marcar_notificacao_lida`, `marcar_todas_notificacoes_lidas`, `admin_listar_avisos`.
+- `AvisoService`: carrega avisos pendentes na entrada do dashboard (pula durante impersonacao), remove do estado local apos marcar como visto.
+- `AppNotificacaoService`: gerencia notificacoes in-app por usuario com signals; estrutura pronta para receber novos tipos futuros.
+- `AvisoModalComponent`: modal fullscreen com imagem + texto opcional, tecla Esc, fecha e marca como visto automaticamente.
+- `NotificacoesSinoComponent`: sino com badge de nao lidas, dropdown animado, "marcar todas como lidas"; fecha ao clicar fora.
+- Stories Storybook para ambos os componentes (`ComTexto`, `SomenteImagem`, `Vazio` / `ComNaoLidas`, `TodasLidas`, `Vazia`).
+- `AdminAvisosComponent` em `/admin/avisos`: CRUD completo com upload de imagem para bucket, toggle ativo/inativo e preview instantaneo.
+- Rota `/admin/avisos` adicionada ao `admin.routes.ts`; item "Avisos" adicionado ao menu lateral do admin.
+- Dashboard integrado: `AvisoModalComponent` e `NotificacoesSinoComponent` montados no shell; sino visivel no header mobile.
+
+---
+
+## 2026-05-23 | Tweak | sem commit
+
+**Imagens da landing otimizadas**
+
+- Imagens principais da landing foram convertidas de PNG para JPEG redimensionado.
+- Payload dos assets usados na landing caiu em aproximadamente 4.2 MB.
+- Hero passou de `heroImage.png` com ~841 KB para `hero-image.jpg` com ~84 KB.
+- Cards de modos e imagem de performance passaram a usar arquivos entre ~78 KB e ~190 KB.
+- Assets PNG antigos da landing foram removidos do deploy apos troca das referencias.
+- Placeholder institucional antigo, sem uso no app, foi removido de `public/landing-page`.
+
+---
+
 ## 2026-05-23 | Tweak | sem commit
 
 **Landing e SSR com menos custo de renderizacao**

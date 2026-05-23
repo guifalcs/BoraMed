@@ -141,10 +141,10 @@ export class LandingComponent implements OnDestroy {
       icon: Stethoscope,
       variant: 'national',
       image: {
-        src: '/landing-page/modoNacional.png',
+        src: '/landing-page/modo-nacional.jpg',
         alt: 'Interface de treino nacional BoraMed com questões e score',
-        width: 800,
-        height: 450,
+        width: 1672,
+        height: 941,
       },
     },
     {
@@ -155,10 +155,10 @@ export class LandingComponent implements OnDestroy {
       icon: ClipboardList,
       variant: 'process',
       image: {
-        src: '/landing-page/modoProcessual.png',
+        src: '/landing-page/modo-processual.jpg',
         alt: 'Seleção de temas médicos para simulado processual',
-        width: 800,
-        height: 450,
+        width: 1672,
+        height: 941,
       },
     },
     {
@@ -169,10 +169,10 @@ export class LandingComponent implements OnDestroy {
       icon: FlaskConical,
       variant: 'lab',
       image: {
-        src: '/landing-page/modoLaboratorio.png',
+        src: '/landing-page/modo-laboratorio.jpg',
         alt: 'Questão de laboratório com lâmina histológica',
-        width: 800,
-        height: 450,
+        width: 1672,
+        height: 941,
       },
     },
   ];

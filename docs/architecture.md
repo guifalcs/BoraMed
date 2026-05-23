@@ -78,6 +78,18 @@
 
  **Data** : 2026-05
  **Decisao** : O bootstrap principal nao deve inicializar AuthService/Supabase globalmente. Guards de auth, guest e admin carregam a sessao sob demanda, e as rotas internas do dashboard ficam em arquivo lazy separado.
+
+## ADR-014: Avisos broadcast via tabela Supabase + modal no shell do dashboard
+
+ **Data** : 2026-05
+ **Decisao** : Avisos administrativos (imagem + texto opcional) sao armazenados na tabela `avisos`. O controle de visualizacao por usuario e feito via `avisos_vistos`. A verificacao ocorre uma vez por sessao no `effect()` do `DashboardComponent`, ignorada durante impersonacao. O modal fica montado no shell, nao em rotas filhas.
+ **Motivo** : Solucao simples, sem polling, sem Realtime. Admin cria o aviso, usuarios veem na proxima entrada. Impersonacao ignorada para nao poluir a experiencia de debug do admin.
+
+## ADR-015: Notificacoes in-app com estrutura pronta, sem gatilhos pre-definidos
+
+ **Data** : 2026-05
+ **Decisao** : A tabela `notificacoes` e o `AppNotificacaoService` estao implementados mas sem gatilhos automaticos ainda. Novos tipos (`sistema`, `conquista`, `info`, `aviso`) serao adicionados via RPCs SECURITY DEFINER em migrations futuras conforme a necessidade.
+ **Motivo** : Evitar acoplamento prematuro a eventos de negocio ainda indefinidos. A estrutura esta pronta para receber qualquer tipo de notificacao sem reescrever o frontend.
  **Motivo** : Landing e rotas publicas nao precisam carregar Supabase Auth, resolvers do dashboard ou telas logadas na primeira renderizacao. Deixar auth e dashboard em chunks sob demanda reduz o bundle inicial e mantem a protecao das rotas privadas no ponto de navegacao.
 
 ## ADR-014: Performance visual sem decoracao cara
@@ -85,3 +97,9 @@
  **Data** : 2026-05
  **Decisao** : Componentes publicos devem respeitar o budget de CSS por componente e evitar texturas SVG inline, fundos decorativos animados e listeners de scroll sem limitacao por frame. Imagens abaixo da dobra devem usar carregamento/decodificacao nao bloqueante.
  **Motivo** : A landing e a primeira experiencia publica do produto. Reduzir CSS, trabalho de pintura e callbacks de scroll melhora carregamento e fluidez sem retirar funcionalidades centrais para o usuario.
+
+## ADR-015: Imagens publicas otimizadas para entrega web
+
+ **Data** : 2026-05
+ **Decisao** : Assets raster usados na landing devem ser servidos em formatos e dimensoes adequados ao tamanho real de exibicao. PNGs grandes ficam reservados para casos que exigem transparencia ou fidelidade sem perdas.
+ **Motivo** : Depois da reducao de JS e CSS, imagens passam a dominar o payload percebido. Redimensionar e comprimir assets publicos reduz tempo de carregamento, consumo de dados e tamanho do deploy sem alterar a experiencia funcional.

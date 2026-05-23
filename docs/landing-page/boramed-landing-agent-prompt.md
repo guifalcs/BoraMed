@@ -48,7 +48,7 @@ Subheadline: `O BoraMed organiza treinos nacionais, simulados por tema e questoe
 
 CTA: botao principal `Comecar agora`, botao secundario `Conhecer os modulos`, nota `Plataforma independente. Questoes autorais no modelo das avaliacoes.`
 
-Visual: frame estilo janela do macOS contendo a imagem `/landing-page/heroImage.png` ocupando a area interna da janela. A imagem deve ficar dentro da moldura, responsiva, com `object-fit: cover` e foco no topo.
+Visual: frame estilo janela do macOS contendo a imagem `/landing-page/hero-image.jpg` ocupando a area interna da janela. A imagem deve ficar dentro da moldura, responsiva, com `object-fit: cover` e foco no topo.
 
 Ticker discreto: Treinos nacionais, Simulados por tema, Questoes autorais, Revisao guiada, Historico, Laboratorio, Streak de estudo.
 
@@ -136,7 +136,7 @@ Reserve espacos e use paths genericos:
 
 - `/landing/placeholders/lab-slide.webp`
 - `/landing/placeholders/boramed-illustration.webp`
-- `/landing-page/heroImage.png` para a imagem principal da hero
+- `/landing-page/hero-image.jpg` para a imagem principal da hero
 
 Cada imagem deve ter `alt` descritivo, `width`/`height` ou `aspect-ratio`, e lazy loading quando estiver abaixo da dobra.
 
