@@ -11,6 +11,10 @@ import { NotificationService } from '../core/services/notification.service';
 import { ProfileService } from '../core/services/profile.service';
 import { TentativaService } from '../core/services/tentativa.service';
 import { OnboardingService } from '../core/services/onboarding.service';
+import { AvisoService } from '../core/services/aviso.service';
+import { AppNotificacaoService } from '../core/services/app-notification.service';
+import { AvisoModalComponent } from '../shared/components/aviso-modal/aviso-modal.component';
+import { NotificacoesSinoComponent } from '../shared/components/notificacoes-sino/notificacoes-sino.component';
 
 interface NavItem {
   label: string;
@@ -23,7 +27,7 @@ interface NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +39,8 @@ export class DashboardComponent {
   private readonly tentativaService = inject(TentativaService);
   private readonly router = inject(Router);
   protected readonly onboarding = inject(OnboardingService);
+  private readonly avisoService = inject(AvisoService);
+  private readonly notifService = inject(AppNotificacaoService);
 
   protected readonly logOutIcon = LogOut;
   protected readonly userIcon = User;
@@ -66,9 +72,14 @@ export class DashboardComponent {
   constructor() {
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
       effect(() => {
-        if (this.auth.user()) {
+        if (this.auth.user() && !this.auth.impersonando()) {
           void this.profileService.loadProfile();
           void this.onboarding.load();
+          void this.tentativaService.hidratarTentativaAtiva();
+          void this.avisoService.verificarAvisos();
+          void this.notifService.carregar();
+        } else if (this.auth.user() && this.auth.impersonando()) {
+          void this.profileService.loadProfile();
           void this.tentativaService.hidratarTentativaAtiva();
         }
       });

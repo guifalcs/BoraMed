@@ -1,0 +1,24 @@
+@if (visivel() && aviso(); as a) {
+  <div class="backdrop" (click)="fechar()" role="dialog" aria-modal="true" aria-label="Aviso">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <button class="close-btn" type="button" (click)="fechar()" aria-label="Fechar aviso">
+        <app-ui-icon [icon]="iconX" [size]="20" />
+      </button>
+
+      <img class="aviso-img" [src]="a.imagem_url" [alt]="a.titulo ?? 'Aviso'" />
+
+      @if (a.titulo || a.mensagem) {
+        <div class="aviso-body">
+          @if (a.titulo) {
+            <h2 class="aviso-titulo">{{ a.titulo }}</h2>
+          }
+          @if (a.mensagem) {
+            <p class="aviso-mensagem">{{ a.mensagem }}</p>
+          }
+        </div>
+      }
+
+      <button class="btn-fechar" type="button" (click)="fechar()">Fechar</button>
+    </div>
+  </div>
+}

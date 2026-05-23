@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
+  Bell,
   BookOpen,
   FileText,
   GraduationCap,
@@ -52,6 +53,7 @@ export class AdminComponent {
     { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },
     { label: 'Temas', icon: Tag, route: '/admin/temas' },
     { label: 'Importar', icon: Upload, route: '/admin/importar' },
+    { label: 'Avisos', icon: Bell, route: '/admin/avisos' },
   ];
 
   protected toggleMenu(): void {

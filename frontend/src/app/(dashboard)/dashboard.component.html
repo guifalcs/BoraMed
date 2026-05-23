@@ -23,6 +23,10 @@
     </nav>
 
     <div class="sidebar-bottom">
+      <div class="sidebar-notif-row">
+        <app-notificacoes-sino [sidebar]="true" />
+        <span class="sidebar-notif-label">Notificações</span>
+      </div>
       <div class="desktop-avatar-wrapper">
         <button class="user-card" type="button" aria-label="Menu do perfil" data-onboarding-target="profile-menu" (click)="toggleMenu()">
           <app-ui-avatar
@@ -76,6 +80,9 @@
         decoding="async"
       />
     </a>
+    <div class="mobile-header-actions">
+      <app-notificacoes-sino />
+    </div>
     <div class="mobile-avatar-wrapper">
       <button class="mobile-avatar-btn" type="button" aria-label="Menu do perfil" data-onboarding-target="profile-menu" (click)="toggleMenu()">
         <app-ui-avatar
@@ -147,5 +154,7 @@
     (pular)="handleOnboardingSkip()"
     (finalizar)="handleOnboardingComplete()"
   />
+
+  <app-aviso-modal />
 
 </div>

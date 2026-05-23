@@ -168,6 +168,15 @@ export interface AdminTema {
   criado_em: string;
 }
 
+export interface AdminAviso {
+  id: string;
+  titulo: string | null;
+  mensagem: string | null;
+  imagem_url: string;
+  ativo: boolean;
+  criado_em: string;
+}
+
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface ImpersonacaoResult {
@@ -674,5 +683,54 @@ export class AdminService {
     if (idx === -1) return;
     const path = url.substring(idx + marker.length);
     await this.supabase.storage.from(bucket).remove([path]);
+  }
+
+  // ---- Avisos ----
+
+  async listarAvisos(): Promise<ServiceResult<AdminAviso[]>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_avisos');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminAviso[] };
+  }
+
+  async criarAviso(
+    input: Pick<AdminAviso, 'titulo' | 'mensagem' | 'imagem_url'>,
+  ): Promise<ServiceResult<AdminAviso>> {
+    const { data, error } = await this.supabase
+      .from('avisos')
+      .insert(input)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminAviso };
+  }
+
+  async toggleAtivoAviso(id: string, ativo: boolean): Promise<ServiceResult<AdminAviso>> {
+    const { data, error } = await this.supabase
+      .from('avisos')
+      .update({ ativo })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminAviso };
+  }
+
+  async deletarAviso(id: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.from('avisos').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
+  }
+
+  async uploadImagemAviso(file: File): Promise<ServiceResult<string>> {
+    const ext = file.name.split('.').pop() ?? 'jpg';
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await this.supabase.storage.from('avisos').upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+    if (error) return { ok: false, error: error.message };
+    const { data } = this.supabase.storage.from('avisos').getPublicUrl(path);
+    return { ok: true, data: data.publicUrl };
   }
 }

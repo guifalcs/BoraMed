@@ -1,0 +1,53 @@
+<div class="wrapper">
+  <button
+    class="sino-btn"
+    type="button"
+    [attr.aria-label]="naoLidas() > 0 ? naoLidas() + ' notificações não lidas' : 'Notificações'"
+    [class.sino-btn--ativo]="aberto()"
+    (click)="toggleAberto()"
+  >
+    <app-ui-icon [icon]="iconBell" [size]="20" />
+    @if (badgeLabel()) {
+      <span class="badge" aria-hidden="true">{{ badgeLabel() }}</span>
+    }
+  </button>
+
+  @if (aberto()) {
+    <div class="dropdown" [class.dropdown--sidebar]="sidebar()" role="menu" aria-label="Notificações">
+      <div class="dropdown-header">
+        <span class="dropdown-titulo">Notificações</span>
+        @if (naoLidas() > 0) {
+          <button class="btn-marcar-todas" type="button" (click)="marcarTodasLidas()">
+            <app-ui-icon [icon]="iconCheck" [size]="14" />
+            <span>Marcar todas</span>
+          </button>
+        }
+      </div>
+
+      <ul class="lista" role="list">
+        @if (notificacoes().length === 0) {
+          <li class="vazio">Nenhuma notificação ainda.</li>
+        }
+        @for (n of notificacoes(); track n.id) {
+          <li
+            class="item"
+            [class.item--nao-lida]="!n.lida"
+            role="menuitem"
+            (click)="marcarLida(n)"
+          >
+            <div class="item-conteudo">
+              <span class="item-titulo">{{ n.titulo }}</span>
+              @if (n.mensagem) {
+                <span class="item-mensagem">{{ n.mensagem }}</span>
+              }
+              <span class="item-data">{{ formatarData(n.criado_em) }}</span>
+            </div>
+            @if (!n.lida) {
+              <span class="dot" aria-label="Não lida"></span>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>

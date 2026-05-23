@@ -50,4 +50,11 @@ export const adminRoutes: Routes = [
         (m) => m.AdminImportarComponent,
       ),
   },
+  {
+    path: 'avisos',
+    loadComponent: () =>
+      import('./avisos/admin-avisos.component').then(
+        (m) => m.AdminAvisosComponent,
+      ),
+  },
 ];
