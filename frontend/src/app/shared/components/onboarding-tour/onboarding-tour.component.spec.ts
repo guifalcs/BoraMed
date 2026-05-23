@@ -22,6 +22,7 @@ const flow: IOnboardingFlow = {
       titulo: 'Pronto',
       descricao: 'Agora escolha um treino.',
       target: null,
+      placement: 'center',
       ctaLabel: 'Escolher treino',
     },
   ],

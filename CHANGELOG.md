@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-05-23 | Tweak | sem commit
+
+**Melhorias de performance, historico e testes**
+
+- Bundle inicial do build de producao reduzido ao mover Markdown e Chart.js/ng2-charts para providers locais das telas que usam esses recursos.
+- Historico passa a oferecer filtro de laboratorio junto de nacional e processual.
+- Textos visiveis de simulados foram ajustados para reforcar treinos autorais e reduzir risco de leitura como vinculo institucional.
+- Specs foram alinhadas aos modelos atuais de prova, perfil, questao e onboarding; suite unitaria voltou a passar com 392 testes.
+- Arquitetura e regras de negocio documentam o carregamento lazy de dependencias ricas e os filtros atuais do historico.
+
+---
+
 ## 2026-05-21 | Tweak | sem commit
 
 **Logo menor na sidebar logada**

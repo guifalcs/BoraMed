@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { BaseChartDirective } from 'ng2-charts';
+import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import type { ChartData, ChartOptions } from 'chart.js';
 
 export interface PontoEvolucao {
@@ -12,6 +12,7 @@ export interface PontoEvolucao {
   standalone: true,
   imports: [BaseChartDirective],
   templateUrl: './evolucao-nota-chart.component.html',
+  providers: [provideCharts(withDefaultRegisterables())],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EvolucaoNotaChartComponent {

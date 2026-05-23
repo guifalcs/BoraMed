@@ -9,7 +9,7 @@ import {
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { ModoProva } from '../../../core/models/tentativa';
 import type { EstadoAlternativa } from '../alternativa-item/alternativa-item.component';
-import { MarkdownComponent } from 'ngx-markdown';
+import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 import { AlternativaItemComponent } from '../alternativa-item/alternativa-item.component';
 import { QuestaoExplicacaoComponent } from '../questao-explicacao/questao-explicacao.component';
 
@@ -18,6 +18,7 @@ import { QuestaoExplicacaoComponent } from '../questao-explicacao/questao-explic
   standalone: true,
   imports: [MarkdownComponent, AlternativaItemComponent, QuestaoExplicacaoComponent],
   templateUrl: './questao-card.component.html',
+  providers: [provideMarkdown()],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuestaoCardComponent {

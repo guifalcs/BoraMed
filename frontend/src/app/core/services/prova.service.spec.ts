@@ -11,9 +11,15 @@ const provaMock: Prova = {
   faculdade_id: null,
   nome: 'Simulado N1 — 1º Período — Edição 1',
   periodo: 1,
-  tipo: 'nacional',
+  tipo: 'autoral',
+  origem: 'autoral',
+  formato: 'nacional',
+  rede: 'afya',
+  subtipo: 'N1',
   subtipo_nacional: 'N1',
   qtd_questoes: 30,
+  publicada: true,
+  arquivada: false,
   criado_em: '2024-01-01T00:00:00Z',
 };
 
@@ -110,7 +116,7 @@ describe('ProvaService', () => {
       await service.listarProvasNacionais({ subtipo: 'N1', periodo: null });
 
       const eqMock = builder['eq'] as ReturnType<typeof vi.fn>;
-      expect(eqMock).toHaveBeenCalledWith('subtipo_nacional', 'N1');
+      expect(eqMock).toHaveBeenCalledWith('subtipo', 'N1');
     });
 
     it('aplica filtro de periodo quando fornecido', async () => {
@@ -130,9 +136,9 @@ describe('ProvaService', () => {
       await service.listarProvasNacionais({ subtipo: null, periodo: null });
 
       const eqMock = builder['eq'] as ReturnType<typeof vi.fn>;
-      // Only the mandatory eq('tipo', 'nacional') should be called
-      expect(eqMock).toHaveBeenCalledTimes(1);
-      expect(eqMock).toHaveBeenCalledWith('tipo', 'nacional');
+      expect(eqMock).toHaveBeenCalledTimes(2);
+      expect(eqMock).toHaveBeenCalledWith('formato', 'nacional');
+      expect(eqMock).toHaveBeenCalledWith('arquivada', false);
     });
 
     it('retorna array vazio quando Supabase retorna data: null', async () => {

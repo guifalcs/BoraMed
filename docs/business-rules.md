@@ -91,6 +91,12 @@
 3. Abre o simulado e responde
 4. Ao finalizar: exibe resultado com gabarito
 
+### Historico e analise de desempenho
+
+* O historico do aluno deve permitir recortes por periodo de tempo e por formato de treino.
+* Os formatos filtraveis no historico acompanham os formatos pedagogicos ativos: nacional, processual e laboratorio.
+* Simulados personalizados devem continuar aparecendo no historico com o formato da prova gerada, preservando navegacao para resultado e revisao.
+
 ## Calendário de Referência (Foco Inicial Afya)
 
 Uso interno como referência de produto. Não apresentar como calendário oficial, parceria ou representação da Afya.

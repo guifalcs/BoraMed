@@ -29,8 +29,10 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     nome_completo: 'Fulano de Tal',
     tipo_usuario: 'medico',
     periodo: null,
+    faculdade_rede: null,
     avatar_url: null,
     competir_publico: true,
+    papel: 'aluno',
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString(),
     ...overrides,
@@ -313,6 +315,7 @@ describe('PerfilComponent', () => {
         nome_completo: 'Maria Silva',
         tipo_usuario: 'medico',
         periodo: null,
+        faculdade_rede: null,
       });
     });
 
@@ -328,6 +331,7 @@ describe('PerfilComponent', () => {
         nome_completo: 'João Silva',
         tipo_usuario: 'estudante_medicina',
         periodo: 4,
+        faculdade_rede: null,
       });
     });
 

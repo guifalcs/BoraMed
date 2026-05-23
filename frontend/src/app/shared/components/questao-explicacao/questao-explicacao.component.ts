@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { MarkdownComponent } from 'ngx-markdown';
+import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 
 @Component({
   selector: 'app-questao-explicacao',
   standalone: true,
   imports: [MarkdownComponent],
   templateUrl: './questao-explicacao.component.html',
+  providers: [provideMarkdown()],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuestaoExplicacaoComponent {

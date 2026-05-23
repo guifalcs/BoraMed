@@ -206,7 +206,7 @@ describe('ResultadoSummaryComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(el.textContent).toContain('Revisar temas críticos');
       expect(el.textContent).toContain('2 temas com menor aproveitamento');
-      expect(el.textContent).toContain('Menor aproveitamento nesta tentativa: 0%');
+      expect(el.textContent).toContain('0% de acertos');
       expect(el.textContent).not.toContain('Reforce Cardiologia agora');
       expect(component['temEmpateEntreTemasPrioritarios']()).toBe(true);
     });

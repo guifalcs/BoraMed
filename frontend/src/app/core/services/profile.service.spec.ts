@@ -30,8 +30,10 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     nome_completo: 'Fulano de Tal',
     tipo_usuario: 'medico',
     periodo: null,
+    faculdade_rede: null,
     avatar_url: null,
     competir_publico: true,
+    papel: 'aluno',
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString(),
     ...overrides,
@@ -189,6 +191,7 @@ describe('ProfileService', () => {
         nome_completo: 'João',
         tipo_usuario: 'residente',
         periodo: null,
+        faculdade_rede: null,
       });
     });
   });

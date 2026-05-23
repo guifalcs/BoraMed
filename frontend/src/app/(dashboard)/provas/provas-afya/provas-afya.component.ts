@@ -129,9 +129,9 @@ export class ProvasAfyaComponent {
 
   protected readonly titulo = computed(() => {
     switch (this.formatoAtual()) {
-      case 'processual': return 'Processual no modelo Afya';
-      case 'laboratorio': return 'Laboratório no modelo Afya';
-      default: return 'Nacional no modelo Afya';
+      case 'processual': return 'Treinos processuais';
+      case 'laboratorio': return 'Treinos de laboratório';
+      default: return 'Treinos nacionais';
     }
   });
 

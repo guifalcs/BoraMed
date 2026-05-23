@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 import { ProvasAfyaComponent } from './provas-afya.component';
 import { ProvaService } from '../../../core/services/prova.service';
 import type { Prova } from '../../../core/models/prova';
@@ -15,9 +16,15 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
     faculdade_id: null,
     nome: 'Simulado N1 — 1º Período — Edição 1',
     periodo: 1,
-    tipo: 'nacional',
+    tipo: 'autoral',
+    origem: 'autoral',
+    formato: 'nacional',
+    rede: 'afya',
+    subtipo: 'N1',
     subtipo_nacional: 'N1',
     qtd_questoes: 30,
+    publicada: true,
+    arquivada: false,
     criado_em: '2024-01-01T00:00:00Z',
     ...overrides,
   };
@@ -27,7 +34,9 @@ function buildActivatedRoute(resolvedData?: ProvasAfyaResolvedData) {
   return {
     snapshot: {
       data: resolvedData ? { provasAfyaData: resolvedData } : {},
+      queryParamMap: { get: () => null },
     },
+    queryParamMap: of({ get: () => null }),
   };
 }
 
@@ -40,6 +49,7 @@ describe('ProvasAfyaComponent', () => {
 
   const mockProvaService = {
     listarProvasNacionais: vi.fn(),
+    listarProvasPorFormato: vi.fn(),
   };
 
   async function setup(resolvedData?: ProvasAfyaResolvedData) {
@@ -123,8 +133,8 @@ describe('ProvasAfyaComponent', () => {
     beforeEach(async () => {
       const provas: Prova[] = [
         provaFactory({ id: '1', subtipo_nacional: 'N1', periodo: 1 }),
-        provaFactory({ id: '2', subtipo_nacional: 'N2', periodo: 2, nome: 'Prova N2 2024' }),
-        provaFactory({ id: '3', subtipo_nacional: 'teste_progresso', periodo: 1, nome: 'TP 2024' }),
+        provaFactory({ id: '2', subtipo: 'N2', subtipo_nacional: 'N2', periodo: 2, nome: 'Prova N2 2024' }),
+        provaFactory({ id: '3', subtipo: 'teste_progresso', subtipo_nacional: 'teste_progresso', periodo: 1, nome: 'TP 2024' }),
       ];
       await setup({ provasResult: { ok: true, data: provas } });
       fixture.detectChanges();

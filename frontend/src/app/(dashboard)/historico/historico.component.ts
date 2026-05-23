@@ -27,7 +27,7 @@ import { DataTableComponent, type DataTableColumn } from '../../shared/component
 import { DataTableColumnDirective } from '../../shared/components/data-table/data-table-column.directive';
 
 type FiltroPeriodo = 'todos' | 'semana' | 'mes' | 'semestre';
-type FiltroTipo = 'todos' | 'nacional' | 'processual';
+type FiltroTipo = 'todos' | 'nacional' | 'processual' | 'laboratorio';
 
 interface KpiData {
   label: string;
@@ -105,8 +105,9 @@ export class HistoricoComponent {
 
   protected readonly tiposDisponiveis: { valor: FiltroTipo; label: string }[] = [
     { valor: 'todos', label: 'Todos' },
-    { valor: 'nacional', label: 'Modelo Afya' },
-    { valor: 'processual', label: 'Simulados' },
+    { valor: 'nacional', label: 'Nacional' },
+    { valor: 'processual', label: 'Processual' },
+    { valor: 'laboratorio', label: 'Laboratório' },
   ];
 
   protected readonly tentativasColumns: DataTableColumn[] = [

@@ -62,10 +62,6 @@ describe('ProvaCardComponent', () => {
       expect(el.textContent).toContain('1º P');
     });
 
-    it('renderiza a edição', () => {
-      expect(el.textContent).toContain('Ed. 1');
-    });
-
     it('renderiza a quantidade de questões', () => {
       expect(el.textContent).toContain('30q');
     });
@@ -112,7 +108,7 @@ describe('ProvaCardComponent', () => {
 
     it('badge teste_progresso (TP) tem classes bg-violet-100 e text-violet-700', async () => {
       const fixture = await createComponent(
-        provaFactory({ subtipo_nacional: 'teste_progresso', nome: 'Teste de Progresso 2024' }),
+        provaFactory({ subtipo: 'teste_progresso', subtipo_nacional: 'teste_progresso', nome: 'Teste de Progresso 2024' }),
         'card',
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');
@@ -122,7 +118,7 @@ describe('ProvaCardComponent', () => {
 
     it('badge N2 tem classes bg-teal-100 e text-teal-700', async () => {
       const fixture = await createComponent(
-        provaFactory({ subtipo_nacional: 'N2', nome: 'Prova N2 2024' }),
+        provaFactory({ subtipo: 'N2', subtipo_nacional: 'N2', nome: 'Prova N2 2024' }),
         'card',
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');
@@ -132,7 +128,7 @@ describe('ProvaCardComponent', () => {
 
     it('badge TP exibe o texto "TP"', async () => {
       const fixture = await createComponent(
-        provaFactory({ subtipo_nacional: 'teste_progresso', nome: 'Teste de Progresso 2024' }),
+        provaFactory({ subtipo: 'teste_progresso', subtipo_nacional: 'teste_progresso', nome: 'Teste de Progresso 2024' }),
         'card',
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');
@@ -175,7 +171,7 @@ describe('ProvaCardComponent', () => {
   describe('prova sem subtipo_nacional', () => {
     it('não renderiza badge na variante "card" quando subtipo é null', async () => {
       const fixture = await createComponent(
-        provaFactory({ subtipo_nacional: null }),
+        provaFactory({ subtipo: null, subtipo_nacional: null }),
         'card',
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');

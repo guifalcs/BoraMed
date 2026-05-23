@@ -67,3 +67,9 @@
  **Data** : 2026-05
  **DecisÃ£o** : A modelagem de provas passa a separar origem (`autoral`, `faculdade`, `personalizado`), formato pedagogico (`nacional`, `processual`, `laboratorio`, `multiestacoes`) e contexto institucional (`rede`, `faculdade_id`, `subtipo`). `prova.tipo` permanece apenas como campo legado de compatibilidade.
  **Motivo** : O produto precisa atender os formatos iniciais no modelo Afya sem travar o banco a uma unica rede. Separar as dimensoes permite cadastrar novos formatos da Afya e, futuramente, outras faculdades sem reescrever fluxos de admin, listagem e tentativa.
+
+## ADR-012: Dependencias ricas carregadas fora do bootstrap
+
+ **Data** : 2026-05
+ **Decisao** : Dependencias pesadas de renderizacao, como Markdown e Chart.js/ng2-charts, devem ser providas nos componentes ou rotas que as usam, evitando registro global no bootstrap principal.
+ **Motivo** : A primeira carga atende landing, auth e shell do aluno. Isolar Markdown e graficos em chunks lazy reduz o bundle inicial e melhora o tempo ate a primeira interacao sem remover recursos das telas de questoes, historico, competitivo e admin.

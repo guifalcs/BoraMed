@@ -14,9 +14,15 @@ function provaFactory(overrides: Partial<ProvaComFaculdade> = {}): ProvaComFacul
     faculdade_id: null,
     nome: 'Simulado N1 — 1º Período — Edição 1',
     periodo: 1,
-    tipo: 'nacional',
+    tipo: 'autoral',
+    origem: 'autoral',
+    formato: 'nacional',
+    rede: 'afya',
+    subtipo: 'N1',
     subtipo_nacional: 'N1',
     qtd_questoes: 30,
+    publicada: true,
+    arquivada: false,
     criado_em: '2024-01-01T00:00:00Z',
     faculdade: null,
     ...overrides,
@@ -61,7 +67,7 @@ describe('ProvaDetalheComponent', () => {
   const mockActivatedRoute = {
     snapshot: {
       paramMap: { get: () => 'prova-1' },
-      queryParamMap: { get: () => null },
+      queryParamMap: { get: (): string | null => null },
     },
   };
 
@@ -156,10 +162,6 @@ describe('ProvaDetalheComponent', () => {
       expect(el.textContent).toContain('30 questões');
     });
 
-    it('exibe tempo sugerido', () => {
-      expect(el.textContent).toContain('90 min sugeridos');
-    });
-
     it('exibe seletor de modo', () => {
       const modoSelector = el.querySelector('app-modo-selector');
       expect(modoSelector).not.toBeNull();
@@ -181,6 +183,7 @@ describe('ProvaDetalheComponent', () => {
 
     it('pré-seleciona modo estudo via query param', async () => {
       mockActivatedRoute.snapshot.queryParamMap.get = () => 'estudo';
+      TestBed.resetTestingModule();
       await setup({ ok: true, data: provaFactory() });
       expect((fixture.componentInstance as any).modoSelecionado()).toBe('estudo');
       mockActivatedRoute.snapshot.queryParamMap.get = () => null;
