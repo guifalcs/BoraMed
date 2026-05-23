@@ -323,27 +323,38 @@ export class LandingComponent implements OnDestroy {
   }
 
   private configureSeo(): void {
+    const siteUrl = 'https://bora-med.vercel.app';
+    const title = 'BoraMed | Simulados médicos com questões autorais';
+    const shortTitle = 'BoraMed | Simulados médicos autorais';
     const description =
       'Treine para avaliações nacionais com simulados médicos autorais, revisão por desempenho e questões no modelo das provas.';
+    const ogImage = `${siteUrl}/og-image.png`;
 
-    this.title.setTitle('BoraMed | Simulados médicos com questões autorais');
+    this.title.setTitle(title);
     this.meta.updateTag({ name: 'description', content: description });
-    this.meta.updateTag({
-      name: 'keywords',
-      content:
-        'simulado medicina, questões medicina, treino médico, avaliações nacionais medicina, simulado laboratório',
-    });
-    this.meta.updateTag({ property: 'og:title', content: 'BoraMed | Simulados médicos autorais' });
-    this.meta.updateTag({ property: 'og:description', content: description });
+    this.meta.updateTag({ name: 'robots', content: 'index, follow' });
+
     this.meta.updateTag({ property: 'og:type', content: 'website' });
     this.meta.updateTag({ property: 'og:locale', content: 'pt_BR' });
-    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ property: 'og:site_name', content: 'BoraMed' });
+    this.meta.updateTag({ property: 'og:url', content: `${siteUrl}/` });
+    this.meta.updateTag({ property: 'og:title', content: shortTitle });
+    this.meta.updateTag({ property: 'og:description', content: description });
+    this.meta.updateTag({ property: 'og:image', content: ogImage });
+    this.meta.updateTag({ property: 'og:image:width', content: '1200' });
+    this.meta.updateTag({ property: 'og:image:height', content: '630' });
+    this.meta.updateTag({ property: 'og:image:alt', content: 'BoraMed — Simulados médicos autorais' });
 
-    this.setCanonicalUrl();
-    this.setStructuredData();
+    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ name: 'twitter:title', content: shortTitle });
+    this.meta.updateTag({ name: 'twitter:description', content: description });
+    this.meta.updateTag({ name: 'twitter:image', content: ogImage });
+
+    this.setCanonicalUrl(siteUrl);
+    this.setStructuredData(siteUrl);
   }
 
-  private setCanonicalUrl(): void {
+  private setCanonicalUrl(siteUrl: string): void {
     const head = this.document.head;
     let link = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!link) {
@@ -351,13 +362,28 @@ export class LandingComponent implements OnDestroy {
       link.rel = 'canonical';
       head.appendChild(link);
     }
-    link.href = 'https://boramed.com.br/';
+    link.href = `${siteUrl}/`;
   }
 
-  private setStructuredData(): void {
+  private setStructuredData(siteUrl: string): void {
     this.document.querySelectorAll('script[data-boramed-landing-jsonld]').forEach((node) => {
       node.remove();
     });
+
+    const organizationScript = this.document.createElement('script');
+    organizationScript.type = 'application/ld+json';
+    organizationScript.setAttribute('data-boramed-landing-jsonld', 'org');
+    organizationScript.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'BoraMed',
+      url: siteUrl,
+      logo: `${siteUrl}/logo.png`,
+      description: 'Plataforma independente de simulados médicos com questões autorais.',
+      email: 'contato@boramed.com.br',
+      inLanguage: 'pt-BR',
+    });
+    this.document.head.appendChild(organizationScript);
 
     const softwareScript = this.document.createElement('script');
     softwareScript.type = 'application/ld+json';
@@ -366,10 +392,22 @@ export class LandingComponent implements OnDestroy {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
       name: 'BoraMed',
+      url: siteUrl,
       applicationCategory: 'EducationalApplication',
+      applicationSubCategory: 'MedicalEducation',
       operatingSystem: 'Web',
+      inLanguage: 'pt-BR',
       description:
         'Plataforma independente de simulados médicos com questões autorais no modelo das avaliações.',
+      audience: {
+        '@type': 'Audience',
+        audienceType: 'Estudantes de medicina',
+      },
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'BRL',
+      },
     });
     this.document.head.appendChild(softwareScript);
 
