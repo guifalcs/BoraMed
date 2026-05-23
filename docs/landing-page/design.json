@@ -67,7 +67,7 @@
     },
     "typography": {
       "ui_font": "Inter",
-      "display_font": "Playfair Display",
+      "display_font": "Inter",
       "body_fallback": "Inter, Segoe UI, sans-serif",
       "hero": {
         "font_family": "Inter",

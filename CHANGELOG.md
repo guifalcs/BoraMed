@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-23 | Tweak | sem commit
+
+**Fonte externa simplificada**
+
+- Import global de fontes passou a carregar apenas Inter.
+- Playfair Display foi removida do CSS global, evitando uma familia externa usada em apenas um titulo.
+- Painel visual de auth foi alinhado ao Inter com peso maior, mantendo hierarquia sem custo adicional de fonte.
+
+---
+
 ## 2026-05-23 | Feat | sem commit
 
 **Sistema de notificacoes e avisos broadcast**

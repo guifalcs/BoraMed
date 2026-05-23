@@ -103,3 +103,9 @@
  **Data** : 2026-05
  **Decisao** : Assets raster usados na landing devem ser servidos em formatos e dimensoes adequados ao tamanho real de exibicao. PNGs grandes ficam reservados para casos que exigem transparencia ou fidelidade sem perdas.
  **Motivo** : Depois da reducao de JS e CSS, imagens passam a dominar o payload percebido. Redimensionar e comprimir assets publicos reduz tempo de carregamento, consumo de dados e tamanho do deploy sem alterar a experiencia funcional.
+
+## ADR-016: Fonte externa unica no frontend
+
+ **Data** : 2026-05
+ **Decisao** : O frontend carrega apenas Inter como familia externa global. Titulos e paineis devem reutilizar Inter ou fontes do sistema, salvo justificativa forte de marca.
+ **Motivo** : Cada familia adicional de fonte aumenta requisicoes, bytes e risco de troca visual tardia. Como Playfair Display era usada em apenas um titulo, o custo de carregamento era maior que o ganho de experiencia.

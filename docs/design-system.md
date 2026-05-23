@@ -45,13 +45,13 @@ Uso:
 Fontes:
 
 * **Texto e UI**: Inter.
-* **Display institucional**: Playfair Display, usada apenas em painéis de marca, onboarding e chamadas editoriais.
+* **Display institucional**: Inter em peso 800, reutilizando a mesma familia externa do produto.
 * **Enunciados e alternativas**: Inter, peso 400–500 para leitura longa.
 
 Hierarquia:
 
 ```text
-Display brand: 2.875rem / 600 / Playfair Display / line-height 0.98
+Display brand: 2.875rem / 800 / Inter / line-height 1.02
 Título de página: 2rem / 800 / Inter
 Título de seção: 1.25rem / 700 / Inter
 Texto de apoio: 1rem / 400 / Inter
@@ -106,7 +106,7 @@ Elementos:
 
 * Logo/monograma no topo, `48px`, `border-radius: 12px`, fundo branco com 14% de opacidade.
 * Nome `BoraMed` em Inter 800.
-* Headline em Playfair Display, com `em` itálico para a palavra de destaque.
+* Headline em Inter 800, com destaque por peso, escala e contraste.
 * Métricas em cards translúcidos com borda branca em 18% de opacidade.
 
 Exemplo de tom:

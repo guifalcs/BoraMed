@@ -75,10 +75,10 @@
 .brand-title {
   max-width: 31rem;
   margin: 0;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Inter, "Segoe UI", sans-serif;
   font-size: 2.875rem;
-  font-weight: 600;
-  line-height: 0.98;
+  font-weight: 800;
+  line-height: 1.02;
 }
 
 .brand-title em {
