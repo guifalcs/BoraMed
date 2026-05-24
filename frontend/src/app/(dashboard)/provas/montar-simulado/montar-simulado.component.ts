@@ -6,7 +6,7 @@ import {
   computed,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ChevronLeft, Shuffle, Filter, LoaderCircle } from 'lucide-angular';
+import { Shuffle, Filter, LoaderCircle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
 import type { MontarSimuladoResolvedData } from '../../../core/resolvers/montar-simulado.resolver';
@@ -72,7 +72,6 @@ export class MontarSimuladoComponent {
     { label: 'Montar simulado' },
   ];
 
-  protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly shuffleIcon = Shuffle;
   protected readonly filterIcon = Filter;
   protected readonly loaderIcon = LoaderCircle;

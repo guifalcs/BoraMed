@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-24 | UX | sem commit
+
+**Melhoria de navegação e orientação do usuário**
+
+- Criado componente reutilizável `PageHeaderComponent` com breadcrumbs contextuais e subtítulo em `shared/components/page-header/`.
+- Breadcrumbs adicionados em: Histórico, Perfil, Suporte, Simulados (home, treinos nacionais, montar simulado, detalhes da prova).
+- Bottom nav (mobile): indicador visual de barra superior na rota ativa com gradiente.
+- Admin sidebar: barra lateral branca na rota ativa para melhor distinção.
+- Atalho "Ir para o Suporte →" adicionado ao final da página de Perfil.
+- Links de retorno manuais (`← Simulados`) substituídos por breadcrumbs consistentes.
+- Subtítulos contextuais nas páginas principais para o usuário entender o que pode fazer.
+- Imports não utilizados removidos (ChevronLeft, UiIconComponent, RouterLink) das páginas refatoradas.
+
+---
+
 ## 2026-05-24 | Perf | sem commit
 
 **Prefetch, cache e skeletons para percepção de velocidade**

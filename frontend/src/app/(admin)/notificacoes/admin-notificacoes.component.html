@@ -7,15 +7,13 @@
   <h2 class="section-title">Enviar notificação</h2>
   <div class="form-col">
     <div class="form-row">
-      <select
-        class="form-input form-select"
-        [ngModel]="tipo()"
-        (ngModelChange)="tipo.set($event)"
-      >
-        @for (t of tiposDisponiveis; track t.value) {
-          <option [value]="t.value">{{ t.label }}</option>
-        }
-      </select>
+      <app-ui-select
+        label="Tipo"
+        name="tipo"
+        [options]="tiposDisponiveis"
+        [value]="tipo()"
+        (valueChange)="tipo.set($any($event))"
+      />
     </div>
     <div class="form-row">
       <input
@@ -197,7 +195,6 @@
     outline: none; width: 100%; font-family: inherit; box-sizing: border-box;
   }
   .form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
-  .form-select { cursor: pointer; }
   .form-textarea { resize: vertical; min-height: 5rem; }
 
   /* ── Autocomplete ── */

@@ -13,6 +13,7 @@ import { Send, RefreshCw, X, ChevronLeft, ChevronRight } from 'lucide-angular';
 import { AdminService, AdminNotificacao } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import type { Profile } from '../../core/models/auth.types';
 
 const PAGE_SIZE = 20;
@@ -22,7 +23,7 @@ type NotifTipo = 'sistema' | 'conquista' | 'info' | 'aviso';
 @Component({
   selector: 'app-admin-notificacoes',
   standalone: true,
-  imports: [FormsModule, UiIconComponent],
+  imports: [FormsModule, UiIconComponent, UiSelectComponent],
   templateUrl: './admin-notificacoes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -62,7 +63,7 @@ export class AdminNotificacoesComponent implements OnInit {
   protected readonly iconPrev = ChevronLeft;
   protected readonly iconNext = ChevronRight;
 
-  protected readonly tiposDisponiveis: { value: NotifTipo; label: string }[] = [
+  protected readonly tiposDisponiveis: SelectOption[] = [
     { value: 'info', label: 'Info' },
     { value: 'sistema', label: 'Sistema' },
     { value: 'aviso', label: 'Aviso' },
