@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ChevronLeft } from 'lucide-angular';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -15,13 +14,13 @@ import type { ProvaComFaculdade } from '../../../core/models/prova';
 import type { ModoProva, Tentativa } from '../../../core/models/tentativa';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
-import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-prova-detalhe',
   standalone: true,
-  imports: [RouterLink, ModoSelectorComponent, UiButtonComponent, UiIconComponent, EmptyStateComponent],
+  imports: [RouterLink, ModoSelectorComponent, UiButtonComponent, EmptyStateComponent, PageHeaderComponent],
   templateUrl: './prova-detalhe.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -32,7 +31,11 @@ export class ProvaDetalheComponent implements OnInit {
   private readonly tentativaService = inject(TentativaService);
   private readonly notifications = inject(NotificationService);
 
-  protected readonly chevronLeftIcon = ChevronLeft;
+  protected readonly breadcrumbs: Breadcrumb[] = [
+    { label: 'Início', route: '/dashboard' },
+    { label: 'Simulados', route: '/dashboard/simulados' },
+    { label: 'Detalhes da prova' },
+  ];
 
   protected readonly prova = signal<ProvaComFaculdade | null>(null);
   protected readonly isLoading = signal(true);

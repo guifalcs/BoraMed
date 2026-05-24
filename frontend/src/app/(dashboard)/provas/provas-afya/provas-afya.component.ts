@@ -15,11 +15,12 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { UiMultiselectComponent } from '../../../shared/components/ui/multiselect/ui-multiselect.component';
 import type { SelectOption } from '../../../shared/components/ui/select/ui-select.component';
+import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-provas-afya',
   standalone: true,
-  imports: [RouterLink, ProvaCardComponent, EmptyStateComponent, UiIconComponent, UiMultiselectComponent],
+  imports: [RouterLink, ProvaCardComponent, EmptyStateComponent, UiIconComponent, UiMultiselectComponent, PageHeaderComponent],
   templateUrl: './provas-afya.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -27,6 +28,12 @@ export class ProvasAfyaComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly provaService = inject(ProvaService);
   private readonly router = inject(Router);
+
+  protected readonly breadcrumbs: Breadcrumb[] = [
+    { label: 'Início', route: '/dashboard' },
+    { label: 'Simulados', route: '/dashboard/simulados' },
+    { label: 'Treinos nacionais' },
+  ];
 
   protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly stethoscopeIcon = Stethoscope;

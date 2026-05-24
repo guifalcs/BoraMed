@@ -75,6 +75,18 @@
   background: rgba(255, 255, 255, 0.22);
   color: #ffffff;
   font-weight: 600;
+  position: relative;
+}
+
+.admin-nav-item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #ffffff;
 }
 
 /* ── Footer ── */

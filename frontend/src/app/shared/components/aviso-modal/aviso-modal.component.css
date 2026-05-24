@@ -55,7 +55,7 @@
 }
 
 .aviso-body {
-  padding: 1.25rem 1.5rem 0;
+  padding: 1.25rem 1.5rem 1.5rem;
 }
 
 .aviso-titulo {
@@ -71,24 +71,4 @@
   margin: 0;
   line-height: 1.6;
   white-space: pre-line;
-}
-
-.btn-fechar {
-  display: block;
-  width: calc(100% - 3rem);
-  margin: 1.25rem 1.5rem 1.5rem;
-  padding: 0.625rem 1rem;
-  border: 1.5px solid #d1d5db;
-  border-radius: 0.5rem;
-  background: transparent;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.btn-fechar:hover {
-  background: #f3f4f6;
-  color: #111827;
 }

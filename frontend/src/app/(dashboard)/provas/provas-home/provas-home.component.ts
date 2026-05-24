@@ -3,16 +3,22 @@ import { RouterLink } from '@angular/router';
 import { BookOpen, PlayCircle, Shuffle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
+import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-provas-home',
   standalone: true,
-  imports: [RouterLink, UiIconComponent],
+  imports: [RouterLink, UiIconComponent, PageHeaderComponent],
   templateUrl: './provas-home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProvasHomeComponent {
   private readonly tentativaService = inject(TentativaService);
+
+  protected readonly breadcrumbs: Breadcrumb[] = [
+    { label: 'Início', route: '/dashboard' },
+    { label: 'Simulados' },
+  ];
 
   protected readonly bookOpenIcon = BookOpen;
   protected readonly shuffleIcon = Shuffle;

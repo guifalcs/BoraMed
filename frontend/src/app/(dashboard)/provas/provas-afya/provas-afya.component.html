@@ -1,14 +1,10 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-6xl">
-    <a routerLink="/dashboard/simulados" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
-      <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
-      Simulados
-    </a>
-
-    <div class="mb-6">
-      <h1 class="text-2xl font-extrabold text-[var(--color-text)]">{{ titulo() }}</h1>
-      <p class="mt-1 text-sm text-[var(--color-text-muted)]">{{ descricao() }}</p>
-    </div>
+    <app-page-header
+      [titulo]="titulo()"
+      [subtitulo]="descricao()"
+      [breadcrumbs]="breadcrumbs"
+    />
 
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
       <div class="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">

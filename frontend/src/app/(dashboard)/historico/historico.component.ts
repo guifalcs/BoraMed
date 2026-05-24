@@ -25,6 +25,7 @@ import { EvolucaoNotaChartComponent } from '../../shared/components/evolucao-not
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { DataTableComponent, type DataTableColumn } from '../../shared/components/data-table/data-table.component';
 import { DataTableColumnDirective } from '../../shared/components/data-table/data-table-column.directive';
+import { PageHeaderComponent, type Breadcrumb } from '../../shared/components/page-header/page-header.component';
 
 type FiltroPeriodo = 'todos' | 'semana' | 'mes' | 'semestre';
 type FiltroTipo = 'todos' | 'nacional' | 'processual' | 'laboratorio';
@@ -40,13 +41,18 @@ interface KpiData {
 @Component({
   selector: 'app-historico',
   standalone: true,
-  imports: [RouterLink, KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective],
+  imports: [RouterLink, KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective, PageHeaderComponent],
   templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoricoComponent {
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  protected readonly breadcrumbs: Breadcrumb[] = [
+    { label: 'Início', route: '/dashboard' },
+    { label: 'Histórico' },
+  ];
 
   protected readonly isLoadingKpis = signal(true);
   protected readonly isLoadingTemas = signal(true);

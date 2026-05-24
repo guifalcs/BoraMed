@@ -41,12 +41,14 @@
   pointer-events: none;
 }
 
+/* ── Dropdown base ── */
 .dropdown {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  z-index: 200;
+  z-index: 1000;
   width: 320px;
+  max-width: calc(100vw - 1rem);
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
@@ -55,12 +57,23 @@
   overflow: hidden;
 }
 
-/* No sidebar: abre para cima e alinha à esquerda */
-.dropdown--sidebar {
+/* Abre para cima (absolute) */
+.dropdown--open-up:not(.dropdown--fixed) {
   top: auto;
   bottom: calc(100% + 0.5rem);
-  right: auto;
-  left: 0;
+}
+
+/* Sidebar: position fixed, coordenadas via [style] */
+.dropdown--fixed {
+  position: fixed;
+  top: unset;
+  right: unset;
+  /* top e left injetados via binding */
+}
+
+/* Sidebar + abre para cima: translada para cima pela própria altura */
+.dropdown--fixed.dropdown--open-up {
+  transform: translateY(calc(-100% - 8px));
 }
 
 @keyframes fade-in {
@@ -68,6 +81,28 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Sidebar + abre para cima tem animação invertida */
+.dropdown--open-up {
+  animation: fade-in-up 0.15s ease-out;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Sidebar + abre para cima: translateY combinado */
+.dropdown--fixed.dropdown--open-up {
+  animation: fade-in-up-fixed 0.15s ease-out;
+  transform: translateY(calc(-100% - 8px));
+}
+
+@keyframes fade-in-up-fixed {
+  from { opacity: 0; transform: translateY(calc(-100% - 8px + 6px)); }
+  to   { opacity: 1; transform: translateY(calc(-100% - 8px)); }
+}
+
+/* ── Conteúdo ── */
 .dropdown-header {
   display: flex;
   align-items: center;
@@ -174,4 +209,23 @@
   margin-top: 0.3rem;
   border-radius: 50%;
   background: #6366f1;
+}
+
+/* Telas muito pequenas: ocupa a largura do viewport sem vazar em nenhum lado */
+@media (max-width: 400px) {
+  .dropdown:not(.dropdown--fixed) {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 68px; /* header (60px) + gap (8px) */
+    width: auto;
+    max-width: none;
+    max-height: 70vh;
+  }
+
+  /* Em mobile o botão fica no topo — sempre abre pra baixo, ignora --open-up */
+  .dropdown--open-up:not(.dropdown--fixed) {
+    bottom: auto;
+    top: 68px;
+  }
 }

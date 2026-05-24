@@ -13,7 +13,15 @@
   </button>
 
   @if (aberto()) {
-    <div class="dropdown" [class.dropdown--sidebar]="sidebar()" role="menu" aria-label="Notificações">
+    <div
+      class="dropdown"
+      [class.dropdown--open-up]="sidebar() ? !!fixedPos()?.openUp : openUp()"
+      [class.dropdown--fixed]="sidebar()"
+      [style.top.px]="sidebar() && fixedPos() ? fixedPos()!.top : null"
+      [style.left.px]="sidebar() && fixedPos() ? fixedPos()!.left : null"
+      role="menu"
+      aria-label="Notificações"
+    >
       <div class="dropdown-header">
         <span class="dropdown-titulo">Notificações</span>
         @if (naoLidas() > 0) {

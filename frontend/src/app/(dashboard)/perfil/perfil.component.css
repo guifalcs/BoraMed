@@ -7,7 +7,7 @@
 /* ── Header ──────────────────────────────────────────── */
 
 .perfil-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 
 .perfil-title {
@@ -748,4 +748,36 @@
   .perfil-conquistas-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ── Atalho suporte ── */
+.perfil-suporte-link {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.perfil-suporte-text {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.perfil-suporte-anchor {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.13s;
+}
+
+.perfil-suporte-anchor:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
 }

@@ -1,7 +1,10 @@
 <div class="perfil-page">
   <header class="perfil-header">
-    <h1 class="perfil-title">Meu Perfil</h1>
-    <p class="perfil-subtitle">Gerencie suas informações pessoais e senha de acesso.</p>
+    <app-page-header
+      titulo="Meu Perfil"
+      subtitulo="Gerencie suas informações pessoais e senha de acesso."
+      [breadcrumbs]="breadcrumbs"
+    />
   </header>
 
   <div class="perfil-card">
@@ -380,6 +383,12 @@
       </section>
 
     }
+
+    <!-- Atalho para suporte -->
+    <div class="perfil-suporte-link">
+      <p class="perfil-suporte-text">Precisa de ajuda ou quer relatar um problema?</p>
+      <a routerLink="/dashboard/suporte" class="perfil-suporte-anchor">Ir para o Suporte →</a>
+    </div>
 
   </div>
 </div>

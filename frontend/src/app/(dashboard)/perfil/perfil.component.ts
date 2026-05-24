@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Award, Camera, Flame, LucideIconData, Medal, Shield, Trash2, Trophy } from 'lucide-angular';
 import { UiAvatarComponent } from '../../shared/components/ui/avatar/ui-avatar.component';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
+import { PageHeaderComponent, type Breadcrumb } from '../../shared/components/page-header/page-header.component';
 import { updateProfileSchema, changePasswordSchema } from '../../core/models/profile.schemas';
 import { ProfileService } from '../../core/services/profile.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -38,7 +40,7 @@ const FACULDADE_REDE_OPTIONS: SelectOption<string>[] = [
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [UiAvatarComponent, UiButtonComponent, UiInputComponent, UiIconComponent, UiSelectComponent],
+  imports: [RouterLink, UiAvatarComponent, UiButtonComponent, UiInputComponent, UiIconComponent, UiSelectComponent, PageHeaderComponent],
   templateUrl: './perfil.component.html',
   styleUrl: './perfil.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +51,11 @@ export class PerfilComponent {
   private readonly gamificacaoService = inject(GamificacaoService);
   private readonly conquistaService = inject(ConquistaService);
   private readonly toast = inject(NotificationService);
+
+  protected readonly breadcrumbs: Breadcrumb[] = [
+    { label: 'Início', route: '/dashboard' },
+    { label: 'Perfil' },
+  ];
 
   protected readonly cameraIcon: LucideIconData = Camera;
   protected readonly trashIcon: LucideIconData = Trash2;

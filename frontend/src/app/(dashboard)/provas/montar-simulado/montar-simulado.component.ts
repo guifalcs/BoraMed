@@ -5,7 +5,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ChevronLeft, Shuffle, Filter, LoaderCircle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
@@ -15,6 +15,7 @@ import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
+import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
 type FormatoSimulado = 'todos' | 'nacional' | 'processual' | 'laboratorio';
 
@@ -55,7 +56,7 @@ const FORMATOS: OpcaoFormato[] = [
 @Component({
   selector: 'app-montar-simulado',
   standalone: true,
-  imports: [RouterLink, UiButtonComponent, UiIconComponent, ModoSelectorComponent],
+  imports: [UiButtonComponent, UiIconComponent, ModoSelectorComponent, PageHeaderComponent],
   templateUrl: './montar-simulado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -64,6 +65,12 @@ export class MontarSimuladoComponent {
   private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
   private readonly temaService = inject(TemaService);
+
+  protected readonly breadcrumbs: Breadcrumb[] = [
+    { label: 'Início', route: '/dashboard' },
+    { label: 'Simulados', route: '/dashboard/simulados' },
+    { label: 'Montar simulado' },
+  ];
 
   protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly shuffleIcon = Shuffle;

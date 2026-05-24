@@ -378,5 +378,18 @@
 
   .bottom-nav-item--active {
     color: #1d4ed8;
+    position: relative;
+  }
+
+  .bottom-nav-item--active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1.5rem;
+    height: 2.5px;
+    border-radius: 0 0 2px 2px;
+    background: linear-gradient(90deg, #1e40af, #7c3aed);
   }
 }

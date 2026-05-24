@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   HostListener,
   OnInit,
   computed,
@@ -13,6 +14,15 @@ import { AppNotificacaoService } from '../../../core/services/app-notification.s
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 import type { AppNotificacao } from '../../../core/models/app-notification.types';
 
+interface DropdownPos {
+  top: number;
+  left: number;
+  openUp: boolean;
+}
+
+const DROPDOWN_ESTIMATED_H = 380;
+const DROPDOWN_GAP = 8;
+
 @Component({
   selector: 'app-notificacoes-sino',
   standalone: true,
@@ -23,11 +33,17 @@ import type { AppNotificacao } from '../../../core/models/app-notification.types
 })
 export class NotificacoesSinoComponent implements OnInit {
   private readonly notifService = inject(AppNotificacaoService);
+  private readonly elRef = inject(ElementRef);
 
-  /** Quando true, o dropdown abre para cima e alinhado à esquerda (uso no sidebar). */
+  /** Quando true, usa position:fixed calculado para escapar do overflow:hidden do sidebar. */
   sidebar = input(false);
 
   protected readonly aberto = signal(false);
+  /** Posição calculada para modo sidebar (position:fixed). */
+  protected readonly fixedPos = signal<DropdownPos | null>(null);
+  /** Direção para modo não-sidebar (position:absolute via CSS). */
+  protected readonly openUp = signal(false);
+
   protected readonly iconBell = Bell;
   protected readonly iconCheck = CheckCheck;
   protected readonly notificacoes = this.notifService.notificacoes;
@@ -42,7 +58,24 @@ export class NotificacoesSinoComponent implements OnInit {
   }
 
   protected toggleAberto(): void {
-    this.aberto.update(v => !v);
+    const next = !this.aberto();
+    if (next) {
+      const rect = (this.elRef.nativeElement as HTMLElement).getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const shouldOpenUp = spaceBelow < DROPDOWN_ESTIMATED_H && spaceAbove > spaceBelow;
+
+      if (this.sidebar()) {
+        this.fixedPos.set({
+          top: shouldOpenUp ? rect.top : rect.bottom + DROPDOWN_GAP,
+          left: rect.right + DROPDOWN_GAP,
+          openUp: shouldOpenUp,
+        });
+      } else {
+        this.openUp.set(shouldOpenUp);
+      }
+    }
+    this.aberto.set(next);
   }
 
   protected async marcarLida(notif: AppNotificacao): Promise<void> {

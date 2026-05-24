@@ -1,9 +1,9 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-3xl">
-    <a [routerLink]="backRoute()" class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
-      <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
-      Simulados
-    </a>
+    <app-page-header
+      titulo="Detalhes da prova"
+      [breadcrumbs]="breadcrumbs"
+    />
 
     @if (isLoading()) {
       <div class="space-y-4">

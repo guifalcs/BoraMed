@@ -1,7 +1,10 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-5xl">
-    <h1 class="mb-1 text-2xl font-extrabold text-[var(--color-text)]">Simulados</h1>
-    <p class="mb-8 text-sm text-[var(--color-text-muted)]">Escolha o tipo de treino para começar.</p>
+    <app-page-header
+      titulo="Simulados"
+      subtitulo="Escolha o tipo de treino para começar."
+      [breadcrumbs]="breadcrumbs"
+    />
 
     @if (resumoTentativaAtiva()) {
       <a
