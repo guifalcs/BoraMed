@@ -43,6 +43,17 @@
             role="menuitem"
             (click)="marcarLida(n)"
           >
+            <span
+              class="tipo-icon"
+              [style.background]="tipoConfig(n.tipo).bg"
+              [attr.aria-label]="n.tipo"
+            >
+              <app-ui-icon
+                [icon]="tipoConfig(n.tipo).icon"
+                [size]="14"
+                [style.color]="tipoConfig(n.tipo).color"
+              />
+            </span>
             <div class="item-conteudo">
               <span class="item-titulo">{{ n.titulo }}</span>
               @if (n.mensagem) {

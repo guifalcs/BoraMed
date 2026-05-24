@@ -9,10 +9,31 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { Bell, CheckCheck } from 'lucide-angular';
+import {
+  AlertTriangle,
+  Bell,
+  CheckCheck,
+  Info,
+  LucideIconData,
+  Trophy,
+  Zap,
+} from 'lucide-angular';
 import { AppNotificacaoService } from '../../../core/services/app-notification.service';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
-import type { AppNotificacao } from '../../../core/models/app-notification.types';
+import type { AppNotificacao, AppNotificacaoTipo } from '../../../core/models/app-notification.types';
+
+interface TipoConfig {
+  icon: LucideIconData;
+  bg: string;
+  color: string;
+}
+
+const TIPO_CONFIG: Record<AppNotificacaoTipo, TipoConfig> = {
+  info:      { icon: Info,          bg: '#dbeafe', color: '#1d4ed8' },
+  sistema:   { icon: Zap,           bg: '#ede9fe', color: '#6d28d9' },
+  aviso:     { icon: AlertTriangle, bg: '#fef3c7', color: '#92400e' },
+  conquista: { icon: Trophy,        bg: '#d1fae5', color: '#065f46' },
+};
 
 interface DropdownPos {
   top: number;
@@ -46,6 +67,8 @@ export class NotificacoesSinoComponent implements OnInit {
 
   protected readonly iconBell = Bell;
   protected readonly iconCheck = CheckCheck;
+  protected readonly tipoConfig = (tipo: AppNotificacaoTipo): TipoConfig =>
+    TIPO_CONFIG[tipo] ?? TIPO_CONFIG.info;
   protected readonly notificacoes = this.notifService.notificacoes;
   protected readonly naoLidas = this.notifService.naoLidas;
   protected readonly badgeLabel = computed(() => {
