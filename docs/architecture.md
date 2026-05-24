@@ -115,3 +115,9 @@
  **Data** : 2026-05
  **Decisao** : O build Angular permite explicitamente o pacote `cookie` como dependencia CommonJS conhecida.
  **Motivo** : `cookie` e usado internamente por `@supabase/ssr@0.10.3`, versao mais recente disponivel no momento da decisao. O allowlist remove ruido de build para esse caso auditado sem desativar alertas para novos pacotes CommonJS.
+
+## ADR-018: Prefetch de rotas e cache leve para percepcao de velocidade
+
+ **Data** : 2026-05
+ **Decisao** : Apos login, carregar chunks das rotas mais provaveis em idle time. Dados dos resolvers do dashboard sao cacheados em sessionStorage com TTL de 5 min (stale-while-revalidate).
+ **Motivo** : Reduz tela em branco apos login e entre navegacoes do aluno. O cache e limpo no logout. Nenhum dado sensivel alem do necessario para UX e cacheado. Rotas admin nao sao pre-carregadas.

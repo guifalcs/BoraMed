@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { PrefetchService } from '../../core/services/prefetch.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -12,6 +13,7 @@ export class AuthCallbackComponent implements OnInit {
   private readonly supabase = inject(SupabaseService).client;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly prefetch = inject(PrefetchService);
 
   async ngOnInit(): Promise<void> {
     const code = this.route.snapshot.queryParamMap.get('code');
@@ -25,6 +27,7 @@ export class AuthCallbackComponent implements OnInit {
       }
     }
 
+    this.prefetch.prefetchDashboardRoutes();
     void this.router.navigateByUrl(next.startsWith('/') ? next : '/dashboard', { replaceUrl: true });
   }
 }

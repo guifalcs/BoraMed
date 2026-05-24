@@ -5,6 +5,7 @@ import { GamificacaoService } from '../services/gamificacao.service';
 import { HistoricoService } from '../services/historico.service';
 import { RankingService } from '../services/ranking.service';
 import { DesafioService } from '../services/desafio.service';
+import { CacheService } from '../services/cache.service';
 import type { DesafioDiario, GamificacaoStats, MinhaPosicaoRanking, StreakEstudoV2 } from '../models/gamificacao';
 import type { HistoricoKpis, TentativaHistoricoItem } from '../models/historico';
 
@@ -19,6 +20,8 @@ export interface InicioResolvedData {
 
 const INICIO_STATE_KEY = makeStateKey<InicioResolvedData>('inicio-data');
 
+const INICIO_CACHE_KEY = 'inicio_data';
+
 export const inicioResolver: ResolveFn<InicioResolvedData> = async () => {
   const transferState = inject(TransferState);
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -26,11 +29,19 @@ export const inicioResolver: ResolveFn<InicioResolvedData> = async () => {
   const gamificacaoService = inject(GamificacaoService);
   const rankingService = inject(RankingService);
   const desafioService = inject(DesafioService);
+  const cache = inject(CacheService);
 
   if (isBrowser && transferState.hasKey(INICIO_STATE_KEY)) {
     const data = transferState.get(INICIO_STATE_KEY, null) as InicioResolvedData;
     transferState.remove(INICIO_STATE_KEY);
+    cache.set(INICIO_CACHE_KEY, data);
     return data;
+  }
+
+  // Stale-while-revalidate: return cached data immediately if fresh enough
+  const cached = isBrowser ? cache.get<InicioResolvedData>(INICIO_CACHE_KEY) : null;
+  if (cached && !cache.isStale(INICIO_CACHE_KEY)) {
+    return cached;
   }
 
   const [kpisResult, tentativasResult, streakResult, gamificacaoResult, rankingPosicaoResult, desafioResult] = await Promise.all([
@@ -53,6 +64,8 @@ export const inicioResolver: ResolveFn<InicioResolvedData> = async () => {
 
   if (!isBrowser) {
     transferState.set(INICIO_STATE_KEY, resolved);
+  } else {
+    cache.set(INICIO_CACHE_KEY, resolved);
   }
 
   return resolved;

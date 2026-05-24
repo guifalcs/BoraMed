@@ -5,11 +5,13 @@ import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import type { LoginInput, RecoverPasswordInput, ResetPasswordInput, SignupInput } from '../models/auth.schemas';
 import type { AuthErrorCode, AuthResult, ImpersonacaoInfo } from '../models/auth.types';
 import { SupabaseService } from './supabase.service';
+import { CacheService } from './cache.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements OnDestroy {
   private readonly supabase = inject(SupabaseService).client;
   private readonly router = inject(Router);
+  private readonly cache = inject(CacheService);
 
   private readonly _user = signal<User | null>(null);
   private readonly _isReady = signal(false);
@@ -117,6 +119,7 @@ export class AuthService implements OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
       this._impersonando.set(null);
+      this.cache.clear();
     }
     await this.supabase.auth.signOut();
   }

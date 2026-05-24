@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-05-24 | Perf | sem commit
+
+**Prefetch, cache e skeletons para percepção de velocidade**
+
+- `PrefetchService` criado: após login ou auth-callback, carrega os chunks das rotas mais prováveis (`dashboard`, `simulados`, `historico`, `perfil`) durante idle time via `requestIdleCallback`.
+- `CacheService` criado: cache leve em memória + `sessionStorage` com TTL de 5 min (stale-while-revalidate).
+- Resolvers `inicioResolver` e `historicoResolver` agora retornam dados cacheados instantaneamente quando disponíveis e frescos, eliminando espera na navegação interna.
+- Cache é limpo automaticamente no `signOut`.
+- `SkeletonComponent` reutilizável adicionado a `shared/components/` com variantes `text`, `card`, `kpi`, `row`.
+- Nenhum dado sensível é cacheado além do necessário para UX. Rotas admin e fluxos raros não são pré-carregados.
+
+---
+
+## 2026-05-23 | Perf | sem commit
+
+**Otimizacao de imagens e compressao de uploads**
+
+- Imagens estaticas convertidas de PNG/JPG para WebP com redimensionamento adequado ao uso na UI.
+- Peso total de imagens em `frontend/public` reduzido de ~6.2 MB para ~437 KB (economia de 93%).
+- Utilitario `image-compress.util.ts` criado para pre-processamento de imagens no cliente antes de upload.
+- Uploads de questoes, avatares e avisos agora comprimem automaticamente para WebP (max 1200px, qualidade 82%).
+- Logo para email otimizada separadamente (PNG, 2 KB) por compatibilidade com clientes de email.
+- Imagens originais pesadas removidas do deploy.
+
+---
+
 ## 2026-05-23 | Tweak | sem commit
 
 **Warning CommonJS do Supabase SSR**

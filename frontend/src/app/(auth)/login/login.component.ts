@@ -5,6 +5,7 @@ import { UiInputComponent } from '../../shared/components/ui/input/ui-input.comp
 import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-panel.component';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { PrefetchService } from '../../core/services/prefetch.service';
 import { loginSchema } from '../../core/models/auth.schemas';
 import type { AuthErrorCode } from '../../core/models/auth.types';
 
@@ -21,6 +22,7 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(NotificationService);
+  private readonly prefetch = inject(PrefetchService);
 
   protected readonly email = signal('');
   protected readonly password = signal('');
@@ -58,6 +60,7 @@ export class LoginComponent {
 
     if (result.ok) {
       this.toast.success('Bem-vindo de volta!');
+      this.prefetch.prefetchDashboardRoutes();
       void this.router.navigate(['/dashboard']);
     } else {
       this.errorCode.set(result.error);
