@@ -13,7 +13,7 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
         codigo="403"
         titulo="Acesso restrito"
         mensagem="Você não tem prontuário liberado para acessar essa área."
-        ilustracao="illustrations/403.png"
+        ilustracao="illustrations/403.webp"
         [acoes]="acoes"
         (acaoClick)="onAcaoClick($event)"
       />

@@ -141,7 +141,7 @@ export class LandingComponent implements OnDestroy {
       icon: Stethoscope,
       variant: 'national',
       image: {
-        src: '/landing-page/modo-nacional.jpg',
+        src: '/landing-page/modo-nacional.webp',
         alt: 'Interface de treino nacional BoraMed com questões e score',
         width: 1672,
         height: 941,
@@ -155,7 +155,7 @@ export class LandingComponent implements OnDestroy {
       icon: ClipboardList,
       variant: 'process',
       image: {
-        src: '/landing-page/modo-processual.jpg',
+        src: '/landing-page/modo-processual.webp',
         alt: 'Seleção de temas médicos para simulado processual',
         width: 1672,
         height: 941,
@@ -169,7 +169,7 @@ export class LandingComponent implements OnDestroy {
       icon: FlaskConical,
       variant: 'lab',
       image: {
-        src: '/landing-page/modo-laboratorio.jpg',
+        src: '/landing-page/modo-laboratorio.webp',
         alt: 'Questão de laboratório com lâmina histológica',
         width: 1672,
         height: 941,
@@ -384,7 +384,7 @@ export class LandingComponent implements OnDestroy {
       '@type': 'Organization',
       name: 'BoraMed',
       url: siteUrl,
-      logo: `${siteUrl}/logo.png`,
+      logo: `${siteUrl}/logo.webp`,
       description: 'Plataforma independente de simulados médicos com questões autorais.',
       email: 'contato@boramed.com.br',
       inLanguage: 'pt-BR',

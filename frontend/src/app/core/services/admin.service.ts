@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { compressImage } from '../utils/image-compress.util';
 import type { Profile } from '../models/auth.types';
 
 export interface AdminDisciplina {
@@ -174,6 +175,17 @@ export interface AdminAviso {
   mensagem: string | null;
   imagem_url: string;
   ativo: boolean;
+  criado_em: string;
+}
+
+export interface AdminNotificacao {
+  id: string;
+  user_id: string;
+  user_email: string;
+  tipo: string;
+  titulo: string;
+  mensagem: string | null;
+  lida: boolean;
   criado_em: string;
 }
 
@@ -723,14 +735,46 @@ export class AdminService {
   }
 
   async uploadImagemAviso(file: File): Promise<ServiceResult<string>> {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await this.supabase.storage.from('avisos').upload(path, file, {
-      contentType: file.type,
+    let processedFile: File;
+    try {
+      processedFile = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
+    } catch {
+      processedFile = file;
+    }
+
+    const path = `${crypto.randomUUID()}.webp`;
+    const { error } = await this.supabase.storage.from('avisos').upload(path, processedFile, {
+      contentType: processedFile.type,
       upsert: false,
     });
     if (error) return { ok: false, error: error.message };
     const { data } = this.supabase.storage.from('avisos').getPublicUrl(path);
     return { ok: true, data: data.publicUrl };
+  }
+
+  // ---- Notificações in-app ----
+
+  async enviarNotificacao(
+    tipo: string,
+    titulo: string,
+    mensagem: string | null,
+    userId: string | null,
+  ): Promise<ServiceResult<number>> {
+    const { data, error } = await this.supabase.rpc('admin_enviar_notificacao', {
+      p_tipo: tipo,
+      p_titulo: titulo,
+      p_mensagem: mensagem,
+      p_user_id: userId,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as number };
+  }
+
+  async listarNotificacoesEnviadas(limit = 100): Promise<ServiceResult<AdminNotificacao[]>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_notificacoes', {
+      p_limit: limit,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminNotificacao[] };
   }
 }

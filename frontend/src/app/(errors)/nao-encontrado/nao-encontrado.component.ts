@@ -12,7 +12,7 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
         codigo="404"
         titulo="Página não diagnosticada"
         mensagem="A URL que você buscou não consta no prontuário do sistema."
-ilustracao="illustrations/404.png"
+ilustracao="illustrations/404.webp"
         [acoes]="acoes"
         (acaoClick)="onAcaoClick($event)"
       />

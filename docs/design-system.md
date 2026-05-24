@@ -352,3 +352,13 @@ Padrões:
 * Doughnut para composição do banco de questões por status.
 * Barras menores para movimento do dia.
 * Sinais operacionais derivados das estatísticas existentes, sem buscar dados sensíveis adicionais no cliente.
+
+## Imagens
+
+* Formato padrão: **WebP** para todas as imagens estáticas e uploads.
+* Ilustrações de estado (erro, onboarding): max 600px de largura.
+* Imagens de landing page: max 800px de largura.
+* Logo: max 400px, servida em WebP (logo.webp, logoBranca.webp).
+* Logo para email: PNG separado (logoBranca-email.png) por compatibilidade.
+* Uploads do usuário/admin: comprimidos automaticamente no cliente para WebP (max 1200px, qualidade 82%) via `core/utils/image-compress.util.ts`.
+* Avatares: max 512px, WebP, qualidade 80%.

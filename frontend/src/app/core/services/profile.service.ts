@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
+import { compressImage } from '../utils/image-compress.util';
 import type { Profile } from '../models/auth.types';
 import type { ChangePasswordInput, UpdateProfileInput } from '../models/profile.schemas';
 
@@ -92,12 +93,12 @@ export class ProfileService {
     if (!user) return { ok: false, error: 'Usuário não autenticado.' };
 
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg';
-      const path = `${user.id}/avatar.${ext}`;
+      const compressed = await compressImage(file, { maxWidth: 512, maxHeight: 512, quality: 0.80 });
+      const path = `${user.id}/avatar.webp`;
 
       const { error: uploadError } = await this.supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true });
+        .upload(path, compressed, { upsert: true, contentType: compressed.type });
 
       if (uploadError) throw uploadError;
 

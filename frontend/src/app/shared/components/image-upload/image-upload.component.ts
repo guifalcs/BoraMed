@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { Image, Loader } from 'lucide-angular';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { compressImage } from '../../../core/utils/image-compress.util';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 const BUCKET = 'questao-imagens';
@@ -169,9 +170,18 @@ export class ImageUploadComponent {
     // Só deleta upload anterior *desta sessão*, nunca a currentUrl original
     if (this._sessionUrl) await this.deletarDoStorage(this._sessionUrl);
 
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `questoes/${crypto.randomUUID()}.${ext}`;
-    const { data, error } = await this.supabase.storage.from(BUCKET).upload(path, file);
+    // Comprimir imagem antes do upload
+    let processedFile: File;
+    try {
+      processedFile = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
+    } catch {
+      processedFile = file;
+    }
+
+    const path = `questoes/${crypto.randomUUID()}.webp`;
+    const { data, error } = await this.supabase.storage.from(BUCKET).upload(path, processedFile, {
+      contentType: processedFile.type,
+    });
 
     this.uploading.set(false);
 
