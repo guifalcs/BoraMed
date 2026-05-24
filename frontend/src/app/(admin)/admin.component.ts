@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LucideIconData,
   LogOut,
+  Send,
   Settings,
   Tag,
   Upload,
@@ -54,6 +55,7 @@ export class AdminComponent {
     { label: 'Temas', icon: Tag, route: '/admin/temas' },
     { label: 'Importar', icon: Upload, route: '/admin/importar' },
     { label: 'Avisos', icon: Bell, route: '/admin/avisos' },
+    { label: 'Notificações', icon: Send, route: '/admin/notificacoes' },
   ];
 
   protected toggleMenu(): void {

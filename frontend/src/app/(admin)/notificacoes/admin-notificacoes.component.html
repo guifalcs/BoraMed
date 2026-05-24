@@ -1,0 +1,334 @@
+<div class="page-header">
+  <h1 class="page-title">Notificações</h1>
+  <p class="page-subtitle">Envie notificações in-app para um usuário específico ou para todos os usuários.</p>
+</div>
+
+<div class="create-form">
+  <h2 class="section-title">Enviar notificação</h2>
+  <div class="form-col">
+    <div class="form-row">
+      <select
+        class="form-input form-select"
+        [ngModel]="tipo()"
+        (ngModelChange)="tipo.set($event)"
+      >
+        @for (t of tiposDisponiveis; track t.value) {
+          <option [value]="t.value">{{ t.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-row">
+      <input
+        class="form-input"
+        type="text"
+        placeholder="Título *"
+        [ngModel]="titulo()"
+        (ngModelChange)="titulo.set($event)"
+      />
+    </div>
+    <div class="form-row">
+      <textarea
+        class="form-input form-textarea"
+        placeholder="Mensagem (opcional)"
+        rows="3"
+        [ngModel]="mensagem()"
+        (ngModelChange)="mensagem.set($event)"
+      ></textarea>
+    </div>
+
+    <!-- Autocomplete de usuário -->
+    <div class="autocomplete-wrapper">
+      <div class="autocomplete-input-row">
+        <input
+          class="form-input autocomplete-input"
+          type="text"
+          [placeholder]="usuarioSelecionado() ? '' : 'Pesquisar usuário (deixe vazio para enviar a todos)'"
+          [ngModel]="buscaTexto()"
+          (ngModelChange)="onBuscaInput($event)"
+          autocomplete="off"
+        />
+        @if (buscando()) {
+          <span class="autocomplete-spinner"></span>
+        } @else if (usuarioSelecionado()) {
+          <button class="autocomplete-clear" type="button" aria-label="Limpar seleção" (click)="limparUsuario()">
+            <app-ui-icon [icon]="iconX" [size]="14" />
+          </button>
+        }
+      </div>
+
+      @if (usuarioSelecionado(); as u) {
+        <div class="usuario-selecionado">
+          <span class="usuario-nome">{{ u.nome_completo ?? u.email }}</span>
+          @if (u.nome_completo) {
+            <span class="usuario-email">{{ u.email }}</span>
+          }
+        </div>
+      }
+
+      @if (dropdownAberto()) {
+        <ul class="autocomplete-dropdown" role="listbox">
+          @for (u of resultados(); track u.id) {
+            <li
+              class="autocomplete-item"
+              role="option"
+              (click)="selecionarUsuario(u)"
+            >
+              <span class="autocomplete-item-nome">{{ u.nome_completo ?? u.email }}</span>
+              @if (u.nome_completo) {
+                <span class="autocomplete-item-email">{{ u.email }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="destinatario-hint">
+      @if (usuarioSelecionado()) {
+        <span class="hint hint--individual">Enviará apenas para este usuário</span>
+      } @else {
+        <span class="hint hint--todos">Enviará para todos os usuários cadastrados</span>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button
+        class="btn btn--primary"
+        [disabled]="enviando() || !titulo().trim()"
+        (click)="enviar()"
+      >
+        <app-ui-icon [icon]="iconSend" [size]="15" />
+        {{ enviando() ? 'Enviando…' : 'Enviar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="historico-header">
+  <div class="historico-header-left">
+    <h2 class="section-title-inline">Histórico enviado</h2>
+    @if (!isLoading()) {
+      <span class="total-badge">{{ totalItens() }}</span>
+    }
+  </div>
+  <button class="btn btn--outline btn--sm" [disabled]="isLoading()" (click)="carregarHistorico()">
+    <app-ui-icon [icon]="iconRefresh" [size]="14" />
+    Atualizar
+  </button>
+</div>
+
+@if (isLoading()) {
+  <p class="loading-text">Carregando…</p>
+} @else {
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Destinatário</th>
+          <th>Tipo</th>
+          <th>Título</th>
+          <th>Mensagem</th>
+          <th>Lida</th>
+          <th>Enviada em</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (historicoAtual().length === 0) {
+          <tr><td colspan="6" class="empty-cell">Nenhuma notificação enviada ainda.</td></tr>
+        }
+        @for (n of historicoAtual(); track n.id) {
+          <tr>
+            <td class="email-cell">{{ n.user_email }}</td>
+            <td><span class="tipo-badge tipo-badge--{{ n.tipo }}">{{ n.tipo }}</span></td>
+            <td>{{ n.titulo }}</td>
+            <td class="mensagem-cell">{{ n.mensagem ?? '—' }}</td>
+            <td>
+              <span class="lida-dot" [class.lida-dot--lida]="n.lida">
+                {{ n.lida ? 'Sim' : 'Não' }}
+              </span>
+            </td>
+            <td class="data-cell">{{ formatarData(n.criado_em) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPaginas() > 1) {
+    <div class="paginacao">
+      <button
+        class="btn btn--ghost btn--sm btn--icon-only"
+        [disabled]="pagina() === 0"
+        aria-label="Página anterior"
+        (click)="irParaPagina(pagina() - 1)"
+      >
+        <app-ui-icon [icon]="iconPrev" [size]="16" />
+      </button>
+      <span class="paginacao-info">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+      <button
+        class="btn btn--ghost btn--sm btn--icon-only"
+        [disabled]="pagina() === totalPaginas() - 1"
+        aria-label="Próxima página"
+        (click)="irParaPagina(pagina() + 1)"
+      >
+        <app-ui-icon [icon]="iconNext" [size]="16" />
+      </button>
+    </div>
+  }
+}
+
+<style>
+  .page-header { margin-bottom: 1.5rem; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
+  .page-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+
+  .create-form {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .section-title { font-size: 0.9rem; font-weight: 600; color: #7c3aed; margin: 0 0 0.875rem; }
+
+  .form-col { display: flex; flex-direction: column; gap: 0.75rem; }
+  .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-start; }
+
+  .form-input {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.5rem 0.875rem; color: #1e293b; font-size: 0.875rem;
+    outline: none; width: 100%; font-family: inherit; box-sizing: border-box;
+  }
+  .form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+  .form-select { cursor: pointer; }
+  .form-textarea { resize: vertical; min-height: 5rem; }
+
+  /* ── Autocomplete ── */
+  .autocomplete-wrapper { position: relative; }
+
+  .autocomplete-input-row {
+    position: relative; display: flex; align-items: center;
+  }
+  .autocomplete-input { padding-right: 2.25rem; }
+
+  .autocomplete-spinner {
+    position: absolute; right: 0.75rem;
+    width: 1rem; height: 1rem;
+    border: 2px solid #e2e8f0; border-top-color: #7c3aed;
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .autocomplete-clear {
+    position: absolute; right: 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    border: none; background: #e5e7eb; color: #6b7280; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .autocomplete-clear:hover { background: #d1d5db; color: #374151; }
+
+  .autocomplete-dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1); list-style: none; margin: 0; padding: 0;
+    max-height: 220px; overflow-y: auto;
+  }
+  .autocomplete-item {
+    display: flex; flex-direction: column; gap: 0.125rem;
+    padding: 0.625rem 0.875rem; cursor: pointer; transition: background 0.1s;
+  }
+  .autocomplete-item:hover { background: #f5f3ff; }
+  .autocomplete-item + .autocomplete-item { border-top: 1px solid #f1f5f9; }
+  .autocomplete-item-nome { font-size: 0.875rem; font-weight: 500; color: #1e293b; }
+  .autocomplete-item-email { font-size: 0.75rem; color: #94a3b8; }
+
+  .usuario-selecionado {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    padding: 0.375rem 0.875rem; background: #f5f3ff;
+    border: 1px solid #ddd6fe; border-top: none;
+    border-radius: 0 0 8px 8px;
+  }
+  .usuario-nome { font-size: 0.8125rem; font-weight: 600; color: #5b21b6; }
+  .usuario-email { font-size: 0.75rem; color: #8b5cf6; }
+
+  .destinatario-hint { margin-top: -0.25rem; }
+  .hint { font-size: 0.8rem; }
+  .hint--individual { color: #0369a1; }
+  .hint--todos { color: #7c3aed; }
+
+  .form-actions { display: flex; justify-content: flex-end; }
+
+  .historico-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .historico-header-left { display: flex; align-items: center; gap: 0.5rem; }
+  .section-title-inline { font-size: 0.9rem; font-weight: 600; color: #7c3aed; margin: 0; }
+  .total-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.5rem; height: 1.375rem; padding: 0 0.375rem;
+    background: #ede9fe; color: #6d28d9;
+    font-size: 0.7rem; font-weight: 700; border-radius: 9999px;
+  }
+
+  .paginacao {
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;
+    padding: 0.75rem 0 0;
+  }
+  .paginacao-info { font-size: 0.8125rem; color: #64748b; }
+  .btn--icon-only { width: 2rem; height: 2rem; padding: 0; justify-content: center; }
+
+  .loading-text { color: #64748b; font-size: 0.875rem; }
+
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: #f8fafc; padding: 0.75rem 1rem; text-align: left;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0;
+  }
+  .data-table td {
+    padding: 0.75rem 1rem; font-size: 0.875rem; color: #334155;
+    border-bottom: 1px solid #f1f5f9; background: #fff; vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .email-cell { font-size: 0.8125rem; color: #475569; }
+  .mensagem-cell { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .data-cell { white-space: nowrap; font-size: 0.8125rem; }
+  .empty-cell { text-align: center; color: #9ca3af; padding: 2rem 1rem; }
+
+  .tipo-badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px;
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tipo-badge--info { background: #dbeafe; color: #1d4ed8; }
+  .tipo-badge--sistema { background: #e0e7ff; color: #4338ca; }
+  .tipo-badge--aviso { background: #fef3c7; color: #92400e; }
+  .tipo-badge--conquista { background: #d1fae5; color: #065f46; }
+
+  .lida-dot {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.8rem; color: #94a3b8;
+  }
+  .lida-dot::before {
+    content: ''; width: 0.5rem; height: 0.5rem;
+    border-radius: 50%; background: #ef4444; flex-shrink: 0;
+  }
+  .lida-dot--lida { color: #065f46; }
+  .lida-dot--lida::before { background: #10b981; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    padding: 0.4rem 0.875rem; border-radius: 6px; font-size: 0.875rem;
+    font-weight: 500; border: none; cursor: pointer; transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn--primary { background: #7c3aed; color: #fff; }
+  .btn--primary:hover:not(:disabled) { background: #6d28d9; }
+  .btn--outline { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+  .btn--outline:hover:not(:disabled) { background: #f3f4f6; }
+  .btn--ghost { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
+  .btn--ghost:hover:not(:disabled) { background: #e2e8f0; }
+  .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.8125rem; }
+</style>

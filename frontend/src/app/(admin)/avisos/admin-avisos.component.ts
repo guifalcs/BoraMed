@@ -2,11 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Trash2, Upload } from 'lucide-angular';
+import { Power, Trash2, Upload, ChevronLeft, ChevronRight } from 'lucide-angular';
+
+const PAGE_SIZE = 20;
 import { AdminService, AdminAviso } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
@@ -35,8 +38,20 @@ export class AdminAvisosComponent implements OnInit {
   protected readonly processando = signal<string | null>(null);
   protected readonly avisoParaDeletar = signal<AdminAviso | null>(null);
 
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.avisos().length / PAGE_SIZE))
+  );
+  protected readonly avisosAtual = computed(() => {
+    const ini = this.pagina() * PAGE_SIZE;
+    return this.avisos().slice(ini, ini + PAGE_SIZE);
+  });
+
+  protected readonly iconPower = Power;
   protected readonly iconTrash = Trash2;
   protected readonly iconUpload = Upload;
+  protected readonly iconPrev = ChevronLeft;
+  protected readonly iconNext = ChevronRight;
 
   async ngOnInit(): Promise<void> {
     await this.carregar();
@@ -47,10 +62,15 @@ export class AdminAvisosComponent implements OnInit {
     const result = await this.adminService.listarAvisos();
     if (result.ok) {
       this.avisos.set(result.data);
+      this.pagina.set(0);
     } else {
       this.toast.error('Erro ao carregar avisos.');
     }
     this.isLoading.set(false);
+  }
+
+  protected irParaPagina(p: number): void {
+    this.pagina.set(Math.max(0, Math.min(p, this.totalPaginas() - 1)));
   }
 
   async handleFileSelect(event: Event): Promise<void> {
