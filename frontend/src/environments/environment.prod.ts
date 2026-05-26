@@ -3,6 +3,5 @@ export const environment = {
   supabaseUrl: 'https://gakvktwtdunljojghpff.supabase.co',
   supabaseAnonKey:
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdha3ZrdHd0ZHVubGpvamdocGZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxODY1NzgsImV4cCI6MjA5Mzc2MjU3OH0.yiGHqFIfDyByHBl_7zyHFsClAtXmYggYiSjBb8qo3bU',
-  // Preencher após criar projeto em sentry.io
-  sentryDsn: '',
+  sentryDsn: 'https://52153d44379bda28bed8d9a2868f260b@o4511458808561664.ingest.us.sentry.io/4511458868920320',
 };
