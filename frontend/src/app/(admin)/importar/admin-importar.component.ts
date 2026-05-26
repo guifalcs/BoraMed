@@ -30,13 +30,16 @@ interface AlternativaParseada {
 
 interface QuestaoParseada {
   enunciado: string;
+  enunciado_apoio: string | null;
   alternativas: AlternativaParseada[];
   formato: 'multipla_escolha' | 'verdadeiro_falso';
+  tipo_questao: 'nacional' | 'processual' | 'laboratorio' | null;
   disciplina_id: string | null;
   disciplinaDisplay: string;
   tema_ids: string[];
   temasDisplay: string;
   explicacao: string | null;
+  referencia: string | null;
   fonte: string | null;
   valida: boolean;
   erros: string[];
@@ -97,6 +100,9 @@ FORMATO — separe cada questão com ---
 ENUNCIADO
 [texto completo da questão, exatamente como está no original]
 
+ENUNCIADO_APOIO
+[texto de apoio/caso clínico que antecede a pergunta — omita a seção inteira se não houver]
+
 ALTERNATIVAS
 A) [texto da alternativa A]
 B) [texto da alternativa B]
@@ -105,9 +111,11 @@ D) [texto da alternativa D]
 E) [texto da alternativa E]
 
 GABARITO: [letra correta, ex: B]
+TIPO: [nacional | processual | laboratorio — omita se não souber]
 DISCIPLINA: [sigla exata da lista abaixo — omita se não souber]
 TEMA: [nome exato de um tema da lista abaixo — omita se não souber]
 EXPLICACAO: [explicação do gabarito, se disponível no documento]
+REFERENCIA: [referência bibliográfica, se disponível — omita se não houver]
 FONTE: [ex: Afya P1 2024.1 — omita se não souber]
 ---
 
@@ -119,9 +127,11 @@ ${listaTemas}
 
 REGRAS:
 • Copie o enunciado exatamente, sem resumir ou alterar
+• Se houver um caso clínico ou texto de apoio antes da pergunta, coloque em ENUNCIADO_APOIO e a pergunta final em ENUNCIADO
 • GABARITO deve ser apenas a letra (A, B, C, D ou E)
 • Questões de verdadeiro/falso: use A) Verdadeiro e B) Falso como alternativas
-• DISCIPLINA, TEMA, EXPLICACAO e FONTE são campos opcionais
+• TIPO: use "nacional" para provas nacionais, "processual" para simulados por tema, "laboratorio" para questões com imagem de lâmina/peça
+• DISCIPLINA, TEMA, TIPO, EXPLICACAO, REFERENCIA e FONTE são campos opcionais
 • Se preencher DISCIPLINA ou TEMA, use exatamente uma opção cadastrada nas listas acima
 • Em TEMA, escreva apenas o nome do tema; o prefixo [DISCIPLINA] na lista serve só para contexto
 • Se não tiver confiança na classificação, omita DISCIPLINA e/ou TEMA em vez de inventar
@@ -185,31 +195,41 @@ function parseQuestaoBloco(
   const erros: string[] = [];
   const linhas = bloco.split('\n');
 
-  type Secao = 'nenhuma' | 'enunciado' | 'alternativas' | 'explicacao';
+  type Secao = 'nenhuma' | 'enunciado' | 'enunciado_apoio' | 'alternativas' | 'explicacao';
   let secao: Secao = 'nenhuma';
 
   const enunciadoLinhas: string[] = [];
+  const enunciadoApoioLinhas: string[] = [];
   const alternativaLinhas: string[] = [];
   let gabaritoLetra: string | null = null;
+  let tipoQuestao: string | null = null;
   let disciplinaSigla: string | null = null;
   let temaLinha: string | null = null;
   const explicacaoLinhas: string[] = [];
+  let referencia: string | null = null;
   let fonte: string | null = null;
 
   for (const linha of linhas) {
     const t = linha.trim();
 
     if (t.toUpperCase() === 'ENUNCIADO') { secao = 'enunciado'; continue; }
+    if (t.toUpperCase() === 'ENUNCIADO_APOIO') { secao = 'enunciado_apoio'; continue; }
     if (t.toUpperCase() === 'ALTERNATIVAS') { secao = 'alternativas'; continue; }
 
     const mGabarito = t.match(/^GABARITO:\s*([A-Ea-e])/i);
     if (mGabarito) { gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue; }
+
+    const mTipo = t.match(/^TIPO:\s*(.+)/i);
+    if (mTipo) { tipoQuestao = mTipo[1].trim().toLowerCase(); secao = 'nenhuma'; continue; }
 
     const mDisciplina = t.match(/^DISCIPLINA:\s*(.+)/i);
     if (mDisciplina) { disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue; }
 
     const mTema = t.match(/^TEMAS?:\s*(.+)/i);
     if (mTema) { temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue; }
+
+    const mReferencia = t.match(/^REFERENCIA:\s*(.+)/i);
+    if (mReferencia) { referencia = mReferencia[1].trim(); secao = 'nenhuma'; continue; }
 
     const mFonte = t.match(/^FONTE:\s*(.+)/i);
     if (mFonte) { fonte = mFonte[1].trim(); secao = 'nenhuma'; continue; }
@@ -222,12 +242,20 @@ function parseQuestaoBloco(
     }
 
     if (secao === 'enunciado') { enunciadoLinhas.push(linha); continue; }
+    if (secao === 'enunciado_apoio') { enunciadoApoioLinhas.push(linha); continue; }
     if (secao === 'alternativas') { alternativaLinhas.push(linha); continue; }
     if (secao === 'explicacao' && t) { explicacaoLinhas.push(linha); }
   }
 
   const enunciado = enunciadoLinhas.join('\n').trim();
+  const enunciadoApoio = enunciadoApoioLinhas.join('\n').trim() || null;
   if (!enunciado) erros.push('Enunciado ausente');
+
+  const tiposValidos = ['nacional', 'processual', 'laboratorio'];
+  const tipoResolvido = tipoQuestao && tiposValidos.includes(tipoQuestao)
+    ? tipoQuestao as 'nacional' | 'processual' | 'laboratorio'
+    : null;
+  if (tipoQuestao && !tipoResolvido) erros.push(`TIPO "${tipoQuestao}" inválido (use: nacional, processual ou laboratorio)`);
 
   const alternativas: AlternativaParseada[] = [];
   for (const linha of alternativaLinhas) {
@@ -263,13 +291,16 @@ function parseQuestaoBloco(
 
   return {
     enunciado,
+    enunciado_apoio: enunciadoApoio,
     alternativas,
     formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha',
+    tipo_questao: tipoResolvido,
     disciplina_id: disciplinaObj?.id ?? null,
     disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—',
     tema_ids: temasResolvidos.ids,
     temasDisplay: temasResolvidos.display,
     explicacao: explicacaoLinhas.join('\n').trim() || null,
+    referencia,
     fonte,
     valida: erros.length === 0,
     erros,
@@ -498,7 +529,10 @@ export class AdminImportarComponent implements OnInit {
 
 ---
 ENUNCIADO
-Paciente de 45 anos apresenta dor torácica em repouso...
+Qual o diagnóstico mais provável para este paciente?
+
+ENUNCIADO_APOIO
+Paciente de 45 anos, sexo masculino, dá entrada no PS com dor torácica em repouso há 2 horas, irradiando para membro superior esquerdo, sudorese e náuseas.
 
 ALTERNATIVAS
 A) Angina estável
@@ -508,9 +542,12 @@ D) Dissecção aórtica
 E) TEP
 
 GABARITO: B
+TIPO: processual
 DISCIPLINA: SOI I
 TEMA: Infarto agudo do miocárdio
 EXPLICACAO: O infarto agudo se caracteriza por...
+REFERENCIA: Harrison, Princípios de Medicina Interna, 21ª ed.
+FONTE: Afya P1 2024.1
 ---`;
       case 'disciplinas': return `Cole aqui o markdown gerado pela IA...
 
@@ -642,11 +679,15 @@ PARENT: Semiologia Cardiovascular
     for (const q of validas) {
       const payload: QuestaoPayload = {
         enunciado: q.enunciado,
+        enunciado_apoio: q.enunciado_apoio,
         formato: q.formato,
+        tipo_questao: q.tipo_questao ?? undefined,
         status: 'rascunho',
         disciplina_id: q.disciplina_id,
         explicacao: q.explicacao,
+        referencia: q.referencia,
         fonte: q.fonte,
+        origem_geracao: 'ia_assistida',
       };
       const alternativas: AlternativaPayload[] = q.alternativas.map((a, i) => ({
         letra: a.letra,

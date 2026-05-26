@@ -104,6 +104,7 @@ export interface QuestaoPayload {
   apto_desafio_diario?: boolean;
   formato_prova?: string | null;
   autor_id?: string | null;
+  origem_geracao?: 'manual' | 'ia_assistida';
 }
 
 export type AlternativaPayload = Omit<AdminAlternativa, 'id' | 'questao_id'>;

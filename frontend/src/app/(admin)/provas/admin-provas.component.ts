@@ -18,13 +18,16 @@ import { montarPromptQuestoes } from '../importar/admin-importar.component';
 interface AlternativaParseada { letra: string; texto: string; correta: boolean; }
 interface QuestaoParseada {
   enunciado: string;
+  enunciado_apoio: string | null;
   alternativas: AlternativaParseada[];
   formato: 'multipla_escolha' | 'verdadeiro_falso';
+  tipo_questao: 'nacional' | 'processual' | 'laboratorio' | null;
   disciplina_id: string | null;
   disciplinaDisplay: string;
   tema_ids: string[];
   temasDisplay: string;
   explicacao: string | null;
+  referencia: string | null;
   fonte: string | null;
   valida: boolean;
   erros: string[];
@@ -40,35 +43,48 @@ function parseBlocos(markdown: string, disciplinas: AdminDisciplina[], temas: Ad
 function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[], temas: AdminTema[]): QuestaoParseada {
   const erros: string[] = [];
   const linhas = bloco.split('\n');
-  type Secao = 'nenhuma' | 'enunciado' | 'alternativas' | 'explicacao';
+  type Secao = 'nenhuma' | 'enunciado' | 'enunciado_apoio' | 'alternativas' | 'explicacao';
   let secao: Secao = 'nenhuma';
   const enunciadoLinhas: string[] = [];
+  const enunciadoApoioLinhas: string[] = [];
   const alternativaLinhas: string[] = [];
   let gabaritoLetra: string | null = null;
+  let tipoQuestao: string | null = null;
   let disciplinaSigla: string | null = null;
   let temaLinha: string | null = null;
   const explicacaoLinhas: string[] = [];
+  let referencia: string | null = null;
   let fonte: string | null = null;
   for (const linha of linhas) {
     const t = linha.trim();
     if (t.toUpperCase() === 'ENUNCIADO') { secao = 'enunciado'; continue; }
+    if (t.toUpperCase() === 'ENUNCIADO_APOIO') { secao = 'enunciado_apoio'; continue; }
     if (t.toUpperCase() === 'ALTERNATIVAS') { secao = 'alternativas'; continue; }
     const mGabarito = t.match(/^GABARITO:\s*([A-Ea-e])/i);
     if (mGabarito) { gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue; }
+    const mTipo = t.match(/^TIPO:\s*(.+)/i);
+    if (mTipo) { tipoQuestao = mTipo[1].trim().toLowerCase(); secao = 'nenhuma'; continue; }
     const mDisciplina = t.match(/^DISCIPLINA:\s*(.+)/i);
     if (mDisciplina) { disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue; }
     const mTema = t.match(/^TEMAS?:\s*(.+)/i);
     if (mTema) { temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue; }
+    const mReferencia = t.match(/^REFERENCIA:\s*(.+)/i);
+    if (mReferencia) { referencia = mReferencia[1].trim(); secao = 'nenhuma'; continue; }
     const mFonte = t.match(/^FONTE:\s*(.+)/i);
     if (mFonte) { fonte = mFonte[1].trim(); secao = 'nenhuma'; continue; }
     const mExplicacao = t.match(/^EXPLICACAO:\s*(.*)/i);
     if (mExplicacao) { secao = 'explicacao'; if (mExplicacao[1].trim()) explicacaoLinhas.push(mExplicacao[1]); continue; }
     if (secao === 'enunciado') { enunciadoLinhas.push(linha); continue; }
+    if (secao === 'enunciado_apoio') { enunciadoApoioLinhas.push(linha); continue; }
     if (secao === 'alternativas') { alternativaLinhas.push(linha); continue; }
     if (secao === 'explicacao' && t) { explicacaoLinhas.push(linha); }
   }
   const enunciado = enunciadoLinhas.join('\n').trim();
+  const enunciadoApoio = enunciadoApoioLinhas.join('\n').trim() || null;
   if (!enunciado) erros.push('Enunciado ausente');
+  const tiposValidos = ['nacional', 'processual', 'laboratorio'];
+  const tipoResolvido = tipoQuestao && tiposValidos.includes(tipoQuestao) ? tipoQuestao as 'nacional' | 'processual' | 'laboratorio' : null;
+  if (tipoQuestao && !tipoResolvido) erros.push(`TIPO "${tipoQuestao}" inválido (use: nacional, processual ou laboratorio)`);
   const alternativas: AlternativaParseada[] = [];
   for (const linha of alternativaLinhas) {
     const m = linha.match(/^([A-Ea-e])\)\s*(.*)/);
@@ -82,7 +98,7 @@ function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[], temas:
   if (disciplinaSigla && !disciplinaObj) erros.push(`Disciplina "${disciplinaSigla}" não encontrada`);
   const temasResolvidos = resolverTemasQuestao(temaLinha, temas, disciplinaObj?.id ?? null);
   erros.push(...temasResolvidos.erros);
-  return { enunciado, alternativas, formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha', disciplina_id: disciplinaObj?.id ?? null, disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—', tema_ids: temasResolvidos.ids, temasDisplay: temasResolvidos.display, explicacao: explicacaoLinhas.join('\n').trim() || null, fonte, valida: erros.length === 0, erros };
+  return { enunciado, enunciado_apoio: enunciadoApoio, alternativas, formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha', tipo_questao: tipoResolvido, disciplina_id: disciplinaObj?.id ?? null, disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—', tema_ids: temasResolvidos.ids, temasDisplay: temasResolvidos.display, explicacao: explicacaoLinhas.join('\n').trim() || null, referencia, fonte, valida: erros.length === 0, erros };
 }
 
 function resolverTemasQuestao(
@@ -472,12 +488,15 @@ export class AdminProvasComponent implements OnInit {
       const q = validas[i];
       const payload: QuestaoPayload = {
         enunciado: q.enunciado,
+        enunciado_apoio: q.enunciado_apoio,
         formato: q.formato,
-        tipo_questao: this.fFormato() === 'laboratorio' ? 'laboratorio' : 'nacional',
+        tipo_questao: q.tipo_questao ?? (this.fFormato() === 'laboratorio' ? 'laboratorio' : 'nacional'),
         status: 'ativa',
         disciplina_id: q.disciplina_id,
         explicacao: q.explicacao,
+        referencia: q.referencia,
         fonte: q.fonte,
+        origem_geracao: 'ia_assistida',
       };
       const alternativas: AlternativaPayload[] = q.alternativas.map((a, idx) => ({ letra: a.letra, texto: a.texto, correta: a.correta, ordem: idx + 1 }));
       const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, q.tema_ids);
