@@ -490,7 +490,7 @@ export class AdminProvasComponent implements OnInit {
         enunciado: q.enunciado,
         enunciado_apoio: q.enunciado_apoio,
         formato: q.formato,
-        tipo_questao: q.tipo_questao ?? (this.fFormato() === 'laboratorio' ? 'laboratorio' : 'nacional'),
+        tipo_questao: q.tipo_questao ?? (this.fFormato() as 'nacional' | 'processual' | 'laboratorio'),
         status: 'ativa',
         disciplina_id: q.disciplina_id,
         explicacao: q.explicacao,
