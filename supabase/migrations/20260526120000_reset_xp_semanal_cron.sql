@@ -1,38 +1,4 @@
--- Habilita pg_cron (disponível no Supabase Pro; extensão ignorada em planos sem suporte)
-create extension if not exists pg_cron;
-
--- Função de reset: zera xp_semana_atual de todos os usuários de semanas anteriores
-create or replace function public.resetar_xp_semana()
-returns void
-language plpgsql
-security definer
-set search_path to 'public', 'pg_temp'
-as $function$
-declare
-  v_semana_iso text;
-begin
-  v_semana_iso := to_char((now() at time zone 'America/Sao_Paulo')::date, 'IYYY-"W"IW');
-
-  update public.user_gamificacao_stats
-  set
-    xp_semana_atual = 0,
-    semana_iso      = v_semana_iso,
-    atualizado_em   = now()
-  where semana_iso is distinct from v_semana_iso
-    and xp_semana_atual > 0;
-end;
-$function$;
-
-revoke execute on function public.resetar_xp_semana() from public, anon, authenticated;
-
--- Cron: toda segunda-feira às 03:00 UTC (meia-noite de Brasília, UTC-3)
-select cron.schedule(
-  'resetar-xp-semanal',
-  '0 3 * * 1',
-  $$ select public.resetar_xp_semana(); $$
-);
-
--- Corrige get_ranking_semana para ignorar xp de semanas anteriores mesmo sem o cron
+-- Corrige get_ranking_semana para ignorar xp de semanas anteriores
 create or replace function public.get_ranking_semana(p_limite integer default 10)
 returns jsonb language plpgsql security definer set search_path to 'public', 'pg_temp'
 as $function$
