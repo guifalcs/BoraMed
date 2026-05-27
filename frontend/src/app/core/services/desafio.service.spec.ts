@@ -19,7 +19,6 @@ const questaoRaw = {
   enunciado: 'Qual é a capital do Brasil?',
   enunciado_apoio: null,
   imagem_url: null,
-  dificuldade: 2,
   disciplina: 'Geografia',
 };
 

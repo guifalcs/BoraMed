@@ -46,7 +46,6 @@ function makeDesafioPendente(): DesafioDiario {
       enunciado: 'Questão teste',
       enunciado_apoio: null,
       imagem_url: null,
-      dificuldade: 2,
       disciplina: 'Clínica Médica',
     },
     alternativas: [

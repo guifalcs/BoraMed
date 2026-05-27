@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-27 | Fix | sem commit
+
+**Desafio diario sem coluna de dificuldade**
+
+- Nova migration redefine `get_desafio_diario` sem ler `questao.dificuldade`, coluna removida do schema em `20260520180000_remover_dificuldade_e_campos_prova.sql`.
+- Contrato TypeScript do desafio diario e mocks de teste deixam de esperar `dificuldade` na questao.
+- `docs/business-rules.md` documenta que o desafio diario nao depende mais de dificuldade.
+
+---
+
 ## 2026-05-24 | UX | sem commit
 
 **Melhoria de navegação e orientação do usuário**
