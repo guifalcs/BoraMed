@@ -78,6 +78,7 @@
 
  **Data** : 2026-05
  **Decisao** : O bootstrap principal nao deve inicializar AuthService/Supabase globalmente. Guards de auth, guest e admin carregam a sessao sob demanda, e as rotas internas do dashboard ficam em arquivo lazy separado.
+ **Motivo** : Landing e rotas publicas nao precisam carregar Supabase Auth, resolvers do dashboard ou telas logadas na primeira renderizacao. Deixar auth e dashboard em chunks sob demanda reduz o bundle inicial e mantem a protecao das rotas privadas no ponto de navegacao.
 
 ## ADR-014: Avisos broadcast via tabela Supabase + modal no shell do dashboard
 
@@ -90,7 +91,12 @@
  **Data** : 2026-05
  **Decisao** : A tabela `notificacoes` e o `AppNotificacaoService` estao implementados mas sem gatilhos automaticos ainda. Novos tipos (`sistema`, `conquista`, `info`, `aviso`) serao adicionados via RPCs SECURITY DEFINER em migrations futuras conforme a necessidade.
  **Motivo** : Evitar acoplamento prematuro a eventos de negocio ainda indefinidos. A estrutura esta pronta para receber qualquer tipo de notificacao sem reescrever o frontend.
- **Motivo** : Landing e rotas publicas nao precisam carregar Supabase Auth, resolvers do dashboard ou telas logadas na primeira renderizacao. Deixar auth e dashboard em chunks sob demanda reduz o bundle inicial e mantem a protecao das rotas privadas no ponto de navegacao.
+
+## ADR-019: Buckets publicos sem listagem ampla
+
+ **Data** : 2026-05
+ **Decisao** : Buckets publicos usados para imagens (`avisos`, `questao-imagens`) podem servir arquivos por URL publica, mas nao devem manter policy ampla de `SELECT` em `storage.objects`. Escrita, update e delete seguem restritos a administradores.
+ **Motivo** : URL publica e suficiente para renderizar imagens ja referenciadas no banco. Permitir `SELECT` amplo em objetos de bucket publico tambem permite listagem de arquivos, aumentando exposicao sem necessidade funcional.
 
 ## ADR-014: Performance visual sem decoracao cara
 

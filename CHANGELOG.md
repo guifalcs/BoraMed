@@ -2,6 +2,16 @@
 
 ## 2026-05-27 | Fix | sem commit
 
+**Limpeza de advisors Supabase**
+
+- Corrigidos warnings remotos plausiveis do Security/Performance Advisor: `search_path` fixo em RPCs de avisos/notificacoes, remocao de listagem ampla dos buckets publicos `avisos` e `questao-imagens`, consolidacao da policy de SELECT em `avisos`, e revogacao de EXECUTE direto em `is_super_admin`/`sync_ultimo_login`.
+- Mantidos warnings de RPCs `SECURITY DEFINER` autenticadas que fazem parte do contrato do frontend e validam permissao internamente.
+- `Leaked Password Protection` permanece dependente de configuracao do Auth no painel/plano Supabase, fora de migration SQL.
+
+---
+
+## 2026-05-27 | Fix | sem commit
+
 **Desafio diario sem coluna de dificuldade**
 
 - Nova migration redefine `get_desafio_diario` sem ler `questao.dificuldade`, coluna removida do schema em `20260520180000_remover_dificuldade_e_campos_prova.sql`.

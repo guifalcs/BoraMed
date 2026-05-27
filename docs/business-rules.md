@@ -117,6 +117,7 @@ Uso interno como referência de produto. Não apresentar como calendário oficia
 * Alterações de papel (`aluno`/`admin`) devem passar pela RPC `alterar_papel_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.
 * Apenas administradores podem alterar papéis, e um administrador não pode revogar o próprio acesso.
 * Telas de aluno acessadas por impersonação devem usar o usuário autenticado efetivo como escopo; consultas de histórico/tentativas devem filtrar `user_id` explicitamente e gravações em `tentativa_resposta` devem passar por RPC que valida o dono da tentativa.
+* Buckets públicos de imagens podem expor arquivos por URL pública, mas não devem permitir listagem ampla de objetos pelo cliente.
 
 ## Integridade de Dados
 
