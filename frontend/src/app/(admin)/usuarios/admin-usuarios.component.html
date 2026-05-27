@@ -23,6 +23,7 @@
           <th>Usuário</th>
           <th>Tipo</th>
           <th>Cadastro</th>
+          <th>Último login</th>
           <th>Papel</th>
           <th>Ação</th>
         </tr>
@@ -38,6 +39,13 @@
             </td>
             <td>{{ tipoUsuarioLabel(u.tipo_usuario) }}</td>
             <td>{{ u.criado_em | date:'dd/MM/yyyy' }}</td>
+            <td>
+              @if (u.ultimo_login) {
+                {{ u.ultimo_login | date:'dd/MM/yyyy HH:mm' }}
+              } @else {
+                <span class="no-action">—</span>
+              }
+            </td>
             <td>
               <span class="badge"
                 [class.badge--admin]="u.papel === 'admin'"

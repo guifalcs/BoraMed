@@ -28,6 +28,7 @@ export interface Profile {
   competir_publico: boolean;
   papel: PapelUsuario;
   atualizado_em: string;
+  ultimo_login: string | null;
 }
 
 export type AuthResult = { ok: true; needsConfirmation?: boolean } | { ok: false; error: AuthErrorCode };
