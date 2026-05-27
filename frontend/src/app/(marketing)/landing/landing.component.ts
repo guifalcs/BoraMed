@@ -117,7 +117,7 @@ export class LandingComponent implements OnDestroy {
   ];
 
   protected readonly stats = [
-    { value: 'server-side', label: 'sorteio de questões' },
+    { value: '+2.400', label: 'questões autorais' },
     { value: '3', label: 'módulos de treino' },
     { value: '100%', label: 'conteúdo autoral' },
   ] as const;
