@@ -15,5 +15,9 @@ if (environment.sentryDsn) {
 }
 
 bootstrapApplication(AppComponent, browserConfig)
-  .then(() => import('@vercel/analytics').then(({ inject }) => inject()))
+  .then(() => {
+    if (environment.production) {
+      void import('@vercel/analytics').then(({ inject }) => inject());
+    }
+  })
   .catch((err) => console.error(err));
