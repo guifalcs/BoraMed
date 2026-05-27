@@ -384,7 +384,7 @@ export class LandingComponent implements OnDestroy {
       '@type': 'Organization',
       name: 'BoraMed',
       url: siteUrl,
-      logo: `${siteUrl}/logo.webp`,
+      logo: `${siteUrl}/brand/logo.webp`,
       description: 'Plataforma independente de simulados médicos com questões autorais.',
       email: 'contato@boramed.com.br',
       inLanguage: 'pt-BR',

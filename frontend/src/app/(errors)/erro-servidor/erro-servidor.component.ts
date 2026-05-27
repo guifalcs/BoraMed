@@ -13,7 +13,7 @@ import { ErrorStateAcao, ErrorStateComponent } from '../../shared/components/err
         codigo="500"
         titulo="Algo deu errado"
         mensagem="Ocorreu um erro inesperado. Tente novamente em alguns instantes."
-        ilustracao="illustrations/ErroGenerico.webp"
+        ilustracao="illustrations/erro-generico.webp"
         [acoes]="acoes"
         (acaoClick)="onAcaoClick($event)"
       />
