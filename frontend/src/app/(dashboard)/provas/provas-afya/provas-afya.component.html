@@ -1,24 +1,22 @@
 <div class="px-4 py-8 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-6xl">
     <app-page-header
-      [titulo]="titulo()"
-      [subtitulo]="descricao()"
+      [titulo]="titulo"
+      [subtitulo]="descricao"
       [breadcrumbs]="breadcrumbs"
     />
 
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
       <div class="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 sm:px-6">
-        @if (subtipoOpcoes().length > 0) {
-          <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
-            <app-ui-multiselect
-              label="Subtipo"
-              name="subtipo"
-              [options]="subtipoOpcoes()"
-              [values]="subtiposFiltro()"
-              (valuesChange)="onSubtipoChange($event)"
-            />
-          </div>
-        }
+        <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
+          <app-ui-multiselect
+            label="Subtipo"
+            name="subtipo"
+            [options]="subtipoOpcoes"
+            [values]="subtiposFiltro()"
+            (valuesChange)="onSubtipoChange($event)"
+          />
+        </div>
         <div style="width:9rem;min-width:9rem;max-width:9rem;flex:none">
           <app-ui-multiselect
             label="Periodo"
@@ -87,36 +85,5 @@
       }
     </div>
 
-    <div class="mt-8">
-      <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Formatos de treino</p>
-      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <a
-          routerLink="/dashboard/simulados/rede-afya"
-          [queryParams]="{ tipo: 'nacional' }"
-          class="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3 text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-        >
-          <app-ui-icon [icon]="zapIcon" [size]="16" />
-          <span class="text-sm font-medium">Nacional</span>
-        </a>
-
-        <a
-          routerLink="/dashboard/simulados/rede-afya"
-          [queryParams]="{ tipo: 'processual' }"
-          class="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3 text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-        >
-          <app-ui-icon [icon]="stethoscopeIcon" [size]="16" />
-          <span class="text-sm font-medium">Processual</span>
-        </a>
-
-        <a
-          routerLink="/dashboard/simulados/rede-afya"
-          [queryParams]="{ tipo: 'laboratorio' }"
-          class="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3 text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-        >
-          <app-ui-icon [icon]="flaskIcon" [size]="16" />
-          <span class="text-sm font-medium">Laboratório</span>
-        </a>
-      </div>
-    </div>
   </div>
 </div>

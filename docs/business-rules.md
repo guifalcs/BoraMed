@@ -26,7 +26,8 @@
 * A retomada de qualquer tentativa deve remontar as questões a partir de `tentativa_resposta`, pois simulados personalizados não têm questões vinculadas diretamente à prova sintética
 * Se existir tentativa com status `em_andamento` ou `pausada`, a home e a área de simulados devem priorizar um CTA de continuidade para levar o aluno direto de volta à execução
 * Ao trocar o formato na montagem de simulado, a lista de temas deve entrar em estado de carregamento e bloquear ações sobre temas até a nova contagem ser retornada
-* A montagem de simulado deve permitir a opção sem tipo de prova, sorteando questões ativas de todos os formatos disponíveis
+* A montagem de simulado deve permitir a opção sem tipo de prova, sorteando questões ativas dos formatos disponíveis para montagem: processual e laboratório
+* Provas prontas exibidas ao aluno devem listar apenas treinos nacionais; processuais e laboratório ficam restritos ao fluxo de montagem personalizada.
 * Ao montar simulado, o sorteio deve priorizar questões ainda não entregues ao usuário dentro dos filtros escolhidos; questões já vistas só entram aleatoriamente quando as inéditas acabam.
 * O histórico de questões já entregues ao usuário é derivado de `tentativa_resposta` vinculada às tentativas do próprio usuário, excluindo modo `visualizar`.
 * Uma vez iniciado, o tempo corre

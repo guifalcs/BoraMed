@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-08 | Tweak | sem commit
+
+**Provas prontas apenas nacionais**
+
+- A lista de provas prontas (`/dashboard/simulados/rede-afya`) passa a ignorar formatos processual e laboratório, mantendo somente treinos nacionais mesmo quando houver query param legado.
+- Removidos os atalhos visuais para processual e laboratório nessa lista; esses formatos ficam restritos ao fluxo de montar simulado.
+- `docs/business-rules.md` documenta a separação entre provas prontas nacionais e montagem personalizada processual/laboratório.
+
+---
+
 ## 2026-05-27 | Fix | sem commit
 
 **Limpeza de advisors Supabase**

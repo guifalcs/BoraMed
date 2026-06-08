@@ -30,13 +30,15 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
   };
 }
 
-function buildActivatedRoute(resolvedData?: ProvasAfyaResolvedData) {
+function buildActivatedRoute(resolvedData?: ProvasAfyaResolvedData, tipo: string | null = null) {
+  const queryParamMap = { get: (key: string) => (key === 'tipo' ? tipo : null) };
+
   return {
     snapshot: {
       data: resolvedData ? { provasAfyaData: resolvedData } : {},
-      queryParamMap: { get: () => null },
+      queryParamMap,
     },
-    queryParamMap: of({ get: () => null }),
+    queryParamMap: of(queryParamMap),
   };
 }
 
@@ -52,7 +54,7 @@ describe('ProvasAfyaComponent', () => {
     listarProvasPorFormato: vi.fn(),
   };
 
-  async function setup(resolvedData?: ProvasAfyaResolvedData) {
+  async function setup(resolvedData?: ProvasAfyaResolvedData, tipo: string | null = null) {
     vi.clearAllMocks();
 
     await TestBed.configureTestingModule({
@@ -60,7 +62,7 @@ describe('ProvasAfyaComponent', () => {
       providers: [
         provideRouter([]),
         { provide: ProvaService, useValue: mockProvaService },
-        { provide: ActivatedRoute, useValue: buildActivatedRoute(resolvedData) },
+        { provide: ActivatedRoute, useValue: buildActivatedRoute(resolvedData, tipo) },
       ],
     }).compileComponents();
 
@@ -105,6 +107,17 @@ describe('ProvasAfyaComponent', () => {
     it('não exibe o empty state quando há provas', () => {
       const emptyState = el.querySelector('app-empty-state');
       expect(emptyState).toBeNull();
+    });
+  });
+
+  describe('query params legados', () => {
+    it('ignora query param de formato e mantem treinos nacionais', async () => {
+      await setup({ provasResult: { ok: true, data: [provaFactory()] } }, 'processual');
+      fixture.detectChanges();
+
+      expect(el.textContent).toContain('Treinos nacionais');
+      expect(el.textContent).not.toContain('Treinos processuais');
+      expect(mockProvaService.listarProvasPorFormato).not.toHaveBeenCalled();
     });
   });
 
