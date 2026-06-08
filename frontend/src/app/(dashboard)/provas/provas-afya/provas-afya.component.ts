@@ -5,14 +5,12 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ChevronLeft, Stethoscope, FlaskConical, Zap } from 'lucide-angular';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
-import type { FormatoProva, Prova, SubtipoProva } from '../../../core/models/prova';
+import type { Prova, SubtipoProva } from '../../../core/models/prova';
 import type { ProvasAfyaResolvedData } from '../../../core/resolvers/provas-afya.resolver';
 import { ProvaCardComponent } from '../../../shared/components/prova-card/prova-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { UiMultiselectComponent } from '../../../shared/components/ui/multiselect/ui-multiselect.component';
 import type { SelectOption } from '../../../shared/components/ui/select/ui-select.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
@@ -20,7 +18,7 @@ import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components
 @Component({
   selector: 'app-provas-afya',
   standalone: true,
-  imports: [RouterLink, ProvaCardComponent, EmptyStateComponent, UiIconComponent, UiMultiselectComponent, PageHeaderComponent],
+  imports: [ProvaCardComponent, EmptyStateComponent, UiMultiselectComponent, PageHeaderComponent],
   templateUrl: './provas-afya.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,28 +33,18 @@ export class ProvasAfyaComponent {
     { label: 'Treinos nacionais' },
   ];
 
-  protected readonly chevronLeftIcon = ChevronLeft;
-  protected readonly stethoscopeIcon = Stethoscope;
-  protected readonly flaskIcon = FlaskConical;
-  protected readonly zapIcon = Zap;
-
   protected readonly todasAsProvas = signal<Prova[]>([]);
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
-  protected readonly formatoAtual = signal<FormatoProva>('nacional');
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
 
-  protected readonly subtipoOpcoes = computed<SelectOption[]>(() =>
-    this.formatoAtual() === 'nacional'
-      ? [
-          { value: 'N1', label: 'N1' },
-          { value: 'teste_progresso', label: 'TPI' },
-          { value: 'N2', label: 'Integradora' },
-        ]
-      : [],
-  );
+  protected readonly subtipoOpcoes: SelectOption[] = [
+    { value: 'N1', label: 'N1' },
+    { value: 'teste_progresso', label: 'TPI' },
+    { value: 'N2', label: 'Integradora' },
+  ];
 
   protected readonly periodoOpcoes: SelectOption[] = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
@@ -82,8 +70,6 @@ export class ProvasAfyaComponent {
 
   constructor() {
     const resolved = this.route.snapshot.data['provasAfyaData'] as ProvasAfyaResolvedData | undefined;
-    const formatoInicial = parseFormato(this.route.snapshot.queryParamMap.get('tipo'));
-    this.formatoAtual.set(formatoInicial);
 
     if (resolved?.provasResult.ok) {
       this.todasAsProvas.set(resolved.provasResult.data);
@@ -92,24 +78,12 @@ export class ProvasAfyaComponent {
       this.erro.set(resolved.provasResult.error);
       this.isLoading.set(false);
     }
-
-    if (formatoInicial !== 'nacional') {
-      void this.carregarProvas();
-    }
-
-    this.route.queryParamMap.subscribe((params) => {
-      const formato = parseFormato(params.get('tipo'));
-      if (formato === this.formatoAtual()) return;
-      this.formatoAtual.set(formato);
-      this.subtiposFiltro.set([]);
-      void this.carregarProvas();
-    });
   }
 
   protected async carregarProvas(): Promise<void> {
     this.erro.set(null);
     this.isLoading.set(true);
-    const result = await this.provaService.listarProvasPorFormato(this.formatoAtual(), {
+    const result = await this.provaService.listarProvasNacionais({
       subtipo: null,
       periodo: null,
       rede: 'afya',
@@ -134,24 +108,6 @@ export class ProvasAfyaComponent {
     void this.router.navigate(['/dashboard/simulados', id]);
   }
 
-  protected readonly titulo = computed(() => {
-    switch (this.formatoAtual()) {
-      case 'processual': return 'Treinos processuais';
-      case 'laboratorio': return 'Treinos de laboratório';
-      default: return 'Treinos nacionais';
-    }
-  });
-
-  protected readonly descricao = computed(() => {
-    switch (this.formatoAtual()) {
-      case 'processual': return 'Simulados autorais inspirados no formato das avaliações processuais. BoraMed é independente e não representa a Afya.';
-      case 'laboratorio': return 'Questões autorais com imagens de lâminas e peças no modelo de laboratório. BoraMed é independente e não representa a Afya.';
-      default: return 'Simulados autorais inspirados no formato das avaliações nacionais. BoraMed é independente e não representa a Afya.';
-    }
-  });
-}
-
-function parseFormato(value: string | null): FormatoProva {
-  if (value === 'processual' || value === 'laboratorio') return value;
-  return 'nacional';
+  protected readonly titulo = 'Treinos nacionais';
+  protected readonly descricao = 'Simulados autorais inspirados no formato das avaliações nacionais. BoraMed é independente e não representa a Afya.';
 }

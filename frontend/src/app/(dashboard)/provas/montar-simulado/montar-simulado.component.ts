@@ -17,13 +17,13 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
-type FormatoSimulado = 'todos' | 'nacional' | 'processual' | 'laboratorio';
+type FormatoSimulado = 'todos' | 'processual' | 'laboratorio';
 
 interface OpcaoFormato {
   value: FormatoSimulado;
   label: string;
   descricao: string;
-  tipoQuestao: 'nacional' | 'processual' | 'laboratorio' | null;
+  tipoQuestao: 'processual' | 'laboratorio' | null;
 }
 
 const FORMATOS: OpcaoFormato[] = [
@@ -32,12 +32,6 @@ const FORMATOS: OpcaoFormato[] = [
     label: 'Todos',
     descricao: 'Sorteio sem filtrar por tipo de prova',
     tipoQuestao: null,
-  },
-  {
-    value: 'nacional',
-    label: 'Nacional',
-    descricao: 'Questões de múltipla escolha no estilo N1, TPI e Integradora',
-    tipoQuestao: 'nacional',
   },
   {
     value: 'processual',
