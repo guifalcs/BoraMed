@@ -1,167 +1,310 @@
-<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
+<div class="inicio-page mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
 
-  <!-- Seção 1: Hero de saudação -->
-  <app-greeting-hero
-    data-onboarding-target="inicio-hero"
-    [nomeCompleto]="profile()?.nome_completo ?? null"
-    [periodo]="profile()?.periodo ?? null"
-    [faculdadeRede]="profile()?.faculdade_rede ?? null"
-    [temTentativaAtiva]="temTentativaAtiva()"
-    [rotaCta]="provasRoute()"
-  />
+  <!-- Defs de gradiente reaproveitados por todos os anéis SVG -->
+  <svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="grad-brand" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1e40af" />
+        <stop offset="100%" stop-color="#7c3aed" />
+      </linearGradient>
+      <linearGradient id="grad-success" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#059669" />
+        <stop offset="100%" stop-color="#34d399" />
+      </linearGradient>
+      <linearGradient id="grad-warning" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#d97706" />
+        <stop offset="100%" stop-color="#fbbf24" />
+      </linearGradient>
+      <linearGradient id="grad-danger" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#dc2626" />
+        <stop offset="100%" stop-color="#fb7185" />
+      </linearGradient>
+    </defs>
+  </svg>
 
-  <div class="mt-4">
-    <app-ranking-status-bar
-      [posicaoGlobal]="rankingPosicao()?.posicao_global ?? null"
-      [posicaoSemana]="rankingPosicao()?.posicao_semana ?? null"
-      [xpSemana]="gamificacao()?.xp_semana_atual ?? 0"
-      [competirPublico]="gamificacao()?.competir_publico ?? true"
-    />
-  </div>
-
-  @if (resumoTentativaAtiva()) {
+  <!-- Faixa de tentativa ativa (continuar simulado) -->
+  @if (resumoTentativaAtiva(); as resumo) {
     <a
       [routerLink]="provasRoute()"
-      class="mt-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
+      class="bento group mb-4 flex items-center gap-3 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-5 py-4 text-amber-900 shadow-sm transition-all hover:shadow-md"
+      style="--d:0ms"
     >
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/90 text-white shadow-sm">
+        <app-ui-icon [icon]="chevronIcon" [size]="22" />
+      </span>
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold">Você tem um simulado para continuar</p>
-        <p class="text-xs text-amber-800">{{ resumoTentativaAtiva() }}</p>
+        <p class="text-sm font-bold">Você tem um simulado para continuar</p>
+        <p class="truncate text-xs text-amber-800">{{ resumo }}</p>
       </div>
-      <span class="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-amber-700">Continuar</span>
+      <span class="shrink-0 rounded-full bg-white px-3.5 py-1 text-xs font-bold text-amber-700 shadow-sm transition-transform group-hover:translate-x-0.5">
+        Continuar →
+      </span>
     </a>
   }
 
-  <!-- Desafio Diário -->
-  @if (desafio(); as d) {
-    @if (d.disponivel) {
-      @if (d.minha_resposta === null) {
-        <a routerLink="/dashboard/competitivo"
-           class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm transition-colors hover:bg-[var(--color-surface-2)]">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-500">
-            <app-ui-icon [icon]="desafioPendenteIcon" [size]="18" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-[var(--color-text)]">Desafio do dia</p>
-            <p class="text-xs text-[var(--color-text-muted)]">Responda a questão diária e ganhe XP</p>
-          </div>
-          <span class="shrink-0 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">Fazer agora →</span>
-        </a>
-      } @else {
-        <div class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
-            <app-ui-icon [icon]="desafioFeitoIcon" [size]="18" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-[var(--color-text)]">✓ Desafio feito hoje</p>
-            <p class="text-xs text-[var(--color-text-muted)]">+{{ d.minha_resposta.xp_ganho }} XP · {{ d.minha_resposta.correta ? 'Acertou!' : 'Errou' }}</p>
-          </div>
-        </div>
-      }
-    }
-  }
+  <!-- ───────────────────────── BENTO ───────────────────────── -->
+  <div class="grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-12">
 
-  <!-- Seção 2: KPIs -->
-  <div class="mt-4 grid grid-cols-2 gap-3 md:mt-5 md:grid-cols-5 md:gap-4">
-    @if (isLoadingKpis()) {
-      @for (_ of [1, 2, 3, 4, 5]; track $index) {
-        <div class="h-28 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
-      }
-    } @else {
-      @for (kpi of kpis(); track kpi.label) {
-        <app-kpi-card
-          [label]="kpi.label"
-          [valor]="kpi.valor"
-          [sublabel]="kpi.sublabel"
-          [icone]="kpi.icone"
-          [variante]="kpi.variante"
-          [sparkline]="kpi.sparkline ?? []"
-        />
-      }
-    }
-  </div>
+    <!-- Hero -->
+    <app-greeting-hero
+      class="bento col-span-2 h-full lg:col-span-8"
+      style="--d:40ms"
+      data-onboarding-target="inicio-hero"
+      [nomeCompleto]="profile()?.nome_completo ?? null"
+      [periodo]="profile()?.periodo ?? null"
+      [faculdadeRede]="profile()?.faculdade_rede ?? null"
+      [temTentativaAtiva]="temTentativaAtiva()"
+      [rotaCta]="provasRoute()"
+    />
 
-  <!-- Streak de estudo -->
-  @if (streak(); as streakData) {
-    @if (streakData.atual > 0) {
-      <div class="mt-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-          <app-ui-icon [icon]="streakIcon" [size]="18" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-[var(--color-text)]">
-            {{ streakData.atual }} dia{{ streakData.atual > 1 ? 's' : '' }} seguido{{ streakData.atual > 1 ? 's' : '' }}
-          </p>
-          <p class="text-xs text-[var(--color-text-muted)]">
-            Recorde: {{ streakData.recorde }} · {{ streakData.freezes_disponiveis }} protetor{{ streakData.freezes_disponiveis === 1 ? '' : 'es' }}
-            @if (streakData.dias_para_proximo_marco > 0) {
-              · {{ streakData.dias_para_proximo_marco }} dia{{ streakData.dias_para_proximo_marco === 1 ? '' : 's' }} para o próximo marco
-            }
-          </p>
-        </div>
+    <!-- Nível & XP -->
+    <article class="bento card relative flex h-full flex-col overflow-hidden col-span-2 lg:col-span-4" style="--d:100ms">
+      <span class="accent-strip" style="background: linear-gradient(90deg,#1e40af,#7c3aed)"></span>
+      <div class="mb-4 flex items-center justify-between">
+        <p class="text-xs font-bold uppercase tracking-wide text-[var(--color-text-muted)]">Seu progresso</p>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <app-ui-icon [icon]="xpIcon" [size]="18" />
+        </span>
       </div>
-    }
-  }
 
-  <!-- Seção 3: Trajetória recente -->
-  @if (temaRecomendado(); as tema) {
-    <a
-      routerLink="/dashboard/simulados/montar"
-      [queryParams]="{ tema: tema.nome, qtd: 10, modo: 'estudo' }"
-      class="mt-4 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-700 shadow-sm transition-colors hover:bg-blue-100"
-    >
-      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600">
-        <app-ui-icon [icon]="desafioPendenteIcon" [size]="18" />
-      </div>
-      <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-semibold">Reforçar {{ tema.nome }}</p>
-        <p class="text-xs text-blue-600">
-          @if (tema.taxa !== null) {
-            Seu aproveitamento está em {{ tema.taxa }}%
-          } @else {
-            Tema prioritário para revisar
+      <div class="flex flex-1 items-center gap-4">
+        <!-- anel de progresso de nível -->
+        <div class="relative h-24 w-24 shrink-0">
+          <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-surface-2)" stroke-width="9" />
+            <circle
+              cx="50" cy="50" r="40" fill="none" stroke="url(#grad-brand)" stroke-width="9" stroke-linecap="round"
+              class="gauge-arc"
+              [attr.stroke-dasharray]="GAUGE_CIRC"
+              [attr.stroke-dashoffset]="gaugeOffset(nivelInfo().pct)"
+              [style.--target-offset]="gaugeOffset(nivelInfo().pct)"
+            />
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-[10px] font-semibold uppercase text-[var(--color-text-muted)]">Nível</span>
+            <span class="text-2xl font-extrabold leading-none text-[var(--color-text)]">{{ nivelInfo().nivel }}</span>
+          </div>
+        </div>
+
+        <div class="min-w-0">
+          <p class="text-3xl font-extrabold leading-tight text-[var(--color-text)]">
+            {{ formatNumber(nivelInfo().xp) }}<span class="ml-1 text-base font-bold text-[var(--color-text-muted)]">XP</span>
+          </p>
+          <p class="mt-1 text-xs text-[var(--color-text-muted)]">
+            Faltam <span class="font-bold text-violet-600">{{ formatNumber(nivelInfo().faltam) }} XP</span> para o nível {{ nivelInfo().nivel + 1 }}
+          </p>
+          @if ((gamificacao()?.xp_semana_atual ?? 0) > 0) {
+            <span class="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+              +{{ formatNumber(gamificacao()?.xp_semana_atual ?? 0) }} XP esta semana
+            </span>
           }
-        </p>
+        </div>
       </div>
-      <span class="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-700">Treinar</span>
-    </a>
-  }
+    </article>
 
-  <div class="mt-8">
-    <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-sm font-semibold text-[var(--color-text)]">Trajetória recente</h2>
-      <a
-        routerLink="/dashboard/historico"
-        class="text-xs font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
-      >
-        Ver tudo →
-      </a>
-    </div>
+    <!-- Evolução (gráfico de barras) -->
+    <section class="bento card relative flex flex-col overflow-hidden col-span-2 lg:col-span-8" style="--d:160ms">
+      <span class="accent-strip" style="background: linear-gradient(90deg,#2554dc,#3b82f6)"></span>
+      <div class="mb-5 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-[var(--color-text)]">Evolução das notas</h2>
+          @if (evolucao().count > 0) {
+            <p class="text-xs text-[var(--color-text-muted)]">últimas {{ evolucao().count }} notas</p>
+          }
+        </div>
+        @if (evolucao().media !== null) {
+          <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
+            média {{ evolucao().media }}%
+          </span>
+        }
+      </div>
 
-    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-      @if (isLoadingRecentes()) {
-        <div class="flex flex-col divide-y divide-[var(--color-border)]">
-          @for (_ of [1, 2, 3]; track $index) {
-            <div class="flex items-center justify-between gap-3 py-3">
-              <div class="flex flex-1 flex-col gap-1.5">
-                <div class="h-4 w-2/3 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-                <div class="h-3 w-1/4 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
+      @if (evolucao().bars.length > 0) {
+        <div class="flex h-44 items-stretch gap-2 sm:gap-3">
+          @for (b of evolucao().bars; track $index) {
+            <div class="flex h-full flex-1 flex-col items-center gap-1.5">
+              <span class="text-[11px] font-bold" [class]="corVariante(b.variante)">{{ b.nota }}</span>
+              <div class="flex w-full flex-1 items-end justify-center">
+                <div
+                  class="w-full max-w-[2.75rem] rounded-t-lg bar-grow shadow-sm"
+                  [class]="barBg(b.variante)"
+                  [style.height.%]="b.altura"
+                  [style.animation-delay.ms]="$index * 70"
+                ></div>
               </div>
-              <div class="h-6 w-12 animate-pulse rounded-full bg-[var(--color-surface-2)]"></div>
             </div>
           }
         </div>
-      } @else if (tentativasRecentes().length > 0) {
-        @for (t of tentativasRecentes(); track t.id) {
-          <app-tentativa-recente-item
-            [nomeProva]="t.prova_nome"
-            [dataIso]="t.finalizada_em ?? ''"
-            [nota]="t.nota"
-            [tentativaId]="t.id"
-            [provaId]="t.prova_id"
-            [modo]="t.modo"
+      } @else {
+        <div class="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
+          <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
+            <app-ui-icon [icon]="trendingIcon" [size]="24" />
+          </span>
+          <p class="text-sm font-semibold text-[var(--color-text)]">Sua evolução aparece aqui</p>
+          <p class="text-xs text-[var(--color-text-muted)]">Finalize simulados para ver a curva das suas notas.</p>
+        </div>
+      }
+    </section>
+
+    <!-- Desafio do dia -->
+    @if (desafio(); as d) {
+      @if (d.disponivel && d.minha_resposta === null) {
+        <a
+          routerLink="/dashboard/competitivo"
+          class="bento group relative flex flex-col justify-between overflow-hidden rounded-2xl p-6 text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl col-span-2 lg:col-span-4"
+          style="--d:220ms; background: linear-gradient(150deg,#4f1d96 0%,#5b21b6 45%,#1e40af 100%)"
+        >
+          <div class="animate-float pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/10"></div>
+          <div class="relative flex items-center justify-between">
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+              <app-ui-icon [icon]="desafioPendenteIcon" [size]="22" />
+            </span>
+            <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">Diário</span>
+          </div>
+          <div class="relative mt-4">
+            <h3 class="text-xl font-extrabold">Desafio do dia</h3>
+            <p class="mt-1 text-sm text-white/80">Responda a questão de hoje e ganhe XP.</p>
+            <span class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-bold text-violet-700 shadow-sm transition-transform group-hover:translate-x-0.5">
+              Fazer agora →
+            </span>
+          </div>
+        </a>
+      } @else if (d.minha_resposta; as resp) {
+        <article class="bento card relative flex flex-col justify-between overflow-hidden col-span-2 lg:col-span-4" style="--d:220ms">
+          <span class="accent-strip" style="background: linear-gradient(90deg,#059669,#34d399)"></span>
+          <div class="flex items-center justify-between">
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <app-ui-icon [icon]="desafioFeitoIcon" [size]="22" />
+            </span>
+            <span class="rounded-full px-3 py-1 text-xs font-bold"
+              [class]="resp.correta ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
+              {{ resp.correta ? 'Acertou!' : 'Errou' }}
+            </span>
+          </div>
+          <div class="mt-4">
+            <h3 class="text-xl font-extrabold text-[var(--color-text)]">Desafio concluído</h3>
+            <p class="mt-1 text-sm text-[var(--color-text-muted)]">
+              +{{ formatNumber(resp.xp_ganho) }} XP hoje
+              @if (d.estatistica.total_responderam > 0) {
+                · {{ d.estatistica.percentual_acerto }}% acertaram
+              }
+            </p>
+          </div>
+        </article>
+      } @else {
+        <article class="bento card relative flex flex-col justify-center overflow-hidden text-center col-span-2 lg:col-span-4" style="--d:220ms">
+          <span class="flex h-11 w-11 mx-auto items-center justify-center rounded-xl bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
+            <app-ui-icon [icon]="desafioPendenteIcon" [size]="22" />
+          </span>
+          <h3 class="mt-3 text-lg font-bold text-[var(--color-text)]">Sem desafio hoje</h3>
+          <p class="mt-1 text-xs text-[var(--color-text-muted)]">Volte amanhã para um novo desafio diário.</p>
+        </article>
+      }
+    }
+
+    <!-- % Acerto geral (anel) -->
+    <article class="bento card flex flex-col items-center text-center lg:col-span-3" style="--d:280ms">
+      <div class="relative h-24 w-24">
+        <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-surface-2)" stroke-width="9" />
+          <circle
+            cx="50" cy="50" r="40" fill="none" stroke-width="9" stroke-linecap="round" class="gauge-arc"
+            [attr.stroke]="'url(#' + gradId(varianteNota(kpisData()?.taxa_acerto ?? null)) + ')'"
+            [attr.stroke-dasharray]="GAUGE_CIRC"
+            [attr.stroke-dashoffset]="gaugeOffset(kpisData()?.taxa_acerto ?? 0)"
+            [style.--target-offset]="gaugeOffset(kpisData()?.taxa_acerto ?? 0)"
           />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-xl font-extrabold tracking-tight" [class]="corVariante(varianteNota(kpisData()?.taxa_acerto ?? null))">
+            {{ kpisData()?.taxa_acerto !== null && kpisData()?.taxa_acerto !== undefined ? kpisData()!.taxa_acerto + '%' : '—' }}
+          </span>
+        </div>
+      </div>
+      <p class="mt-3 text-sm font-bold text-[var(--color-text)]">Acerto geral</p>
+      <p class="text-xs text-[var(--color-text-muted)]">todas as tentativas</p>
+    </article>
+
+    <!-- Última nota (anel) -->
+    <article class="bento card flex flex-col items-center text-center lg:col-span-3" style="--d:340ms">
+      <div class="relative h-24 w-24">
+        <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-surface-2)" stroke-width="9" />
+          <circle
+            cx="50" cy="50" r="40" fill="none" stroke-width="9" stroke-linecap="round" class="gauge-arc"
+            [attr.stroke]="'url(#' + gradId(varianteNota(kpisData()?.ultima_nota ?? null)) + ')'"
+            [attr.stroke-dasharray]="GAUGE_CIRC"
+            [attr.stroke-dashoffset]="gaugeOffset(kpisData()?.ultima_nota ?? 0)"
+            [style.--target-offset]="gaugeOffset(kpisData()?.ultima_nota ?? 0)"
+          />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-xl font-extrabold tracking-tight" [class]="corVariante(varianteNota(kpisData()?.ultima_nota ?? null))">
+            {{ kpisData()?.ultima_nota !== null && kpisData()?.ultima_nota !== undefined ? kpisData()!.ultima_nota + '%' : '—' }}
+          </span>
+        </div>
+      </div>
+      <p class="mt-3 text-sm font-bold text-[var(--color-text)]">Última nota</p>
+      <p class="text-xs text-[var(--color-text-muted)]">simulado mais recente</p>
+    </article>
+
+    <!-- Simulados concluídos -->
+    <article class="bento card relative flex flex-col justify-between overflow-hidden lg:col-span-3" style="--d:400ms">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
+        <app-ui-icon [icon]="concluidosIcon" [size]="22" />
+      </span>
+      <div class="mt-4">
+        <p class="text-4xl font-extrabold leading-none text-[var(--color-text)]">{{ kpisData()?.total_finalizadas ?? 0 }}</p>
+        <p class="mt-2 text-sm font-bold text-[var(--color-text)]">Simulados</p>
+        <p class="text-xs text-[var(--color-text-muted)]">concluídos no total</p>
+      </div>
+    </article>
+
+    <!-- Ranking -->
+    <a
+      routerLink="/dashboard/competitivo"
+      class="bento card group relative flex flex-col justify-between overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg lg:col-span-3"
+      style="--d:460ms"
+    >
+      <div class="flex items-center justify-between">
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-500">
+          <app-ui-icon [icon]="trophyIcon" [size]="22" />
+        </span>
+        <app-ui-icon [icon]="chevronIcon" [size]="18" class="text-[var(--color-text-muted)] transition-transform group-hover:translate-x-0.5" />
+      </div>
+      <div class="mt-4">
+        @if (rankingPosicao()?.posicao_global; as pos) {
+          <p class="text-4xl font-extrabold leading-none text-[var(--color-text)]">#{{ pos }}</p>
+          <p class="mt-2 text-sm font-bold text-[var(--color-text)]">Ranking geral</p>
+          <p class="text-xs text-[var(--color-text-muted)]">{{ formatNumber(gamificacao()?.xp_semana_atual ?? 0) }} XP na semana</p>
+        } @else {
+          <p class="text-2xl font-extrabold leading-tight text-[var(--color-text)]">Entre no<br />ranking</p>
+          <p class="mt-2 text-xs text-[var(--color-text-muted)]">Finalize um simulado para competir.</p>
         }
+      </div>
+    </a>
+
+    <!-- Trajetória recente -->
+    <section class="bento card flex flex-col col-span-2 lg:col-span-8" style="--d:520ms">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-base font-bold text-[var(--color-text)]">Trajetória recente</h2>
+        <a routerLink="/dashboard/historico" class="text-xs font-bold text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]">
+          Ver tudo →
+        </a>
+      </div>
+      @if (tentativasRecentes().length > 0) {
+        <div class="flex flex-col">
+          @for (t of tentativasRecentes(); track t.id) {
+            <app-tentativa-recente-item
+              [nomeProva]="t.prova_nome"
+              [dataIso]="t.finalizada_em ?? ''"
+              [nota]="t.nota"
+              [tentativaId]="t.id"
+              [provaId]="t.prova_id"
+              [modo]="t.modo"
+            />
+          }
+        </div>
       } @else {
         <app-empty-state
           titulo="Nenhum simulado ainda"
@@ -170,7 +313,62 @@
           (acao)="onComecarSimulado()"
         />
       }
-    </div>
-  </div>
+    </section>
 
+    <!-- Aside: reforçar tema + streak -->
+    <aside class="bento flex flex-col gap-4 col-span-2 lg:col-span-4" style="--d:580ms">
+      @if (temaRecomendado(); as tema) {
+        <a
+          routerLink="/dashboard/simulados/montar"
+          [queryParams]="{ tema: tema.nome, qtd: 10, modo: 'estudo' }"
+          class="card group relative flex items-center gap-3 overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg"
+        >
+          <span class="accent-strip" style="background: linear-gradient(90deg,#dc2626,#fb7185)"></span>
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+            <app-ui-icon [icon]="temaIcon" [size]="22" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold text-[var(--color-text)]">Reforçar {{ tema.nome }}</p>
+            <p class="text-xs text-[var(--color-text-muted)]">
+              @if (tema.taxa !== null) { aproveitamento em {{ tema.taxa }}% } @else { tema prioritário }
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white transition-transform group-hover:translate-x-0.5">Treinar</span>
+        </a>
+      }
+
+      @if (streak(); as s) {
+        @if (s.atual > 0) {
+          <article class="card relative flex items-center gap-3 overflow-hidden">
+            <span class="accent-strip" style="background: linear-gradient(90deg,#ea580c,#fb923c)"></span>
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+              <app-ui-icon [icon]="streakIcon" [size]="22" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-bold text-[var(--color-text)]">{{ s.atual }} dia{{ s.atual > 1 ? 's' : '' }} seguido{{ s.atual > 1 ? 's' : '' }}</p>
+              <p class="text-xs text-[var(--color-text-muted)]">
+                recorde {{ s.recorde }}
+                @if (s.dias_para_proximo_marco > 0) { · {{ s.dias_para_proximo_marco }} dia{{ s.dias_para_proximo_marco === 1 ? '' : 's' }} para o marco }
+              </p>
+            </div>
+          </article>
+        }
+      }
+
+      <!-- Fallback motivacional quando não há tema nem streak -->
+      @if (!temaRecomendado() && !(streak() && streak()!.atual > 0)) {
+        <a
+          [routerLink]="provasRoute()"
+          class="card group relative flex flex-1 flex-col justify-center overflow-hidden text-center transition-all hover:-translate-y-0.5 hover:shadow-lg"
+        >
+          <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
+            <app-ui-icon [icon]="trendingIcon" [size]="24" />
+          </span>
+          <p class="mt-3 text-sm font-bold text-[var(--color-text)]">Pronto para treinar?</p>
+          <p class="mt-1 text-xs text-[var(--color-text-muted)]">Comece um simulado e construa sua sequência.</p>
+        </a>
+      }
+    </aside>
+
+  </div>
 </div>

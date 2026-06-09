@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+/* ── Card base (superfície branca dos blocos) ─────────── */
+.card {
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 1.5rem;
+  }
+}
+
+/* Faixa de acento no topo do card */
+.accent-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+/* ── Entrada escalonada dos blocos ────────────────────── */
+.bento {
+  animation: bento-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes bento-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Desenho do anel (gauge) ──────────────────────────── */
+.gauge-arc {
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: gauge-draw 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes gauge-draw {
+  from {
+    stroke-dashoffset: 251.327;
+  }
+  to {
+    stroke-dashoffset: var(--target-offset);
+  }
+}
+
+/* ── Crescimento das barras de evolução ───────────────── */
+.bar-grow {
+  transform-origin: bottom;
+  animation: bar-grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}

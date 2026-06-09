@@ -353,6 +353,37 @@ Padrões:
 * Barras menores para movimento do dia.
 * Sinais operacionais derivados das estatísticas existentes, sem buscar dados sensíveis adicionais no cliente.
 
+## Dashboard Inicial (Bento)
+
+A tela inicial do usuário logado (`InicioComponent`) usa um layout *bento*: blocos grandes e chamativos numa grade de 12 colunas no desktop (`lg:grid-cols-12`) e empilhados em coluna única no mobile.
+
+Composição desktop:
+
+```text
+linha 1: hero (col-span-8)            | nível & XP (col-span-4)
+linha 2: evolução das notas (col-8)   | desafio do dia (col-4)
+linha 3: acerto geral | última nota | simulados | ranking  (4× col-3)
+linha 4: trajetória recente (col-8)   | reforçar tema + streak (col-4)
+```
+
+Padrões visuais:
+
+* **Card base**: `border-radius: 1rem`, borda `--color-border`, superfície branca, sombra suave; hover com leve elevação (`-translate-y-0.5` + sombra maior) nos cards clicáveis.
+* **Faixa de acento** (`.accent-strip`): barra de `4px` no topo do card, com gradiente por contexto (marca, sucesso, atenção, perigo).
+* **Anéis (gauges)**: SVG `viewBox 0 0 100 100`, círculo `r=40`, `stroke-width 9`, `stroke-linecap round`, girados `-90deg` para começar no topo. Trilho em `--color-surface-2`, arco preenchido com gradiente (`grad-brand`/`grad-success`/`grad-warning`/`grad-danger` definidos uma única vez por página). Valor no centro.
+* **Gráfico de evolução**: barras com gradiente vertical, topo arredondado, altura proporcional à nota (mínimo de 6% para visibilidade), cor pelo desempenho. Sempre rotular honestamente ("últimas N notas").
+* **Hero do desafio pendente**: único bloco, além do hero, que pode usar gradiente cheio (violeta→azul institucional) para chamar a ação; estado concluído volta a card branco com acento verde.
+
+Cores por desempenho (thresholds centralizados em `varianteNota()`): `≥70` sucesso, `≥50` atenção, `<50` perigo, sem dado = neutro (azul institucional). Os mesmos thresholds valem para anéis, barras e badges.
+
+Progresso de nível: derivado da fórmula do backend `nivel = floor(sqrt(xp/100))`; o nível `N` abrange `(2N+1)·100` de XP. Nunca inventar curva de XP no cliente.
+
+Animações (todas removíveis via `prefers-reduced-motion`):
+
+* `bento-rise`: entrada escalonada dos blocos via `animation-delay: var(--d)`.
+* `gauge-draw`: desenho do arco do anel (com fallback estático no `stroke-dashoffset`).
+* `bar-grow`: crescimento das barras a partir da base.
+
 ## Imagens
 
 * Formato padrão: **WebP** para todas as imagens estáticas e uploads.

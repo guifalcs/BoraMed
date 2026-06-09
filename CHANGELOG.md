@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-08 | UX | sem commit
+
+**Dashboard inicial redesenhado (layout bento)**
+
+- `InicioComponent` reescrito do zero com um layout *bento* de blocos grandes e chamativos: hero, anel de progresso de nível/XP, gráfico de barras de evolução das notas, desafio do dia em destaque, anéis (gauges) de acerto geral e última nota, blocos de simulados concluídos e ranking, trajetória recente e bloco lateral de reforço de tema/streak.
+- Anéis SVG (gauges) com gradiente, faixas de acento no topo dos cards, entrada escalonada (`bento-rise`), desenho animado dos anéis (`gauge-draw`) e crescimento das barras (`bar-grow`) — tudo respeitando `prefers-reduced-motion`.
+- Progresso de nível derivado honestamente da fórmula do backend (`nivel = floor(sqrt(xp/100))`), sem inventar curva.
+- Thresholds de cor (≥70 sucesso / ≥50 atenção / <50 perigo) centralizados em `varianteNota()` e reaproveitados por anéis, barras e badges.
+- `greeting-hero` mantido e reaproveitado como hero. Componente órfão `ranking-status-bar` (só usado na início) removido junto com sua story. `kpi-card` deixa de ser usado na início, mas permanece em Histórico/Admin.
+- `docs/design-system.md` documenta o padrão Dashboard Inicial (Bento).
+
+---
+
 ## 2026-06-08 | Tweak | sem commit
 
 **Provas prontas apenas nacionais**
