@@ -77,17 +77,6 @@
             <p class="mt-1 text-xs text-[var(--color-text-muted)]">O conteúdo está sendo preparado e estará disponível em breve.</p>
           </div>
         }
-
-        @if (prova()!.qtd_questoes > 0) {
-          <div class="mt-4 border-t border-[var(--color-border)] pt-4">
-            <a
-              [routerLink]="['/dashboard/simulados', prova()!.id, 'visualizar']"
-              class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] underline underline-offset-2"
-            >
-              Só quero ver as questões e o gabarito
-            </a>
-          </div>
-        }
       }
     }
   </div>

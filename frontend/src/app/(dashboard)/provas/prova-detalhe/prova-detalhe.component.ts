@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -20,7 +20,7 @@ import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components
 @Component({
   selector: 'app-prova-detalhe',
   standalone: true,
-  imports: [RouterLink, ModoSelectorComponent, UiButtonComponent, EmptyStateComponent, PageHeaderComponent],
+  imports: [ModoSelectorComponent, UiButtonComponent, EmptyStateComponent, PageHeaderComponent],
   templateUrl: './prova-detalhe.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

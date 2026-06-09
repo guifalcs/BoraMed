@@ -5,7 +5,7 @@
 
 ## Veredito
 
-**Não liberar para dados reais ainda.** Base de segurança boa (RLS em todas as tabelas, escalonamento de privilégio bloqueado, escrita de admin protegida por `is_admin()`, score/XP server-side), mas há **2 falhas CRÍTICAS exploráveis hoje** por qualquer aluno autenticado via `curl`, e itens MÉDIOS a resolver antes do go-live.
+**Atualização 2026-06-09:** os **2 CRÍTICOS foram resolvidos** (Crítico 2 — escrita direta em tentativa bloqueada; Crítico 1 — colunas de resposta revogadas + revisão/edição via RPC) e os MÉDIOS/BAIXOS seguros foram aplicados. Restam: smoke test ponta-a-ponta no app, itens de dashboard (HIBP/senha em produção, signup), deploy da edge function + secret de CORS, e a CSP no `vercel.json`. Base de segurança boa (RLS em todas as tabelas, escalonamento de privilégio bloqueado, escrita de admin protegida por `is_admin()`, score/XP server-side).
 
 Ordem de execução sugerida:
 1. Crítico 2 (só banco, fecha farm de XP imediatamente)
@@ -38,10 +38,13 @@ REVOKE SELECT (resposta_correta_texto, respostas_aceitas, explicacao, explicacao
 
 **Atenção:** admins também são `authenticated` → o editor de questões (lê `alternativa(*)` direto) precisará carregar a resposta via RPC admin (`admin_get_questao` com `is_admin()`). Alternativa mais simples: revogar `SELECT` inteiro de `alternativa`/`questao`/`prova_questao` do `authenticated` e servir tudo pelas RPCs definer.
 
-- [ ] Migration revogando colunas de resposta (ou SELECT inteiro)
-- [ ] Ajustar selects do frontend (execução/visualização)
-- [ ] RPC admin para o editor de questões ler a resposta
-- [ ] Testar simulado/estudo/visualizar/desafio/admin no banco local
+**✅ Resolvido (política escolhida: gabarito é segredo até o aluno finalizar a prova; admin vê sempre).** Migrations `20260609130000` (+ correção de grants aplicada em prod). Como o REVOKE de coluna não tem efeito com SELECT a nível de tabela, foi feito `REVOKE SELECT ON tabela` + `GRANT SELECT (colunas seguras)` para `authenticated` (anon já não tinha SELECT). Revisão do aluno via RPC `get_revisao_prova` (só libera se houver tentativa finalizada); editor admin via `admin_get_questao` (valida `is_admin()`). Verificado no banco: `has_column_privilege(authenticated, correta)=false`, RPC devolve gabarito ao usuário com tentativa e bloqueia quem não tem. Desafio diário já não vazava `correta` antes de responder.
+
+- [x] Migration revogando leitura das colunas de resposta (revoke tabela + grant colunas seguras)
+- [x] Ajustar selects do frontend (revisão via RPC; selects admin sem `*`; código morto repontado)
+- [x] RPC admin (`admin_get_questao`) para o editor ler a resposta
+- [x] RPC de revisão do aluno (`get_revisao_prova`) gated por tentativa finalizada; link aberto "ver gabarito" removido do prova-detalhe
+- [ ] Smoke test ponta-a-ponta no app rodando: simulado/estudo/visualizar/desafio/admin
 
 ---
 

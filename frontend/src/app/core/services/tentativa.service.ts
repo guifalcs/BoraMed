@@ -6,17 +6,7 @@ import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { QuestaoComAlternativas } from '../models/questao';
-import type { Tema } from '../models/tema';
 import type { ProvaResult } from './prova.service';
-
-type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
-  temas: { tema: Tema }[];
-};
-
-type RawProvaQuestao = {
-  ordem: number;
-  questao: RawQuestao | null;
-};
 
 @Injectable({ providedIn: 'root' })
 export class TentativaService {
@@ -139,23 +129,10 @@ export class TentativaService {
     provaId: string,
   ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
     try {
-      const { data, error } = await this.supabase
-        .from('prova_questao')
-        .select('ordem, questao:questao_id!inner(*, alternativas:alternativa(*), temas:questao_tema(tema(*)))')
-        .eq('prova_id', provaId)
-        .eq('questao.status', 'ativa')
-        .order('ordem');
-
+      // Gabarito de revisão via RPC (colunas de resposta revogadas das tabelas).
+      const { data, error } = await this.supabase.rpc('get_revisao_prova', { p_prova_id: provaId });
       if (error) throw error;
-
-      const questoes = ((data ?? []) as unknown as RawProvaQuestao[])
-        .filter((row): row is RawProvaQuestao & { questao: RawQuestao } => row.questao !== null)
-        .map((row) => ({
-          ...row.questao,
-          prova_id: provaId,
-          ordem_na_prova: row.ordem,
-          temas: row.questao.temas.map((qt) => qt.tema),
-        })) as QuestaoComAlternativas[];
+      const questoes = ((data as { questoes?: unknown } | null)?.questoes ?? []) as QuestaoComAlternativas[];
 
       const tentativaSintetica: Tentativa = {
         id: provaId,
@@ -192,62 +169,10 @@ export class TentativaService {
     provaId: string,
   ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[] }>> {
     try {
-      const user = this.auth.user();
-      if (!user) return { ok: false, error: 'Usuário não autenticado.' };
-
-      // Busca a tentativa mais recente desta prova
-      const { data: tentativaData, error: tentativaError } = await this.supabase
-        .from('tentativa')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('prova_id', provaId)
-        .order('criado_em', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (tentativaError) throw tentativaError;
-
-      // Busca questão IDs via tentativa_resposta
-      const { data: respostasData, error: respostasError } = await this.supabase
-        .from('tentativa_resposta')
-        .select('questao_id, ordem_na_tentativa')
-        .eq('tentativa_id', tentativaData.id)
-        .order('ordem_na_tentativa', { ascending: true })
-        .order('id', { ascending: true });
-
-      if (respostasError) throw respostasError;
-
-      type TentativaRespostaOrdem = {
-        questao_id: string;
-        ordem_na_tentativa: number | null;
-      };
-
-      const questaoIds = ((respostasData ?? []) as TentativaRespostaOrdem[]).map((r) => r.questao_id);
-      if (questaoIds.length === 0) {
-        return { ok: true, data: { questoes: [] } };
-      }
-
-      // Busca questões completas
-      const { data, error } = await this.supabase
-        .from('questao')
-        .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
-        .in('id', questaoIds);
-
+      // Mesma RPC de revisão; cobre provas regulares e personalizadas.
+      const { data, error } = await this.supabase.rpc('get_revisao_prova', { p_prova_id: provaId });
       if (error) throw error;
-
-      type RawQuestao = Omit<QuestaoComAlternativas, 'temas'> & {
-        temas: { tema: import('../models/tema').Tema }[];
-      };
-
-      const ordemPorQuestao = new Map(questaoIds.map((id, index) => [id, index]));
-      const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
-        ...q,
-        temas: q.temas.map((qt) => qt.tema),
-      })) as QuestaoComAlternativas[];
-
-      questoes.sort(
-        (a, b) => (ordemPorQuestao.get(a.id) ?? 0) - (ordemPorQuestao.get(b.id) ?? 0),
-      );
+      const questoes = ((data as { questoes?: unknown } | null)?.questoes ?? []) as QuestaoComAlternativas[];
 
       this._questoes.set(questoes);
       this._respostas.set([]);

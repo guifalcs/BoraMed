@@ -2,6 +2,20 @@
 
 ## 2026-06-09 | Segurança | sem commit
 
+**Hardening pré-produção (fase 2 — Crítico 1: gabarito)**
+
+Política: gabarito/explicação são segredo até o aluno finalizar a prova (admin vê sempre).
+
+- **Banco:** revogada a leitura das colunas de resposta (`alternativa.correta`, `questao.{resposta_correta_texto,respostas_aceitas,explicacao,explicacao_alternativas}`) de `authenticated` — feito via `REVOKE SELECT ON tabela` + `GRANT SELECT (colunas seguras)`, porque revoke de coluna não tem efeito com SELECT a nível de tabela. `anon` já não lia essas tabelas. Fecha REST e GraphQL, inclusive durante simulado. Migration `20260609130000` (+ correção de grants).
+- **RPC `get_revisao_prova`:** revisão do aluno só devolve o gabarito de provas que ele já finalizou (admin sempre). `SECURITY DEFINER`, EXECUTE só para `authenticated`.
+- **RPC `admin_get_questao`:** editor de questões lê a questão completa (com gabarito) validando `is_admin()`.
+- **Frontend:** resolver de revisão e `admin.service.buscarQuestaoCompleta` passam por RPC; selects admin sem `*`; código morto (`prepararVisualizacao*`) repontado para a RPC; removido o link aberto "Só quero ver as questões e o gabarito" do prova-detalhe; `database.types.ts` atualizado.
+- **Verificação:** confirmado no banco que `authenticated` não lê mais `correta`/`explicacao`; a RPC entrega o gabarito a quem tem tentativa finalizada e bloqueia quem não tem.
+
+---
+
+## 2026-06-09 | Segurança | sem commit
+
 **Hardening pré-produção (fase 1 — Crítico 2 + Médios/Baixos seguros)**
 
 Baseado em `AUDITORIA_SEGURANCA.md`. Crítico 1 (gabarito) e Storage→signed URL ficaram para uma fase com smoke test dedicado.

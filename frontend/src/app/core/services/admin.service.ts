@@ -272,20 +272,11 @@ export class AdminService {
   }
 
   async buscarQuestaoCompleta(id: string): Promise<ServiceResult<AdminQuestaoCompleta>> {
-    const [q, alts, temas] = await Promise.all([
-      this.supabase.from('questao').select('*,prova!questao_prova_id_fkey(nome)').eq('id', id).single(),
-      this.supabase.from('alternativa').select('id,letra,texto,correta,ordem').eq('questao_id', id).order('ordem'),
-      this.supabase.from('questao_tema').select('tema_id').eq('questao_id', id),
-    ]);
-    if (q.error) return { ok: false, error: q.error.message };
-    return {
-      ok: true,
-      data: {
-        ...(q.data as AdminQuestaoCompleta),
-        alternativas: (alts.data ?? []) as AdminAlternativa[],
-        temas: ((temas.data ?? []) as { tema_id: string }[]).map((t) => t.tema_id),
-      },
-    };
+    // As colunas de resposta foram revogadas das tabelas; o editor lê a questão
+    // completa (com gabarito) via RPC SECURITY DEFINER que valida is_admin().
+    const { data, error } = await this.supabase.rpc('admin_get_questao', { p_id: id });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminQuestaoCompleta };
   }
 
   async criarQuestaoCompleta(
@@ -353,7 +344,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('questao')
       .insert(input)
-      .select()
+      .select('id,enunciado,formato,tipo_questao,formato_prova,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminQuestao };
@@ -367,7 +358,7 @@ export class AdminService {
       .from('questao')
       .update(input)
       .eq('id', id)
-      .select()
+      .select('id,enunciado,formato,tipo_questao,formato_prova,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminQuestao };

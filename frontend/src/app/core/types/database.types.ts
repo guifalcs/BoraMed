@@ -861,6 +861,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_questao: { Args: { p_id: string }; Returns: Json }
       admin_get_stats: { Args: never; Returns: Json }
       alterar_papel_usuario: {
         Args: { p_papel: string; p_user_id: string }
@@ -910,6 +911,7 @@ export type Database = {
       get_minha_posicao_ranking: { Args: never; Returns: Json }
       get_minhas_conquistas: { Args: never; Returns: Json }
       get_ranking_global: { Args: { p_limite?: number }; Returns: Json }
+      get_revisao_prova: { Args: { p_prova_id: string }; Returns: Json }
       get_ranking_semana: { Args: { p_limite?: number }; Returns: Json }
       get_streak_estudo: { Args: never; Returns: number }
       get_streak_estudo_v2: { Args: never; Returns: Json }
