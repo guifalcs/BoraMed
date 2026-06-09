@@ -248,15 +248,15 @@
       <p class="text-xs text-[var(--color-text-muted)]">simulado mais recente</p>
     </article>
 
-    <!-- Simulados concluídos -->
+    <!-- Questões respondidas + Simulados concluídos -->
     <article class="bento card relative flex flex-col justify-between overflow-hidden lg:col-span-3" style="--d:400ms">
       <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
         <app-ui-icon [icon]="concluidosIcon" [size]="22" />
       </span>
       <div class="mt-4">
-        <p class="text-4xl font-extrabold leading-none text-[var(--color-text)]">{{ kpisData()?.total_finalizadas ?? 0 }}</p>
-        <p class="mt-2 text-sm font-bold text-[var(--color-text)]">Simulados</p>
-        <p class="text-xs text-[var(--color-text-muted)]">concluídos no total</p>
+        <p class="text-4xl font-extrabold leading-none text-[var(--color-text)]">{{ formatNumber(kpisData()?.total_questoes_respondidas ?? 0) }}</p>
+        <p class="mt-2 text-sm font-bold text-[var(--color-text)]">Questões respondidas</p>
+        <p class="text-xs text-[var(--color-text-muted)]">em {{ kpisData()?.total_finalizadas ?? 0 }} simulado{{ (kpisData()?.total_finalizadas ?? 0) !== 1 ? 's' : '' }}</p>
       </div>
     </article>
 
@@ -328,9 +328,10 @@
             <app-ui-icon [icon]="temaIcon" [size]="22" />
           </span>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-bold text-[var(--color-text)]">Reforçar {{ tema.nome }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-red-500">Tema mais fraco</p>
+            <p class="truncate text-sm font-bold text-[var(--color-text)]">{{ tema.nome }}</p>
             <p class="text-xs text-[var(--color-text-muted)]">
-              @if (tema.taxa !== null) { aproveitamento em {{ tema.taxa }}% } @else { tema prioritário }
+              @if (tema.taxa !== null) { {{ tema.taxa }}% de aproveitamento } @else { tema prioritário }
             </p>
           </div>
           <span class="shrink-0 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white transition-transform group-hover:translate-x-0.5">Treinar</span>
