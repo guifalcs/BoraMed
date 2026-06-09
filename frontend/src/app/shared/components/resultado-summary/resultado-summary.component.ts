@@ -141,11 +141,17 @@ export class ResultadoSummaryComponent {
       : ['/dashboard/simulados', this.provaId()],
   );
 
+  protected readonly modoOposto = computed(() =>
+    this.resultado().tentativa.modo === 'estudo' ? 'simulado' : 'estudo',
+  );
+
   protected readonly queryParamsRefazerEstudo = computed(() => {
+    const modo = this.modoOposto();
+
     if (this.isPersonalizado()) {
       const params: Record<string, string | number> = {
         qtd: this.total(),
-        modo: 'estudo',
+        modo,
       };
 
       const tema = this.temaPrioritario();
@@ -156,12 +162,14 @@ export class ResultadoSummaryComponent {
       return params;
     }
 
-    return { modo: 'estudo' };
+    return { modo };
   });
 
-  protected readonly labelRefazerEstudo = computed(() =>
-    this.isPersonalizado() ? 'Montar treino no modo estudo' : 'Refazer em modo estudo',
-  );
+  protected readonly labelRefazerEstudo = computed(() => {
+    const modo = this.modoOposto();
+    const label = modo === 'estudo' ? 'modo estudo' : 'modo simulado';
+    return this.isPersonalizado() ? `Montar treino em ${label}` : `Refazer em ${label}`;
+  });
 
   protected readonly labelTreinoPrioritario = computed(() => {
     const taxa = this.temaPrioritario()?.taxa ?? 100;

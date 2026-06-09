@@ -116,7 +116,11 @@
       >
         <p class="text-sm font-semibold">{{ labelRefazerEstudo() }}</p>
         <p class="mt-1 text-xs leading-5 text-emerald-700">
-          Refaça este conteúdo com gabarito visível e foco em fixação.
+          @if (modoOposto() === 'estudo') {
+            Refaça com gabarito visível e foco em fixação.
+          } @else {
+            Refaça sem gabarito, como em uma prova real.
+          }
         </p>
       </a>
 
