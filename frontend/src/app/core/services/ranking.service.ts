@@ -62,10 +62,11 @@ function parseRankingItem(value: unknown): RankingItem | null {
   const record = value as Record<string, unknown>;
   const userId = record['user_id'];
   const nomeDisplay = record['nome_display'];
-  if (typeof userId !== 'string' || typeof nomeDisplay !== 'string') return null;
+  // user_id pode vir NULL (perfil privado mascarado pelo backend); só nome_display é obrigatório.
+  if (typeof nomeDisplay !== 'string') return null;
 
   return {
-    user_id: userId,
+    user_id: typeof userId === 'string' ? userId : null,
     nome_display: nomeDisplay,
     avatar_url: typeof record['avatar_url'] === 'string' ? record['avatar_url'] : null,
     nivel: toNumber(record['nivel']),

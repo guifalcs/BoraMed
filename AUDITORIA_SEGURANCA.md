@@ -67,17 +67,17 @@ DROP POLICY tentativa_resposta_update_own   ON public.tentativa_resposta;
 -- manter apenas as policies de SELECT (já scoped por dono/is_admin)
 ```
 
-- [ ] Migration revogando escrita direta + drop das policies de write
+- [x] Migration revogando escrita direta + drop das policies de write — `20260609120000_seguranca_bloquear_escrita_tentativa.sql` (aplicada). Escritas seguem só via RPCs SECURITY DEFINER.
 - [ ] Smoke test: iniciar → responder → pausar → retomar → finalizar → XP no banco local
 
 ---
 
 ## 🟠 MÉDIO (antes do go-live)
 
-- [ ] **Ranking desanonimiza perfil privado** — `get_ranking_global/_semana` põe `nome_display='Anônimo'` quando `competir_publico=false`, mas devolve `user_id` real e XP exato (dá pra reidentificar e enumerar `user_id`s). → Omitir/`NULL` no `user_id` quando não for `is_me` e o perfil for privado.
+- [x] **Ranking desanonimiza perfil privado** — `get_ranking_global/_semana` agora mascaram `user_id` (NULL) quando o perfil é privado e não é `is_me`. Migration `20260609120100_seguranca_ranking_mascarar_user_id.sql` (aplicada) + frontend ajustado (`RankingItem.user_id: string | null`, parser tolera NULL, trackBy por `posicao`).
 - [ ] **Buckets de Storage públicos** — `questao-imagens`, `questoes-lab` (sem policies), `avatars`, `avisos` estão `public=true`. Imagens de lâminas/peças (conteúdo de prova) acessíveis por URL sem login, contornando policies. → Tornar `questao-imagens` e `questoes-lab` privados e servir por signed URL.
-- [ ] **Open redirect no `/auth/callback`** — `server.ts:76` aceita `next=//evil.com` (`startsWith('/')` deixa passar protocol-relative). → Validar `next.startsWith('/') && !next.startsWith('//')`. Mesmo fix em `auth-callback.component.ts:31`.
-- [ ] **Sem headers de segurança** no `vercel.json` (CSP, X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy). → Adicionar bloco `headers`:
+- [x] **Open redirect no `/auth/callback`** — corrigido em `server.ts` e `auth-callback.component.ts` com `next.startsWith('/') && !next.startsWith('//')`.
+- [~] **Headers de segurança** no `vercel.json` — adicionados X-Frame-Options (DENY), X-Content-Type-Options, Referrer-Policy e HSTS. **CSP ainda pendente** (deferida para a fase de teste junto com Crítico 1/Storage: CSP mal calibrada pode quebrar o app em produção e precisa de smoke test em preview deploy). Bloco de referência:
 ```json
 "headers": [{
   "source": "/(.*)",
@@ -91,19 +91,19 @@ DROP POLICY tentativa_resposta_update_own   ON public.tentativa_resposta;
 }]
 ```
 (Ajustar `script-src` conforme hydration/analytics antes de aplicar.)
-- [ ] **Senha fraca** — `minimum_password_length=6`, `password_requirements=""` e *leaked password protection* (HIBP) desligada em produção (confirmado pelo advisor). → Dashboard: mínimo 8, exigir letras+dígitos, habilitar HIBP.
-- [ ] **Refresh token do admin em `sessionStorage`** durante impersonação (`auth.service.ts:140`) — XSS exfiltra credencial admin de longa duração. → Não persistir refresh token; restaurar sessão server-side ou re-autenticar ao sair.
+- [~] **Senha fraca** — `config.toml` atualizado para `minimum_password_length=8` e `password_requirements="letters_digits"`. **Pendente no dashboard de produção** (config.toml é dev/local): aplicar mínimo 8 + letras&dígitos e **habilitar HIBP** (leaked password protection) — advisor ainda acusa `auth_leaked_password_protection`.
+- [x] **Refresh token do admin em `sessionStorage`** — não persistimos mais tokens (só o nome do admin para o banner). A reversão imediata em caso de mismatch usa a sessão em memória; ao sair da impersonação o admin **re-autentica** (`voltarParaAdmin` → signOut → /login). ⚠️ Mudança de UX: admin precisa logar de novo após impersonar.
 - [ ] **Signup aberto** (`enable_signup=true`) amplia impacto enquanto o público é fechado (alunos). Considerar allowlist/convite.
 
 ---
 
 ## 🟡 BAIXO / endurecimento
 
-- [ ] Grants legados `GRANT ALL` (`TRUNCATE/TRIGGER/REFERENCES`, e DML do `anon` em `profiles`/`notificacoes`) — não explorável via PostgREST, mas viola menor-privilégio. Revogar.
-- [ ] 6 funções definer com `SET search_path = public` sem `pg_temp` (`is_admin`, `is_super_admin`, `admin_get_stats`, `prevent_papel_change`, `admin_enviar_notificacao`, `get_historico_kpis`). → usar `public, pg_temp`.
-- [ ] Log de impersonação é *best-effort* (`.then()` sem await) — se o INSERT falhar, impersonação ocorre **sem auditoria**. Gravar antes de retornar o `token_hash`. Considerar restringir leitura do log a `super_admin` (hoje qualquer `admin` lê tudo).
-- [ ] CORS `*` na edge function `admin-impersonate` — baixo risco (exige JWT admin); travar na origem do app.
-- [ ] **Não-segurança (vai quebrar):** `get_streak_estudo_v2` referencia variável inexistente `v_freeze_uso_hoje` (declarou `v_freeze_usado_hoje`) → erro em runtime. O arquivo `reset_xp_semanal_cron.sql` **não cria cron** (nome enganoso; reset é lógico por semana ISO).
+- [x] Grants legados `GRANT ALL` — revogados `TRUNCATE/TRIGGER/REFERENCES` de `anon`/`authenticated` e DML do `anon` em `profiles`/`notificacoes`. Migration `20260609120300_seguranca_revogar_grants_legados.sql` (aplicada).
+- [x] 6 funções definer com `SET search_path = public` sem `pg_temp` — corrigidas via `ALTER FUNCTION ... SET search_path TO 'public', 'pg_temp'`. Migration `20260609120200_seguranca_search_path_pg_temp.sql` (aplicada).
+- [x] Log de impersonação — a edge function agora **grava a auditoria com `await` ANTES** de gerar/retornar o `token_hash` e **aborta** (500) se o INSERT falhar. Leitura do log restringida a `super_admin` (migration `20260609120400_seguranca_restringir_log_impersonacao.sql`, aplicada). ⚠️ Edge function precisa de **deploy** (`supabase functions deploy admin-impersonate`).
+- [~] CORS `*` na edge function `admin-impersonate` — agora travável por env `APP_ALLOWED_ORIGINS` (lista separada por vírgula); sem a env mantém `*` para não quebrar. **Pendente:** definir o secret com a origem do app + deploy.
+- [x] **Não-segurança:** `get_streak_estudo_v2` — verificado no banco de produção: a função **já usa** `v_freeze_usado_hoje` consistentemente (sem o bug). Nenhuma ação necessária. (`reset_xp_semanal_cron.sql` segue sem cron — reset lógico por semana ISO, sem impacto de segurança.)
 
 ---
 

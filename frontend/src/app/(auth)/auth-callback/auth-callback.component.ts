@@ -28,6 +28,8 @@ export class AuthCallbackComponent implements OnInit {
     }
 
     this.prefetch.prefetchDashboardRoutes();
-    void this.router.navigateByUrl(next.startsWith('/') ? next : '/dashboard', { replaceUrl: true });
+    // `//evil.com` passa em `startsWith('/')` (protocol-relative) → open redirect.
+    const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+    void this.router.navigateByUrl(safeNext, { replaceUrl: true });
   }
 }

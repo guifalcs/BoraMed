@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-09 | Segurança | sem commit
+
+**Hardening pré-produção (fase 1 — Crítico 2 + Médios/Baixos seguros)**
+
+Baseado em `AUDITORIA_SEGURANCA.md`. Crítico 1 (gabarito) e Storage→signed URL ficaram para uma fase com smoke test dedicado.
+
+- **CRÍTICO 2 — fim do farm de XP/nota forjada:** revogada escrita direta (`INSERT/UPDATE/DELETE`) de `authenticated` em `tentativa`/`tentativa_resposta` e removidas as policies de escrita. Toda escrita segue exclusivamente pelas RPCs `SECURITY DEFINER`. Migration `20260609120000_seguranca_bloquear_escrita_tentativa.sql`.
+- **Ranking não desanonimiza perfil privado:** `get_ranking_global/_semana` mascaram `user_id` (NULL) quando o perfil é privado e não é o próprio usuário. Frontend ajustado (`RankingItem.user_id: string | null`, parser tolerante a NULL, `trackBy` por `posicao`). Migration `20260609120100`.
+- **Open redirect** em `/auth/callback` corrigido (`server.ts` + `auth-callback.component.ts`): bloqueia `//evil.com`.
+- **Headers de segurança** em `vercel.json`: X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS. (CSP deferida para a fase de teste.)
+- **Refresh token de admin** não é mais persistido em `sessionStorage` durante impersonação; saída re-autentica o admin.
+- **Edge function `admin-impersonate`:** auditoria gravada com `await` antes de emitir o token (aborta se falhar); CORS travável por `APP_ALLOWED_ORIGINS`.
+- **Endurecimento de banco:** revogados grants legados (`TRUNCATE/TRIGGER/REFERENCES` + DML do `anon` em `profiles`/`notificacoes`); `pg_temp` adicionado ao `search_path` de 6 funções definer; leitura do log de impersonação restrita a `super_admin`. Migrations `20260609120200`/`20260609120300`/`20260609120400`.
+- **config.toml:** `minimum_password_length=8` + `password_requirements="letters_digits"`.
+- **Pendências de dashboard/deploy:** habilitar HIBP e política de senha em produção; `deploy` da edge function; definir secret `APP_ALLOWED_ORIGINS`.
+
+---
+
 ## 2026-06-08 | UX | sem commit
 
 **Dashboard inicial redesenhado (layout bento)**

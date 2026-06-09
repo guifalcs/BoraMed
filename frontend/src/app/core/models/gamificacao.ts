@@ -36,7 +36,8 @@ export interface ConquistaUsuario {
 }
 
 export interface RankingItem {
-  user_id: string;
+  /** NULL quando o perfil é privado (competir_publico=false) e não é o próprio usuário. */
+  user_id: string | null;
   nome_display: string;
   avatar_url: string | null;
   nivel: number;

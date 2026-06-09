@@ -1,27 +1,48 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Origens permitidas para CORS. Configure APP_ALLOWED_ORIGINS (lista separada por
+// vírgula) nos secrets da função para travar na origem do app. Sem a env, mantém
+// `*` para não quebrar a chamada (baixo risco: a função exige JWT de admin).
+const ALLOWED_ORIGINS = (Deno.env.get('APP_ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-function json(data: unknown, status = 200): Response {
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowOrigin =
+    ALLOWED_ORIGINS.length === 0
+      ? '*'
+      : ALLOWED_ORIGINS.includes(origin)
+        ? origin
+        : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  };
+}
+
+function json(data: unknown, status: number, cors: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req) => {
+  const cors = corsHeaders(req);
+  const reply = (data: unknown, status = 200) => json(data, status, cors);
+
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: CORS_HEADERS });
+    return new Response('ok', { headers: cors });
   }
   if (req.method !== 'POST') {
-    return json({ error: 'method not allowed' }, 405);
+    return reply({ error: 'method not allowed' }, 405);
   }
 
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return json({ error: 'missing token' }, 401);
+  if (!authHeader) return reply({ error: 'missing token' }, 401);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -32,7 +53,7 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: callerData, error: callerError } = await callerClient.auth.getUser();
-  if (callerError || !callerData.user) return json({ error: 'unauthorized' }, 401);
+  if (callerError || !callerData.user) return reply({ error: 'unauthorized' }, 401);
   const caller = callerData.user;
 
   // Usar service role para operações admin
@@ -48,7 +69,7 @@ Deno.serve(async (req) => {
     .single();
   const callerPapel = callerProfile?.papel as string | undefined;
   if (callerPapel !== 'admin' && callerPapel !== 'super_admin') {
-    return json({ error: 'forbidden' }, 403);
+    return reply({ error: 'forbidden' }, 403);
   }
 
   // Validar body
@@ -56,19 +77,19 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return json({ error: 'invalid body' }, 400);
+    return reply({ error: 'invalid body' }, 400);
   }
   const targetUserId = body.target_user_id;
   if (!targetUserId || typeof targetUserId !== 'string') {
-    return json({ error: 'invalid target_user_id' }, 400);
+    return reply({ error: 'invalid target_user_id' }, 400);
   }
   if (targetUserId === caller.id) {
-    return json({ error: 'cannot impersonate yourself' }, 400);
+    return reply({ error: 'cannot impersonate yourself' }, 400);
   }
 
   // Buscar usuário alvo
   const { data: targetUserData, error: targetError } = await adminClient.auth.admin.getUserById(targetUserId);
-  if (targetError || !targetUserData.user) return json({ error: 'target user not found' }, 404);
+  if (targetError || !targetUserData.user) return reply({ error: 'target user not found' }, 404);
   const targetUser = targetUserData.user;
 
   // Buscar perfil do alvo
@@ -81,43 +102,40 @@ Deno.serve(async (req) => {
 
   // super_admin é irrepresentável
   if (targetPapel === 'super_admin') {
-    return json({ error: 'cannot impersonate super_admin account' }, 403);
+    return reply({ error: 'cannot impersonate super_admin account' }, 403);
   }
   // admin só pode impersonar alunos; super_admin pode impersonar admins também
   if (targetPapel === 'admin' && callerPapel !== 'super_admin') {
-    return json({ error: 'cannot impersonate admin account' }, 403);
+    return reply({ error: 'cannot impersonate admin account' }, 403);
   }
 
-  // Gerar magic link
+  // Registrar audit log ANTES de emitir o token. Se a auditoria falhar, a
+  // impersonação é abortada — nunca impersonar sem registro.
+  const { error: auditError } = await adminClient.from('admin_impersonation_log').insert({
+    admin_id: caller.id,
+    admin_email: caller.email ?? '',
+    target_id: targetUserId,
+    target_email: targetUser.email ?? '',
+    target_name: targetProfile?.nome_completo ?? null,
+    ip: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+    user_agent: req.headers.get('user-agent') ?? null,
+  });
+  if (auditError) {
+    console.error('audit log error:', auditError.message);
+    return reply({ error: 'failed to record audit log' }, 500);
+  }
+
+  // Gerar magic link (somente após a auditoria estar persistida)
   const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
     type: 'magiclink',
     email: targetUser.email!,
   });
-  if (linkError || !linkData) return json({ error: 'failed to generate link' }, 500);
+  if (linkError || !linkData) return reply({ error: 'failed to generate link' }, 500);
 
   const tokenHash = (linkData as { properties?: { hashed_token?: string } }).properties?.hashed_token;
-  if (!tokenHash) return json({ error: 'failed to extract token' }, 500);
+  if (!tokenHash) return reply({ error: 'failed to extract token' }, 500);
 
-  // Registrar audit log (não bloqueia em caso de erro)
-  adminClient
-    .from('admin_impersonation_log')
-    .insert({
-      admin_id: caller.id,
-      admin_email: caller.email ?? '',
-      target_id: targetUserId,
-      target_email: targetUser.email ?? '',
-      target_name: targetProfile?.nome_completo ?? null,
-      ip:
-        req.headers.get('x-forwarded-for') ??
-        req.headers.get('cf-connecting-ip') ??
-        null,
-      user_agent: req.headers.get('user-agent') ?? null,
-    })
-    .then(({ error }) => {
-      if (error) console.error('audit log error:', error.message);
-    });
-
-  return json({
+  return reply({
     token_hash: tokenHash,
     target_user_id: targetUserId,
     target_email: targetUser.email,

@@ -72,8 +72,10 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
     return;
   }
 
-  // Garante que next seja uma rota relativa segura
-  const safePath = next.startsWith('/') ? next : '/dashboard';
+  // Garante que next seja uma rota relativa segura.
+  // `startsWith('/')` sozinho deixa passar `//evil.com` (protocol-relative),
+  // que é um open redirect — por isso bloqueamos também o prefixo `//`.
+  const safePath = next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
   res.redirect(302, safePath);
 });
 

@@ -210,7 +210,7 @@
         </div>
       } @else if (rankingAtual().length > 0) {
         <div class="divide-y divide-[var(--color-border)] overflow-hidden rounded-lg border border-[var(--color-border)]">
-          @for (row of rankingComGap(); track row.item.user_id) {
+          @for (row of rankingComGap(); track row.item.posicao) {
             @if (row.showGap) {
               <div class="px-4 py-1.5 text-xs text-center text-[var(--color-text-muted)] select-none tracking-widest">···</div>
             }

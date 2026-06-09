@@ -137,14 +137,11 @@ export class AuthService implements OnDestroy {
     if (!session) return { ok: false, error: 'Sem sessão ativa' };
 
     try {
-      sessionStorage.setItem(
-        this.ADMIN_SESSION_KEY,
-        JSON.stringify({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          adminName,
-        }),
-      );
+      // Não persistir tokens: refresh token de admin em sessionStorage é
+      // exfiltrável por XSS. Guardamos só o nome do admin para exibir o banner;
+      // a reversão imediata (mismatch abaixo) usa a `session` em memória, e a
+      // saída da impersonação re-autentica o admin (voltarParaAdmin).
+      sessionStorage.setItem(this.ADMIN_SESSION_KEY, JSON.stringify({ adminName }));
     } catch {
       return { ok: false, error: 'Erro ao salvar sessão' };
     }
@@ -179,32 +176,13 @@ export class AuthService implements OnDestroy {
   async voltarParaAdmin(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    let backup: { access_token: string; refresh_token: string; adminName: string } | null = null;
-    try {
-      const raw = sessionStorage.getItem(this.ADMIN_SESSION_KEY);
-      if (raw) backup = JSON.parse(raw);
-    } catch { /* ignorar */ }
-
-    if (!backup) {
-      this._impersonando.set(null);
-      void this.router.navigate(['/login']);
-      return;
-    }
-
-    const { error } = await this.supabase.auth.setSession({
-      access_token: backup.access_token,
-      refresh_token: backup.refresh_token,
-    });
-
+    // Sem tokens de admin persistidos (por segurança): encerramos a sessão
+    // impersonada e enviamos o admin para re-autenticar.
     sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
     this._impersonando.set(null);
-
-    if (error) {
-      await this.supabase.auth.signOut();
-      return;
-    }
-
-    void this.router.navigate(['/admin']);
+    this.cache.clear();
+    await this.supabase.auth.signOut();
+    void this.router.navigate(['/login']);
   }
 
   ngOnDestroy(): void {
