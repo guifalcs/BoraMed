@@ -139,8 +139,7 @@ describe('ProvaDetalheComponent', () => {
     });
 
     it('não exibe título da prova quando há erro', () => {
-      const h1 = el.querySelector('h1');
-      expect(h1).toBeNull();
+      expect(el.textContent).not.toContain('Simulado N1 — 1º Período — Edição 1');
     });
   });
 
@@ -152,8 +151,8 @@ describe('ProvaDetalheComponent', () => {
     });
 
     it('exibe o nome do simulado', () => {
-      const h1 = el.querySelector('h1');
-      expect(h1?.textContent).toContain('Simulado N1 — 1º Período — Edição 1');
+      const titulos = Array.from(el.querySelectorAll('h1')).map((h) => h.textContent ?? '');
+      expect(titulos.join(' ')).toContain('Simulado N1 — 1º Período — Edição 1');
     });
 
     it('exibe metadados (período, edição, questões)', () => {

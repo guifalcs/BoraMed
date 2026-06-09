@@ -1,15 +1,10 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Tentativa } from '../../../core/models/tentativa';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvasHomeComponent } from './provas-home.component';
-
-try {
-  TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
-} catch {}
 
 function tentativaFactory(overrides: Partial<Tentativa> = {}): Tentativa {
   return {

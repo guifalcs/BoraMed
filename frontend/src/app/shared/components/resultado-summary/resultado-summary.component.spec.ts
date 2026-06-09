@@ -255,7 +255,7 @@ describe('ResultadoSummaryComponent', () => {
       fixture.detectChanges();
 
       const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('Montar treino no modo estudo');
+      expect(el.textContent).toContain('Montar treino em modo estudo');
     });
   });
 });

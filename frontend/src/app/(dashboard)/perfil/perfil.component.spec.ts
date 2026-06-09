@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { PerfilComponent } from './perfil.component';
 import { ProfileService } from '../../core/services/profile.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -33,6 +34,7 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     avatar_url: null,
     competir_publico: true,
     papel: 'aluno',
+    ultimo_login: null,
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString(),
     ...overrides,
@@ -89,6 +91,7 @@ describe('PerfilComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PerfilComponent],
       providers: [
+        provideRouter([]),
         { provide: ProfileService, useValue: mockProfileService },
         { provide: AuthService, useValue: { user: userSignal.asReadonly() } },
         { provide: NotificationService, useValue: mockToast },
