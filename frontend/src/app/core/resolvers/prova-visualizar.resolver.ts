@@ -23,9 +23,10 @@ type RawProvaQuestao = {
   questao: RawQuestao | null;
 };
 
-type TentativaRespostaOrdem = {
-  questao_id: string;
+type RawTentativaResposta = {
+  id: string;
   ordem_na_tentativa: number | null;
+  questao: RawQuestao | null;
 };
 
 export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = async (route) => {
@@ -41,7 +42,12 @@ export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = a
   }
 
   const provaId = route.paramMap.get('provaId') ?? '';
-  const provaResult = await provaService.buscarProva(provaId);
+
+  // Prova e questões regulares em paralelo; o caminho personalizado (raro) busca depois.
+  const [provaResult, questoesRegularesResult] = await Promise.all([
+    provaService.buscarProva(provaId),
+    fetchQuestoesRegulares(supabase, provaId),
+  ]);
 
   let questoesResult: ProvaVisualizarResolvedData['questoesResult'];
 
@@ -51,7 +57,7 @@ export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = a
     const isPersonalizado = provaResult.data.origem === 'personalizado';
     questoesResult = isPersonalizado
       ? await fetchQuestoesPersonalizado(supabase, provaId)
-      : await fetchQuestoesRegulares(supabase, provaId);
+      : questoesRegularesResult;
   }
 
   const resolved: ProvaVisualizarResolvedData = { provaResult, questoesResult };
@@ -97,44 +103,29 @@ async function fetchQuestoesPersonalizado(
   provaId: string,
 ): Promise<{ ok: true; data: QuestaoComAlternativas[] } | { ok: false; error: string }> {
   try {
-    const { data: tentativaData, error: tentativaError } = await supabase
+    const { data, error } = await supabase
       .from('tentativa')
-      .select('id')
+      .select(
+        'id, respostas:tentativa_resposta(id, ordem_na_tentativa, questao:questao_id(*, alternativas:alternativa(*), temas:questao_tema(tema(*))))',
+      )
       .eq('prova_id', provaId)
       .order('criado_em', { ascending: false })
       .limit(1)
       .single();
 
-    if (tentativaError) throw tentativaError;
-
-    const { data: respostasData, error: respostasError } = await supabase
-      .from('tentativa_resposta')
-      .select('questao_id, ordem_na_tentativa')
-      .eq('tentativa_id', tentativaData.id)
-      .order('ordem_na_tentativa', { ascending: true })
-      .order('id', { ascending: true });
-
-    if (respostasError) throw respostasError;
-
-    const questaoIds = ((respostasData ?? []) as TentativaRespostaOrdem[]).map((r) => r.questao_id);
-    if (questaoIds.length === 0) return { ok: true, data: [] };
-
-    const { data, error } = await supabase
-      .from('questao')
-      .select('*, alternativas:alternativa(*), temas:questao_tema(tema(*))')
-      .in('id', questaoIds);
-
     if (error) throw error;
 
-    const ordemPorQuestao = new Map(questaoIds.map((id, index) => [id, index]));
-    const questoes = ((data ?? []) as RawQuestao[]).map((q) => ({
-      ...q,
-      temas: q.temas.map((qt) => qt.tema),
-    })) as QuestaoComAlternativas[];
+    const respostas = ((data?.respostas ?? []) as unknown as RawTentativaResposta[])
+      .filter((r): r is RawTentativaResposta & { questao: RawQuestao } => r.questao !== null)
+      .sort(
+        (a, b) =>
+          (a.ordem_na_tentativa ?? 0) - (b.ordem_na_tentativa ?? 0) || a.id.localeCompare(b.id),
+      );
 
-    questoes.sort(
-      (a, b) => (ordemPorQuestao.get(a.id) ?? 0) - (ordemPorQuestao.get(b.id) ?? 0),
-    );
+    const questoes = respostas.map((r) => ({
+      ...r.questao,
+      temas: r.questao.temas.map((qt) => qt.tema),
+    })) as QuestaoComAlternativas[];
 
     return { ok: true, data: questoes };
   } catch {

@@ -42,7 +42,7 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
     },
   };
 
-  for (const method of ['select', 'eq', 'order']) {
+  for (const method of ['select', 'eq', 'order', 'limit']) {
     builder[method] = vi.fn().mockReturnValue(builder);
   }
 
@@ -191,7 +191,7 @@ describe('ProvaService', () => {
 
       expect(mockFrom).toHaveBeenCalledWith('prova');
       const selectMock = builder['select'] as ReturnType<typeof vi.fn>;
-      expect(selectMock).toHaveBeenCalledWith('*, faculdade(nome, sigla)');
+      expect(selectMock).toHaveBeenCalledWith(expect.stringContaining('faculdade(nome, sigla)'));
     });
   });
 });

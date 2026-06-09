@@ -5,6 +5,13 @@ import type { FormatoProva, Prova, ProvaComFaculdade, FiltrosProvas } from '../m
 
 export type ProvaResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+const PROVA_COLUMNS =
+  'id, faculdade_id, nome, periodo, tipo, origem, formato, rede, subtipo, subtipo_nacional, qtd_questoes, publicada, arquivada, criado_em';
+
+const FACULDADE_COLUMNS = 'id, nome, sigla, rede, ativa, logo_url, criado_em';
+
+const MAX_PROVAS_LISTA = 200;
+
 @Injectable({ providedIn: 'root' })
 export class ProvaService {
   private readonly supabase = inject(SupabaseService).client;
@@ -19,7 +26,7 @@ export class ProvaService {
     try {
       const { data, error } = await this.supabase
         .from('faculdade')
-        .select('*')
+        .select(FACULDADE_COLUMNS)
         .eq('ativa', true)
         .order('nome');
 
@@ -42,11 +49,12 @@ export class ProvaService {
     try {
       let query = this.supabase
         .from('prova')
-        .select('*')
+        .select(PROVA_COLUMNS)
         .eq('formato', formato)
         .eq('arquivada', false)
         .order('criado_em', { ascending: false })
-        .order('subtipo', { ascending: true });
+        .order('subtipo', { ascending: true })
+        .limit(MAX_PROVAS_LISTA);
 
       if (filtros.rede) {
         query = query.eq('rede', filtros.rede);
@@ -76,12 +84,12 @@ export class ProvaService {
     try {
       const { data, error } = await this.supabase
         .from('prova')
-        .select('*, faculdade(nome, sigla)')
+        .select(`${PROVA_COLUMNS}, faculdade(nome, sigla)`)
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      return { ok: true, data: data as ProvaComFaculdade };
+      return { ok: true, data: data as unknown as ProvaComFaculdade };
     } catch {
       return { ok: false, error: 'Simulado não encontrado.' };
     }
