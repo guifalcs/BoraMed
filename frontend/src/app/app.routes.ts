@@ -60,6 +60,11 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./(admin)/admin.routes').then((m) => m.adminRoutes),
   },
+  {
+    path: 'termos-de-uso',
+    loadComponent: () =>
+      import('./(legal)/termos-de-uso/termos-de-uso.component').then((m) => m.TermosDeUsoComponent),
+  },
   { path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
   { path: 'erro', loadComponent: () => import('./(errors)/erro-servidor/erro-servidor.component').then(m => m.ErroServidorComponent) },
   { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },

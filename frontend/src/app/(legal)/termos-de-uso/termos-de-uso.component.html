@@ -1,0 +1,213 @@
+<main class="min-h-screen bg-white">
+
+  <!-- Cabeçalho -->
+  <header class="border-b border-gray-100 bg-white sticky top-0 z-10">
+    <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a routerLink="/" aria-label="BoraMed - início">
+        <img src="/brand/logo.webp" alt="BoraMed" class="h-7 w-auto" />
+      </a>
+      <a routerLink="/" class="text-sm text-gray-500 hover:text-gray-800 transition-colors">
+        ← Voltar ao início
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo -->
+  <div class="max-w-3xl mx-auto px-6 py-12">
+
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Termos de Uso</h1>
+      <p class="text-sm text-gray-400">Última atualização: {{ dataAtualizacao }}</p>
+    </div>
+
+    <div class="prose prose-gray max-w-none space-y-8 text-gray-700 leading-relaxed">
+
+      <!-- 1 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">1. Sobre o BoraMed</h2>
+        <p>
+          O BoraMed é uma plataforma independente de simulados para estudantes de medicina,
+          desenvolvida e operada por seus fundadores. O BoraMed não possui qualquer vínculo
+          oficial, parceria ou afiliação com a Afya Educação ou com qualquer outra instituição
+          de ensino. Todo o conteúdo disponível na plataforma é autoral, criado exclusivamente
+          pela equipe do BoraMed.
+        </p>
+      </section>
+
+      <!-- 2 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">2. Aceitação dos Termos</h2>
+        <p>
+          Ao acessar ou utilizar o BoraMed, você declara que leu, entendeu e concorda com
+          estes Termos de Uso. Se você não concordar com qualquer parte destes termos, não
+          utilize a plataforma.
+        </p>
+        <p class="mt-3">
+          Estes termos se aplicam a todos os usuários, incluindo visitantes, usuários
+          registrados e administradores.
+        </p>
+      </section>
+
+      <!-- 3 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">3. Descrição do Serviço</h2>
+        <p>O BoraMed oferece os seguintes módulos:</p>
+        <ul class="list-disc pl-5 mt-3 space-y-1">
+          <li><strong>Treinos Nacionais:</strong> simulados autorais no modelo das avaliações nacionais de medicina.</li>
+          <li><strong>Simulados Processuais:</strong> questões autorais por tema e quantidade, com geração aleatória.</li>
+          <li><strong>Simulados de Laboratório:</strong> questões autorais com imagens de lâminas e peças anatômicas.</li>
+        </ul>
+        <p class="mt-3">
+          O acesso a determinados módulos pode estar condicionado ao cadastro na plataforma.
+          O BoraMed se reserva o direito de adicionar, modificar ou remover funcionalidades
+          a qualquer momento, sem aviso prévio.
+        </p>
+      </section>
+
+      <!-- 4 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">4. Cadastro e Conta de Usuário</h2>
+        <p>
+          Para acessar os recursos da plataforma, é necessário criar uma conta utilizando
+          e-mail e senha. Você é responsável por:
+        </p>
+        <ul class="list-disc pl-5 mt-3 space-y-1">
+          <li>Manter suas credenciais de acesso em sigilo.</li>
+          <li>Todas as atividades realizadas com sua conta.</li>
+          <li>Notificar imediatamente o BoraMed em caso de uso não autorizado.</li>
+          <li>Fornecer informações verdadeiras e atualizadas no cadastro.</li>
+        </ul>
+        <p class="mt-3">
+          O BoraMed se reserva o direito de suspender ou encerrar contas que violem estes
+          termos ou que apresentem atividade suspeita.
+        </p>
+      </section>
+
+      <!-- 5 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">5. Uso Permitido</h2>
+        <p>Você pode utilizar o BoraMed para:</p>
+        <ul class="list-disc pl-5 mt-3 space-y-1">
+          <li>Realizar simulados e treinos para fins de estudo pessoal.</li>
+          <li>Acompanhar seu próprio desempenho e histórico de tentativas.</li>
+          <li>Revisar questões e gabaritos após a conclusão de tentativas.</li>
+        </ul>
+      </section>
+
+      <!-- 6 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">6. Uso Proibido</h2>
+        <p>É expressamente proibido:</p>
+        <ul class="list-disc pl-5 mt-3 space-y-1">
+          <li>Copiar, reproduzir, distribuir ou comercializar qualquer conteúdo da plataforma sem autorização expressa.</li>
+          <li>Compartilhar questões, gabaritos ou conteúdos do BoraMed em outros ambientes ou plataformas.</li>
+          <li>Utilizar bots, scripts ou qualquer meio automatizado para acessar ou extrair conteúdo.</li>
+          <li>Tentar burlar sistemas de autenticação, segurança ou controle de acesso.</li>
+          <li>Criar múltiplas contas com o objetivo de obter vantagens indevidas.</li>
+          <li>Realizar engenharia reversa, descompilar ou tentar acessar o código-fonte da plataforma.</li>
+          <li>Praticar qualquer ato que prejudique a integridade, disponibilidade ou funcionamento da plataforma.</li>
+        </ul>
+      </section>
+
+      <!-- 7 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">7. Propriedade Intelectual</h2>
+        <p>
+          Todo o conteúdo disponível no BoraMed — incluindo questões, enunciados, gabaritos,
+          explicações, imagens e o código da plataforma — é de propriedade exclusiva do BoraMed
+          e está protegido pela legislação brasileira de direitos autorais (Lei nº 9.610/98).
+        </p>
+        <p class="mt-3">
+          O uso da plataforma não transfere ao usuário qualquer direito de propriedade intelectual
+          sobre o conteúdo disponibilizado. A reprodução parcial ou total sem autorização prévia
+          e por escrito é estritamente proibida.
+        </p>
+      </section>
+
+      <!-- 8 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">8. Privacidade e Dados Pessoais</h2>
+        <p>
+          O BoraMed coleta e armazena dados necessários para o funcionamento da plataforma,
+          como nome, e-mail e histórico de desempenho. Esses dados são utilizados exclusivamente
+          para oferecer e melhorar o serviço.
+        </p>
+        <p class="mt-3">
+          O BoraMed não vende nem compartilha seus dados pessoais com terceiros para fins
+          comerciais. O tratamento de dados segue os princípios da Lei Geral de Proteção
+          de Dados (LGPD — Lei nº 13.709/2018).
+        </p>
+        <p class="mt-3">
+          Para exercer seus direitos previstos na LGPD (acesso, correção, exclusão de dados,
+          entre outros), entre em contato pelo e-mail:
+          <a href="mailto:contato@boramed.com.br" class="text-blue-600 hover:underline">contato&#64;boramed.com.br</a>.
+        </p>
+      </section>
+
+      <!-- 9 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">9. Limitação de Responsabilidade</h2>
+        <p>
+          O BoraMed é uma ferramenta de apoio ao estudo e não substitui orientação acadêmica
+          formal, professores ou materiais didáticos oficiais de sua instituição.
+        </p>
+        <p class="mt-3">
+          O BoraMed não garante que o conteúdo da plataforma estará sempre disponível, livre
+          de erros ou atualizado. Eventuais interrupções de serviço por manutenção, problemas
+          técnicos ou fatores externos não geram direito à indenização.
+        </p>
+        <p class="mt-3">
+          O BoraMed não se responsabiliza por resultados em avaliações, provas ou concursos
+          decorrentes do uso da plataforma.
+        </p>
+      </section>
+
+      <!-- 10 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">10. Alterações nos Termos</h2>
+        <p>
+          O BoraMed pode atualizar estes Termos de Uso a qualquer momento. As alterações
+          entram em vigor na data de publicação nesta página. O uso contínuo da plataforma
+          após alterações constitui aceitação dos novos termos.
+        </p>
+        <p class="mt-3">
+          Recomendamos que você consulte esta página periodicamente.
+        </p>
+      </section>
+
+      <!-- 11 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">11. Lei Aplicável e Foro</h2>
+        <p>
+          Estes Termos de Uso são regidos pela legislação brasileira. Para a solução de
+          quaisquer controvérsias decorrentes deste instrumento, fica eleito o foro da
+          comarca de domicílio do usuário, nos termos do Código de Defesa do Consumidor
+          (Lei nº 8.078/1990).
+        </p>
+      </section>
+
+      <!-- 12 -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">12. Contato</h2>
+        <p>
+          Dúvidas, solicitações ou notificações relacionadas a estes termos podem ser
+          enviadas para:
+        </p>
+        <p class="mt-3">
+          <strong>E-mail:</strong>
+          <a href="mailto:contato@boramed.com.br" class="text-blue-600 hover:underline ml-1">contato&#64;boramed.com.br</a>
+        </p>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Rodapé simples -->
+  <footer class="border-t border-gray-100 mt-16">
+    <div class="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between text-sm text-gray-400">
+      <span>BoraMed. Plataforma independente de estudo médico.</span>
+      <a routerLink="/" class="hover:text-gray-700 transition-colors">Voltar ao início</a>
+    </div>
+  </footer>
+
+</main>
