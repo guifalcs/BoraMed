@@ -61,6 +61,13 @@ export const routes: Routes = [
       import('./(admin)/admin.routes').then((m) => m.adminRoutes),
   },
   {
+    path: 'politica-de-privacidade',
+    loadComponent: () =>
+      import('./(legal)/politica-de-privacidade/politica-de-privacidade.component').then(
+        (m) => m.PoliticaDePrivacidadeComponent,
+      ),
+  },
+  {
     path: 'termos-de-uso',
     loadComponent: () =>
       import('./(legal)/termos-de-uso/termos-de-uso.component').then((m) => m.TermosDeUsoComponent),
