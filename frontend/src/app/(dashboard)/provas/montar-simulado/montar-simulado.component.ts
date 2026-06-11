@@ -30,7 +30,7 @@ const FORMATOS: OpcaoFormato[] = [
   {
     value: 'todos',
     label: 'Todos',
-    descricao: 'Sorteio sem filtrar por tipo de prova',
+    descricao: 'Mistura questões processuais e de laboratório',
     tipoQuestao: null,
   },
   {
