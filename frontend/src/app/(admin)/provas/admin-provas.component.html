@@ -1014,4 +1014,100 @@ EXPLICACAO: O infarto agudo se caracteriza por...
   .done-num--err { color: #dc2626; }
   .done-desc { font-size: 0.75rem; color: #64748b; }
   .done-hint { font-size: 0.8125rem; color: #64748b; margin: 0; line-height: 1.5; }
+  @media (max-width: 640px) {
+    .page-header { margin-bottom: 1rem; }
+    .page-title { font-size: 1.35rem; }
+    .toolbar {
+      align-items: stretch;
+    }
+    .search-input,
+    .toolbar-filter,
+    .toolbar .btn {
+      width: 100%;
+      max-width: none;
+      margin-left: 0 !important;
+    }
+    .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
+    .data-table { min-width: 720px; }
+    .data-table th,
+    .data-table td { padding: 0.65rem 0.75rem; }
+    .pagination {
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .pagination .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .drawer {
+      width: 100%;
+      max-width: none;
+    }
+    .drawer-header,
+    .drawer-body,
+    .drawer-footer {
+      padding-inline: 1rem;
+    }
+    .drawer-header-left {
+      min-width: 0;
+    }
+    .drawer-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .drawer-steps {
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+    }
+    .step {
+      flex: 0 0 auto;
+    }
+    .step-connector {
+      flex: 0 0 1.5rem;
+    }
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    .drawer-footer {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    .drawer-footer .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .metodo-card,
+    .prompt-header,
+    .select-toolbar {
+      align-items: stretch;
+    }
+    .metodo-card,
+    .prompt-header {
+      flex-direction: column;
+    }
+    .prompt-text {
+      min-width: 0;
+    }
+    .prompt-header .btn,
+    .select-toolbar .form-input,
+    .select-toolbar__action {
+      width: 100%;
+    }
+    .preview-item-row {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .preview-enunciado {
+      flex-basis: calc(100% - 2rem);
+    }
+    .preview-disc {
+      white-space: normal;
+    }
+    .done-stats,
+    .progress-counts {
+      gap: 1rem;
+    }
+  }
 </style>

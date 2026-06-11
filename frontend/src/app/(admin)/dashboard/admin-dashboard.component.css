@@ -454,3 +454,52 @@
     height: 250px;
   }
 }
+
+@media (max-width: 520px) {
+  .page-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.45rem;
+  }
+
+  .header-summary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .kpi-card,
+  .panel,
+  .insight-card,
+  .priority-panel {
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  }
+
+  .kpi-card,
+  .insight-card {
+    padding: 0.875rem;
+  }
+
+  .panel,
+  .priority-panel {
+    padding: 1rem;
+  }
+
+  .panel-header,
+  .insight-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart--bar,
+  .chart--donut,
+  .chart--small-bar {
+    height: 220px;
+  }
+
+  .priority-list {
+    gap: 0.625rem;
+  }
+}

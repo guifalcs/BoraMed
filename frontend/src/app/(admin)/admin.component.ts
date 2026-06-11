@@ -8,11 +8,13 @@ import {
   LayoutDashboard,
   LucideIconData,
   LogOut,
+  Menu,
   Send,
   Settings,
   Tag,
   Upload,
   Users,
+  X,
 } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
@@ -44,7 +46,9 @@ export class AdminComponent {
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);
   protected readonly logOutIcon = LogOut;
+  protected readonly menuIcon = Menu;
   protected readonly settingsIcon = Settings;
+  protected readonly closeIcon = X;
 
   protected readonly navItems: AdminNavItem[] = [
     { label: 'Dashboard', icon: LayoutDashboard, route: '/admin', exact: true },

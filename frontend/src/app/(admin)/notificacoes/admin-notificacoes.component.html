@@ -328,4 +328,25 @@
   .btn--ghost { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
   .btn--ghost:hover:not(:disabled) { background: #e2e8f0; }
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.8125rem; }
+
+  @media (max-width: 640px) {
+    .page-header { margin-bottom: 1rem; }
+    .page-title { font-size: 1.35rem; }
+    .create-form { padding: 1rem; margin-bottom: 1rem; }
+    .form-row,
+    .form-actions,
+    .historico-header,
+    .usuario-selecionado {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .form-actions .btn,
+    .historico-header .btn { width: 100%; justify-content: center; }
+    .usuario-selecionado { gap: 0.125rem; }
+    .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
+    .data-table { min-width: 760px; }
+    .data-table th,
+    .data-table td { padding: 0.65rem 0.75rem; }
+    .paginacao { justify-content: center; }
+  }
 </style>

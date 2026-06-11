@@ -506,4 +506,53 @@
   .btn--primary:hover:not(:disabled) { background: #6d28d9; }
   .btn--outline { background: #7c3aed; border: 1px solid #7c3aed; color: #fff; }
   .btn--outline:hover:not(:disabled) { background: #6d28d9; border-color: #6d28d9; }
+
+  @media (max-width: 640px) {
+    .page-title { font-size: 1.35rem; }
+    .tipo-tabs {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .tipo-tab {
+      flex: 1 0 auto;
+      white-space: nowrap;
+    }
+    .prompt-header,
+    .prompt-header-left,
+    .prompt-actions,
+    .input-toolbar,
+    .input-footer,
+    .summary-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .prompt-header-left,
+    .prompt-actions {
+      gap: 0.625rem;
+    }
+    .prompt-actions,
+    .summary-actions {
+      width: 100%;
+      margin-left: 0;
+    }
+    .prompt-actions .btn,
+    .input-footer .btn,
+    .summary-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .input-card,
+    .progress-card,
+    .done-card {
+      padding: 1rem;
+    }
+    .markdown-input {
+      min-height: 18rem;
+    }
+    .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
+    .data-table { min-width: 760px; }
+    .data-table th,
+    .data-table td { padding: 0.65rem 0.75rem; }
+    .done-stats { gap: 1rem; }
+  }
 </style>

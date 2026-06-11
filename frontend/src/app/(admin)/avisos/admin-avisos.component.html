@@ -309,4 +309,26 @@
   .btn--sm { padding: 0.3rem 0.625rem; font-size: 0.75rem; margin-right: 0.25rem; }
   .btn--icon { width: 2rem; height: 2rem; justify-content: center; padding: 0; margin-right: 0.25rem; }
   .btn--icon-only { width: 2rem; height: 2rem; justify-content: center; padding: 0; margin-right: 0; }
+
+  @media (max-width: 640px) {
+    .page-header { margin-bottom: 1rem; }
+    .page-title { font-size: 1.35rem; }
+    .create-form { padding: 1rem; margin-bottom: 1rem; }
+    .form-row,
+    .imagem-row,
+    .form-actions,
+    .historico-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .form-input--grow,
+    .btn--upload,
+    .form-actions .btn { width: 100%; }
+    .preview-wrapper { max-width: none; }
+    .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
+    .data-table { min-width: 760px; }
+    .data-table th,
+    .data-table td { padding: 0.65rem 0.75rem; }
+    .paginacao { justify-content: center; }
+  }
 </style>

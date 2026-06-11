@@ -751,4 +751,78 @@
 
   /* ── Opções ── */
   .opcoes-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  @media (max-width: 640px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      margin-bottom: 1rem;
+    }
+    .page-title { font-size: 1.35rem; }
+    .page-header .btn,
+    .toolbar .btn,
+    .toolbar-filter,
+    .search-input {
+      width: 100%;
+      max-width: none;
+    }
+    .toolbar {
+      align-items: stretch;
+    }
+    .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
+    .data-table { min-width: 820px; }
+    .data-table th,
+    .data-table td { padding: 0.65rem 0.75rem; }
+    .pagination {
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .pagination .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .drawer,
+    .preview-modal {
+      inset: 0;
+      width: 100%;
+      max-width: none;
+      max-height: none;
+      height: 100dvh;
+      border-radius: 0;
+      transform: none;
+    }
+    .drawer-header,
+    .drawer-footer {
+      padding: 1rem;
+    }
+    .drawer-body,
+    .preview-body {
+      padding: 1rem;
+    }
+    .drawer-footer {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    .drawer-footer .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .field-row {
+      flex-direction: column;
+    }
+    .field-row .field,
+    .field--narrow {
+      min-width: 0 !important;
+      flex: 1 1 auto !important;
+    }
+    .alt-row {
+      gap: 0.5rem;
+    }
+    .temas-grid {
+      grid-template-columns: 1fr;
+      max-height: 280px;
+    }
+    .preview-specs {
+      padding: 1rem;
+    }
+  }
 </style>

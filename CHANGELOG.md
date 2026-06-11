@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-11 | UX | sem commit
+
+**Admin responsivo no mobile**
+
+- Shell admin passa a usar drawer lateral em telas estreitas, com botão de menu no topbar, backdrop, botão de fechar e fechamento ao navegar.
+- Dashboard, listagens, importação e fluxos de Questões/Provas receberam ajustes mobile: padding menor, toolbars/formulários empilhados, tabelas com rolagem horizontal controlada e drawers em tela cheia.
+- `docs/design-system.md` documenta os padrões de responsividade do admin.
+
+---
+
 ## 2026-06-09 | Segurança | sem commit
 
 **Hardening pré-produção (fase 2 — Crítico 1: gabarito)**
