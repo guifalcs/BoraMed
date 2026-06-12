@@ -2,13 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
-  OnInit,
-  PLATFORM_ID,
+  afterNextRender,
   inject,
   signal,
   computed,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -34,7 +32,7 @@ type Aba = 'nova' | 'solicitacoes' | 'faq';
   styleUrl: './suporte-widget.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SuporteWidgetComponent implements OnInit {
+export class SuporteWidgetComponent {
   private readonly suporteService = inject(SuporteService);
 
   protected readonly iconLifeBuoy = LifeBuoy;
@@ -82,13 +80,13 @@ export class SuporteWidgetComponent implements OnInit {
     { value: 'outro', label: CATEGORIA_LABELS.outro },
   ];
 
-  async ngOnInit(): Promise<void> {
-    if (isPlatformBrowser(inject(PLATFORM_ID))) {
-      await Promise.all([
+  constructor() {
+    afterNextRender(() => {
+      void Promise.all([
         this.suporteService.carregarMeusTickets(),
         this.suporteService.carregarFaq(),
       ]);
-    }
+    });
   }
 
   protected toggleAberto(): void {

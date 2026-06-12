@@ -1,13 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
-  PLATFORM_ID,
+  afterNextRender,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -42,7 +40,7 @@ type FiltroStatus = 'todos' | TicketStatus;
   styleUrl: './admin-suporte.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminSuporteComponent implements OnInit {
+export class AdminSuporteComponent {
   private readonly toast = inject(NotificationService);
   private readonly suporteService = inject(SuporteService);
 
@@ -101,10 +99,8 @@ export class AdminSuporteComponent implements OnInit {
     { value: 'resolvido', label: 'Resolvido' },
   ];
 
-  async ngOnInit(): Promise<void> {
-    if (isPlatformBrowser(inject(PLATFORM_ID))) {
-      await this.carregarTudo();
-    }
+  constructor() {
+    afterNextRender(() => { void this.carregarTudo(); });
   }
 
   private async carregarTudo(): Promise<void> {
