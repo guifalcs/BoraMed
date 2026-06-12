@@ -2,7 +2,7 @@
 .widget-btn {
   position: fixed;
   bottom: 6rem;
-  right: 1rem;
+  right: 0;
   z-index: 9990;
   display: flex;
   align-items: center;
@@ -21,7 +21,7 @@
 .widget-btn:hover,
 .widget-btn--aberto {
   background: #15803d;
-  transform: scale(1.12);
+  transform: translateX(-6px) scale(1.08);
   box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
 }
 
@@ -503,7 +503,6 @@
 @media (max-width: 480px) {
   .widget-btn {
     bottom: 5.5rem;
-    right: 0.75rem;
   }
 
   .widget-drawer {
