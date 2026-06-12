@@ -63,15 +63,14 @@
   bottom: calc(100% + 0.5rem);
 }
 
-/* Sidebar: position fixed, coordenadas via [style] */
+/* Sempre fixed: escapa de qualquer stacking context */
 .dropdown--fixed {
   position: fixed;
   top: unset;
   right: unset;
-  /* top e left injetados via binding */
 }
 
-/* Sidebar + abre para cima: translada para cima pela própria altura */
+/* Abre para cima: translada pela própria altura */
 .dropdown--fixed.dropdown--open-up {
   transform: translateY(calc(-100% - 8px));
 }

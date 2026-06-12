@@ -14,11 +14,10 @@
 
   @if (aberto()) {
     <div
-      class="dropdown"
-      [class.dropdown--open-up]="sidebar() ? !!fixedPos()?.openUp : openUp()"
-      [class.dropdown--fixed]="sidebar()"
-      [style.top.px]="sidebar() && fixedPos() ? fixedPos()!.top : null"
-      [style.left.px]="sidebar() && fixedPos() ? fixedPos()!.left : null"
+      class="dropdown dropdown--fixed"
+      [class.dropdown--open-up]="!!fixedPos()?.openUp"
+      [style.top.px]="fixedPos()?.top"
+      [style.left.px]="fixedPos()?.left"
       role="menu"
       aria-label="Notificações"
     >

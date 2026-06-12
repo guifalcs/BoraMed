@@ -60,6 +60,7 @@ export class NotificacoesSinoComponent implements OnInit {
   sidebar = input(false);
 
   protected readonly aberto = signal(false);
+  protected readonly windowHeight = signal(typeof window !== 'undefined' ? window.innerHeight : 800);
   /** Posição calculada para modo sidebar (position:fixed). */
   protected readonly fixedPos = signal<DropdownPos | null>(null);
   /** Direção para modo não-sidebar (position:absolute via CSS). */
@@ -95,7 +96,12 @@ export class NotificacoesSinoComponent implements OnInit {
           openUp: shouldOpenUp,
         });
       } else {
-        this.openUp.set(shouldOpenUp);
+        // Sempre fixed para escapar de qualquer stacking context
+        this.fixedPos.set({
+          top: shouldOpenUp ? rect.top : rect.bottom + DROPDOWN_GAP,
+          left: Math.max(8, rect.right - 320), // alinha pela direita do botão
+          openUp: shouldOpenUp,
+        });
       }
     }
     this.aberto.set(next);
