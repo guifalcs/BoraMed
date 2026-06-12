@@ -5,6 +5,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   ChevronDown,
@@ -131,7 +132,7 @@ const MOCK_FAQ: SuporteFaq[] = [
 @Component({
   selector: 'app-suporte-widget',
   standalone: true,
-  imports: [FormsModule, UiIconComponent],
+  imports: [FormsModule, NgClass, UiIconComponent],
   templateUrl: './suporte-widget.component.html',
   styleUrl: './suporte-widget.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

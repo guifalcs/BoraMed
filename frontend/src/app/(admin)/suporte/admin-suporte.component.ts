@@ -4,6 +4,7 @@ import {
   computed,
   signal,
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   CheckCircle2,
@@ -161,7 +162,7 @@ const MOCK_ADMIN_FAQ: SuporteFaq[] = [
 @Component({
   selector: 'app-admin-suporte',
   standalone: true,
-  imports: [FormsModule, UiIconComponent],
+  imports: [FormsModule, NgClass, UiIconComponent],
   templateUrl: './admin-suporte.component.html',
   styleUrl: './admin-suporte.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -198,7 +199,7 @@ export class AdminSuporteComponent {
   protected readonly criandoFaq = signal(false);
   protected readonly mostrarFormFaq = signal(false);
 
-  protected readonly ticketsFiltrados = computed<AdminTicketResumo[]>(() => {
+  protected readonly ticketsFiltrados = computed<AdminTicketDetalhe[]>(() => {
     const status = this.filtroStatus();
     const todos = this.tickets();
     if (status === 'todos') return todos;
