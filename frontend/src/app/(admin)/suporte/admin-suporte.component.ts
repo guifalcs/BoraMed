@@ -21,6 +21,7 @@ import {
 } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { NotificationService } from '../../core/services/notification.service';
+import { SuporteService } from '../../core/services/suporte.service';
 import type {
   AdminTicketDetalhe,
   AdminTicketResumo,
@@ -45,6 +46,7 @@ type FiltroStatus = 'todos' | TicketStatus;
 })
 export class AdminSuporteComponent {
   private readonly toast = inject(NotificationService);
+  private readonly suporteService = inject(SuporteService);
   protected readonly iconHeadphones = Headphones;
   protected readonly iconMessage = MessageCircle;
   protected readonly iconSend = Send;
@@ -68,8 +70,8 @@ export class AdminSuporteComponent {
   protected readonly enviandoResposta = signal(false);
   protected readonly alterandoStatus = signal(false);
 
-  // FAQ
-  protected readonly faqItems = signal<SuporteFaq[]>([]);
+  // FAQ — estado compartilhado via serviço
+  protected readonly faqItems = this.suporteService.faqItems;
   protected readonly novoFaqPergunta = signal('');
   protected readonly novoFaqResposta = signal('');
   protected readonly novoFaqCategoria = signal('');

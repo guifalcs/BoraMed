@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  inject,
   signal,
   computed,
 } from '@angular/core';
@@ -23,6 +24,7 @@ import type {
   TicketCategoria,
 } from '../../../core/models/suporte.types';
 import { CATEGORIA_LABELS, STATUS_LABELS } from '../../../core/models/suporte.types';
+import { SuporteService } from '../../../core/services/suporte.service';
 
 type Aba = 'nova' | 'solicitacoes' | 'faq';
 
@@ -38,6 +40,8 @@ type Aba = 'nova' | 'solicitacoes' | 'faq';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuporteWidgetComponent {
+  private readonly suporteService = inject(SuporteService);
+
   protected readonly iconLifeBuoy = LifeBuoy;
   protected readonly iconX = X;
   protected readonly iconSend = Send;
@@ -65,7 +69,7 @@ export class SuporteWidgetComponent {
   protected readonly enviandoMensagem = signal(false);
 
   // FAQ
-  protected readonly faqItems = signal<SuporteFaq[]>([]);
+  protected readonly faqItems = this.suporteService.faqItems;
   protected readonly faqExpandido = signal<string | null>(null);
 
   protected readonly podeSalvar = computed(() =>
