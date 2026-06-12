@@ -56,6 +56,14 @@ describe('ProvasHomeComponent', () => {
     expect(el.textContent).not.toContain('Retome seu simulado');
   });
 
+  it('exibe as duas opções principais de simulado', () => {
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Treinos nacionais');
+    expect(el.textContent).toContain('Montar simulado');
+    expect(el.textContent).toContain('Ou ajuste o simulado ao que precisa revisar agora');
+  });
+
   it('exibe card de continuidade com progresso da tentativa ativa', () => {
     tentativaAtiva.set(tentativaFactory({ status: 'pausada', total_respondidas: 12, total_questoes: 20 }));
 

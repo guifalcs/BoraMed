@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-12 | UX | sem commit
+
+**Hub de simulados mais denso**
+
+- `/dashboard/simulados` deixa o grid de dois cards pequenos e passa a usar cards de ação em largura total, empilhados com separador de decisão entre treino nacional pronto e montagem personalizada.
+- Cards receberam mais preenchimento visual com altura mínima, blocos informativos, linha de atributos, CTA lateral com ícone e bordas de acento para ocupar melhor o espaço útil sem parecer landing page.
+- O card de Treinos nacionais mantém o degradê institucional anterior; Montar simulado segue em superfície branca sem degradê.
+- Em larguras abaixo de `lg`, os cards ficam mais enxutos: blocos grandes dão lugar a chips compactos e o CTA ocupa o rodapé inteiro.
+- `docs/design-system.md` documenta o padrão do hub de simulados.
+
+---
+
 ## 2026-06-11 | UX | sem commit
 
 **Admin responsivo no mobile**

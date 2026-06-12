@@ -278,6 +278,21 @@ justify-content: space-between;
 * `< 50%`: `--color-danger`.
 * Incluir barra de progresso por tema e lista de questões com link para revisão.
 
+### Hub De Simulados
+
+O hub `/dashboard/simulados` usa cards de ação em largura total, empilhados verticalmente, para reduzir vazio visual e deixar a escolha mais explícita.
+
+Padrões:
+
+* Cada opção é um card clicável com `border-radius: 8px`, borda esquerda de acento e ícone Lucide em bloco fixo.
+* O card de treinos nacionais mantém o gradiente institucional com texto claro, por ser o caminho pronto e principal.
+* O card de montar simulado permanece em superfície branca, sem gradiente, com acento verde discreto.
+* Conteúdo principal: título, badge de estado, descrição curta, blocos informativos e uma linha final de atributos objetivos.
+* Cards devem ter altura mínima suficiente para ocupar a área útil apenas em desktop largo (`lg+`, `min-height` aproximado de 16rem). Em mobile e tablet, usar chips compactos e ocultar os blocos informativos maiores.
+* Ação lateral em desktop com rótulo curto e botão quadrado com `ArrowRight`; abaixo de `lg`, a área de ação ocupa a largura inteira como rodapé do card.
+* Separador textual entre opções quando houver caminhos com intenção diferente, como treino pronto vs. montagem personalizada.
+* Evitar círculos/orbes decorativos nessa tela operacional; usar densidade, gradiente institucional e chips para ocupar espaço.
+
 ## Badges
 
 ```css

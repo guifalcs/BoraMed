@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BookOpen, PlayCircle, Shuffle } from 'lucide-angular';
+import { ArrowRight, BookOpen, ClipboardList, PlayCircle, Shuffle, Target } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
@@ -23,6 +23,9 @@ export class ProvasHomeComponent {
   protected readonly bookOpenIcon = BookOpen;
   protected readonly shuffleIcon = Shuffle;
   protected readonly playCircleIcon = PlayCircle;
+  protected readonly arrowRightIcon = ArrowRight;
+  protected readonly clipboardListIcon = ClipboardList;
+  protected readonly targetIcon = Target;
 
   protected readonly tentativaAtiva = this.tentativaService.tentativaAtiva;
 
