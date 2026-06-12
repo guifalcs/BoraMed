@@ -3,10 +3,12 @@ import {
   Component,
   HostListener,
   OnInit,
+  PLATFORM_ID,
   inject,
   signal,
   computed,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -81,10 +83,12 @@ export class SuporteWidgetComponent implements OnInit {
   ];
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([
-      this.suporteService.carregarMeusTickets(),
-      this.suporteService.carregarFaq(),
-    ]);
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      await Promise.all([
+        this.suporteService.carregarMeusTickets(),
+        this.suporteService.carregarFaq(),
+      ]);
+    }
   }
 
   protected toggleAberto(): void {

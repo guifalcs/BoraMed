@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -100,7 +102,9 @@ export class AdminSuporteComponent implements OnInit {
   ];
 
   async ngOnInit(): Promise<void> {
-    await this.carregarTudo();
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      await this.carregarTudo();
+    }
   }
 
   private async carregarTudo(): Promise<void> {
