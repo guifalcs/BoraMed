@@ -13,6 +13,7 @@
   align-items: center;
   gap: 0.75rem;
   color: #7c3aed;
+  min-width: 0;
 }
 
 .page-title {
@@ -26,6 +27,7 @@
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Panel toggle */
@@ -35,6 +37,7 @@
   background: #f1f5f9;
   border-radius: 8px;
   padding: 0.25rem;
+  flex-shrink: 0;
 }
 
 .toggle-btn {
@@ -68,9 +71,10 @@
 /* Tickets layout: two columns */
 .tickets-layout {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.7fr);
   gap: 1rem;
-  min-height: 0;
+  min-height: 34rem;
+  height: calc(100dvh - 11.5rem);
 }
 
 /* List column */
@@ -79,6 +83,8 @@
   flex-direction: column;
   gap: 0.5rem;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Detail column */
@@ -89,6 +95,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -103,6 +110,7 @@
 .filtro-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.375rem;
   padding: 0.3rem 0.625rem;
   border: 1px solid #e2e8f0;
@@ -151,10 +159,12 @@
 .ticket-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0.25rem 0 0;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .ticket-card {
@@ -186,6 +196,11 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
+}
+
+.ticket-card-top app-ui-icon {
+  flex-shrink: 0;
+  color: #94a3b8;
 }
 
 .user-avatar {
@@ -249,6 +264,7 @@
   font-size: 0.7rem;
   color: #cbd5e1;
   margin-left: auto;
+  white-space: nowrap;
 }
 
 /* Badges */
@@ -315,6 +331,7 @@
 }
 
 .detail-user-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -325,11 +342,17 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-user-email {
   font-size: 0.8125rem;
   color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-meta {
@@ -345,6 +368,8 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: #0f172a;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .detail-categoria {
@@ -379,6 +404,7 @@
   gap: 0.25rem;
   align-items: flex-start;
   max-width: 80%;
+  min-width: 0;
 }
 
 .thread-msg--admin {
@@ -392,12 +418,15 @@
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .thread-msg-bubble {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
   padding: 0.625rem 0.875rem;
   border-radius: 0.625rem;
   font-size: 0.9rem;
@@ -405,6 +434,7 @@
   color: #1e293b;
   background: #fff;
   border: 1px solid #e2e8f0;
+  overflow-wrap: anywhere;
 }
 
 .thread-msg--admin .thread-msg-bubble {
@@ -505,6 +535,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .btn-resolver {
@@ -631,6 +662,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
 }
 
 .faq-section-title {
@@ -780,6 +812,7 @@
 
 .faq-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
 }
 
@@ -828,6 +861,7 @@
   display: flex;
   align-items: center;
   gap: 0.375rem;
+  flex-wrap: nowrap;
 }
 
 /* Status dot */
@@ -911,18 +945,29 @@
   background: #dc2626;
 }
 
-/* Mobile */
-@media (max-width: 900px) {
+/* Compact master-detail */
+@media (max-width: 1180px) {
   .tickets-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
   }
 
   .tickets-col-list--oculto {
     display: none;
   }
 
+  .tickets-col-detail {
+    display: none;
+    min-height: min(42rem, calc(100dvh - 7rem));
+  }
+
   .tickets-col-detail--visivel {
     display: flex;
+  }
+
+  .detail-placeholder {
+    display: none;
   }
 
   .back-btn {
@@ -935,6 +980,10 @@
     flex-direction: column;
   }
 
+  .page-header-left {
+    align-items: flex-start;
+  }
+
   .painel-toggle {
     width: 100%;
   }
@@ -944,12 +993,106 @@
     justify-content: center;
   }
 
-  .faq-toolbar {
-    flex-direction: column;
-    align-items: flex-start;
+  .filtro-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .filtro-btn {
+    min-width: 0;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .ticket-card {
+    padding: 0.75rem;
+  }
+
+  .ticket-card-footer {
+    gap: 0.375rem;
+  }
+
+  .ticket-card-data {
+    margin-left: 0;
+  }
+
+  .tickets-col-detail {
+    min-height: calc(100dvh - 7rem);
+    border-radius: 8px;
+  }
+
+  .detail-header {
+    align-items: flex-start;
+    padding: 0.875rem;
+  }
+
+  .back-btn {
+    flex-basis: 100%;
+  }
+
+  .detail-user {
+    flex-basis: calc(100% - 5.5rem);
+  }
+
+  .detail-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .detail-data {
+    margin-left: 0;
+  }
+
+  .thread {
+    padding: 0.75rem;
+  }
+
+  .thread-msg {
+    max-width: 100%;
+  }
+
+  .thread-msg--admin {
+    max-width: 100%;
+  }
+
+  .thread-attachment-link {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .thread-attachment-link small {
+    grid-column: 2;
+  }
+
+  .reply-area {
+    padding: 0.875rem;
+  }
+
+  .reply-actions,
+  .faq-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-resolver,
+  .btn-reabrir,
+  .btn-responder,
   .btn-add-faq {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .faq-form-card {
+    padding: 1rem;
+  }
+
+  .faq-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn-cancelar,
+  .btn-salvar {
     width: 100%;
     justify-content: center;
   }
@@ -960,7 +1103,7 @@
   }
 
   .faq-table {
-    min-width: 600px;
+    min-width: 680px;
   }
 
   .faq-table th,

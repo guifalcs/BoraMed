@@ -379,6 +379,7 @@ Padrões:
 * Conteúdo principal usa padding de aproximadamente `1rem` no mobile.
 * Toolbars e formulários administrativos empilham campos e botões em largura total abaixo de `640px`.
 * Tabelas administrativas mantêm rolagem horizontal com largura mínima por contexto, evitando colunas ilegíveis.
+* Telas administrativas com padrão master-detail, como Suporte, colapsam antes do mobile quando a área útil fica estreita; abaixo desse ponto, lista e detalhe alternam entre si com ação explícita de voltar.
 * Drawers de criação/edição ocupam a viewport no mobile, com footer de ações empilhado.
 
 ## Dashboard Inicial (Bento)

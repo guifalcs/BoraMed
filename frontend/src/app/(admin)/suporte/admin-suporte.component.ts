@@ -10,6 +10,7 @@ import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Clock,
   FileImage,
@@ -57,6 +58,7 @@ export class AdminSuporteComponent {
   protected readonly iconPlus = Plus;
   protected readonly iconTrash = Trash2;
   protected readonly iconPencil = Pencil;
+  protected readonly iconChevronLeft = ChevronLeft;
   protected readonly iconChevronRight = ChevronRight;
   protected readonly iconFileImage = FileImage;
   protected readonly iconFileVideo = FileVideo;

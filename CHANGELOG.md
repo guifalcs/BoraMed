@@ -9,6 +9,7 @@
 - Spinner dos anexos no suporte passa a girar corretamente durante o envio de arquivos, exibindo apenas um indicador no estado de envio.
 - Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores; a reabertura volta o status para `aberto` e registra uma mensagem no historico.
 - Painel admin exibe anexos no historico do ticket com links assinados para abrir os arquivos privados.
+- Painel admin de suporte passa a usar layout responsivo: master-detail em telas largas e lista/detalhe alternados em larguras compactas, com filtros, conversa, anexos, resposta e FAQ adaptados ao mobile.
 - Novas migrations criam bucket privado `suporte-anexos`, tabela `suporte_anexos`, policies de Storage/RLS e RPCs `buscar_anexos_ticket`/`registrar_anexos_mensagem`/`reabrir_ticket`.
 - `docs/architecture.md` documenta a decisao de manter evidencias de suporte em bucket privado com URLs assinadas temporarias.
 - `docs/business-rules.md` documenta o ciclo de vida de chamados reabertos.

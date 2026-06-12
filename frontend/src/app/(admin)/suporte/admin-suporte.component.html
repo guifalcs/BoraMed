@@ -101,7 +101,8 @@
       @if (ticketSelecionado(); as ticket) {
         <div class="detail-header">
           <button class="back-btn" type="button" (click)="ticketSelecionado.set(null)" aria-label="Voltar">
-            &larr; Voltar
+            <app-ui-icon [icon]="iconChevronLeft" [size]="15" />
+            Voltar
           </button>
           <div class="detail-user">
             <div class="user-avatar user-avatar--lg">{{ iniciais(ticket.perfil.nome_completo, ticket.perfil.email) }}</div>
