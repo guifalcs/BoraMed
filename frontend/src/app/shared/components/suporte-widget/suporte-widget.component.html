@@ -116,6 +116,12 @@
                 rows="4"
                 maxlength="2000"
               ></textarea>
+              <div class="field-footer">
+                <span class="field-hint-min" [class.field-hint-min--ok]="novaDescricao().trim().length >= 10">
+                  Mínimo 10 caracteres
+                </span>
+                <span class="field-hint">{{ novaDescricao().length }}/2000</span>
+              </div>
             </div>
 
             @if (erroEnvio()) {
