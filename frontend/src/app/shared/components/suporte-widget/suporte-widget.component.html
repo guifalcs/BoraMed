@@ -1,0 +1,237 @@
+<!-- Floating button -->
+<button
+  class="widget-btn"
+  type="button"
+  (click)="toggleAberto()"
+  [attr.aria-expanded]="aberto()"
+  aria-label="Abrir suporte"
+>
+  @if (aberto()) {
+    <app-ui-icon [icon]="iconX" [size]="22" />
+  } @else {
+    <app-ui-icon [icon]="iconLifeBuoy" [size]="22" />
+  }
+  @if (!aberto()) {
+    <span class="widget-btn-label">Suporte</span>
+  }
+</button>
+
+@if (aberto()) {
+  <!-- Backdrop -->
+  <div class="widget-backdrop" (click)="fechar()" aria-hidden="true"></div>
+
+  <!-- Drawer -->
+  <div class="widget-drawer" role="dialog" aria-modal="true" aria-label="Suporte">
+    <div class="drawer-header">
+      <div class="drawer-header-info">
+        <app-ui-icon [icon]="iconLifeBuoy" [size]="20" />
+        <span>Suporte</span>
+      </div>
+      <button class="drawer-close" type="button" (click)="fechar()" aria-label="Fechar">
+        <app-ui-icon [icon]="iconX" [size]="18" />
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="drawer-tabs">
+      <button
+        class="drawer-tab"
+        [class.drawer-tab--active]="abaAtiva() === 'nova'"
+        type="button"
+        (click)="setAba('nova')"
+      >
+        Nova solicitação
+      </button>
+      <button
+        class="drawer-tab"
+        [class.drawer-tab--active]="abaAtiva() === 'solicitacoes'"
+        type="button"
+        (click)="setAba('solicitacoes')"
+      >
+        Minhas solicitações
+      </button>
+      <button
+        class="drawer-tab"
+        [class.drawer-tab--active]="abaAtiva() === 'faq'"
+        type="button"
+        (click)="setAba('faq')"
+      >
+        FAQ
+      </button>
+    </div>
+
+    <div class="drawer-body">
+
+      <!-- ABA: Nova solicitação -->
+      @if (abaAtiva() === 'nova') {
+        @if (sucessoEnvio()) {
+          <div class="sucesso-state">
+            <div class="sucesso-icon">&#10003;</div>
+            <h3 class="sucesso-titulo">Solicitação enviada!</h3>
+            <p class="sucesso-texto">Você receberá uma resposta em breve. Acompanhe em "Minhas solicitações".</p>
+            <button class="btn-primary" type="button" (click)="novaForm()">Nova solicitação</button>
+            <button class="btn-ghost" type="button" (click)="setAba('solicitacoes')">Ver minhas solicitações</button>
+          </div>
+        } @else {
+          <form class="nova-form" (ngSubmit)="enviarSolicitacao()">
+            <div class="field">
+              <label class="field-label" for="sw-categoria">Categoria</label>
+              <select
+                id="sw-categoria"
+                class="field-select"
+                [ngModel]="novaCategoria()"
+                (ngModelChange)="novaCategoria.set($event)"
+                name="categoria"
+              >
+                <option value="">Selecione uma categoria...</option>
+                @for (cat of categorias; track cat.value) {
+                  <option [value]="cat.value">{{ cat.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="sw-titulo">Título</label>
+              <input
+                id="sw-titulo"
+                class="field-input"
+                type="text"
+                placeholder="Descreva brevemente o problema..."
+                [ngModel]="novaTitulo()"
+                (ngModelChange)="novaTitulo.set($event)"
+                name="titulo"
+                maxlength="120"
+              />
+              <span class="field-hint">{{ novaTitulo().length }}/120 caracteres</span>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="sw-descricao">Descrição</label>
+              <textarea
+                id="sw-descricao"
+                class="field-textarea"
+                placeholder="Explique com detalhes o que aconteceu..."
+                [ngModel]="novaDescricao()"
+                (ngModelChange)="novaDescricao.set($event)"
+                name="descricao"
+                rows="4"
+                maxlength="2000"
+              ></textarea>
+            </div>
+
+            <button
+              class="btn-primary"
+              type="submit"
+              [disabled]="!podeSalvar() || enviando()"
+            >
+              @if (enviando()) {
+                Enviando...
+              } @else {
+                Enviar solicitação
+              }
+            </button>
+          </form>
+        }
+      }
+
+      <!-- ABA: Minhas solicitações -->
+      @if (abaAtiva() === 'solicitacoes') {
+        @if (tickets().length === 0) {
+          <div class="empty-state">
+            <app-ui-icon [icon]="iconMessage" [size]="32" />
+            <p>Você não tem solicitações ainda.</p>
+          </div>
+        } @else {
+          <ul class="tickets-list">
+            @for (ticket of tickets(); track ticket.id) {
+              <li class="ticket-item">
+                <button
+                  class="ticket-header"
+                  type="button"
+                  (click)="toggleTicket(ticket.id)"
+                >
+                  <div class="ticket-info">
+                    <span class="ticket-titulo">{{ ticket.titulo }}</span>
+                    <span class="ticket-meta">
+                      {{ categoriaLabels[ticket.categoria] }} &middot; {{ formatarData(ticket.criado_em) }}
+                    </span>
+                  </div>
+                  <div class="ticket-right">
+                    <span class="badge" [ngClass]="statusClass(ticket.status)">
+                      {{ statusLabels[ticket.status] }}
+                    </span>
+                    <app-ui-icon
+                      [icon]="ticketExpandido() === ticket.id ? iconUp : iconDown"
+                      [size]="16"
+                    />
+                  </div>
+                </button>
+
+                @if (ticketExpandido() === ticket.id) {
+                  <div class="ticket-thread">
+                    @for (msg of ticket.mensagens; track msg.id) {
+                      <div class="mensagem" [class.mensagem--admin]="msg.is_admin">
+                        <div class="mensagem-origem">
+                          {{ msg.is_admin ? 'Suporte BoraMed' : 'Você' }}
+                        </div>
+                        <div class="mensagem-bubble">{{ msg.mensagem }}</div>
+                        <div class="mensagem-data">{{ formatarData(msg.criado_em) }}</div>
+                      </div>
+                    }
+
+                    @if (ticket.status !== 'resolvido') {
+                      <div class="reply-box">
+                        <textarea
+                          class="reply-input"
+                          placeholder="Responder..."
+                          [ngModel]="novaMensagem()"
+                          (ngModelChange)="novaMensagem.set($event)"
+                          name="reply"
+                          rows="2"
+                        ></textarea>
+                        <button
+                          class="reply-btn"
+                          type="button"
+                          [disabled]="!novaMensagem().trim() || enviandoMensagem()"
+                          (click)="enviarMensagem(ticket.id)"
+                        >
+                          <app-ui-icon [icon]="iconSend" [size]="16" />
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      <!-- ABA: FAQ -->
+      @if (abaAtiva() === 'faq') {
+        <ul class="faq-list">
+          @for (item of faqItems(); track item.id) {
+            <li class="faq-item">
+              <button
+                class="faq-question"
+                type="button"
+                (click)="toggleFaq(item.id)"
+                [attr.aria-expanded]="faqExpandido() === item.id"
+              >
+                <span>{{ item.pergunta }}</span>
+                <app-ui-icon
+                  [icon]="faqExpandido() === item.id ? iconUp : iconDown"
+                  [size]="16"
+                />
+              </button>
+              @if (faqExpandido() === item.id) {
+                <div class="faq-answer">{{ item.resposta }}</div>
+              }
+            </li>
+          }
+        </ul>
+      }
+
+    </div>
+  </div>
+}

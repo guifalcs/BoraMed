@@ -16,11 +16,6 @@ export const dashboardRoutes: Routes = [
   },
   { path: 'perfil/competitivo', pathMatch: 'full', redirectTo: 'perfil' },
   {
-    path: 'suporte',
-    loadComponent: () =>
-      import('./suporte/suporte.component').then((m) => m.SuporteComponent),
-  },
-  {
     path: 'simulados',
     loadChildren: () =>
       import('./provas/provas.routes').then((m) => m.provasRoutes),

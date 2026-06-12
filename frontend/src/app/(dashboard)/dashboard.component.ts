@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, History, Home, LifeBuoy, LogOut, LucideIconData, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, History, Home, LogOut, LucideIconData, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -15,6 +15,7 @@ import { AvisoService } from '../core/services/aviso.service';
 import { AppNotificacaoService } from '../core/services/app-notification.service';
 import { AvisoModalComponent } from '../shared/components/aviso-modal/aviso-modal.component';
 import { NotificacoesSinoComponent } from '../shared/components/notificacoes-sino/notificacoes-sino.component';
+import { SuporteWidgetComponent } from '../shared/components/suporte-widget/suporte-widget.component';
 
 interface NavItem {
   label: string;
@@ -27,7 +28,7 @@ interface NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,7 +45,6 @@ export class DashboardComponent {
 
   protected readonly logOutIcon = LogOut;
   protected readonly userIcon = User;
-  protected readonly lifeBuoyIcon = LifeBuoy;
   protected readonly settingsIcon = Settings;
   protected readonly isAdmin = computed(() => {
     const papel = this.profileService.profile()?.papel;

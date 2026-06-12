@@ -1,0 +1,309 @@
+<div class="page-header">
+  <div class="page-header-left">
+    <app-ui-icon [icon]="iconHeadphones" [size]="24" />
+    <div>
+      <h1 class="page-title">Suporte</h1>
+      <p class="page-subtitle">Gerencie tickets de suporte e perguntas frequentes.</p>
+    </div>
+  </div>
+  <div class="painel-toggle">
+    <button
+      class="toggle-btn"
+      [class.toggle-btn--active]="painelAtivo() === 'tickets'"
+      type="button"
+      (click)="setPainel('tickets')"
+    >
+      <app-ui-icon [icon]="iconMessage" [size]="15" />
+      Tickets
+    </button>
+    <button
+      class="toggle-btn"
+      [class.toggle-btn--active]="painelAtivo() === 'faq'"
+      type="button"
+      (click)="setPainel('faq')"
+    >
+      FAQ
+    </button>
+  </div>
+</div>
+
+<!-- PAINEL: Tickets -->
+@if (painelAtivo() === 'tickets') {
+  <div class="tickets-layout">
+
+    <!-- Lista -->
+    <div class="tickets-col-list" [class.tickets-col-list--oculto]="ticketSelecionado() !== null">
+      <div class="filtro-bar">
+        @for (f of filtros; track f.value) {
+          <button
+            class="filtro-btn"
+            [class.filtro-btn--active]="filtroStatus() === f.value"
+            type="button"
+            (click)="setFiltro(f.value)"
+          >
+            {{ f.label }}
+            <span class="filtro-count">
+              @if (f.value === 'todos') {
+                {{ contadores().todos }}
+              } @else if (f.value === 'aberto') {
+                {{ contadores().aberto }}
+              } @else if (f.value === 'em_andamento') {
+                {{ contadores().em_andamento }}
+              } @else {
+                {{ contadores().resolvido }}
+              }
+            </span>
+          </button>
+        }
+      </div>
+
+      @if (ticketsFiltrados().length === 0) {
+        <div class="lista-vazia">
+          <app-ui-icon [icon]="iconMessage" [size]="28" />
+          <p>Nenhum ticket encontrado.</p>
+        </div>
+      } @else {
+        <ul class="ticket-list">
+          @for (ticket of ticketsFiltrados(); track ticket.id) {
+            <li>
+              <button
+                class="ticket-card"
+                [class.ticket-card--selecionado]="ticketSelecionado()?.id === ticket.id"
+                type="button"
+                (click)="selecionarTicket(ticket)"
+              >
+                <div class="ticket-card-top">
+                  <div class="user-avatar">{{ iniciais(ticket.perfil.nome_completo, ticket.perfil.email) }}</div>
+                  <div class="ticket-card-info">
+                    <span class="ticket-card-titulo">{{ ticket.titulo }}</span>
+                    <span class="ticket-card-user">{{ ticket.perfil.nome_completo ?? ticket.perfil.email }}</span>
+                  </div>
+                  <app-ui-icon [icon]="iconChevronRight" [size]="16" />
+                </div>
+                <div class="ticket-card-footer">
+                  <span class="badge" [ngClass]="statusClass(ticket.status)">
+                    {{ statusLabels[ticket.status] }}
+                  </span>
+                  <span class="ticket-card-meta">
+                    {{ categoriaLabels[ticket.categoria] }}
+                  </span>
+                  <span class="ticket-card-data">{{ formatarData(ticket.criado_em) }}</span>
+                </div>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <!-- Detalhe -->
+    <div class="tickets-col-detail" [class.tickets-col-detail--visivel]="ticketSelecionado() !== null">
+      @if (ticketSelecionado(); as ticket) {
+        <div class="detail-header">
+          <button class="back-btn" type="button" (click)="ticketSelecionado.set(null)" aria-label="Voltar">
+            &larr; Voltar
+          </button>
+          <div class="detail-user">
+            <div class="user-avatar user-avatar--lg">{{ iniciais(ticket.perfil.nome_completo, ticket.perfil.email) }}</div>
+            <div class="detail-user-info">
+              <span class="detail-user-nome">{{ ticket.perfil.nome_completo ?? '—' }}</span>
+              <span class="detail-user-email">{{ ticket.perfil.email }}</span>
+            </div>
+          </div>
+          <span class="badge badge--lg" [ngClass]="statusClass(ticket.status)">
+            {{ statusLabels[ticket.status] }}
+          </span>
+        </div>
+
+        <div class="detail-meta">
+          <span class="detail-titulo">{{ ticket.titulo }}</span>
+          <span class="detail-categoria">{{ categoriaLabels[ticket.categoria] }}</span>
+          <span class="detail-data">Aberto em {{ formatarData(ticket.criado_em) }}</span>
+        </div>
+
+        <div class="thread">
+          @for (msg of ticket.mensagens; track msg.id) {
+            <div class="thread-msg" [class.thread-msg--admin]="msg.is_admin">
+              <div class="thread-msg-origem">
+                {{ msg.is_admin ? 'Equipe BoraMed' : (ticket.perfil.nome_completo ?? ticket.perfil.email) }}
+              </div>
+              <div class="thread-msg-bubble">{{ msg.mensagem }}</div>
+              <div class="thread-msg-data">{{ formatarData(msg.criado_em) }}</div>
+            </div>
+          }
+        </div>
+
+        <div class="reply-area">
+          <textarea
+            class="reply-textarea"
+            placeholder="Digite sua resposta..."
+            rows="3"
+            [ngModel]="novaResposta()"
+            (ngModelChange)="novaResposta.set($event)"
+            name="resposta"
+            [disabled]="ticket.status === 'resolvido'"
+          ></textarea>
+          <div class="reply-actions">
+            @if (ticket.status !== 'resolvido') {
+              <button
+                class="btn-resolver"
+                type="button"
+                [disabled]="alterandoStatus()"
+                (click)="marcarResolvido()"
+              >
+                <app-ui-icon [icon]="iconCheck" [size]="15" />
+                {{ alterandoStatus() ? 'Aguarde...' : 'Marcar como resolvido' }}
+              </button>
+            }
+            <button
+              class="btn-responder"
+              type="button"
+              [disabled]="!novaResposta().trim() || enviandoResposta() || ticket.status === 'resolvido'"
+              (click)="responder()"
+            >
+              <app-ui-icon [icon]="iconSend" [size]="15" />
+              {{ enviandoResposta() ? 'Enviando...' : 'Responder' }}
+            </button>
+          </div>
+          @if (ticket.status === 'resolvido') {
+            <p class="ticket-encerrado">Este ticket está encerrado.</p>
+          }
+        </div>
+      } @else {
+        <div class="detail-placeholder">
+          <app-ui-icon [icon]="iconHeadphones" [size]="40" />
+          <p>Selecione um ticket para ver os detalhes.</p>
+        </div>
+      }
+    </div>
+
+  </div>
+}
+
+<!-- PAINEL: FAQ -->
+@if (painelAtivo() === 'faq') {
+  <div class="faq-panel">
+
+    <div class="faq-toolbar">
+      <h2 class="faq-section-title">Perguntas frequentes</h2>
+      <button
+        class="btn-add-faq"
+        type="button"
+        (click)="mostrarFormFaq.set(true)"
+      >
+        <app-ui-icon [icon]="iconPlus" [size]="15" />
+        Nova FAQ
+      </button>
+    </div>
+
+    @if (mostrarFormFaq()) {
+      <div class="faq-form-card">
+        <h3 class="faq-form-title">Nova pergunta</h3>
+        <div class="faq-form-fields">
+          <div class="form-field">
+            <label class="form-label">Categoria (opcional)</label>
+            <input
+              class="form-input"
+              type="text"
+              placeholder="Ex: Conta, Assinatura..."
+              [ngModel]="novoFaqCategoria()"
+              (ngModelChange)="novoFaqCategoria.set($event)"
+            />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Pergunta *</label>
+            <input
+              class="form-input"
+              type="text"
+              placeholder="Qual é a dúvida?"
+              [ngModel]="novoFaqPergunta()"
+              (ngModelChange)="novoFaqPergunta.set($event)"
+            />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Resposta *</label>
+            <textarea
+              class="form-input form-textarea"
+              placeholder="Explique a resposta..."
+              rows="4"
+              [ngModel]="novoFaqResposta()"
+              (ngModelChange)="novoFaqResposta.set($event)"
+            ></textarea>
+          </div>
+        </div>
+        <div class="faq-form-actions">
+          <button
+            class="btn-cancelar"
+            type="button"
+            (click)="mostrarFormFaq.set(false)"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn-salvar"
+            type="button"
+            [disabled]="!novoFaqPergunta().trim() || !novoFaqResposta().trim() || criandoFaq()"
+            (click)="criarFaq()"
+          >
+            {{ criandoFaq() ? 'Salvando...' : 'Salvar FAQ' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (faqItems().length === 0) {
+      <div class="lista-vazia">
+        <p>Nenhuma FAQ cadastrada.</p>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="faq-table">
+          <thead>
+            <tr>
+              <th>Pergunta</th>
+              <th>Categoria</th>
+              <th>Status</th>
+              <th>Criado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of faqItems(); track item.id) {
+              <tr [class.row--inativo]="!item.ativo">
+                <td class="faq-pergunta-cell">{{ item.pergunta }}</td>
+                <td>{{ item.categoria ?? '—' }}</td>
+                <td>
+                  <span class="status-dot" [class.status-dot--ativo]="item.ativo">
+                    {{ item.ativo ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td class="data-cell">{{ formatarData(item.criado_em) }}</td>
+                <td>
+                  <div class="acoes-cell">
+                    <button
+                      class="btn btn--sm"
+                      [class.btn--success]="!item.ativo"
+                      [class.btn--outline]="item.ativo"
+                      type="button"
+                      (click)="toggleAtivoFaq(item.id)"
+                    >
+                      {{ item.ativo ? 'Desativar' : 'Ativar' }}
+                    </button>
+                    <button
+                      class="btn btn--sm btn--danger"
+                      type="button"
+                      aria-label="Deletar FAQ"
+                      (click)="deletarFaq(item.id)"
+                    >
+                      <app-ui-icon [icon]="iconTrash" [size]="14" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

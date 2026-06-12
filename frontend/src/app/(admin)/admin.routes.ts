@@ -64,4 +64,11 @@ export const adminRoutes: Routes = [
         (m) => m.AdminNotificacoesComponent,
       ),
   },
+  {
+    path: 'suporte',
+    loadComponent: () =>
+      import('./suporte/admin-suporte.component').then(
+        (m) => m.AdminSuporteComponent,
+      ),
+  },
 ];

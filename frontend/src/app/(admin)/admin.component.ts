@@ -5,6 +5,7 @@ import {
   BookOpen,
   FileText,
   GraduationCap,
+  Headphones,
   LayoutDashboard,
   LucideIconData,
   LogOut,
@@ -60,6 +61,7 @@ export class AdminComponent {
     { label: 'Importar', icon: Upload, route: '/admin/importar' },
     { label: 'Avisos', icon: Bell, route: '/admin/avisos' },
     { label: 'Notificações', icon: Send, route: '/admin/notificacoes' },
+    { label: 'Suporte', icon: Headphones, route: '/admin/suporte' },
   ];
 
   protected toggleMenu(): void {
