@@ -6,23 +6,30 @@
   z-index: 9990;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.75rem 0.875rem;
   background: #16a34a;
   color: #fff;
   border: none;
-  border-radius: 50%;
+  border-radius: 9999px 0 0 9999px;
   cursor: pointer;
-  box-shadow: 0 3px 12px rgba(22, 163, 74, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s;
+  box-shadow: -3px 3px 14px rgba(22, 163, 74, 0.35);
+  transform: translateX(calc(100% - 2.75rem));
+  transition: transform 0.25s ease, box-shadow 0.2s ease, background 0.15s;
+  white-space: nowrap;
 }
 
 .widget-btn:hover,
 .widget-btn--aberto {
   background: #15803d;
-  transform: translateX(-6px) scale(1.08);
-  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
+  transform: translateX(0);
+  box-shadow: -4px 4px 20px rgba(22, 163, 74, 0.45);
+}
+
+.widget-btn-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
 /* Backdrop */
