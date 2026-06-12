@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   signal,
 } from '@angular/core';
 import { NgClass } from '@angular/common';
@@ -19,6 +20,7 @@ import {
   X,
 } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { NotificationService } from '../../core/services/notification.service';
 import type {
   AdminTicketDetalhe,
   AdminTicketResumo,
@@ -136,28 +138,6 @@ const MOCK_ADMIN_TICKETS: AdminTicketDetalhe[] = [
   },
 ];
 
-const MOCK_ADMIN_FAQ: SuporteFaq[] = [
-  {
-    id: 'f1',
-    pergunta: 'Como faço para redefinir minha senha?',
-    resposta: 'Acesse a página de login e clique em "Esqueci minha senha". Você receberá um e-mail com o link para redefinição.',
-    categoria: 'Conta',
-    ordem: 1,
-    ativo: true,
-    criado_em: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    atualizado_em: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'f2',
-    pergunta: 'Como funciona o modo competitivo?',
-    resposta: 'No modo competitivo você compete em tempo real com outros estudantes, respondendo questões cronometradas.',
-    categoria: 'Funcionalidades',
-    ordem: 2,
-    ativo: true,
-    criado_em: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    atualizado_em: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
 
 @Component({
   selector: 'app-admin-suporte',
@@ -168,6 +148,7 @@ const MOCK_ADMIN_FAQ: SuporteFaq[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminSuporteComponent {
+  private readonly toast = inject(NotificationService);
   protected readonly iconHeadphones = Headphones;
   protected readonly iconMessage = MessageCircle;
   protected readonly iconSend = Send;
@@ -192,7 +173,7 @@ export class AdminSuporteComponent {
   protected readonly alterandoStatus = signal(false);
 
   // FAQ
-  protected readonly faqItems = signal<SuporteFaq[]>(MOCK_ADMIN_FAQ);
+  protected readonly faqItems = signal<SuporteFaq[]>([]);
   protected readonly novoFaqPergunta = signal('');
   protected readonly novoFaqResposta = signal('');
   protected readonly novoFaqCategoria = signal('');
@@ -262,6 +243,7 @@ export class AdminSuporteComponent {
     this.ticketSelecionado.set(ticketAtualizado);
     this.novaResposta.set('');
     this.enviandoResposta.set(false);
+    this.toast.success('Resposta enviada.');
   }
 
   protected async marcarResolvido(): Promise<void> {
@@ -273,6 +255,7 @@ export class AdminSuporteComponent {
     this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
     this.ticketSelecionado.set(ticketAtualizado);
     this.alterandoStatus.set(false);
+    this.toast.success('Ticket marcado como resolvido.');
   }
 
   protected async criarFaq(): Promise<void> {
@@ -295,16 +278,20 @@ export class AdminSuporteComponent {
     this.novoFaqCategoria.set('');
     this.mostrarFormFaq.set(false);
     this.criandoFaq.set(false);
+    this.toast.success('FAQ criada com sucesso.');
   }
 
   protected toggleAtivoFaq(id: string): void {
+    const item = this.faqItems().find(f => f.id === id);
     this.faqItems.update(items =>
       items.map(f => f.id === id ? { ...f, ativo: !f.ativo } : f)
     );
+    this.toast.success(!item?.ativo ? 'FAQ ativada.' : 'FAQ desativada.');
   }
 
   protected deletarFaq(id: string): void {
     this.faqItems.update(items => items.filter(f => f.id !== id));
+    this.toast.success('FAQ removida.');
   }
 
   protected formatarData(iso: string): string {

@@ -86,48 +86,6 @@ const MOCK_TICKETS: SuporteTicketComMensagens[] = [
   },
 ];
 
-const MOCK_FAQ: SuporteFaq[] = [
-  {
-    id: 'f1',
-    pergunta: 'Como faço para redefinir minha senha?',
-    resposta: 'Acesse a página de login e clique em "Esqueci minha senha". Você receberá um e-mail com o link para redefinição.',
-    categoria: 'Conta',
-    ordem: 1,
-    ativo: true,
-    criado_em: '',
-    atualizado_em: '',
-  },
-  {
-    id: 'f2',
-    pergunta: 'Como funciona o modo competitivo?',
-    resposta: 'No modo competitivo você compete em tempo real com outros estudantes, respondendo questões cronometradas. Sua posição no ranking é atualizada após cada rodada.',
-    categoria: 'Funcionalidades',
-    ordem: 2,
-    ativo: true,
-    criado_em: '',
-    atualizado_em: '',
-  },
-  {
-    id: 'f3',
-    pergunta: 'Posso cancelar minha assinatura a qualquer momento?',
-    resposta: 'Sim. Você pode cancelar sua assinatura a qualquer momento nas configurações do perfil. O acesso continua até o fim do período pago.',
-    categoria: 'Assinatura',
-    ordem: 3,
-    ativo: true,
-    criado_em: '',
-    atualizado_em: '',
-  },
-  {
-    id: 'f4',
-    pergunta: 'As questões são atualizadas com frequência?',
-    resposta: 'Sim! Nosso banco de questões é atualizado constantemente com questões de provas recentes e elaboradas pela nossa equipe médica.',
-    categoria: 'Conteúdo',
-    ordem: 4,
-    ativo: true,
-    criado_em: '',
-    atualizado_em: '',
-  },
-];
 
 @Component({
   selector: 'app-suporte-widget',
@@ -165,7 +123,7 @@ export class SuporteWidgetComponent {
   protected readonly enviandoMensagem = signal(false);
 
   // FAQ
-  protected readonly faqItems = signal<SuporteFaq[]>(MOCK_FAQ);
+  protected readonly faqItems = signal<SuporteFaq[]>([]);
   protected readonly faqExpandido = signal<string | null>(null);
 
   protected readonly podeSalvar = computed(() =>
