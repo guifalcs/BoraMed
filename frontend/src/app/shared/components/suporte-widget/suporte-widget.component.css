@@ -2,27 +2,27 @@
 .widget-btn {
   position: fixed;
   bottom: 6rem;
-  right: 0;
+  right: 1rem;
   z-index: 9990;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3rem;
+  height: 3rem;
   background: #16a34a;
   color: #fff;
   border: none;
-  border-radius: 0.5rem 0 0 0.5rem;
+  border-radius: 50%;
   cursor: pointer;
-  box-shadow: -3px 2px 12px rgba(22, 163, 74, 0.3);
-  transform: translateX(calc(100% - 0.4rem));
-  transition: transform 0.22s ease, background 0.15s;
+  box-shadow: 0 3px 12px rgba(22, 163, 74, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s;
 }
 
 .widget-btn:hover,
 .widget-btn--aberto {
   background: #15803d;
-  transform: translateX(0);
+  transform: scale(1.12);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
 }
 
 /* Backdrop */
@@ -503,6 +503,7 @@
 @media (max-width: 480px) {
   .widget-btn {
     bottom: 5.5rem;
+    right: 0.75rem;
   }
 
   .widget-drawer {
