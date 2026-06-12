@@ -14,7 +14,7 @@
   border-radius: 9999px 0 0 9999px;
   cursor: pointer;
   box-shadow: -3px 3px 14px rgba(37, 99, 235, 0.35);
-  transform: translateX(calc(100% - 2.75rem));
+  transform: translateX(calc(100% - 1.75rem));
   transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1), box-shadow 1s ease, background 0.4s;
   white-space: nowrap;
 }
