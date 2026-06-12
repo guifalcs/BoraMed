@@ -1,18 +1,16 @@
 <!-- Floating button -->
 <button
   class="widget-btn"
+  [class.widget-btn--aberto]="aberto()"
   type="button"
   (click)="toggleAberto()"
   [attr.aria-expanded]="aberto()"
   aria-label="Abrir suporte"
 >
   @if (aberto()) {
-    <app-ui-icon [icon]="iconX" [size]="22" />
+    <app-ui-icon [icon]="iconX" [size]="20" />
   } @else {
-    <app-ui-icon [icon]="iconLifeBuoy" [size]="22" />
-  }
-  @if (!aberto()) {
-    <span class="widget-btn-label">Suporte</span>
+    <app-ui-icon [icon]="iconLifeBuoy" [size]="20" />
   }
 </button>
 
