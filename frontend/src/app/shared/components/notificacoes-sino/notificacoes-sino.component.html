@@ -18,6 +18,9 @@
       [class.dropdown--open-up]="!!fixedPos()?.openUp"
       [style.top.px]="fixedPos()?.top"
       [style.left.px]="fixedPos()?.left"
+      [style.width.px]="tamanho()?.w"
+      [style.height.px]="tamanho()?.h"
+      [style.max-height.px]="tamanho()?.h"
       role="menu"
       aria-label="Notificações"
     >
@@ -66,6 +69,19 @@
           </li>
         }
       </ul>
+
+      <div
+        class="resize-handle"
+        [class.resize-handle--esq]="!sidebar()"
+        [class.resize-handle--topo]="!!fixedPos()?.openUp"
+        aria-hidden="true"
+        title="Arraste para redimensionar; duplo clique restaura o tamanho padrão"
+        (pointerdown)="iniciarResize($event)"
+        (pointermove)="moverResize($event)"
+        (pointerup)="finalizarResize()"
+        (pointercancel)="finalizarResize()"
+        (dblclick)="resetarTamanho()"
+      ></div>
     </div>
   }
 </div>

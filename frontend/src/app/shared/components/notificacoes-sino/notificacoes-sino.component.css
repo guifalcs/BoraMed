@@ -47,8 +47,11 @@
   top: calc(100% + 0.5rem);
   right: 0;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
   width: 320px;
   max-width: calc(100vw - 1rem);
+  max-height: 380px;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
@@ -107,6 +110,7 @@
 /* ── Conteúdo ── */
 .dropdown-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1rem 0.625rem;
@@ -140,7 +144,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 320px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -221,6 +226,75 @@
   margin-top: 0.3rem;
   border-radius: 50%;
   background: #6366f1;
+}
+
+/* ── Handle de redimensionamento ──
+   Fica no canto oposto à âncora do dropdown: canto esquerdo quando alinhado
+   pela direita do botão, canto direito no modo sidebar; topo quando abre
+   para cima. O sentido do arrasto é tratado no componente. */
+.resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 1;
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #cbd5e1;
+  border-bottom: 2px solid #cbd5e1;
+  border-radius: 0 0 3px 0;
+  transition: border-color 0.15s;
+}
+
+.resize-handle--esq {
+  right: auto;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.resize-handle--esq::after {
+  right: auto;
+  left: 4px;
+  border-right: none;
+  border-left: 2px solid #cbd5e1;
+  border-radius: 0 0 0 3px;
+}
+
+.resize-handle--topo {
+  bottom: auto;
+  top: 0;
+  cursor: nesw-resize;
+}
+
+.resize-handle--topo::after {
+  bottom: auto;
+  top: 4px;
+  border-bottom: none;
+  border-top: 2px solid #cbd5e1;
+  border-radius: 0 3px 0 0;
+}
+
+.resize-handle--esq.resize-handle--topo {
+  cursor: nwse-resize;
+}
+
+.resize-handle--esq.resize-handle--topo::after {
+  border-radius: 3px 0 0 0;
+}
+
+.resize-handle:hover::after,
+.resize-handle:active::after {
+  border-color: #6366f1;
 }
 
 /* Telas muito pequenas: ocupa a largura do viewport sem vazar em nenhum lado */
