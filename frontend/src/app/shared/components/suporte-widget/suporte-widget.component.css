@@ -15,7 +15,7 @@
   cursor: pointer;
   box-shadow: -3px 3px 14px rgba(22, 163, 74, 0.35);
   transform: translateX(calc(100% - 2.75rem));
-  transition: transform 0.25s ease, box-shadow 0.2s ease, background 0.15s;
+  transition: transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.35s ease, background 0.2s;
   white-space: nowrap;
 }
 
