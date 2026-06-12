@@ -244,6 +244,11 @@
   display: none;
 }
 
+/* Sino fora do mobile-header para escapar do seu stacking context */
+.mobile-notif-float {
+  display: none;
+}
+
 /* ── Mobile ──────────────────────────────────────────── */
 
 @media (max-width: 767px) {
@@ -286,6 +291,15 @@
     gap: 0.25rem;
     margin-left: auto;
     margin-right: 0.5rem;
+  }
+
+  /* Posiciona o sino no mesmo lugar que ocupava dentro do header */
+  .mobile-notif-float {
+    display: block;
+    position: fixed;
+    top: 11px;
+    right: 56px; /* deixa espaço para o avatar à direita */
+    z-index: 200;
   }
 
   .mobile-avatar-wrapper {

@@ -84,7 +84,7 @@
       />
     </a>
     <div class="mobile-header-actions">
-      <app-notificacoes-sino />
+      <!-- sino renderizado fora do header via classe mobile-notif-float -->
     </div>
     <div class="mobile-avatar-wrapper">
       <button class="mobile-avatar-btn" type="button" aria-label="Menu do perfil" data-onboarding-target="profile-menu" (click)="toggleMenu()">
@@ -116,6 +116,11 @@
       }
     </div>
   </header>
+
+  <!-- Sino fora do mobile-header para escapar do stacking context (position:fixed) -->
+  <div class="mobile-notif-float">
+    <app-notificacoes-sino />
+  </div>
 
   <main class="main-content">
     @if (impersonando(); as info) {
