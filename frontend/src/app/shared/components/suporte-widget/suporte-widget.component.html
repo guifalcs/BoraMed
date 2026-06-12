@@ -169,7 +169,7 @@
                 @if (ticketExpandido() === ticket.id) {
                   <div class="ticket-thread">
                     @for (msg of ticket.mensagens; track msg.id) {
-                      <div class="mensagem" [class.mensagem--admin]="msg.is_admin">
+                      <div class="mensagem" [class.mensagem--admin]="!msg.is_admin">
                         <div class="mensagem-origem">
                           {{ msg.is_admin ? 'Suporte BoraMed' : 'Você' }}
                         </div>
