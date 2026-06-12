@@ -8,12 +8,12 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem 0.75rem 0.875rem;
-  background: #16a34a;
+  background: #2563eb;
   color: #fff;
   border: none;
   border-radius: 9999px 0 0 9999px;
   cursor: pointer;
-  box-shadow: -3px 3px 14px rgba(22, 163, 74, 0.35);
+  box-shadow: -3px 3px 14px rgba(37, 99, 235, 0.35);
   transform: translateX(calc(100% - 2.75rem));
   transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1), box-shadow 1s ease, background 0.4s;
   white-space: nowrap;
@@ -21,9 +21,9 @@
 
 .widget-btn:hover,
 .widget-btn--aberto {
-  background: #15803d;
+  background: #1d4ed8;
   transform: translateX(0);
-  box-shadow: -4px 4px 20px rgba(22, 163, 74, 0.45);
+  box-shadow: -4px 4px 20px rgba(37, 99, 235, 0.45);
 }
 
 .widget-btn-label {
