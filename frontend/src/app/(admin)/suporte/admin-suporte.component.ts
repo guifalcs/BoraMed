@@ -33,110 +33,6 @@ type PainelAtivo = 'tickets' | 'faq';
 type FiltroStatus = 'todos' | TicketStatus;
 
 // MOCKED data
-const MOCK_ADMIN_TICKETS: AdminTicketDetalhe[] = [
-  {
-    id: '1',
-    user_id: 'u1',
-    titulo: 'Não consigo acessar minha conta',
-    descricao: 'Estou tentando fazer login mas aparece erro 403.',
-    categoria: 'problema_tecnico',
-    status: 'em_andamento',
-    criado_em: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    atualizado_em: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    perfil: {
-      nome_completo: 'Ana Paula Silva',
-      email: 'ana@exemplo.com',
-      avatar_url: null,
-    },
-    total_mensagens: 2,
-    mensagens: [
-      {
-        id: 'm1',
-        ticket_id: '1',
-        autor_id: 'u1',
-        mensagem: 'Estou tentando fazer login mas aparece erro 403.',
-        is_admin: false,
-        criado_em: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'm2',
-        ticket_id: '1',
-        autor_id: 'admin',
-        mensagem: 'Olá! Estamos verificando o problema. Pode tentar limpar os cookies do navegador?',
-        is_admin: true,
-        criado_em: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ],
-  },
-  {
-    id: '2',
-    user_id: 'u2',
-    titulo: 'Dúvida sobre questão de cardiologia',
-    descricao: 'A alternativa correta parece estar errada na questão 42.',
-    categoria: 'duvida_conteudo',
-    status: 'aberto',
-    criado_em: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    atualizado_em: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    perfil: {
-      nome_completo: 'Carlos Mendes',
-      email: 'carlos@exemplo.com',
-      avatar_url: null,
-    },
-    total_mensagens: 1,
-    mensagens: [
-      {
-        id: 'm3',
-        ticket_id: '2',
-        autor_id: 'u2',
-        mensagem: 'A alternativa correta parece estar errada na questão 42.',
-        is_admin: false,
-        criado_em: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ],
-  },
-  {
-    id: '3',
-    user_id: 'u3',
-    titulo: 'Problema com assinatura',
-    descricao: 'Fui cobrado duas vezes no mês.',
-    categoria: 'assinatura_pagamento',
-    status: 'resolvido',
-    criado_em: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    atualizado_em: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    perfil: {
-      nome_completo: 'Maria Fernanda',
-      email: 'maria@exemplo.com',
-      avatar_url: null,
-    },
-    total_mensagens: 3,
-    mensagens: [
-      {
-        id: 'm5',
-        ticket_id: '3',
-        autor_id: 'u3',
-        mensagem: 'Fui cobrado duas vezes no mês de junho.',
-        is_admin: false,
-        criado_em: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'm6',
-        ticket_id: '3',
-        autor_id: 'admin',
-        mensagem: 'Identificamos o problema e o estorno já foi solicitado. Prazo de 5 dias úteis.',
-        is_admin: true,
-        criado_em: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'm7',
-        ticket_id: '3',
-        autor_id: 'admin',
-        mensagem: 'Estorno confirmado. Ticket encerrado.',
-        is_admin: true,
-        criado_em: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ],
-  },
-];
 
 
 @Component({
@@ -166,7 +62,7 @@ export class AdminSuporteComponent {
   protected readonly painelAtivo = signal<PainelAtivo>('tickets');
   protected readonly filtroStatus = signal<FiltroStatus>('todos');
 
-  protected readonly tickets = signal<AdminTicketDetalhe[]>(MOCK_ADMIN_TICKETS);
+  protected readonly tickets = signal<AdminTicketDetalhe[]>([]);
   protected readonly ticketSelecionado = signal<AdminTicketDetalhe | null>(null);
   protected readonly novaResposta = signal('');
   protected readonly enviandoResposta = signal(false);
