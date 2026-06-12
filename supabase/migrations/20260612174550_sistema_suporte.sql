@@ -47,9 +47,9 @@ alter table "public"."suporte_mensagens" enable row level security;
 
 alter table "public"."suporte_tickets" enable row level security;
 
-alter table "public"."profiles" add column "avatar_url" text;
+alter table "public"."profiles" add column if not exists "avatar_url" text;
 
-alter table "public"."profiles" add column "nome_completo" text;
+alter table "public"."profiles" add column if not exists "nome_completo" text;
 
 CREATE INDEX suporte_faq_ativo_ordem_idx ON public.suporte_faq USING btree (ativo, ordem) WHERE (ativo = true);
 
