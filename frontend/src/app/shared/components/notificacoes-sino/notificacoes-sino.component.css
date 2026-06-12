@@ -55,6 +55,9 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   animation: fade-in 0.15s ease-out;
   overflow: hidden;
+  /* Força compositing layer própria para sobrepor cards com transform/animation */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Abre para cima (absolute) */

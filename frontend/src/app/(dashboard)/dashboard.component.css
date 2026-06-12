@@ -230,6 +230,8 @@
 .main-content {
   min-height: 100vh;
   overflow-y: auto;
+  /* Isola compositing layers dos cards dentro deste contexto */
+  isolation: isolate;
 }
 
 /* ── Bottom nav (mobile only) ────────────────────────── */
