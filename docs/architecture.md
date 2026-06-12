@@ -127,3 +127,9 @@
  **Data** : 2026-05
  **Decisao** : Apos login, carregar chunks das rotas mais provaveis em idle time. Dados dos resolvers do dashboard sao cacheados em sessionStorage com TTL de 5 min (stale-while-revalidate).
  **Motivo** : Reduz tela em branco apos login e entre navegacoes do aluno. O cache e limpo no logout. Nenhum dado sensivel alem do necessario para UX e cacheado. Rotas admin nao sao pre-carregadas.
+
+## ADR-020: Anexos privados nas mensagens de suporte
+
+ **Data** : 2026-06
+ **Decisao** : Fotos e videos enviados no suporte ficam no bucket privado `suporte-anexos`, com metadados em `suporte_anexos` ligados a `suporte_mensagens`. A UI abre arquivos por URLs assinadas temporarias, nunca por URL publica.
+ **Motivo** : Evidencias de debug podem conter dados sensiveis da tela do usuario. Associar anexos a mensagens preserva contexto da conversa, enquanto bucket privado + RLS restringe leitura ao dono do ticket e administradores.

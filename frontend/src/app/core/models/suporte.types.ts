@@ -24,6 +24,20 @@ export interface SuporteMensagem {
   mensagem: string;
   is_admin: boolean;
   criado_em: string;
+  anexos: SuporteAnexo[];
+}
+
+export interface SuporteAnexo {
+  id: string;
+  mensagem_id: string;
+  ticket_id: string;
+  user_id: string;
+  storage_path: string;
+  nome_arquivo: string;
+  mime_type: string;
+  tamanho_bytes: number;
+  criado_em: string;
+  url_assinada: string | null;
 }
 
 export interface SuporteTicketComMensagens extends SuporteTicket {

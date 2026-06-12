@@ -68,6 +68,9 @@
             <div class="sucesso-icon">&#10003;</div>
             <h3 class="sucesso-titulo">Solicitação enviada!</h3>
             <p class="sucesso-texto">Você receberá uma resposta em breve. Acompanhe em "Minhas solicitações".</p>
+            @if (avisoEnvio()) {
+              <p class="sucesso-aviso">{{ avisoEnvio() }}</p>
+            }
             <button class="btn-primary" type="button" (click)="novaForm()">Nova solicitação</button>
             <button class="btn-ghost" type="button" (click)="setAba('solicitacoes')">Ver minhas solicitações</button>
           </div>
@@ -124,6 +127,55 @@
               </div>
             </div>
 
+            <div class="field">
+              <span class="field-label">Anexos</span>
+              <label
+                class="upload-trigger"
+                [class.upload-trigger--disabled]="enviando()"
+                for="sw-anexos"
+              >
+                <app-ui-icon [icon]="iconPaperclip" [size]="16" />
+                <span>Anexar foto ou vídeo</span>
+              </label>
+              <input
+                id="sw-anexos"
+                class="file-input"
+                type="file"
+                multiple
+                [accept]="anexosAccept"
+                [disabled]="enviando()"
+                (change)="onNovosAnexosChange($event)"
+              />
+              @if (novosAnexos().length > 0) {
+                <ul class="selected-files">
+                  @for (arquivo of novosAnexos(); track arquivo.name + arquivo.size + $index) {
+                    <li class="selected-file" [class.selected-file--uploading]="enviando()">
+                      <app-ui-icon [icon]="anexoEhVideo(arquivo) ? iconFileVideo : iconFileImage" [size]="15" />
+                      <span class="selected-file-name">{{ arquivo.name }}</span>
+                      <span class="selected-file-size">{{ formatarTamanhoArquivo(arquivo.size) }}</span>
+                      @if (enviando()) {
+                        <span class="file-spinner" aria-hidden="true"></span>
+                      } @else {
+                        <button type="button" class="selected-file-remove" (click)="removerNovoAnexo($index)" aria-label="Remover anexo">
+                          <app-ui-icon [icon]="iconX" [size]="14" />
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+              <span class="field-hint-min">Até {{ maxAnexos }} arquivos por mensagem.</span>
+              @if (enviando() && novosAnexos().length > 0) {
+                <div class="upload-progress" role="status" aria-live="polite">
+                  <span class="file-spinner" aria-hidden="true"></span>
+                  <span>Enviando anexos...</span>
+                </div>
+              }
+              @if (erroAnexos()) {
+                <p class="erro-envio">{{ erroAnexos() }}</p>
+              }
+            </div>
+
             @if (erroEnvio()) {
               <p class="erro-envio">{{ erroEnvio() }}</p>
             }
@@ -134,7 +186,7 @@
               [disabled]="!podeSalvar() || enviando()"
             >
               @if (enviando()) {
-                Enviando...
+                {{ novosAnexos().length > 0 ? 'Enviando anexos...' : 'Enviando...' }}
               } @else {
                 Enviar solicitação
               }
@@ -183,28 +235,117 @@
                         <div class="mensagem-origem">
                           {{ msg.is_admin ? 'Suporte BoraMed' : 'Você' }}
                         </div>
-                        <div class="mensagem-bubble">{{ msg.mensagem }}</div>
+                        <div class="mensagem-bubble">
+                          <span>{{ msg.mensagem }}</span>
+                          @if (msg.anexos.length > 0) {
+                            <div class="message-attachments">
+                              @for (anexo of msg.anexos; track anexo.id) {
+                                @if (anexo.url_assinada) {
+                                  <a
+                                    class="attachment-link"
+                                    [href]="anexo.url_assinada"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <app-ui-icon [icon]="anexoEhVideo(anexo) ? iconFileVideo : iconFileImage" [size]="15" />
+                                    <span>{{ anexo.nome_arquivo }}</span>
+                                    <small>{{ formatarTamanhoArquivo(anexo.tamanho_bytes) }}</small>
+                                  </a>
+                                } @else {
+                                  <span class="attachment-link attachment-link--disabled">
+                                    <app-ui-icon [icon]="anexoEhVideo(anexo) ? iconFileVideo : iconFileImage" [size]="15" />
+                                    <span>{{ anexo.nome_arquivo }}</span>
+                                  </span>
+                                }
+                              }
+                            </div>
+                          }
+                        </div>
                         <div class="mensagem-data">{{ formatarData(msg.criado_em) }}</div>
                       </div>
                     }
 
                     @if (ticket.status !== 'resolvido') {
                       <div class="reply-box">
-                        <textarea
-                          class="reply-input"
-                          placeholder="Responder..."
-                          [ngModel]="novaMensagem()"
-                          (ngModelChange)="novaMensagem.set($event)"
-                          name="reply"
-                          rows="2"
-                        ></textarea>
+                        <div class="reply-compose">
+                          <textarea
+                            class="reply-input"
+                            placeholder="Responder..."
+                            [ngModel]="novaMensagem()"
+                            (ngModelChange)="novaMensagem.set($event)"
+                            name="reply"
+                            rows="2"
+                          ></textarea>
+                          <div class="reply-toolbar">
+                            <label
+                              class="attach-icon-btn"
+                              [class.attach-icon-btn--disabled]="enviandoMensagem()"
+                              [attr.for]="'sw-reply-anexos-' + ticket.id"
+                              aria-label="Anexar arquivo"
+                            >
+                              <app-ui-icon [icon]="iconPaperclip" [size]="15" />
+                            </label>
+                            @if (erroMensagem()) {
+                              <span class="reply-error">{{ erroMensagem() }}</span>
+                            }
+                          </div>
+                          <input
+                            [id]="'sw-reply-anexos-' + ticket.id"
+                            class="file-input"
+                            type="file"
+                            multiple
+                            [accept]="anexosAccept"
+                            [disabled]="enviandoMensagem()"
+                            (change)="onRespostaAnexosChange($event)"
+                          />
+                          @if (respostaAnexos().length > 0) {
+                            <ul class="selected-files selected-files--compact">
+                              @for (arquivo of respostaAnexos(); track arquivo.name + arquivo.size + $index) {
+                                <li class="selected-file" [class.selected-file--uploading]="enviandoMensagem()">
+                                  <app-ui-icon [icon]="anexoEhVideo(arquivo) ? iconFileVideo : iconFileImage" [size]="14" />
+                                  <span class="selected-file-name">{{ arquivo.name }}</span>
+                                  @if (enviandoMensagem()) {
+                                    <span class="file-spinner" aria-hidden="true"></span>
+                                  } @else {
+                                    <button type="button" class="selected-file-remove" (click)="removerRespostaAnexo($index)" aria-label="Remover anexo">
+                                      <app-ui-icon [icon]="iconX" [size]="13" />
+                                    </button>
+                                  }
+                                </li>
+                              }
+                            </ul>
+                          }
+                          @if (enviandoMensagem() && respostaAnexos().length > 0) {
+                            <div class="upload-progress upload-progress--compact" role="status" aria-live="polite">
+                              <span class="file-spinner" aria-hidden="true"></span>
+                              <span>Enviando anexos...</span>
+                            </div>
+                          }
+                        </div>
                         <button
                           class="reply-btn"
+                          [class.reply-btn--loading]="enviandoMensagem() && respostaAnexos().length > 0"
                           type="button"
-                          [disabled]="!novaMensagem().trim() || enviandoMensagem()"
+                          [disabled]="(!novaMensagem().trim() && respostaAnexos().length === 0) || enviandoMensagem()"
                           (click)="enviarMensagem(ticket.id)"
                         >
                           <app-ui-icon [icon]="iconSend" [size]="16" />
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="reopen-box">
+                        <p class="reopen-text">Este chamado está encerrado.</p>
+                        @if (erroMensagem()) {
+                          <span class="reply-error reply-error--block">{{ erroMensagem() }}</span>
+                        }
+                        <button
+                          class="btn-reabrir"
+                          type="button"
+                          [disabled]="reabrindoTicket()"
+                          (click)="reabrirTicket(ticket.id)"
+                        >
+                          <app-ui-icon [icon]="iconRefresh" [size]="15" />
+                          {{ reabrindoTicket() ? 'Reabrindo...' : 'Reabrir chamado' }}
                         </button>
                       </div>
                     }

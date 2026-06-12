@@ -99,6 +99,14 @@
 * Os formatos filtraveis no historico acompanham os formatos pedagogicos ativos: nacional, processual e laboratorio.
 * Simulados personalizados devem continuar aparecendo no historico com o formato da prova gerada, preservando navegacao para resultado e revisao.
 
+### Suporte
+
+* O aluno pode abrir chamados e acompanhar o historico de mensagens pelo widget de suporte.
+* Chamados resolvidos bloqueiam novas respostas ate serem reabertos.
+* Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores.
+* Ao reabrir, o status volta para `aberto` e uma mensagem de auditoria fica registrada no historico do chamado.
+* Quando a equipe reabre um chamado, o aluno recebe uma notificacao informativa.
+
 ## Calendário de Referência (Foco Inicial Afya)
 
 Uso interno como referência de produto. Não apresentar como calendário oficial, parceria ou representação da Afya.

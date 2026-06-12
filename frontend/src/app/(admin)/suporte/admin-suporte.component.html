@@ -127,7 +127,32 @@
               <div class="thread-msg-origem">
                 {{ msg.is_admin ? 'Equipe BoraMed' : (ticket.perfil.nome_completo ?? ticket.perfil.email) }}
               </div>
-              <div class="thread-msg-bubble">{{ msg.mensagem }}</div>
+              <div class="thread-msg-bubble">
+                <span>{{ msg.mensagem }}</span>
+                @if (msg.anexos.length > 0) {
+                  <div class="thread-attachments">
+                    @for (anexo of msg.anexos; track anexo.id) {
+                      @if (anexo.url_assinada) {
+                        <a
+                          class="thread-attachment-link"
+                          [href]="anexo.url_assinada"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <app-ui-icon [icon]="anexoEhVideo(anexo) ? iconFileVideo : iconFileImage" [size]="15" />
+                          <span>{{ anexo.nome_arquivo }}</span>
+                          <small>{{ formatarTamanhoArquivo(anexo.tamanho_bytes) }}</small>
+                        </a>
+                      } @else {
+                        <span class="thread-attachment-link thread-attachment-link--disabled">
+                          <app-ui-icon [icon]="anexoEhVideo(anexo) ? iconFileVideo : iconFileImage" [size]="15" />
+                          <span>{{ anexo.nome_arquivo }}</span>
+                        </span>
+                      }
+                    }
+                  </div>
+                }
+              </div>
               <div class="thread-msg-data">{{ formatarData(msg.criado_em) }}</div>
             </div>
           }
@@ -154,6 +179,16 @@
                 <app-ui-icon [icon]="iconCheck" [size]="15" />
                 {{ alterandoStatus() ? 'Aguarde...' : 'Marcar como resolvido' }}
               </button>
+            } @else {
+              <button
+                class="btn-reabrir"
+                type="button"
+                [disabled]="reabrindoTicket()"
+                (click)="reabrirTicket()"
+              >
+                <app-ui-icon [icon]="iconRefresh" [size]="15" />
+                {{ reabrindoTicket() ? 'Reabrindo...' : 'Reabrir ticket' }}
+              </button>
             }
             <button
               class="btn-responder"
@@ -166,7 +201,7 @@
             </button>
           </div>
           @if (ticket.status === 'resolvido') {
-            <p class="ticket-encerrado">Este ticket está encerrado.</p>
+            <p class="ticket-encerrado">Este ticket está encerrado. Reabra para responder.</p>
           }
         </div>
       } @else {

@@ -12,10 +12,13 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  FileImage,
+  FileVideo,
   Headphones,
   MessageCircle,
   Pencil,
   Plus,
+  RefreshCw,
   Send,
   Trash2,
   X,
@@ -25,6 +28,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { SuporteService } from '../../core/services/suporte.service';
 import type {
   AdminTicketDetalhe,
+  SuporteAnexo,
   TicketStatus,
 } from '../../core/models/suporte.types';
 import { CATEGORIA_LABELS, STATUS_LABELS } from '../../core/models/suporte.types';
@@ -54,6 +58,9 @@ export class AdminSuporteComponent {
   protected readonly iconTrash = Trash2;
   protected readonly iconPencil = Pencil;
   protected readonly iconChevronRight = ChevronRight;
+  protected readonly iconFileImage = FileImage;
+  protected readonly iconFileVideo = FileVideo;
+  protected readonly iconRefresh = RefreshCw;
 
   protected readonly categoriaLabels = CATEGORIA_LABELS;
   protected readonly statusLabels = STATUS_LABELS;
@@ -67,6 +74,7 @@ export class AdminSuporteComponent {
   protected readonly novaResposta = signal('');
   protected readonly enviandoResposta = signal(false);
   protected readonly alterandoStatus = signal(false);
+  protected readonly reabrindoTicket = signal(false);
 
   protected readonly faqItems = this.suporteService.faqItems;
   protected readonly novoFaqPergunta = signal('');
@@ -179,6 +187,34 @@ export class AdminSuporteComponent {
     this.alterandoStatus.set(false);
   }
 
+  protected async reabrirTicket(): Promise<void> {
+    const ticket = this.ticketSelecionado();
+    if (!ticket || this.reabrindoTicket()) return;
+
+    this.reabrindoTicket.set(true);
+    try {
+      const result = await this.suporteService.reabrirTicket(ticket.id);
+      if (result.ok) {
+        const ticketAtualizado: AdminTicketDetalhe = {
+          ...ticket,
+          ...result.data,
+          perfil: ticket.perfil,
+          total_mensagens: result.data.mensagens.length,
+        };
+        this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
+        this.ticketSelecionado.set(ticketAtualizado);
+        this.novaResposta.set('');
+        this.toast.success('Ticket reaberto.');
+      } else {
+        this.toast.error('Erro ao reabrir ticket.');
+      }
+    } catch {
+      this.toast.error('Erro ao reabrir ticket.');
+    } finally {
+      this.reabrindoTicket.set(false);
+    }
+  }
+
   protected async criarFaq(): Promise<void> {
     if (!this.novoFaqPergunta().trim() || !this.novoFaqResposta().trim()) return;
     this.criandoFaq.set(true);
@@ -239,5 +275,13 @@ export class AdminSuporteComponent {
         : partes[0].slice(0, 2).toUpperCase();
     }
     return email.slice(0, 2).toUpperCase();
+  }
+
+  protected formatarTamanhoArquivo(bytes: number): string {
+    return this.suporteService.formatarTamanhoArquivo(bytes);
+  }
+
+  protected anexoEhVideo(anexo: SuporteAnexo): boolean {
+    return anexo.mime_type.startsWith('video/');
   }
 }
