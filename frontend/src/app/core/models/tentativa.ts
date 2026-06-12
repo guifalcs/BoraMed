@@ -7,7 +7,8 @@ export type StatusTentativa = 'em_andamento' | 'pausada' | 'finalizada';
 export interface Tentativa {
   id: string;
   user_id: string;
-  prova_id: string;
+  /** null quando a prova foi deletada pelo admin (histórico preservado) */
+  prova_id: string | null;
   modo: ModoProva;
   status: StatusTentativa;
   total_questoes: number;

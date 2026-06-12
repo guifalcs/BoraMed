@@ -377,7 +377,9 @@ export class AdminQuestoesComponent implements OnInit {
     if (result.ok) {
       this.questoes.update((lista) => lista.filter((q) => q.id !== questao.id));
       this.total.update((t) => t - 1);
-      this.toast.success('Questão deletada.');
+      this.toast.success(result.data.modo === 'soft'
+        ? 'Questão removida do banco. As respostas já dadas por alunos seguem visíveis no histórico deles.'
+        : 'Questão deletada.');
     } else {
       this.toast.error(result.error);
     }

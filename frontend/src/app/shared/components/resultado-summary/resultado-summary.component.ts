@@ -26,6 +26,9 @@ export class ResultadoSummaryComponent {
 
   protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
 
+  /** Prova deletada pelo admin: o resultado segue visível, mas sem ações de revisar/refazer */
+  protected readonly provaRemovida = computed(() => this.provaId() === null);
+
   protected readonly nota = computed(() => this.resultado().tentativa.nota ?? 0);
 
   protected readonly deltaNota = computed(() => {

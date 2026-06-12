@@ -223,7 +223,7 @@ export class HistoricoComponent {
 
   protected onTentativaClick(tentativa: TentativaHistoricoItem): void {
     void this.router.navigate(
-      ['/dashboard/simulados', tentativa.prova_id, 'tentativa', tentativa.id, 'resultado'],
+      ['/dashboard/simulados', tentativa.prova_id ?? 'removida', 'tentativa', tentativa.id, 'resultado'],
       { state: { fromHistorico: true } }
     );
   }

@@ -64,7 +64,7 @@ export class DashboardComponent {
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
     if (t && t.status !== 'finalizada' && t.modo !== 'visualizar') {
-      return ['/dashboard/simulados', t.prova_id, 'tentativa', t.id];
+      return ['/dashboard/simulados', t.prova_id ?? 'removida', 'tentativa', t.id];
     }
     return ['/dashboard/simulados'];
   });

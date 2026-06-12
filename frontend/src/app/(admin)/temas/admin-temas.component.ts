@@ -133,8 +133,11 @@ export class AdminTemasComponent implements OnInit {
     this.temaParaDeletar.set(null);
     const result = await this.adminService.deletarTema(tema.id);
     if (result.ok) {
-      this.temas.update((lista) => lista.filter((t) => t.id !== tema.id));
-      this.toast.success('Tema deletado.');
+      const { questoes_desvinculadas, subtemas_realocados } = result.data;
+      this.toast.success(questoes_desvinculadas > 0 || subtemas_realocados > 0
+        ? `Tema deletado. ${questoes_desvinculadas} questão(ões) desvinculada(s) e ${subtemas_realocados} subtema(s) realocado(s).`
+        : 'Tema deletado.');
+      await this.carregar();
     } else {
       this.toast.error(result.error);
     }

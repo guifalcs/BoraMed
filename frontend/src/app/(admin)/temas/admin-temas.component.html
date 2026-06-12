@@ -92,7 +92,7 @@
 @if (temaParaDeletar()) {
   <app-ui-confirm-dialog
     titulo="Deletar tema"
-    [mensagem]="'Deletar &quot;' + temaParaDeletar()!.nome + '&quot;? Temas com questões vinculadas não podem ser removidos.'"
+    [mensagem]="'Deletar &quot;' + temaParaDeletar()!.nome + '&quot;? As questões perdem a marcação deste tema e subtemas sobem um nível. Esta ação é irreversível.'"
     labelConfirmar="Deletar"
     variante="danger"
     (confirmar)="confirmarDelete()"

@@ -211,7 +211,12 @@
         (rowClick)="onTentativaClick($event)"
       >
         <ng-template appDataTableColumn="prova_nome" header="Prova" [sortable]="true" let-value let-row="row">
-          <span class="block max-w-[200px] truncate font-medium text-[var(--color-text)] md:max-w-[300px]" [title]="value">{{ value }}</span>
+          <span class="flex max-w-[200px] items-center gap-1.5 md:max-w-[300px]">
+            <span class="truncate font-medium text-[var(--color-text)]" [title]="value">{{ value }}</span>
+            @if (row.prova_removida) {
+              <span class="shrink-0 rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-muted)]" title="Esta prova não está mais no catálogo, mas seu resultado foi preservado.">prova removida</span>
+            }
+          </span>
         </ng-template>
 
         <ng-template appDataTableColumn="finalizada_em" header="Data" [sortable]="true" let-value>

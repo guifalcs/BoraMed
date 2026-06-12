@@ -130,11 +130,12 @@ Uso interno como referência de produto. Não apresentar como calendário oficia
 
 ## Integridade de Dados
 
-* Disciplina com temas ou questões vinculadas não pode ser deletada. Para retirar da operação, usar `ativa=false`.
-* Tema com questões ou subtemas vinculados não pode ser deletado.
-* Questão com respostas, desafio diário ou vínculo com prova não pode ser deletada.
-* Prova com tentativas vinculadas não pode ser deletada.
-* Deleções administrativas devem ser bloqueadas no banco por FK `RESTRICT` e antecipadas no app com mensagem clara.
+* Toda entidade acadêmica (prova, questão, disciplina, tema) pode ser deletada pelo admin; a regra é preservar o histórico do aluno, nunca bloquear a exclusão.
+* Deleções administrativas passam pelas RPCs `admin_deletar_prova`, `admin_deletar_questao`, `admin_deletar_disciplina` e `admin_deletar_tema` (SECURITY DEFINER, exigem `is_admin()`), nunca por `DELETE` direto no cliente.
+* Prova: delete físico. Antes do delete, um trigger grava `tentativa.prova_snapshot` (nome/tipo/origem/formato) e o FK `tentativa.prova_id` vira `NULL`. O histórico, o resultado e a retomada de tentativas em andamento continuam funcionando; o app exibe o nome do snapshot com selo "prova removida".
+* Questão: delete físico quando nunca foi usada por aluno; soft delete (`status='deletada'` + `apto_desafio_diario=false`) quando há respostas de tentativa ou desafio diário — a revisão dos alunos permanece intacta e a questão sai do banco, das provas e dos sorteios.
+* Disciplina: delete físico; questões e temas vinculados ficam sem disciplina (`SET NULL`).
+* Tema: delete físico; subtemas sobem para o pai do tema removido e as questões apenas perdem a marcação (`questao_tema` em cascade).
 
 ## Público-Alvo
 

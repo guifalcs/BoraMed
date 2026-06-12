@@ -19,7 +19,8 @@ export interface DesempenhoTema {
 
 export interface TentativaHistoricoItem {
   id: string;
-  prova_id: string;
+  /** null quando a prova foi deletada pelo admin (histórico preservado) */
+  prova_id: string | null;
   modo: ModoProva;
   nota: number | null;
   total_questoes: number;
@@ -27,4 +28,5 @@ export interface TentativaHistoricoItem {
   finalizada_em: string | null;
   prova_nome: string;
   tipo_prova: string;
+  prova_removida: boolean;
 }

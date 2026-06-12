@@ -39,7 +39,7 @@ export class HistoricoService {
 
       const { data, error } = await this.supabase
         .from('tentativa')
-        .select('id, prova_id, modo, nota, total_questoes, acertos, finalizada_em, prova:prova_id(nome, tipo, origem, formato)')
+        .select('id, prova_id, modo, nota, total_questoes, acertos, finalizada_em, prova_snapshot, prova:prova_id(nome, tipo, origem, formato)')
         .eq('user_id', user.id)
         .eq('status', 'finalizada')
         .neq('modo', 'visualizar')
@@ -48,22 +48,23 @@ export class HistoricoService {
 
       if (error) throw error;
 
+      type ProvaInfo = { nome: string; tipo: string; origem: string | null; formato: string | null };
       type RawRow = {
         id: string;
-        prova_id: string;
+        prova_id: string | null;
         modo: ModoProva;
         nota: number | null;
         total_questoes: number;
         acertos: number;
         finalizada_em: string | null;
-        prova:
-          | { nome: string; tipo: string; origem: string | null; formato: string | null }
-          | { nome: string; tipo: string; origem: string | null; formato: string | null }[]
-          | null;
+        prova_snapshot: ProvaInfo | null;
+        prova: ProvaInfo | ProvaInfo[] | null;
       };
 
       const items: TentativaHistoricoItem[] = ((data ?? []) as unknown as RawRow[]).map((r) => {
-        const prova = Array.isArray(r.prova) ? r.prova[0] : r.prova;
+        const provaAtual = Array.isArray(r.prova) ? r.prova[0] : r.prova;
+        // Prova deletada: usa o snapshot gravado no momento da exclusão
+        const prova = provaAtual ?? r.prova_snapshot;
         const tipo = prova?.formato ?? prova?.tipo ?? 'nacional';
         const nome = prova?.origem === 'personalizado' ? 'Simulado Personalizado' : (prova?.nome ?? 'Prova');
         return {
@@ -76,6 +77,7 @@ export class HistoricoService {
           finalizada_em: r.finalizada_em,
           prova_nome: nome,
           tipo_prova: tipo,
+          prova_removida: !provaAtual,
         };
       });
 

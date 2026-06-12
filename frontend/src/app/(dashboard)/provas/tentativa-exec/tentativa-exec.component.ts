@@ -117,7 +117,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async carregarDeMemoria(provaId: string): Promise<void> {
+  private async carregarDeMemoria(provaId: string | null): Promise<void> {
     const tentativaAtiva = this.tentativaService.tentativaAtiva()!;
     this.tentativa.set(tentativaAtiva);
     this.questoes.set(this.tentativaService.questoes());
@@ -145,7 +145,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
     this.timer.start(tentativaAtiva.tempo_acumulado_segundos);
 
-    if (!this.tentativaService.provaNome()) {
+    if (!this.tentativaService.provaNome() && provaId) {
       const provaResult = await this.provaService.buscarProva(provaId);
       if (provaResult.ok) {
         this.tentativaService.setProvaNome(provaResult.data.nome);
@@ -312,7 +312,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       this.tentativaService.setLastResultado(result.data);
       void this.router.navigate([
         '/dashboard/simulados',
-        tentativa.prova_id,
+        tentativa.prova_id ?? 'removida',
         'tentativa',
         tentativa.id,
         'resultado',

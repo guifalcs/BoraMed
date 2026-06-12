@@ -115,7 +115,7 @@
 @if (questaoParaDeletar()) {
   <app-ui-confirm-dialog
     titulo="Deletar questão"
-    mensagem="Esta ação é irreversível. A questão será permanentemente removida."
+    mensagem="Esta ação é irreversível. A questão sai do banco, das provas e dos sorteios. Se alunos já a responderam, as respostas deles seguem visíveis no histórico."
     labelConfirmar="Deletar"
     variante="danger"
     (confirmar)="confirmarDelete()"

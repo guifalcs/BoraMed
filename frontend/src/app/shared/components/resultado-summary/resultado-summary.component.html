@@ -91,7 +91,7 @@
   <!-- Próximos passos -->
   <div class="space-y-4">
     <div class="grid grid-cols-1 gap-3 md:grid-flow-col md:auto-cols-fr">
-      @if (temQuestoesErradas()) {
+      @if (temQuestoesErradas() && !provaRemovida()) {
         <a
           class="rounded-xl border border-rose-100 bg-rose-50 p-4 text-left text-rose-800 transition-colors hover:bg-rose-100"
           [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
@@ -109,20 +109,22 @@
         </a>
       }
 
-      <a
-        class="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left text-emerald-800 transition-colors hover:bg-emerald-100"
-        [routerLink]="rotaRefazerEstudo()"
-        [queryParams]="queryParamsRefazerEstudo()"
-      >
-        <p class="text-sm font-semibold">{{ labelRefazerEstudo() }}</p>
-        <p class="mt-1 text-xs leading-5 text-emerald-700">
-          @if (modoOposto() === 'estudo') {
-            Refaça com gabarito visível e foco em fixação.
-          } @else {
-            Refaça sem gabarito, como em uma prova real.
-          }
-        </p>
-      </a>
+      @if (!provaRemovida()) {
+        <a
+          class="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left text-emerald-800 transition-colors hover:bg-emerald-100"
+          [routerLink]="rotaRefazerEstudo()"
+          [queryParams]="queryParamsRefazerEstudo()"
+        >
+          <p class="text-sm font-semibold">{{ labelRefazerEstudo() }}</p>
+          <p class="mt-1 text-xs leading-5 text-emerald-700">
+            @if (modoOposto() === 'estudo') {
+              Refaça com gabarito visível e foco em fixação.
+            } @else {
+              Refaça sem gabarito, como em uma prova real.
+            }
+          </p>
+        </a>
+      }
 
       @if (temaPrioritarioParaRevisar(); as tema) {
         <a
@@ -146,22 +148,28 @@
   </div>
 
   <div class="flex flex-col gap-3">
-    <div class="flex flex-col gap-3 sm:flex-row">
-      <a
-        class="flex-1"
-        [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
-        [state]="{ fromResultado: true }"
-      >
-        <app-ui-button label="Revisar questões" variant="primary" />
-      </a>
-      <a
-        class="flex-1"
-        [routerLink]="rotaRefazerEstudo()"
-        [queryParams]="queryParamsRefazerEstudo()"
-      >
-        <app-ui-button [label]="labelRefazerEstudo()" variant="secondary" />
-      </a>
-    </div>
+    @if (provaRemovida()) {
+      <p class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-center text-sm text-[var(--color-text-muted)]">
+        Esta prova não está mais disponível no catálogo, mas seu resultado e seu desempenho continuam salvos aqui.
+      </p>
+    } @else {
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <a
+          class="flex-1"
+          [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
+          [state]="{ fromResultado: true }"
+        >
+          <app-ui-button label="Revisar questões" variant="primary" />
+        </a>
+        <a
+          class="flex-1"
+          [routerLink]="rotaRefazerEstudo()"
+          [queryParams]="queryParamsRefazerEstudo()"
+        >
+          <app-ui-button [label]="labelRefazerEstudo()" variant="secondary" />
+        </a>
+      </div>
+    }
 
     <div class="text-center">
       <a

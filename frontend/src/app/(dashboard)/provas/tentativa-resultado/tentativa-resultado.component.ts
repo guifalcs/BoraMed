@@ -59,8 +59,8 @@ export class TentativaResultadoComponent implements OnInit {
       }
     }
 
-    // Detecta se é simulado personalizado
-    if (provaId) {
+    // Detecta se é simulado personalizado ('removida' = prova deletada pelo admin)
+    if (provaId && provaId !== 'removida') {
       const provaResult = await this.provaService.buscarProva(provaId);
       if (provaResult.ok) {
         this.isPersonalizado.set(provaResult.data.origem === 'personalizado');
@@ -69,7 +69,7 @@ export class TentativaResultadoComponent implements OnInit {
 
     // Busca nota da tentativa anterior (não bloqueia loading)
     const res = this.resultado();
-    if (res) {
+    if (res?.tentativa.prova_id) {
       const anterior = await this.tentativaService.buscarNotaAnterior(
         res.tentativa.prova_id,
         res.tentativa.id,

@@ -34,7 +34,7 @@ export class ProvasHomeComponent {
     if (!tentativa || tentativa.status === 'finalizada' || tentativa.modo === 'visualizar') {
       return ['/dashboard/simulados'];
     }
-    return ['/dashboard/simulados', tentativa.prova_id, 'tentativa', tentativa.id];
+    return ['/dashboard/simulados', tentativa.prova_id ?? 'removida', 'tentativa', tentativa.id];
   });
 
   protected readonly resumoTentativaAtiva = computed(() => {

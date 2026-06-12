@@ -103,7 +103,7 @@
 @if (disciplinaParaDeletar()) {
   <app-ui-confirm-dialog
     titulo="Deletar disciplina"
-    [mensagem]="'Deletar &quot;' + disciplinaParaDeletar()!.sigla + '&quot;? Disciplinas com temas ou questões vinculados não podem ser removidas.'"
+    [mensagem]="'Deletar &quot;' + disciplinaParaDeletar()!.sigla + '&quot;? Questões e temas vinculados não são apagados — apenas ficam sem disciplina. Esta ação é irreversível.'"
     labelConfirmar="Deletar"
     variante="danger"
     (confirmar)="confirmarDelete()"

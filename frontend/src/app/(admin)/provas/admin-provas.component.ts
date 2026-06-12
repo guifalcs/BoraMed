@@ -300,7 +300,14 @@ export class AdminProvasComponent implements OnInit {
     if (!prova) return;
     this.provaParaDeletar.set(null);
     const result = await this.adminService.deletarProva(prova.id);
-    if (result.ok) { this.provas.update((lista) => lista.filter((p) => p.id !== prova.id)); this.total.update((t) => t - 1); this.toast.success('Prova deletada.'); }
+    if (result.ok) {
+      this.provas.update((lista) => lista.filter((p) => p.id !== prova.id));
+      this.total.update((t) => t - 1);
+      const n = result.data.tentativas_preservadas;
+      this.toast.success(n > 0
+        ? `Prova deletada. ${n} tentativa${n > 1 ? 's' : ''} de alunos preservada${n > 1 ? 's' : ''} no histórico.`
+        : 'Prova deletada.');
+    }
     else this.toast.error(result.error);
   }
 

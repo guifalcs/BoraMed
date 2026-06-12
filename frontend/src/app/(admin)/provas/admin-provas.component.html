@@ -79,7 +79,7 @@
 @if (provaParaDeletar()) {
   <app-ui-confirm-dialog
     titulo="Deletar prova"
-    [mensagem]="'Deletar &quot;' + provaParaDeletar()!.nome + '&quot;? Esta ação é irreversível.'"
+    [mensagem]="'Deletar &quot;' + provaParaDeletar()!.nome + '&quot;? A prova sai do catálogo de forma irreversível, mas o histórico e as notas dos alunos que já a fizeram são preservados.'"
     labelConfirmar="Deletar"
     variante="danger"
     (confirmar)="confirmarDelete()"

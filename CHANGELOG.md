@@ -2,6 +2,20 @@
 
 ## 2026-06-12 | Feature | sem commit
 
+**Exclusão de provas, questões, disciplinas e temas preservando histórico do aluno**
+
+- Provas agora podem ser deletadas mesmo com tentativas vinculadas: trigger grava snapshot (nome/tipo/origem/formato) em `tentativa.prova_snapshot`, o FK vira `SET NULL` e o histórico/resultado/retomada do aluno seguem funcionando.
+- Questões com respostas de alunos ou uso em desafio diário recebem soft delete (`status='deletada'`): saem do banco de questões, das provas e dos sorteios, mas a revisão dos alunos permanece intacta. Questões nunca usadas são removidas fisicamente.
+- Disciplinas e temas podem ser deletados sempre: questões/temas ficam sem disciplina (`SET NULL`), subtemas sobem para o pai do tema removido e `qtd_questoes` das provas afetadas é recalculado.
+- Novas RPCs SECURITY DEFINER com checagem `is_admin()`: `admin_deletar_prova`, `admin_deletar_questao`, `admin_deletar_disciplina`, `admin_deletar_tema`; `admin.service.ts` deixou de fazer guards client-side.
+- Modais de confirmação do admin explicam o impacto real de cada exclusão e os toasts informam quantas tentativas/respostas foram preservadas ou vínculos desfeitos.
+- Histórico do aluno exibe selo "prova removida" com o nome vindo do snapshot; página de resultado oculta ações de revisar/refazer quando a prova não existe mais e mostra aviso de que o desempenho continua salvo.
+- Migration `20260612220000_exclusao_entidades_preserva_historico.sql`; `docs/business-rules.md` atualizado (seção Integridade de Dados).
+
+---
+
+## 2026-06-12 | Feature | sem commit
+
 **Anexos e reabertura no suporte**
 
 - Widget de suporte permite anexar ate 3 imagens/videos na abertura do chamado e nas respostas do usuario.

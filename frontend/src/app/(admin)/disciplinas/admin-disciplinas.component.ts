@@ -122,7 +122,10 @@ export class AdminDisciplinasComponent implements OnInit {
     const result = await this.adminService.deletarDisciplina(d.id);
     if (result.ok) {
       this.disciplinas.update((lista) => lista.filter((item) => item.id !== d.id));
-      this.toast.success('Disciplina deletada.');
+      const { questoes_desvinculadas, temas_desvinculados } = result.data;
+      this.toast.success(questoes_desvinculadas > 0 || temas_desvinculados > 0
+        ? `Disciplina deletada. ${questoes_desvinculadas} questão(ões) e ${temas_desvinculados} tema(s) ficaram sem disciplina.`
+        : 'Disciplina deletada.');
     } else {
       this.toast.error(result.error);
     }
