@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnInit,
   inject,
   signal,
   computed,
@@ -17,19 +18,11 @@ import {
   X,
 } from 'lucide-angular';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
-import type {
-  SuporteFaq,
-  SuporteMensagem,
-  SuporteTicketComMensagens,
-  TicketCategoria,
-} from '../../../core/models/suporte.types';
+import type { TicketCategoria } from '../../../core/models/suporte.types';
 import { CATEGORIA_LABELS, STATUS_LABELS } from '../../../core/models/suporte.types';
 import { SuporteService } from '../../../core/services/suporte.service';
 
 type Aba = 'nova' | 'solicitacoes' | 'faq';
-
-// MOCKED data - will be replaced in ETAPA 4
-
 
 @Component({
   selector: 'app-suporte-widget',
@@ -39,7 +32,7 @@ type Aba = 'nova' | 'solicitacoes' | 'faq';
   styleUrl: './suporte-widget.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SuporteWidgetComponent {
+export class SuporteWidgetComponent implements OnInit {
   private readonly suporteService = inject(SuporteService);
 
   protected readonly iconLifeBuoy = LifeBuoy;
@@ -54,6 +47,7 @@ export class SuporteWidgetComponent {
 
   protected readonly aberto = signal(false);
   protected readonly abaAtiva = signal<Aba>('nova');
+  protected readonly carregando = signal(false);
 
   // Nova solicitação
   protected readonly novaCategoria = signal<TicketCategoria | ''>('');
@@ -61,9 +55,10 @@ export class SuporteWidgetComponent {
   protected readonly novaDescricao = signal('');
   protected readonly enviando = signal(false);
   protected readonly sucessoEnvio = signal(false);
+  protected readonly erroEnvio = signal('');
 
   // Minhas solicitações
-  protected readonly tickets = signal<SuporteTicketComMensagens[]>([]);
+  protected readonly tickets = this.suporteService.tickets;
   protected readonly ticketExpandido = signal<string | null>(null);
   protected readonly novaMensagem = signal('');
   protected readonly enviandoMensagem = signal(false);
@@ -85,6 +80,13 @@ export class SuporteWidgetComponent {
     { value: 'outro', label: CATEGORIA_LABELS.outro },
   ];
 
+  async ngOnInit(): Promise<void> {
+    await Promise.all([
+      this.suporteService.carregarMeusTickets(),
+      this.suporteService.carregarFaq(),
+    ]);
+  }
+
   protected toggleAberto(): void {
     this.aberto.update(v => !v);
   }
@@ -96,22 +98,33 @@ export class SuporteWidgetComponent {
   protected setAba(aba: Aba): void {
     this.abaAtiva.set(aba);
     this.sucessoEnvio.set(false);
+    this.erroEnvio.set('');
   }
 
   protected async enviarSolicitacao(): Promise<void> {
     if (!this.podeSalvar()) return;
     this.enviando.set(true);
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 800));
+    this.erroEnvio.set('');
+    const result = await this.suporteService.criarTicket(
+      this.novaTitulo().trim(),
+      this.novaDescricao().trim(),
+      this.novaCategoria() as TicketCategoria,
+    );
     this.enviando.set(false);
-    this.sucessoEnvio.set(true);
-    this.novaCategoria.set('');
-    this.novaTitulo.set('');
-    this.novaDescricao.set('');
+    if (result.ok) {
+      this.sucessoEnvio.set(true);
+      this.novaCategoria.set('');
+      this.novaTitulo.set('');
+      this.novaDescricao.set('');
+      await this.suporteService.carregarMeusTickets();
+    } else {
+      this.erroEnvio.set('Não foi possível enviar. Tente novamente.');
+    }
   }
 
   protected novaForm(): void {
     this.sucessoEnvio.set(false);
+    this.erroEnvio.set('');
   }
 
   protected toggleTicket(id: string): void {
@@ -123,27 +136,7 @@ export class SuporteWidgetComponent {
     const msg = this.novaMensagem().trim();
     if (!msg) return;
     this.enviandoMensagem.set(true);
-    await new Promise(r => setTimeout(r, 400));
-    // Add mocked message
-    this.tickets.update(tickets =>
-      tickets.map(t => t.id === ticketId
-        ? {
-            ...t,
-            mensagens: [
-              ...t.mensagens,
-              {
-                id: Math.random().toString(36).slice(2),
-                ticket_id: ticketId,
-                autor_id: 'u1',
-                mensagem: msg,
-                is_admin: false,
-                criado_em: new Date().toISOString(),
-              } satisfies SuporteMensagem,
-            ],
-          }
-        : t
-      )
-    );
+    await this.suporteService.enviarMensagem(ticketId, msg);
     this.novaMensagem.set('');
     this.enviandoMensagem.set(false);
   }

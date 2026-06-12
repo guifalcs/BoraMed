@@ -211,6 +211,12 @@
   cursor: not-allowed;
 }
 
+.erro-envio {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0;
+}
+
 .btn-ghost {
   width: 100%;
   padding: 0.625rem;

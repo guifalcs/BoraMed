@@ -118,6 +118,10 @@
               ></textarea>
             </div>
 
+            @if (erroEnvio()) {
+              <p class="erro-envio">{{ erroEnvio() }}</p>
+            }
+
             <button
               class="btn-primary"
               type="submit"

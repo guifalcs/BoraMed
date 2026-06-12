@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   inject,
   signal,
@@ -24,17 +25,12 @@ import { NotificationService } from '../../core/services/notification.service';
 import { SuporteService } from '../../core/services/suporte.service';
 import type {
   AdminTicketDetalhe,
-  AdminTicketResumo,
-  SuporteFaq,
   TicketStatus,
 } from '../../core/models/suporte.types';
 import { CATEGORIA_LABELS, STATUS_LABELS } from '../../core/models/suporte.types';
 
 type PainelAtivo = 'tickets' | 'faq';
 type FiltroStatus = 'todos' | TicketStatus;
-
-// MOCKED data
-
 
 @Component({
   selector: 'app-admin-suporte',
@@ -44,9 +40,10 @@ type FiltroStatus = 'todos' | TicketStatus;
   styleUrl: './admin-suporte.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminSuporteComponent {
+export class AdminSuporteComponent implements OnInit {
   private readonly toast = inject(NotificationService);
   private readonly suporteService = inject(SuporteService);
+
   protected readonly iconHeadphones = Headphones;
   protected readonly iconMessage = MessageCircle;
   protected readonly iconSend = Send;
@@ -61,6 +58,7 @@ export class AdminSuporteComponent {
   protected readonly categoriaLabels = CATEGORIA_LABELS;
   protected readonly statusLabels = STATUS_LABELS;
 
+  protected readonly isLoading = signal(true);
   protected readonly painelAtivo = signal<PainelAtivo>('tickets');
   protected readonly filtroStatus = signal<FiltroStatus>('todos');
 
@@ -70,7 +68,6 @@ export class AdminSuporteComponent {
   protected readonly enviandoResposta = signal(false);
   protected readonly alterandoStatus = signal(false);
 
-  // FAQ — estado compartilhado via serviço
   protected readonly faqItems = this.suporteService.faqItems;
   protected readonly novoFaqPergunta = signal('');
   protected readonly novoFaqResposta = signal('');
@@ -102,6 +99,31 @@ export class AdminSuporteComponent {
     { value: 'resolvido', label: 'Resolvido' },
   ];
 
+  async ngOnInit(): Promise<void> {
+    await this.carregarTudo();
+  }
+
+  private async carregarTudo(): Promise<void> {
+    this.isLoading.set(true);
+    const [ticketsResult] = await Promise.all([
+      this.suporteService.adminListarTickets(),
+      this.suporteService.adminListarFaq(),
+    ]);
+    if (ticketsResult.ok) {
+      // Carrega detalhe completo de cada ticket para ter as mensagens
+      const detalhados = await Promise.all(
+        ticketsResult.data.map(async t => {
+          const res = await this.suporteService.adminDetalharTicket(t.id);
+          return res.ok ? res.data : { ...t, mensagens: [] };
+        })
+      );
+      this.tickets.set(detalhados as AdminTicketDetalhe[]);
+    } else {
+      this.toast.error('Erro ao carregar tickets.');
+    }
+    this.isLoading.set(false);
+  }
+
   protected setPainel(p: PainelAtivo): void {
     this.painelAtivo.set(p);
     this.ticketSelecionado.set(null);
@@ -112,9 +134,10 @@ export class AdminSuporteComponent {
     this.ticketSelecionado.set(null);
   }
 
-  protected selecionarTicket(ticket: AdminTicketDetalhe): void {
-    this.ticketSelecionado.set(ticket);
+  protected async selecionarTicket(ticket: AdminTicketDetalhe): Promise<void> {
     this.novaResposta.set('');
+    const res = await this.suporteService.adminDetalharTicket(ticket.id);
+    this.ticketSelecionado.set(res.ok ? res.data : ticket);
   }
 
   protected async responder(): Promise<void> {
@@ -122,74 +145,77 @@ export class AdminSuporteComponent {
     const msg = this.novaResposta().trim();
     if (!ticket || !msg) return;
     this.enviandoResposta.set(true);
-    await new Promise(r => setTimeout(r, 500));
-    const novaMensagem = {
-      id: Math.random().toString(36).slice(2),
-      ticket_id: ticket.id,
-      autor_id: 'admin',
-      mensagem: msg,
-      is_admin: true,
-      criado_em: new Date().toISOString(),
-    };
-    const ticketAtualizado: AdminTicketDetalhe = {
-      ...ticket,
-      mensagens: [...ticket.mensagens, novaMensagem],
-      total_mensagens: ticket.total_mensagens + 1,
-      status: 'em_andamento' as TicketStatus,
-    };
-    this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
-    this.ticketSelecionado.set(ticketAtualizado);
-    this.novaResposta.set('');
+    const result = await this.suporteService.adminResponder(ticket.id, msg);
+    if (result.ok) {
+      const ticketAtualizado: AdminTicketDetalhe = {
+        ...ticket,
+        mensagens: [...ticket.mensagens, result.data],
+        total_mensagens: ticket.total_mensagens + 1,
+        status: ticket.status === 'aberto' ? 'em_andamento' : ticket.status,
+      };
+      this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
+      this.ticketSelecionado.set(ticketAtualizado);
+      this.novaResposta.set('');
+      this.toast.success('Resposta enviada.');
+    } else {
+      this.toast.error('Erro ao enviar resposta.');
+    }
     this.enviandoResposta.set(false);
-    this.toast.success('Resposta enviada.');
   }
 
   protected async marcarResolvido(): Promise<void> {
     const ticket = this.ticketSelecionado();
     if (!ticket) return;
     this.alterandoStatus.set(true);
-    await new Promise(r => setTimeout(r, 300));
-    const ticketAtualizado: AdminTicketDetalhe = { ...ticket, status: 'resolvido' as TicketStatus };
-    this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
-    this.ticketSelecionado.set(ticketAtualizado);
+    const result = await this.suporteService.adminAtualizarStatus(ticket.id, 'resolvido');
+    if (result.ok) {
+      const ticketAtualizado: AdminTicketDetalhe = { ...ticket, status: 'resolvido' };
+      this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
+      this.ticketSelecionado.set(ticketAtualizado);
+      this.toast.success('Ticket marcado como resolvido.');
+    } else {
+      this.toast.error('Erro ao atualizar status.');
+    }
     this.alterandoStatus.set(false);
-    this.toast.success('Ticket marcado como resolvido.');
   }
 
   protected async criarFaq(): Promise<void> {
     if (!this.novoFaqPergunta().trim() || !this.novoFaqResposta().trim()) return;
     this.criandoFaq.set(true);
-    await new Promise(r => setTimeout(r, 400));
-    const novoItem: SuporteFaq = {
-      id: Math.random().toString(36).slice(2),
-      pergunta: this.novoFaqPergunta().trim(),
-      resposta: this.novoFaqResposta().trim(),
-      categoria: this.novoFaqCategoria().trim() || null,
-      ordem: this.faqItems().length + 1,
-      ativo: true,
-      criado_em: new Date().toISOString(),
-      atualizado_em: new Date().toISOString(),
-    };
-    this.faqItems.update(items => [...items, novoItem]);
-    this.novoFaqPergunta.set('');
-    this.novoFaqResposta.set('');
-    this.novoFaqCategoria.set('');
-    this.mostrarFormFaq.set(false);
-    this.criandoFaq.set(false);
-    this.toast.success('FAQ criada com sucesso.');
-  }
-
-  protected toggleAtivoFaq(id: string): void {
-    const item = this.faqItems().find(f => f.id === id);
-    this.faqItems.update(items =>
-      items.map(f => f.id === id ? { ...f, ativo: !f.ativo } : f)
+    const result = await this.suporteService.adminCriarFaq(
+      this.novoFaqPergunta().trim(),
+      this.novoFaqResposta().trim(),
+      this.novoFaqCategoria().trim() || null,
     );
-    this.toast.success(!item?.ativo ? 'FAQ ativada.' : 'FAQ desativada.');
+    if (result.ok) {
+      this.novoFaqPergunta.set('');
+      this.novoFaqResposta.set('');
+      this.novoFaqCategoria.set('');
+      this.mostrarFormFaq.set(false);
+      this.toast.success('FAQ criada com sucesso.');
+    } else {
+      this.toast.error('Erro ao criar FAQ.');
+    }
+    this.criandoFaq.set(false);
   }
 
-  protected deletarFaq(id: string): void {
-    this.faqItems.update(items => items.filter(f => f.id !== id));
-    this.toast.success('FAQ removida.');
+  protected async toggleAtivoFaq(id: string): Promise<void> {
+    const item = this.faqItems().find(f => f.id === id);
+    const result = await this.suporteService.adminToggleFaq(id);
+    if (result.ok) {
+      this.toast.success(!item?.ativo ? 'FAQ ativada.' : 'FAQ desativada.');
+    } else {
+      this.toast.error('Erro ao atualizar FAQ.');
+    }
+  }
+
+  protected async deletarFaq(id: string): Promise<void> {
+    const result = await this.suporteService.adminDeletarFaq(id);
+    if (result.ok) {
+      this.toast.success('FAQ removida.');
+    } else {
+      this.toast.error('Erro ao remover FAQ.');
+    }
   }
 
   protected formatarData(iso: string): string {
