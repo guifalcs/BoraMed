@@ -153,9 +153,7 @@
                       <app-ui-icon [icon]="anexoEhVideo(arquivo) ? iconFileVideo : iconFileImage" [size]="15" />
                       <span class="selected-file-name">{{ arquivo.name }}</span>
                       <span class="selected-file-size">{{ formatarTamanhoArquivo(arquivo.size) }}</span>
-                      @if (enviando()) {
-                        <span class="file-spinner" aria-hidden="true"></span>
-                      } @else {
+                      @if (!enviando()) {
                         <button type="button" class="selected-file-remove" (click)="removerNovoAnexo($index)" aria-label="Remover anexo">
                           <app-ui-icon [icon]="iconX" [size]="14" />
                         </button>
@@ -304,9 +302,7 @@
                                 <li class="selected-file" [class.selected-file--uploading]="enviandoMensagem()">
                                   <app-ui-icon [icon]="anexoEhVideo(arquivo) ? iconFileVideo : iconFileImage" [size]="14" />
                                   <span class="selected-file-name">{{ arquivo.name }}</span>
-                                  @if (enviandoMensagem()) {
-                                    <span class="file-spinner" aria-hidden="true"></span>
-                                  } @else {
+                                  @if (!enviandoMensagem()) {
                                     <button type="button" class="selected-file-remove" (click)="removerRespostaAnexo($index)" aria-label="Remover anexo">
                                       <app-ui-icon [icon]="iconX" [size]="13" />
                                     </button>

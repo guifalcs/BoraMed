@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Award, Camera, Flame, LucideIconData, Medal, Shield, Trash2, Trophy } from 'lucide-angular';
 import { UiAvatarComponent } from '../../shared/components/ui/avatar/ui-avatar.component';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
@@ -40,7 +39,7 @@ const FACULDADE_REDE_OPTIONS: SelectOption<string>[] = [
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [RouterLink, UiAvatarComponent, UiButtonComponent, UiInputComponent, UiIconComponent, UiSelectComponent, PageHeaderComponent],
+  imports: [UiAvatarComponent, UiButtonComponent, UiInputComponent, UiIconComponent, UiSelectComponent, PageHeaderComponent],
   templateUrl: './perfil.component.html',
   styleUrl: './perfil.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -312,12 +312,14 @@
 }
 
 .file-spinner {
+  display: inline-block;
   width: 0.875rem;
   height: 0.875rem;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 9999px;
   animation: support-file-spin 0.7s linear infinite;
+  transform-origin: center;
   flex-shrink: 0;
 }
 
@@ -340,6 +342,14 @@
 
 @keyframes support-file-spin {
   to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .file-spinner {
+    animation-duration: 0.7s !important;
+    animation-iteration-count: infinite !important;
+    animation-timing-function: linear !important;
+  }
 }
 
 .btn-primary {

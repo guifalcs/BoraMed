@@ -6,6 +6,7 @@
 
 - Widget de suporte permite anexar ate 3 imagens/videos na abertura do chamado e nas respostas do usuario.
 - Anexos exibem estado visual de upload com spinner, linha "Enviando anexos..." e controles travados enquanto o envio esta em andamento.
+- Spinner dos anexos no suporte passa a girar corretamente durante o envio de arquivos, exibindo apenas um indicador no estado de envio.
 - Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores; a reabertura volta o status para `aberto` e registra uma mensagem no historico.
 - Painel admin exibe anexos no historico do ticket com links assinados para abrir os arquivos privados.
 - Novas migrations criam bucket privado `suporte-anexos`, tabela `suporte_anexos`, policies de Storage/RLS e RPCs `buscar_anexos_ticket`/`registrar_anexos_mensagem`/`reabrir_ticket`.
