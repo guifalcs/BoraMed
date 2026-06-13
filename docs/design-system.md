@@ -224,10 +224,24 @@ padding: 1.5rem;
 box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 ```
 
-* Número da questão: badge cinza no canto superior esquerdo.
+* N?mero da quest?o: badge cinza no canto superior esquerdo.
 * Enunciado: `text-base font-medium text-[--color-text]`.
-* Imagem de laboratório: acima do enunciado, `rounded-lg max-w-lg w-full mx-auto mb-4`.
+* Imagem de laborat?rio: acima do enunciado, `rounded-lg max-w-lg w-full mx-auto mb-4`.
 * Alternativas: lista vertical com `gap-2`.
+
+### QuestaoAnotacao
+
+Usado apenas na revis?o de uma tentativa finalizada, abaixo do `QuestaoCard`.
+
+Padr?es:
+
+* Painel colaps?vel por quest?o, nunca aberto em massa por padr?o.
+* Superf?cie azul muito suave (`bg-blue-50`) com borda discreta (`border-blue-100`), separada do card da quest?o por `gap-3`.
+* Header compacto com ?cone Lucide `StickyNote`, estado "Adicionar anota??o" quando vazio e "Anota??o salva" com preview de uma linha quando preenchido.
+* Editor em `textarea` com altura m?nima confort?vel, autosave silencioso e contador `0/5000`.
+* Estados inline pequenos: `Salvando...`, `Salvo` e erro em vermelho; n?o usar modal/toast para falhas de autosave.
+* Bot?o de excluir usa ?cone `Trash2`, s? aparece quando h? conte?do e mant?m `aria-label`.
+* A execu??o do simulado n?o renderiza o painel para evitar distra??o durante prova cronometrada.
 
 ### Alternativa
 

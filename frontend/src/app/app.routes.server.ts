@@ -11,6 +11,8 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'erro', renderMode: RenderMode.Prerender },
   { path: 'admin/**', renderMode: RenderMode.Client },
   { path: 'admin', renderMode: RenderMode.Client },
+  { path: 'imprimir/simulado/montado', renderMode: RenderMode.Client },
+  { path: 'imprimir/simulado/:provaId', renderMode: RenderMode.Client },
   { path: 'dashboard/**', renderMode: RenderMode.Server },
   { path: '**', renderMode: RenderMode.Prerender },
 ];

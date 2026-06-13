@@ -62,74 +62,86 @@
  **Data** : 2026-05
  **Decisão** : O onboarding de novos usuários será implementado como componente Angular próprio, orquestrado pelo shell do dashboard e persistido em tabela Supabase `user_onboarding_state` por usuário, fluxo e versão.
  **Motivo** : O BoraMed precisa de uma experiência integrada ao design system, responsiva para sidebar/bottom-nav e segura por RLS. Ferramentas externas de product tour ficam para uma fase futura, quando houver necessidade real de edição no-code, segmentação avançada ou analytics de growth.
-## ADR-011: Provas separadas por origem, formato e instituicao
+## ADR-011: Provas separadas por origem, formato e instituição
 
  **Data** : 2026-05
- **DecisÃ£o** : A modelagem de provas passa a separar origem (`autoral`, `faculdade`, `personalizado`), formato pedagogico (`nacional`, `processual`, `laboratorio`, `multiestacoes`) e contexto institucional (`rede`, `faculdade_id`, `subtipo`). `prova.tipo` permanece apenas como campo legado de compatibilidade.
- **Motivo** : O produto precisa atender os formatos iniciais no modelo Afya sem travar o banco a uma unica rede. Separar as dimensoes permite cadastrar novos formatos da Afya e, futuramente, outras faculdades sem reescrever fluxos de admin, listagem e tentativa.
+ **Decisão** : A modelagem de provas passa a separar origem (`autoral`, `faculdade`, `personalizado`), formato pedagógico (`nacional`, `processual`, `laboratório`, `multiestações`) e contexto institucional (`rede`, `faculdade_id`, `subtipo`). `prova.tipo` permanece apenas como campo legado de compatibilidade.
+ **Motivo** : O produto precisa atender os formatos iniciais no modelo Afya sem travar o banco a uma única rede. Separar as dimensões permite cadastrar novos formatos da Afya e, futuramente, outras faculdades sem reescrever fluxos de admin, listagem e tentativa.
 
-## ADR-012: Dependencias ricas carregadas fora do bootstrap
+## ADR-012: Dependências ricas carregadas fora do bootstrap
 
  **Data** : 2026-05
- **Decisao** : Dependencias pesadas de renderizacao, como Markdown e Chart.js/ng2-charts, devem ser providas nos componentes ou rotas que as usam, evitando registro global no bootstrap principal.
- **Motivo** : A primeira carga atende landing, auth e shell do aluno. Isolar Markdown e graficos em chunks lazy reduz o bundle inicial e melhora o tempo ate a primeira interacao sem remover recursos das telas de questoes, historico, competitivo e admin.
+ **Decisão** : Dependências pesadas de renderização, como Markdown e Chart.js/ng2-charts, devem ser providas nos componentes ou rotas que as usam, evitando registro global no bootstrap principal.
+ **Motivo** : A primeira carga atende landing, auth e shell do aluno. Isolar Markdown e gráficos em chunks lazy reduz o bundle inicial e melhora o tempo até a primeira interação sem remover recursos das telas de questões, histórico, competitivo e admin.
 
 ## ADR-013: Auth e dashboard carregados sob demanda
 
  **Data** : 2026-05
- **Decisao** : O bootstrap principal nao deve inicializar AuthService/Supabase globalmente. Guards de auth, guest e admin carregam a sessao sob demanda, e as rotas internas do dashboard ficam em arquivo lazy separado.
- **Motivo** : Landing e rotas publicas nao precisam carregar Supabase Auth, resolvers do dashboard ou telas logadas na primeira renderizacao. Deixar auth e dashboard em chunks sob demanda reduz o bundle inicial e mantem a protecao das rotas privadas no ponto de navegacao.
+ **Decisão** : O bootstrap principal não deve inicializar AuthService/Supabase globalmente. Guards de auth, guest e admin carregam a sessão sob demanda, e as rotas internas do dashboard ficam em arquivo lazy separado.
+ **Motivo** : Landing e rotas públicas não precisam carregar Supabase Auth, resolvers do dashboard ou telas logadas na primeira renderização. Deixar auth e dashboard em chunks sob demanda reduz o bundle inicial e mantém a proteção das rotas privadas no ponto de navegação.
 
 ## ADR-014: Avisos broadcast via tabela Supabase + modal no shell do dashboard
 
  **Data** : 2026-05
- **Decisao** : Avisos administrativos (imagem + texto opcional) sao armazenados na tabela `avisos`. O controle de visualizacao por usuario e feito via `avisos_vistos`. A verificacao ocorre uma vez por sessao no `effect()` do `DashboardComponent`, ignorada durante impersonacao. O modal fica montado no shell, nao em rotas filhas.
- **Motivo** : Solucao simples, sem polling, sem Realtime. Admin cria o aviso, usuarios veem na proxima entrada. Impersonacao ignorada para nao poluir a experiencia de debug do admin.
+ **Decisão** : Avisos administrativos (imagem + texto opcional) são armazenados na tabela `avisos`. O controle de visualização por usuário é feito via `avisos_vistos`. A verificação ocorre uma vez por sessão no `effect()` do `DashboardComponent`, ignorada durante impersonação. O modal fica montado no shell, não em rotas filhas.
+ **Motivo** : Solução simples, sem polling, sem Realtime. Admin cria o aviso, usuários veem na próxima entrada. Impersonação ignorada para não poluir a experiência de debug do admin.
 
-## ADR-015: Notificacoes in-app com estrutura pronta, sem gatilhos pre-definidos
-
- **Data** : 2026-05
- **Decisao** : A tabela `notificacoes` e o `AppNotificacaoService` estao implementados mas sem gatilhos automaticos ainda. Novos tipos (`sistema`, `conquista`, `info`, `aviso`) serao adicionados via RPCs SECURITY DEFINER em migrations futuras conforme a necessidade.
- **Motivo** : Evitar acoplamento prematuro a eventos de negocio ainda indefinidos. A estrutura esta pronta para receber qualquer tipo de notificacao sem reescrever o frontend.
-
-## ADR-019: Buckets publicos sem listagem ampla
+## ADR-015: Notificações in-app com estrutura pronta, sem gatilhos predefinidos
 
  **Data** : 2026-05
- **Decisao** : Buckets publicos usados para imagens (`avisos`, `questao-imagens`) podem servir arquivos por URL publica, mas nao devem manter policy ampla de `SELECT` em `storage.objects`. Escrita, update e delete seguem restritos a administradores.
- **Motivo** : URL publica e suficiente para renderizar imagens ja referenciadas no banco. Permitir `SELECT` amplo em objetos de bucket publico tambem permite listagem de arquivos, aumentando exposicao sem necessidade funcional.
+ **Decisão** : A tabela `notificacoes` e o `AppNotificacaoService` estão implementados, mas sem gatilhos automáticos ainda. Novos tipos (`sistema`, `conquista`, `info`, `aviso`) serão adicionados via RPCs SECURITY DEFINER em migrations futuras conforme a necessidade.
+ **Motivo** : Evitar acoplamento prematuro a eventos de negócio ainda indefinidos. A estrutura está pronta para receber qualquer tipo de notificação sem reescrever o frontend.
 
-## ADR-014: Performance visual sem decoracao cara
-
- **Data** : 2026-05
- **Decisao** : Componentes publicos devem respeitar o budget de CSS por componente e evitar texturas SVG inline, fundos decorativos animados e listeners de scroll sem limitacao por frame. Imagens abaixo da dobra devem usar carregamento/decodificacao nao bloqueante.
- **Motivo** : A landing e a primeira experiencia publica do produto. Reduzir CSS, trabalho de pintura e callbacks de scroll melhora carregamento e fluidez sem retirar funcionalidades centrais para o usuario.
-
-## ADR-015: Imagens publicas otimizadas para entrega web
+## ADR-019: Buckets públicos sem listagem ampla
 
  **Data** : 2026-05
- **Decisao** : Assets raster usados na landing devem ser servidos em formatos e dimensoes adequados ao tamanho real de exibicao. PNGs grandes ficam reservados para casos que exigem transparencia ou fidelidade sem perdas.
- **Motivo** : Depois da reducao de JS e CSS, imagens passam a dominar o payload percebido. Redimensionar e comprimir assets publicos reduz tempo de carregamento, consumo de dados e tamanho do deploy sem alterar a experiencia funcional.
+ **Decisão** : Buckets públicos usados para imagens (`avisos`, `questao-imagens`) podem servir arquivos por URL pública, mas não devem manter policy ampla de `SELECT` em `storage.objects`. Escrita, update e delete seguem restritos a administradores.
+ **Motivo** : URL pública é suficiente para renderizar imagens já referenciadas no banco. Permitir `SELECT` amplo em objetos de bucket público também permite listagem de arquivos, aumentando exposição sem necessidade funcional.
 
-## ADR-016: Fonte externa unica no frontend
-
- **Data** : 2026-05
- **Decisao** : O frontend carrega apenas Inter como familia externa global. Titulos e paineis devem reutilizar Inter ou fontes do sistema, salvo justificativa forte de marca.
- **Motivo** : Cada familia adicional de fonte aumenta requisicoes, bytes e risco de troca visual tardia. Como Playfair Display era usada em apenas um titulo, o custo de carregamento era maior que o ganho de experiencia.
-
-## ADR-017: Allowlist explicita para CommonJS auditado
+## ADR-014: Performance visual sem decoração cara
 
  **Data** : 2026-05
- **Decisao** : O build Angular permite explicitamente o pacote `cookie` como dependencia CommonJS conhecida.
- **Motivo** : `cookie` e usado internamente por `@supabase/ssr@0.10.3`, versao mais recente disponivel no momento da decisao. O allowlist remove ruido de build para esse caso auditado sem desativar alertas para novos pacotes CommonJS.
+ **Decisão** : Componentes públicos devem respeitar o budget de CSS por componente e evitar texturas SVG inline, fundos decorativos animados e listeners de scroll sem limitação por frame. Imagens abaixo da dobra devem usar carregamento/decodificação não bloqueante.
+ **Motivo** : A landing é a primeira experiência pública do produto. Reduzir CSS, trabalho de pintura e callbacks de scroll melhora carregamento e fluidez sem retirar funcionalidades centrais para o usuário.
 
-## ADR-018: Prefetch de rotas e cache leve para percepcao de velocidade
+## ADR-015: Imagens públicas otimizadas para entrega web
 
  **Data** : 2026-05
- **Decisao** : Apos login, carregar chunks das rotas mais provaveis em idle time. Dados dos resolvers do dashboard sao cacheados em sessionStorage com TTL de 5 min (stale-while-revalidate).
- **Motivo** : Reduz tela em branco apos login e entre navegacoes do aluno. O cache e limpo no logout. Nenhum dado sensivel alem do necessario para UX e cacheado. Rotas admin nao sao pre-carregadas.
+ **Decisão** : Assets raster usados na landing devem ser servidos em formatos e dimensões adequados ao tamanho real de exibição. PNGs grandes ficam reservados para casos que exigem transparência ou fidelidade sem perdas.
+ **Motivo** : Depois da redução de JS e CSS, imagens passam a dominar o payload percebido. Redimensionar e comprimir assets públicos reduz tempo de carregamento, consumo de dados e tamanho do deploy sem alterar a experiência funcional.
+
+## ADR-016: Fonte externa única no frontend
+
+ **Data** : 2026-05
+ **Decisão** : O frontend carrega apenas Inter como família externa global. Títulos e painéis devem reutilizar Inter ou fontes do sistema, salvo justificativa forte de marca.
+ **Motivo** : Cada família adicional de fonte aumenta requisições, bytes e risco de troca visual tardia. Como Playfair Display era usada em apenas um título, o custo de carregamento era maior que o ganho de experiência.
+
+## ADR-017: Allowlist explícita para CommonJS auditado
+
+ **Data** : 2026-05
+ **Decisão** : O build Angular permite explicitamente o pacote `cookie` como dependência CommonJS conhecida.
+ **Motivo** : `cookie` é usado internamente por `@supabase/ssr@0.10.3`, versão mais recente disponível no momento da decisão. O allowlist remove ruído de build para esse caso auditado sem desativar alertas para novos pacotes CommonJS.
+
+## ADR-018: Prefetch de rotas e cache leve para percepção de velocidade
+
+ **Data** : 2026-05
+ **Decisão** : Após login, carregar chunks das rotas mais prováveis em idle time. Dados dos resolvers do dashboard são cacheados em sessionStorage com TTL de 5 min (stale-while-revalidate).
+ **Motivo** : Reduz tela em branco após login e entre navegações do aluno. O cache é limpo no logout. Nenhum dado sensível além do necessário para UX é cacheado. Rotas admin não são pré-carregadas.
 
 ## ADR-020: Anexos privados nas mensagens de suporte
 
  **Data** : 2026-06
- **Decisao** : Fotos e videos enviados no suporte ficam no bucket privado `suporte-anexos`, com metadados em `suporte_anexos` ligados a `suporte_mensagens`. A UI abre arquivos por URLs assinadas temporarias, nunca por URL publica.
- **Motivo** : Evidencias de debug podem conter dados sensiveis da tela do usuario. Associar anexos a mensagens preserva contexto da conversa, enquanto bucket privado + RLS restringe leitura ao dono do ticket e administradores.
+ **Decisão** : Fotos e vídeos enviados no suporte ficam no bucket privado `suporte-anexos`, com metadados em `suporte_anexos` ligados a `suporte_mensagens`. A UI abre arquivos por URLs assinadas temporárias, nunca por URL pública.
+ **Motivo** : Evidências de debug podem conter dados sensíveis da tela do usuário. Associar anexos a mensagens preserva contexto da conversa, enquanto bucket privado + RLS restringe leitura ao dono do ticket e administradores.
+
+## ADR-021: Anotações de questão vinculadas à tentativa
+
+ **Data** : 2026-06
+ **Decisão** : Anotações do aluno em questões são armazenadas por `user_id + tentativa_id + questao_id`, exibidas somente na revisão de uma tentativa finalizada. A revisão principal usa a rota `/dashboard/simulados/:provaId/tentativa/:tentativaId/revisao` e a RPC `get_revisao_tentativa` para carregar exatamente as questões daquela tentativa.
+ **Motivo** : A mesma questão pode aparecer em simulados diferentes, com contexto pedagógico, ordem, desempenho e objetivo de revisão distintos. Vincular anotações à tentativa evita vazamento de contexto entre simulados e preserva uma UX limpa durante a execução cronometrada.
+
+## ADR-022: Impressão de simulados via print nativo do navegador
+
+ **Data** : 2026-06
+ **Decisão** : A impressão/PDF de simulados usa `window.print()` + `@media print` (variantes `print:` do Tailwind), em uma rota dedicada fora do dashboard (`/imprimir/simulado/:provaId` e `/imprimir/simulado/montado`). Não há biblioteca de PDF nem geração server-side. Os dados vêm de duas RPCs SECURITY DEFINER: `get_simulado_impressao(uuid, boolean)` para simulados existentes (provas prontas via `prova_questao`; montados via `tentativa_resposta` da tentativa mais recente) e `gerar_simulado_impressao(uuid[], int, text, text)` para montar um simulado só para impressão sem criar prova/tentativa. O gabarito (`correta`/`explicacao`) só é exposto após o aluno finalizar a prova (ou admin), espelhando `get_revisao_prova`.
+ **Motivo** : O print nativo entrega texto vetorial nítido, imagens em alta, quebra de página por CSS e zero dependência/manutenção extra, contra rasterização e reconstrução manual de markdown/imagens das libs de PDF. A geração só-impressão mantém o histórico limpo e o mascaramento server-side do gabarito preserva a integridade do ranking/gamificação.

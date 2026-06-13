@@ -45,6 +45,18 @@
 * Quando múltiplos temas tiverem o mesmo menor aproveitamento, o resultado deve comunicar o conjunto de temas críticos sem eleger arbitrariamente um único pior tema
 * Treinos recomendados abrem a montagem de simulado com o tema pré-selecionado e modo estudo quando o objetivo for revisão
 * Ao finalizar uma tentativa, a tela de resultado deve oferecer próximos passos objetivos, incluindo a revisão dos erros e o refazer em modo estudo
+* Anotações de revisão pertencem sempre ao par `tentativa_id + questao_id` do próprio usuário. A mesma questão em outra tentativa não deve exibir nem herdar a anotação anterior.
+* Anotações ficam disponíveis apenas na revisão de tentativas finalizadas. A execução cronometrada do simulado não deve exibir editor de anotação para não competir com resposta, timer e navegação.
+* Uma anotação só pode ser criada para questão que realmente exista em `tentativa_resposta` daquela tentativa. A validação deve ser server-side e protegida por RLS/RPC.
+
+### Impressão de simulados (levar consigo)
+
+* O aluno pode imprimir / salvar em PDF qualquer simulado — pronto (Afya/autoral) ou montado — por uma tela dedicada (`/imprimir/simulado/:provaId`), fora do layout do dashboard.
+* A impressão usa o recurso nativo do navegador (`window.print()` + `@media print`); não há geração de PDF no servidor nem dependência externa.
+* **Integridade do gabarito:** o gabarito e as explicações só entram no material impresso quando o aluno **já finalizou** aquela prova (ou é admin). Antes disso, imprime-se apenas o enunciado e as alternativas — preserva a mesma regra de segurança da revisão (`get_revisao_prova`) e protege ranking/gamificação. A RPC `get_simulado_impressao` aplica essa decisão server-side (`correta`/`explicacao` retornam nulos quando não liberado).
+* **Montado para impressão:** ao escolher "Apenas imprimir" na montagem, o sistema sorteia as questões via `gerar_simulado_impressao` **sem criar prova nem tentativa** (histórico permanece limpo). O conjunto não é resolvível no app nem persiste além da sessão do navegador.
+* O sorteio do montado para impressão segue a mesma priorização de questões inéditas da geração normal.
+* Seções opcionais antes de imprimir: espaço de marcação na questão, cartão-resposta (folha de bolhas), gabarito ao final e explicações no gabarito (estas duas só quando o gabarito está liberado), além de mostrar/ocultar imagens e tamanho da fonte.
 
 ### Gamificação Competitiva
 
@@ -93,25 +105,25 @@
 3. Abre o simulado e responde
 4. Ao finalizar: exibe resultado com gabarito
 
-### Historico e analise de desempenho
+### Hist?rico e an?lise de desempenho
 
-* O historico do aluno deve permitir recortes por periodo de tempo e por formato de treino.
-* Os formatos filtraveis no historico acompanham os formatos pedagogicos ativos: nacional, processual e laboratorio.
-* Simulados personalizados devem continuar aparecendo no historico com o formato da prova gerada, preservando navegacao para resultado e revisao.
+* O hist?rico do aluno deve permitir recortes por per?odo de tempo e por formato de treino.
+* Os formatos filtr?veis no hist?rico acompanham os formatos pedag?gicos ativos: nacional, processual e laborat?rio.
+* Simulados personalizados devem continuar aparecendo no hist?rico com o formato da prova gerada, preservando navega??o para resultado e revis?o.
 
 ### Suporte
 
-* O aluno pode abrir chamados e acompanhar o historico de mensagens pelo widget de suporte.
-* Chamados resolvidos bloqueiam novas respostas ate serem reabertos.
+* O aluno pode abrir chamados e acompanhar o hist?rico de mensagens pelo widget de suporte.
+* Chamados resolvidos bloqueiam novas respostas at? serem reabertos.
 * Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores.
-* Ao reabrir, o status volta para `aberto` e uma mensagem de auditoria fica registrada no historico do chamado.
-* Quando a equipe reabre um chamado, o aluno recebe uma notificacao informativa.
+* Ao reabrir, o status volta para `aberto` e uma mensagem de auditoria fica registrada no hist?rico do chamado.
+* Quando a equipe reabre um chamado, o aluno recebe uma notifica??o informativa.
 
-## Calendário de Referência (Foco Inicial Afya)
+## Calend?rio de Refer?ncia (Foco Inicial Afya)
 
-Uso interno como referência de produto. Não apresentar como calendário oficial, parceria ou representação da Afya.
+Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, parceria ou representa??o da Afya.
 
-* **N1** (processual): semana 4–5 do semestre
+* **N1** (processual): semana 4?5 do semestre
 * **P1** (laboratório): semana 6
 * **N2** (processual): semana 10–11
 * **P2** (laboratório): semana 12

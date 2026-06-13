@@ -151,7 +151,7 @@ describe('ProvaDetalheComponent', () => {
     });
 
     it('exibe o nome do simulado', () => {
-      const titulos = Array.from(el.querySelectorAll('h1')).map((h) => h.textContent ?? '');
+      const titulos = Array.from(el.querySelectorAll('h1')).map((h) => h.textContent   '');
       expect(titulos.join(' ')).toContain('Simulado N1 — 1º Período — Edição 1');
     });
 
@@ -171,8 +171,8 @@ describe('ProvaDetalheComponent', () => {
       expect(btn).not.toBeNull();
     });
 
-    it('exibe link "Só quero ver as questões"', () => {
-      expect(el.textContent).toContain('Só quero ver as questões e o gabarito');
+    it('nao exibe link aberto de gabarito antes de finalizar', () => {
+      expect(el.textContent).not.toContain('Só quero ver as questões e o gabarito');
     });
 
     it('não exibe banner de tentativa ativa', () => {

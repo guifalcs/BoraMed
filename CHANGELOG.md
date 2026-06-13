@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-13 | Feature | sem commit
+
+**Anota??es por quest?o em revis?o de tentativa**
+
+- Alunos agora podem criar anota??es privadas por quest?o dentro da revis?o de uma tentativa finalizada; a mesma quest?o em outro simulado n?o herda a anota??o.
+- Nova tabela `tentativa_questao_anotacao` com RLS, grants expl?citos para Data API e unicidade por `user_id + tentativa_id + questao_id`.
+- Novas RPCs: `get_revisao_tentativa`, `listar_anotacoes_tentativa`, `salvar_anotacao_questao` e `excluir_anotacao_questao`.
+- Resultado passa a abrir a revis?o pela rota `/dashboard/simulados/:provaId/tentativa/:tentativaId/revisao`, preservando filtro de erros e contexto da tentativa.
+- Frontend adiciona painel colaps?vel de anota??o por quest?o, com autosave, contador, estado de salvamento e exclus?o.
+- Atualizados `docs/business-rules.md`, `docs/design-system.md`, `docs/architecture.md` e `database.types.ts`.
+
+---
+
 ## 2026-06-12 | Feature | sem commit
 
 **Exclusão de provas, questões, disciplinas e temas preservando histórico do aluno**
@@ -18,11 +31,11 @@
 
 **Anexos e reabertura no suporte**
 
-- Widget de suporte permite anexar ate 3 imagens/videos na abertura do chamado e nas respostas do usuario.
+- Widget de suporte permite anexar at? 3 imagens/v?deos na abertura do chamado e nas respostas do usu?rio.
 - Anexos exibem estado visual de upload com spinner, linha "Enviando anexos..." e controles travados enquanto o envio esta em andamento.
 - Spinner dos anexos no suporte passa a girar corretamente durante o envio de arquivos, exibindo apenas um indicador no estado de envio.
-- Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores; a reabertura volta o status para `aberto` e registra uma mensagem no historico.
-- Painel admin exibe anexos no historico do ticket com links assinados para abrir os arquivos privados.
+- Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores; a reabertura volta o status para `aberto` e registra uma mensagem no hist?rico.
+- Painel admin exibe anexos no hist?rico do ticket com links assinados para abrir os arquivos privados.
 - Painel admin de suporte passa a usar layout responsivo: master-detail em telas largas e lista/detalhe alternados em larguras compactas, com filtros, conversa, anexos, resposta e FAQ adaptados ao mobile.
 - Novas migrations criam bucket privado `suporte-anexos`, tabela `suporte_anexos`, policies de Storage/RLS e RPCs `buscar_anexos_ticket`/`registrar_anexos_mensagem`/`reabrir_ticket`.
 - `docs/architecture.md` documenta a decisao de manter evidencias de suporte em bucket privado com URLs assinadas temporarias.

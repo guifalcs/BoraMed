@@ -1,0 +1,104 @@
+<article class="questao break-inside-avoid border-b border-dashed border-gray-300 pb-4">
+
+  @if (mostrarTema() && disciplinaTag()) {
+    <!-- Com tema: número + tag no cabeçalho, pré-texto → imagem → enunciado abaixo -->
+    <header class="mb-2 flex items-baseline gap-2">
+      <span class="font-bold text-[1.05em]">{{ numero() }}.</span>
+      <span class="rounded border border-gray-300 px-1.5 py-px text-[0.7em] uppercase tracking-wide text-gray-500">
+        {{ disciplinaTag() }}
+      </span>
+    </header>
+
+    @if (questao().enunciado_apoio) {
+      <div class="mb-2 rounded bg-gray-50 p-2 text-[0.9em] leading-snug text-gray-700 print:bg-transparent print:p-0">
+        <markdown [data]="questao().enunciado_apoio!"></markdown>
+      </div>
+    }
+
+    @if (temImagem()) {
+      <figure class="mb-2 flex flex-col items-center gap-1">
+        <img [src]="questao().imagem_url!" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+          class="max-h-[60mm] w-auto max-w-full rounded object-contain" (load)="onImgLoad()" (error)="onImgLoad()" />
+        @if (questao().imagem_legenda) {
+          <figcaption class="text-center text-[0.75em] text-gray-500">{{ questao().imagem_legenda }}</figcaption>
+        }
+      </figure>
+    }
+
+    <div class="mb-2 leading-snug">
+      <markdown [data]="questao().enunciado"></markdown>
+    </div>
+
+  } @else if (questao().enunciado_apoio) {
+    <!-- Sem tema, com pré-texto: número + pré-texto inline; imagem; enunciado abaixo -->
+    <div class="mb-2 flex items-baseline gap-1.5">
+      <span class="shrink-0 font-bold text-[1.05em]">{{ numero() }}.</span>
+      <div class="rounded bg-gray-50 p-2 text-[0.9em] leading-snug text-gray-700 print:bg-transparent print:p-0">
+        <markdown [data]="questao().enunciado_apoio!"></markdown>
+      </div>
+    </div>
+
+    @if (temImagem()) {
+      <figure class="mb-2 flex flex-col items-center gap-1">
+        <img [src]="questao().imagem_url!" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+          class="max-h-[60mm] w-auto max-w-full rounded object-contain" (load)="onImgLoad()" (error)="onImgLoad()" />
+        @if (questao().imagem_legenda) {
+          <figcaption class="text-center text-[0.75em] text-gray-500">{{ questao().imagem_legenda }}</figcaption>
+        }
+      </figure>
+    }
+
+    <div class="mb-2 leading-snug">
+      <markdown [data]="questao().enunciado"></markdown>
+    </div>
+
+  } @else if (temImagem()) {
+    <!-- Sem tema, sem pré-texto, com imagem: número → imagem → enunciado -->
+    <div class="mb-1 font-bold text-[1.05em]">{{ numero() }}.</div>
+
+    <figure class="mb-2 flex flex-col items-center gap-1">
+      <img [src]="questao().imagem_url!" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+        class="max-h-[60mm] w-auto max-w-full rounded object-contain" (load)="onImgLoad()" (error)="onImgLoad()" />
+      @if (questao().imagem_legenda) {
+        <figcaption class="text-center text-[0.75em] text-gray-500">{{ questao().imagem_legenda }}</figcaption>
+      }
+    </figure>
+
+    <div class="mb-2 leading-snug">
+      <markdown [data]="questao().enunciado"></markdown>
+    </div>
+
+  } @else {
+    <!-- Sem tema, sem pré-texto, sem imagem: número + enunciado inline -->
+    <div class="mb-2 flex items-baseline gap-1.5 leading-snug">
+      <span class="shrink-0 font-bold text-[1.05em]">{{ numero() }}.</span>
+      <div><markdown [data]="questao().enunciado"></markdown></div>
+    </div>
+  }
+
+  <!-- Alternativas -->
+  <ol class="flex flex-col gap-1">
+    @for (alt of questao().alternativas; track alt.id) {
+      <li class="flex items-start gap-2 text-[0.95em] leading-snug" [class.font-semibold]="ehCorreta(alt.correta)">
+        @if (marcacao()) {
+          <span
+            class="mt-0.5 flex h-[1.1em] w-[1.1em] shrink-0 items-center justify-center rounded-full border border-gray-500 text-[0.7em] font-bold"
+            [class.bg-gray-800]="ehCorreta(alt.correta)"
+            [class.text-white]="ehCorreta(alt.correta)"
+            [class.border-gray-800]="ehCorreta(alt.correta)"
+          >
+            {{ alt.letra }}
+          </span>
+        } @else {
+          <span class="shrink-0 font-semibold">{{ alt.letra }})</span>
+        }
+        <span>
+          {{ alt.texto }}
+          @if (ehCorreta(alt.correta)) {
+            <span class="ml-1 font-bold">✓</span>
+          }
+        </span>
+      </li>
+    }
+  </ol>
+</article>

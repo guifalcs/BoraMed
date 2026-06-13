@@ -52,6 +52,31 @@ input {
   }
 }
 
+/* ── Impressão (tela de impressão de simulados) ──────── */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* Esconde elementos marcados como não-imprimíveis (barra de opções etc.) */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Garante cores/marcadores fiéis ao preview */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* ── Animated Gradient Shift (hero banners) ──────────── */
 
 @keyframes gradient-shift {

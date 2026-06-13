@@ -1,0 +1,17 @@
+/* Aparência de "papel" apenas na tela; na impressão a folha é o próprio papel. */
+@media screen {
+  :host {
+    display: block;
+    min-height: 100vh;
+    background: var(--color-bg);
+  }
+
+  .doc-impressao {
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  }
+}

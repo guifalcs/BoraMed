@@ -4,6 +4,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { PrefetchService } from '../../core/services/prefetch.service';
 
 const mockAuth = {
   login: vi.fn(),
@@ -11,6 +12,7 @@ const mockAuth = {
 };
 
 const mockToast = { success: vi.fn(), error: vi.fn() };
+const mockPrefetch = { prefetchDashboardRoutes: vi.fn() };
 
 const mockRouter = { navigate: vi.fn() };
 
@@ -32,6 +34,7 @@ describe('LoginComponent', () => {
         provideRouter([{ path: 'dashboard', component: LoginComponent }]),
         { provide: AuthService, useValue: mockAuth },
         { provide: NotificationService, useValue: mockToast },
+        { provide: PrefetchService, useValue: mockPrefetch },
       ],
     }).compileComponents();
 

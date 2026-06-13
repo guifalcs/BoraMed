@@ -34,6 +34,16 @@ export interface TentativaResposta {
   respondida_em: string | null;
 }
 
+export interface QuestaoAnotacao {
+  id: string;
+  user_id: string;
+  tentativa_id: string;
+  questao_id: string;
+  conteudo: string;
+  criado_em: string;
+  atualizado_em: string;
+}
+
 export interface DistribuicaoTema {
   tema: Tema;
   total: number;

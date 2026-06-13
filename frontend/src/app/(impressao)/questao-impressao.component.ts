@@ -1,0 +1,45 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
+import { MarkdownComponent } from 'ngx-markdown';
+import type { QuestaoComAlternativas } from '../core/models/questao';
+
+@Component({
+  selector: 'app-questao-impressao',
+  standalone: true,
+  imports: [MarkdownComponent],
+  templateUrl: './questao-impressao.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class QuestaoImpressaoComponent {
+  questao = input.required<QuestaoComAlternativas>();
+  numero = input.required<number>();
+  marcacao = input(true);
+  mostrarImagem = input(true);
+  mostrarTema = input(true);
+  comGabarito = input(false);
+
+  imagemCarregada = output<void>();
+
+  protected readonly disciplinaTag = computed(() => {
+    const q = this.questao();
+    const tema = q.temas?.[0]?.nome;
+    return tema ?? q.disciplina ?? null;
+  });
+
+  protected readonly temImagem = computed(
+    () => this.mostrarImagem() && !!this.questao().imagem_url,
+  );
+
+  protected ehCorreta(correta: boolean | null): boolean {
+    return this.comGabarito() && correta === true;
+  }
+
+  protected onImgLoad(): void {
+    this.imagemCarregada.emit();
+  }
+}

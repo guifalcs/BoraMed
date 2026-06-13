@@ -50,11 +50,11 @@ export class ProvaDetalheComponent implements OnInit {
   });
 
   protected readonly backRoute = computed(() =>
-    this.isPersonalizado() ? '/dashboard/simulados' : '/dashboard/simulados/rede-afya',
+    this.isPersonalizado() '/dashboard/simulados' : '/dashboard/simulados/rede-afya',
   );
 
   async ngOnInit(): Promise<void> {
-    const id = this.route.snapshot.paramMap.get('provaId') ?? '';
+    const id = this.route.snapshot.paramMap.get('provaId')   '';
     const modoParam = this.route.snapshot.queryParamMap?.get('modo');
 
     if (modoParam === 'estudo' || modoParam === 'simulado') {
@@ -97,6 +97,12 @@ export class ProvaDetalheComponent implements OnInit {
     } else {
       this.notifications.error('Não foi possível iniciar a prova. Tente novamente.');
     }
+  }
+
+  protected imprimir(): void {
+    const prova = this.prova();
+    if (!prova) return;
+    void this.router.navigate(['/imprimir/simulado', prova.id]);
   }
 
   protected async retomar(): Promise<void> {

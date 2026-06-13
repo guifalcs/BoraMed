@@ -36,23 +36,23 @@ export type Database = {
     Tables: {
       admin_impersonation_log: {
         Row: {
-          admin_email: string
-          admin_id: string | null
-          criado_em: string
-          id: string
-          ip: string | null
-          target_email: string
-          target_id: string | null
-          target_name: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          admin_email: string
+          admin_email?: string
           admin_id?: string | null
           criado_em?: string
           id?: string
           ip?: string | null
-          target_email: string
+          target_email?: string
+          target_id?: string | null
+          target_name?: string | null
+          user_agent?: string | null
+        }
+        Insert: {
+          admin_email?: string
+          admin_id?: string | null
+          criado_em?: string
+          id?: string
+          ip?: string | null
+          target_email?: string
           target_id?: string | null
           target_name?: string | null
           user_agent?: string | null
@@ -72,22 +72,22 @@ export type Database = {
       }
       alternativa: {
         Row: {
-          correta: boolean
-          id: string
-          imagem_url: string | null
-          letra: string
-          ordem: number
-          questao_id: string
-          texto: string
+          correta?: boolean
+          id?: string
+          imagem_url?: string | null
+          letra?: string
+          ordem?: number
+          questao_id?: string
+          texto?: string
         }
         Insert: {
           correta?: boolean
           id?: string
           imagem_url?: string | null
-          letra: string
-          ordem: number
-          questao_id: string
-          texto: string
+          letra?: string
+          ordem?: number
+          questao_id?: string
+          texto?: string
         }
         Update: {
           correta?: boolean
@@ -110,25 +110,25 @@ export type Database = {
       }
       conquista_catalogo: {
         Row: {
-          ativa: boolean
-          categoria: string
-          criado_em: string
-          descricao: string
-          icone: string
-          id: string
-          nome: string
-          ordem: number
-          secreta: boolean
-          xp_recompensa: number
+          ativa?: boolean
+          categoria?: string
+          criado_em?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          secreta?: boolean
+          xp_recompensa?: number
         }
         Insert: {
           ativa?: boolean
-          categoria: string
+          categoria?: string
           criado_em?: string
-          descricao: string
-          icone: string
-          id: string
-          nome: string
+          descricao?: string
+          icone?: string
+          id?: string
+          nome?: string
           ordem?: number
           secreta?: boolean
           xp_recompensa?: number
@@ -149,14 +149,14 @@ export type Database = {
       }
       desafio_diario: {
         Row: {
-          criado_em: string
-          data: string
-          questao_id: string
+          criado_em?: string
+          data?: string
+          questao_id?: string
         }
         Insert: {
           criado_em?: string
-          data: string
-          questao_id: string
+          data?: string
+          questao_id?: string
         }
         Update: {
           criado_em?: string
@@ -175,21 +175,21 @@ export type Database = {
       }
       desafio_diario_resposta: {
         Row: {
-          alternativa_id: string | null
-          correta: boolean
-          data: string
-          respondido_em: string
-          tempo_segundos: number | null
-          user_id: string
-          xp_ganho: number
+          alternativa_id?: string | null
+          correta?: boolean
+          data?: string
+          respondido_em?: string
+          tempo_segundos?: number | null
+          user_id?: string
+          xp_ganho?: number
         }
         Insert: {
           alternativa_id?: string | null
-          correta: boolean
-          data: string
+          correta?: boolean
+          data?: string
           respondido_em?: string
           tempo_segundos?: number | null
-          user_id: string
+          user_id?: string
           xp_ganho?: number
         }
         Update: {
@@ -213,20 +213,20 @@ export type Database = {
       }
       disciplina: {
         Row: {
-          ativa: boolean
-          criado_em: string
-          id: string
-          nome: string | null
-          periodo: number
-          sigla: string
+          ativa?: boolean
+          criado_em?: string
+          id?: string
+          nome?: string | null
+          periodo?: number
+          sigla?: string
         }
         Insert: {
           ativa?: boolean
           criado_em?: string
           id?: string
           nome?: string | null
-          periodo: number
-          sigla: string
+          periodo?: number
+          sigla?: string
         }
         Update: {
           ativa?: boolean
@@ -240,22 +240,22 @@ export type Database = {
       }
       faculdade: {
         Row: {
-          ativa: boolean
-          criado_em: string
-          id: string
-          logo_url: string | null
-          nome: string
-          rede: string
-          sigla: string
+          ativa?: boolean
+          criado_em?: string
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          rede?: string
+          sigla?: string
         }
         Insert: {
           ativa?: boolean
           criado_em?: string
           id?: string
           logo_url?: string | null
-          nome: string
-          rede: string
-          sigla: string
+          nome?: string
+          rede?: string
+          sigla?: string
         }
         Update: {
           ativa?: boolean
@@ -270,22 +270,22 @@ export type Database = {
       }
       gamificacao_evento: {
         Row: {
-          criado_em: string
-          id: string
-          idempotency_key: string
-          metadata: Json
-          tipo: string
-          user_id: string
-          xp: number
+          criado_em?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          tipo?: string
+          user_id?: string
+          xp?: number
         }
         Insert: {
           criado_em?: string
           id?: string
-          idempotency_key: string
+          idempotency_key?: string
           metadata?: Json
-          tipo: string
-          user_id: string
-          xp: number
+          tipo?: string
+          user_id?: string
+          xp?: number
         }
         Update: {
           criado_em?: string
@@ -300,20 +300,20 @@ export type Database = {
       }
       profiles: {
         Row: {
-          competir_publico: boolean
-          criado_em: string
-          email: string
-          faculdade_rede: string | null
-          id: string
-          papel: string
-          tipo_usuario: string | null
+          competir_publico?: boolean
+          criado_em?: string
+          email?: string
+          faculdade_rede?: string | null
+          id?: string
+          papel?: string
+          tipo_usuario?: string | null
         }
         Insert: {
           competir_publico?: boolean
           criado_em?: string
-          email: string
+          email?: string
           faculdade_rede?: string | null
-          id: string
+          id?: string
           papel?: string
           tipo_usuario?: string | null
         }
@@ -330,20 +330,20 @@ export type Database = {
       }
       prova: {
         Row: {
-          arquivada: boolean
-          criado_em: string
-          faculdade_id: string | null
-          formato: string | null
-          id: string
-          nome: string
-          origem: string
-          periodo: number
-          publicada: boolean
-          qtd_questoes: number
-          rede: string | null
-          subtipo: string | null
-          subtipo_nacional: string | null
-          tipo: string
+          arquivada?: boolean
+          criado_em?: string
+          faculdade_id?: string | null
+          formato?: string | null
+          id?: string
+          nome?: string
+          origem?: string
+          periodo?: number
+          publicada?: boolean
+          qtd_questoes?: number
+          rede?: string | null
+          subtipo?: string | null
+          subtipo_nacional?: string | null
+          tipo?: string
         }
         Insert: {
           arquivada?: boolean
@@ -351,15 +351,15 @@ export type Database = {
           faculdade_id?: string | null
           formato?: string | null
           id?: string
-          nome: string
+          nome?: string
           origem?: string
-          periodo: number
+          periodo?: number
           publicada?: boolean
           qtd_questoes?: number
           rede?: string | null
           subtipo?: string | null
           subtipo_nacional?: string | null
-          tipo: string
+          tipo?: string
         }
         Update: {
           arquivada?: boolean
@@ -389,14 +389,14 @@ export type Database = {
       }
       prova_questao: {
         Row: {
-          ordem: number
-          prova_id: string
-          questao_id: string
+          ordem?: number
+          prova_id?: string
+          questao_id?: string
         }
         Insert: {
           ordem?: number
-          prova_id: string
-          questao_id: string
+          prova_id?: string
+          questao_id?: string
         }
         Update: {
           ordem?: number
@@ -422,38 +422,38 @@ export type Database = {
       }
       questao: {
         Row: {
-          aprovada_em: string | null
-          apto_desafio_diario: boolean
-          atualizado_em: string
-          autor_id: string | null
-          codigo_externo: string | null
-          criado_em: string
-          disciplina_id: string | null
-          enunciado: string
-          enunciado_apoio: string | null
-          explicacao: string | null
-          explicacao_alternativas: Json | null
-          fonte: string | null
-          formato: string
-          formato_prova: string | null
-          id: string
-          imagem_legenda: string | null
-          imagem_url: string | null
-          nivel_bloom: number | null
-          ordem_na_prova: number | null
-          origem_geracao: string
-          prova_id: string | null
-          publicada_em: string | null
-          referencia: string | null
-          resposta_correta_texto: string | null
-          respostas_aceitas: string[] | null
-          revisado: boolean
-          revisor_id: string | null
-          status: string
-          taxa_acerto: number | null
-          tipo_questao: string
-          vezes_acertada: number
-          vezes_respondida: number
+          aprovada_em?: string | null
+          apto_desafio_diario?: boolean
+          atualizado_em?: string
+          autor_id?: string | null
+          codigo_externo?: string | null
+          criado_em?: string
+          disciplina_id?: string | null
+          enunciado?: string
+          enunciado_apoio?: string | null
+          explicacao?: string | null
+          explicacao_alternativas?: Json | null
+          fonte?: string | null
+          formato?: string
+          formato_prova?: string | null
+          id?: string
+          imagem_legenda?: string | null
+          imagem_url?: string | null
+          nivel_bloom?: number | null
+          ordem_na_prova?: number | null
+          origem_geracao?: string
+          prova_id?: string | null
+          publicada_em?: string | null
+          referencia?: string | null
+          resposta_correta_texto?: string | null
+          respostas_aceitas?: string[] | null
+          revisado?: boolean
+          revisor_id?: string | null
+          status?: string
+          taxa_acerto?: number | null
+          tipo_questao?: string
+          vezes_acertada?: number
+          vezes_respondida?: number
         }
         Insert: {
           aprovada_em?: string | null
@@ -463,12 +463,12 @@ export type Database = {
           codigo_externo?: string | null
           criado_em?: string
           disciplina_id?: string | null
-          enunciado: string
+          enunciado?: string
           enunciado_apoio?: string | null
           explicacao?: string | null
           explicacao_alternativas?: Json | null
           fonte?: string | null
-          formato: string
+          formato?: string
           formato_prova?: string | null
           id?: string
           imagem_legenda?: string | null
@@ -556,14 +556,14 @@ export type Database = {
       }
       questao_tema: {
         Row: {
-          principal: boolean
-          questao_id: string
-          tema_id: string
+          principal?: boolean
+          questao_id?: string
+          tema_id?: string
         }
         Insert: {
           principal?: boolean
-          questao_id: string
-          tema_id: string
+          questao_id?: string
+          tema_id?: string
         }
         Update: {
           principal?: boolean
@@ -589,17 +589,17 @@ export type Database = {
       }
       tema: {
         Row: {
-          criado_em: string
-          disciplina_id: string | null
-          id: string
-          nome: string
-          parent_id: string | null
+          criado_em?: string
+          disciplina_id?: string | null
+          id?: string
+          nome?: string
+          parent_id?: string | null
         }
         Insert: {
           criado_em?: string
           disciplina_id?: string | null
           id?: string
-          nome: string
+          nome?: string
           parent_id?: string | null
         }
         Update: {
@@ -628,20 +628,20 @@ export type Database = {
       }
       tentativa: {
         Row: {
-          acertos: number
-          criado_em: string
-          finalizada_em: string | null
-          id: string
-          iniciada_em: string
-          modo: string
-          nota: number | null
-          pausada_em: string | null
-          prova_id: string
-          status: string
-          tempo_acumulado_segundos: number
-          total_questoes: number
-          total_respondidas: number
-          user_id: string
+          acertos?: number
+          criado_em?: string
+          finalizada_em?: string | null
+          id?: string
+          iniciada_em?: string
+          modo?: string
+          nota?: number | null
+          pausada_em?: string | null
+          prova_id?: string
+          status?: string
+          tempo_acumulado_segundos?: number
+          total_questoes?: number
+          total_respondidas?: number
+          user_id?: string
         }
         Insert: {
           acertos?: number
@@ -649,15 +649,15 @@ export type Database = {
           finalizada_em?: string | null
           id?: string
           iniciada_em?: string
-          modo: string
+          modo?: string
           nota?: number | null
           pausada_em?: string | null
-          prova_id: string
+          prova_id?: string
           status?: string
           tempo_acumulado_segundos?: number
-          total_questoes: number
+          total_questoes?: number
           total_respondidas?: number
-          user_id: string
+          user_id?: string
         }
         Update: {
           acertos?: number
@@ -687,26 +687,26 @@ export type Database = {
       }
       tentativa_resposta: {
         Row: {
-          alternativa_id: string | null
-          correta: boolean | null
-          id: string
-          ordem_na_tentativa: number | null
-          questao_id: string
-          respondida_em: string | null
-          resposta_texto: string | null
-          tempo_gasto_segundos: number | null
-          tentativa_id: string
+          alternativa_id?: string | null
+          correta?: boolean | null
+          id?: string
+          ordem_na_tentativa?: number | null
+          questao_id?: string
+          respondida_em?: string | null
+          resposta_texto?: string | null
+          tempo_gasto_segundos?: number | null
+          tentativa_id?: string
         }
         Insert: {
           alternativa_id?: string | null
           correta?: boolean | null
           id?: string
           ordem_na_tentativa?: number | null
-          questao_id: string
+          questao_id?: string
           respondida_em?: string | null
           resposta_texto?: string | null
           tempo_gasto_segundos?: number | null
-          tentativa_id: string
+          tentativa_id?: string
         }
         Update: {
           alternativa_id?: string | null
@@ -743,16 +743,61 @@ export type Database = {
           },
         ]
       }
-      user_conquista: {
+      tentativa_questao_anotacao: {
         Row: {
-          conquista_id: string
-          desbloqueada_em: string
-          user_id: string
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          questao_id?: string
+          tentativa_id?: string
+          user_id?: string
         }
         Insert: {
-          conquista_id: string
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          questao_id?: string
+          tentativa_id?: string
+          user_id?: string
+        }
+        Update: {
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          questao_id?: string
+          tentativa_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tentativa_questao_anotacao_questao_id_fkey"
+            columns: ["questao_id"]
+            isOneToOne: false
+            referencedRelation: "questao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tentativa_questao_anotacao_tentativa_id_fkey"
+            columns: ["tentativa_id"]
+            isOneToOne: false
+            referencedRelation: "tentativa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_conquista: {
+        Row: {
+          conquista_id?: string
           desbloqueada_em?: string
-          user_id: string
+          user_id?: string
+        }
+        Insert: {
+          conquista_id?: string
+          desbloqueada_em?: string
+          user_id?: string
         }
         Update: {
           conquista_id?: string
@@ -771,18 +816,18 @@ export type Database = {
       }
       user_gamificacao_stats: {
         Row: {
-          atualizado_em: string
-          competir_publico: boolean
-          freeze_usado_em: string | null
-          freezes_disponiveis: number
-          nivel: number
-          semana_iso: string | null
-          streak_atual: number
-          streak_recorde: number
-          ultimo_dia_ativo: string | null
-          user_id: string
-          xp_semana_atual: number
-          xp_total: number
+          atualizado_em?: string
+          competir_publico?: boolean
+          freeze_usado_em?: string | null
+          freezes_disponiveis?: number
+          nivel?: number
+          semana_iso?: string | null
+          streak_atual?: number
+          streak_recorde?: number
+          ultimo_dia_ativo?: string | null
+          user_id?: string
+          xp_semana_atual?: number
+          xp_total?: number
         }
         Insert: {
           atualizado_em?: string
@@ -794,7 +839,7 @@ export type Database = {
           streak_atual?: number
           streak_recorde?: number
           ultimo_dia_ativo?: string | null
-          user_id: string
+          user_id?: string
           xp_semana_atual?: number
           xp_total?: number
         }
@@ -816,30 +861,30 @@ export type Database = {
       }
       user_onboarding_state: {
         Row: {
-          atualizado_em: string
-          completed_at: string | null
-          criado_em: string
-          current_step: string | null
-          flow_key: string
-          flow_version: number
-          metadata: Json
-          skipped_at: string | null
-          started_at: string | null
-          status: string
-          user_id: string
+          atualizado_em?: string
+          completed_at?: string | null
+          criado_em?: string
+          current_step?: string | null
+          flow_key?: string
+          flow_version?: number
+          metadata?: Json
+          skipped_at?: string | null
+          started_at?: string | null
+          status?: string
+          user_id?: string
         }
         Insert: {
           atualizado_em?: string
           completed_at?: string | null
           criado_em?: string
           current_step?: string | null
-          flow_key: string
+          flow_key?: string
           flow_version?: number
           metadata?: Json
           skipped_at?: string | null
           started_at?: string | null
           status?: string
-          user_id: string
+          user_id?: string
         }
         Update: {
           atualizado_em?: string
@@ -866,13 +911,13 @@ export type Database = {
       alterar_papel_usuario: {
         Args: { p_papel: string; p_user_id: string }
         Returns: {
-          competir_publico: boolean
-          criado_em: string
-          email: string
-          faculdade_rede: string | null
-          id: string
-          papel: string
-          tipo_usuario: string | null
+          competir_publico?: boolean
+          criado_em?: string
+          email?: string
+          faculdade_rede?: string | null
+          id?: string
+          papel?: string
+          tipo_usuario?: string | null
         }
         SetofOptions: {
           from: "*"
@@ -885,6 +930,10 @@ export type Database = {
       finalizar_tentativa: {
         Args: { p_tempo_segundos?: number; p_tentativa_id: string }
         Returns: Json
+      }
+      excluir_anotacao_questao: {
+        Args: { p_questao_id: string; p_tentativa_id: string }
+        Returns: undefined
       }
       gerar_simulado_personalizado: {
         Args: {
@@ -900,7 +949,7 @@ export type Database = {
       get_desempenho_por_tema: {
         Args: never
         Returns: {
-          acertos: number
+          acertos?: number
           taxa: number
           tema_nome: string
           total: number
@@ -912,6 +961,7 @@ export type Database = {
       get_minhas_conquistas: { Args: never; Returns: Json }
       get_ranking_global: { Args: { p_limite?: number }; Returns: Json }
       get_revisao_prova: { Args: { p_prova_id: string }; Returns: Json }
+      get_revisao_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
       get_ranking_semana: { Args: { p_limite?: number }; Returns: Json }
       get_streak_estudo: { Args: never; Returns: number }
       get_streak_estudo_v2: { Args: never; Returns: Json }
@@ -924,14 +974,26 @@ export type Database = {
       listar_temas_com_contagem: {
         Args: { p_tipo_questao?: string }
         Returns: {
-          criado_em: string
+          criado_em?: string
           disciplina: string
           disciplina_id: string
-          id: string
-          nome: string
+          id?: string
+          nome?: string
           parent_id: string
-          periodo: number
-          qtd_questoes: number
+          periodo?: number
+          qtd_questoes?: number
+        }[]
+      }
+      listar_anotacoes_tentativa: {
+        Args: { p_tentativa_id: string }
+        Returns: {
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          questao_id?: string
+          tentativa_id?: string
+          user_id?: string
         }[]
       }
       responder_desafio_diario: {
@@ -939,6 +1001,22 @@ export type Database = {
         Returns: Json
       }
       retomar_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
+      salvar_anotacao_questao: {
+        Args: {
+          p_conteudo: string
+          p_questao_id: string
+          p_tentativa_id: string
+        }
+        Returns: {
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          questao_id?: string
+          tentativa_id?: string
+          user_id?: string
+        } | null
+      }
       verificar_conquistas_usuario: {
         Args: { p_user_id?: string }
         Returns: Json
@@ -964,25 +1042,25 @@ export type Tables<
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+  (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
+    R
     : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
         DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
+    (DefaultSchema["Tables"] &
         DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
-      ? R
+      R
       : never
     : never
 
@@ -993,21 +1071,21 @@ export type TablesInsert<
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
-    ? I
+    I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
-      ? I
+      I
       : never
     : never
 
@@ -1018,21 +1096,21 @@ export type TablesUpdate<
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
-    ? U
+    U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
-      ? U
+      U
       : never
     : never
 
@@ -1043,14 +1121,14 @@ export type Enums<
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
@@ -1060,14 +1138,14 @@ export type CompositeTypes<
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
@@ -1078,4 +1156,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

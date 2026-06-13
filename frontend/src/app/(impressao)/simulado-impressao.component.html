@@ -1,0 +1,308 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SIDEBAR DE CONFIGURAÇÃO — desktop (lg+), não impressa
+     ═══════════════════════════════════════════════════════════════ -->
+<aside class="no-print fixed inset-y-0 left-0 z-20 hidden w-56 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-white shadow-sm lg:flex">
+
+  <!-- Cabeçalho da sidebar -->
+  <div class="p-4 pb-0">
+    <a
+      routerLink="/dashboard/simulados"
+      class="mb-4 flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+    >
+      <app-ui-icon [icon]="chevronLeftIcon" [size]="14" />
+      Voltar
+    </a>
+
+    <p class="mb-4 line-clamp-3 text-sm font-semibold leading-snug text-[var(--color-text)]">
+      {{ simulado()?.nome ?? 'Carregando…' }}
+    </p>
+
+    <app-ui-button
+      label="Imprimir"
+      [disabled]="!prontoParaImprimir()"
+      [loading]="!isLoading() && !erro() && !prontoParaImprimir()"
+      loadingLabel="Aguarde…"
+      (buttonClick)="imprimir()"
+    />
+  </div>
+
+  @if (simulado() && !erro()) {
+    <hr class="mx-4 my-4 border-[var(--color-border)]" />
+
+    <div class="flex flex-col gap-5 px-4 pb-4 text-sm text-[var(--color-text)]">
+
+      <!-- Layout -->
+      <section>
+        <p class="mb-2 text-[0.68rem] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+          Layout
+        </p>
+        <div class="flex flex-col gap-2.5">
+          <label class="flex cursor-pointer items-center gap-2.5">
+            <input type="checkbox" class="accent-[var(--color-primary)]"
+              [checked]="opcoes().marcacaoNaQuestao" (change)="toggleOpcao('marcacaoNaQuestao')" />
+            Espaço p/ marcar
+          </label>
+          <label class="flex cursor-pointer items-center gap-2.5">
+            <input type="checkbox" class="accent-[var(--color-primary)]"
+              [checked]="opcoes().mostrarTema" (change)="toggleOpcao('mostrarTema')" />
+            Tema
+          </label>
+          <label class="flex cursor-pointer items-center gap-2.5">
+            <input type="checkbox" class="accent-[var(--color-primary)]"
+              [checked]="opcoes().mostrarImagens" (change)="setMostrarImagens(!opcoes().mostrarImagens)" />
+            Imagens
+          </label>
+          <label class="flex cursor-pointer items-center gap-2.5">
+            <input type="checkbox" class="accent-[var(--color-primary)]"
+              [checked]="opcoes().cartaoResposta" (change)="toggleOpcao('cartaoResposta')" />
+            Cartão-resposta
+          </label>
+        </div>
+      </section>
+
+      <!-- Gabarito -->
+      <section>
+        <p class="mb-2 text-[0.68rem] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+          Gabarito
+        </p>
+        <div class="flex flex-col gap-2.5">
+          <label
+            class="flex items-center gap-2.5"
+            [class.cursor-pointer]="podeIncluirGabarito()"
+            [class.opacity-40]="!podeIncluirGabarito()"
+            [title]="podeIncluirGabarito() ? '' : 'Disponível após finalizar a prova'"
+          >
+            <input type="checkbox" class="accent-[var(--color-primary)]"
+              [checked]="opcoes().gabaritoAoFinal"
+              [disabled]="!podeIncluirGabarito()"
+              (change)="toggleOpcao('gabaritoAoFinal')" />
+            Gabarito ao final
+          </label>
+          @if (opcoes().gabaritoAoFinal && podeIncluirGabarito()) {
+            <label class="ml-5 flex cursor-pointer items-center gap-2.5">
+              <input type="checkbox" class="accent-[var(--color-primary)]"
+                [checked]="opcoes().explicacoesNoGabarito" (change)="toggleOpcao('explicacoesNoGabarito')" />
+              Com explicações
+            </label>
+          }
+        </div>
+      </section>
+
+      <!-- Tamanho da fonte -->
+      <section>
+        <p class="mb-2 text-[0.68rem] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+          Tamanho da fonte
+        </p>
+        <div class="flex gap-1.5">
+          @for (t of tamanhosFonte; track t) {
+            <button type="button" [class]="fonteBtnClass(t)" (click)="setTamanhoFonte(t)">
+              {{ t }}
+            </button>
+          }
+        </div>
+      </section>
+
+    </div>
+  }
+</aside>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BARRA MOBILE — só em telas menores que lg, não impressa
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="no-print sticky top-0 z-20 border-b border-[var(--color-border)] bg-white shadow-sm lg:hidden">
+
+  <!-- Linha principal: voltar + título + botão imprimir -->
+  <div class="flex items-center gap-3 px-4 py-3">
+    <a
+      routerLink="/dashboard/simulados"
+      class="flex shrink-0 items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+    >
+      <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
+      Voltar
+    </a>
+    <span class="flex-1 truncate text-sm font-semibold text-[var(--color-text)]">
+      {{ simulado()?.nome ?? 'Carregando…' }}
+    </span>
+    <div class="w-28 shrink-0">
+      <app-ui-button
+        label="Imprimir"
+        [disabled]="!prontoParaImprimir()"
+        [loading]="!isLoading() && !erro() && !prontoParaImprimir()"
+        loadingLabel="…"
+        (buttonClick)="imprimir()"
+      />
+    </div>
+  </div>
+
+  @if (simulado() && !erro()) {
+    <!-- Opções: linha centralizada, com scroll horizontal se necessário -->
+    <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 px-4 pb-3 text-sm text-[var(--color-text-muted)]">
+      <label class="flex cursor-pointer items-center gap-1.5">
+        <input type="checkbox" class="accent-[var(--color-primary)]"
+          [checked]="opcoes().marcacaoNaQuestao" (change)="toggleOpcao('marcacaoNaQuestao')" />
+        Marcar
+      </label>
+      <label class="flex cursor-pointer items-center gap-1.5">
+        <input type="checkbox" class="accent-[var(--color-primary)]"
+          [checked]="opcoes().mostrarTema" (change)="toggleOpcao('mostrarTema')" />
+        Tema
+      </label>
+      <label class="flex cursor-pointer items-center gap-1.5">
+        <input type="checkbox" class="accent-[var(--color-primary)]"
+          [checked]="opcoes().mostrarImagens" (change)="setMostrarImagens(!opcoes().mostrarImagens)" />
+        Imagens
+      </label>
+      <label class="flex cursor-pointer items-center gap-1.5">
+        <input type="checkbox" class="accent-[var(--color-primary)]"
+          [checked]="opcoes().cartaoResposta" (change)="toggleOpcao('cartaoResposta')" />
+        Cartão
+      </label>
+      <label
+        class="flex items-center gap-1.5"
+        [class.cursor-pointer]="podeIncluirGabarito()"
+        [class.opacity-40]="!podeIncluirGabarito()"
+        [title]="podeIncluirGabarito() ? '' : 'Disponível após finalizar a prova'"
+      >
+        <input type="checkbox" class="accent-[var(--color-primary)]"
+          [checked]="opcoes().gabaritoAoFinal"
+          [disabled]="!podeIncluirGabarito()"
+          (change)="toggleOpcao('gabaritoAoFinal')" />
+        Gabarito
+      </label>
+      @if (opcoes().gabaritoAoFinal && podeIncluirGabarito()) {
+        <label class="flex cursor-pointer items-center gap-1.5">
+          <input type="checkbox" class="accent-[var(--color-primary)]"
+            [checked]="opcoes().explicacoesNoGabarito" (change)="toggleOpcao('explicacoesNoGabarito')" />
+          Explicações
+        </label>
+      }
+      <span class="flex items-center gap-1.5">
+        @for (t of tamanhosFonte; track t) {
+          <button type="button" [class]="fonteBtnClass(t)" (click)="setTamanhoFonte(t)">{{ t }}</button>
+        }
+      </span>
+    </div>
+  }
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CONTEÚDO PRINCIPAL (offset pela sidebar no desktop)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="lg:ml-56">
+
+  @if (isLoading()) {
+    <div class="mx-auto max-w-3xl space-y-4 px-4 py-8">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="h-40 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
+      }
+    </div>
+  }
+
+  @if (!isLoading() && erro()) {
+    <div class="mx-auto max-w-3xl px-4 py-12">
+      <app-empty-state
+        titulo="Não foi possível abrir a impressão"
+        [descricao]="erro()"
+        labelBotao="Voltar para simulados"
+        [routerLink]="['/dashboard/simulados']"
+      />
+    </div>
+  }
+
+  @if (!isLoading() && !erro() && simulado()) {
+    <div
+      class="doc-impressao mx-auto max-w-3xl px-6 py-8 text-[var(--color-text)] print:px-0 print:py-0"
+      [style.fontSize]="fonteBase()"
+    >
+      <!-- Cabeçalho / folha de rosto -->
+      <header class="mb-6 border-b-2 border-gray-800 pb-4">
+        <div class="mb-3 flex items-center justify-between gap-4">
+          <img src="brand/logo.webp" alt="BoraMed" class="h-8 w-auto" width="400" height="128" />
+          <span class="text-[0.8em] text-gray-500">{{ dataHoje }}</span>
+        </div>
+        <h1 class="text-[1.4em] font-extrabold leading-tight">{{ simulado()!.nome }}</h1>
+        <p class="mt-1 text-[0.85em] text-gray-600">{{ subtitulo() }}</p>
+
+        <div class="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-[0.85em]">
+          <span class="flex-1 whitespace-nowrap">
+            Nome: <span class="inline-block w-48 border-b border-gray-400"></span>
+          </span>
+          <span class="whitespace-nowrap">
+            Turma: <span class="inline-block w-24 border-b border-gray-400"></span>
+          </span>
+          <span class="whitespace-nowrap">Data: ___/___/______</span>
+        </div>
+
+        <p class="mt-3 text-[0.78em] leading-snug text-gray-500">
+          Marque apenas uma alternativa por questão. Use caneta azul ou preta.
+        </p>
+      </header>
+
+      <!-- Questões -->
+      <div class="flex flex-col gap-5">
+        @for (q of questoes(); track q.id; let i = $index) {
+          <app-questao-impressao
+            [questao]="q"
+            [numero]="i + 1"
+            [marcacao]="opcoes().marcacaoNaQuestao"
+            [mostrarImagem]="opcoes().mostrarImagens"
+            [mostrarTema]="opcoes().mostrarTema"
+            [comGabarito]="false"
+            (imagemCarregada)="onImagemCarregada()"
+          />
+        }
+      </div>
+
+      <!-- Cartão-resposta -->
+      @if (opcoes().cartaoResposta) {
+        <section class="mt-8 break-before-page">
+          <h2 class="mb-1 text-[1.2em] font-bold">Cartão-resposta</h2>
+          <p class="mb-4 text-[0.78em] text-gray-500">
+            Preencha completamente a bolha da alternativa escolhida.
+          </p>
+          <div class="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-4 print:grid-cols-4">
+            @for (q of questoes(); track q.id; let i = $index) {
+              <div class="flex items-center gap-2 text-[0.85em]">
+                <span class="w-6 text-right font-semibold">{{ i + 1 }}.</span>
+                @for (letra of letrasCartao; track letra) {
+                  <span class="flex h-[1.2em] w-[1.2em] items-center justify-center rounded-full border border-gray-500 text-[0.7em] text-gray-500">
+                    {{ letra }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Gabarito -->
+      @if (gabarito().length > 0) {
+        <section class="mt-8 break-before-page">
+          <h2 class="mb-4 text-[1.2em] font-bold">Gabarito</h2>
+          <div class="mb-6 grid grid-cols-3 gap-x-6 gap-y-1 text-[0.9em] sm:grid-cols-5 print:grid-cols-5">
+            @for (item of gabarito(); track item.numero) {
+              <span><strong>{{ item.numero }}.</strong> {{ item.letra ?? '—' }}</span>
+            }
+          </div>
+
+          @if (opcoes().explicacoesNoGabarito) {
+            <div class="flex flex-col gap-3">
+              @for (item of gabarito(); track item.numero) {
+                @if (item.explicacao) {
+                  <div class="break-inside-avoid text-[0.85em] leading-snug">
+                    <p class="font-semibold">{{ item.numero }}. Resposta: {{ item.letra ?? '—' }}</p>
+                    <p class="text-gray-700">{{ item.explicacao }}</p>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </section>
+      }
+
+    </div>
+  }
+
+</div>

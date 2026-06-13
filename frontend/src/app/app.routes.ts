@@ -53,6 +53,19 @@ export const routes: Routes = [
       import('./(auth)/auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
+    path: 'imprimir/simulado/montado',
+    canActivate: [lazyAuthGuard],
+    data: { modo: 'efemero' },
+    loadComponent: () =>
+      import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
+  },
+  {
+    path: 'imprimir/simulado/:provaId',
+    canActivate: [lazyAuthGuard],
+    loadComponent: () =>
+      import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
+  },
+  {
     path: 'admin',
     canActivate: [lazyAdminGuard],
     loadComponent: () =>

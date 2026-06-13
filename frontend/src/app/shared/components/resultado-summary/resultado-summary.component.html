@@ -79,7 +79,7 @@
                 [class.bg-[var(--color-success)]]="d.total > 0 && (d.acertos / d.total) >= 0.7"
                 [class.bg-[var(--color-warning)]]="d.total > 0 && (d.acertos / d.total) >= 0.5 && (d.acertos / d.total) < 0.7"
                 [class.bg-[var(--color-danger)]]="d.total === 0 || (d.acertos / d.total) < 0.5"
-                [style.width.%]="d.total > 0 ? (d.acertos / d.total) * 100 : 0"
+                [style.width.%]="d.total > 0 (d.acertos / d.total) * 100 : 0"
               ></div>
             </div>
           </li>
@@ -94,7 +94,7 @@
       @if (temQuestoesErradas() && !provaRemovida()) {
         <a
           class="rounded-xl border border-rose-100 bg-rose-50 p-4 text-left text-rose-800 transition-colors hover:bg-rose-100"
-          [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
+          [routerLink]="['/dashboard/simulados', provaId(), 'tentativa', resultado().tentativa.id, 'revisao']"
           [queryParams]="{ filtro: 'erros' }"
           [state]="{ fromResultado: true }"
         >
@@ -156,10 +156,10 @@
       <div class="flex flex-col gap-3 sm:flex-row">
         <a
           class="flex-1"
-          [routerLink]="['/dashboard/simulados', provaId(), 'visualizar']"
+          [routerLink]="['/dashboard/simulados', provaId(), 'tentativa', resultado().tentativa.id, 'revisao']"
           [state]="{ fromResultado: true }"
         >
-          <app-ui-button label="Revisar questões" variant="primary" />
+          <app-ui-button label="Revisar e anotar" variant="primary" />
         </a>
         <a
           class="flex-1"
@@ -169,6 +169,12 @@
           <app-ui-button [label]="labelRefazerEstudo()" variant="secondary" />
         </a>
       </div>
+      <a
+        [routerLink]="['/imprimir/simulado', provaId()]"
+        [queryParams]="{ gabarito: 1 }"
+      >
+        <app-ui-button label="Imprimir com gabarito" variant="secondary" />
+      </a>
     }
 
     <div class="text-center">
