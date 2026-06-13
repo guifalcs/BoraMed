@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Award,
+  Star,
 } from 'lucide-angular';
 import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../../core/models/historico';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
@@ -26,9 +27,12 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { DataTableComponent, type DataTableColumn } from '../../shared/components/data-table/data-table.component';
 import { DataTableColumnDirective } from '../../shared/components/data-table/data-table-column.directive';
 import { PageHeaderComponent, type Breadcrumb } from '../../shared/components/page-header/page-header.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { HistoricoService } from '../../core/services/historico.service';
 
 type FiltroPeriodo = 'todos' | 'semana' | 'mes' | 'semestre';
 type FiltroTipo = 'todos' | 'nacional' | 'processual' | 'laboratorio';
+type FiltroFavorito = 'todos' | 'favoritas';
 
 interface KpiData {
   label: string;
@@ -41,13 +45,14 @@ interface KpiData {
 @Component({
   selector: 'app-historico',
   standalone: true,
-  imports: [RouterLink, KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective, PageHeaderComponent],
+  imports: [RouterLink, KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective, PageHeaderComponent, UiIconComponent],
   templateUrl: './historico.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoricoComponent {
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly historicoService = inject(HistoricoService);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -67,6 +72,9 @@ export class HistoricoComponent {
 
   protected readonly filtroPeriodo = signal<FiltroPeriodo>('todos');
   protected readonly filtroTipo = signal<FiltroTipo>('todos');
+  protected readonly filtroFavorito = signal<FiltroFavorito>('todos');
+
+  protected readonly starIcon = Star;
 
   protected readonly tentativasFiltradas = computed(() => {
     let items = this.tentativas();
@@ -80,6 +88,9 @@ export class HistoricoComponent {
       const diasMap: Record<string, number> = { semana: 7, mes: 30, semestre: 180 };
       const corte = agora - (diasMap[periodo] ?? 0) * 86_400_000;
       items = items.filter((t) => t.finalizada_em && new Date(t.finalizada_em).getTime() >= corte);
+    }
+    if (this.filtroFavorito() === 'favoritas') {
+      items = items.filter((t) => t.favorito);
     }
     return items;
   });
@@ -96,7 +107,7 @@ export class HistoricoComponent {
     return [...temas].sort((a, b) => a.taxa - b.taxa || b.total - a.total)[0];
   });
 
-  protected readonly temFiltroAtivo = computed(() => this.filtroPeriodo() !== 'todos' || this.filtroTipo() !== 'todos');
+  protected readonly temFiltroAtivo = computed(() => this.filtroPeriodo() !== 'todos' || this.filtroTipo() !== 'todos' || this.filtroFavorito() !== 'todos');
   protected readonly temHistorico = computed(() => this.tentativas().length > 0);
   protected readonly temEvolucao = computed(() => this.pontosEvolucao().length > 0);
   protected readonly temTemas = computed(() => this.temas().some((tema) => tema.total > 0));
@@ -117,6 +128,7 @@ export class HistoricoComponent {
   ];
 
   protected readonly tentativasColumns: DataTableColumn[] = [
+    { key: 'favorito', header: '', sortable: false },
     { key: 'prova_nome', header: 'Prova', sortable: true },
     { key: 'finalizada_em', header: 'Data', sortable: true },
     { key: 'modo', header: 'Modo', sortable: true },
@@ -213,6 +225,20 @@ export class HistoricoComponent {
   protected onLimparFiltros(): void {
     this.filtroPeriodo.set('todos');
     this.filtroTipo.set('todos');
+    this.filtroFavorito.set('todos');
+  }
+
+  protected onToggleFavorito(tentativa: TentativaHistoricoItem, event: MouseEvent): void {
+    event.stopPropagation();
+    const novoValor = !tentativa.favorito;
+    this.tentativas.update((list) =>
+      list.map((t) => (t.id === tentativa.id ? { ...t, favorito: novoValor } : t))
+    );
+    void this.historicoService.toggleFavorito(tentativa.id, novoValor).catch(() => {
+      this.tentativas.update((list) =>
+        list.map((t) => (t.id === tentativa.id ? { ...t, favorito: !novoValor } : t))
+      );
+    });
   }
 
   protected onTentarNovamente(): void {

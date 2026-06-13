@@ -39,7 +39,7 @@ export class HistoricoService {
 
       const { data, error } = await this.supabase
         .from('tentativa')
-        .select('id, prova_id, modo, nota, total_questoes, acertos, finalizada_em, prova_snapshot, prova:prova_id(nome, tipo, origem, formato)')
+        .select('id, prova_id, modo, nota, total_questoes, acertos, finalizada_em, favorito, prova_snapshot, prova:prova_id(nome, tipo, origem, formato)')
         .eq('user_id', user.id)
         .eq('status', 'finalizada')
         .neq('modo', 'visualizar')
@@ -57,6 +57,7 @@ export class HistoricoService {
         total_questoes: number;
         acertos: number;
         finalizada_em: string | null;
+        favorito: boolean;
         prova_snapshot: ProvaInfo | null;
         prova: ProvaInfo | ProvaInfo[] | null;
       };
@@ -78,6 +79,7 @@ export class HistoricoService {
           prova_nome: nome,
           tipo_prova: tipo,
           prova_removida: !provaAtual,
+          favorito: r.favorito ?? false,
         };
       });
 
@@ -85,6 +87,14 @@ export class HistoricoService {
     } catch {
       return { ok: false, error: 'Não foi possível carregar o histórico.' };
     }
+  }
+
+  async toggleFavorito(tentativaId: string, favorito: boolean): Promise<void> {
+    const { error } = await this.supabase.rpc('toggle_favorito_tentativa', {
+      p_tentativa_id: tentativaId,
+      p_favorito: favorito,
+    });
+    if (error) throw error;
   }
 
   async getStreak(): Promise<HistoricoResult<number>> {

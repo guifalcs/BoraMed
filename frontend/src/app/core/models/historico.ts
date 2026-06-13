@@ -29,4 +29,5 @@ export interface TentativaHistoricoItem {
   prova_nome: string;
   tipo_prova: string;
   prova_removida: boolean;
+  favorito: boolean;
 }

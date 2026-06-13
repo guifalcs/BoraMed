@@ -72,6 +72,17 @@
         >{{ t.label }}</button>
       }
     </div>
+    <button
+      type="button"
+      class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+      [class]="filtroFavorito() === 'favoritas'
+        ? 'bg-amber-400 text-white'
+        : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
+      (click)="filtroFavorito.set(filtroFavorito() === 'favoritas' ? 'todos' : 'favoritas')"
+    >
+      <app-ui-icon [icon]="starIcon" [size]="12" />
+      Favoritas
+    </button>
   </div>
   }
 
@@ -185,7 +196,7 @@
         @if (temFiltroAtivo()) {
           <app-empty-state
             titulo="Nenhum resultado para o filtro"
-            descricao="Tente mudar o período ou tipo de prova."
+            [descricao]="filtroFavorito() === 'favoritas' ? 'Você ainda não favoritou nenhum simulado.' : 'Tente mudar o período ou tipo de prova.'"
             labelBotao="Limpar filtros"
             (acao)="onLimparFiltros()"
           />
@@ -210,6 +221,21 @@
         [clickable]="true"
         (rowClick)="onTentativaClick($event)"
       >
+        <ng-template appDataTableColumn="favorito" header="" let-row="row">
+          <button
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-[var(--color-surface-2)]"
+            (click)="onToggleFavorito(row, $event)"
+            [title]="row.favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+          >
+            <app-ui-icon
+              [icon]="starIcon"
+              [size]="16"
+              [class]="row.favorito ? 'text-amber-400' : 'text-[var(--color-text-muted)] opacity-40'"
+            />
+          </button>
+        </ng-template>
+
         <ng-template appDataTableColumn="prova_nome" header="Prova" [sortable]="true" let-value let-row="row">
           <span class="flex max-w-[200px] items-center gap-1.5 md:max-w-[300px]">
             <span class="truncate font-medium text-[var(--color-text)]" [title]="value">{{ value }}</span>
