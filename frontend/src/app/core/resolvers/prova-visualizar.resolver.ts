@@ -33,26 +33,26 @@ export const provaVisualizarResolver: ResolveFn<ProvaVisualizarResolvedData> = a
     return data;
   }
 
-  const provaId = route.paramMap.get('provaId')   '';
-  const tentativaId = route.paramMap.get('tentativaId')   '';
+  const provaId = route.paramMap.get('provaId') ?? '';
+  const tentativaId = route.paramMap.get('tentativaId') ?? '';
 
   const [provaResult, revisaoResult, respostasResult] = await Promise.all([
     provaService.buscarProva(provaId),
     tentativaId
-      fetchQuestoesRevisaoTentativa(supabase, tentativaId)
+      ? fetchQuestoesRevisaoTentativa(supabase, tentativaId)
       : fetchQuestoesRevisaoProva(supabase, provaId),
-    tentativaId fetchRespostasTentativa(supabase, tentativaId) : Promise.resolve(undefined),
+    tentativaId ? fetchRespostasTentativa(supabase, tentativaId) : Promise.resolve(undefined),
   ]);
 
   const resolved: ProvaVisualizarResolvedData = {
     provaResult,
     questoesResult: revisaoResult.ok
-      { ok: true, data: revisaoResult.data.questoes }
+      ? { ok: true, data: revisaoResult.data.questoes }
       : revisaoResult,
-    respostasResult,
+    respostasResult: respostasResult as { ok: true; data: TentativaResposta[] } | { ok: false; error: string },
     tentativaResult: revisaoResult.ok && revisaoResult.data.tentativa
-      { ok: true, data: revisaoResult.data.tentativa }
-      : undefined,
+      ? { ok: true, data: revisaoResult.data.tentativa }
+      : { ok: false, error: '' },
   };
 
   if (!isBrowser) {
@@ -70,10 +70,10 @@ async function fetchQuestoesRevisaoProva(
     const { data, error } = await supabase.rpc('get_revisao_prova', { p_prova_id: provaId });
     if (error) throw error;
 
-    const questoes = ((data as { questoes: unknown } | null).questoes ?? []) as QuestaoComAlternativas[];
+    const questoes = ((data as { questoes: unknown } | null)?.questoes ?? []) as QuestaoComAlternativas[];
     return { ok: true, data: { questoes, tentativa: null } };
   } catch (e: unknown) {
-    const message = e instanceof Error e.message : '';
+    const message = e instanceof Error ? e.message : '';
     if (message.includes('Revisao disponivel apenas apos finalizar')) {
       return { ok: false, error: 'A revisao fica disponivel apos voce finalizar a prova.' };
     }
@@ -95,12 +95,12 @@ async function fetchQuestoesRevisaoTentativa(
     return {
       ok: true,
       data: {
-        questoes: (payload.questoes ?? []) as QuestaoComAlternativas[],
-        tentativa: payload.tentativa as Tentativa,
+        questoes: (payload?.questoes ?? []) as QuestaoComAlternativas[],
+        tentativa: payload?.tentativa as Tentativa,
       },
     };
   } catch (e: unknown) {
-    const message = e instanceof Error e.message : '';
+    const message = e instanceof Error ? e.message : '';
     if (message.includes('Revisao disponivel apenas apos finalizar')) {
       return { ok: false, error: 'A revisao fica disponivel apos voce finalizar a tentativa.' };
     }

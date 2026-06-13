@@ -151,7 +151,7 @@ describe('ProvaDetalheComponent', () => {
     });
 
     it('exibe o nome do simulado', () => {
-      const titulos = Array.from(el.querySelectorAll('h1')).map((h) => h.textContent   '');
+      const titulos = Array.from(el.querySelectorAll('h1')).map((h) => h.textContent ?? '');
       expect(titulos.join(' ')).toContain('Simulado N1 — 1º Período — Edição 1');
     });
 

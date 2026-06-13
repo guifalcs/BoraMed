@@ -210,13 +210,25 @@
       </div>
     }
 
-    <!-- Botão gerar -->
-    <app-ui-button
-      [label]="botaoLabel()"
-      [loading]="gerando()"
-      [disabled]="desabilitado()"
-      loadingLabel="Gerando..."
-      (buttonClick)="gerar()"
-    />
+    <!-- Botões -->
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <app-ui-button
+        [label]="botaoLabel()"
+        [loading]="gerando()"
+        [disabled]="desabilitado()"
+        loadingLabel="Gerando..."
+        (buttonClick)="gerar()"
+        class="flex-1"
+      />
+      <app-ui-button
+        label="Apenas imprimir"
+        variant="secondary"
+        [loading]="imprimindo()"
+        [disabled]="desabilitado()"
+        loadingLabel="Gerando..."
+        (buttonClick)="imprimirApenas()"
+        class="flex-1"
+      />
+    </div>
   </div>
 </div>

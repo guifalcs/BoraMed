@@ -9,6 +9,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Shuffle, Filter, LoaderCircle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
+import { ImpressaoSimuladoService } from '../../../core/services/impressao-simulado.service';
 import type { MontarSimuladoResolvedData } from '../../../core/resolvers/montar-simulado.resolver';
 import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
@@ -59,6 +60,7 @@ export class MontarSimuladoComponent {
   private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
   private readonly temaService = inject(TemaService);
+  private readonly impressaoService = inject(ImpressaoSimuladoService);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -83,6 +85,7 @@ export class MontarSimuladoComponent {
   protected readonly modoSelecionado = signal<ModoProva>('simulado');
   protected readonly origemRecomendacao = signal<string | null>(null);
   protected readonly gerando = signal(false);
+  protected readonly imprimindo = signal(false);
   protected readonly erro = signal<string | null>(null);
 
   protected readonly opcoesQtd = [5, 10, 15, 20, 30];
@@ -254,6 +257,28 @@ export class MontarSimuladoComponent {
 
   protected onModoChange(modo: ModoProva): void {
     this.modoSelecionado.set(modo);
+  }
+
+  protected async imprimirApenas(): Promise<void> {
+    if (this.desabilitado()) return;
+    this.imprimindo.set(true);
+    this.erro.set(null);
+
+    const temaIds = Array.from(this.temasSelecionados());
+    const result = await this.impressaoService.gerarParaImpressao(
+      temaIds.length > 0 ? temaIds : null,
+      this.quantidade(),
+      this.formatoAtual().tipoQuestao,
+      this.formatoSelecionado() === 'todos' ? null : this.formatoSelecionado(),
+    );
+
+    this.imprimindo.set(false);
+
+    if (result.ok) {
+      void this.router.navigate(['/imprimir/simulado/montado']);
+    } else {
+      this.erro.set(result.error);
+    }
   }
 
   protected async gerar(): Promise<void> {

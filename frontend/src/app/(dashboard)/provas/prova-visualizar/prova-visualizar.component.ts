@@ -8,26 +8,30 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ChevronLeft } from 'lucide-angular';
+import { ChevronLeft, Printer } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { AnotacaoQuestaoService } from '../../../core/services/anotacao-questao.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { ProvaVisualizarResolvedData } from '../../../core/resolvers/prova-visualizar.resolver';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
+import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-anotacao/questao-anotacao.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, UiIconComponent, EmptyStateComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProvaVisualizarComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly tentativaService = inject(TentativaService);
+  private readonly anotacaoService = inject(AnotacaoQuestaoService);
 
   protected readonly chevronLeftIcon = ChevronLeft;
+  protected readonly printerIcon = Printer;
 
   protected readonly provaId = signal('');
   protected readonly tentativaId = signal('');
@@ -38,12 +42,15 @@ export class ProvaVisualizarComponent {
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
   protected readonly filtro = signal<'todas' | 'erros'>('todas');
+  protected readonly anotacoesErro = signal<string | null>(null);
 
   protected readonly backRoute = computed(() =>
     this.tentativaId()
       ? ['/dashboard/simulados', this.provaId(), 'tentativa', this.tentativaId(), 'resultado']
       : ['/dashboard/simulados', this.provaId()],
   );
+
+  protected readonly mostrarAnotacoes = computed(() => !!this.tentativaId());
 
   protected readonly questoesFiltradas = computed(() => {
     if (this.filtro() !== 'erros') {
@@ -87,7 +94,6 @@ export class ProvaVisualizarComponent {
 
     this.isLoading.set(false);
 
-    // Lê respostas anteriores do lastResultado (browser only — depende de history.state)
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
       const lastResultado = this.tentativaService.lastResultado();
       const navState = history.state as { fromResultado?: boolean } | null;
@@ -106,7 +112,37 @@ export class ProvaVisualizarComponent {
         }
         this.respostasMap.set(map);
         this.respostasCorretasMap.set(corretas);
+
+        void this.anotacaoService.carregarPorTentativa(lastResultado.tentativa.id).then((result) => {
+          if (!result.ok) {
+            this.anotacoesErro.set(result.error);
+          }
+        });
       }
     }
+  }
+
+  protected anotacaoConteudo(questaoId: string): string | null {
+    return this.anotacaoService.anotacoes().get(questaoId)?.conteudo ?? null;
+  }
+
+  protected salvandoAnotacao(questaoId: string): boolean {
+    return this.anotacaoService.salvandoQuestoes().has(questaoId);
+  }
+
+  protected erroAnotacao(questaoId: string): string | null {
+    return this.anotacaoService.errosQuestoes().get(questaoId) ?? null;
+  }
+
+  protected async onSalvarAnotacao(questaoId: string, conteudo: string): Promise<void> {
+    const tentativaId = this.tentativaId();
+    if (!tentativaId) return;
+    await this.anotacaoService.salvar(tentativaId, questaoId, conteudo);
+  }
+
+  protected async onExcluirAnotacao(questaoId: string): Promise<void> {
+    const tentativaId = this.tentativaId();
+    if (!tentativaId) return;
+    await this.anotacaoService.excluir(tentativaId, questaoId);
   }
 }

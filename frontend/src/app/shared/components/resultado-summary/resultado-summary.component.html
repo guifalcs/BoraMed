@@ -79,7 +79,7 @@
                 [class.bg-[var(--color-success)]]="d.total > 0 && (d.acertos / d.total) >= 0.7"
                 [class.bg-[var(--color-warning)]]="d.total > 0 && (d.acertos / d.total) >= 0.5 && (d.acertos / d.total) < 0.7"
                 [class.bg-[var(--color-danger)]]="d.total === 0 || (d.acertos / d.total) < 0.5"
-                [style.width.%]="d.total > 0 (d.acertos / d.total) * 100 : 0"
+                [style.width.%]="d.total > 0 ? (d.acertos / d.total) * 100 : 0"
               ></div>
             </div>
           </li>

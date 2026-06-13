@@ -253,17 +253,17 @@ export class OnboardingService {
 
   private mapRowToState(row: OnboardingStateRow): IOnboardingState {
     return {
-      userId: row.user_id,
-      flowKey: row.flow_key,
-      flowVersion: row.flow_version,
+      userId: row.user_id!,
+      flowKey: row.flow_key!,
+      flowVersion: row.flow_version!,
       status: row.status as OnboardingStatus,
-      currentStep: row.current_step,
-      startedAt: row.started_at,
-      completedAt: row.completed_at,
-      skippedAt: row.skipped_at,
-      metadata: row.metadata,
-      criadoEm: row.criado_em,
-      atualizadoEm: row.atualizado_em,
+      currentStep: row.current_step ?? null,
+      startedAt: row.started_at ?? null,
+      completedAt: row.completed_at ?? null,
+      skippedAt: row.skipped_at ?? null,
+      metadata: row.metadata!,
+      criadoEm: row.criado_em!,
+      atualizadoEm: row.atualizado_em!,
     };
   }
 

@@ -45,7 +45,7 @@ export class QuestaoAnotacaoComponent implements OnDestroy {
 
   constructor() {
     effect(() => {
-      const conteudo = this.conteudo()   '';
+      const conteudo = this.conteudo() ?? '';
       if (!this.tocado()) {
         this.texto.set(conteudo);
       }

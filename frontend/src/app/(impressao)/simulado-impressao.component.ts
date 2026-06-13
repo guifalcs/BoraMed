@@ -116,7 +116,7 @@ export class SimuladoImpressaoComponent {
   protected readonly tamanhosFonte: TamanhoFonteImpressao[] = ['compacto', 'normal', 'grande'];
 
   protected fonteBtnClass(t: TamanhoFonteImpressao): string {
-    const base = 'rounded border px-2 py-0.5 text-xs capitalize';
+    const base = 'flex-1 rounded border px-1.5 py-0.5 text-center text-xs capitalize';
     return this.opcoes().tamanhoFonte === t
       ? `${base} border-[var(--color-primary)] text-[var(--color-primary)]`
       : `${base} border-[var(--color-border)] text-[var(--color-text-muted)]`;
