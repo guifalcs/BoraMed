@@ -65,23 +65,19 @@
 
         <!-- Botão iniciar -->
         @if (prova()!.qtd_questoes > 0) {
-          <div class="flex gap-3">
-            <div class="flex-[1]">
-              <app-ui-button
-                label="Imprimir"
-                variant="secondary"
-                [disabled]="iniciando()"
-                (buttonClick)="imprimir()"
-              />
-            </div>
-            <div class="flex-[3]">
-              <app-ui-button
-                label="Iniciar prova"
-                [loading]="iniciando()"
-                loadingLabel="Iniciando..."
-                (buttonClick)="iniciar()"
-              />
-            </div>
+          <div class="flex flex-col gap-3">
+            <app-ui-button
+              label="Iniciar prova"
+              [loading]="iniciando()"
+              loadingLabel="Iniciando..."
+              (buttonClick)="iniciar()"
+            />
+            <app-ui-button
+              label="Imprimir"
+              variant="secondary"
+              [disabled]="iniciando()"
+              (buttonClick)="imprimir()"
+            />
           </div>
         } @else {
           <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 text-center">
