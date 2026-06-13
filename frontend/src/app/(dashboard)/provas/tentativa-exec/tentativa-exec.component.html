@@ -24,9 +24,11 @@
     [modo]="modo()"
     [isPaused]="isPaused()"
     [salvando]="salvando()"
+    [focoAtivo]="focoMode.ativo()"
     (finalizar)="onFinalizar()"
     (togglePausar)="onTogglePausar()"
     (sair)="onSair()"
+    (toggleFoco)="focoMode.toggle()"
   />
 
   <div class="mx-auto max-w-3xl px-4 py-6">
@@ -42,22 +44,24 @@
       />
 
       <!-- Botão marcar para revisão -->
-      <div class="mt-3 flex justify-end">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-          [class.bg-amber-100]="questaoAtualMarcada()"
-          [class.text-amber-700]="questaoAtualMarcada()"
-          [class.text-[var(--color-text-muted)]]="!questaoAtualMarcada()"
-          [class.hover:bg-amber-50]="!questaoAtualMarcada()"
-          [class.hover:text-amber-600]="!questaoAtualMarcada()"
-          (click)="toggleMarcar()"
-          [attr.aria-label]="questaoAtualMarcada() ? 'Remover marcação de revisão' : 'Marcar para revisão'"
-        >
-          <app-ui-icon [icon]="bookmarkIcon" [size]="14" />
-          {{ questaoAtualMarcada() ? 'Marcada para revisão' : 'Marcar para revisão' }}
-        </button>
-      </div>
+      @if (!focoMode.ativo()) {
+        <div class="mt-3 flex justify-end">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+            [class.bg-amber-100]="questaoAtualMarcada()"
+            [class.text-amber-700]="questaoAtualMarcada()"
+            [class.text-[var(--color-text-muted)]]="!questaoAtualMarcada()"
+            [class.hover:bg-amber-50]="!questaoAtualMarcada()"
+            [class.hover:text-amber-600]="!questaoAtualMarcada()"
+            (click)="toggleMarcar()"
+            [attr.aria-label]="questaoAtualMarcada() ? 'Remover marcação de revisão' : 'Marcar para revisão'"
+          >
+            <app-ui-icon [icon]="bookmarkIcon" [size]="14" />
+            {{ questaoAtualMarcada() ? 'Marcada para revisão' : 'Marcar para revisão' }}
+          </button>
+        </div>
+      }
 
       <!-- Anúncio para screen readers -->
       <div class="sr-only" aria-live="polite" aria-atomic="true">
@@ -105,9 +109,11 @@
       </nav>
 
       <!-- Dica de atalhos de teclado -->
-      <p class="mt-2 hidden text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:block">
-        ← → para navegar &nbsp;·&nbsp; A–E ou 1–5 para responder &nbsp;·&nbsp; M para marcar
-      </p>
+      @if (!focoMode.ativo()) {
+        <p class="mt-2 hidden text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:block">
+          ← → para navegar &nbsp;·&nbsp; A–E ou 1–5 para responder &nbsp;·&nbsp; M para marcar
+        </p>
+      }
 
       <!-- Grade de questões: recolhível no mobile, sempre visível no desktop -->
       <div class="mt-4">

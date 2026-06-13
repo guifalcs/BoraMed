@@ -16,6 +16,7 @@ import { AppNotificacaoService } from '../core/services/app-notification.service
 import { AvisoModalComponent } from '../shared/components/aviso-modal/aviso-modal.component';
 import { NotificacoesSinoComponent } from '../shared/components/notificacoes-sino/notificacoes-sino.component';
 import { SuporteWidgetComponent } from '../shared/components/suporte-widget/suporte-widget.component';
+import { FocoModoService } from '../core/services/foco-modo.service';
 
 interface NavItem {
   label: string;
@@ -42,6 +43,7 @@ export class DashboardComponent {
   protected readonly onboarding = inject(OnboardingService);
   private readonly avisoService = inject(AvisoService);
   private readonly notifService = inject(AppNotificacaoService);
+  protected readonly focoMode = inject(FocoModoService);
 
   protected readonly logOutIcon = LogOut;
   protected readonly userIcon = User;

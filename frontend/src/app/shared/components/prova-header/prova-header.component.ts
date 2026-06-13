@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { ArrowLeft, Flag, Pause, Play } from 'lucide-angular';
+import { ArrowLeft, Flag, Maximize2, Minimize2, Pause, Play } from 'lucide-angular';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { TimerComponent } from '../timer/timer.component';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
@@ -19,15 +19,19 @@ export class ProvaHeaderComponent {
   modo = input.required<ModoProva>();
   isPaused = input<boolean>(false);
   salvando = input<boolean>(false);
+  focoAtivo = input<boolean>(false);
 
   finalizar = output<void>();
   togglePausar = output<void>();
   sair = output<void>();
+  toggleFoco = output<void>();
 
   protected readonly pauseIcon = Pause;
   protected readonly playIcon = Play;
   protected readonly arrowLeftIcon = ArrowLeft;
   protected readonly flagIcon = Flag;
+  protected readonly expandIcon = Maximize2;
+  protected readonly shrinkIcon = Minimize2;
 
   protected readonly progressoPercent = computed(() =>
     this.totalQuestoes() > 0

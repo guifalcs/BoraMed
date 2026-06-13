@@ -14,6 +14,7 @@ import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { FocoModoService } from '../../../core/services/foco-modo.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
@@ -38,6 +39,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   private readonly provaService = inject(ProvaService);
   private readonly timer = inject(TimerService);
   private readonly notifications = inject(NotificationService);
+  protected readonly focoMode = inject(FocoModoService);
 
   protected readonly tentativa = signal<Tentativa | null>(null);
   protected readonly questoes = signal<QuestaoComAlternativas[]>([]);
@@ -158,6 +160,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     const segundos = this.timer.seconds();
     this.timer.stop();
+    this.focoMode.desativar();
     const tentativa = this.tentativa();
     if (!this._finalizado && tentativa) {
       void this.tentativaService.pausar(tentativa.id, segundos);

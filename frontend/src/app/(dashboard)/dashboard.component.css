@@ -254,6 +254,33 @@
 
 /* ── Mobile ──────────────────────────────────────────── */
 
+/* ── Modo Foco ───────────────────────────────────────── */
+
+.shell--foco {
+  grid-template-columns: 1fr;
+}
+
+.shell--foco .sidebar,
+.shell--foco .mobile-header,
+.shell--foco .mobile-notif-float,
+.shell--foco .bottom-nav {
+  display: none !important;
+}
+
+.shell--foco app-suporte-widget,
+.shell--foco app-onboarding-tour {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .shell--foco .main-content {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+/* ────────────────────────────────────────────────────── */
+
 @media (max-width: 767px) {
   .shell {
     grid-template-columns: 1fr;
