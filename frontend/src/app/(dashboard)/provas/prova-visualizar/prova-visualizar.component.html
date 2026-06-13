@@ -4,7 +4,7 @@
     class="mb-6 flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
   >
     <app-ui-icon [icon]="chevronLeftIcon" [size]="16" />
-    {{ tentativaId() 'Voltar para o resultado' : 'Voltar para a prova' }}
+    {{ tentativaId() ? 'Voltar para o resultado' : 'Voltar para a prova' }}
   </a>
 
   @if (tituloPagina()) {
@@ -29,7 +29,7 @@
 
   @if (mostrarAnotacoes() && !anotacoesErro()) {
     <p class="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800">
-      Suas anotacoes ficam salvas apenas nesta tentativa e nesta questao.
+      Suas anotações ficam salvas apenas nesta tentativa e nesta questão.
     </p>
   }
 
@@ -81,7 +81,7 @@
               [questao]="q"
               [numero]="i + 1"
               modo="visualizar"
-              [respostaSelecionada]="respostasMap().get(q.id)   null"
+              [respostaSelecionada]="respostasMap().get(q.id) ?? null"
               [alternativaCorreta]="null"
               [gabaritioVisivel]="true"
               (responder)="$event"
