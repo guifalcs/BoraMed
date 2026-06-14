@@ -17,11 +17,12 @@ import { QuestaoCardComponent } from '../../../shared/components/questao-card/qu
 import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-anotacao/questao-anotacao.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { QuestaoComentariosComponent } from '../../../shared/components/questao-comentarios/questao-comentarios.component';
 
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, QuestaoComentariosComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

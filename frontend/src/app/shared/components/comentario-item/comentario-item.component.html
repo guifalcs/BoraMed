@@ -1,0 +1,196 @@
+@let c = comentario();
+
+<article
+  class="flex gap-3"
+  [class.pl-6]="nivel() === 1"
+  [class.sm:pl-8]="nivel() === 1"
+>
+  <!-- Avatar -->
+  @if (c.avatar_url !== null || c.user_id !== null) {
+    <app-ui-avatar
+      [name]="c.nome_display"
+      [avatarUrl]="c.avatar_url"
+      size="sm"
+      class="shrink-0"
+    />
+  } @else {
+    <div
+      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400"
+      aria-label="Usuário anônimo"
+    >
+      <app-ui-icon [icon]="userXIcon" [size]="14" />
+    </div>
+  }
+
+  <!-- Body -->
+  <div class="min-w-0 flex-1">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center gap-1.5 text-xs">
+      <span class="font-semibold text-[var(--color-text)]">{{ c.nome_display }}</span>
+      <span class="text-[var(--color-text-muted)]">·</span>
+      <span class="text-[var(--color-text-muted)]">{{ c.criado_em | timeAgo }}</span>
+      @if (c.editado) {
+        <span class="text-[var(--color-text-muted)]">· editado</span>
+      }
+    </div>
+
+    <!-- Conteúdo -->
+    @if (c.status === 'removido') {
+      <p class="mt-1 text-sm italic text-[var(--color-text-muted)]">Comentário removido.</p>
+    } @else if (editando()) {
+      <div class="mt-2">
+        <textarea
+          class="w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm leading-6 text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+          rows="3"
+          [value]="textoEdicao()"
+          placeholder="Editar comentário..."
+          (input)="onInputEdicao($event)"
+        ></textarea>
+        <div class="mt-1.5 flex gap-2">
+          <button
+            type="button"
+            class="rounded-md bg-[var(--color-primary)] px-3 py-1 text-xs font-medium text-white hover:opacity-90"
+            (click)="confirmarEdicao()"
+          >
+            Salvar
+          </button>
+          <button
+            type="button"
+            class="rounded-md border border-[var(--color-border)] px-3 py-1 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            (click)="cancelarEdicao()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    } @else {
+      <p class="mt-1 whitespace-pre-wrap break-words text-sm text-[var(--color-text)]">{{ c.conteudo }}</p>
+    }
+
+    <!-- Ações -->
+    @if (c.status !== 'removido') {
+      <div class="mt-2 flex flex-wrap items-center gap-3">
+        <!-- Like -->
+        <button
+          type="button"
+          class="flex items-center gap-1 text-xs transition-colors"
+          [class.text-indigo-600]="c.meu_voto === 1"
+          [class.text-[var(--color-text-muted)]]="c.meu_voto !== 1"
+          [class.hover:text-indigo-600]="c.meu_voto !== 1"
+          aria-label="Curtir comentário"
+          (click)="onVotar(1)"
+        >
+          <app-ui-icon [icon]="thumbsUpIcon" [size]="14" />
+          <span>{{ c.likes }}</span>
+        </button>
+
+        <!-- Dislike -->
+        <button
+          type="button"
+          class="flex items-center gap-1 text-xs transition-colors"
+          [class.text-red-500]="c.meu_voto === -1"
+          [class.text-[var(--color-text-muted)]]="c.meu_voto !== -1"
+          [class.hover:text-red-500]="c.meu_voto !== -1"
+          aria-label="Não curtir comentário"
+          (click)="onVotar(-1)"
+        >
+          <app-ui-icon [icon]="thumbsDownIcon" [size]="14" />
+          <span>{{ c.dislikes }}</span>
+        </button>
+
+        <!-- Responder: apenas raiz -->
+        @if (nivel() === 0) {
+          <button
+            type="button"
+            class="text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-primary)]"
+            (click)="toggleFormResposta()"
+          >
+            Responder
+          </button>
+        }
+
+        <!-- Editar / Excluir: apenas dono -->
+        @if (c.is_me) {
+          <button
+            type="button"
+            class="flex items-center gap-1 text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+            aria-label="Editar comentário"
+            (click)="iniciarEdicao()"
+          >
+            <app-ui-icon [icon]="pencilIcon" [size]="13" />
+            <span>Editar</span>
+          </button>
+
+          <button
+            type="button"
+            class="flex items-center gap-1 text-xs text-[var(--color-text-muted)] transition-colors hover:text-red-500"
+            aria-label="Excluir comentário"
+            (click)="onExcluir()"
+          >
+            <app-ui-icon [icon]="trash2Icon" [size]="13" />
+            <span>Excluir</span>
+          </button>
+        }
+
+        <!-- Denunciar: apenas quando não é o dono -->
+        @if (!c.is_me) {
+          <button
+            type="button"
+            class="ml-auto flex items-center gap-1 text-xs text-[var(--color-text-muted)] transition-colors hover:text-amber-500"
+            aria-label="Denunciar comentário"
+            (click)="onDenunciar()"
+          >
+            <app-ui-icon [icon]="flagIcon" [size]="13" />
+            <span class="sr-only">Denunciar</span>
+          </button>
+        }
+      </div>
+
+      <!-- Form de resposta -->
+      @if (nivel() === 0 && mostrarFormResposta()) {
+        <div class="mt-3">
+          <textarea
+            class="w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm leading-6 text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            rows="3"
+            [value]="textoResposta()"
+            placeholder="Escrever resposta..."
+            (input)="onInputResposta($event)"
+          ></textarea>
+          <div class="mt-1.5 flex gap-2">
+            <button
+              type="button"
+              class="rounded-md bg-[var(--color-primary)] px-3 py-1 text-xs font-medium text-white hover:opacity-90"
+              (click)="confirmarResposta()"
+            >
+              Responder
+            </button>
+            <button
+              type="button"
+              class="rounded-md border border-[var(--color-border)] px-3 py-1 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              (click)="cancelarResposta()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Respostas (apenas nível 0) -->
+    @if (nivel() === 0 && c.respostas.length > 0) {
+      <div class="mt-4 space-y-4 border-l-2 border-[var(--color-border)] pl-4">
+        @for (reply of c.respostas; track reply.id) {
+          <app-comentario-item
+            [comentario]="reply"
+            [nivel]="1"
+            (votar)="votar.emit($event)"
+            (denunciar)="denunciar.emit($event)"
+            (editar)="editar.emit($event)"
+            (excluir)="excluir.emit($event)"
+            (responder)="responder.emit($event)"
+          />
+        }
+      </div>
+    }
+  </div>
+</article>

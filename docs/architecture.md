@@ -145,3 +145,15 @@
  **Data** : 2026-06
  **Decisão** : A impressão/PDF de simulados usa `window.print()` + `@media print` (variantes `print:` do Tailwind), em uma rota dedicada fora do dashboard (`/imprimir/simulado/:provaId` e `/imprimir/simulado/montado`). Não há biblioteca de PDF nem geração server-side. Os dados vêm de duas RPCs SECURITY DEFINER: `get_simulado_impressao(uuid, boolean)` para simulados existentes (provas prontas via `prova_questao`; montados via `tentativa_resposta` da tentativa mais recente) e `gerar_simulado_impressao(uuid[], int, text, text)` para montar um simulado só para impressão sem criar prova/tentativa. O gabarito (`correta`/`explicacao`) só é exposto após o aluno finalizar a prova (ou admin), espelhando `get_revisao_prova`.
  **Motivo** : O print nativo entrega texto vetorial nítido, imagens em alta, quebra de página por CSS e zero dependência/manutenção extra, contra rasterização e reconstrução manual de markdown/imagens das libs de PDF. A geração só-impressão mantém o histórico limpo e o mascaramento server-side do gabarito preserva a integridade do ranking/gamificação.
+
+## ADR-024: Comentários públicos por questão com provider isolado por instância
+
+ **Data** : 2026-06
+ **Decisão** : `ComentarioQuestaoService` é declarado com `@Injectable()` sem `providedIn: 'root'` e provido via `providers: [ComentarioQuestaoService]` no decorator do `QuestaoComentariosComponent`. Na tela de revisão (`prova-visualizar`), múltiplas instâncias do componente coexistem no mesmo `@for`, cada uma com seu próprio estado isolado.
+ **Motivo** : Comentários de questões diferentes são independentes. Um service singleton com `Map<questaoId, estado>` gerenciaria estado morto de questões não visíveis e complicaria o cleanup. O escopo de componente garante que o estado é destruído junto com o componente e elimina colisão entre acordeons simultâneos.
+
+## ADR-023: Suspensão administrativa preserva acesso ao suporte
+
+ **Data** : 2026-06
+ **Decisão** : Usuários suspensos são marcados em `profiles` (`banido`, `banido_em`, `banido_por`, `motivo_banimento`) por RPC administrativa, não pelo ban nativo do Supabase Auth. A sessão autenticada permanece válida para que a rota fixa `/conta-suspensa` consiga exibir o estado da conta e manter o widget de suporte disponível. Tabelas fora do suporte recebem policy RLS restritiva para negar acesso a perfis suspensos.
+ **Motivo** : O ban nativo do Auth impediria login/refresh e bloquearia o canal autenticado de suporte. O bloqueio em aplicação permite restringir a navegação normal e remover permissões administrativas (`is_admin()`/`is_super_admin()` ignoram perfis suspensos), mantendo um canal formal para contestação ou esclarecimento.

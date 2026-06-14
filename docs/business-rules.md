@@ -78,6 +78,21 @@
 * Desafio diário deve exibir explicação pedagógica após a resposta quando a questão possuir `explicacao`
 * Desafio diário não deve depender de `questao.dificuldade`, pois a classificação de dificuldade foi removida do schema de questões.
 
+### Comentários Públicos por Questão
+
+* Comentários são públicos e atrelados ao `questao_id`, compartilhados entre todos os alunos que viram aquela questão em qualquer tentativa.
+* A seção de comentários é exibida como accordion recolhido por padrão. O estado (expandido/colapsado) é persistido em `localStorage` por questão (`bm_coment_exp_<questaoId>`).
+* O modo foco durante a execução de simulado oculta a seção de comentários por completo.
+* **Identidade do autor:** segue `profiles.competir_publico`. Usuários com opt-out aparecem como "Anônimo" sem avatar e sem `user_id` exposto. O próprio autor sempre vê seus comentários como "is_me", independentemente do opt-out.
+* **Replies:** suportado apenas um nível (comentário raiz + respostas diretas). Respostas não podem receber sub-respostas.
+* **Votos:** like (1) ou dislike (-1) por usuário. Repetir o mesmo voto remove-o (toggle). O contador é denormalizado em `likes`/`dislikes` e recalculado por trigger.
+* **Ordenação:** padrão "Mais relevantes" (`likes - dislikes DESC, criado_em DESC`). Usuário pode trocar para "Mais recentes" ou "Mais antigos".
+* **Moderação:** blocklist de termos pt-BR validada server-side no RPC de criação e edição (extensão `unaccent` para normalização). Conteúdo recusado retorna code `P0010`; o frontend exibe mensagem amigável. Além disso, qualquer aluno pode denunciar um comentário; as denúncias ficam na tabela `questao_comentario_denuncia` para revisão administrativa futura.
+* **Exclusão:** soft delete (status='removido') quando o comentário tem respostas ativas (preserva a thread); hard delete quando é folha sem respostas.
+* **Conteúdo:** texto puro, sem markdown. Exibido com `white-space: pre-wrap`.
+* **Comprimento:** mínimo 1, máximo 2000 caracteres.
+* Tela de moderação admin para revisar denúncias é um TODO futuro (tabela `questao_comentario_denuncia` já captura os dados).
+
 ## Fluxos Principais
 
 ### Onboarding de Novos Usuários
@@ -138,6 +153,10 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Admin: Arthur e Guilherme têm acesso total
 * Alterações de papel (`aluno`/`admin`) devem passar pela RPC `alterar_papel_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.
 * Apenas administradores podem alterar papéis, e um administrador não pode revogar o próprio acesso.
+* Suspensões de usuários devem passar pelas RPCs `admin_banir_usuario` e `admin_desbanir_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.
+* Um usuário suspenso permanece autenticado apenas para acessar a página fixa `/conta-suspensa` e o suporte. As demais rotas privadas devem redirecionar para a página de suspensão.
+* Tabelas de estudo, gamificação, notificações, avisos e administração devem ter policy restritiva que bloqueia perfis suspensos. Tabelas e RPCs de suporte permanecem acessíveis para abertura e acompanhamento de solicitações.
+* Administradores suspensos não contam como `admin` ou `super_admin` em funções de autorização. Nenhum administrador pode suspender a própria conta, e `super_admin` não pode ser suspenso.
 * Telas de aluno acessadas por impersonação devem usar o usuário autenticado efetivo como escopo; consultas de histórico/tentativas devem filtrar `user_id` explicitamente e gravações em `tentativa_resposta` devem passar por RPC que valida o dono da tentativa.
 * Buckets públicos de imagens podem expor arquivos por URL pública, mas não devem permitir listagem ampla de objetos pelo cliente.
 

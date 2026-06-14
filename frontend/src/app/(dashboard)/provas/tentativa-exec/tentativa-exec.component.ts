@@ -23,11 +23,12 @@ import { ProvaHeaderComponent } from '../../../shared/components/prova-header/pr
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { GradeItemComponent } from '../../../shared/components/grade-item/grade-item.component';
+import { QuestaoComentariosComponent } from '../../../shared/components/questao-comentarios/questao-comentarios.component';
 
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
-  imports: [ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent, GradeItemComponent],
+  imports: [ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent, GradeItemComponent, QuestaoComentariosComponent],
   providers: [TimerService],
   templateUrl: './tentativa-exec.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
