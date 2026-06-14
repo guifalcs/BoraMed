@@ -25,7 +25,7 @@
 
     <!-- Formato -->
     <section class="mb-8">
-      <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Formato da prova</h2>
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Formato da prova</h2>
       <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         @for (f of formatos; track f.value) {
           <button
@@ -34,8 +34,8 @@
             [disabled]="isLoadingTemas()"
             [attr.aria-busy]="isRecarregandoFormato() && formatoSelecionado() === f.value"
             [class]="formatoSelecionado() === f.value
-              ? 'flex min-h-32 flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 p-4 text-left transition-all disabled:cursor-wait disabled:opacity-80'
-              : 'flex min-h-32 flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)] disabled:cursor-wait disabled:opacity-60'"
+              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 px-4 py-3 text-left transition-all disabled:cursor-wait disabled:opacity-80'
+              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)] disabled:cursor-wait disabled:opacity-60'"
           >
             <span class="text-sm font-semibold" [class]="formatoSelecionado() === f.value ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'">
               {{ f.label }}
@@ -54,7 +54,7 @@
 
     <!-- Quantidade -->
     <section class="mb-8">
-      <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Quantidade de questões</h2>
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Quantidade de questões</h2>
       <div class="flex flex-wrap gap-2">
         @for (qtd of opcoesQtd; track qtd) {
           <button
@@ -73,11 +73,11 @@
     <!-- Temas -->
     <section class="mb-8">
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-[var(--color-text)]">
-          <app-ui-icon [icon]="filterIcon" [size]="14" class="mr-1 inline-block opacity-60" />
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          <app-ui-icon [icon]="filterIcon" [size]="12" class="mr-1 inline-block opacity-70" />
           Filtrar por temas
           @if (!isLoadingTemas()) {
-            <span class="ml-1 text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+            <span class="ml-1 normal-case tracking-normal font-normal">(opcional)</span>
           }
         </h2>
         <div class="flex gap-3">
@@ -174,7 +174,7 @@
 
     <!-- Modo -->
     <section class="mb-8">
-      <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Como você quer resolver?</h2>
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Como você quer resolver?</h2>
       <app-modo-selector
         [modo]="modoSelecionado()"
         (modoChange)="onModoChange($event)"

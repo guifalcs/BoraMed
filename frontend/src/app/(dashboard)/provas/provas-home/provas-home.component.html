@@ -24,150 +24,69 @@
       </a>
     }
 
-    <section class="space-y-4" aria-label="Tipos de simulado">
+    <section class="space-y-3" aria-label="Tipos de simulado">
+
+      <!-- Treinos Nacionais -->
       <a
         routerLink="/dashboard/simulados/rede-afya"
-        class="animate-gradient-shift group relative grid gap-4 overflow-hidden rounded-lg p-5 shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 md:grid-cols-[auto_minmax(0,1fr)] md:p-6 lg:min-h-[16rem] lg:grid-cols-[auto_minmax(0,1fr)_18rem] lg:items-center lg:gap-5 lg:p-7"
-        style="background: linear-gradient(145deg, #1E40AF 0%, #2451D8 25%, #6427D9 50%, #2451D8 75%, #1E40AF 100%);"
+        class="group relative flex items-center gap-6 overflow-hidden rounded-xl p-7 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 lg:p-9"
+        style="background: linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%);"
       >
         <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%);"></div>
 
-        <div class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur-sm lg:h-14 lg:w-14">
-          <app-ui-icon [icon]="bookOpenIcon" [size]="26" />
+        <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm">
+          <app-ui-icon [icon]="bookOpenIcon" [size]="28" />
         </div>
 
-        <div class="relative min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="text-xl font-bold text-white">Treinos nacionais</h2>
-          </div>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-white/80">
+        <div class="relative min-w-0 flex-1">
+          <h2 class="text-xl font-bold text-white">Treinos nacionais</h2>
+          <p class="mt-1.5 text-sm leading-relaxed text-white/75">
             Simulados autorais no modelo das avaliações nacionais, com formato fechado e ritmo de prova.
           </p>
-
-          <div class="mt-4 flex flex-wrap gap-2 lg:hidden">
-            <span class="rounded-lg bg-white/15 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm">
-              N1, N2 e TP
-            </span>
-            <span class="rounded-lg bg-white/15 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm">
-              Autorais
-            </span>
-            <span class="rounded-lg bg-white/15 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm">
-              Ritmo de prova
-            </span>
-          </div>
-
-          <div class="mt-5 hidden gap-3 lg:grid lg:grid-cols-3">
-            <div class="rounded-lg bg-white/15 px-4 py-3 text-white backdrop-blur-sm">
-              <p class="text-xs font-semibold uppercase text-white/65">Formatos</p>
-              <p class="mt-1 text-sm font-bold">N1, N2 e Teste de Progresso</p>
-            </div>
-            <div class="rounded-lg bg-white/15 px-4 py-3 text-white backdrop-blur-sm">
-              <p class="text-xs font-semibold uppercase text-white/65">Questões</p>
-              <p class="mt-1 text-sm font-bold">Autorais e prontas</p>
-            </div>
-            <div class="rounded-lg bg-white/15 px-4 py-3 text-white backdrop-blur-sm">
-              <p class="text-xs font-semibold uppercase text-white/65">Uso ideal</p>
-              <p class="mt-1 text-sm font-bold">Treino com pressão de prova</p>
-            </div>
-          </div>
-
-          <div class="mt-5 hidden flex-wrap gap-x-5 gap-y-2 border-t border-white/15 pt-4 text-xs font-semibold text-white/75 lg:flex">
-            <span>Formato fechado</span>
-            <span>Correção ao final</span>
-            <span>Histórico de desempenho</span>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">N1, N2 e TP</span>
+            <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">Formato fechado</span>
+            <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">Correção ao final</span>
           </div>
         </div>
 
-        <div class="relative flex items-center justify-between gap-3 border-t border-white/20 pt-4 md:col-span-2 lg:col-span-1 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-          <div>
-            <p class="text-xs font-semibold uppercase text-white/65">Caminho direto</p>
-            <p class="mt-1 text-sm font-semibold text-white">Escolher um treino</p>
-          </div>
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur-sm transition-transform group-hover:translate-x-1">
-            <app-ui-icon [icon]="arrowRightIcon" [size]="20" />
-          </span>
-        </div>
+        <span class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm transition-transform group-hover:translate-x-1">
+          <app-ui-icon [icon]="arrowRightIcon" [size]="20" />
+        </span>
       </a>
 
       <div class="flex items-center gap-4 py-1">
         <div class="h-px flex-1 bg-[var(--color-border)]"></div>
-        <p class="max-w-[18rem] text-center text-xs font-semibold uppercase text-[var(--color-text-muted)] sm:max-w-none">
-          Ou ajuste o simulado ao que precisa revisar agora
-        </p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">ou</p>
         <div class="h-px flex-1 bg-[var(--color-border)]"></div>
       </div>
 
+      <!-- Montar Simulado -->
       <a
         routerLink="/dashboard/simulados/montar"
-        class="group grid gap-4 rounded-lg border border-l-4 border-[var(--color-border)] border-l-emerald-500 bg-[var(--color-surface)] p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:border-l-emerald-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 md:grid-cols-[auto_minmax(0,1fr)] md:p-6 lg:min-h-[16rem] lg:grid-cols-[auto_minmax(0,1fr)_18rem] lg:items-center lg:gap-5 lg:p-7"
+        class="group flex items-center gap-6 rounded-xl border border-l-4 border-[var(--color-border)] border-l-emerald-500 bg-[var(--color-surface)] p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:border-l-emerald-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 lg:p-9"
       >
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 lg:h-14 lg:w-14">
-          <app-ui-icon [icon]="shuffleIcon" [size]="26" />
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+          <app-ui-icon [icon]="shuffleIcon" [size]="28" />
         </div>
 
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="text-xl font-bold text-[var(--color-text)]">Montar simulado</h2>
-            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Personalizado
-            </span>
-          </div>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-text-muted)]">
-            Defina formato, temas e quantidade para gerar um simulado server-side com foco na sua revisão.
+        <div class="min-w-0 flex-1">
+          <h2 class="text-xl font-bold text-[var(--color-text)]">Montar simulado</h2>
+          <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
+            Escolha temas, quantidade e modo para gerar um simulado personalizado com foco na sua revisão.
           </p>
-
-          <div class="mt-4 flex flex-wrap gap-2 lg:hidden">
-            <span class="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-xs font-semibold text-[var(--color-text)]">
-              Temas
-            </span>
-            <span class="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-xs font-semibold text-[var(--color-text)]">
-              Quantidade
-            </span>
-            <span class="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-xs font-semibold text-[var(--color-text)]">
-              Modo
-            </span>
-          </div>
-
-          <div class="mt-5 hidden gap-3 lg:grid lg:grid-cols-3">
-            <div class="rounded-lg bg-[var(--color-surface-2)] px-4 py-3">
-              <p class="flex items-center gap-2 text-xs font-semibold uppercase text-[var(--color-text-muted)]">
-                <app-ui-icon [icon]="targetIcon" [size]="15" />
-                Temas
-              </p>
-              <p class="mt-1 text-sm font-bold text-[var(--color-text)]">Escolha o foco</p>
-            </div>
-            <div class="rounded-lg bg-[var(--color-surface-2)] px-4 py-3">
-              <p class="flex items-center gap-2 text-xs font-semibold uppercase text-[var(--color-text-muted)]">
-                <app-ui-icon [icon]="clipboardListIcon" [size]="15" />
-                Quantidade
-              </p>
-              <p class="mt-1 text-sm font-bold text-[var(--color-text)]">Defina o tamanho</p>
-            </div>
-            <div class="rounded-lg bg-[var(--color-surface-2)] px-4 py-3">
-              <p class="flex items-center gap-2 text-xs font-semibold uppercase text-[var(--color-text-muted)]">
-                <app-ui-icon [icon]="playCircleIcon" [size]="15" />
-                Modo
-              </p>
-              <p class="mt-1 text-sm font-bold text-[var(--color-text)]">Simulado ou estudo</p>
-            </div>
-          </div>
-
-          <div class="mt-5 hidden flex-wrap gap-x-5 gap-y-2 border-t border-[var(--color-border)] pt-4 text-xs font-semibold text-[var(--color-text-muted)] lg:flex">
-            <span>Processual</span>
-            <span>Laboratório com imagem</span>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Por tema</span>
+            <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Processual</span>
+            <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Laboratório com imagem</span>
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-3 border-t border-[var(--color-border)] pt-4 md:col-span-2 lg:col-span-1 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-          <div>
-            <p class="text-xs font-semibold uppercase text-[var(--color-text-muted)]">Caminho flexível</p>
-            <p class="mt-1 text-sm font-semibold text-[var(--color-text)]">Configurar prática</p>
-          </div>
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition-transform group-hover:translate-x-1">
-            <app-ui-icon [icon]="arrowRightIcon" [size]="20" />
-          </span>
-        </div>
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-transform group-hover:translate-x-1">
+          <app-ui-icon [icon]="arrowRightIcon" [size]="20" />
+        </span>
       </a>
+
     </section>
   </div>
 </div>
