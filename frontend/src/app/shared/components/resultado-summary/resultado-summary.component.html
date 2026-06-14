@@ -156,25 +156,19 @@
       <div class="flex flex-col gap-3 sm:flex-row">
         <a
           class="flex-1"
+          [routerLink]="['/imprimir/simulado', provaId()]"
+          [queryParams]="{ gabarito: 1 }"
+        >
+          <app-ui-button label="Imprimir com gabarito" variant="secondary" />
+        </a>
+        <a
+          class="flex-1"
           [routerLink]="['/dashboard/simulados', provaId(), 'tentativa', resultado().tentativa.id, 'revisao']"
           [state]="{ fromResultado: true }"
         >
           <app-ui-button label="Revisar e anotar" variant="primary" />
         </a>
-        <a
-          class="flex-1"
-          [routerLink]="rotaRefazerEstudo()"
-          [queryParams]="queryParamsRefazerEstudo()"
-        >
-          <app-ui-button [label]="labelRefazerEstudo()" variant="secondary" />
-        </a>
       </div>
-      <a
-        [routerLink]="['/imprimir/simulado', provaId()]"
-        [queryParams]="{ gabarito: 1 }"
-      >
-        <app-ui-button label="Imprimir com gabarito" variant="secondary" />
-      </a>
     }
 
     <div class="text-center">

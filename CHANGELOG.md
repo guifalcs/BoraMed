@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-14 | UX | sem commit
+
+**Ações finais do resultado de simulado**
+
+- Resultado passa a exibir `Imprimir com gabarito` e `Revisar e anotar` na mesma linha final.
+- O CTA primário colorido `Revisar e anotar` fica à direita, enquanto impressão ocupa a ação secundária à esquerda.
+- Atualizados `docs/business-rules.md` e `docs/design-system.md`.
+
+---
+
 ## 2026-06-13 | Feature | sem commit
 
 **Anota??es por quest?o em revis?o de tentativa**

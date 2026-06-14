@@ -257,5 +257,15 @@ describe('ResultadoSummaryComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(el.textContent).toContain('Montar treino em modo estudo');
     });
+
+    it('exibe imprimir antes de revisar na linha final de acoes', async () => {
+      await setup(resultadoFactory());
+
+      const el = fixture.nativeElement as HTMLElement;
+      const botoes = Array.from(el.querySelectorAll('app-ui-button button'))
+        .map((button) => button.textContent?.trim() ?? '');
+
+      expect(botoes.slice(-2)).toEqual(['Imprimir com gabarito', 'Revisar e anotar']);
+    });
   });
 });

@@ -45,6 +45,7 @@
 * Quando múltiplos temas tiverem o mesmo menor aproveitamento, o resultado deve comunicar o conjunto de temas críticos sem eleger arbitrariamente um único pior tema
 * Treinos recomendados abrem a montagem de simulado com o tema pré-selecionado e modo estudo quando o objetivo for revisão
 * Ao finalizar uma tentativa, a tela de resultado deve oferecer próximos passos objetivos, incluindo a revisão dos erros e o refazer em modo estudo
+* Na linha final de ações do resultado, o botão secundário de impressão com gabarito fica à esquerda e o CTA primário `Revisar e anotar` fica à direita
 * Anotações de revisão pertencem sempre ao par `tentativa_id + questao_id` do próprio usuário. A mesma questão em outra tentativa não deve exibir nem herdar a anotação anterior.
 * Anotações ficam disponíveis apenas na revisão de tentativas finalizadas. A execução cronometrada do simulado não deve exibir editor de anotação para não competir com resposta, timer e navegação.
 * Uma anotação só pode ser criada para questão que realmente exista em `tentativa_resposta` daquela tentativa. A validação deve ser server-side e protegida por RLS/RPC.

@@ -291,6 +291,7 @@ justify-content: space-between;
 * `50-69%`: `--color-warning`.
 * `< 50%`: `--color-danger`.
 * Incluir barra de progresso por tema e lista de questões com link para revisão.
+* A linha final de ações deve manter `Imprimir com gabarito` como botão secundário à esquerda e `Revisar e anotar` como botão primário à direita em telas `sm+`; em mobile, empilhar nessa mesma ordem.
 
 ### Hub De Simulados
 
