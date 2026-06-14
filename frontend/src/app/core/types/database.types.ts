@@ -300,31 +300,58 @@ export type Database = {
       }
       profiles: {
         Row: {
+          atualizado_em?: string
+          avatar_url?: string | null
+          banido?: boolean
+          banido_em?: string | null
+          banido_por?: string | null
           competir_publico?: boolean
           criado_em?: string
           email?: string
           faculdade_rede?: string | null
           id?: string
+          motivo_banimento?: string | null
+          nome_completo?: string | null
           papel?: string
+          periodo?: number | null
           tipo_usuario?: string | null
+          ultimo_login?: string | null
         }
         Insert: {
+          atualizado_em?: string
+          avatar_url?: string | null
+          banido?: boolean
+          banido_em?: string | null
+          banido_por?: string | null
           competir_publico?: boolean
           criado_em?: string
           email?: string
           faculdade_rede?: string | null
           id?: string
+          motivo_banimento?: string | null
+          nome_completo?: string | null
           papel?: string
+          periodo?: number | null
           tipo_usuario?: string | null
+          ultimo_login?: string | null
         }
         Update: {
+          atualizado_em?: string
+          avatar_url?: string | null
+          banido?: boolean
+          banido_em?: string | null
+          banido_por?: string | null
           competir_publico?: boolean
           criado_em?: string
           email?: string
           faculdade_rede?: string | null
           id?: string
+          motivo_banimento?: string | null
+          nome_completo?: string | null
           papel?: string
+          periodo?: number | null
           tipo_usuario?: string | null
+          ultimo_login?: string | null
         }
         Relationships: []
       }
@@ -911,13 +938,22 @@ export type Database = {
       alterar_papel_usuario: {
         Args: { p_papel: string; p_user_id: string }
         Returns: {
+          atualizado_em?: string
+          avatar_url?: string | null
+          banido?: boolean
+          banido_em?: string | null
+          banido_por?: string | null
           competir_publico?: boolean
           criado_em?: string
           email?: string
           faculdade_rede?: string | null
           id?: string
+          motivo_banimento?: string | null
+          nome_completo?: string | null
           papel?: string
+          periodo?: number | null
           tipo_usuario?: string | null
+          ultimo_login?: string | null
         }
         SetofOptions: {
           from: "*"
@@ -925,6 +961,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_banir_usuario: {
+        Args: { p_motivo?: string | null; p_user_id: string }
+        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+      }
+      admin_desbanir_usuario: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Tables"]["profiles"]["Row"]
       }
       conceder_xp_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
       finalizar_tentativa: {
@@ -970,6 +1014,7 @@ export type Database = {
         Returns: Json
       }
       is_admin: { Args: { uid?: string }; Returns: boolean }
+      is_banned: { Args: { uid?: string }; Returns: boolean }
       is_super_admin: { Args: { uid?: string }; Returns: boolean }
       listar_temas_com_contagem: {
         Args: { p_tipo_questao?: string }

@@ -1,0 +1,174 @@
+<main class="suspensa-page">
+  <section class="suspensa-panel" aria-labelledby="titulo-conta-suspensa">
+    <img
+      src="brand/logo.webp"
+      alt="BoraMed"
+      class="suspensa-logo"
+      width="400"
+      height="128"
+      decoding="async"
+    />
+
+    <div class="status-pill">Conta suspensa</div>
+
+    <h1 id="titulo-conta-suspensa">Seu acesso à plataforma está temporariamente suspenso.</h1>
+
+    <p>
+      Identificamos conduta incompatível com as diretrizes de uso do BoraMed ou
+      uma possível violação das regras da plataforma. Por esse motivo, o acesso
+      aos recursos acadêmicos, ao histórico, aos simulados e às áreas
+      administrativas foi interrompido.
+    </p>
+
+    <p>
+      Durante a suspensão, você poderá utilizar apenas o suporte para solicitar
+      esclarecimentos, apresentar informações adicionais ou pedir a revisão da
+      decisão. Nossa equipe analisará a solicitação e responderá pelo próprio
+      canal de atendimento.
+    </p>
+
+    @if (profile()?.banido_em) {
+      <p class="suspensa-meta">
+        Suspensão registrada em {{ profile()?.banido_em | date:'dd/MM/yyyy HH:mm' }}.
+      </p>
+    }
+
+    @if (profile()?.motivo_banimento) {
+      <div class="motivo-box">
+        <span>Motivo informado</span>
+        <p>{{ profile()?.motivo_banimento }}</p>
+      </div>
+    }
+
+    <div class="actions">
+      <button class="btn-secondary" type="button" (click)="sair()">
+        <app-ui-icon [icon]="logOutIcon" [size]="18" />
+        <span>Sair da conta</span>
+      </button>
+    </div>
+  </section>
+
+  <app-suporte-widget />
+</main>
+
+<style>
+  .suspensa-page {
+    min-height: 100vh;
+    background: #f8fafc;
+    color: #1e293b;
+    display: grid;
+    place-items: center;
+    padding: 2rem 1rem;
+  }
+
+  .suspensa-panel {
+    width: min(100%, 720px);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  }
+
+  .suspensa-logo {
+    width: 164px;
+    height: auto;
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0 0.625rem;
+    border-radius: 4px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 1rem 0;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: #0f172a;
+  }
+
+  p {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #475569;
+  }
+
+  .suspensa-meta {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+
+  .motivo-box {
+    margin: 1.25rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+  }
+
+  .motivo-box span {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #991b1b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .motivo-box p {
+    margin: 0;
+    color: #7f1d1d;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 1.5rem;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover {
+    background: #f1f5f9;
+  }
+
+  @media (max-width: 640px) {
+    .suspensa-page {
+      align-items: start;
+      padding: 1rem;
+    }
+
+    .suspensa-panel {
+      padding: 1.25rem;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+    }
+  }
+</style>

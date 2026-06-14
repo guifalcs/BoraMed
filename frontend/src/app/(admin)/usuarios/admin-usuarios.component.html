@@ -25,6 +25,7 @@
           <th>Cadastro</th>
           <th>Último login</th>
           <th>Papel</th>
+          <th>Status</th>
           <th>Ação</th>
         </tr>
       </thead>
@@ -54,42 +55,120 @@
               </span>
             </td>
             <td>
+              @if (u.banido) {
+                <div class="status-cell">
+                  <span class="badge badge--banned">Suspenso</span>
+                  @if (u.banido_em) {
+                    <span class="status-date">{{ u.banido_em | date:'dd/MM/yyyy HH:mm' }}</span>
+                  }
+                </div>
+              } @else {
+                <span class="badge badge--active">Ativo</span>
+              }
+            </td>
+            <td>
               <div class="action-cell">
                 @if (u.papel === 'super_admin') {
                   <span class="no-action">—</span>
                 } @else if (u.papel === 'aluno') {
                   @if (isSuperAdmin()) {
                     <button
-                      class="btn btn--sm btn--outline"
-                      [disabled]="processando() === u.id || impersonando()"
+                      class="icon-btn icon-btn--primary"
+                      type="button"
+                      [disabled]="processando() === u.id || impersonando() || u.banido"
+                      aria-label="Tornar admin"
+                      title="Tornar admin"
+                      data-tooltip="Tornar admin"
                       (click)="alterarPapel(u, 'admin')"
                     >
-                      Tornar admin
+                      <app-ui-icon [icon]="iconPromoverAdmin" [size]="16" />
                     </button>
                   }
                   <button
-                    class="btn btn--sm btn--ghost"
-                    [disabled]="impersonando()"
+                    class="icon-btn icon-btn--neutral"
+                    type="button"
+                    [disabled]="impersonando() || u.banido"
+                    aria-label="Entrar como usuário"
+                    title="Entrar como usuário"
+                    data-tooltip="Entrar como usuário"
                     (click)="solicitarImpersonar(u)"
                   >
-                    Entrar como
+                    <app-ui-icon [icon]="iconEntrarComo" [size]="16" />
                   </button>
+                  @if (podeBanir(u)) {
+                    <button
+                      class="icon-btn icon-btn--danger"
+                      type="button"
+                      [disabled]="processando() === u.id"
+                      aria-label="Suspender usuário"
+                      title="Suspender usuário"
+                      data-tooltip="Suspender usuário"
+                      (click)="solicitarBanir(u)"
+                    >
+                      <app-ui-icon [icon]="iconSuspender" [size]="16" />
+                    </button>
+                  } @else if (podeDesbanir(u)) {
+                    <button
+                      class="icon-btn icon-btn--primary"
+                      type="button"
+                      [disabled]="processando() === u.id"
+                      aria-label="Reativar usuário"
+                      title="Reativar usuário"
+                      data-tooltip="Reativar usuário"
+                      (click)="solicitarDesbanir(u)"
+                    >
+                      <app-ui-icon [icon]="iconReativar" [size]="16" />
+                    </button>
+                  }
                 } @else {
                   @if (isSuperAdmin()) {
                     <button
-                      class="btn btn--sm btn--ghost"
-                      [disabled]="impersonando()"
+                      class="icon-btn icon-btn--neutral"
+                      type="button"
+                      [disabled]="impersonando() || u.banido"
+                      aria-label="Entrar como usuário"
+                      title="Entrar como usuário"
+                      data-tooltip="Entrar como usuário"
                       (click)="solicitarImpersonar(u)"
                     >
-                      Entrar como
+                      <app-ui-icon [icon]="iconEntrarComo" [size]="16" />
                     </button>
                     <button
-                      class="btn btn--sm btn--danger"
-                      [disabled]="processando() === u.id"
+                      class="icon-btn icon-btn--danger"
+                      type="button"
+                      [disabled]="processando() === u.id || u.banido"
+                      aria-label="Revogar admin"
+                      title="Revogar admin"
+                      data-tooltip="Revogar admin"
                       (click)="solicitarRevogar(u)"
                     >
-                      Revogar admin
+                      <app-ui-icon [icon]="iconRevogarAdmin" [size]="16" />
                     </button>
+                    @if (podeBanir(u)) {
+                      <button
+                        class="icon-btn icon-btn--danger"
+                        type="button"
+                        [disabled]="processando() === u.id"
+                        aria-label="Suspender usuário"
+                        title="Suspender usuário"
+                        data-tooltip="Suspender usuário"
+                        (click)="solicitarBanir(u)"
+                      >
+                        <app-ui-icon [icon]="iconSuspender" [size]="16" />
+                      </button>
+                    } @else if (podeDesbanir(u)) {
+                      <button
+                        class="icon-btn icon-btn--primary"
+                        type="button"
+                        [disabled]="processando() === u.id"
+                        aria-label="Reativar usuário"
+                        title="Reativar usuário"
+                        data-tooltip="Reativar usuário"
+                        (click)="solicitarDesbanir(u)"
+                      >
+                        <app-ui-icon [icon]="iconReativar" [size]="16" />
+                      </button>
+                    }
                   } @else {
                     <span class="no-action">—</span>
                   }
@@ -122,6 +201,44 @@
     variante="primary"
     (confirmar)="confirmarImpersonar()"
     (cancelar)="cancelarImpersonar()"
+  />
+}
+
+@if (usuarioParaBanir()) {
+  <div class="modal-backdrop" role="presentation">
+    <section class="ban-dialog" role="dialog" aria-modal="true" aria-labelledby="ban-dialog-title">
+      <h2 id="ban-dialog-title">Suspender usuário</h2>
+      <p>
+        O usuário {{ usuarioParaBanir()!.nome_completo ?? usuarioParaBanir()!.email }}
+        será direcionado à página de conta suspensa e manterá acesso apenas ao suporte.
+      </p>
+      <label class="field-label" for="motivo-banimento">Motivo da suspensão</label>
+      <textarea
+        id="motivo-banimento"
+        class="reason-input"
+        rows="4"
+        maxlength="1000"
+        placeholder="Descreva objetivamente o motivo. Este texto poderá ser exibido ao usuário."
+        [ngModel]="motivoBanimento()"
+        (ngModelChange)="motivoBanimento.set($event)"
+      ></textarea>
+      <span class="field-hint">{{ motivoBanimento().length }}/1000 caracteres</span>
+      <div class="dialog-actions">
+        <button class="btn btn--ghost" type="button" (click)="cancelarBanir()">Cancelar</button>
+        <button class="btn btn--danger" type="button" (click)="confirmarBanir()">Suspender</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (usuarioParaDesbanir()) {
+  <app-ui-confirm-dialog
+    titulo="Reativar usuário"
+    [mensagem]="'Restaurar acesso de ' + (usuarioParaDesbanir()!.nome_completo ?? usuarioParaDesbanir()!.email) + '?'"
+    labelConfirmar="Reativar"
+    variante="primary"
+    (confirmar)="confirmarDesbanir()"
+    (cancelar)="cancelarDesbanir()"
   />
 }
 
@@ -184,7 +301,11 @@
   }
   .badge--admin { background: #ede9fe; color: #6d28d9; }
   .badge--super-admin { background: #fef3c7; color: #92400e; }
+  .badge--active { background: #dcfce7; color: #166534; }
+  .badge--banned { background: #fee2e2; color: #991b1b; }
   .no-action { font-size: 0.75rem; color: #94a3b8; }
+  .status-cell { display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start; }
+  .status-date { font-size: 0.72rem; color: #94a3b8; }
 
   .btn {
     display: inline-flex;
@@ -207,13 +328,115 @@
   .action-cell { display: flex; gap: 0.375rem; flex-wrap: wrap; align-items: center; }
   .btn--ghost { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
   .btn--ghost:hover:not(:disabled) { background: #e2e8f0; }
+  .icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+  }
+  .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .icon-btn--primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .icon-btn--primary:hover:not(:disabled) { background: #6d28d9; border-color: #6d28d9; }
+  .icon-btn--neutral { background: #f1f5f9; border-color: #e2e8f0; color: #475569; }
+  .icon-btn--neutral:hover:not(:disabled) { background: #e2e8f0; color: #334155; }
+  .icon-btn--danger { background: #ef4444; border-color: #ef4444; color: #fff; }
+  .icon-btn--danger:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
+  .icon-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.5rem);
+    z-index: 10;
+    width: max-content;
+    max-width: 12rem;
+    transform: translateX(-50%) translateY(0.25rem);
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-transform: none;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  }
+  .icon-btn::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.2rem);
+    z-index: 10;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: #0f172a;
+    transform: translateX(-50%) rotate(45deg);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+  }
+  .icon-btn:hover::after,
+  .icon-btn:focus-visible::after,
+  .icon-btn:hover::before,
+  .icon-btn:focus-visible::before {
+    opacity: 1;
+    visibility: visible;
+  }
+  .icon-btn:hover::after,
+  .icon-btn:focus-visible::after {
+    transform: translateX(-50%);
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.45);
+  }
+  .ban-dialog {
+    width: min(100%, 480px);
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.24);
+  }
+  .ban-dialog h2 { margin: 0 0 0.5rem; color: #0f172a; font-size: 1.1rem; }
+  .ban-dialog p { margin: 0 0 1rem; color: #475569; font-size: 0.875rem; line-height: 1.5; }
+  .field-label { display: block; margin-bottom: 0.375rem; font-size: 0.8rem; font-weight: 600; color: #334155; }
+  .reason-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 7rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font: inherit;
+    color: #1e293b;
+    outline: none;
+  }
+  .reason-input:focus { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.12); }
+  .field-hint { display: block; margin-top: 0.25rem; color: #94a3b8; font-size: 0.75rem; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 
   @media (max-width: 640px) {
     .page-header { margin-bottom: 1rem; }
     .page-title { font-size: 1.35rem; }
     .search-input { max-width: none; min-height: 2.75rem; }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 760px; }
+    .data-table { min-width: 880px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
     .action-cell { align-items: stretch; }

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-14 | Feature | sem commit
+
+**Suspensão administrativa de usuários**
+
+- Admin de usuários passa a permitir suspender e reativar contas, com motivo opcional e status visível na listagem.
+- Ações da lista de usuários passam a usar botões apenas com ícones, com tooltip no hover/foco explicando cada opção.
+- Nova migration `20260614151017_admin_banir_usuario.sql` adiciona campos de suspensão em `profiles`, RPCs `admin_banir_usuario`/`admin_desbanir_usuario`, `is_banned` e policies restritivas para bloquear tabelas fora do suporte.
+- `is_admin()` e `is_super_admin()` deixam de considerar perfis suspensos, impedindo privilégios administrativos durante a suspensão.
+- Rotas privadas redirecionam usuários suspensos para `/conta-suspensa`, página fixa em português formal com acesso apenas ao suporte e opção de sair.
+- Atualizados `docs/business-rules.md`, `docs/architecture.md` e `database.types.ts`.
+
+---
+
 ## 2026-06-14 | UX | sem commit
 
 **Ações finais do resultado de simulado**

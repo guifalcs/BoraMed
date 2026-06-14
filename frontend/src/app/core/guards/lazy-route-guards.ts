@@ -21,3 +21,10 @@ export const lazyAdminGuard: CanActivateFn = (route, state) => {
     runInInjectionContext(injector, () => m.adminGuard(route, state)),
   ) as Promise<GuardResult>;
 };
+
+export const lazyBannedAccountGuard: CanActivateFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+  return import('./banned-account.guard').then((m) =>
+    runInInjectionContext(injector, () => m.bannedAccountGuard(route, state)),
+  ) as Promise<GuardResult>;
+};

@@ -29,6 +29,10 @@ export interface Profile {
   papel: PapelUsuario;
   atualizado_em: string;
   ultimo_login: string | null;
+  banido: boolean;
+  banido_em: string | null;
+  banido_por: string | null;
+  motivo_banimento: string | null;
 }
 
 export type AuthResult = { ok: true; needsConfirmation?: boolean } | { ok: false; error: AuthErrorCode };

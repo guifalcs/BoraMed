@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import {
   lazyAdminGuard,
   lazyAuthGuard,
+  lazyBannedAccountGuard,
   lazyGuestGuard,
 } from './core/guards/lazy-route-guards';
 
@@ -37,6 +38,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./(auth)/redefinir-senha/redefinir-senha.component').then(
         (m) => m.RedefinirSenhaComponent,
+      ),
+  },
+  {
+    path: 'conta-suspensa',
+    canActivate: [lazyBannedAccountGuard],
+    loadComponent: () =>
+      import('./(auth)/conta-suspensa/conta-suspensa.component').then(
+        (m) => m.ContaSuspensaComponent,
       ),
   },
   {

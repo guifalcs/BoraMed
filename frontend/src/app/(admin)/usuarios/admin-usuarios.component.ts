@@ -8,18 +8,25 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import {
+  Ban,
+  LogIn,
+  ShieldCheck,
+  ShieldMinus,
+  Undo2,
+} from 'lucide-angular';
 import { AdminService } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
 import type { Profile } from '../../core/models/auth.types';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 
 @Component({
   selector: 'app-admin-usuarios',
   standalone: true,
-  imports: [FormsModule, DatePipe, UiConfirmDialogComponent],
+  imports: [FormsModule, DatePipe, UiConfirmDialogComponent, UiIconComponent],
   templateUrl: './admin-usuarios.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -27,10 +34,9 @@ export class AdminUsuariosComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly toast = inject(NotificationService);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly profileService = inject(ProfileService);
 
-  protected readonly currentUserId = this.auth.user()?.id;
+  protected readonly currentUserId = computed(() => this.auth.user()?.id);
   protected readonly isSuperAdmin = computed(() => this.profileService.profile()?.papel === 'super_admin');
 
   protected readonly usuarios = signal<Profile[]>([]);
@@ -40,6 +46,14 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly usuarioParaRevogar = signal<Profile | null>(null);
   protected readonly impersonando = signal(false);
   protected readonly usuarioParaImpersonar = signal<Profile | null>(null);
+  protected readonly usuarioParaBanir = signal<Profile | null>(null);
+  protected readonly usuarioParaDesbanir = signal<Profile | null>(null);
+  protected readonly motivoBanimento = signal('');
+  protected readonly iconPromoverAdmin = ShieldCheck;
+  protected readonly iconEntrarComo = LogIn;
+  protected readonly iconRevogarAdmin = ShieldMinus;
+  protected readonly iconSuspender = Ban;
+  protected readonly iconReativar = Undo2;
 
   async ngOnInit(): Promise<void> {
     await this.carregar();
@@ -84,11 +98,35 @@ export class AdminUsuariosComponent implements OnInit {
     this.usuarioParaImpersonar.set(null);
   }
 
+  protected solicitarBanir(usuario: Profile): void {
+    this.motivoBanimento.set('');
+    this.usuarioParaBanir.set(usuario);
+  }
+
+  protected cancelarBanir(): void {
+    this.usuarioParaBanir.set(null);
+    this.motivoBanimento.set('');
+  }
+
+  protected solicitarDesbanir(usuario: Profile): void {
+    this.usuarioParaDesbanir.set(usuario);
+  }
+
+  protected cancelarDesbanir(): void {
+    this.usuarioParaDesbanir.set(null);
+  }
+
   async confirmarImpersonar(): Promise<void> {
     const usuario = this.usuarioParaImpersonar();
     if (!usuario) return;
     this.usuarioParaImpersonar.set(null);
     this.impersonando.set(true);
+
+    if (usuario.banido) {
+      this.toast.error('Não é possível entrar como um usuário suspenso.');
+      this.impersonando.set(false);
+      return;
+    }
 
     const result = await this.adminService.gerarTokenImpersonacao(usuario.id);
     if (!result.ok) {
@@ -134,6 +172,14 @@ export class AdminUsuariosComponent implements OnInit {
     return 'Aluno';
   }
 
+  protected podeBanir(usuario: Profile): boolean {
+    return usuario.id !== this.currentUserId() && usuario.papel !== 'super_admin' && !usuario.banido;
+  }
+
+  protected podeDesbanir(usuario: Profile): boolean {
+    return usuario.banido;
+  }
+
   async alterarPapel(usuario: Profile, papel: 'aluno' | 'admin'): Promise<void> {
     if (this.processando()) return;
     this.processando.set(usuario.id);
@@ -146,6 +192,47 @@ export class AdminUsuariosComponent implements OnInit {
     } else {
       this.toast.error('Erro ao alterar papel.');
     }
+    this.processando.set(null);
+  }
+
+  async confirmarBanir(): Promise<void> {
+    const usuario = this.usuarioParaBanir();
+    if (!usuario || this.processando()) return;
+
+    this.usuarioParaBanir.set(null);
+    this.processando.set(usuario.id);
+
+    const result = await this.adminService.banirUsuario(usuario.id, this.motivoBanimento());
+    if (result.ok) {
+      this.usuarios.update((lista) =>
+        lista.map((u) => (u.id === usuario.id ? result.data : u)),
+      );
+      this.toast.success(`${usuario.nome_completo ?? usuario.email} foi suspenso.`);
+    } else {
+      this.toast.error('Erro ao suspender usuário: ' + result.error);
+    }
+
+    this.motivoBanimento.set('');
+    this.processando.set(null);
+  }
+
+  async confirmarDesbanir(): Promise<void> {
+    const usuario = this.usuarioParaDesbanir();
+    if (!usuario || this.processando()) return;
+
+    this.usuarioParaDesbanir.set(null);
+    this.processando.set(usuario.id);
+
+    const result = await this.adminService.desbanirUsuario(usuario.id);
+    if (result.ok) {
+      this.usuarios.update((lista) =>
+        lista.map((u) => (u.id === usuario.id ? result.data : u)),
+      );
+      this.toast.success(`${usuario.nome_completo ?? usuario.email} foi reativado.`);
+    } else {
+      this.toast.error('Erro ao reativar usuário: ' + result.error);
+    }
+
     this.processando.set(null);
   }
 }

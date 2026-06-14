@@ -260,6 +260,23 @@ export class AdminService {
     return { ok: true, data: data as Profile };
   }
 
+  async banirUsuario(userId: string, motivo: string): Promise<ServiceResult<Profile>> {
+    const { data, error } = await this.supabase.rpc('admin_banir_usuario', {
+      p_user_id: userId,
+      p_motivo: motivo.trim() || null,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as Profile };
+  }
+
+  async desbanirUsuario(userId: string): Promise<ServiceResult<Profile>> {
+    const { data, error } = await this.supabase.rpc('admin_desbanir_usuario', {
+      p_user_id: userId,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as Profile };
+  }
+
   async gerarTokenImpersonacao(targetUserId: string): Promise<ServiceResult<ImpersonacaoResult>> {
     const { data, error } = await this.supabase.functions.invoke('admin-impersonate', {
       body: { target_user_id: targetUserId },
