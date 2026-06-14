@@ -142,22 +142,25 @@ export class ComentarioQuestaoService {
 
       if (error) return { ok: false, error: error.message };
 
-      // Remover da lista (hard ou soft delete — recarregar é mais simples)
       this._comentarios.update((prev) => {
-        // Hard delete: remover completamente se for folha
-        const semRaiz = prev.filter((c) => c.id !== comentarioId);
-        if (semRaiz.length < prev.length) {
+        const raiz = prev.find((c) => c.id === comentarioId);
+        if (raiz) {
           this._total.update((t) => Math.max(0, t - 1));
-          return semRaiz;
+          const temRespostasAtivas = raiz.respostas.some((r) => r.status === 'ativo');
+          if (temRespostasAtivas) {
+            // Soft delete: mantém visível com status removido para não quebrar a thread
+            return prev.map((c) =>
+              c.id === comentarioId ? { ...c, status: 'removido' as const, conteudo: null } : c,
+            );
+          }
+          // Hard delete: sem replies, remove da lista
+          return prev.filter((c) => c.id !== comentarioId);
         }
-        // Soft delete: marcar como removido (era raiz com respostas)
-        return prev.map((c) => {
-          if (c.id === comentarioId) return { ...c, status: 'removido' as const, conteudo: null };
-          return {
-            ...c,
-            respostas: c.respostas.filter((r) => r.id !== comentarioId),
-          };
-        });
+        // É uma reply: remover da lista de respostas do pai
+        return prev.map((c) => ({
+          ...c,
+          respostas: c.respostas.filter((r) => r.id !== comentarioId),
+        }));
       });
 
       return { ok: true, data: undefined };

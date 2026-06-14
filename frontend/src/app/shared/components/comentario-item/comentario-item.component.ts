@@ -39,6 +39,7 @@ export class ComentarioItemComponent {
   protected readonly textoEdicao = signal('');
   protected readonly mostrarFormResposta = signal(false);
   protected readonly textoResposta = signal('');
+  protected readonly confirmandoExclusao = signal(false);
 
   protected onVotar(valor: -1 | 1): void {
     this.votar.emit({ comentarioId: this.comentario().id, valor });
@@ -87,7 +88,16 @@ export class ComentarioItemComponent {
     this.textoResposta.set('');
   }
 
+  protected pedirConfirmacaoExclusao(): void {
+    this.confirmandoExclusao.set(true);
+  }
+
+  protected cancelarExclusao(): void {
+    this.confirmandoExclusao.set(false);
+  }
+
   protected onExcluir(): void {
+    this.confirmandoExclusao.set(false);
     this.excluir.emit(this.comentario().id);
   }
 

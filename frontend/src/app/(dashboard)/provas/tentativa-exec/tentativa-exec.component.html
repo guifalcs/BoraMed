@@ -43,11 +43,6 @@
         (responder)="onResponder($event)"
       />
 
-      <!-- Comentários públicos (ocultos no modo foco) -->
-      @if (!focoMode.ativo()) {
-        <app-questao-comentarios [questaoId]="questaoAtual()!.id" />
-      }
-
       <!-- Botão marcar para revisão -->
       @if (!focoMode.ativo()) {
         <div class="mt-3 flex justify-end">
@@ -152,6 +147,11 @@
           }
         </div>
       </div>
+
+      <!-- Comentários públicos (ocultos no modo foco) -->
+      @if (!focoMode.ativo()) {
+        <app-questao-comentarios [questaoId]="questaoAtual()!.id" class="mt-10 block" />
+      }
     }
   </div>
 

@@ -12,15 +12,13 @@ import { isPlatformBrowser } from '@angular/common';
 import { ChevronDown, ChevronUp, LucideIconData, MessageSquare } from 'lucide-angular';
 
 import { ComentarioQuestaoService } from '../../../core/services/comentario-questao.service';
-import type { OrdenacaoComentario } from '../../../core/models/comentario';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
-import { UiSelectComponent, SelectOption } from '../ui/select/ui-select.component';
 import { ComentarioItemComponent } from '../comentario-item/comentario-item.component';
 
 @Component({
   selector: 'app-questao-comentarios',
   standalone: true,
-  imports: [UiIconComponent, UiSelectComponent, ComentarioItemComponent],
+  imports: [UiIconComponent, ComentarioItemComponent],
   providers: [ComentarioQuestaoService],
   templateUrl: './questao-comentarios.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,12 +34,6 @@ export class QuestaoComentariosComponent {
   protected readonly messageSquareIcon: LucideIconData = MessageSquare;
   protected readonly chevronDownIcon: LucideIconData = ChevronDown;
   protected readonly chevronUpIcon: LucideIconData = ChevronUp;
-
-  protected readonly opcoesOrdenacao: SelectOption[] = [
-    { value: 'relevante', label: 'Mais relevantes' },
-    { value: 'recente', label: 'Mais recentes' },
-    { value: 'antigo', label: 'Mais antigos' },
-  ];
 
   private readonly isBrowser: boolean;
 
@@ -77,11 +69,6 @@ export class QuestaoComentariosComponent {
     if (novoEstado && this.service.comentarios().length === 0 && !this.service.isLoading()) {
       void this.service.carregar(this.questaoId());
     }
-  }
-
-  onMudarOrdenacao(valor: string | number | null): void {
-    const novaOrdenacao = (valor as OrdenacaoComentario) ?? 'relevante';
-    void this.service.carregar(this.questaoId(), novaOrdenacao);
   }
 
   async onEnviarComentario(): Promise<void> {

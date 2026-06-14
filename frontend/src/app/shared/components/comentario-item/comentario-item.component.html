@@ -121,15 +121,31 @@
             <span>Editar</span>
           </button>
 
-          <button
-            type="button"
-            class="flex items-center gap-1 text-xs text-[var(--color-text-muted)] transition-colors hover:text-red-500"
-            aria-label="Excluir comentário"
-            (click)="onExcluir()"
-          >
-            <app-ui-icon [icon]="trash2Icon" [size]="13" />
-            <span>Excluir</span>
-          </button>
+          @if (confirmandoExclusao()) {
+            <span class="flex items-center gap-2 text-xs">
+              <span class="text-[var(--color-text-muted)]">Excluir comentário?</span>
+              <button
+                type="button"
+                class="font-medium text-red-500 hover:text-red-700 transition-colors"
+                (click)="onExcluir()"
+              >Sim</button>
+              <button
+                type="button"
+                class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                (click)="cancelarExclusao()"
+              >Não</button>
+            </span>
+          } @else {
+            <button
+              type="button"
+              class="flex items-center gap-1 text-xs text-[var(--color-text-muted)] transition-colors hover:text-red-500"
+              aria-label="Excluir comentário"
+              (click)="pedirConfirmacaoExclusao()"
+            >
+              <app-ui-icon [icon]="trash2Icon" [size]="13" />
+              <span>Excluir</span>
+            </button>
+          }
         }
 
         <!-- Denunciar: apenas quando não é o dono -->
