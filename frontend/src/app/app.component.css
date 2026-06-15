@@ -32,8 +32,12 @@
   }
 }
 
+/* Barra de progresso é feedback funcional de carregamento: continua animando
+   mesmo com motion reduzido. Precisa de !important para vencer o reset global
+   em styles.css, que zera duration e iteration-count. */
 @media (prefers-reduced-motion: reduce) {
   .nav-progress {
-    animation-duration: 2s;
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
   }
 }

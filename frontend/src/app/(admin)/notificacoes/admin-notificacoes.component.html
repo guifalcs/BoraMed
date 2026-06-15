@@ -214,6 +214,14 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* Spinner é feedback funcional: continua girando mesmo com motion reduzido. */
+  @media (prefers-reduced-motion: reduce) {
+    .autocomplete-spinner {
+      animation-duration: 0.6s !important;
+      animation-iteration-count: infinite !important;
+    }
+  }
+
   .autocomplete-clear {
     position: absolute; right: 0.5rem;
     display: flex; align-items: center; justify-content: center;

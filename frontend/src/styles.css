@@ -50,6 +50,16 @@ input {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* Spinners e barras de loading comunicam "carregando" — são feedback
+     funcional, não decoração. Devem continuar animando mesmo com motion
+     reduzido. O reset acima só zera duration/iteration (o animation-name é
+     preservado), então basta restaurar essas duas propriedades.
+     Cobre a utility `animate-spin` do Tailwind usada em todo o app. */
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* ── Impressão (tela de impressão de simulados) ──────── */

@@ -700,6 +700,14 @@
   animation: spin 0.7s linear infinite;
 }
 
+/* Spinner é feedback funcional: continua girando mesmo com motion reduzido. */
+@media (prefers-reduced-motion: reduce) {
+  .perfil-avatar-spinner {
+    animation-duration: 0.7s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
 /* ── Mobile ──────────────────────────────────────────── */
 
 @media (max-width: 767px) {
