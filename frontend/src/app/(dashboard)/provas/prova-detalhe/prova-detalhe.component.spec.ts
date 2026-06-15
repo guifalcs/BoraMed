@@ -102,7 +102,7 @@ describe('ProvaDetalheComponent', () => {
   // ── Loading ────────────────────────────────────────────────────────────────
 
   describe('loading', () => {
-    it('exibe skeleton enquanto carrega', async () => {
+    it('exibe spinner de loading enquanto carrega', async () => {
       const pending = new Promise<never>(() => {});
       mockProvaService.buscarProva.mockReturnValue(pending);
       mockTentativaService.buscarTentativaAtiva.mockReturnValue(pending);
@@ -121,8 +121,8 @@ describe('ProvaDetalheComponent', () => {
       el = fixture.nativeElement as HTMLElement;
       fixture.detectChanges();
 
-      const skeleton = el.querySelectorAll('.animate-pulse');
-      expect(skeleton.length).toBeGreaterThan(0);
+      const spinner = el.querySelector('app-ui-spinner [role="status"]');
+      expect(spinner).not.toBeNull();
     });
   });
 

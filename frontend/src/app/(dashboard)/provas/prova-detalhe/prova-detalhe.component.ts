@@ -14,13 +14,14 @@ import type { ProvaComFaculdade } from '../../../core/models/prova';
 import type { ModoProva, Tentativa } from '../../../core/models/tentativa';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
+import { UiSpinnerComponent } from '../../../shared/components/ui/spinner/ui-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-prova-detalhe',
   standalone: true,
-  imports: [ModoSelectorComponent, UiButtonComponent, EmptyStateComponent, PageHeaderComponent],
+  imports: [ModoSelectorComponent, UiButtonComponent, UiSpinnerComponent, EmptyStateComponent, PageHeaderComponent],
   templateUrl: './prova-detalhe.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -6,11 +6,7 @@
     />
 
     @if (isLoading()) {
-      <div class="space-y-4">
-        <div class="h-8 w-64 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-        <div class="h-4 w-48 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-        <div class="h-32 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
-      </div>
+      <app-ui-spinner size="lg" label="Carregando prova..." />
     }
 
     @if (!isLoading() && erro()) {
