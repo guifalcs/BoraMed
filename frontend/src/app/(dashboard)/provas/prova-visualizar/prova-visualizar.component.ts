@@ -11,18 +11,17 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChevronLeft, Printer } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { AnotacaoQuestaoService } from '../../../core/services/anotacao-questao.service';
+import { ProvaService } from '../../../core/services/prova.service';
+import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
-import type { ProvaVisualizarResolvedData } from '../../../core/resolvers/prova-visualizar.resolver';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-anotacao/questao-anotacao.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { QuestaoComentariosComponent } from '../../../shared/components/questao-comentarios/questao-comentarios.component';
-
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, QuestaoComentariosComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,6 +29,8 @@ export class ProvaVisualizarComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly tentativaService = inject(TentativaService);
   private readonly anotacaoService = inject(AnotacaoQuestaoService);
+  private readonly provaService = inject(ProvaService);
+  private readonly nav = inject(NavigationProgressService);
 
   protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly printerIcon = Printer;
@@ -75,51 +76,69 @@ export class ProvaVisualizarComponent {
   });
 
   constructor() {
-    const resolved = this.route.snapshot.data['provaVisualizarData'] as ProvaVisualizarResolvedData | undefined;
     const id = this.route.snapshot.paramMap.get('provaId') ?? '';
+    const routeTentativaId = this.route.snapshot.paramMap.get('tentativaId') ?? '';
     const filtroParam = this.route.snapshot.queryParamMap.get('filtro');
     this.provaId.set(id);
     if (filtroParam === 'erros') {
       this.filtro.set('erros');
     }
 
-    if (resolved?.provaResult.ok) {
-      this.provaNome.set(resolved.provaResult.data.nome);
-    }
-
-    if (resolved?.questoesResult.ok) {
-      this.questoes.set(resolved.questoesResult.data);
-    } else if (resolved && !resolved.questoesResult.ok) {
-      this.erro.set(resolved.questoesResult.error);
-    }
-
-    this.isLoading.set(false);
-
+    // Navega instantaneamente; prova + questões são buscadas aqui, sem bloquear
+    // a rota (skeleton enquanto carrega).
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
-      const lastResultado = this.tentativaService.lastResultado();
-      const navState = history.state as { fromResultado?: boolean } | null;
+      void this.nav.track(this.carregar(id, routeTentativaId || null));
+      this.hidratarRespostas(id);
+    }
+  }
 
-      if (lastResultado?.tentativa.prova_id === id && navState?.fromResultado) {
-        this.tentativaId.set(lastResultado.tentativa.id);
-        const map = new Map<string, string>();
-        const corretas = new Map<string, boolean>();
-        for (const r of lastResultado.respostas) {
-          if (r.alternativa_id) {
-            map.set(r.questao_id, r.alternativa_id);
-          }
-          if (r.correta !== null) {
-            corretas.set(r.questao_id, r.correta);
-          }
+  private async carregar(provaId: string, tentativaId: string | null): Promise<void> {
+    this.isLoading.set(true);
+    this.erro.set(null);
+    const [provaResult, questoesResult] = await Promise.all([
+      this.provaService.buscarProva(provaId),
+      this.provaService.getQuestoesRevisao(provaId, tentativaId),
+    ]);
+
+    if (provaResult.ok) {
+      this.provaNome.set(provaResult.data.nome);
+    }
+    if (questoesResult.ok) {
+      this.questoes.set(questoesResult.data);
+    } else {
+      this.erro.set(questoesResult.error);
+    }
+    this.isLoading.set(false);
+  }
+
+  /**
+   * Quando a navegação vem da tela de resultado, hidrata as respostas e
+   * anotações a partir do último resultado em memória (sem novo round-trip).
+   */
+  private hidratarRespostas(provaId: string): void {
+    const lastResultado = this.tentativaService.lastResultado();
+    const navState = history.state as { fromResultado?: boolean } | null;
+
+    if (lastResultado?.tentativa.prova_id === provaId && navState?.fromResultado) {
+      this.tentativaId.set(lastResultado.tentativa.id);
+      const map = new Map<string, string>();
+      const corretas = new Map<string, boolean>();
+      for (const r of lastResultado.respostas) {
+        if (r.alternativa_id) {
+          map.set(r.questao_id, r.alternativa_id);
         }
-        this.respostasMap.set(map);
-        this.respostasCorretasMap.set(corretas);
-
-        void this.anotacaoService.carregarPorTentativa(lastResultado.tentativa.id).then((result) => {
-          if (!result.ok) {
-            this.anotacoesErro.set(result.error);
-          }
-        });
+        if (r.correta !== null) {
+          corretas.set(r.questao_id, r.correta);
+        }
       }
+      this.respostasMap.set(map);
+      this.respostasCorretasMap.set(corretas);
+
+      void this.anotacaoService.carregarPorTentativa(lastResultado.tentativa.id).then((result) => {
+        if (!result.ok) {
+          this.anotacoesErro.set(result.error);
+        }
+      });
     }
   }
 
