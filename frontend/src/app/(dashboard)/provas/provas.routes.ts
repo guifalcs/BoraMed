@@ -1,7 +1,4 @@
 import { Routes } from '@angular/router';
-import { provasAfyaResolver } from '../../core/resolvers/provas-afya.resolver';
-import { montarSimuladoResolver } from '../../core/resolvers/montar-simulado.resolver';
-import { provaVisualizarResolver } from '../../core/resolvers/prova-visualizar.resolver';
 
 export const provasRoutes: Routes = [
   {
@@ -18,13 +15,11 @@ export const provasRoutes: Routes = [
     path: 'rede-afya',
     loadComponent: () =>
       import('./provas-afya/provas-afya.component').then((m) => m.ProvasAfyaComponent),
-    resolve: { provasAfyaData: provasAfyaResolver },
   },
   {
     path: 'montar',
     loadComponent: () =>
       import('./montar-simulado/montar-simulado.component').then((m) => m.MontarSimuladoComponent),
-    resolve: { montarSimuladoData: montarSimuladoResolver },
   },
   {
     path: ':provaId/tentativa/:tentativaId/resultado',
@@ -37,7 +32,6 @@ export const provasRoutes: Routes = [
     path: ':provaId/tentativa/:tentativaId/revisao',
     loadComponent: () =>
       import('./prova-visualizar/prova-visualizar.component').then((m) => m.ProvaVisualizarComponent),
-    resolve: { provaVisualizarData: provaVisualizarResolver },
   },
   {
     path: ':provaId/tentativa/:tentativaId',
@@ -50,7 +44,6 @@ export const provasRoutes: Routes = [
     path: ':provaId/visualizar',
     loadComponent: () =>
       import('./prova-visualizar/prova-visualizar.component').then((m) => m.ProvaVisualizarComponent),
-    resolve: { provaVisualizarData: provaVisualizarResolver },
   },
   {
     path: ':provaId',

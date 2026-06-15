@@ -1,13 +1,10 @@
 import { Routes } from '@angular/router';
-import { inicioResolver } from '../core/resolvers/inicio.resolver';
-import { historicoResolver } from '../core/resolvers/historico.resolver';
 
 export const dashboardRoutes: Routes = [
   {
     path: '',
     loadComponent: () =>
       import('./inicio/inicio.component').then((m) => m.InicioComponent),
-    resolve: { inicioData: inicioResolver },
   },
   {
     path: 'perfil',
@@ -32,7 +29,6 @@ export const dashboardRoutes: Routes = [
     path: 'historico',
     loadComponent: () =>
       import('./historico/historico.component').then((m) => m.HistoricoComponent),
-    resolve: { historicoData: historicoResolver },
   },
   {
     path: '**',

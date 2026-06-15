@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import type { Faculdade } from '../models/faculdade';
 import type { FormatoProva, Prova, ProvaComFaculdade, FiltrosProvas } from '../models/prova';
+import type { QuestaoComAlternativas } from '../models/questao';
 
 export type ProvaResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -92,6 +93,42 @@ export class ProvaService {
       return { ok: true, data: data as unknown as ProvaComFaculdade };
     } catch {
       return { ok: false, error: 'Simulado não encontrado.' };
+    }
+  }
+
+  /**
+   * Questões da revisão de uma prova (ou de uma tentativa específica), via RPC.
+   * Disponível apenas após a tentativa/prova ser finalizada.
+   */
+  async getQuestoesRevisao(
+    provaId: string,
+    tentativaId: string | null,
+  ): Promise<ProvaResult<QuestaoComAlternativas[]>> {
+    try {
+      if (tentativaId) {
+        const { data, error } = await this.supabase.rpc('get_revisao_tentativa', {
+          p_tentativa_id: tentativaId,
+        });
+        if (error) throw error;
+        const payload = data as { questoes: unknown } | null;
+        return { ok: true, data: (payload?.questoes ?? []) as QuestaoComAlternativas[] };
+      }
+
+      const { data, error } = await this.supabase.rpc('get_revisao_prova', {
+        p_prova_id: provaId,
+      });
+      if (error) throw error;
+      const questoes = ((data as { questoes: unknown } | null)?.questoes ?? []) as QuestaoComAlternativas[];
+      return { ok: true, data: questoes };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '';
+      if (message.includes('Revisao disponivel apenas apos finalizar')) {
+        return { ok: false, error: 'A revisao fica disponivel apos voce finalizar a prova.' };
+      }
+      if (message.includes('Tentativa nao encontrada') || message.includes('sem permissao')) {
+        return { ok: false, error: 'Tentativa nao encontrada ou sem permissao para acesso.' };
+      }
+      return { ok: false, error: 'Nao foi possivel carregar as questoes.' };
     }
   }
 }

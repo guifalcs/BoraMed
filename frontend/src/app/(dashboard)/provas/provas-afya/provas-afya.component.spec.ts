@@ -1,12 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
 import { ProvasAfyaComponent } from './provas-afya.component';
-import { ProvaService } from '../../../core/services/prova.service';
+import { ProvaService, type ProvaResult } from '../../../core/services/prova.service';
 import type { Prova } from '../../../core/models/prova';
-import type { ProvasAfyaResolvedData } from '../../../core/resolvers/provas-afya.resolver';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -30,18 +27,6 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
   };
 }
 
-function buildActivatedRoute(resolvedData?: ProvasAfyaResolvedData, tipo: string | null = null) {
-  const queryParamMap = { get: (key: string) => (key === 'tipo' ? tipo : null) };
-
-  return {
-    snapshot: {
-      data: resolvedData ? { provasAfyaData: resolvedData } : {},
-      queryParamMap,
-    },
-    queryParamMap: of(queryParamMap),
-  };
-}
-
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 describe('ProvasAfyaComponent', () => {
@@ -54,30 +39,36 @@ describe('ProvasAfyaComponent', () => {
     listarProvasPorFormato: vi.fn(),
   };
 
-  async function setup(resolvedData?: ProvasAfyaResolvedData, tipo: string | null = null) {
+  /**
+   * Monta o componente. Sem `provasResult`, o fetch fica pendente (isLoading
+   * permanece true) para exercitar o estado de skeleton.
+   */
+  async function setup(provasResult?: ProvaResult<Prova[]>) {
     vi.clearAllMocks();
+    mockProvaService.listarProvasNacionais.mockReturnValue(
+      provasResult ? Promise.resolve(provasResult) : new Promise(() => {}),
+    );
 
     await TestBed.configureTestingModule({
       imports: [ProvasAfyaComponent],
       providers: [
         provideRouter([]),
         { provide: ProvaService, useValue: mockProvaService },
-        { provide: ActivatedRoute, useValue: buildActivatedRoute(resolvedData, tipo) },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProvasAfyaComponent);
     component = fixture.componentInstance;
     el = fixture.nativeElement as HTMLElement;
+    await fixture.whenStable();
+    fixture.detectChanges();
   }
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
 
   describe('estado de loading', () => {
-    it('renderiza skeleton enquanto isLoading é true (sem dados do resolver)', async () => {
-      // No resolved data = isLoading stays true
+    it('renderiza skeleton enquanto o fetch está pendente', async () => {
       await setup(undefined);
-      fixture.detectChanges();
 
       const skeletonItems = el.querySelectorAll('li .animate-pulse');
       expect(skeletonItems.length).toBeGreaterThan(0);
@@ -89,9 +80,9 @@ describe('ProvasAfyaComponent', () => {
   describe('lista de provas carregada', () => {
     beforeEach(async () => {
       await setup({
-        provasResult: { ok: true, data: [provaFactory(), provaFactory({ id: 'prova-2', nome: 'Prova N2 2024' })] },
+        ok: true,
+        data: [provaFactory(), provaFactory({ id: 'prova-2', nome: 'Prova N2 2024' })],
       });
-      fixture.detectChanges();
     });
 
     it('renderiza um item de prova por prova retornada', () => {
@@ -110,13 +101,12 @@ describe('ProvasAfyaComponent', () => {
     });
   });
 
-  describe('query params legados', () => {
-    it('ignora query param de formato e mantem treinos nacionais', async () => {
-      await setup({ provasResult: { ok: true, data: [provaFactory()] } }, 'processual');
-      fixture.detectChanges();
+  describe('busca de provas', () => {
+    it('busca apenas treinos nacionais e mantém o título da página', async () => {
+      await setup({ ok: true, data: [provaFactory()] });
 
       expect(el.textContent).toContain('Treinos nacionais');
-      expect(el.textContent).not.toContain('Treinos processuais');
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenCalled();
       expect(mockProvaService.listarProvasPorFormato).not.toHaveBeenCalled();
     });
   });
@@ -125,8 +115,7 @@ describe('ProvasAfyaComponent', () => {
 
   describe('empty state', () => {
     beforeEach(async () => {
-      await setup({ provasResult: { ok: true, data: [] } });
-      fixture.detectChanges();
+      await setup({ ok: true, data: [] });
     });
 
     it('renderiza o empty state quando a lista está vazia', () => {
@@ -149,8 +138,7 @@ describe('ProvasAfyaComponent', () => {
         provaFactory({ id: '2', subtipo: 'N2', subtipo_nacional: 'N2', periodo: 2, nome: 'Prova N2 2024' }),
         provaFactory({ id: '3', subtipo: 'teste_progresso', subtipo_nacional: 'teste_progresso', periodo: 1, nome: 'TP 2024' }),
       ];
-      await setup({ provasResult: { ok: true, data: provas } });
-      fixture.detectChanges();
+      await setup({ ok: true, data: provas });
     });
 
     it('retorna todas as provas quando nenhum filtro está ativo', () => {
@@ -199,8 +187,7 @@ describe('ProvasAfyaComponent', () => {
 
   describe('erro de carregamento', () => {
     beforeEach(async () => {
-      await setup({ provasResult: { ok: false, error: 'Não foi possível carregar os simulados.' } });
-      fixture.detectChanges();
+      await setup({ ok: false, error: 'Não foi possível carregar os simulados.' });
     });
 
     it('exibe o empty-state de erro quando o serviço retorna erro', () => {

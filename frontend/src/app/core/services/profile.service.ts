@@ -14,6 +14,7 @@ export class ProfileService {
 
   private readonly _profile = signal<Profile | null>(null);
   private readonly _isLoading = signal(false);
+  private loadPromise: Promise<void> | null = null;
 
   readonly profile = this._profile.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
@@ -26,12 +27,23 @@ export class ProfileService {
     const user = this.auth.user();
     if (!user) return;
 
+    // Dedup: o guard e o effect do dashboard disparam quase juntos no load
+    // inicial; sem isto, seriam duas buscas idênticas em paralelo.
+    if (this.loadPromise) return this.loadPromise;
+
+    this.loadPromise = this.fetchProfile(user.id).finally(() => {
+      this.loadPromise = null;
+    });
+    return this.loadPromise;
+  }
+
+  private async fetchProfile(userId: string): Promise<void> {
     this._isLoading.set(true);
     try {
       const { data, error } = await this.supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
       if (error) throw error;

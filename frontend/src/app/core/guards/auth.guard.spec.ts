@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { describe, it, expect, vi } from 'vitest';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
+import { ProfileService } from '../services/profile.service';
 
 describe('authGuard', () => {
   function setup(isAuthenticated: boolean) {
@@ -10,16 +11,21 @@ describe('authGuard', () => {
       initialize: vi.fn().mockResolvedValue(undefined),
       isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
     };
+    const profileMock = {
+      profile: vi.fn().mockReturnValue(null),
+      loadProfile: vi.fn().mockResolvedValue(undefined),
+    };
     const routerMock = { createUrlTree: vi.fn().mockReturnValue('/login-tree') };
 
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthService, useValue: authMock },
+        { provide: ProfileService, useValue: profileMock },
         { provide: Router, useValue: routerMock },
       ],
     });
 
-    return { authMock, routerMock };
+    return { authMock, profileMock, routerMock };
   }
 
   it('deve permitir acesso quando autenticado', async () => {

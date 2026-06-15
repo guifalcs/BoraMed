@@ -1,16 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  PLATFORM_ID,
   inject,
   signal,
   computed,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Shuffle, Filter, LoaderCircle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
 import { ImpressaoSimuladoService } from '../../../core/services/impressao-simulado.service';
-import type { MontarSimuladoResolvedData } from '../../../core/resolvers/montar-simulado.resolver';
+import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
@@ -61,6 +63,8 @@ export class MontarSimuladoComponent {
   private readonly tentativaService = inject(TentativaService);
   private readonly temaService = inject(TemaService);
   private readonly impressaoService = inject(ImpressaoSimuladoService);
+  private readonly nav = inject(NavigationProgressService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -160,14 +164,26 @@ export class MontarSimuladoComponent {
   });
 
   constructor() {
-    const resolved = this.route.snapshot.data['montarSimuladoData'] as MontarSimuladoResolvedData | undefined;
-    if (resolved?.temasResult.ok) {
-      this.temas.set(resolved.temasResult.data);
-      this.aplicarPreSelecao();
-    } else if (resolved && !resolved.temasResult.ok) {
-      this.loadError.set(resolved.temasResult.error);
+    // Navega instantaneamente; os temas são buscados aqui, sem bloquear a rota.
+    if (this.isBrowser) {
+      void this.nav.track(this.carregarTemasIniciais());
     }
-    this.isLoadingTemas.set(false);
+  }
+
+  private async carregarTemasIniciais(): Promise<void> {
+    this.isLoadingTemas.set(true);
+    this.loadError.set(null);
+    try {
+      const result = await this.temaService.listarTemasComContagem();
+      if (result.ok) {
+        this.temas.set(result.data);
+        this.aplicarPreSelecao();
+      } else {
+        this.loadError.set(result.error);
+      }
+    } finally {
+      this.isLoadingTemas.set(false);
+    }
   }
 
   private aplicarPreSelecao(): void {

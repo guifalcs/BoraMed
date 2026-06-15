@@ -37,6 +37,10 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     ultimo_login: null,
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString(),
+    banido: false,
+    banido_em: null,
+    banido_por: null,
+    motivo_banimento: null,
     ...overrides,
   };
 }

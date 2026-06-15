@@ -2,3 +2,38 @@
   display: block;
   min-height: 100vh;
 }
+
+/* Barra de progresso de navegação (topo da janela). */
+.nav-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9999;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-primary, #4f46e5),
+    transparent
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: nav-progress-slide 1s ease-in-out infinite;
+}
+
+@keyframes nav-progress-slide {
+  0% {
+    background-position: -40% 0;
+  }
+  100% {
+    background-position: 140% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress {
+    animation-duration: 2s;
+  }
+}

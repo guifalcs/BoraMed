@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   TrendingUp,
   CheckCircle2,
@@ -18,7 +18,6 @@ import {
 import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../../core/models/historico';
 import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
 import type { LucideIconData } from 'lucide-angular';
-import type { HistoricoResolvedData } from '../../core/resolvers/historico.resolver';
 import type { PontoEvolucao } from '../../shared/components/evolucao-nota-chart/evolucao-nota-chart.component';
 import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
 import { DesempenhoTemaChartComponent } from '../../shared/components/desempenho-tema-chart/desempenho-tema-chart.component';
@@ -29,6 +28,18 @@ import { DataTableColumnDirective } from '../../shared/components/data-table/dat
 import { PageHeaderComponent, type Breadcrumb } from '../../shared/components/page-header/page-header.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { HistoricoService } from '../../core/services/historico.service';
+import { CacheService } from '../../core/services/cache.service';
+import { NavigationProgressService } from '../../core/services/navigation-progress.service';
+
+type SectionResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+interface HistoricoData {
+  kpisResult: SectionResult<HistoricoKpis>;
+  temasResult: SectionResult<DesempenhoTema[]>;
+  tentativasResult: SectionResult<TentativaHistoricoItem[]>;
+}
+
+const HISTORICO_CACHE_KEY = 'historico_data';
 
 type FiltroPeriodo = 'todos' | 'semana' | 'mes' | 'semestre';
 type FiltroTipo = 'todos' | 'nacional' | 'processual' | 'laboratorio';
@@ -53,6 +64,8 @@ export class HistoricoComponent {
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly historicoService = inject(HistoricoService);
+  private readonly cache = inject(CacheService);
+  private readonly nav = inject(NavigationProgressService);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -136,25 +149,57 @@ export class HistoricoComponent {
   ];
 
   constructor() {
-    const resolved = inject(ActivatedRoute).snapshot.data['historicoData'] as HistoricoResolvedData | undefined;
+    // Navega instantaneamente; os dados são carregados aqui (sem bloquear a
+    // rota). Em SSR os skeletons são renderizados e preenchidos no cliente.
+    if (this.isBrowser) {
+      void this.carregar();
+    }
+  }
 
-    if (resolved?.kpisResult.ok) {
+  /**
+   * Stale-while-revalidate: aplica o cache na hora (render instantâneo em
+   * revisitas) e revalida em background; sem cache, mantém os skeletons
+   * enquanto busca.
+   */
+  private async carregar(): Promise<void> {
+    const cached = this.cache.get<HistoricoData>(HISTORICO_CACHE_KEY);
+    if (cached) {
+      this.aplicar(cached);
+      if (!this.cache.isStale(HISTORICO_CACHE_KEY)) return;
+    }
+
+    const data = await this.nav.track(this.buscar());
+    this.cache.set(HISTORICO_CACHE_KEY, data);
+    this.aplicar(data);
+  }
+
+  private async buscar(): Promise<HistoricoData> {
+    const [kpisResult, temasResult, tentativasResult] = await Promise.all([
+      this.historicoService.getKpis(),
+      this.historicoService.getDesempenhoTemas(),
+      this.historicoService.listarTentativas(),
+    ]);
+    return { kpisResult, temasResult, tentativasResult };
+  }
+
+  private aplicar(resolved: HistoricoData): void {
+    if (resolved.kpisResult.ok) {
       this.kpis.set(this.buildKpis(resolved.kpisResult.data));
-    } else if (resolved && !resolved.kpisResult.ok) {
+    } else {
       this.kpisError.set(resolved.kpisResult.error);
     }
     this.isLoadingKpis.set(false);
 
-    if (resolved?.temasResult.ok) {
+    if (resolved.temasResult.ok) {
       this.temas.set(resolved.temasResult.data);
-    } else if (resolved && !resolved.temasResult.ok) {
+    } else {
       this.temasError.set(resolved.temasResult.error);
     }
     this.isLoadingTemas.set(false);
 
-    if (resolved?.tentativasResult.ok) {
+    if (resolved.tentativasResult.ok) {
       this.tentativas.set(resolved.tentativasResult.data);
-    } else if (resolved && !resolved.tentativasResult.ok) {
+    } else {
       this.tentativasError.set(resolved.tentativasResult.error);
     }
     this.isLoadingTentativas.set(false);

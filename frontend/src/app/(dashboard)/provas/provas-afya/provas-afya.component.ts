@@ -1,14 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  PLATFORM_ID,
   inject,
   signal,
   computed,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
+import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { Prova, SubtipoProva } from '../../../core/models/prova';
-import type { ProvasAfyaResolvedData } from '../../../core/resolvers/provas-afya.resolver';
 import { ProvaCardComponent } from '../../../shared/components/prova-card/prova-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UiMultiselectComponent } from '../../../shared/components/ui/multiselect/ui-multiselect.component';
@@ -23,9 +25,10 @@ import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProvasAfyaComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly provaService = inject(ProvaService);
   private readonly router = inject(Router);
+  private readonly nav = inject(NavigationProgressService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -69,14 +72,9 @@ export class ProvasAfyaComponent {
   });
 
   constructor() {
-    const resolved = this.route.snapshot.data['provasAfyaData'] as ProvasAfyaResolvedData | undefined;
-
-    if (resolved?.provasResult.ok) {
-      this.todasAsProvas.set(resolved.provasResult.data);
-      this.isLoading.set(false);
-    } else if (resolved && !resolved.provasResult.ok) {
-      this.erro.set(resolved.provasResult.error);
-      this.isLoading.set(false);
+    // Navega instantaneamente; os dados são buscados aqui, sem bloquear a rota.
+    if (this.isBrowser) {
+      void this.nav.track(this.carregarProvas());
     }
   }
 

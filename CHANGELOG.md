@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-06-15 | Performance | sem commit
+
+**Navegação sem espera bloqueante e com feedback**
+
+- Barra de progresso global no topo (`app-root`) acende durante a navegação do router (guards lazy + download de chunks) e durante carregamentos de dados de página, eliminando a navegação "travada sem feedback".
+- Novo `NavigationProgressService` centraliza o estado de carregamento; páginas registram seus fetches via `track()`.
+- `app.config.ts` passa a pré-carregar os chunks lazy em background (`withPreloading(PreloadAllModules)`) e habilita `withViewTransitions()`.
+- **Nenhuma rota logada bloqueia mais a navegação.** Todos os resolvers foram removidos (`inicio`, `historico`, `provas-afya`, `montar-simulado`, `prova-visualizar`): as páginas navegam instantaneamente e carregam os dados no próprio componente, com skeleton/barra enquanto chegam. `inicio` e `historico` usam stale-while-revalidate (cache aplicado na hora em revisitas).
+- O bloqueio só faria sentido em página pública/SEO; a única candidata (landing) é estática e não busca dados, então segue sem resolver.
+- Novo método `ProvaService.getQuestoesRevisao()` encapsula os RPCs de revisão (antes chamados direto no resolver).
+- `ProfileService.loadProfile()` passa a deduplicar chamadas concorrentes (guard + effect do dashboard no load inicial).
+- Imagens de questão (lâminas) passam a usar `loading="lazy"` + `decoding="async"`: num simulado com muitas questões, as imagens não baixam mais todas de uma vez.
+- Gráfico de evolução do histórico carregado via `@defer (on viewport)`: o `chart.js` (~440 kB) sai do caminho de carregamento da página e só é baixado quando o gráfico entra na tela.
+
+---
+
 ## 2026-06-14 | Feature | sem commit
 
 **Suspensão administrativa de usuários**

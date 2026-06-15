@@ -1,12 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   TrendingUp,
   CheckCircle2,
@@ -22,14 +24,32 @@ import {
 import { TentativaService } from '../../core/services/tentativa.service';
 import type { GamificacaoStats, MinhaPosicaoRanking, StreakEstudoV2, DesafioDiario } from '../../core/models/gamificacao';
 import type { TentativaHistoricoItem, HistoricoKpis } from '../../core/models/historico';
-import type { InicioResolvedData } from '../../core/resolvers/inicio.resolver';
 import { GreetingHeroComponent } from '../../shared/components/greeting-hero/greeting-hero.component';
 import { TentativaRecenteItemComponent } from '../../shared/components/tentativa-recente-item/tentativa-recente-item.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { ProfileService } from '../../core/services/profile.service';
+import { HistoricoService } from '../../core/services/historico.service';
+import { GamificacaoService } from '../../core/services/gamificacao.service';
+import { RankingService } from '../../core/services/ranking.service';
+import { DesafioService } from '../../core/services/desafio.service';
+import { CacheService } from '../../core/services/cache.service';
+import { NavigationProgressService } from '../../core/services/navigation-progress.service';
 
 type Variante = 'success' | 'warning' | 'danger' | 'neutral';
+
+type SectionResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+interface InicioData {
+  kpisResult: SectionResult<HistoricoKpis>;
+  tentativasResult: SectionResult<TentativaHistoricoItem[]>;
+  streakResult: SectionResult<StreakEstudoV2>;
+  gamificacaoResult: SectionResult<GamificacaoStats>;
+  rankingPosicaoResult: SectionResult<MinhaPosicaoRanking>;
+  desafioResult: SectionResult<DesafioDiario>;
+}
+
+const INICIO_CACHE_KEY = 'inicio_data';
 
 interface BarraEvolucao {
   nota: number;
@@ -54,6 +74,13 @@ interface BarraEvolucao {
 export class InicioComponent {
   private readonly tentativaService = inject(TentativaService);
   private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly historicoService = inject(HistoricoService);
+  private readonly gamificacaoService = inject(GamificacaoService);
+  private readonly rankingService = inject(RankingService);
+  private readonly desafioService = inject(DesafioService);
+  private readonly cache = inject(CacheService);
+  private readonly nav = inject(NavigationProgressService);
 
   protected readonly profile = inject(ProfileService).profile;
 
@@ -140,12 +167,60 @@ export class InicioComponent {
   });
 
   constructor() {
-    const resolved = inject(ActivatedRoute).snapshot.data['inicioData'] as InicioResolvedData | undefined;
+    // Navega instantaneamente; os dados são carregados aqui (sem bloquear a
+    // rota). A barra de progresso global dá feedback enquanto chegam.
+    if (this.isBrowser) {
+      void this.carregar();
+    }
+  }
 
-    if (resolved?.tentativasResult.ok) {
+  /**
+   * Stale-while-revalidate: aplica o cache na hora (render instantâneo em
+   * revisitas) e revalida em background; sem cache, busca acendendo a barra.
+   */
+  private async carregar(): Promise<void> {
+    const cached = this.cache.get<InicioData>(INICIO_CACHE_KEY);
+    if (cached) {
+      this.aplicar(cached);
+      if (!this.cache.isStale(INICIO_CACHE_KEY)) return;
+    }
+
+    const data = await this.nav.track(this.buscar());
+    this.cache.set(INICIO_CACHE_KEY, data);
+    this.aplicar(data);
+  }
+
+  private async buscar(): Promise<InicioData> {
+    const [
+      kpisResult,
+      tentativasResult,
+      streakResult,
+      gamificacaoResult,
+      rankingPosicaoResult,
+      desafioResult,
+    ] = await Promise.all([
+      this.historicoService.getKpis(),
+      this.historicoService.listarTentativas(10),
+      this.historicoService.getStreakV2(),
+      this.gamificacaoService.getMeuXp(),
+      this.rankingService.carregarMinhaPosicao(),
+      this.desafioService.carregarDesafio(),
+    ]);
+    return {
+      kpisResult,
+      tentativasResult,
+      streakResult,
+      gamificacaoResult,
+      rankingPosicaoResult,
+      desafioResult,
+    };
+  }
+
+  private aplicar(resolved: InicioData): void {
+    if (resolved.tentativasResult.ok) {
       this.historicoTentativas.set(resolved.tentativasResult.data);
     }
-    if (resolved?.kpisResult.ok) {
+    if (resolved.kpisResult.ok) {
       this.kpisData.set(resolved.kpisResult.data);
       if (resolved.kpisResult.data.tema_mais_fraco) {
         this.temaRecomendado.set({
@@ -154,16 +229,16 @@ export class InicioComponent {
         });
       }
     }
-    if (resolved?.gamificacaoResult.ok) {
+    if (resolved.gamificacaoResult.ok) {
       this.gamificacao.set(resolved.gamificacaoResult.data);
     }
-    if (resolved?.streakResult.ok) {
+    if (resolved.streakResult.ok) {
       this.streak.set(resolved.streakResult.data);
     }
-    if (resolved?.rankingPosicaoResult.ok) {
+    if (resolved.rankingPosicaoResult.ok) {
       this.rankingPosicao.set(resolved.rankingPosicaoResult.data);
     }
-    if (resolved?.desafioResult.ok) {
+    if (resolved.desafioResult.ok) {
       this.desafio.set(resolved.desafioResult.data);
     }
   }

@@ -108,7 +108,11 @@
           (acao)="temFiltroAtivo() ? onLimparFiltros() : onComecarSimulado()"
         />
       } @else {
-        <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
+        @defer (on viewport) {
+          <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
+        } @placeholder {
+          <div class="h-64 w-full animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+        }
       }
     </div>
   </div>

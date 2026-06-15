@@ -22,6 +22,8 @@
         [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
         class="max-w-full max-h-[60vh] w-auto h-auto rounded-lg object-contain"
         [class.hidden]="!imgCarregada()"
+        loading="lazy"
+        decoding="async"
         (load)="onImgLoad()"
       />
       @if (questao().imagem_legenda && imgCarregada()) {
