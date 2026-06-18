@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-18 | Backend | sem commit
+
+**Fuso de Brasília na API e `atualizado_em` nas entidades de questão**
+
+- Nova migration `20260618140000_fuso_horario_brasil_api.sql`: define `timezone = America/Sao_Paulo` nos papéis da API (`authenticator`, `anon`, `authenticated`, `service_role`). Colunas `timestamptz` seguem armazenadas em UTC; muda apenas a apresentação, fazendo `criado_em`/`atualizado_em` retornarem com offset `-03:00` (hora exata do Brasil).
+- Nova migration `20260618150000_atualizado_em_entidades_questao.sql`: adiciona `atualizado_em` (com trigger `update_atualizado_em()` em BEFORE UPDATE) a `disciplina`, `tema`, `prova` e `alternativa`. `alternativa` ganha também `criado_em`. Linhas existentes recebem `atualizado_em = criado_em`.
+
+---
+
 ## 2026-06-15 | Performance | sem commit
 
 **Navegação sem espera bloqueante e com feedback**
