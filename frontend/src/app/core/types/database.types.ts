@@ -36,23 +36,23 @@ export type Database = {
     Tables: {
       admin_impersonation_log: {
         Row: {
-          admin_email?: string
-          admin_id?: string | null
-          criado_em?: string
-          id?: string
-          ip?: string | null
-          target_email?: string
-          target_id?: string | null
-          target_name?: string | null
-          user_agent?: string | null
+          admin_email: string
+          admin_id: string | null
+          criado_em: string
+          id: string
+          ip: string | null
+          target_email: string
+          target_id: string | null
+          target_name: string | null
+          user_agent: string | null
         }
         Insert: {
-          admin_email?: string
+          admin_email: string
           admin_id?: string | null
           criado_em?: string
           id?: string
           ip?: string | null
-          target_email?: string
+          target_email: string
           target_id?: string | null
           target_name?: string | null
           user_agent?: string | null
@@ -72,22 +72,22 @@ export type Database = {
       }
       alternativa: {
         Row: {
-          correta?: boolean
-          id?: string
-          imagem_url?: string | null
-          letra?: string
-          ordem?: number
-          questao_id?: string
-          texto?: string
+          correta: boolean
+          id: string
+          imagem_url: string | null
+          letra: string
+          ordem: number
+          questao_id: string
+          texto: string
         }
         Insert: {
           correta?: boolean
           id?: string
           imagem_url?: string | null
-          letra?: string
-          ordem?: number
-          questao_id?: string
-          texto?: string
+          letra: string
+          ordem: number
+          questao_id: string
+          texto: string
         }
         Update: {
           correta?: boolean
@@ -108,27 +108,91 @@ export type Database = {
           },
         ]
       }
+      avisos: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          imagem_url: string
+          mensagem: string | null
+          titulo: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          imagem_url: string
+          mensagem?: string | null
+          titulo?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          imagem_url?: string
+          mensagem?: string | null
+          titulo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avisos_vistos: {
+        Row: {
+          aviso_id: string
+          user_id: string
+          visto_em: string
+        }
+        Insert: {
+          aviso_id: string
+          user_id: string
+          visto_em?: string
+        }
+        Update: {
+          aviso_id?: string
+          user_id?: string
+          visto_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_vistos_aviso_id_fkey"
+            columns: ["aviso_id"]
+            isOneToOne: false
+            referencedRelation: "avisos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conquista_catalogo: {
         Row: {
-          ativa?: boolean
-          categoria?: string
-          criado_em?: string
-          descricao?: string
-          icone?: string
-          id?: string
-          nome?: string
-          ordem?: number
-          secreta?: boolean
-          xp_recompensa?: number
+          ativa: boolean
+          categoria: string
+          criado_em: string
+          descricao: string
+          icone: string
+          id: string
+          nome: string
+          ordem: number
+          secreta: boolean
+          xp_recompensa: number
         }
         Insert: {
           ativa?: boolean
-          categoria?: string
+          categoria: string
           criado_em?: string
-          descricao?: string
-          icone?: string
-          id?: string
-          nome?: string
+          descricao: string
+          icone: string
+          id: string
+          nome: string
           ordem?: number
           secreta?: boolean
           xp_recompensa?: number
@@ -149,14 +213,14 @@ export type Database = {
       }
       desafio_diario: {
         Row: {
-          criado_em?: string
-          data?: string
-          questao_id?: string
+          criado_em: string
+          data: string
+          questao_id: string
         }
         Insert: {
           criado_em?: string
-          data?: string
-          questao_id?: string
+          data: string
+          questao_id: string
         }
         Update: {
           criado_em?: string
@@ -175,21 +239,21 @@ export type Database = {
       }
       desafio_diario_resposta: {
         Row: {
-          alternativa_id?: string | null
-          correta?: boolean
-          data?: string
-          respondido_em?: string
-          tempo_segundos?: number | null
-          user_id?: string
-          xp_ganho?: number
+          alternativa_id: string | null
+          correta: boolean
+          data: string
+          respondido_em: string
+          tempo_segundos: number | null
+          user_id: string
+          xp_ganho: number
         }
         Insert: {
           alternativa_id?: string | null
-          correta?: boolean
-          data?: string
+          correta: boolean
+          data: string
           respondido_em?: string
           tempo_segundos?: number | null
-          user_id?: string
+          user_id: string
           xp_ganho?: number
         }
         Update: {
@@ -213,79 +277,101 @@ export type Database = {
       }
       disciplina: {
         Row: {
-          ativa?: boolean
-          criado_em?: string
-          id?: string
-          nome?: string | null
-          periodo?: number
-          sigla?: string
+          ativa: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          nome: string | null
+          periodo: number
+          sigla: string
         }
         Insert: {
           ativa?: boolean
           criado_em?: string
+          criado_por?: string | null
           id?: string
           nome?: string | null
-          periodo?: number
-          sigla?: string
+          periodo: number
+          sigla: string
         }
         Update: {
           ativa?: boolean
           criado_em?: string
+          criado_por?: string | null
           id?: string
           nome?: string | null
           periodo?: number
           sigla?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "disciplina_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       faculdade: {
         Row: {
-          ativa?: boolean
-          criado_em?: string
-          id?: string
-          logo_url?: string | null
-          nome?: string
-          rede?: string
-          sigla?: string
+          ativa: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          rede: string
+          sigla: string
         }
         Insert: {
           ativa?: boolean
           criado_em?: string
+          criado_por?: string | null
           id?: string
           logo_url?: string | null
-          nome?: string
-          rede?: string
-          sigla?: string
+          nome: string
+          rede: string
+          sigla: string
         }
         Update: {
           ativa?: boolean
           criado_em?: string
+          criado_por?: string | null
           id?: string
           logo_url?: string | null
           nome?: string
           rede?: string
           sigla?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "faculdade_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gamificacao_evento: {
         Row: {
-          criado_em?: string
-          id?: string
-          idempotency_key?: string
-          metadata?: Json
-          tipo?: string
-          user_id?: string
-          xp?: number
+          criado_em: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          tipo: string
+          user_id: string
+          xp: number
         }
         Insert: {
           criado_em?: string
           id?: string
-          idempotency_key?: string
+          idempotency_key: string
           metadata?: Json
-          tipo?: string
-          user_id?: string
-          xp?: number
+          tipo: string
+          user_id: string
+          xp: number
         }
         Update: {
           criado_em?: string
@@ -295,27 +381,77 @@ export type Database = {
           tipo?: string
           user_id?: string
           xp?: number
+        }
+        Relationships: []
+      }
+      notificacoes: {
+        Row: {
+          criado_em: string
+          dados: Json | null
+          id: string
+          lida: boolean
+          mensagem: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string
+          dados?: Json | null
+          id?: string
+          lida?: boolean
+          mensagem?: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          dados?: Json | null
+          id?: string
+          lida?: boolean
+          mensagem?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      palavra_proibida: {
+        Row: {
+          criado_em: string
+          id: string
+          termo: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          termo: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          termo?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          atualizado_em?: string
-          avatar_url?: string | null
-          banido?: boolean
-          banido_em?: string | null
-          banido_por?: string | null
-          competir_publico?: boolean
-          criado_em?: string
-          email?: string
-          faculdade_rede?: string | null
-          id?: string
-          motivo_banimento?: string | null
-          nome_completo?: string | null
-          papel?: string
-          periodo?: number | null
-          tipo_usuario?: string | null
-          ultimo_login?: string | null
+          atualizado_em: string
+          avatar_url: string | null
+          banido: boolean
+          banido_em: string | null
+          banido_por: string | null
+          competir_publico: boolean
+          criado_em: string
+          email: string
+          faculdade_rede: string | null
+          id: string
+          motivo_banimento: string | null
+          nome_completo: string | null
+          papel: string
+          tipo_usuario: string | null
+          ultimo_login: string | null
         }
         Insert: {
           atualizado_em?: string
@@ -325,13 +461,12 @@ export type Database = {
           banido_por?: string | null
           competir_publico?: boolean
           criado_em?: string
-          email?: string
+          email: string
           faculdade_rede?: string | null
-          id?: string
+          id: string
           motivo_banimento?: string | null
           nome_completo?: string | null
           papel?: string
-          periodo?: number | null
           tipo_usuario?: string | null
           ultimo_login?: string | null
         }
@@ -349,7 +484,6 @@ export type Database = {
           motivo_banimento?: string | null
           nome_completo?: string | null
           papel?: string
-          periodo?: number | null
           tipo_usuario?: string | null
           ultimo_login?: string | null
         }
@@ -357,40 +491,43 @@ export type Database = {
       }
       prova: {
         Row: {
-          arquivada?: boolean
-          criado_em?: string
-          faculdade_id?: string | null
-          formato?: string | null
-          id?: string
-          nome?: string
-          origem?: string
-          periodo?: number
-          publicada?: boolean
-          qtd_questoes?: number
-          rede?: string | null
-          subtipo?: string | null
-          subtipo_nacional?: string | null
-          tipo?: string
+          arquivada: boolean
+          criado_em: string
+          criado_por: string | null
+          faculdade_id: string | null
+          formato: string | null
+          id: string
+          nome: string
+          origem: string
+          periodo: number
+          publicada: boolean
+          qtd_questoes: number
+          rede: string | null
+          subtipo: string | null
+          subtipo_nacional: string | null
+          tipo: string
         }
         Insert: {
           arquivada?: boolean
           criado_em?: string
+          criado_por?: string | null
           faculdade_id?: string | null
           formato?: string | null
           id?: string
-          nome?: string
+          nome: string
           origem?: string
-          periodo?: number
+          periodo: number
           publicada?: boolean
           qtd_questoes?: number
           rede?: string | null
           subtipo?: string | null
           subtipo_nacional?: string | null
-          tipo?: string
+          tipo: string
         }
         Update: {
           arquivada?: boolean
           criado_em?: string
+          criado_por?: string | null
           faculdade_id?: string | null
           formato?: string | null
           id?: string
@@ -406,6 +543,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "prova_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prova_faculdade_id_fkey"
             columns: ["faculdade_id"]
             isOneToOne: false
@@ -416,14 +560,14 @@ export type Database = {
       }
       prova_questao: {
         Row: {
-          ordem?: number
-          prova_id?: string
-          questao_id?: string
+          ordem: number
+          prova_id: string
+          questao_id: string
         }
         Insert: {
           ordem?: number
-          prova_id?: string
-          questao_id?: string
+          prova_id: string
+          questao_id: string
         }
         Update: {
           ordem?: number
@@ -449,38 +593,38 @@ export type Database = {
       }
       questao: {
         Row: {
-          aprovada_em?: string | null
-          apto_desafio_diario?: boolean
-          atualizado_em?: string
-          autor_id?: string | null
-          codigo_externo?: string | null
-          criado_em?: string
-          disciplina_id?: string | null
-          enunciado?: string
-          enunciado_apoio?: string | null
-          explicacao?: string | null
-          explicacao_alternativas?: Json | null
-          fonte?: string | null
-          formato?: string
-          formato_prova?: string | null
-          id?: string
-          imagem_legenda?: string | null
-          imagem_url?: string | null
-          nivel_bloom?: number | null
-          ordem_na_prova?: number | null
-          origem_geracao?: string
-          prova_id?: string | null
-          publicada_em?: string | null
-          referencia?: string | null
-          resposta_correta_texto?: string | null
-          respostas_aceitas?: string[] | null
-          revisado?: boolean
-          revisor_id?: string | null
-          status?: string
-          taxa_acerto?: number | null
-          tipo_questao?: string
-          vezes_acertada?: number
-          vezes_respondida?: number
+          aprovada_em: string | null
+          apto_desafio_diario: boolean
+          atualizado_em: string
+          autor_id: string | null
+          codigo_externo: string | null
+          criado_em: string
+          disciplina_id: string | null
+          enunciado: string
+          enunciado_apoio: string | null
+          explicacao: string | null
+          explicacao_alternativas: Json | null
+          fonte: string | null
+          formato: string
+          formato_prova: string | null
+          id: string
+          imagem_legenda: string | null
+          imagem_url: string | null
+          nivel_bloom: number | null
+          ordem_na_prova: number | null
+          origem_geracao: string
+          prova_id: string | null
+          publicada_em: string | null
+          referencia: string | null
+          resposta_correta_texto: string | null
+          respostas_aceitas: string[] | null
+          revisado: boolean
+          revisor_id: string | null
+          status: string
+          taxa_acerto: number | null
+          tipo_questao: string
+          vezes_acertada: number
+          vezes_respondida: number
         }
         Insert: {
           aprovada_em?: string | null
@@ -490,12 +634,12 @@ export type Database = {
           codigo_externo?: string | null
           criado_em?: string
           disciplina_id?: string | null
-          enunciado?: string
+          enunciado: string
           enunciado_apoio?: string | null
           explicacao?: string | null
           explicacao_alternativas?: Json | null
           fonte?: string | null
-          formato?: string
+          formato: string
           formato_prova?: string | null
           id?: string
           imagem_legenda?: string | null
@@ -581,16 +725,137 @@ export type Database = {
           },
         ]
       }
+      questao_comentario: {
+        Row: {
+          atualizado_em: string
+          conteudo: string
+          criado_em: string
+          dislikes: number
+          editado: boolean
+          id: string
+          likes: number
+          parent_id: string | null
+          questao_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          dislikes?: number
+          editado?: boolean
+          id?: string
+          likes?: number
+          parent_id?: string | null
+          questao_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          conteudo?: string
+          criado_em?: string
+          dislikes?: number
+          editado?: boolean
+          id?: string
+          likes?: number
+          parent_id?: string | null
+          questao_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questao_comentario_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "questao_comentario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questao_comentario_questao_id_fkey"
+            columns: ["questao_id"]
+            isOneToOne: false
+            referencedRelation: "questao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questao_comentario_denuncia: {
+        Row: {
+          comentario_id: string
+          criado_em: string
+          id: string
+          motivo: string | null
+          user_id: string
+        }
+        Insert: {
+          comentario_id: string
+          criado_em?: string
+          id?: string
+          motivo?: string | null
+          user_id: string
+        }
+        Update: {
+          comentario_id?: string
+          criado_em?: string
+          id?: string
+          motivo?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questao_comentario_denuncia_comentario_id_fkey"
+            columns: ["comentario_id"]
+            isOneToOne: false
+            referencedRelation: "questao_comentario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questao_comentario_voto: {
+        Row: {
+          comentario_id: string
+          criado_em: string
+          id: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          comentario_id: string
+          criado_em?: string
+          id?: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          comentario_id?: string
+          criado_em?: string
+          id?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questao_comentario_voto_comentario_id_fkey"
+            columns: ["comentario_id"]
+            isOneToOne: false
+            referencedRelation: "questao_comentario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questao_tema: {
         Row: {
-          principal?: boolean
-          questao_id?: string
-          tema_id?: string
+          principal: boolean
+          questao_id: string
+          tema_id: string
         }
         Insert: {
           principal?: boolean
-          questao_id?: string
-          tema_id?: string
+          questao_id: string
+          tema_id: string
         }
         Update: {
           principal?: boolean
@@ -614,29 +879,191 @@ export type Database = {
           },
         ]
       }
-      tema: {
+      suporte_anexos: {
         Row: {
-          criado_em?: string
-          disciplina_id?: string | null
-          id?: string
-          nome?: string
-          parent_id?: string | null
+          criado_em: string
+          id: string
+          mensagem_id: string
+          mime_type: string
+          nome_arquivo: string
+          storage_path: string
+          tamanho_bytes: number
+          ticket_id: string
+          user_id: string
         }
         Insert: {
           criado_em?: string
+          id?: string
+          mensagem_id: string
+          mime_type: string
+          nome_arquivo: string
+          storage_path: string
+          tamanho_bytes: number
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          mensagem_id?: string
+          mime_type?: string
+          nome_arquivo?: string
+          storage_path?: string
+          tamanho_bytes?: number
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suporte_anexos_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "suporte_mensagens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suporte_anexos_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "suporte_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suporte_faq: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string | null
+          criado_em: string
+          id: string
+          ordem: number
+          pergunta: string
+          resposta: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string | null
+          criado_em?: string
+          id?: string
+          ordem?: number
+          pergunta: string
+          resposta: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string | null
+          criado_em?: string
+          id?: string
+          ordem?: number
+          pergunta?: string
+          resposta?: string
+        }
+        Relationships: []
+      }
+      suporte_mensagens: {
+        Row: {
+          autor_id: string
+          criado_em: string
+          id: string
+          is_admin: boolean
+          mensagem: string
+          ticket_id: string
+        }
+        Insert: {
+          autor_id: string
+          criado_em?: string
+          id?: string
+          is_admin?: boolean
+          mensagem: string
+          ticket_id: string
+        }
+        Update: {
+          autor_id?: string
+          criado_em?: string
+          id?: string
+          is_admin?: boolean
+          mensagem?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suporte_mensagens_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "suporte_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suporte_tickets: {
+        Row: {
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          descricao: string
+          id: string
+          status: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          categoria: string
+          criado_em?: string
+          descricao: string
+          id?: string
+          status?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          descricao?: string
+          id?: string
+          status?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tema: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          disciplina_id: string | null
+          id: string
+          nome: string
+          parent_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
           disciplina_id?: string | null
           id?: string
-          nome?: string
+          nome: string
           parent_id?: string | null
         }
         Update: {
           criado_em?: string
+          criado_por?: string | null
           disciplina_id?: string | null
           id?: string
           nome?: string
           parent_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tema_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tema_disciplina_id_fkey"
             columns: ["disciplina_id"]
@@ -655,47 +1082,53 @@ export type Database = {
       }
       tentativa: {
         Row: {
-          acertos?: number
-          criado_em?: string
-          finalizada_em?: string | null
-          id?: string
-          iniciada_em?: string
-          modo?: string
-          nota?: number | null
-          pausada_em?: string | null
-          prova_id?: string
-          status?: string
-          tempo_acumulado_segundos?: number
-          total_questoes?: number
-          total_respondidas?: number
-          user_id?: string
+          acertos: number
+          criado_em: string
+          favorito: boolean
+          finalizada_em: string | null
+          id: string
+          iniciada_em: string
+          modo: string
+          nota: number | null
+          pausada_em: string | null
+          prova_id: string | null
+          prova_snapshot: Json | null
+          status: string
+          tempo_acumulado_segundos: number
+          total_questoes: number
+          total_respondidas: number
+          user_id: string
         }
         Insert: {
           acertos?: number
           criado_em?: string
+          favorito?: boolean
           finalizada_em?: string | null
           id?: string
           iniciada_em?: string
-          modo?: string
+          modo: string
           nota?: number | null
           pausada_em?: string | null
-          prova_id?: string
+          prova_id?: string | null
+          prova_snapshot?: Json | null
           status?: string
           tempo_acumulado_segundos?: number
-          total_questoes?: number
+          total_questoes: number
           total_respondidas?: number
-          user_id?: string
+          user_id: string
         }
         Update: {
           acertos?: number
           criado_em?: string
+          favorito?: boolean
           finalizada_em?: string | null
           id?: string
           iniciada_em?: string
           modo?: string
           nota?: number | null
           pausada_em?: string | null
-          prova_id?: string
+          prova_id?: string | null
+          prova_snapshot?: Json | null
           status?: string
           tempo_acumulado_segundos?: number
           total_questoes?: number
@@ -712,28 +1145,73 @@ export type Database = {
           },
         ]
       }
+      tentativa_questao_anotacao: {
+        Row: {
+          atualizado_em: string
+          conteudo: string
+          criado_em: string
+          id: string
+          questao_id: string
+          tentativa_id: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          questao_id: string
+          tentativa_id: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          conteudo?: string
+          criado_em?: string
+          id?: string
+          questao_id?: string
+          tentativa_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tentativa_questao_anotacao_questao_id_fkey"
+            columns: ["questao_id"]
+            isOneToOne: false
+            referencedRelation: "questao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tentativa_questao_anotacao_tentativa_id_fkey"
+            columns: ["tentativa_id"]
+            isOneToOne: false
+            referencedRelation: "tentativa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tentativa_resposta: {
         Row: {
-          alternativa_id?: string | null
-          correta?: boolean | null
-          id?: string
-          ordem_na_tentativa?: number | null
-          questao_id?: string
-          respondida_em?: string | null
-          resposta_texto?: string | null
-          tempo_gasto_segundos?: number | null
-          tentativa_id?: string
+          alternativa_id: string | null
+          correta: boolean | null
+          id: string
+          ordem_na_tentativa: number | null
+          questao_id: string
+          respondida_em: string | null
+          resposta_texto: string | null
+          tempo_gasto_segundos: number | null
+          tentativa_id: string
         }
         Insert: {
           alternativa_id?: string | null
           correta?: boolean | null
           id?: string
           ordem_na_tentativa?: number | null
-          questao_id?: string
+          questao_id: string
           respondida_em?: string | null
           resposta_texto?: string | null
           tempo_gasto_segundos?: number | null
-          tentativa_id?: string
+          tentativa_id: string
         }
         Update: {
           alternativa_id?: string | null
@@ -770,61 +1248,16 @@ export type Database = {
           },
         ]
       }
-      tentativa_questao_anotacao: {
-        Row: {
-          atualizado_em?: string
-          conteudo: string
-          criado_em?: string
-          id?: string
-          questao_id?: string
-          tentativa_id?: string
-          user_id?: string
-        }
-        Insert: {
-          atualizado_em?: string
-          conteudo: string
-          criado_em?: string
-          id?: string
-          questao_id?: string
-          tentativa_id?: string
-          user_id?: string
-        }
-        Update: {
-          atualizado_em?: string
-          conteudo: string
-          criado_em?: string
-          id?: string
-          questao_id?: string
-          tentativa_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tentativa_questao_anotacao_questao_id_fkey"
-            columns: ["questao_id"]
-            isOneToOne: false
-            referencedRelation: "questao"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tentativa_questao_anotacao_tentativa_id_fkey"
-            columns: ["tentativa_id"]
-            isOneToOne: false
-            referencedRelation: "tentativa"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_conquista: {
         Row: {
-          conquista_id?: string
-          desbloqueada_em?: string
-          user_id?: string
+          conquista_id: string
+          desbloqueada_em: string
+          user_id: string
         }
         Insert: {
-          conquista_id?: string
+          conquista_id: string
           desbloqueada_em?: string
-          user_id?: string
+          user_id: string
         }
         Update: {
           conquista_id?: string
@@ -843,18 +1276,18 @@ export type Database = {
       }
       user_gamificacao_stats: {
         Row: {
-          atualizado_em?: string
-          competir_publico?: boolean
-          freeze_usado_em?: string | null
-          freezes_disponiveis?: number
-          nivel?: number
-          semana_iso?: string | null
-          streak_atual?: number
-          streak_recorde?: number
-          ultimo_dia_ativo?: string | null
-          user_id?: string
-          xp_semana_atual?: number
-          xp_total?: number
+          atualizado_em: string
+          competir_publico: boolean
+          freeze_usado_em: string | null
+          freezes_disponiveis: number
+          nivel: number
+          semana_iso: string | null
+          streak_atual: number
+          streak_recorde: number
+          ultimo_dia_ativo: string | null
+          user_id: string
+          xp_semana_atual: number
+          xp_total: number
         }
         Insert: {
           atualizado_em?: string
@@ -866,7 +1299,7 @@ export type Database = {
           streak_atual?: number
           streak_recorde?: number
           ultimo_dia_ativo?: string | null
-          user_id?: string
+          user_id: string
           xp_semana_atual?: number
           xp_total?: number
         }
@@ -888,30 +1321,30 @@ export type Database = {
       }
       user_onboarding_state: {
         Row: {
-          atualizado_em?: string
-          completed_at?: string | null
-          criado_em?: string
-          current_step?: string | null
-          flow_key?: string
-          flow_version?: number
-          metadata?: Json
-          skipped_at?: string | null
-          started_at?: string | null
-          status?: string
-          user_id?: string
+          atualizado_em: string
+          completed_at: string | null
+          criado_em: string
+          current_step: string | null
+          flow_key: string
+          flow_version: number
+          metadata: Json
+          skipped_at: string | null
+          started_at: string | null
+          status: string
+          user_id: string
         }
         Insert: {
           atualizado_em?: string
           completed_at?: string | null
           criado_em?: string
           current_step?: string | null
-          flow_key?: string
+          flow_key: string
           flow_version?: number
           metadata?: Json
           skipped_at?: string | null
           started_at?: string | null
           status?: string
-          user_id?: string
+          user_id: string
         }
         Update: {
           atualizado_em?: string
@@ -933,27 +1366,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_get_questao: { Args: { p_id: string }; Returns: Json }
-      admin_get_stats: { Args: never; Returns: Json }
-      alterar_papel_usuario: {
-        Args: { p_papel: string; p_user_id: string }
+      admin_atualizar_status_ticket: {
+        Args: { p_status: string; p_ticket_id: string }
         Returns: {
-          atualizado_em?: string
-          avatar_url?: string | null
-          banido?: boolean
-          banido_em?: string | null
-          banido_por?: string | null
-          competir_publico?: boolean
-          criado_em?: string
-          email?: string
-          faculdade_rede?: string | null
-          id?: string
-          motivo_banimento?: string | null
-          nome_completo?: string | null
-          papel?: string
-          periodo?: number | null
-          tipo_usuario?: string | null
-          ultimo_login?: string | null
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          descricao: string
+          id: string
+          status: string
+          titulo: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_banir_usuario: {
+        Args: { p_motivo?: string; p_user_id: string }
+        Returns: {
+          atualizado_em: string
+          avatar_url: string | null
+          banido: boolean
+          banido_em: string | null
+          banido_por: string | null
+          competir_publico: boolean
+          criado_em: string
+          email: string
+          faculdade_rede: string | null
+          id: string
+          motivo_banimento: string | null
+          nome_completo: string | null
+          papel: string
+          tipo_usuario: string | null
+          ultimo_login: string | null
         }
         SetofOptions: {
           from: "*"
@@ -962,22 +1411,376 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      admin_banir_usuario: {
-        Args: { p_motivo?: string | null; p_user_id: string }
-        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+      admin_criar_faq: {
+        Args: { p_categoria?: string; p_pergunta: string; p_resposta: string }
+        Returns: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string | null
+          criado_em: string
+          id: string
+          ordem: number
+          pergunta: string
+          resposta: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_faq"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
+      admin_deletar_disciplina: {
+        Args: { p_disciplina_id: string }
+        Returns: Json
+      }
+      admin_deletar_faq: { Args: { p_id: string }; Returns: undefined }
+      admin_deletar_prova: { Args: { p_prova_id: string }; Returns: Json }
+      admin_deletar_questao: { Args: { p_questao_id: string }; Returns: Json }
+      admin_deletar_tema: { Args: { p_tema_id: string }; Returns: Json }
       admin_desbanir_usuario: {
         Args: { p_user_id: string }
-        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+        Returns: {
+          atualizado_em: string
+          avatar_url: string | null
+          banido: boolean
+          banido_em: string | null
+          banido_por: string | null
+          competir_publico: boolean
+          criado_em: string
+          email: string
+          faculdade_rede: string | null
+          id: string
+          motivo_banimento: string | null
+          nome_completo: string | null
+          papel: string
+          tipo_usuario: string | null
+          ultimo_login: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_detalhar_ticket: { Args: { p_ticket_id: string }; Returns: Json }
+      admin_enviar_notificacao: {
+        Args: {
+          p_mensagem?: string
+          p_tipo: string
+          p_titulo: string
+          p_user_id?: string
+        }
+        Returns: number
+      }
+      admin_get_questao: { Args: { p_id: string }; Returns: Json }
+      admin_get_stats: { Args: never; Returns: Json }
+      admin_listar_avisos: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          imagem_url: string
+          mensagem: string | null
+          titulo: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "avisos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_listar_faq: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string | null
+          criado_em: string
+          id: string
+          ordem: number
+          pergunta: string
+          resposta: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "suporte_faq"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_listar_notificacoes: {
+        Args: { p_limit?: number }
+        Returns: {
+          criado_em: string
+          id: string
+          lida: boolean
+          mensagem: string
+          tipo: string
+          titulo: string
+          user_email: string
+          user_id: string
+        }[]
+      }
+      admin_listar_tickets: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: {
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          descricao: string
+          id: string
+          perfil_avatar: string
+          perfil_email: string
+          perfil_nome: string
+          status: string
+          titulo: string
+          total_mensagens: number
+          user_id: string
+        }[]
+      }
+      admin_responder_ticket: {
+        Args: { p_mensagem: string; p_ticket_id: string }
+        Returns: {
+          autor_id: string
+          criado_em: string
+          id: string
+          is_admin: boolean
+          mensagem: string
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_mensagens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_toggle_faq: {
+        Args: { p_id: string }
+        Returns: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string | null
+          criado_em: string
+          id: string
+          ordem: number
+          pergunta: string
+          resposta: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_faq"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      alterar_papel_usuario: {
+        Args: { p_papel: string; p_user_id: string }
+        Returns: {
+          atualizado_em: string
+          avatar_url: string | null
+          banido: boolean
+          banido_em: string | null
+          banido_por: string | null
+          competir_publico: boolean
+          criado_em: string
+          email: string
+          faculdade_rede: string | null
+          id: string
+          motivo_banimento: string | null
+          nome_completo: string | null
+          papel: string
+          tipo_usuario: string | null
+          ultimo_login: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      buscar_anexos_ticket: {
+        Args: { p_ticket_id: string }
+        Returns: {
+          criado_em: string
+          id: string
+          mensagem_id: string
+          mime_type: string
+          nome_arquivo: string
+          storage_path: string
+          tamanho_bytes: number
+          ticket_id: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "suporte_anexos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      buscar_avisos_pendentes: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          imagem_url: string
+          mensagem: string | null
+          titulo: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "avisos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      buscar_faq: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string | null
+          criado_em: string
+          id: string
+          ordem: number
+          pergunta: string
+          resposta: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "suporte_faq"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      buscar_mensagens_ticket: {
+        Args: { p_ticket_id: string }
+        Returns: {
+          autor_id: string
+          criado_em: string
+          id: string
+          is_admin: boolean
+          mensagem: string
+          ticket_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "suporte_mensagens"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      buscar_meus_tickets: {
+        Args: never
+        Returns: {
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          descricao: string
+          id: string
+          status: string
+          titulo: string
+          total_mensagens: number
+        }[]
+      }
+      buscar_notificacoes: {
+        Args: { p_limit?: number }
+        Returns: {
+          criado_em: string
+          dados: Json | null
+          id: string
+          lida: boolean
+          mensagem: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notificacoes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       conceder_xp_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
-      finalizar_tentativa: {
-        Args: { p_tempo_segundos?: number; p_tentativa_id: string }
+      contem_palavra_proibida: { Args: { p_texto: string }; Returns: boolean }
+      criar_comentario_questao: {
+        Args: { p_conteudo: string; p_parent_id?: string; p_questao_id: string }
         Returns: Json
+      }
+      criar_ticket: {
+        Args: { p_categoria: string; p_descricao: string; p_titulo: string }
+        Returns: {
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          descricao: string
+          id: string
+          status: string
+          titulo: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      denunciar_comentario_questao: {
+        Args: { p_comentario_id: string; p_motivo?: string }
+        Returns: undefined
+      }
+      editar_comentario_questao: {
+        Args: { p_comentario_id: string; p_conteudo: string }
+        Returns: Json
+      }
+      enviar_mensagem_ticket: {
+        Args: { p_mensagem: string; p_ticket_id: string }
+        Returns: {
+          autor_id: string
+          criado_em: string
+          id: string
+          is_admin: boolean
+          mensagem: string
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_mensagens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       excluir_anotacao_questao: {
         Args: { p_questao_id: string; p_tentativa_id: string }
         Returns: undefined
+      }
+      excluir_comentario_questao: {
+        Args: { p_comentario_id: string }
+        Returns: undefined
+      }
+      finalizar_tentativa: {
+        Args: { p_tempo_segundos?: number; p_tentativa_id: string }
+        Returns: Json
+      }
+      gerar_simulado_impressao: {
+        Args: {
+          p_formato?: string
+          p_qtd?: number
+          p_tema_ids?: string[]
+          p_tipo_questao?: string
+        }
+        Returns: Json
       }
       gerar_simulado_personalizado: {
         Args: {
@@ -993,7 +1796,7 @@ export type Database = {
       get_desempenho_por_tema: {
         Args: never
         Returns: {
-          acertos?: number
+          acertos: number
           taxa: number
           tema_nome: string
           total: number
@@ -1004,9 +1807,13 @@ export type Database = {
       get_minha_posicao_ranking: { Args: never; Returns: Json }
       get_minhas_conquistas: { Args: never; Returns: Json }
       get_ranking_global: { Args: { p_limite?: number }; Returns: Json }
+      get_ranking_semana: { Args: { p_limite?: number }; Returns: Json }
       get_revisao_prova: { Args: { p_prova_id: string }; Returns: Json }
       get_revisao_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
-      get_ranking_semana: { Args: { p_limite?: number }; Returns: Json }
+      get_simulado_impressao: {
+        Args: { p_com_gabarito?: boolean; p_prova_id: string }
+        Returns: Json
+      }
       get_streak_estudo: { Args: never; Returns: number }
       get_streak_estudo_v2: { Args: never; Returns: Json }
       iniciar_tentativa: {
@@ -1016,30 +1823,82 @@ export type Database = {
       is_admin: { Args: { uid?: string }; Returns: boolean }
       is_banned: { Args: { uid?: string }; Returns: boolean }
       is_super_admin: { Args: { uid?: string }; Returns: boolean }
-      listar_temas_com_contagem: {
-        Args: { p_tipo_questao?: string }
-        Returns: {
-          criado_em?: string
-          disciplina: string
-          disciplina_id: string
-          id?: string
-          nome?: string
-          parent_id: string
-          periodo?: number
-          qtd_questoes?: number
-        }[]
-      }
       listar_anotacoes_tentativa: {
         Args: { p_tentativa_id: string }
         Returns: {
-          atualizado_em?: string
+          atualizado_em: string
           conteudo: string
-          criado_em?: string
-          id?: string
-          questao_id?: string
-          tentativa_id?: string
-          user_id?: string
+          criado_em: string
+          id: string
+          questao_id: string
+          tentativa_id: string
+          user_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "tentativa_questao_anotacao"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      listar_comentarios_questao: {
+        Args: { p_ordenacao?: string; p_questao_id: string }
+        Returns: Json
+      }
+      listar_temas_com_contagem: {
+        Args: { p_tipo_questao?: string }
+        Returns: {
+          criado_em: string
+          disciplina: string
+          disciplina_id: string
+          id: string
+          nome: string
+          parent_id: string
+          periodo: number
+          qtd_questoes: number
+        }[]
+      }
+      marcar_aviso_visto: { Args: { p_aviso_id: string }; Returns: undefined }
+      marcar_notificacao_lida: { Args: { p_id: string }; Returns: undefined }
+      marcar_todas_notificacoes_lidas: { Args: never; Returns: undefined }
+      reabrir_ticket: {
+        Args: { p_ticket_id: string }
+        Returns: {
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          descricao: string
+          id: string
+          status: string
+          titulo: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suporte_tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      registrar_anexos_mensagem: {
+        Args: { p_anexos: Json; p_mensagem_id: string }
+        Returns: {
+          criado_em: string
+          id: string
+          mensagem_id: string
+          mime_type: string
+          nome_arquivo: string
+          storage_path: string
+          tamanho_bytes: number
+          ticket_id: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "suporte_anexos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       responder_desafio_diario: {
         Args: { p_alternativa_id: string; p_tempo_segundos?: number }
@@ -1053,17 +1912,55 @@ export type Database = {
           p_tentativa_id: string
         }
         Returns: {
-          atualizado_em?: string
+          atualizado_em: string
           conteudo: string
-          criado_em?: string
-          id?: string
-          questao_id?: string
-          tentativa_id?: string
-          user_id?: string
-        } | null
+          criado_em: string
+          id: string
+          questao_id: string
+          tentativa_id: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tentativa_questao_anotacao"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      salvar_resposta_tentativa: {
+        Args: {
+          p_alternativa_id: string
+          p_questao_id: string
+          p_tentativa_id: string
+        }
+        Returns: {
+          alternativa_id: string | null
+          correta: boolean | null
+          id: string
+          ordem_na_tentativa: number | null
+          questao_id: string
+          respondida_em: string | null
+          resposta_texto: string | null
+          tempo_gasto_segundos: number | null
+          tentativa_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tentativa_resposta"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      toggle_favorito_tentativa: {
+        Args: { p_favorito: boolean; p_tentativa_id: string }
+        Returns: undefined
       }
       verificar_conquistas_usuario: {
         Args: { p_user_id?: string }
+        Returns: Json
+      }
+      votar_comentario_questao: {
+        Args: { p_comentario_id: string; p_valor: number }
         Returns: Json
       }
     }
@@ -1201,3 +2098,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
