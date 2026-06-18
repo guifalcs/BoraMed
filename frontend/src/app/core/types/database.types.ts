@@ -72,7 +72,9 @@ export type Database = {
       }
       alternativa: {
         Row: {
+          atualizado_em: string
           correta: boolean
+          criado_em: string
           id: string
           imagem_url: string | null
           letra: string
@@ -81,7 +83,9 @@ export type Database = {
           texto: string
         }
         Insert: {
+          atualizado_em?: string
           correta?: boolean
+          criado_em?: string
           id?: string
           imagem_url?: string | null
           letra: string
@@ -90,7 +94,9 @@ export type Database = {
           texto: string
         }
         Update: {
+          atualizado_em?: string
           correta?: boolean
+          criado_em?: string
           id?: string
           imagem_url?: string | null
           letra?: string
@@ -278,6 +284,7 @@ export type Database = {
       disciplina: {
         Row: {
           ativa: boolean
+          atualizado_em: string
           criado_em: string
           criado_por: string | null
           id: string
@@ -287,6 +294,7 @@ export type Database = {
         }
         Insert: {
           ativa?: boolean
+          atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
           id?: string
@@ -296,6 +304,7 @@ export type Database = {
         }
         Update: {
           ativa?: boolean
+          atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
           id?: string
@@ -492,6 +501,7 @@ export type Database = {
       prova: {
         Row: {
           arquivada: boolean
+          atualizado_em: string
           criado_em: string
           criado_por: string | null
           faculdade_id: string | null
@@ -509,6 +519,7 @@ export type Database = {
         }
         Insert: {
           arquivada?: boolean
+          atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
           faculdade_id?: string | null
@@ -526,6 +537,7 @@ export type Database = {
         }
         Update: {
           arquivada?: boolean
+          atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
           faculdade_id?: string | null
@@ -1033,6 +1045,7 @@ export type Database = {
       }
       tema: {
         Row: {
+          atualizado_em: string
           criado_em: string
           criado_por: string | null
           disciplina_id: string | null
@@ -1041,6 +1054,7 @@ export type Database = {
           parent_id: string | null
         }
         Insert: {
+          atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
           disciplina_id?: string | null
@@ -1049,6 +1063,7 @@ export type Database = {
           parent_id?: string | null
         }
         Update: {
+          atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
           disciplina_id?: string | null
