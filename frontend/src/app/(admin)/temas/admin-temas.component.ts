@@ -14,6 +14,8 @@ import { UiSelectComponent, SelectOption } from '../../shared/components/ui/sele
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { Pencil, Trash2 } from 'lucide-angular';
 
+const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
 @Component({
   selector: 'app-admin-temas',
   standalone: true,
@@ -125,6 +127,11 @@ export class AdminTemasComponent implements OnInit {
   disciplinaSiglaFor(id: string | null): string {
     if (!id) return '—';
     return this.disciplinasDisponiveis().find((d) => d.id === id)?.sigla ?? '—';
+  }
+
+  protected formatarData(data: string | null | undefined): string {
+    if (!data) return '—';
+    return DATA_CURTA_FMT.format(new Date(data));
   }
 
   async confirmarDelete(): Promise<void> {

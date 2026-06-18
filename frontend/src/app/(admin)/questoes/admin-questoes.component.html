@@ -42,6 +42,7 @@
           <th>Tipo</th>
           <th>Status</th>
           <th>Acerto</th>
+          <th>Criada em</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -72,6 +73,7 @@
                 <span class="taxa-badge taxa-badge--none">—</span>
               }
             </td>
+            <td class="data-cell">{{ dataCurta(q.criado_em) }}</td>
             <td class="actions-cell">
               <button
                 class="btn btn--sm btn--icon btn--ghost"
@@ -515,6 +517,7 @@
   }
   .data-table tr:last-child td { border-bottom: none; }
   .enunciado-text { color: #475569; line-height: 1.4; }
+  .data-cell { color: #64748b; white-space: nowrap; }
   .actions-cell {
     display: flex;
     align-items: center;
@@ -769,7 +772,7 @@
       align-items: stretch;
     }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 820px; }
+    .data-table { min-width: 900px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
     .pagination {

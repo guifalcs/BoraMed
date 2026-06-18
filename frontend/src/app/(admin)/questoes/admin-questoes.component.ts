@@ -30,6 +30,7 @@ import { ImageUploadComponent } from '../../shared/components/image-upload/image
 import { QuestaoCardComponent } from '../../shared/components/questao-card/questao-card.component';
 
 const DATE_FMT = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 interface AlternativaForm {
   letra: string;
@@ -435,6 +436,11 @@ export class AdminQuestoesComponent implements OnInit {
   protected dataLabel(data: string | null | undefined): string {
     if (!data) return '—';
     return DATE_FMT.format(new Date(data));
+  }
+
+  protected dataCurta(data: string | null | undefined): string {
+    if (!data) return '—';
+    return DATA_CURTA_FMT.format(new Date(data));
   }
 
   private temasDaQuestao(ids: string[]): Tema[] {

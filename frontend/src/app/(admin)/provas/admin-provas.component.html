@@ -40,6 +40,7 @@
           <th>Origem</th>
           <th>Faculdade</th>
           <th>Questões</th>
+          <th>Criada em</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -51,6 +52,7 @@
             <td><span class="type-badge">{{ p.origem }}</span></td>
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
             <td>{{ p.qtd_questoes }}</td>
+            <td class="data-cell">{{ formatarData(p.criado_em) }}</td>
             <td class="actions-cell">
               <button class="btn btn--sm btn--icon btn--ghost" aria-label="Editar prova" (click)="abrirDrawerEdicao(p)">
                 <app-ui-icon [icon]="iconPencil" [size]="15" />
@@ -681,6 +683,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
     border-bottom: 1px solid #f1f5f9; background: #ffffff;
   }
   .data-table tr:last-child td { border-bottom: none; }
+  .data-cell { color: #64748b; white-space: nowrap; }
 
   .type-badge {
     font-size: 0.7rem; background: #ede9fe; border: 1px solid #ddd6fe;
@@ -1028,7 +1031,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
       margin-left: 0 !important;
     }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 720px; }
+    .data-table { min-width: 820px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
     .pagination {

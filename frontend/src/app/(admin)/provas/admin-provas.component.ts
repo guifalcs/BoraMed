@@ -132,6 +132,8 @@ function resolverTemasQuestao(
   return { ids, display: displays.length > 0 ? displays.join('; ') : '—', erros };
 }
 
+const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
 @Component({
   selector: 'app-admin-provas',
   standalone: true,
@@ -583,6 +585,7 @@ export class AdminProvasComponent implements OnInit {
   }
 
   protected tipoLabel(tipo: string | null): string { return this.opcoesTipo.find((o) => o.value === tipo)?.label ?? tipo ?? '—'; }
+  protected formatarData(data: string | null | undefined): string { return data ? DATA_CURTA_FMT.format(new Date(data)) : '—'; }
   protected enunciadoCurto(texto: string): string { return texto.length > 100 ? texto.slice(0, 100) + '…' : texto; }
   protected gabaritoLabel(q: QuestaoParseada): string { return q.alternativas.find((a) => a.correta)?.letra ?? '—'; }
 
