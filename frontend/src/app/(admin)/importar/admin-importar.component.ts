@@ -586,7 +586,7 @@ PARENT: Semiologia Cardiovascular
 
   protected readonly doneHint = computed(() => {
     switch (this.tipoImportacao()) {
-      case 'questoes': return 'As questões foram criadas com status Rascunho. Revise e publique em /admin/questoes.';
+      case 'questoes': return 'As questões foram importadas e já estão ativas.';
       case 'disciplinas': return 'As disciplinas foram criadas e já estão disponíveis para uso nas questões e temas.';
       case 'temas': return 'Os temas foram criados e já estão disponíveis para uso nas questões.';
     }
@@ -682,7 +682,7 @@ PARENT: Semiologia Cardiovascular
         enunciado_apoio: q.enunciado_apoio,
         formato: q.formato,
         tipo_questao: q.tipo_questao ?? undefined,
-        status: 'rascunho',
+        status: 'ativa',
         disciplina_id: q.disciplina_id,
         explicacao: q.explicacao,
         referencia: q.referencia,
