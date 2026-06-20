@@ -33,13 +33,15 @@ export class QuestaoCardComponent {
 
   protected readonly imgCarregada = signal(false);
 
-  protected readonly exibirExplicacao = computed(
-    () =>
-      !!this.questao().explicacao &&
-      this.modo() === 'estudo' &&
-      this.respostaSelecionada() !== null &&
-      this.alternativaCorreta() !== null,
-  );
+  protected readonly exibirExplicacao = computed(() => {
+    if (!this.questao().explicacao) return false;
+    const modo = this.modo();
+    if (modo === 'visualizar') return true;
+    if (modo === 'estudo') {
+      return this.respostaSelecionada() !== null && this.alternativaCorreta() !== null;
+    }
+    return false;
+  });
 
   protected readonly naoRespondida = computed(
     () => this.gabaritioVisivel() && this.respostaSelecionada() === null,
