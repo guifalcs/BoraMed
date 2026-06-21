@@ -6,7 +6,13 @@ import { PrefetchService } from '../../core/services/prefetch.service';
 @Component({
   selector: 'app-auth-callback',
   standalone: true,
-  template: `<p style="padding:2rem;font-family:sans-serif">Autenticando…</p>`,
+  template: `
+    <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-gray-50 px-4">
+      <img src="brand/logo.webp" alt="BoraMed" class="h-9 w-auto" width="400" height="128" />
+      <div class="h-9 w-9 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+      <p class="text-sm text-gray-500">Entrando…</p>
+    </div>
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthCallbackComponent implements OnInit {

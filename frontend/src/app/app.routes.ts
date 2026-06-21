@@ -6,11 +6,13 @@ import {
   lazyGuestGuard,
   lazySubscriptionGuard,
 } from './core/guards/lazy-route-guards';
+import { oauthRedirectGuard } from './core/guards/oauth-redirect.guard';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
+    canActivate: [oauthRedirectGuard],
     loadComponent: () =>
       import('./(marketing)/landing/landing.component').then((m) => m.LandingComponent),
   },
