@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-20 | Pagamentos | sem commit
+
+**Integração Mercado Pago — assinaturas recorrentes + paywall total**
+
+- Nova migration `20260620120000_planos_assinaturas_pagamentos.sql`: tabelas `plano`, `assinatura` e `pagamento` com RLS (aluno só lê as próprias; escrita de assinatura/pagamento apenas via service role), trigger `set_atualizado_em`, helper `tem_assinatura_ativa()` (SECURITY DEFINER, admin sempre passa) e seed dos planos mensal/anual.
+- Três edge functions: `mp-criar-assinatura` (autenticada — devolve o `init_point` do plano com `external_reference`), `mp-webhook` (pública, `verify_jwt=false` — valida `x-signature` HMAC-SHA256 e faz upsert de assinatura/pagamento; fonte da verdade do status) e `mp-gerenciar-assinatura` (cancelar/pausar via `PUT /preapproval/{id}`). Helpers de CORS/JSON em `functions/_shared/cors.ts`.
+- Frontend: `SubscriptionService` + `subscription.types.ts`; `lazySubscriptionGuard` (paywall total em `/dashboard`, bypass admin, consulta RPC autoritativa); rotas `/planos` e `/assinatura/retorno`; tela `/dashboard/assinatura` (gerenciar e histórico). `mercadoPagoPublicKey` adicionada aos environments (reservada para futura migração a CardForm).
+- Modelo: assinatura recorrente *com plano associado*, checkout por redirecionamento (sem manuseio de cartão no app). Planos de TESTE (sandbox) criados no Mercado Pago. **Pendente para produção**: ativar credenciais MP, recriar planos com token de produção, definir preços finais, configurar webhook + secret e fazer deploy das migrations/functions (ver ADR-025).
+
+---
+
 ## 2026-06-18 | Backend | sem commit
 
 **Fuso de Brasília na API e `atualizado_em` nas entidades de questão**

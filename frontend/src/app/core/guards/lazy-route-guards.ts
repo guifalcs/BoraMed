@@ -28,3 +28,10 @@ export const lazyBannedAccountGuard: CanActivateFn = (route, state) => {
     runInInjectionContext(injector, () => m.bannedAccountGuard(route, state)),
   ) as Promise<GuardResult>;
 };
+
+export const lazySubscriptionGuard: CanActivateFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+  return import('./subscription.guard').then((m) =>
+    runInInjectionContext(injector, () => m.subscriptionGuard(route, state)),
+  ) as Promise<GuardResult>;
+};

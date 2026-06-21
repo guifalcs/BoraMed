@@ -4,6 +4,7 @@ import {
   lazyAuthGuard,
   lazyBannedAccountGuard,
   lazyGuestGuard,
+  lazySubscriptionGuard,
 } from './core/guards/lazy-route-guards';
 
 export const routes: Routes = [
@@ -50,11 +51,24 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [lazyAuthGuard],
+    canActivate: [lazyAuthGuard, lazySubscriptionGuard],
     loadComponent: () =>
       import('./(dashboard)/dashboard.component').then((m) => m.DashboardComponent),
     loadChildren: () =>
       import('./(dashboard)/dashboard.routes').then((m) => m.dashboardRoutes),
+  },
+  {
+    path: 'planos',
+    canActivate: [lazyAuthGuard],
+    loadComponent: () =>
+      import('./(assinatura)/planos/planos.component').then((m) => m.PlanosComponent),
+  },
+  {
+    path: 'assinatura/retorno',
+    loadComponent: () =>
+      import('./(assinatura)/retorno/assinatura-retorno.component').then(
+        (m) => m.AssinaturaRetornoComponent,
+      ),
   },
   {
     path: 'auth/callback',

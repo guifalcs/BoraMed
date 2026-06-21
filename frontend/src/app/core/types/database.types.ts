@@ -114,6 +114,60 @@ export type Database = {
           },
         ]
       }
+      assinatura: {
+        Row: {
+          atualizado_em: string
+          cancelada_em: string | null
+          criado_em: string
+          data_inicio: string | null
+          id: string
+          mp_preapproval_id: string | null
+          plano_id: string | null
+          proxima_cobranca: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cancelada_em?: string | null
+          criado_em?: string
+          data_inicio?: string | null
+          id?: string
+          mp_preapproval_id?: string | null
+          plano_id?: string | null
+          proxima_cobranca?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          cancelada_em?: string | null
+          criado_em?: string
+          data_inicio?: string | null
+          id?: string
+          mp_preapproval_id?: string | null
+          plano_id?: string | null
+          proxima_cobranca?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinatura_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "plano"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinatura_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avisos: {
         Row: {
           ativo: boolean
@@ -426,6 +480,66 @@ export type Database = {
         }
         Relationships: []
       }
+      pagamento: {
+        Row: {
+          assinatura_id: string | null
+          atualizado_em: string
+          criado_em: string
+          id: string
+          metodo_pagamento: string | null
+          moeda: string
+          mp_authorized_payment_id: string | null
+          mp_payment_id: string | null
+          processado_em: string | null
+          status: string
+          user_id: string
+          valor_centavos: number | null
+        }
+        Insert: {
+          assinatura_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          metodo_pagamento?: string | null
+          moeda?: string
+          mp_authorized_payment_id?: string | null
+          mp_payment_id?: string | null
+          processado_em?: string | null
+          status?: string
+          user_id: string
+          valor_centavos?: number | null
+        }
+        Update: {
+          assinatura_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          metodo_pagamento?: string | null
+          moeda?: string
+          mp_authorized_payment_id?: string | null
+          mp_payment_id?: string | null
+          processado_em?: string | null
+          status?: string
+          user_id?: string
+          valor_centavos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamento_assinatura_id_fkey"
+            columns: ["assinatura_id"]
+            isOneToOne: false
+            referencedRelation: "assinatura"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       palavra_proibida: {
         Row: {
           criado_em: string
@@ -441,6 +555,57 @@ export type Database = {
           criado_em?: string
           id?: string
           termo?: string
+        }
+        Relationships: []
+      }
+      plano: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          descricao: string | null
+          frequency: number
+          frequency_type: string
+          id: string
+          moeda: string
+          mp_init_point: string | null
+          mp_preapproval_plan_id: string | null
+          nome: string
+          ordem: number
+          preco_centavos: number
+          slug: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          frequency?: number
+          frequency_type?: string
+          id?: string
+          moeda?: string
+          mp_init_point?: string | null
+          mp_preapproval_plan_id?: string | null
+          nome: string
+          ordem?: number
+          preco_centavos: number
+          slug: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          frequency?: number
+          frequency_type?: string
+          id?: string
+          moeda?: string
+          mp_init_point?: string | null
+          mp_preapproval_plan_id?: string | null
+          nome?: string
+          ordem?: number
+          preco_centavos?: number
+          slug?: string
         }
         Relationships: []
       }
@@ -1966,6 +2131,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      tem_assinatura_ativa: { Args: { uid?: string }; Returns: boolean }
       toggle_favorito_tentativa: {
         Args: { p_favorito: boolean; p_tentativa_id: string }
         Returns: undefined

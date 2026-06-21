@@ -1,0 +1,374 @@
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { ShieldCheck, type LucideIconData } from 'lucide-angular';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
+import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import type { Assinatura, Pagamento } from '../../core/models/subscription.types';
+
+const STATUS_LABEL: Record<Assinatura['status'], string> = {
+  pending: 'Pendente',
+  authorized: 'Ativa',
+  paused: 'Pausada',
+  cancelled: 'Cancelada',
+};
+
+const STATUS_PAGAMENTO_LABEL: Record<string, string> = {
+  approved: 'Aprovado',
+  pending: 'Pendente',
+  authorized: 'Autorizado',
+  in_process: 'Processando',
+  rejected: 'Recusado',
+  refunded: 'Reembolsado',
+  cancelled: 'Cancelado',
+  charged_back: 'Estornado',
+};
+
+const METODO_PAGAMENTO_LABEL: Record<string, string> = {
+  credit_card: 'Cartão de crédito',
+  debit_card: 'Cartão de débito',
+  master: 'Cartão de crédito',
+  visa: 'Cartão de crédito',
+  amex: 'Cartão de crédito',
+  elo: 'Cartão de crédito',
+  hipercard: 'Cartão de crédito',
+  pix: 'Pix',
+  bolbradesco: 'Boleto',
+  account_money: 'Saldo Mercado Pago',
+};
+
+@Component({
+  selector: 'app-minha-assinatura',
+  standalone: true,
+  imports: [CommonModule, UiConfirmDialogComponent, UiIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="mx-auto max-w-2xl px-4 py-8">
+      <h1 class="text-2xl font-bold text-gray-900">Minha assinatura</h1>
+
+      @if (loading()) {
+        <p class="mt-6 text-gray-500">Carregando…</p>
+      } @else if (!assinatura()) {
+        <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <p class="text-gray-600">Você ainda não tem uma assinatura.</p>
+          <button
+            type="button"
+            (click)="verPlanos()"
+            class="mt-4 rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700"
+          >
+            Ver planos
+          </button>
+        </div>
+      } @else {
+        <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">Plano</span>
+            <span class="text-sm font-medium text-gray-900">{{ planoNome() }}</span>
+          </div>
+          @if (valorPeriodicidade()) {
+            <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+              <span class="text-sm text-gray-500">Valor</span>
+              <span class="text-sm text-gray-900">{{ valorPeriodicidade() }}</span>
+            </div>
+          }
+          <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+            <span class="text-sm text-gray-500">Status</span>
+            <span
+              class="rounded-full px-3 py-1 text-xs font-semibold"
+              [ngClass]="acessoAtivo() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+            >
+              {{ statusTexto() }}
+            </span>
+          </div>
+          @if (assinatura()!.proxima_cobranca) {
+            <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+              <span class="text-sm text-gray-500">{{ rotuloData() }}</span>
+              <span class="text-sm text-gray-900">
+                @if (mostrarValorProxima()) {{{ proximaCobrancaValor() }} · }{{ data(assinatura()!.proxima_cobranca) }}
+              </span>
+            </div>
+          }
+          @if (assinatura()!.data_inicio) {
+            <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+              <span class="text-sm text-gray-500">Assinante desde</span>
+              <span class="text-sm text-gray-900">{{ data(assinatura()!.data_inicio) }}</span>
+            </div>
+          }
+          @if (formaPagamento()) {
+            <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+              <span class="text-sm text-gray-500">Forma de pagamento</span>
+              <span class="text-sm text-gray-900">{{ formaPagamento() }}</span>
+            </div>
+          }
+          @if (assinatura()!.mp_preapproval_id) {
+            <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+              <span class="text-sm text-gray-500">Código</span>
+              <span class="text-xs text-gray-400">{{ assinatura()!.mp_preapproval_id }}</span>
+            </div>
+          }
+
+          @if (emCarencia()) {
+            <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              Assinatura cancelada. Você continua com acesso até
+              {{ data(assinatura()!.proxima_cobranca) }} e não haverá nova cobrança.
+            </p>
+          }
+          @if (acessoUnicoAtivo()) {
+            <p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
+              Pagamento único — acesso liberado até {{ data(assinatura()!.proxima_cobranca) }}.
+              Não renova automaticamente; você poderá renovar quando expirar.
+            </p>
+          }
+
+          <div class="mt-6 flex gap-3">
+            @if (recorrente() && assinatura()!.status === 'authorized') {
+              <button
+                type="button"
+                (click)="abrirConfirmacao()"
+                [disabled]="processando()"
+                class="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+              >
+                Cancelar assinatura
+              </button>
+            } @else if (!acessoUnicoAtivo()) {
+              <button
+                type="button"
+                (click)="verPlanos()"
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Assinar novamente
+              </button>
+            }
+          </div>
+          @if (recorrente() && assinatura()!.status === 'authorized') {
+            <p class="mt-2 text-xs text-gray-500">
+              Ao cancelar, você mantém o acesso até a data da próxima cobrança.
+            </p>
+          }
+        </div>
+
+        @if (pagamentos().length > 0) {
+          <h2 class="mt-8 text-lg font-semibold text-gray-900">Histórico de pagamentos</h2>
+          <div class="mt-3 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
+            @for (p of pagamentos(); track p.id) {
+              <div class="flex items-center justify-between gap-3 px-4 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-gray-900">{{ p.plano_nome ?? 'Assinatura' }}</p>
+                  <p class="text-xs text-gray-500">{{ data(p.processado_em ?? p.criado_em) }}</p>
+                </div>
+                <span class="text-sm font-medium text-gray-900">{{ valor(p) }}</span>
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                  [ngClass]="p.status === 'approved'
+                    ? 'bg-green-100 text-green-700'
+                    : p.status === 'rejected'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-gray-100 text-gray-600'"
+                >
+                  {{ statusPagamento(p.status) }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @if (erro()) {
+        <p class="mt-4 text-sm text-red-600">{{ erro() }}</p>
+      }
+
+      <div class="relative mt-10 space-y-1.5 pl-6 text-xs leading-relaxed text-gray-400">
+        <app-ui-icon [icon]="segurancaIcon" [size]="14" class="absolute left-0 top-0.5 text-gray-400" />
+        <p>
+          Pagamentos processados com segurança pelo
+          <span class="font-medium text-gray-500">Mercado Pago</span>.
+          O BoraMed não tem acesso nem armazena os dados do seu cartão.
+        </p>
+        <p>
+          No plano <span class="font-medium text-gray-500">mensal</span> a cobrança é recorrente e você
+          pode cancelar quando quiser — o acesso continua até o fim do período já pago.
+        </p>
+        <p>
+          O <span class="font-medium text-gray-500">semestral</span> é um pagamento único (parcelável em
+          até 6x sem juros) que libera 6 meses de acesso e não renova automaticamente.
+        </p>
+        <p>Dúvidas sobre cobrança? Fale com o suporte pelo app.</p>
+      </div>
+
+      @if (mostrarConfirm()) {
+        <app-ui-confirm-dialog
+          titulo="Cancelar assinatura?"
+          [mensagem]="mensagemCancelamento()"
+          labelConfirmar="Sim, cancelar"
+          labelCancelar="Voltar"
+          variante="danger"
+          (confirmar)="confirmarCancelamento()"
+          (cancelar)="mostrarConfirm.set(false)"
+        />
+      }
+    </div>
+  `,
+})
+export class MinhaAssinaturaComponent implements OnInit {
+  private readonly subscription = inject(SubscriptionService);
+  private readonly router = inject(Router);
+
+  readonly assinatura = this.subscription.assinatura;
+  readonly pagamentos = signal<Pagamento[]>([]);
+  readonly loading = signal(true);
+  readonly processando = signal(false);
+  readonly erro = signal<string | null>(null);
+  readonly mostrarConfirm = signal(false);
+  readonly segurancaIcon: LucideIconData = ShieldCheck;
+
+  async ngOnInit(): Promise<void> {
+    await this.subscription.carregarAssinatura();
+    this.pagamentos.set(await this.subscription.historicoPagamentos());
+    this.loading.set(false);
+  }
+
+  statusLabel(status: Assinatura['status']): string {
+    return STATUS_LABEL[status];
+  }
+
+  statusPagamento(status: string): string {
+    return STATUS_PAGAMENTO_LABEL[status] ?? status;
+  }
+
+  planoNome(): string {
+    return this.assinatura()?.plano?.nome ?? '—';
+  }
+
+  valorPeriodicidade(): string | null {
+    const p = this.assinatura()?.plano;
+    if (!p) return null;
+    const valor = this.brl(p.preco_centavos, p.moeda);
+    if (!p.recorrente) return valor; // pagamento único: só o valor, sem periodicidade
+    const per = this.periodicidade(p.frequency, p.frequency_type);
+    return per ? `${valor} ${per}` : valor;
+  }
+
+  proximaCobrancaValor(): string | null {
+    const p = this.assinatura()?.plano;
+    return p ? this.brl(p.preco_centavos, p.moeda) : null;
+  }
+
+  formaPagamento(): string | null {
+    const m = this.pagamentos()[0]?.metodo_pagamento;
+    if (!m) return null;
+    return METODO_PAGAMENTO_LABEL[m] ?? m;
+  }
+
+  private periodicidade(freq: number, tipo: 'days' | 'months'): string {
+    if (tipo === 'months') {
+      if (freq === 1) return ''; // "Mensal" já é claro; não repete "por mês"
+      if (freq === 6) return 'a cada 6 meses';
+      if (freq === 12) return 'por ano';
+      return `a cada ${freq} meses`;
+    }
+    return `a cada ${freq} dias`;
+  }
+
+  private brl(centavos: number, moeda = 'BRL'): string {
+    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: moeda || 'BRL' });
+  }
+
+  /** Cancelada, mas ainda dentro do período pago (acesso liberado até proxima_cobranca). */
+  emCarencia(): boolean {
+    const a = this.assinatura();
+    if (!a || a.status !== 'cancelled' || !a.proxima_cobranca) return false;
+    return new Date(a.proxima_cobranca).getTime() > Date.now();
+  }
+
+  /** Plano recorrente (mensal) vs. pagamento único (semestral). */
+  recorrente(): boolean {
+    return this.assinatura()?.plano?.recorrente ?? true;
+  }
+
+  private temAcessoAgora(): boolean {
+    const a = this.assinatura();
+    if (!a) return false;
+    const futuro = !a.proxima_cobranca || new Date(a.proxima_cobranca).getTime() > Date.now();
+    if (a.status === 'authorized') return futuro;
+    return this.emCarencia();
+  }
+
+  acessoAtivo(): boolean {
+    return this.temAcessoAgora();
+  }
+
+  /** Acesso de pagamento único ainda válido. */
+  acessoUnicoAtivo(): boolean {
+    return !this.recorrente() && this.assinatura()?.status === 'authorized' && this.temAcessoAgora();
+  }
+
+  private acessoUnicoExpirado(): boolean {
+    const a = this.assinatura();
+    return (
+      !this.recorrente() &&
+      a?.status === 'authorized' &&
+      !!a?.proxima_cobranca &&
+      new Date(a.proxima_cobranca).getTime() <= Date.now()
+    );
+  }
+
+  statusTexto(): string {
+    if (this.acessoUnicoExpirado()) return 'Expirada';
+    return this.statusLabel(this.assinatura()!.status);
+  }
+
+  rotuloData(): string {
+    if (this.recorrente() && this.assinatura()?.status === 'authorized' && !this.emCarencia()) {
+      return 'Próxima cobrança';
+    }
+    return 'Acesso até';
+  }
+
+  mostrarValorProxima(): boolean {
+    return this.recorrente() && this.assinatura()?.status === 'authorized' && !this.emCarencia();
+  }
+
+  data(iso: string | null): string {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('pt-BR');
+  }
+
+  valor(p: Pagamento): string {
+    if (p.valor_centavos == null) return '—';
+    return (p.valor_centavos / 100).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: p.moeda || 'BRL',
+    });
+  }
+
+  verPlanos(): void {
+    this.router.navigate(['/planos']);
+  }
+
+  abrirConfirmacao(): void {
+    this.erro.set(null);
+    this.mostrarConfirm.set(true);
+  }
+
+  mensagemCancelamento(): string {
+    const ate = this.data(this.assinatura()?.proxima_cobranca ?? null);
+    return (
+      `Você continuará com acesso até ${ate} e não haverá nova cobrança. ` +
+      `Após essa data, perderá o acesso aos simulados. Você pode assinar de novo quando quiser.`
+    );
+  }
+
+  async confirmarCancelamento(): Promise<void> {
+    this.mostrarConfirm.set(false);
+    await this.cancelar();
+  }
+
+  async cancelar(): Promise<void> {
+    this.erro.set(null);
+    this.processando.set(true);
+    const res = await this.subscription.cancelar();
+    if (!res.ok) this.erro.set(res.error);
+    this.processando.set(false);
+  }
+}

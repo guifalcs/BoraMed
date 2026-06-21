@@ -6,14 +6,18 @@ import {
   Activity,
   AlertTriangle,
   BookOpen,
+  CalendarClock,
   CheckCircle2,
   ClipboardList,
+  CreditCard,
+  DollarSign,
   FileText,
   TrendingUp,
   Users,
+  Wallet,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
-import { AdminService, AdminStats } from '../../core/services/admin.service';
+import { AdminService, AdminFinanceiro, AdminStats } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 
@@ -58,9 +62,21 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   protected readonly stats = signal<AdminStats | null>(null);
+  protected readonly fin = signal<AdminFinanceiro | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly activityIcon = Activity;
   protected readonly checkIcon = CheckCircle2;
+
+  protected readonly financeiroKpis = computed(() => {
+    const f = this.fin();
+    if (!f) return [] as { label: string; value: string; sub: string; icon: LucideIconData; tone: AdminKpi['tone'] }[];
+    return [
+      { label: 'Receita no mês', value: this.brl(f.receita_mes_centavos), sub: `${this.formatNumber(f.pagamentos_aprovados)} aprovados`, icon: DollarSign, tone: 'emerald' as const },
+      { label: 'MRR', value: this.brl(f.mrr_centavos), sub: 'recorrente mensal', icon: Wallet, tone: 'blue' as const },
+      { label: 'Previsão 30 dias', value: this.brl(f.previsao_30d_centavos), sub: 'renovações previstas', icon: CalendarClock, tone: 'violet' as const },
+      { label: 'Assinaturas ativas', value: this.formatNumber(f.assinaturas_ativas), sub: `+${this.formatNumber(f.novas_no_mes)} no mês`, icon: CreditCard, tone: 'cyan' as const },
+    ];
+  });
 
   protected readonly kpis = computed<AdminKpi[]>(() => {
     const s = this.stats();
@@ -314,17 +330,25 @@ export class AdminDashboardComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
-    const result = await this.adminService.getStats();
+    const [result, fin] = await Promise.all([
+      this.adminService.getStats(),
+      this.adminService.getFinanceiro(),
+    ]);
     if (result.ok) {
       this.stats.set(result.data);
     } else {
       this.toast.error('Erro ao carregar estatísticas.');
     }
+    if (fin.ok) this.fin.set(fin.data);
     this.isLoading.set(false);
   }
 
   protected formatNumber(value: number): string {
     return this.numberFormatter.format(value);
+  }
+
+  protected brl(centavos: number): string {
+    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
   private percent(part: number, total: number): number {

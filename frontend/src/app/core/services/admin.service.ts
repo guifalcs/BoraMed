@@ -24,6 +24,42 @@ export interface AdminStats {
   total_temas: number;
 }
 
+export interface AdminFinanceiroPlano {
+  slug: string;
+  nome: string;
+  ativas: number;
+}
+
+export interface AdminFinanceiro {
+  assinaturas_ativas: number;
+  assinaturas_canceladas: number;
+  novas_no_mes: number;
+  cancelamentos_no_mes: number;
+  mrr_centavos: number;
+  previsao_30d_centavos: number;
+  receita_total_centavos: number;
+  receita_mes_centavos: number;
+  receita_liquida_total_centavos: number;
+  receita_liquida_mes_centavos: number;
+  pagamentos_aprovados: number;
+  pagamentos_recusados: number;
+  por_plano: AdminFinanceiroPlano[];
+}
+
+export interface AdminPagamento {
+  id: string;
+  criado_em: string;
+  processado_em: string | null;
+  user_email: string | null;
+  plano_slug: string | null;
+  plano_nome: string | null;
+  valor_centavos: number | null;
+  liquido_centavos: number | null;
+  moeda: string;
+  status: string;
+  metodo_pagamento: string | null;
+}
+
 export interface AdminQuestao {
   id: string;
   enunciado: string;
@@ -227,6 +263,20 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_stats');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminStats };
+  }
+
+  // ---- Financeiro ----
+
+  async getFinanceiro(): Promise<ServiceResult<AdminFinanceiro>> {
+    const { data, error } = await this.supabase.rpc('admin_get_financeiro');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminFinanceiro };
+  }
+
+  async listarPagamentos(limit = 100): Promise<ServiceResult<AdminPagamento[]>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_pagamentos', { p_limit: limit });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminPagamento[] };
   }
 
   // ---- Usuários ----

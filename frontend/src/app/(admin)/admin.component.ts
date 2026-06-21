@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   Bell,
   BookOpen,
+  DollarSign,
   FileText,
   GraduationCap,
   Headphones,
@@ -54,6 +55,7 @@ export class AdminComponent {
   protected readonly navItems: AdminNavItem[] = [
     { label: 'Dashboard', icon: LayoutDashboard, route: '/admin', exact: true },
     { label: 'Usuários', icon: Users, route: '/admin/usuarios' },
+    { label: 'Financeiro', icon: DollarSign, route: '/admin/financeiro' },
     { label: 'Questões', icon: FileText, route: '/admin/questoes' },
     { label: 'Provas', icon: BookOpen, route: '/admin/provas' },
     { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },

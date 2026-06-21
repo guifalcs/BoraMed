@@ -41,6 +41,23 @@
     }
   </section>
 
+  @if (fin()) {
+    <section class="kpi-grid" aria-label="Financeiro">
+      @for (kpi of financeiroKpis(); track kpi.label) {
+        <article class="kpi-card" [ngClass]="'tone-' + kpi.tone">
+          <div class="kpi-icon">
+            <app-ui-icon [icon]="kpi.icon" [size]="20" />
+          </div>
+          <div>
+            <span class="kpi-label">{{ kpi.label }}</span>
+            <strong class="kpi-value">{{ kpi.value }}</strong>
+            <span class="kpi-sub">{{ kpi.sub }}</span>
+          </div>
+        </article>
+      }
+    </section>
+  }
+
   <section class="dashboard-grid" aria-label="Análises">
     <article class="panel panel--wide">
       <div class="panel-header">

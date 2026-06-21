@@ -181,11 +181,25 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Personalização granular: aluno monta o simulado exatamente com o que precisa estudar
 * Competição por consistência de estudo e XP, sem confronto direto por acurácia
 
-## Monetização (planejada)
+## Monetização
 
-* Freemium: treinos nacionais gratuitos, processuais e laboratório pagos
-* Preço alvo: R$19–39/mês ou R$99–199/semestre
-* Definição final pendente
+* **Modelo**: paywall total. Todo o conteúdo (`/dashboard/*`) exige assinatura
+  ativa (`assinatura.status = 'authorized'`). Sem assinatura, o aluno só acessa
+  `/planos`, `/assinatura/retorno` e telas públicas. Admins/super_admins não
+  passam pelo paywall.
+* **Gateway**: Mercado Pago, assinaturas recorrentes (`preapproval`) no modelo
+  **com plano associado**, checkout por **redirecionamento** (init_point do
+  plano). O BoraMed não manuseia dados de cartão (PCI fica no Mercado Pago).
+* **Planos**: definidos na tabela `plano` (mensal e anual no MVP). Preço,
+  frequência e o `mp_preapproval_plan_id`/`mp_init_point` correspondente ficam
+  por linha. Preços iniciais provisórios (mensal R$29,90 / anual R$288,00),
+  ajustáveis sem deploy.
+* **Estados da assinatura** (espelham o Mercado Pago): `pending` →
+  `authorized` (ativa) → `paused`/`cancelled`. Fonte da verdade: webhook do MP.
+* **Retry de cobrança** (regra do MP): após 3 parcelas recusadas a assinatura é
+  cancelada automaticamente.
+* **Vínculo aluno↔assinatura**: `external_reference` = `profiles.id` anexado ao
+  init_point; fallback de reconciliação por `payer_email` no webhook.
 
 ## Conteúdo por Período
 

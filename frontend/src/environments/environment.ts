@@ -4,4 +4,7 @@ export const environment = {
   supabaseAnonKey:
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
   sentryDsn: 'https://52153d44379bda28bed8d9a2868f260b@o4511458808561664.ingest.us.sentry.io/4511458868920320',
+  // Public key do Mercado Pago (frontend-safe). Não usada no checkout por
+  // redirect; reservada para uma futura migração a CardForm/Bricks.
+  mercadoPagoPublicKey: 'TEST-aef365d1-0442-4174-8e02-3da444226cab',
 };

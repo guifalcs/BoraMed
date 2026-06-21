@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Análise do fluxo de pagamento — BoraMed</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#121a2b; --card2:#0f1626; --line:#22304a;
+    --txt:#e6edf7; --muted:#93a4bf; --crit:#ff5d6c; --high:#ff9f43; --sec:#7c8cff;
+    --ux:#ffd24d; --perf:#36d399; --ok:#36d399;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(160deg,#0b1220,#0d1526);color:var(--txt);
+    font:15px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:32px 16px}
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 24px}
+  .counts{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px}
+  .pill{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;background:var(--card2)}
+  h2{font-size:18px;margin:30px 0 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  .f{background:var(--card);border:1px solid var(--line);border-left-width:4px;border-radius:10px;padding:14px 16px;margin:10px 0}
+  .f h3{margin:0 0 6px;font-size:15px}
+  .f p{margin:6px 0;color:#cdd8ec}
+  .f .fix{color:var(--muted);font-size:13.5px}
+  .f .fix b{color:#cfe0ff;font-weight:600}
+  .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px;margin-right:8px;vertical-align:middle}
+  .crit{border-left-color:var(--crit)} .t-crit{background:rgba(255,93,108,.16);color:var(--crit)}
+  .high{border-left-color:var(--high)} .t-high{background:rgba(255,159,67,.16);color:var(--high)}
+  .sec{border-left-color:var(--sec)} .t-sec{background:rgba(124,140,255,.16);color:var(--sec)}
+  .ux{border-left-color:var(--ux)} .t-ux{background:rgba(255,210,77,.16);color:var(--ux)}
+  .perf{border-left-color:var(--perf)} .t-perf{background:rgba(54,211,153,.16);color:var(--perf)}
+  code{background:#0a1322;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:13px;color:#a9c7ff}
+  ul.check{list-style:none;padding:0;margin:0}
+  ul.check li{padding:7px 0 7px 28px;position:relative;border-bottom:1px dashed var(--line)}
+  ul.check li:before{content:"☐";position:absolute;left:4px;color:var(--muted)}
+  .ok li:before{content:"✓";color:var(--ok)}
+  .lead{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:#cdd8ec}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Análise do fluxo de pagamento — BoraMed</h1>
+  <p class="sub">Revisão pré-produção: bugs, segurança, UX, dados. Mercado Pago (mensal recorrente + semestral pagamento único parcelável).</p>
+
+  <div class="counts">
+    <span class="pill" style="color:var(--crit)">4 críticos</span>
+    <span class="pill" style="color:var(--high)">5 bugs/correções</span>
+    <span class="pill" style="color:var(--sec)">4 segurança</span>
+    <span class="pill" style="color:var(--ux)">4 UX</span>
+    <span class="pill" style="color:var(--perf)">3 dados/perf</span>
+  </div>
+
+  <div class="lead">
+    <b>Veredito:</b> a arquitetura está sólida (HMAC validado, RLS correto, idempotência por chaves únicas, paywall com bypass de admin). O que falta para "perfeito em prod" se concentra em: (1) virar a chave de teste→produção, (2) dois furos de <b>registro de receita</b>, (3) <b>revogar acesso em reembolso/chargeback</b>, e (4) um vazamento de informação via RPC. Nada disso é reescrita — são ajustes pontuais.
+  </div>
+
+  <h2>🔴 Críticos — bloqueiam o go-live</h2>
+
+  <div class="f crit">
+    <h3><span class="tag t-crit">C1</span>Tudo está com credenciais de TESTE (vendedor de teste)</h3>
+    <p>Secrets <code>MP_ACCESS_TOKEN</code>/<code>MP_WEBHOOK_SECRET</code>, os <code>mp_preapproval_plan_id</code>/<code>mp_init_point</code> dos planos e a preferência do semestral usam a conta de teste (<code>3486450558</code>).</p>
+    <p class="fix"><b>Ação:</b> na conta real — ativar credenciais de produção, recriar os 2 planos (mensal recorrente + semestral) com o token de prod, atualizar a tabela <code>plano</code>, reconfigurar o webhook (com novo secret) e trocar os secrets das functions.</p>
+  </div>
+
+  <div class="f crit">
+    <h3><span class="tag t-crit">C2</span>Dados de teste no banco de produção</h3>
+    <p>O projeto cloud é o de produção. Há assinaturas/pagamentos e o usuário <code>teste-aluno</code> de teste gravados lá — vão poluir o financeiro do dia 1.</p>
+    <p class="fix"><b>Ação:</b> limpar <code>pagamento</code>, <code>assinatura</code> e o usuário de teste antes de abrir. (Manter os <code>plano</code> após recriá-los em prod.)</p>
+  </div>
+
+  <div class="f crit">
+    <h3><span class="tag t-crit">C3</span>URLs apontam para localhost / redirecionador de dev</h3>
+    <p><code>APP_URL</code> = <code>http://localhost:4300</code>; <code>back_url</code> dos planos e da preferência apontam para a função <code>mp-retorno</code> (atalho de dev que devolve pro localhost).</p>
+    <p class="fix"><b>Ação:</b> <code>APP_URL</code> = domínio https real; back_url dos planos de produção e da preferência direto para <code>https://dominio/assinatura/retorno</code>; <code>mp-retorno</code> deixa de ser necessário em prod.</p>
+  </div>
+
+  <div class="f crit">
+    <h3><span class="tag t-crit">C4</span>✅ RESOLVIDO — Reembolso/chargeback não revoga o acesso</h3>
+    <p>Se um pagamento for <code>refunded</code> ou <code>charged_back</code>, o webhook atualiza o status do <code>pagamento</code>, mas a <code>assinatura</code> continua <code>authorized</code> até <code>proxima_cobranca</code>. No semestral (pagamento único) isso é grave: pagar, usar e estornar mantém 6 meses de acesso.</p>
+    <p class="fix"><b>Ação:</b> no webhook, ao receber <code>refunded</code>/<code>charged_back</code> do pagamento que originou o acesso, cancelar/expirar a assinatura correspondente (revogar acesso).</p>
+  </div>
+
+  <h2>🟠 Bugs / correções de receita e consistência</h2>
+
+  <div class="f high">
+    <h3><span class="tag t-high">B1</span>✅ RESOLVIDO — 1ª cobrança recorrente pode não ser registrada (receita perdida)</h3>
+    <p>No mensal, o <code>subscription_authorized_payment</code> só grava o <code>pagamento</code> se a <code>assinatura</code> já existir (match por <code>preapproval_id</code>). Como o vínculo da recorrente acontece no <i>retorno</i> (claim) e o checkout do plano não propaga <code>external_reference</code>, o webhook da 1ª parcela pode chegar <b>antes</b> do vínculo → cai no "assinatura não encontrada" e, como respondemos 200, o MP não retenta → a 1ª cobrança some do financeiro.</p>
+    <p class="fix"><b>Ação:</b> quando a assinatura ainda não existir, responder <b>não-2xx</b> (ex.: 409) para o MP reenviar depois; ou, no momento do vínculo, fazer backfill dos <code>authorized_payments</code> recentes daquele preapproval.</p>
+  </div>
+
+  <div class="f high">
+    <h3><span class="tag t-high">B2</span>✅ RESOLVIDO — "Assinaturas ativas" conta semestrais já expirados</h3>
+    <p>O semestral (pagamento único) fica com <code>status='authorized'</code> para sempre — só a <code>proxima_cobranca</code> (data-limite de acesso) vence. Mas <code>admin_get_financeiro</code> conta ativos como <code>status='authorized'</code> sem olhar a data. Resultado: semestrais expirados <b>continuam contando como assinatura ativa</b> no admin (e em <code>por_plano</code>). O acesso do usuário é negado corretamente (a RPC olha a data), mas a métrica infla.</p>
+    <p class="fix"><b>Ação:</b> nas contagens de "ativas" considerar acesso real: <code>authorized AND (proxima_cobranca IS NULL OR proxima_cobranca &gt; now())</code>.</p>
+  </div>
+
+  <div class="f high">
+    <h3><span class="tag t-high">B3</span>✅ RESOLVIDO — Risco de pagamento contado em dobro no branch <code>payment</code></h3>
+    <p>O branch <code>payment</code> grava um <code>pagamento</code> para qualquer pagamento com <code>external_reference</code>. Hoje as parcelas recorrentes não trazem <code>external_reference</code> (então só o <code>authorized_payment</code> as grava) — mas isso é frágil: se o MP passar a propagar, a mesma cobrança vira <b>duas linhas</b> (chaves de conflito diferentes) → receita dobrada.</p>
+    <p class="fix"><b>Ação:</b> no branch <code>payment</code>, registrar <code>pagamento</code> apenas quando <code>metadata.tipo = 'acesso_unico'</code> (o semestral); deixar as recorrentes só para o <code>subscription_authorized_payment</code>.</p>
+  </div>
+
+  <div class="f high">
+    <h3><span class="tag t-high">B4</span>Cobrança dupla em cancelar→reassinar na carência</h3>
+    <p>Já discutido: reassinar dentro da carência cria um novo preapproval que cobra na hora, sobrepondo o período já pago. Não é erro de contagem (são 2 cobranças reais), mas é dinheiro cobrado duas vezes do cliente.</p>
+    <p class="fix"><b>Ação (você adiou):</b> bloquear nova assinatura enquanto houver acesso ativo (incl. carência); liberar só após expirar.</p>
+  </div>
+
+  <div class="f high">
+    <h3><span class="tag t-high">B5</span>Sem unicidade de "1 assinatura ativa por usuário" no banco</h3>
+    <p>O guard do <code>mp-criar-assinatura</code> previne duplicatas, mas não há trava no banco. Uma corrida (duplo clique / webhooks concorrentes) pode criar 2 linhas <code>authorized</code> e inflar MRR/ativas — foi o que aconteceu nos testes.</p>
+    <p class="fix"><b>Ação:</b> índice único parcial <code>(user_id) WHERE status='authorized'</code> ou checagem transacional.</p>
+  </div>
+
+  <h2>🔵 Segurança</h2>
+
+  <div class="f sec">
+    <h3><span class="tag t-sec">S1</span>✅ RESOLVIDO — RPC <code>tem_assinatura_ativa(uid)</code> vaza status de outros usuários</h3>
+    <p>A função é <code>SECURITY DEFINER</code>, exposta a <code>authenticated</code> e aceita um <code>uid</code> arbitrário. Qualquer usuário logado pode chamar <code>rpc('tem_assinatura_ativa', {uid:'&lt;outro&gt;'})</code> e descobrir se outra pessoa tem assinatura ativa.</p>
+    <p class="fix"><b>Ação:</b> remover o parâmetro da versão exposta (usar só <code>auth.uid()</code> internamente), ou checar <code>uid = auth.uid() OR is_admin()</code>.</p>
+  </div>
+
+  <div class="f sec">
+    <h3><span class="tag t-sec">S2</span>Vínculo (claim) confia em quem apresenta o <code>preapproval_id</code> primeiro</h3>
+    <p><code>mp-vincular-assinatura</code> só bloqueia se o preapproval já estiver vinculado a outra conta. Quem souber um <code>preapproval_id</code> ainda não vinculado pode reivindicá-lo. O id só aparece na <code>back_url</code> do próprio comprador (risco baixo), mas não há verificação de titularidade.</p>
+    <p class="fix"><b>Ação:</b> validar o <code>payer_email</code> do preapproval contra o e-mail do usuário, ou uma janela curta de tempo desde a criação.</p>
+  </div>
+
+  <div class="f sec">
+    <h3><span class="tag t-sec">S3</span>CORS aberto para localhost</h3>
+    <p><code>APP_ALLOWED_ORIGINS</code> inclui localhost; sem a env vira <code>*</code>.</p>
+    <p class="fix"><b>Ação:</b> em prod, travar no domínio real.</p>
+  </div>
+
+  <div class="f sec">
+    <h3><span class="tag t-sec">S4</span>Rodar advisors de segurança após as migrations</h3>
+    <p>Foram criadas várias tabelas/funções na sessão.</p>
+    <p class="fix"><b>Ação:</b> <code>get_advisors (security)</code> antes do go-live e resolver o que aparecer.</p>
+  </div>
+
+  <h2>🟡 UX</h2>
+
+  <div class="f ux">
+    <h3><span class="tag t-ux">U1</span>Pagamento pendente (boleto/Pix) no semestral cai em "timeout"</h3>
+    <p>A preferência do semestral aceita boleto/Pix, que ficam <code>pending</code> (liberam dias depois). A tela de retorno faz polling ~20s e mostra "ainda processando", sem explicar que é normal e o acesso virá após a confirmação.</p>
+    <p class="fix"><b>Ação:</b> mensagem clara para pagamento pendente; ou restringir o semestral a cartão se quiser acesso sempre imediato.</p>
+  </div>
+
+  <div class="f ux">
+    <h3><span class="tag t-ux">U2</span>Mensagens de erro genéricas</h3>
+    <p>Ex.: o 409 "já possui assinatura ativa" chega ao usuário como "Não foi possível iniciar o checkout".</p>
+    <p class="fix"><b>Ação:</b> propagar a mensagem específica do backend no <code>SubscriptionService</code>.</p>
+  </div>
+
+  <div class="f ux">
+    <h3><span class="tag t-ux">U3</span>Benefícios idênticos nos dois planos</h3>
+    <p>Como o acesso é o mesmo, a lista de benefícios se repete. Funciona, mas a página vende melhor se destacar o diferencial de cada um (flexibilidade x economia/parcelamento).</p>
+    <p class="fix"><b>Ação (opcional):</b> benefícios comuns + 1–2 destaques por plano.</p>
+  </div>
+
+  <div class="f ux">
+    <h3><span class="tag t-ux">U4</span>Polling do retorno curto e sem ação manual</h3>
+    <p>20s pode ser pouco em horário de pico do MP.</p>
+    <p class="fix"><b>Ação:</b> aumentar a janela e/ou botão "Já paguei, atualizar".</p>
+  </div>
+
+  <h2>🟢 Dados / performance</h2>
+
+  <div class="f perf">
+    <h3><span class="tag t-perf">D1</span><code>processado_em</code> da parcela recorrente usa <code>date_created</code></h3>
+    <p>No <code>subscription_authorized_payment</code> usamos <code>date_created</code> (agendamento) em vez da data de aprovação. Pequena imprecisão em relatórios.</p>
+  </div>
+
+  <div class="f perf">
+    <h3><span class="tag t-perf">D2</span>Líquido depende de <code>net_received_amount</code> presente</h3>
+    <p>Quando ausente, <code>liquido_centavos</code> fica nulo e o líquido subnotifica. Em prod costuma vir preenchido; bom monitorar.</p>
+  </div>
+
+  <div class="f perf">
+    <h3><span class="tag t-perf">D3</span>Pausar/Reativar existem no backend mas a recorrente cancelada não reativa no MP</h3>
+    <p><code>mp-gerenciar-assinatura</code> aceita <code>reativar</code> (status authorized), mas um preapproval cancelado no MP não volta. A UI não expõe, mas é código que pode enganar. Remover ou tratar.</p>
+  </div>
+
+  <h2>✅ Checklist de produção (go-live)</h2>
+  <ul class="check">
+    <li>Ativar credenciais de produção no Mercado Pago (conta real)</li>
+    <li>Recriar planos (mensal recorrente + semestral) com token de produção e atualizar <code>plano</code></li>
+    <li>Ativar "parcelamento sem juros até 6x" na conta real</li>
+    <li>Configurar webhook na conta real (tópicos: subscription_preapproval, subscription_authorized_payment, payment) e setar o novo <code>MP_WEBHOOK_SECRET</code></li>
+    <li>Trocar secrets das functions: <code>MP_ACCESS_TOKEN</code>, <code>MP_WEBHOOK_SECRET</code>, <code>APP_URL</code> (domínio real), <code>APP_ALLOWED_ORIGINS</code> (domínio real)</li>
+    <li>back_url dos planos e da preferência → domínio real (dispensar <code>mp-retorno</code>)</li>
+    <li>Limpar dados de teste (assinatura, pagamento, usuário teste)</li>
+    <li>Aplicar correções C4, B1, B2, B5 e S1 (prioritárias)</li>
+    <li>Rodar <code>get_advisors</code> (security + performance)</li>
+    <li>Teste real ponta a ponta (assinar, cancelar, semestral parcelado, reembolso) com transação pequena</li>
+  </ul>
+
+  <h2>✅ O que já está bom</h2>
+  <ul class="check ok">
+    <li>Webhook valida HMAC do <code>x-signature</code> em tempo constante</li>
+    <li>RLS: escrita de assinatura/pagamento só via service role; usuário lê só o próprio</li>
+    <li>Idempotência por chaves únicas (preapproval/payment/authorized_payment)</li>
+    <li><code>verify_jwt</code> nas functions autenticadas; webhook público só por HMAC</li>
+    <li>Paywall com bypass de admin (rota + RPC)</li>
+    <li>Carência no cancelamento; semestral com acesso por 6 meses</li>
+    <li>Financeiro bruto + líquido; transparência ao usuário</li>
+  </ul>
+</div>
+</body>
+</html>
