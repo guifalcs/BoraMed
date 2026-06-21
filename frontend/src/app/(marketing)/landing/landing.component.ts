@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   Activity,
   BarChart3,
@@ -90,6 +90,7 @@ export class LandingComponent implements OnDestroy {
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
   private readonly zone = inject(NgZone);
+  private readonly router = inject(Router);
   private scrollListener: (() => void) | null = null;
   private scrollFrame = 0;
 
@@ -287,6 +288,14 @@ export class LandingComponent implements OnDestroy {
   constructor() {
     this.configureSeo();
     afterNextRender(() => {
+      // Fallback de OAuth: se o provedor voltou para a raiz (Site URL) com ?code=,
+      // encaminha para /auth/callback, que troca a sessão e navega ao destino.
+      const search = this.document.location.search;
+      if (search.includes('code=') || search.includes('error=')) {
+        void this.router.navigateByUrl(`/auth/callback${search}`, { replaceUrl: true });
+        return;
+      }
+
       requestAnimationFrame(() => this.heroReady.set(true));
 
       this.zone.runOutsideAngular(() => {

@@ -17,7 +17,12 @@ export class SupabaseService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly client = this.isBrowser
-    ? createBrowserClient(environment.supabaseUrl, environment.supabaseAnonKey)
+    ? createBrowserClient(environment.supabaseUrl, environment.supabaseAnonKey, {
+        // Não trocar o `code` do OAuth automaticamente ao carregar qualquer página
+        // (evita consumir o code silenciosamente quando o redirect cai na raiz).
+        // A troca acontece só no /auth/callback (exchangeCodeForSession).
+        auth: { detectSessionInUrl: false },
+      })
     : createServerClient(environment.supabaseUrl, environment.supabaseAnonKey, {
         cookies: {
           getAll: () => {
