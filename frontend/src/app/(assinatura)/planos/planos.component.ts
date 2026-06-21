@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Check, LogOut, ShieldCheck, type LucideIconData } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
+import { ProfileService } from '../../core/services/profile.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { UiAvatarComponent } from '../../shared/components/ui/avatar/ui-avatar.component';
 import type { Plano } from '../../core/models/subscription.types';
 
 @Component({
   selector: 'app-planos',
   standalone: true,
-  imports: [CommonModule, RouterLink, UiIconComponent],
+  imports: [CommonModule, RouterLink, UiIconComponent, UiAvatarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex min-h-screen flex-col bg-gray-50">
@@ -19,14 +21,20 @@ import type { Plano } from '../../core/models/subscription.types';
         <a routerLink="/" aria-label="Ir para a página inicial">
           <img src="brand/logo.webp" alt="BoraMed" class="h-8 w-auto" width="400" height="128" />
         </a>
-        <button
-          type="button"
-          (click)="sair()"
-          class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-        >
-          <app-ui-icon [icon]="logoutIcon" [size]="16" />
-          Sair
-        </button>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="flex items-center gap-2">
+            <app-ui-avatar [name]="nomeExibicao()" [avatarUrl]="profile()?.avatar_url ?? null" size="sm" />
+            <span class="hidden max-w-[180px] truncate text-sm text-gray-700 sm:block">{{ nomeExibicao() }}</span>
+          </div>
+          <button
+            type="button"
+            (click)="sair()"
+            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          >
+            <app-ui-icon [icon]="logoutIcon" [size]="16" />
+            Sair
+          </button>
+        </div>
       </header>
 
       <div class="flex-1 px-4 py-12">
@@ -160,7 +168,10 @@ import type { Plano } from '../../core/models/subscription.types';
 export class PlanosComponent implements OnInit {
   private readonly subscription = inject(SubscriptionService);
   private readonly auth = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
+
+  readonly profile = this.profileService.profile;
 
   readonly gradiente =
     'radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%),' +
@@ -187,8 +198,13 @@ export class PlanosComponent implements OnInit {
   readonly erro = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
+    if (!this.profile()) void this.profileService.loadProfile();
     this.planos.set(await this.subscription.listarPlanos());
     this.loading.set(false);
+  }
+
+  nomeExibicao(): string {
+    return this.profile()?.nome_completo || this.auth.user()?.email || 'Usuário';
   }
 
   destaque(plano: Plano): boolean {
