@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { Check, LogOut, ShieldCheck, type LucideIconData } from 'lucide-angular';
+import { Check, LogOut, ShieldCheck, Sparkles, type LucideIconData } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
@@ -75,17 +75,29 @@ import type { Plano } from '../../core/models/subscription.types';
 
                   @if (porMes(plano)) {
                     <!-- Planos de múltiplos meses: foco no valor por mês; valor cheio em menos destaque -->
-                    <div class="mt-6 flex items-baseline gap-1">
-                      <span class="text-4xl font-extrabold">{{ porMes(plano) }}</span>
-                      <span class="text-sm" [ngClass]="destaque(plano) ? 'text-white/70' : 'text-gray-500'">
-                        /mês
-                      </span>
+                    <div class="mt-6 flex flex-wrap items-end justify-between gap-2">
+                      <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold">{{ porMes(plano) }}</span>
+                        <span class="text-sm" [ngClass]="destaque(plano) ? 'text-white/70' : 'text-gray-500'">
+                          /mês
+                        </span>
+                      </div>
+                      @if (economia(plano)) {
+                        <span
+                          class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm ring-1"
+                          [ngClass]="
+                            destaque(plano)
+                              ? 'bg-emerald-400 text-emerald-950 ring-emerald-300/50'
+                              : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                          "
+                        >
+                          <app-ui-icon [icon]="sparklesIcon" [size]="13" class="shrink-0" />
+                          Economize {{ economia(plano) }}
+                        </span>
+                      }
                     </div>
                     <p class="mt-1 text-sm" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
                       {{ preco(plano) }} {{ periodoExtenso(plano) }}
-                      @if (economia(plano)) {
-                        <span class="font-medium" [ngClass]="destaque(plano) ? 'text-white' : 'text-emerald-600'">· Economize {{ economia(plano) }}</span>
-                      }
                     </p>
                     @if (!plano.recorrente) {
                       <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
@@ -195,6 +207,7 @@ export class PlanosComponent implements OnInit {
   readonly checkIcon: LucideIconData = Check;
   readonly logoutIcon: LucideIconData = LogOut;
   readonly shieldIcon: LucideIconData = ShieldCheck;
+  readonly sparklesIcon: LucideIconData = Sparkles;
   readonly ano = new Date().getFullYear();
 
   // Acesso é o mesmo nos dois planos (paywall total); a diferença é preço/compromisso.
