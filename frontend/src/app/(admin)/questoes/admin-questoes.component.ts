@@ -605,7 +605,13 @@ export class AdminQuestoesComponent implements OnInit {
   }
 
   protected onTipoQuestaoChange(tipo: string): void {
-    this.fFormatoProva.set(tipo === 'laboratorio' ? 'laboratorio' : null);
+    // O subtipo (formato_prova) só se aplica a questões nacionais (N1/N2/teste_progresso),
+    // que é o único tipo com dropdown de "Subtipo da prova". Para processual e laboratório
+    // não há subtipo — manter qualquer valor aqui viola a constraint questao_formato_prova_check
+    // do banco (apenas 'N1', 'N2', 'teste_progresso') e faz o INSERT falhar.
+    if (tipo !== 'nacional') {
+      this.fFormatoProva.set(null);
+    }
   }
 
   protected marcarCorreta(index: number): void {
@@ -679,7 +685,7 @@ export class AdminQuestoesComponent implements OnInit {
     const temaIds = this.fTemas();
     const modo = this.modoDrawer();
 
-    let result: { ok: boolean };
+    let result: { ok: boolean; error?: string };
 
     if (modo === 'criar') {
       questaoPayload.autor_id = this.auth.user()?.id ?? null;
@@ -703,7 +709,9 @@ export class AdminQuestoesComponent implements OnInit {
       this.modoDrawer.set('fechado');
       await this.carregar();
     } else {
-      this.toast.error('Erro ao salvar questão.');
+      this.toast.error(
+        result.error ? `Erro ao salvar questão: ${result.error}` : 'Erro ao salvar questão.',
+      );
     }
 
     this.salvando.set(false);
