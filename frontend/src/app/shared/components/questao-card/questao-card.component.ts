@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
   output,
   signal,
@@ -32,6 +33,20 @@ export class QuestaoCardComponent {
   responder = output<string>();
 
   protected readonly imgCarregada = signal(false);
+  protected readonly imgErro = signal(false);
+
+  constructor() {
+    // O card é reutilizado entre questões (input muda no mesmo componente).
+    // Sem reset, o estado de imagem de uma questão vaza para a próxima.
+    effect(
+      () => {
+        this.questao().imagem_url;
+        this.imgCarregada.set(false);
+        this.imgErro.set(false);
+      },
+      { allowSignalWrites: true },
+    );
+  }
 
   protected readonly exibirExplicacao = computed(() => {
     if (!this.questao().explicacao) return false;
@@ -77,5 +92,11 @@ export class QuestaoCardComponent {
 
   protected onImgLoad(): void {
     this.imgCarregada.set(true);
+    this.imgErro.set(false);
+  }
+
+  protected onImgError(): void {
+    this.imgErro.set(true);
+    this.imgCarregada.set(false);
   }
 }

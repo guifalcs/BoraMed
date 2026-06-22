@@ -6,7 +6,7 @@
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/server" }
+    { "source": "/((?!_vercel/).*)", "destination": "/api/server" }
   ],
   "headers": [
     {
