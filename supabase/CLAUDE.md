@@ -4,9 +4,13 @@
 ## Project Refs
 
 ```
-DEV_REF:  (preencher após criar projeto no Supabase Cloud)
-PROD_REF: (preencher após criar projeto no Supabase Cloud)
+PROD_REF: gakvktwtdunljojghpff   (NUNCA db push / seed de teste contra este ref)
+DEV_REF:  branch de preview efêmero (criar sob demanda; ver docs/ambiente-testes-pagamento.md)
 ```
+
+> Testes de pagamento: usar stack local (`supabase start`) ou um branch de preview
+> com credenciais de TESTE do Mercado Pago. Detalhes em
+> `docs/ambiente-testes-pagamento.md`.
 
 ## Comandos e Fluxo de Dev (Supabase Skill)
 

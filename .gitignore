@@ -1,2 +1,7 @@
 tests/e2e/fixtures/.auth.json
 .env
+
+# Secrets de teste das edge functions (manter apenas os *.example versionados)
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.*.example
