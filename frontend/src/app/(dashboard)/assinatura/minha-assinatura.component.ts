@@ -120,6 +120,12 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               Não renova automaticamente; você poderá renovar quando expirar.
             </p>
           }
+          @if (recorrente() && assinatura()!.status === 'paused') {
+            <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              Sua assinatura está pausada e o acesso aos simulados está suspenso. Reative para
+              voltar a estudar e retomar a cobrança recorrente.
+            </p>
+          }
 
           <div class="mt-6 flex gap-3">
             @if (recorrente() && assinatura()!.status === 'authorized') {
@@ -131,7 +137,16 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               >
                 Cancelar assinatura
               </button>
-            } @else if (!acessoUnicoAtivo()) {
+            } @else if (recorrente() && assinatura()!.status === 'paused') {
+              <button
+                type="button"
+                (click)="reativar()"
+                [disabled]="processando()"
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {{ processando() ? 'Reativando…' : 'Reativar assinatura' }}
+              </button>
+            } @else if (!acessoUnicoAtivo() && !emCarencia()) {
               <button
                 type="button"
                 (click)="verPlanos()"
@@ -368,6 +383,14 @@ export class MinhaAssinaturaComponent implements OnInit {
     this.erro.set(null);
     this.processando.set(true);
     const res = await this.subscription.cancelar();
+    if (!res.ok) this.erro.set(res.error);
+    this.processando.set(false);
+  }
+
+  async reativar(): Promise<void> {
+    this.erro.set(null);
+    this.processando.set(true);
+    const res = await this.subscription.reativar();
     if (!res.ok) this.erro.set(res.error);
     this.processando.set(false);
   }

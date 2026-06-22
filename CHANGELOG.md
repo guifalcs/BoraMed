@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-22 | Pagamentos | sem commit
+
+**Revisão pré-produção do fluxo de pagamento — correções de UX e cobrança dupla**
+
+- `mp-criar-assinatura`: bloqueio de reassinatura (409) enquanto houver acesso ativo, incluindo assinatura `cancelled` ainda em carência (`proxima_cobranca` futura). Evita criar um novo preapproval que cobraria de novo sobre o período já pago (cobrança dupla).
+- `/assinatura/retorno`: novo estado "Pagamento não aprovado". A tela lê `status`/`collection_status` da back_url e, em `rejected`/`failure`/`cancelled` (após uma confirmação no servidor para evitar falso-negativo de corrida com o webhook), mostra mensagem clara e CTA "Tentar novamente" — antes, cartão recusado caía em "em processamento".
+- `/dashboard/assinatura`: estado `paused` agora exibe aviso de pausa e botão "Reativar assinatura" (paused→authorized via `mp-gerenciar-assinatura`); "Assinar novamente" fica oculto durante a carência para não induzir cobrança dupla.
+- Doc `docs/analise-pagamentos.html` atualizado (B4, U5, U6, U7, D3, D4). Verificado no banco de produção que `plano` já usa IDs do Mercado Pago de produção e que não há dados de teste residuais.
+- **Pendente:** confirmar secrets de produção das functions (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `APP_URL`, `APP_ALLOWED_ORIGINS`); índice único parcial `(user_id) WHERE status='authorized'` (B5); notificações de ativação/cobrança recusada (U7); mapear `refunded` na parcela recorrente (D4). Deploy das edge functions necessário para as mudanças de backend valerem.
+
+---
+
 ## 2026-06-20 | Pagamentos | sem commit
 
 **Integração Mercado Pago — assinaturas recorrentes + paywall total**

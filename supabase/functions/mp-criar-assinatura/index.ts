@@ -52,18 +52,25 @@ Deno.serve(async (req) => {
   if (planoError || !plano) return reply({ error: 'plano não encontrado' }, 404);
   if (!plano.ativo) return reply({ error: 'plano inativo' }, 400);
 
-  // Bloqueia se já houver ACESSO ativo: recorrente authorized OU acesso único
-  // ainda válido (proxima_cobranca futura). Cancelada em carência e acesso único
-  // expirado não bloqueiam (a pessoa pode reassinar/recomprar).
-  const nowIso = new Date().toISOString();
-  const { data: ativa } = await admin
+  // Bloqueia enquanto houver ACESSO ativo, evitando cobrança dupla:
+  //  - recorrente 'authorized' com proxima_cobranca futura/nula; OU
+  //  - 'cancelled' ainda em carência (proxima_cobranca futura) — acesso já pago
+  //    segue valendo, reassinar agora cobraria de novo sobre o período pago; OU
+  //  - acesso único 'authorized' ainda dentro do prazo (proxima_cobranca futura).
+  // Só libera reassinar/recomprar quando o acesso de fato terminou.
+  const now = Date.now();
+  const { data: assinaturas } = await admin
     .from('assinatura')
-    .select('id')
+    .select('status, proxima_cobranca')
     .eq('user_id', user.id)
-    .eq('status', 'authorized')
-    .or(`proxima_cobranca.is.null,proxima_cobranca.gt.${nowIso}`)
-    .maybeSingle();
-  if (ativa) return reply({ error: 'já possui assinatura ativa' }, 409);
+    .in('status', ['authorized', 'cancelled']);
+  const temAcesso = (assinaturas ?? []).some((a) => {
+    const proxima = a.proxima_cobranca ? new Date(a.proxima_cobranca).getTime() : null;
+    if (a.status === 'authorized') return proxima === null || proxima > now;
+    // cancelled: só conta enquanto em carência (data futura)
+    return proxima !== null && proxima > now;
+  });
+  if (temAcesso) return reply({ error: 'Você já tem um acesso ativo no momento.' }, 409);
 
   // --- Plano recorrente: redirect para o init_point do plano (preapproval) ---
   if (plano.recorrente) {

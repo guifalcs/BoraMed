@@ -47,8 +47,8 @@
     <span class="pill" style="color:var(--crit)">4 críticos</span>
     <span class="pill" style="color:var(--high)">5 bugs/correções</span>
     <span class="pill" style="color:var(--sec)">4 segurança</span>
-    <span class="pill" style="color:var(--ux)">4 UX</span>
-    <span class="pill" style="color:var(--perf)">3 dados/perf</span>
+    <span class="pill" style="color:var(--ux)">7 UX</span>
+    <span class="pill" style="color:var(--perf)">4 dados/perf</span>
   </div>
 
   <div class="lead">
@@ -102,9 +102,9 @@
   </div>
 
   <div class="f high">
-    <h3><span class="tag t-high">B4</span>Cobrança dupla em cancelar→reassinar na carência</h3>
-    <p>Já discutido: reassinar dentro da carência cria um novo preapproval que cobra na hora, sobrepondo o período já pago. Não é erro de contagem (são 2 cobranças reais), mas é dinheiro cobrado duas vezes do cliente.</p>
-    <p class="fix"><b>Ação (você adiou):</b> bloquear nova assinatura enquanto houver acesso ativo (incl. carência); liberar só após expirar.</p>
+    <h3><span class="tag t-high">B4</span>✅ RESOLVIDO — Cobrança dupla em cancelar→reassinar na carência</h3>
+    <p>Reassinar dentro da carência criava um novo preapproval que cobra na hora, sobrepondo o período já pago — dinheiro cobrado duas vezes do cliente.</p>
+    <p class="fix"><b>Ação:</b> <code>mp-criar-assinatura</code> agora bloqueia (409) enquanto houver acesso ativo, incluindo <code>cancelled</code> em carência (<code>proxima_cobranca</code> futura). No front, "Assinar novamente" fica oculto durante a carência. <b>Falta</b> a trava no banco (B5) para corridas.</p>
   </div>
 
   <div class="f high">
@@ -165,6 +165,24 @@
     <p class="fix"><b>Ação:</b> aumentar a janela e/ou botão "Já paguei, atualizar".</p>
   </div>
 
+  <div class="f ux">
+    <h3><span class="tag t-ux">U5</span>✅ RESOLVIDO — Pagamento recusado caía no estado "em processamento"</h3>
+    <p>Cartão recusado também voltava para <code>/assinatura/retorno</code> e o usuário via "Confirmando seu pagamento…" e depois "em processamento", esperando um acesso que nunca viria.</p>
+    <p class="fix"><b>Ação:</b> a tela agora lê <code>status</code>/<code>collection_status</code> da back_url; em <code>rejected</code>/<code>failure</code>/<code>cancelled</code> (após uma checagem no servidor para evitar falso-negativo) mostra estado dedicado "Pagamento não aprovado" com CTA "Tentar novamente".</p>
+  </div>
+
+  <div class="f ux">
+    <h3><span class="tag t-ux">U6</span>✅ PARCIAL — Estado "Pausada" deixava o usuário preso</h3>
+    <p>Assinatura <code>paused</code> suspende o acesso, mas a UI só oferecia "Assinar novamente" (novo preapproval). O backend já tinha <code>reativar</code>, sem exposição.</p>
+    <p class="fix"><b>Ação:</b> "Minha assinatura" agora mostra aviso de pausa + botão "Reativar assinatura" (paused→authorized via <code>mp-gerenciar-assinatura</code>). <b>Falta</b> notificar o usuário quando a pausa acontece.</p>
+  </div>
+
+  <div class="f ux">
+    <h3><span class="tag t-ux">U7</span>Sem notificação quando o acesso é liberado depois (boleto/Pix) ou quando uma cobrança falha</h3>
+    <p>Boleto aprova dias depois: o usuário paga e não sabe que já pode entrar. E na falha de cobrança recorrente (dunning) não há aviso "atualize o cartão" antes do cancelamento automático do MP (3 tentativas).</p>
+    <p class="fix"><b>Ação:</b> no webhook, ao aprovar (ativação) e ao receber cobrança recusada, criar notificação/e-mail. Considerar link para gerenciar pagamento no MP (sem CardForm próprio ainda).</p>
+  </div>
+
   <h2>🟢 Dados / performance</h2>
 
   <div class="f perf">
@@ -178,8 +196,14 @@
   </div>
 
   <div class="f perf">
-    <h3><span class="tag t-perf">D3</span>Pausar/Reativar existem no backend mas a recorrente cancelada não reativa no MP</h3>
-    <p><code>mp-gerenciar-assinatura</code> aceita <code>reativar</code> (status authorized), mas um preapproval cancelado no MP não volta. A UI não expõe, mas é código que pode enganar. Remover ou tratar.</p>
+    <h3><span class="tag t-perf">D3</span>✅ TRATADO — Reativar agora exposto só para <code>paused</code></h3>
+    <p><code>mp-gerenciar-assinatura</code> aceita <code>reativar</code> (→ authorized). A UI passou a expor o botão apenas no estado <code>paused</code> (reativável no MP); o <code>cancelled</code> continua terminal e segue oferecendo "Assinar novamente" só após o fim da carência.</p>
+  </div>
+
+  <div class="f perf">
+    <h3><span class="tag t-perf">D4</span>Estorno de parcela recorrente não mapeia <code>refunded</code></h3>
+    <p>No branch <code>subscription_authorized_payment</code>, o mapa de status só cobre processed/recycling/waiting/scheduled → o resto vira <code>pending</code>. Um estorno de parcela recorrente fica com status errado no <code>pagamento</code> (não reflete no financeiro). Acesso é pouco afetado (estorno de 1 mês), mas o dado fica impreciso.</p>
+    <p class="fix"><b>Ação:</b> mapear <code>refunded</code>/<code>charged_back</code> também nesse branch.</p>
   </div>
 
   <h2>✅ Checklist de produção (go-live)</h2>

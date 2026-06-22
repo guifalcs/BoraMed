@@ -24,6 +24,29 @@ import { PENDING_PREAPPROVAL_KEY, SubscriptionService } from '../../core/service
         } @else if (estado() === 'ok') {
           <h1 class="text-xl font-bold text-green-700">Assinatura ativada! 🎉</h1>
           <p class="mt-2 text-gray-600">Redirecionando para o painel…</p>
+        } @else if (estado() === 'rejeitado') {
+          <h1 class="text-xl font-bold text-gray-900">Pagamento não aprovado</h1>
+          <p class="mt-2 text-gray-600">
+            O pagamento não foi concluído e <b>nada foi cobrado</b>. Isso costuma acontecer por
+            dados do cartão, limite ou recusa do banco. Você pode tentar de novo com outro
+            cartão ou método.
+          </p>
+          <div class="mt-6 flex flex-col items-center gap-3">
+            <button
+              type="button"
+              (click)="irParaPlanos()"
+              class="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700"
+            >
+              Tentar novamente
+            </button>
+            <button
+              type="button"
+              (click)="irParaInicio()"
+              class="text-sm font-medium text-gray-500 hover:text-gray-700"
+            >
+              Voltar ao início
+            </button>
+          </div>
         } @else {
           <h1 class="text-xl font-bold text-gray-900">Pagamento em processamento</h1>
           <p class="mt-2 text-gray-600">
@@ -60,7 +83,7 @@ export class AssinaturaRetornoComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  readonly estado = signal<'processando' | 'ok' | 'timeout'>('processando');
+  readonly estado = signal<'processando' | 'ok' | 'timeout' | 'rejeitado'>('processando');
   readonly verificando = signal(false);
   private timer: ReturnType<typeof setTimeout> | null = null;
   private tentativas = 0;
@@ -84,6 +107,18 @@ export class AssinaturaRetornoComponent implements OnInit, OnDestroy {
     if (preapprovalId) {
       await this.subscription.vincular(preapprovalId);
     }
+
+    // O Mercado Pago sinaliza recusa/abandono na back_url (status / collection_status).
+    // Antes de declarar recusa, confirma uma vez no servidor — o webhook pode ter
+    // aprovado mesmo assim (corrida). Só então mostra o estado de recusa.
+    const statusMp =
+      this.route.snapshot.queryParamMap.get('status') ??
+      this.route.snapshot.queryParamMap.get('collection_status');
+    if (statusMp === 'rejected' || statusMp === 'failure' || statusMp === 'cancelled') {
+      if (!(await this.confirmou())) this.estado.set('rejeitado');
+      return;
+    }
+
     this.poll();
   }
 
@@ -120,5 +155,9 @@ export class AssinaturaRetornoComponent implements OnInit, OnDestroy {
 
   irParaInicio(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  irParaPlanos(): void {
+    this.router.navigate(['/planos']);
   }
 }
