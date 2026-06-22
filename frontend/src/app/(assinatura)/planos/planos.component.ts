@@ -73,28 +73,42 @@ import type { Plano } from '../../core/models/subscription.types';
                     {{ tagline(plano) }}
                   </p>
 
-                  <div class="mt-6 flex items-baseline gap-1">
-                    <span class="text-4xl font-extrabold">{{ preco(plano) }}</span>
-                    <span class="text-sm" [ngClass]="destaque(plano) ? 'text-white/70' : 'text-gray-500'">
-                      {{ periodo(plano) }}
-                    </span>
-                  </div>
                   @if (porMes(plano)) {
-                    <p class="mt-1 text-sm font-medium" [ngClass]="destaque(plano) ? 'text-white' : 'text-gray-600'">
-                      {{ porMes(plano) }}/mês
+                    <!-- Planos de múltiplos meses: foco no valor por mês; valor cheio em menos destaque -->
+                    <div class="mt-6 flex items-baseline gap-1">
+                      <span class="text-4xl font-extrabold">{{ porMes(plano) }}</span>
+                      <span class="text-sm" [ngClass]="destaque(plano) ? 'text-white/70' : 'text-gray-500'">
+                        /mês
+                      </span>
+                    </div>
+                    <p class="mt-1 text-sm" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
+                      {{ preco(plano) }} {{ periodoExtenso(plano) }}
                       @if (economia(plano)) {
-                        <span [ngClass]="destaque(plano) ? 'text-white/80' : 'text-emerald-600'">· Economize {{ economia(plano) }}</span>
+                        <span class="font-medium" [ngClass]="destaque(plano) ? 'text-white' : 'text-emerald-600'">· Economize {{ economia(plano) }}</span>
                       }
                     </p>
-                  }
-                  @if (!plano.recorrente && porMes(plano)) {
-                    <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
-                      ou em até 6x sem juros de {{ porMes(plano) }}
-                    </p>
-                  } @else if (plano.recorrente) {
-                    <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
-                      renova automaticamente
-                    </p>
+                    @if (!plano.recorrente) {
+                      <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
+                        em até 6x sem juros de {{ porMes(plano) }}
+                      </p>
+                    } @else {
+                      <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
+                        renova automaticamente
+                      </p>
+                    }
+                  } @else {
+                    <!-- Plano mensal: valor cheio em destaque -->
+                    <div class="mt-6 flex items-baseline gap-1">
+                      <span class="text-4xl font-extrabold">{{ preco(plano) }}</span>
+                      <span class="text-sm" [ngClass]="destaque(plano) ? 'text-white/70' : 'text-gray-500'">
+                        {{ periodo(plano) }}
+                      </span>
+                    </div>
+                    @if (plano.recorrente) {
+                      <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
+                        renova automaticamente
+                      </p>
+                    }
                   }
 
                   <!-- Benefícios -->
@@ -250,6 +264,16 @@ export class PlanosComponent implements OnInit {
       return `/${plano.frequency} meses`;
     }
     return `/${plano.frequency} dias`;
+  }
+
+  // Valor cheio por extenso, usado como linha secundária quando o foco é o preço por mês.
+  periodoExtenso(plano: Plano): string {
+    if (plano.frequency_type === 'months') {
+      if (plano.frequency === 6) return 'no semestre';
+      if (plano.frequency === 12) return 'no ano';
+      return `por ${plano.frequency} meses`;
+    }
+    return `por ${plano.frequency} dias`;
   }
 
   async assinar(plano: Plano): Promise<void> {
