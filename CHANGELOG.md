@@ -2,6 +2,17 @@
 
 ## 2026-06-22 | Pagamentos | sem commit
 
+**Unicidade de assinatura ativa (B5) + mapeamento de estorno recorrente (D4)**
+
+- Nova migration `20260622130000_unicidade_assinatura_ativa.sql`: índice único parcial `assinatura (user_id) WHERE status='authorized'` (com normalização dos dados existentes), fechando a corrida que podia criar duas assinaturas ativas e inflar MRR.
+- `mp-webhook`: ao conceder/renovar acesso (preapproval autorizado e acesso único aprovado), passa a **superar** (cancelar) as assinaturas `authorized` anteriores do usuário — mantém no máximo uma ativa e evita que o índice bloqueie reassinatura legítima após o semestral expirar (que permanece `authorized`).
+- `mp-webhook`: branch `subscription_authorized_payment` agora mapeia `refunded`/`charged_back` (antes virava `pending`), refletindo estornos no financeiro. Acesso recorrente não é revogado por uma parcela estornada.
+- **Aplicar em produção:** rodar a migration e redeploy da function `mp-webhook`.
+
+---
+
+## 2026-06-22 | Pagamentos | sem commit
+
 **Revisão pré-produção do fluxo de pagamento — correções de UX e cobrança dupla**
 
 - `mp-criar-assinatura`: bloqueio de reassinatura (409) enquanto houver acesso ativo, incluindo assinatura `cancelled` ainda em carência (`proxima_cobranca` futura). Evita criar um novo preapproval que cobraria de novo sobre o período já pago (cobrança dupla).

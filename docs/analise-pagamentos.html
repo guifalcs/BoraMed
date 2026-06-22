@@ -108,9 +108,9 @@
   </div>
 
   <div class="f high">
-    <h3><span class="tag t-high">B5</span>Sem unicidade de "1 assinatura ativa por usuário" no banco</h3>
-    <p>O guard do <code>mp-criar-assinatura</code> previne duplicatas, mas não há trava no banco. Uma corrida (duplo clique / webhooks concorrentes) pode criar 2 linhas <code>authorized</code> e inflar MRR/ativas — foi o que aconteceu nos testes.</p>
-    <p class="fix"><b>Ação:</b> índice único parcial <code>(user_id) WHERE status='authorized'</code> ou checagem transacional.</p>
+    <h3><span class="tag t-high">B5</span>✅ RESOLVIDO — Unicidade de "1 assinatura ativa por usuário" no banco</h3>
+    <p>Não havia trava no banco; uma corrida (duplo clique / webhooks concorrentes) podia criar 2 linhas <code>authorized</code> e inflar MRR/ativas.</p>
+    <p class="fix"><b>Ação:</b> migration <code>20260622130000_unicidade_assinatura_ativa.sql</code> cria índice único parcial <code>(user_id) WHERE status='authorized'</code> (após normalizar dados existentes). Como o acesso único permanece <code>authorized</code> ao expirar, o <code>mp-webhook</code> passou a <b>superar</b> (cancelar) as <code>authorized</code> anteriores ao conceder novo acesso — evita bloquear reassinatura legítima.</p>
   </div>
 
   <h2>🔵 Segurança</h2>
@@ -201,9 +201,9 @@
   </div>
 
   <div class="f perf">
-    <h3><span class="tag t-perf">D4</span>Estorno de parcela recorrente não mapeia <code>refunded</code></h3>
-    <p>No branch <code>subscription_authorized_payment</code>, o mapa de status só cobre processed/recycling/waiting/scheduled → o resto vira <code>pending</code>. Um estorno de parcela recorrente fica com status errado no <code>pagamento</code> (não reflete no financeiro). Acesso é pouco afetado (estorno de 1 mês), mas o dado fica impreciso.</p>
-    <p class="fix"><b>Ação:</b> mapear <code>refunded</code>/<code>charged_back</code> também nesse branch.</p>
+    <h3><span class="tag t-perf">D4</span>✅ RESOLVIDO — Estorno de parcela recorrente não mapeava <code>refunded</code></h3>
+    <p>No branch <code>subscription_authorized_payment</code>, o mapa de status cobria só processed/recycling/waiting/scheduled → o resto virava <code>pending</code>, deixando estornos com status errado no <code>pagamento</code>.</p>
+    <p class="fix"><b>Ação:</b> o branch passou a mapear <code>refunded</code>/<code>charged_back</code>. Acesso recorrente não é revogado por 1 parcela estornada (quem governa é o status do preapproval).</p>
   </div>
 
   <h2>✅ Checklist de produção (go-live)</h2>

@@ -140,6 +140,18 @@ Deno.serve(async (req) => {
         }
 
         if (userId) {
+          // B5: ao conceder/renovar acesso, supera (cancela) outras assinaturas
+          // 'authorized' do usuário para manter no máximo uma ativa. Necessário
+          // porque o acesso único (semestral) permanece 'authorized' após
+          // expirar; sem isto, o índice único bloquearia a nova concessão.
+          if (status === 'authorized') {
+            await admin
+              .from('assinatura')
+              .update({ status: 'cancelled', cancelada_em: new Date().toISOString() })
+              .eq('user_id', userId)
+              .eq('status', 'authorized');
+          }
+
           // Não sobrescreve proxima_cobranca com null em cancelamentos: o acesso
           // segue até o fim do período pago (carência). Só atualiza quando o MP
           // informa uma nova data.
@@ -178,14 +190,22 @@ Deno.serve(async (req) => {
         }
         // Mapeia o status do authorized_payment para o enum de pagamento.
         const apStatus = String(ap['status'] ?? '');
+        // D4: além dos estados normais, mapeia estorno/chargeback da parcela
+        // recorrente para refletir corretamente no financeiro (antes virava
+        // 'pending'). Acesso recorrente não é revogado por 1 parcela estornada;
+        // quem governa o acesso é o status do preapproval.
         const status =
           apStatus === 'processed'
             ? 'approved'
             : apStatus === 'recycling'
               ? 'rejected'
-              : apStatus === 'waiting for gateway' || apStatus === 'scheduled'
-                ? 'in_process'
-                : 'pending';
+              : apStatus === 'refunded'
+                ? 'refunded'
+                : apStatus === 'charged_back'
+                  ? 'charged_back'
+                  : apStatus === 'waiting for gateway' || apStatus === 'scheduled'
+                    ? 'in_process'
+                    : 'pending';
         const apTd = ap['transaction_details'] as { net_received_amount?: number } | undefined;
         await admin.from('pagamento').upsert(
           {
@@ -224,6 +244,13 @@ Deno.serve(async (req) => {
           let assinaturaId: string | null = null;
 
           if (status === 'approved') {
+            // B5: supera outras assinaturas 'authorized' do usuário antes de
+            // conceder o acesso único, mantendo no máximo uma ativa.
+            await admin
+              .from('assinatura')
+              .update({ status: 'cancelled', cancelada_em: new Date().toISOString() })
+              .eq('user_id', userId)
+              .eq('status', 'authorized');
             // Concede acesso por N meses (sem renovação automática).
             const meses = Number(meta['acesso_meses']) || 6;
             const fim = new Date();
