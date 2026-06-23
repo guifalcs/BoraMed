@@ -8,6 +8,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PrefetchService } from '../../core/services/prefetch.service';
 import { loginSchema } from '../../core/models/auth.schemas';
 import type { AuthErrorCode } from '../../core/models/auth.types';
+import { SeoService } from '../../core/seo/seo.service';
 
 type LoginState = 'idle' | 'error' | 'loading';
 
@@ -23,6 +24,16 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly toast = inject(NotificationService);
   private readonly prefetch = inject(PrefetchService);
+  private readonly seo = inject(SeoService);
+
+  constructor() {
+    this.seo.update({
+      title: 'Entrar',
+      description:
+        'Acesse sua conta no BoraMed e continue treinando com simulados de medicina e questões comentadas no modelo das avaliações.',
+      path: '/login',
+    });
+  }
 
   protected readonly email = signal('');
   protected readonly password = signal('');

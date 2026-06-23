@@ -1,7 +1,15 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
+import { getGuiaSlugs } from './(marketing)/guias/guias.data';
+
 export const serverRoutes: ServerRoute[] = [
   { path: '', renderMode: RenderMode.Prerender },
+  { path: 'guias', renderMode: RenderMode.Prerender },
+  {
+    path: 'guias/:slug',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: async () => getGuiaSlugs().map((slug) => ({ slug })),
+  },
   { path: 'login', renderMode: RenderMode.Prerender },
   { path: 'cadastro', renderMode: RenderMode.Prerender },
   { path: 'recuperar-senha', renderMode: RenderMode.Prerender },

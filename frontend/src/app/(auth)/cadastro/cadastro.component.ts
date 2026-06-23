@@ -6,6 +6,7 @@ import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-p
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { signupSchema } from '../../core/models/auth.schemas';
+import { SeoService } from '../../core/seo/seo.service';
 
 type CadastroState = 'idle' | 'error' | 'loading' | 'success';
 
@@ -20,6 +21,16 @@ export class CadastroComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly seo = inject(SeoService);
+
+  constructor() {
+    this.seo.update({
+      title: 'Criar conta grátis',
+      description:
+        'Crie sua conta grátis no BoraMed e treine para provas de medicina com simulados autorais, questões comentadas e revisão por desempenho.',
+      path: '/cadastro',
+    });
+  }
 
   protected readonly fullName = signal('');
   protected readonly email = signal('');

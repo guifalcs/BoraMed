@@ -99,6 +99,16 @@ export const routes: Routes = [
       import('./(admin)/admin.routes').then((m) => m.adminRoutes),
   },
   {
+    path: 'guias',
+    loadComponent: () =>
+      import('./(marketing)/guias/guias-list.component').then((m) => m.GuiasListComponent),
+  },
+  {
+    path: 'guias/:slug',
+    loadComponent: () =>
+      import('./(marketing)/guias/guia-detail.component').then((m) => m.GuiaDetailComponent),
+  },
+  {
     path: 'politica-de-privacidade',
     loadComponent: () =>
       import('./(legal)/politica-de-privacidade/politica-de-privacidade.component').then(

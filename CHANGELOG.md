@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-23 | SEO | sem commit
+
+**Fundação técnica de SEO + motor de conteúdo indexável**
+
+- Novo `core/seo/seo.service.ts` (SSR-safe) + `seo.config.ts`: centraliza title, description, robots, canonical, Open Graph, Twitter e blocos JSON-LD por rota. Helpers para `WebSite`+`SearchAction` (sitelinks search box), `Organization`, `BreadcrumbList`, `Article`, `FAQPage` e `ItemList`.
+- Páginas que herdavam o meta da landing (login, cadastro, termos, privacidade) agora têm **title/description/canonical próprios** — fim do conteúdo duplicado.
+- Landing refatorada para usar o `SeoService`; passa a emitir `WebSite`+`SearchAction` e `Organization` (antes ausentes). Título encurtado para < 60 caracteres.
+- **Motor de conteúdo** `(marketing)/guias/`: hub `/guias` + 4 guias autorais pré-renderizados (`/guias/:slug`) atacando buscas reais ("como estudar para prova de medicina", "simulado de medicina", "questões de medicina por especialidade", "avaliação nacional de medicina"). Conteúdo data-driven em `guias.data.ts` — novo guia entra sozinho no sitemap e na pré-renderização.
+- Sitemap dinâmico (`scripts/generate-sitemap.mjs`, hook `prebuild`): enumera rotas públicas + guias automaticamente. `robots.txt` ampliado com as rotas privadas/transacionais.
+- Conteúdo segue a regra de independência: **não referencia marca de instituição** em metadados, URLs ou structured data.
+
+---
+
 ## 2026-06-22 | Pagamentos | sem commit
 
 **Unicidade de assinatura ativa (B5) + mapeamento de estorno recorrente (D4)**

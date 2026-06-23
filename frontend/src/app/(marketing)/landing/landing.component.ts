@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,8 +7,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
+
+import { SeoService } from '../../core/seo/seo.service';
+import { SITE_URL } from '../../core/seo/seo.config';
 import {
   Activity,
   BarChart3,
@@ -99,9 +100,7 @@ interface FaqItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingComponent implements OnDestroy {
-  private readonly title = inject(Title);
-  private readonly meta = inject(Meta);
-  private readonly document = inject(DOCUMENT);
+  private readonly seo = inject(SeoService);
   private readonly zone = inject(NgZone);
   private scrollListener: (() => void) | null = null;
   private scrollFrame = 0;
@@ -380,76 +379,24 @@ export class LandingComponent implements OnDestroy {
   }
 
   private configureSeo(): void {
-    const siteUrl = 'https://bora-med.vercel.app';
-    const title = 'BoraMed | Simulados médicos com questões autorais';
-    const shortTitle = 'BoraMed | Simulados médicos autorais';
-    const description =
-      'Treine para avaliações nacionais com simulados médicos autorais, revisão por desempenho e questões no modelo das provas.';
-    const ogImage = `${siteUrl}/og-image.png`;
-
-    this.title.setTitle(title);
-    this.meta.updateTag({ name: 'description', content: description });
-    this.meta.updateTag({ name: 'robots', content: 'index, follow' });
-
-    this.meta.updateTag({ property: 'og:type', content: 'website' });
-    this.meta.updateTag({ property: 'og:locale', content: 'pt_BR' });
-    this.meta.updateTag({ property: 'og:site_name', content: 'BoraMed' });
-    this.meta.updateTag({ property: 'og:url', content: `${siteUrl}/` });
-    this.meta.updateTag({ property: 'og:title', content: shortTitle });
-    this.meta.updateTag({ property: 'og:description', content: description });
-    this.meta.updateTag({ property: 'og:image', content: ogImage });
-    this.meta.updateTag({ property: 'og:image:width', content: '1200' });
-    this.meta.updateTag({ property: 'og:image:height', content: '630' });
-    this.meta.updateTag({ property: 'og:image:alt', content: 'BoraMed — Simulados médicos autorais' });
-
-    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
-    this.meta.updateTag({ name: 'twitter:title', content: shortTitle });
-    this.meta.updateTag({ name: 'twitter:description', content: description });
-    this.meta.updateTag({ name: 'twitter:image', content: ogImage });
-
-    this.setCanonicalUrl(siteUrl);
-    this.setStructuredData(siteUrl);
-  }
-
-  private setCanonicalUrl(siteUrl: string): void {
-    const head = this.document.head;
-    let link = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (!link) {
-      link = this.document.createElement('link');
-      link.rel = 'canonical';
-      head.appendChild(link);
-    }
-    link.href = `${siteUrl}/`;
-  }
-
-  private setStructuredData(siteUrl: string): void {
-    this.document.querySelectorAll('script[data-boramed-landing-jsonld]').forEach((node) => {
-      node.remove();
+    this.seo.update({
+      title: 'BoraMed | Simulados de medicina com questões autorais',
+      description:
+        'Treine para avaliações nacionais com simulados de medicina autorais, questões comentadas e revisão por desempenho. Crie sua conta grátis no BoraMed.',
+      path: '/',
+      titleHasBrand: true,
     });
 
-    const organizationScript = this.document.createElement('script');
-    organizationScript.type = 'application/ld+json';
-    organizationScript.setAttribute('data-boramed-landing-jsonld', 'org');
-    organizationScript.textContent = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      name: 'BoraMed',
-      url: siteUrl,
-      logo: `${siteUrl}/brand/logo.webp`,
-      description: 'Plataforma independente de simulados médicos com questões autorais.',
-      email: 'contato@boramed.com.br',
-      inLanguage: 'pt-BR',
-    });
-    this.document.head.appendChild(organizationScript);
+    // Schemas globais da marca — identidade no Knowledge Graph e caixa de
+    // busca nos resultados do Google (sitelinks search box).
+    this.seo.setWebSiteSchema();
+    this.seo.setOrganizationSchema();
 
-    const softwareScript = this.document.createElement('script');
-    softwareScript.type = 'application/ld+json';
-    softwareScript.setAttribute('data-boramed-landing-jsonld', 'software');
-    softwareScript.textContent = JSON.stringify({
+    this.seo.setJsonLd('software', {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
       name: 'BoraMed',
-      url: siteUrl,
+      url: `${SITE_URL}/`,
       applicationCategory: 'EducationalApplication',
       applicationSubCategory: 'MedicalEducation',
       operatingSystem: 'Web',
@@ -466,12 +413,8 @@ export class LandingComponent implements OnDestroy {
         priceCurrency: 'BRL',
       },
     });
-    this.document.head.appendChild(softwareScript);
 
-    const faqScript = this.document.createElement('script');
-    faqScript.type = 'application/ld+json';
-    faqScript.setAttribute('data-boramed-landing-jsonld', 'faq');
-    faqScript.textContent = JSON.stringify({
+    this.seo.setJsonLd('faq', {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
       mainEntity: this.faqs.map((faq) => ({
@@ -483,6 +426,5 @@ export class LandingComponent implements OnDestroy {
         },
       })),
     });
-    this.document.head.appendChild(faqScript);
   }
 }
