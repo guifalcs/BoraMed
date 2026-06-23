@@ -8,7 +8,7 @@
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 
-const SITE_URL = 'https://bora-med.vercel.app';
+const SITE_URL = 'https://boramedoficial.com.br';
 const ROOT = join(import.meta.dirname, '..');
 const GUIAS_DATA = join(ROOT, 'src', 'app', '(marketing)', 'guias', 'guias.data.ts');
 const OUTPUT = join(ROOT, 'public', 'sitemap.xml');

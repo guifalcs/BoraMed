@@ -59,7 +59,7 @@ projeto-med/
 
 * NUNCA rodar `supabase db push` contra o project ref de produção diretamente.
 * NUNCA editar migrations já aplicadas — apenas criar novas.
-* NUNCA sugerir parceria, vínculo oficial ou acervo de questões/provas da Afya. O BoraMed é independente e usa conteúdo autoral inspirado no modelo das avaliações.
+* Referência à Afya: PERMITIDO uso comparativo/nominativo para SEO e marketing — "no modelo das provas da Afya", "simulado no modelo Afya" — desde que SEMPRE acompanhado de disclaimer de independência ("plataforma independente, sem vínculo com a Afya"). PROIBIDO: afirmar parceria/vínculo/afiliação oficial, dizer que o acervo é "da Afya" ou reproduzir questões reais da Afya. Conteúdo é 100% autoral, apenas no mesmo formato.
 * Questões de laboratório sempre têm `imagem_url` obrigatório.
 * Auth: login/senha simples (Supabase Auth email/password).
 * Lógica de sorteio de questões: server-side via Supabase (RPC ou Edge Function).

@@ -45,6 +45,64 @@ export interface Guia {
 
 export const GUIAS: readonly Guia[] = [
   {
+    slug: 'simulado-modelo-afya',
+    metaTitle: 'Simulado no modelo da Afya: como treinar',
+    metaDescription:
+      'Treine com simulados de medicina no modelo das provas da Afya: questões autorais comentadas e revisão por desempenho. Plataforma independente, sem vínculo com a Afya.',
+    h1: 'Simulado de medicina no modelo da Afya',
+    resumo:
+      'Como treinar com simulados no modelo das provas da Afya usando questões autorais. O BoraMed é independente: não temos vínculo com a Afya nem reproduzimos suas questões.',
+    atualizadoEm: '2026-06-23',
+    tempoLeituraMin: 5,
+    keywords: [
+      'simulado modelo Afya',
+      'questões no modelo Afya',
+      'simulado Afya',
+      'provas Afya medicina',
+      'prova nacional Afya',
+    ],
+    secoes: [
+      {
+        heading: 'O que significa "no modelo da Afya"',
+        paragraphs: [
+          'Quando falamos em treinar "no modelo da Afya", referimo-nos ao formato e ao estilo das avaliações aplicadas na rede — casos clínicos, raciocínio aplicado e a estrutura das provas nacionais. O BoraMed reproduz esse formato com conteúdo 100% autoral.',
+          'Importante deixar claro: o BoraMed é uma plataforma independente. Não temos vínculo, parceria ou afiliação com a Afya, e não reproduzimos as questões reais das provas dela. O que oferecemos são questões próprias, construídas no mesmo estilo, para você treinar com fidelidade ao formato.',
+        ],
+      },
+      {
+        heading: 'Por que treinar no formato certo importa',
+        paragraphs: [
+          'Acertar o formato do treino é metade do caminho. Quem pratica com questões no mesmo estilo das avaliações chega à prova familiarizado com o tipo de enunciado, o tamanho dos casos e o ritmo necessário para administrar o tempo.',
+          'Treinar em formato fiel reduz surpresas no dia da prova e melhora o desempenho real, porque você já desenvolveu o raciocínio que o modelo cobra — e não apenas decorou conteúdo.',
+        ],
+      },
+      {
+        heading: 'Como o BoraMed reproduz esse modelo',
+        paragraphs: [
+          'Treinos nacionais: simulados autorais no formato das avaliações nacionais. Simulados processuais: você escolhe tema e quantidade de questões para reforçar pontos fracos. Simulados de laboratório: questões com imagens de lâminas e peças, essenciais para morfologia.',
+          'Cada questão vem comentada e a revisão de desempenho mostra, por tema, onde você acerta e onde precisa focar — para o estudo render mais a cada simulado.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: 'O BoraMed tem questões da Afya?',
+        answer:
+          'Não. O BoraMed é independente e não reproduz as questões reais da Afya. Todas as questões são autorais, criadas no modelo das provas para você treinar com fidelidade ao formato.',
+      },
+      {
+        question: 'O BoraMed tem vínculo com a Afya?',
+        answer:
+          'Não. O BoraMed não possui vínculo, parceria ou afiliação com a Afya nem com qualquer outra instituição de ensino. A referência ao "modelo da Afya" descreve apenas o formato das avaliações.',
+      },
+      {
+        question: 'Como treinar no modelo da Afya?',
+        answer:
+          'Use simulados autorais construídos no mesmo formato das avaliações nacionais, com casos clínicos cronometrados e revisão dos erros por tema. É o que o BoraMed oferece.',
+      },
+    ],
+  },
+  {
     slug: 'como-estudar-para-prova-de-medicina',
     metaTitle: 'Como estudar para prova de medicina: guia completo',
     metaDescription:
@@ -247,7 +305,7 @@ export const GUIAS: readonly Guia[] = [
       {
         heading: 'Como treinar no modelo certo',
         paragraphs: [
-          'O BoraMed oferece treinos nacionais: simulados autorais construídos no modelo das avaliações nacionais, com revisão de desempenho. A proposta é independente e usa conteúdo próprio inspirado no formato dessas avaliações.',
+          'O BoraMed oferece treinos nacionais: simulados autorais construídos no modelo das provas da Afya e das avaliações nacionais, com revisão de desempenho. A plataforma é independente, sem vínculo com a Afya, e usa conteúdo 100% próprio inspirado no formato dessas avaliações.',
           'Combine simulados completos para medir prontidão com simulados por tema para reforçar pontos fracos, sempre analisando os erros para fechar lacunas antes da prova.',
         ],
       },

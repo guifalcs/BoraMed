@@ -11,4 +11,4 @@ Disallow: /conta-suspensa
 Disallow: /redefinir-senha
 Disallow: /recuperar-senha
 
-Sitemap: https://bora-med.vercel.app/sitemap.xml
+Sitemap: https://boramedoficial.com.br/sitemap.xml

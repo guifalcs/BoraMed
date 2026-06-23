@@ -380,9 +380,9 @@ export class LandingComponent implements OnDestroy {
 
   private configureSeo(): void {
     this.seo.update({
-      title: 'BoraMed | Simulados de medicina com questões autorais',
+      title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Treine para avaliações nacionais com simulados de medicina autorais, questões comentadas e revisão por desempenho. Crie sua conta grátis no BoraMed.',
+        'Simulados de medicina autorais no modelo das provas da Afya: questões comentadas e revisão por desempenho. Plataforma independente — crie sua conta grátis.',
       path: '/',
       titleHasBrand: true,
     });
@@ -402,7 +402,7 @@ export class LandingComponent implements OnDestroy {
       operatingSystem: 'Web',
       inLanguage: 'pt-BR',
       description:
-        'Plataforma independente de simulados médicos com questões autorais no modelo das avaliações.',
+        'Plataforma independente de simulados de medicina com questões autorais no modelo das provas da Afya. Sem vínculo oficial com a Afya.',
       audience: {
         '@type': 'Audience',
         audienceType: 'Estudantes de medicina',

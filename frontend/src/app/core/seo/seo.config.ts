@@ -7,7 +7,7 @@
  */
 
 /** Origem canônica usada em URLs absolutas, canonical, OG e sitemap. */
-export const SITE_URL = 'https://bora-med.vercel.app';
+export const SITE_URL = 'https://boramedoficial.com.br';
 
 /** Nome curto da marca, usado em títulos e structured data. */
 export const SITE_NAME = 'BoraMed';
@@ -19,17 +19,21 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 export const TITLE_SUFFIX = ` | ${SITE_NAME}`;
 
 /**
- * Termos de busca priorizados (compliant — sem usar marca de terceiros).
+ * Termos de busca priorizados.
  *
- * IMPORTANTE: por regra de negócio, o BoraMed é independente e NÃO referencia
- * marcas de instituições de ensino em metadados ou conteúdo. A captação de quem
- * busca por provas específicas é feita por relevância de tema, não por marca.
+ * IMPORTANTE: o BoraMed é independente e NÃO possui vínculo, parceria ou acervo
+ * de questões da Afya. Usamos referência comparativa ("no modelo das provas da
+ * Afya") — uso nominativo de marca, sempre acompanhado de disclaimer de
+ * independência. Nunca afirmar parceria nem reproduzir questões reais da Afya.
  */
 export const PRIMARY_KEYWORDS: readonly string[] = [
   'simulado de medicina',
   'questões de medicina',
   'avaliação nacional de medicina',
   'simulado avaliação nacional',
+  'simulado modelo Afya',
+  'questões no modelo Afya',
+  'simulado no estilo da Afya',
   'banco de questões de medicina',
   'como estudar para prova de medicina',
   'questões comentadas de medicina',
