@@ -247,7 +247,7 @@ export class PlanosComponent implements OnInit {
   beneficioDestaque(plano: Plano): string {
     return plano.recorrente
       ? 'Cancele quando quiser, sem multa'
-      : 'Economize vs. o mensal e parcele em até 6x sem juros';
+      : 'Maior economia do plano, com parcelamento em até 6x sem juros';
   }
 
   preco(plano: Plano): string {
