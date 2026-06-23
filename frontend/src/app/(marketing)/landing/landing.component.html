@@ -377,6 +377,66 @@
     </div>
   </section>
 
+  <section class="section-shell pricing-section" id="planos">
+    <div class="section-heading">
+      <span class="eyebrow">Planos</span>
+      <h2>Acesso completo. Você escolhe o compromisso.</h2>
+      <p>O mesmo acesso a todos os módulos nos dois planos. A diferença está só no preço e na flexibilidade.</p>
+    </div>
+
+    <div class="pricing-grid">
+      @for (plan of pricingPlans; track plan.slug) {
+        <article class="pricing-card" [class.is-featured]="plan.featured">
+          @if (plan.featured) {
+            <span class="pricing-flag">Melhor valor</span>
+          }
+
+          <div class="pricing-card-head">
+            <h3>{{ plan.name }}</h3>
+            <p class="pricing-tagline">{{ plan.tagline }}</p>
+          </div>
+
+          <div class="pricing-price">
+            <strong class="pricing-amount">{{ plan.price }}</strong>
+            <span class="pricing-period">{{ plan.period }}</span>
+            @if (plan.economy) {
+              <span class="pricing-economy">
+                <app-ui-icon [icon]="sparklesIcon" [size]="13" />
+                Economize {{ plan.economy }}
+              </span>
+            }
+          </div>
+
+          @if (plan.note) {
+            <p class="pricing-note">{{ plan.note }}</p>
+          }
+
+          <ul class="pricing-features">
+            @for (feature of plan.features; track feature) {
+              <li>
+                <app-ui-icon [icon]="checkIcon" [size]="16" />
+                <span>{{ feature }}</span>
+              </li>
+            }
+          </ul>
+
+          <a
+            class="pricing-cta"
+            [class.pricing-cta--primary]="plan.featured"
+            routerLink="/cadastro"
+          >
+            Começar agora
+          </a>
+        </article>
+      }
+    </div>
+
+    <p class="pricing-disclaimer">
+      <app-ui-icon [icon]="shieldIcon" [size]="15" />
+      Pagamento seguro via Mercado Pago. O BoraMed não armazena os dados do seu cartão.
+    </p>
+  </section>
+
   <section class="section-shell faq-section" id="faq">
     <div class="section-heading">
       <span class="eyebrow">Dúvidas</span>

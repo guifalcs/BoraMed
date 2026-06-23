@@ -15,6 +15,7 @@ import {
   BarChart3,
   BookOpenCheck,
   Brain,
+  Check,
   ChevronDown,
   ClipboardList,
   FlaskConical,
@@ -72,6 +73,18 @@ interface Capability {
   readonly icon: LucideIconData;
 }
 
+interface PricingPlan {
+  readonly slug: string;
+  readonly name: string;
+  readonly tagline: string;
+  readonly price: string;
+  readonly period: string;
+  readonly note?: string;
+  readonly economy?: string;
+  readonly features: readonly string[];
+  readonly featured: boolean;
+}
+
 interface FaqItem {
   readonly question: string;
   readonly answer: string;
@@ -96,6 +109,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly menuIcon = Menu;
   protected readonly closeIcon = X;
   protected readonly chevronIcon = ChevronDown;
+  protected readonly checkIcon = Check;
   protected readonly targetIcon = Target;
   protected readonly timerIcon = Timer;
   protected readonly activityIcon = Activity;
@@ -113,6 +127,7 @@ export class LandingComponent implements OnDestroy {
     { label: 'Treinos', href: '#treinos' },
     { label: 'Simulados', href: '#solucao' },
     { label: 'Laboratório', href: '#modulos' },
+    { label: 'Planos', href: '#planos' },
     { label: 'FAQ', href: '#faq' },
   ];
 
@@ -243,6 +258,42 @@ export class LandingComponent implements OnDestroy {
       title: 'Treinar',
       description: 'Gere novas tentativas com regras consistentes e montagem no servidor.',
       icon: Brain,
+    },
+  ];
+
+  protected readonly pricingPlans: readonly PricingPlan[] = [
+    {
+      slug: 'mensal',
+      name: 'Mensal',
+      tagline: 'Flexível — cancele quando quiser',
+      price: 'R$ 49,90',
+      period: '/mês',
+      note: 'Renova automaticamente. Sem fidelidade.',
+      features: [
+        'Todos os simulados: nacionais, processuais e laboratório',
+        'Banco completo de questões autorais',
+        'Histórico e estatísticas de desempenho',
+        'Ranking competitivo, XP e conquistas',
+        'Revisão comentada das questões',
+      ],
+      featured: false,
+    },
+    {
+      slug: 'semestral',
+      name: 'Semestral',
+      tagline: 'Melhor custo-benefício — pague em até 6x',
+      price: 'R$ 33,32',
+      period: '/mês',
+      note: 'R$ 199,90 no semestre, em até 6x sem juros.',
+      economy: 'R$ 99,50',
+      features: [
+        'Tudo do plano mensal incluso',
+        'Banco completo de questões autorais',
+        'Histórico e estatísticas de desempenho',
+        'Ranking competitivo, XP e conquistas',
+        'Revisão comentada das questões',
+      ],
+      featured: true,
     },
   ];
 
