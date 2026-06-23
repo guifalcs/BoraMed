@@ -31,6 +31,29 @@
       {{ criando() ? 'Criando…' : 'Criar' }}
     </button>
   </div>
+
+  <div class="tipos-field">
+    <span class="tipos-label">Tipos de prova</span>
+    <div class="tipos-options">
+      @for (tipo of tiposProva; track tipo.value) {
+        <app-ui-checkbox
+          [value]="tipo.value"
+          [ariaLabel]="tipo.label"
+          [checked]="novoTiposProva().includes(tipo.value)"
+          (checkedChange)="toggleNovoTipoProva(tipo.value, $event)"
+        >
+          {{ tipo.label }}
+        </app-ui-checkbox>
+      }
+    </div>
+    <p class="tipos-hint">
+      @if (novoTiposProva().length === 0) {
+        Sem seleção: o tema fica disponível em <strong>todas as provas</strong>.
+      } @else {
+        Disponível apenas em: <strong>{{ tiposProvaLabel(novoTiposProva()) }}</strong>.
+      }
+    </p>
+  </div>
 </div>
 
 @if (isLoading()) {
@@ -42,6 +65,7 @@
         <tr>
           <th>Nome</th>
           <th>Disciplina</th>
+          <th>Tipos de prova</th>
           <th>Criado em</th>
           <th>Ações</th>
         </tr>
@@ -68,6 +92,31 @@
                 />
               } @else {
                 {{ disciplinaSiglaFor(t.disciplina_id) }}
+              }
+            </td>
+            <td class="tipos-td">
+              @if (editandoId() === t.id) {
+                <div class="tipos-options tipos-options--inline">
+                  @for (tipo of tiposProva; track tipo.value) {
+                    <app-ui-checkbox
+                      [value]="tipo.value"
+                      [ariaLabel]="tipo.label"
+                      [compact]="true"
+                      [checked]="editTiposProva().includes(tipo.value)"
+                      (checkedChange)="toggleEditTipoProva(tipo.value, $event)"
+                    >
+                      {{ tipo.label }}
+                    </app-ui-checkbox>
+                  }
+                </div>
+              } @else {
+                @if (!t.tipos_prova || t.tipos_prova.length === 0) {
+                  <span class="tipo-badge tipo-badge--all">Todas</span>
+                } @else {
+                  @for (tipo of t.tipos_prova; track tipo) {
+                    <span class="tipo-badge">{{ tiposProvaLabel([tipo]) }}</span>
+                  }
+                }
               }
             </td>
             <td class="data-cell">{{ formatarData(t.criado_em) }}</td>
@@ -130,6 +179,33 @@
   }
   .form-input--narrow { flex: 0 0 100px; min-width: 80px; }
   .form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+
+  .tipos-field { margin-top: 1rem; }
+  .tipos-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+  }
+  .tipos-options { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+  .tipos-options--inline { gap: 0.4rem 0.875rem; }
+  .tipos-hint { font-size: 0.78rem; color: #64748b; margin: 0.625rem 0 0; }
+  .tipos-hint strong { color: #475569; }
+
+  .tipos-td { min-width: 190px; }
+  .tipo-badge {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    margin: 0.1rem 0.25rem 0.1rem 0;
+  }
+  .tipo-badge--all { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
 
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
@@ -208,7 +284,7 @@
     .select-wrapper,
     .btn { width: 100%; flex: 1 1 auto; }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 660px; }
+    .data-table { min-width: 820px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
   }

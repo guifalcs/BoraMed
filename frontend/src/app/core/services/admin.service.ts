@@ -223,6 +223,8 @@ export interface AdminTema {
   nome: string;
   disciplina_id: string | null;
   parent_id: string | null;
+  /** Tipos de prova aos quais o tema se aplica. null = todas as provas. */
+  tipos_prova: string[] | null;
   criado_em: string;
 }
 
@@ -617,19 +619,24 @@ export class AdminService {
   async listarTemas(): Promise<ServiceResult<AdminTema[]>> {
     const { data, error } = await this.supabase
       .from('tema')
-      .select('id,nome,disciplina_id,parent_id,criado_em')
+      .select('id,nome,disciplina_id,parent_id,tipos_prova,criado_em')
       .order('nome');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as unknown as AdminTema[] };
   }
 
   async criarTema(
-    input: Pick<AdminTema, 'nome' | 'disciplina_id' | 'parent_id'>,
+    input: Pick<AdminTema, 'nome' | 'disciplina_id' | 'parent_id' | 'tipos_prova'>,
   ): Promise<ServiceResult<AdminTema>> {
     const { data, error } = await this.supabase
       .from('tema')
-      .insert({ nome: input.nome, disciplina_id: input.disciplina_id, parent_id: input.parent_id })
-      .select('id,nome,disciplina_id,parent_id,criado_em')
+      .insert({
+        nome: input.nome,
+        disciplina_id: input.disciplina_id,
+        parent_id: input.parent_id,
+        tipos_prova: input.tipos_prova,
+      })
+      .select('id,nome,disciplina_id,parent_id,tipos_prova,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminTema };
@@ -637,13 +644,13 @@ export class AdminService {
 
   async atualizarTema(
     id: string,
-    input: Partial<Pick<AdminTema, 'nome' | 'disciplina_id'>>,
+    input: Partial<Pick<AdminTema, 'nome' | 'disciplina_id' | 'tipos_prova'>>,
   ): Promise<ServiceResult<AdminTema>> {
     const { data, error } = await this.supabase
       .from('tema')
       .update(input)
       .eq('id', id)
-      .select('id,nome,disciplina_id,parent_id,criado_em')
+      .select('id,nome,disciplina_id,parent_id,tipos_prova,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminTema };

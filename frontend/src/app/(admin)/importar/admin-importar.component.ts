@@ -757,6 +757,7 @@ PARENT: Semiologia Cardiovascular
         nome: t.nome,
         disciplina_id: t.disciplina_id,
         parent_id: parentId,
+        tipos_prova: null,
       });
       if (res.ok) {
         this.importados.update((n) => n + 1);
