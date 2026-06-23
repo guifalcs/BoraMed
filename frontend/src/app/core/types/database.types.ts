@@ -1217,6 +1217,7 @@ export type Database = {
           id: string
           nome: string
           parent_id: string | null
+          tipos_prova: string[] | null
         }
         Insert: {
           atualizado_em?: string
@@ -1226,6 +1227,7 @@ export type Database = {
           id?: string
           nome: string
           parent_id?: string | null
+          tipos_prova?: string[] | null
         }
         Update: {
           atualizado_em?: string
@@ -1235,6 +1237,7 @@ export type Database = {
           id?: string
           nome?: string
           parent_id?: string | null
+          tipos_prova?: string[] | null
         }
         Relationships: [
           {
