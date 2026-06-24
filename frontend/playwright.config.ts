@@ -23,6 +23,15 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
+    // Projeto para testes que mockam toda a rede (sem dependência do setup real).
+    // Usado por provas.spec.ts, pagamento.spec.ts e similares.
+    {
+      name: 'mocked',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: { cookies: [], origins: [] },
+      },
+    },
   ],
   webServer: {
     command: 'ng serve --configuration=e2e --port=4210',

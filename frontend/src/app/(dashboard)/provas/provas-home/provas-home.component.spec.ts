@@ -61,7 +61,7 @@ describe('ProvasHomeComponent', () => {
 
     expect(el.textContent).toContain('Treinos nacionais');
     expect(el.textContent).toContain('Montar simulado');
-    expect(el.textContent).toContain('Ou ajuste o simulado ao que precisa revisar agora');
+    expect(el.textContent).toContain('Escolha temas, quantidade e modo');
   });
 
   it('exibe card de continuidade com progresso da tentativa ativa', () => {

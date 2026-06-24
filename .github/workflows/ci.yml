@@ -1,0 +1,82 @@
+name: CI
+
+# Pipeline de validação. Roda em todo push e PR para garantir que mudanças
+# (em especial no fluxo de pagamentos) não quebrem regras de negócio.
+on:
+  push:
+  pull_request:
+
+# Cancela execuções antigas do mesmo ref quando chega um novo push.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Núcleo financeiro: lógica das edge functions de pagamento (Deno) ──────────
+  edge-functions:
+    name: Edge functions (pagamento)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check dos entrypoints de produção
+        run: deno check mp-webhook/index.ts mp-criar-assinatura/index.ts mp-vincular-assinatura/index.ts
+      - name: Testes (unitários + integração com fakes)
+        run: deno test -A --no-check
+
+  # ── Frontend: testes unitários (Vitest via @angular/build) ───────────────────
+  frontend-unit:
+    name: Frontend unit (Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Testes unitários
+        run: npm test
+        env:
+          CI: 'true'
+
+  # ── Frontend: E2E de checkout/retorno (Playwright, backend mockado) ──────────
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Instala o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+      # Só os testes com rede 100% mockada (projeto "mocked"). Os projetos
+      # "setup"/"chromium" fazem login real e exigem um backend Supabase local,
+      # então ficam de fora do CI (rodam localmente com `supabase start`).
+      - name: Testes E2E (pagamento, backend mockado)
+        run: npm run test:e2e -- pagamento --project=mocked
+        env:
+          CI: 'true'
+      - name: Sobe o relatório em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

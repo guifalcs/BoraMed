@@ -46,3 +46,7 @@ Thumbs.db
 
 # Local environment overrides (contém chaves Supabase de dev)
 src/environments/environment.local.ts
+
+# Artefatos de teste do Playwright
+test-results/
+playwright-report/
