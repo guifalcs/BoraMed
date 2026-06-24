@@ -26,7 +26,64 @@
       (valueChange)="filtroStatus.set($any($event) ?? ''); aplicarFiltros()"
     />
   </div>
+  <div class="toolbar-filter">
+    <app-ui-select
+      label="Tipo"
+      name="filtro-tipo"
+      [options]="opcoesTipoFiltro"
+      [value]="filtroTipo()"
+      (valueChange)="filtroTipo.set($any($event) ?? ''); aplicarFiltros()"
+    />
+  </div>
+  <div class="toolbar-filter">
+    <app-ui-select
+      label="Formato"
+      name="filtro-formato"
+      [options]="opcoesFormatoFiltro"
+      [value]="filtroFormato()"
+      (valueChange)="filtroFormato.set($any($event) ?? ''); aplicarFiltros()"
+    />
+  </div>
+  <div class="toolbar-filter">
+    <app-ui-select
+      label="Disciplina"
+      name="filtro-disciplina"
+      [options]="opcoesDisciplinaFiltro()"
+      [value]="filtroDisciplina()"
+      (valueChange)="filtroDisciplina.set($any($event) ?? ''); aplicarFiltros()"
+    />
+  </div>
+  <div class="toolbar-filter">
+    <app-ui-select
+      label="Autor"
+      name="filtro-autor"
+      [options]="opcoesAutorFiltro()"
+      [value]="filtroAutor()"
+      (valueChange)="filtroAutor.set($any($event) ?? ''); aplicarFiltros()"
+    />
+  </div>
+  <label class="date-field">
+    <span class="date-field__label">Criada de</span>
+    <input
+      class="search-input date-input"
+      type="date"
+      [ngModel]="filtroDataDe()"
+      (ngModelChange)="filtroDataDe.set($event); aplicarFiltros()"
+    />
+  </label>
+  <label class="date-field">
+    <span class="date-field__label">até</span>
+    <input
+      class="search-input date-input"
+      type="date"
+      [ngModel]="filtroDataAte()"
+      (ngModelChange)="filtroDataAte.set($event); aplicarFiltros()"
+    />
+  </label>
   <button class="btn btn--primary" (click)="aplicarFiltros()">Filtrar</button>
+  @if (temFiltrosAtivos()) {
+    <button class="btn btn--ghost" (click)="limparFiltros()">Limpar filtros</button>
+  }
 </div>
 
 <!-- ── Tabela ── -->
@@ -42,6 +99,7 @@
           <th>Tipo</th>
           <th>Status</th>
           <th>Acerto</th>
+          <th>Autor</th>
           <th>Criada em</th>
           <th>Ações</th>
         </tr>
@@ -73,6 +131,7 @@
                 <span class="taxa-badge taxa-badge--none">—</span>
               }
             </td>
+            <td class="autor-cell">{{ autorNome(q.autor_id) }}</td>
             <td class="data-cell">{{ dataCurta(q.criado_em) }}</td>
             <td class="actions-cell">
               <button
@@ -501,6 +560,9 @@
   }
   .search-input:focus { border-color: var(--color-primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
   .toolbar-filter { min-width: 180px; }
+  .date-field { display: flex; flex-direction: column; gap: 0.25rem; }
+  .date-field__label { font-size: 0.75rem; font-weight: 600; color: #475569; }
+  .date-input { flex: none; min-width: 0; width: 150px; max-width: 150px; }
   .loading-text { color: #64748b; font-size: 0.875rem; }
 
   /* ── Tabela ── */
@@ -518,6 +580,7 @@
   .data-table tr:last-child td { border-bottom: none; }
   .enunciado-text { color: #475569; line-height: 1.4; }
   .data-cell { color: #64748b; white-space: nowrap; }
+  .autor-cell { color: #475569; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
   .actions-cell {
     display: flex;
     align-items: center;

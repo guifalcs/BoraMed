@@ -85,9 +85,30 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly isLoading = signal(true);
   protected readonly pagina = signal(0);
   protected readonly filtroStatus = signal('');
+  protected readonly filtroTipo = signal('');
+  protected readonly filtroFormato = signal('');
+  protected readonly filtroDisciplina = signal('');
+  protected readonly filtroAutor = signal('');
+  protected readonly filtroDataDe = signal('');
+  protected readonly filtroDataAte = signal('');
   protected readonly busca = signal('');
   protected readonly processando = signal<string | null>(null);
   protected readonly porPagina = 50;
+
+  // ---- Autores (filtro "quem criou") ----
+  protected readonly autoresDisponiveis = signal<{ id: string; nome_completo: string | null }[]>([]);
+
+  protected readonly temFiltrosAtivos = computed(
+    () =>
+      !!this.filtroStatus() ||
+      !!this.filtroTipo() ||
+      !!this.filtroFormato() ||
+      !!this.filtroDisciplina() ||
+      !!this.filtroAutor() ||
+      !!this.filtroDataDe() ||
+      !!this.filtroDataAte() ||
+      !!this.busca().trim(),
+  );
 
   // ---- Drawer ----
   protected readonly modoDrawer = signal<'fechado' | 'criar' | 'editar'>('fechado');
@@ -145,6 +166,33 @@ export class AdminQuestoesComponent implements OnInit {
     { value: 'processual', label: 'Processual' },
     { value: 'laboratorio', label: 'Laboratório' },
   ];
+
+  // ---- Opções dos filtros (com opção "Todos") ----
+  protected readonly opcoesTipoFiltro: SelectOption[] = [
+    { value: '', label: 'Todos os tipos' },
+    ...this.opcoesTipoQuestao,
+  ];
+
+  protected readonly opcoesFormatoFiltro: SelectOption[] = [
+    { value: '', label: 'Todos os formatos' },
+    ...this.opcoesFormato,
+  ];
+
+  protected readonly opcoesDisciplinaFiltro = computed<SelectOption[]>(() => [
+    { value: '', label: 'Todas as disciplinas' },
+    ...this.disciplinasDisponiveis().map((d) => ({
+      value: d.id,
+      label: `${d.sigla}${d.nome ? ' — ' + d.nome : ''} (P${d.periodo})`,
+    })),
+  ]);
+
+  protected readonly opcoesAutorFiltro = computed<SelectOption[]>(() => [
+    { value: '', label: 'Todos os autores' },
+    ...this.autoresDisponiveis().map((a) => ({
+      value: a.id,
+      label: a.nome_completo?.trim() || 'Sem nome',
+    })),
+  ]);
 
   protected readonly opcoesStatusForm: SelectOption[] = [
     { value: 'rascunho', label: 'Rascunho' },
@@ -303,14 +351,16 @@ export class AdminQuestoesComponent implements OnInit {
   }
 
   private async carregarDropdowns(): Promise<void> {
-    const [provasRes, temasRes, disciplinasRes] = await Promise.all([
+    const [provasRes, temasRes, disciplinasRes, autoresRes] = await Promise.all([
       this.adminService.listarProvasSimples(),
       this.adminService.listarTemas(),
       this.adminService.listarDisciplinas(),
+      this.adminService.listarAutores(),
     ]);
     if (provasRes.ok) this.provasDisponiveis.set(provasRes.data);
     if (temasRes.ok) this.temasDisponiveis.set(temasRes.data);
     if (disciplinasRes.ok) this.disciplinasDisponiveis.set(disciplinasRes.data);
+    if (autoresRes.ok) this.autoresDisponiveis.set(autoresRes.data);
   }
 
   // ---- Operações da lista ----
@@ -320,6 +370,12 @@ export class AdminQuestoesComponent implements OnInit {
     const result = await this.adminService.listarQuestoes(this.pagina(), this.porPagina, {
       status: this.filtroStatus() || undefined,
       busca: this.busca() || undefined,
+      tipoQuestao: this.filtroTipo() || undefined,
+      formato: this.filtroFormato() || undefined,
+      disciplinaId: this.filtroDisciplina() || undefined,
+      autorId: this.filtroAutor() || undefined,
+      dataDe: this.filtroDataDe() || undefined,
+      dataAte: this.filtroDataAte() || undefined,
     });
     if (result.ok) {
       this.questoes.set(result.data.questoes);
@@ -333,6 +389,18 @@ export class AdminQuestoesComponent implements OnInit {
   async aplicarFiltros(): Promise<void> {
     this.pagina.set(0);
     await this.carregar();
+  }
+
+  async limparFiltros(): Promise<void> {
+    this.filtroStatus.set('');
+    this.filtroTipo.set('');
+    this.filtroFormato.set('');
+    this.filtroDisciplina.set('');
+    this.filtroAutor.set('');
+    this.filtroDataDe.set('');
+    this.filtroDataAte.set('');
+    this.busca.set('');
+    await this.aplicarFiltros();
   }
 
   async paginaAnterior(): Promise<void> {
@@ -431,6 +499,11 @@ export class AdminQuestoesComponent implements OnInit {
     const disciplina = this.disciplinasDisponiveis().find((d) => d.id === id);
     if (!disciplina) return 'Disciplina não encontrada';
     return `${disciplina.sigla}${disciplina.nome ? ' — ' + disciplina.nome : ''} (P${disciplina.periodo})`;
+  }
+
+  protected autorNome(id: string | null | undefined): string {
+    if (!id) return '—';
+    return this.autoresDisponiveis().find((a) => a.id === id)?.nome_completo?.trim() || 'Desconhecido';
   }
 
   protected dataLabel(data: string | null | undefined): string {

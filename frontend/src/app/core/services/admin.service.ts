@@ -87,6 +87,7 @@ export interface AdminQuestao {
   taxa_acerto: number | null;
   vezes_respondida: number;
   criado_em: string;
+  autor_id: string | null;
   prova?: { nome: string } | null;
 }
 
@@ -364,11 +365,20 @@ export class AdminService {
   async listarQuestoes(
     pagina = 0,
     porPagina = 50,
-    filtros: { status?: string; busca?: string } = {},
+    filtros: {
+      status?: string;
+      busca?: string;
+      tipoQuestao?: string;
+      formato?: string;
+      disciplinaId?: string;
+      autorId?: string;
+      dataDe?: string;
+      dataAte?: string;
+    } = {},
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,prova!questao_prova_id_fkey(nome)', {
+      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,autor_id,prova!questao_prova_id_fkey(nome)', {
         count: 'exact',
       })
       .neq('status', 'deletada')
@@ -377,10 +387,28 @@ export class AdminService {
 
     if (filtros.status) query = query.eq('status', filtros.status);
     if (filtros.busca?.trim()) query = query.ilike('enunciado', `%${filtros.busca}%`);
+    if (filtros.tipoQuestao) query = query.eq('tipo_questao', filtros.tipoQuestao);
+    if (filtros.formato) query = query.eq('formato', filtros.formato);
+    if (filtros.disciplinaId) query = query.eq('disciplina_id', filtros.disciplinaId);
+    if (filtros.autorId) query = query.eq('autor_id', filtros.autorId);
+    if (filtros.dataDe) query = query.gte('criado_em', filtros.dataDe);
+    // criado_em é timestamp; comparar com a data pura excluiria o próprio dia final.
+    if (filtros.dataAte) query = query.lte('criado_em', `${filtros.dataAte}T23:59:59.999`);
 
     const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: { questoes: (data ?? []) as unknown as AdminQuestao[], total: count ?? 0 } };
+  }
+
+  /** Autores possíveis de questões: admins e super admins (usado no filtro). */
+  async listarAutores(): Promise<ServiceResult<{ id: string; nome_completo: string | null }[]>> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('id,nome_completo')
+      .in('papel', ['admin', 'super_admin'])
+      .order('nome_completo', { ascending: true });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as { id: string; nome_completo: string | null }[] };
   }
 
   async buscarQuestaoCompleta(id: string): Promise<ServiceResult<AdminQuestaoCompleta>> {
