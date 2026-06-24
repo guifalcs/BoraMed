@@ -5,13 +5,14 @@ import { TimerComponent } from './timer.component';
 describe('TimerComponent', () => {
   let fixture: ComponentFixture<TimerComponent>;
 
-  async function setup(seconds: number, warnAt = 300, dangerAt = 60) {
+  async function setup(seconds: number, warnAt = 300, dangerAt = 60, countdown = true) {
     await TestBed.configureTestingModule({
       imports: [TimerComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TimerComponent);
     fixture.componentRef.setInput('seconds', seconds);
+    fixture.componentRef.setInput('countdown', countdown);
     fixture.componentRef.setInput('warnAt', warnAt);
     fixture.componentRef.setInput('dangerAt', dangerAt);
     fixture.detectChanges();
@@ -43,5 +44,13 @@ describe('TimerComponent', () => {
     await setup(500, 300, 60);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.innerHTML).toContain('color-text-muted');
+  });
+
+  it('deve ser sempre neutro em contagem crescente (countdown=false)', async () => {
+    await setup(30, 300, 60, false);
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.innerHTML).toContain('color-text-muted');
+    expect(el.innerHTML).not.toContain('color-danger');
+    expect(el.innerHTML).not.toContain('animate-pulse');
   });
 });
