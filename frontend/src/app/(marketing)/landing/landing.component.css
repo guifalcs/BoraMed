@@ -491,12 +491,15 @@
 .ticker-track {
   display: flex;
   width: max-content;
-  gap: 0.75rem;
   padding: 0.8rem 0;
   animation: ticker-move 36s linear infinite;
 }
 
 .ticker span {
+  /* Espaçamento via margin (não flex gap) para que o vão de emenda entre a
+     cópia 1 e a cópia 2 seja idêntico aos internos; assim translateX(-50%)
+     cai exatamente no início da cópia e o loop fica sem solavanco. */
+  margin-right: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   padding: 0.45rem 0.8rem;
