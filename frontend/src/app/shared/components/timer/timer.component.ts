@@ -8,6 +8,13 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 })
 export class TimerComponent {
   seconds = input.required<number>();
+  /**
+   * Quando `true`, `seconds` representa tempo restante (contagem regressiva) e a
+   * coloração de alerta/perigo é aplicada conforme `warnAt`/`dangerAt`.
+   * Em contagem crescente (default) o relógio é sempre neutro — caso contrário
+   * ele apareceria vermelho/amarelo no início, quando o tempo ainda é baixo.
+   */
+  countdown = input<boolean>(false);
   warnAt = input<number>(300);
   dangerAt = input<number>(60);
 
@@ -22,6 +29,7 @@ export class TimerComponent {
   });
 
   protected readonly colorClass = computed(() => {
+    if (!this.countdown()) return 'text-[var(--color-text-muted)]';
     const s = this.seconds();
     if (s <= this.dangerAt()) return 'text-[var(--color-danger)] font-bold animate-pulse';
     if (s <= this.warnAt()) return 'text-[var(--color-warning)] font-semibold';

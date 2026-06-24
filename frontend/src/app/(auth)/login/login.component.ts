@@ -50,6 +50,9 @@ export class LoginComponent {
   protected readonly passwordError = computed<string | null>(() => {
     if (this.state() !== 'error') return null;
     const code = this.errorCode();
+    // E-mail não confirmado já é sinalizado no campo de e-mail; não duplicar
+    // com um erro genérico (e enganoso) no campo de senha.
+    if (code === 'EMAIL_NOT_CONFIRMED') return null;
     if (code === 'INVALID_CREDENTIALS') return 'E-mail ou senha incorretos.';
     if (code === 'RATE_LIMITED') return 'Muitas tentativas. Aguarde alguns minutos.';
     if (code === 'NETWORK_ERROR') return 'Erro de conexão. Tente novamente.';
