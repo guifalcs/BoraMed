@@ -24,6 +24,22 @@ export interface AdminStats {
   total_temas: number;
 }
 
+export interface AdminUsoPonto {
+  /** Para a série diária: data ISO 'YYYY-MM-DD'. */
+  dia?: string;
+  /** Para a série por hora do dia: 0–23. */
+  hora?: number;
+  usuarios_ativos: number;
+  interacoes: number;
+}
+
+export interface AdminUsoPlataforma {
+  por_dia: (AdminUsoPonto & { dia: string })[];
+  por_hora: (AdminUsoPonto & { hora: number })[];
+  usuarios_ativos_14d: number;
+  interacoes_14d: number;
+}
+
 export interface AdminFinanceiroPlano {
   slug: string;
   nome: string;
@@ -265,6 +281,12 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_stats');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminStats };
+  }
+
+  async getUsoPlataforma(): Promise<ServiceResult<AdminUsoPlataforma>> {
+    const { data, error } = await this.supabase.rpc('admin_get_uso_plataforma');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminUsoPlataforma };
   }
 
   // ---- Financeiro ----

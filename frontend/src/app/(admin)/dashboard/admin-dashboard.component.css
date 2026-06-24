@@ -68,6 +68,13 @@
   margin-bottom: 1rem;
 }
 
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .kpi-card,
 .panel,
 .insight-card,
@@ -185,6 +192,10 @@
 
 .chart--small-bar {
   height: 190px;
+}
+
+.chart--usage {
+  height: 280px;
 }
 
 .donut-wrap {
@@ -431,6 +442,7 @@
   }
 
   .dashboard-grid,
+  .usage-grid,
   .priority-list {
     grid-template-columns: 1fr;
   }

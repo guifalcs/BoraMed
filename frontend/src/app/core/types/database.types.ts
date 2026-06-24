@@ -1659,6 +1659,7 @@ export type Database = {
       }
       admin_get_questao: { Args: { p_id: string }; Returns: Json }
       admin_get_stats: { Args: never; Returns: Json }
+      admin_get_uso_plataforma: { Args: never; Returns: Json }
       admin_listar_avisos: {
         Args: never
         Returns: {

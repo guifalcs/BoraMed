@@ -128,6 +128,56 @@
     </article>
   </section>
 
+  <section class="usage-grid" aria-label="Pico de uso da plataforma">
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Pico de uso — últimos 14 dias</h2>
+          <p class="panel-subtitle">
+            @if (uso(); as u) {
+              {{ formatNumber(u.usuarios_ativos_14d) }} usuários ativos · {{ formatNumber(u.interacoes_14d) }} interações
+            } @else {
+              Usuários ativos e interações por dia.
+            }
+          </p>
+        </div>
+        @if (picoDia(); as p) {
+          <span class="panel-badge">Pico {{ formatDiaCurto(p.dia) }}</span>
+        }
+      </div>
+
+      <div class="chart chart--usage">
+        <canvas
+          baseChart
+          type="bar"
+          [data]="usoDiarioData()"
+          [options]="usoComboOptions"
+        ></canvas>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Horário de pico</h2>
+          <p class="panel-subtitle">Distribuição por hora do dia (últimos 30 dias, horário de Brasília).</p>
+        </div>
+        @if (picoHorario(); as p) {
+          <span class="panel-badge panel-badge--live">Pico {{ p.hora }}h</span>
+        }
+      </div>
+
+      <div class="chart chart--usage">
+        <canvas
+          baseChart
+          type="bar"
+          [data]="usoHorarioData()"
+          [options]="usoComboOptions"
+        ></canvas>
+      </div>
+    </article>
+  </section>
+
   <section class="insights-grid" aria-label="Sinais operacionais">
     @for (insight of insights(); track insight.label) {
       <article class="insight-card" [ngClass]="'tone-' + insight.tone">

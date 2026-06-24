@@ -17,7 +17,7 @@ import {
   Wallet,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
-import { AdminService, AdminFinanceiro, AdminStats } from '../../core/services/admin.service';
+import { AdminService, AdminFinanceiro, AdminStats, AdminUsoPlataforma } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 
@@ -63,6 +63,7 @@ export class AdminDashboardComponent implements OnInit {
 
   protected readonly stats = signal<AdminStats | null>(null);
   protected readonly fin = signal<AdminFinanceiro | null>(null);
+  protected readonly uso = signal<AdminUsoPlataforma | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly activityIcon = Activity;
   protected readonly checkIcon = CheckCircle2;
@@ -198,6 +199,140 @@ export class AdminDashboardComponent implements OnInit {
     };
   });
 
+  protected readonly usoDiarioData = computed<ChartData<'bar'>>(() => {
+    const pontos = this.uso()?.por_dia ?? [];
+    const data = {
+      labels: pontos.map((p) => this.formatDiaCurto(p.dia)),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Interações',
+          data: pontos.map((p) => p.interacoes),
+          backgroundColor: '#6366f1',
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 26,
+          yAxisID: 'y',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Usuários ativos',
+          data: pontos.map((p) => p.usuarios_ativos),
+          borderColor: '#f97316',
+          backgroundColor: '#f97316',
+          pointBackgroundColor: '#f97316',
+          pointRadius: 3,
+          tension: 0.35,
+          borderWidth: 2,
+          yAxisID: 'y1',
+          order: 1,
+        },
+      ],
+    };
+    // Gráfico combinado (barra + linha): o tipo estrito de 'bar' não abrange
+    // datasets 'line', então convertemos o objeto montado.
+    return data as unknown as ChartData<'bar'>;
+  });
+
+  protected readonly usoHorarioData = computed<ChartData<'bar'>>(() => {
+    const pontos = this.uso()?.por_hora ?? [];
+    const data = {
+      labels: pontos.map((p) => `${p.hora}h`),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Interações',
+          data: pontos.map((p) => p.interacoes),
+          backgroundColor: '#06b6d4',
+          borderRadius: 4,
+          borderSkipped: false,
+          maxBarThickness: 18,
+          yAxisID: 'y',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Usuários ativos',
+          data: pontos.map((p) => p.usuarios_ativos),
+          borderColor: '#f97316',
+          backgroundColor: '#f97316',
+          pointBackgroundColor: '#f97316',
+          pointRadius: 2,
+          tension: 0.35,
+          borderWidth: 2,
+          yAxisID: 'y1',
+          order: 1,
+        },
+      ],
+    };
+    return data as unknown as ChartData<'bar'>;
+  });
+
+  protected readonly picoHorario = computed(() => {
+    const pontos = this.uso()?.por_hora ?? [];
+    const pico = pontos.reduce<{ hora: number; interacoes: number } | null>(
+      (max, p) => (!max || p.interacoes > max.interacoes ? { hora: p.hora, interacoes: p.interacoes } : max),
+      null,
+    );
+    return pico && pico.interacoes > 0 ? pico : null;
+  });
+
+  protected readonly picoDia = computed(() => {
+    const pontos = this.uso()?.por_dia ?? [];
+    const pico = pontos.reduce<{ dia: string; interacoes: number } | null>(
+      (max, p) => (!max || p.interacoes > max.interacoes ? { dia: p.dia, interacoes: p.interacoes } : max),
+      null,
+    );
+    return pico && pico.interacoes > 0 ? pico : null;
+  });
+
+  protected readonly usoComboOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: { color: '#94a3b8', boxWidth: 12, boxHeight: 12, font: { size: 11 }, usePointStyle: true },
+      },
+      tooltip: {
+        backgroundColor: '#020617',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${this.formatNumber(Number(ctx.parsed.y))}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 0, autoSkipPadding: 8 },
+        grid: { display: false },
+        border: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        position: 'left',
+        title: { display: true, text: 'Interações', color: '#64748b', font: { size: 10 } },
+        ticks: { precision: 0, color: '#64748b', font: { size: 10 }, callback: (v) => this.formatNumber(Number(v)) },
+        grid: { color: 'rgba(148, 163, 184, 0.18)' },
+        border: { display: false },
+      },
+      y1: {
+        beginAtZero: true,
+        position: 'right',
+        title: { display: true, text: 'Usuários', color: '#64748b', font: { size: 10 } },
+        ticks: { precision: 0, color: '#64748b', font: { size: 10 }, callback: (v) => this.formatNumber(Number(v)) },
+        grid: { display: false },
+        border: { display: false },
+      },
+    },
+  };
+
   protected readonly insights = computed<AdminInsight[]>(() => {
     const s = this.stats();
     if (!s) return [];
@@ -330,9 +465,10 @@ export class AdminDashboardComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
-    const [result, fin] = await Promise.all([
+    const [result, fin, uso] = await Promise.all([
       this.adminService.getStats(),
       this.adminService.getFinanceiro(),
+      this.adminService.getUsoPlataforma(),
     ]);
     if (result.ok) {
       this.stats.set(result.data);
@@ -340,11 +476,18 @@ export class AdminDashboardComponent implements OnInit {
       this.toast.error('Erro ao carregar estatísticas.');
     }
     if (fin.ok) this.fin.set(fin.data);
+    if (uso.ok) this.uso.set(uso.data);
     this.isLoading.set(false);
   }
 
   protected formatNumber(value: number): string {
     return this.numberFormatter.format(value);
+  }
+
+  /** 'YYYY-MM-DD' -> 'dd/MM' sem depender de fuso (parse manual). */
+  protected formatDiaCurto(dia: string): string {
+    const [, mes, dataDia] = dia.split('-');
+    return `${dataDia}/${mes}`;
   }
 
   protected brl(centavos: number): string {
