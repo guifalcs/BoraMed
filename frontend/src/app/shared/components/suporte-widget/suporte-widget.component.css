@@ -815,6 +815,32 @@
   font-size: 0.9375rem;
 }
 
+/* Footer WhatsApp */
+.drawer-footer {
+  flex-shrink: 0;
+  padding: 0.625rem 1.25rem;
+  border-top: 1px solid #f3f4f6;
+  text-align: center;
+}
+
+.drawer-footer-text {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.drawer-footer-whatsapp {
+  color: #6b7280;
+  text-decoration: none;
+  border-bottom: 1px dotted #d1d5db;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.drawer-footer-whatsapp:hover {
+  color: #25d366;
+  border-color: #25d366;
+}
+
 /* Mobile */
 @media (max-width: 480px) {
   .widget-btn {
