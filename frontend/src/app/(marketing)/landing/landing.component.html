@@ -130,37 +130,71 @@
     </div>
   </section>
 
-  <section class="section-shell modes-section" id="treinos">
-    <div class="section-heading">
-      <span class="eyebrow">Para diferentes momentos do curso</span>
-      <h2>Do treino nacional à revisão por tema.</h2>
-      <p>Monte uma rotina de estudo com simulados que respeitam seu objetivo, seu tempo e seu histórico.</p>
+  <section class="section-shell modules-bento-section" id="treinos">
+    <div class="modules-bento-header">
+      <div class="section-heading left">
+        <span class="eyebrow">Módulos</span>
+        <h2>Três frentes para treinar melhor.</h2>
+        <p>Do treino nacional à revisão por tema e ao laboratório com imagem — cada modo com regras próprias.</p>
+      </div>
+      <a routerLink="/cadastro" class="modules-bento-btn">
+        Ver todos os módulos
+        <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
+      </a>
     </div>
 
-    <div class="mode-grid">
-      @for (mode of trainingModes; track mode.title) {
-        <article class="mode-card" [class]="'mode-card ' + mode.variant">
-          @if (mode.image; as image) {
-            <figure class="mode-image">
-              <img
-                [src]="image.src"
-                [alt]="image.alt"
-                [width]="image.width"
-                [height]="image.height"
-                loading="lazy"
-                decoding="async"
-              />
-            </figure>
-          } @else {
-            <div class="mode-visual">
-              <app-ui-icon [icon]="mode.icon" [size]="30" />
-              <span>{{ mode.badge }}</span>
-            </div>
-          }
-          <h3>{{ mode.title }}</h3>
-          <p>{{ mode.description }}</p>
-        </article>
-      }
+    <div class="modules-bento">
+      <!-- Feature card: Treinos Nacionais -->
+      <article class="bento-feature">
+        <img src="/landing-page/modo-nacional.webp" alt="Interface de treino nacional BoraMed" loading="lazy" decoding="async" />
+        <div class="bento-overlay"></div>
+
+        <div class="bento-feature-content">
+          <span class="bento-badge bento-badge--national">Modelo nacional</span>
+          <h3>Treinos Nacionais</h3>
+          <p>Simulados autorais no modelo das avaliações nacionais, com foco inicial em alunos da rede Afya.</p>
+          <a routerLink="/cadastro" class="bento-link bento-link--light">
+            Explorar módulo
+            <app-ui-icon [icon]="arrowRightIcon" [size]="16" />
+          </a>
+        </div>
+      </article>
+
+      <!-- Compact card: Simulados Processuais -->
+      <article class="bento-compact">
+        <div class="bento-compact-image">
+          <img src="/landing-page/modo-processual.webp" alt="Seleção de temas para simulado processual" loading="lazy" decoding="async" />
+        </div>
+        <div class="bento-compact-content">
+          <div class="bento-compact-meta">
+            <span class="bento-badge bento-badge--process">Por tema</span>
+          </div>
+          <h3>Simulados Processuais</h3>
+          <p>Escolha temas e quantidade de questões. A montagem aleatória acontece no servidor.</p>
+          <a routerLink="/cadastro" class="bento-link bento-link--process">
+            Explorar módulo
+            <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
+          </a>
+        </div>
+      </article>
+
+      <!-- Compact card: Laboratório -->
+      <article class="bento-compact">
+        <div class="bento-compact-image">
+          <img src="/landing-page/modo-laboratorio.webp" alt="Questão de laboratório com lâmina histológica" loading="lazy" decoding="async" />
+        </div>
+        <div class="bento-compact-content">
+          <div class="bento-compact-meta">
+            <span class="bento-badge bento-badge--lab">Com imagem</span>
+          </div>
+          <h3>Laboratório</h3>
+          <p>Questões autorais com imagem de lâminas ou peças para treinar reconhecimento e raciocínio visual.</p>
+          <a routerLink="/cadastro" class="bento-link bento-link--lab">
+            Explorar módulo
+            <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
+          </a>
+        </div>
+      </article>
     </div>
   </section>
 
@@ -352,38 +386,24 @@
     </div>
   </section>
 
-  <section class="section-shell modules-section" id="modulos">
-    <div class="section-heading">
-      <span class="eyebrow">Módulos</span>
-      <h2>Três frentes para treinar melhor.</h2>
-    </div>
-
-    <div class="module-grid">
-      @for (mode of trainingModes; track mode.title) {
-        <article class="module-card">
-          <span [class]="'module-badge ' + mode.variant">{{ mode.badge }}</span>
-          <h3>{{ mode.title }}</h3>
-          <p>{{ mode.description }}</p>
-        </article>
-      }
-    </div>
-  </section>
-
   <section class="section-shell capability-section">
     <div class="section-heading">
       <span class="eyebrow">Capacidades</span>
       <h2>Menos tentativa solta. Mais rotina de estudo.</h2>
+      <p>Um ciclo que se repete a cada simulado: você diagnostica, direciona o foco e treina de novo — sempre mais perto da prova.</p>
     </div>
 
-    <div class="capability-grid">
+    <div class="cycle-track">
       @for (capability of capabilities; track capability.title) {
-        <article>
-          <div class="capability-icon">
-            <app-ui-icon [icon]="capability.icon" [size]="20" />
+        <div class="cycle-step">
+          <div class="cycle-icon">
+            <app-ui-icon [icon]="capability.icon" [size]="32" />
           </div>
-          <h3>{{ capability.title }}</h3>
-          <p>{{ capability.description }}</p>
-        </article>
+          <div class="cycle-card">
+            <h3>{{ capability.title }}</h3>
+            <p>{{ capability.description }}</p>
+          </div>
+        </div>
       }
     </div>
   </section>
