@@ -97,6 +97,7 @@ export class SuporteWidgetComponent {
     { value: 'problema_tecnico', label: CATEGORIA_LABELS.problema_tecnico },
     { value: 'duvida_conteudo', label: CATEGORIA_LABELS.duvida_conteudo },
     { value: 'assinatura_pagamento', label: CATEGORIA_LABELS.assinatura_pagamento },
+    { value: 'melhoria', label: CATEGORIA_LABELS.melhoria },
     { value: 'outro', label: CATEGORIA_LABELS.outro },
   ];
 

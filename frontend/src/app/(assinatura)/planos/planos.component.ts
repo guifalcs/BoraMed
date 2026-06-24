@@ -7,12 +7,13 @@ import { ProfileService } from '../../core/services/profile.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../../shared/components/ui/avatar/ui-avatar.component';
+import { SuporteWidgetComponent } from '../../shared/components/suporte-widget/suporte-widget.component';
 import type { Plano } from '../../core/models/subscription.types';
 
 @Component({
   selector: 'app-planos',
   standalone: true,
-  imports: [CommonModule, RouterLink, UiIconComponent, UiAvatarComponent],
+  imports: [CommonModule, RouterLink, UiIconComponent, UiAvatarComponent, SuporteWidgetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex min-h-screen flex-col bg-gray-50">
@@ -188,6 +189,8 @@ import type { Plano } from '../../core/models/subscription.types';
           </div>
         </div>
       </footer>
+
+      <app-suporte-widget />
     </div>
   `,
 })

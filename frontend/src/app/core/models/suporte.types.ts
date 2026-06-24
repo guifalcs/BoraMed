@@ -4,6 +4,7 @@ export type TicketCategoria =
   | 'problema_tecnico'
   | 'duvida_conteudo'
   | 'assinatura_pagamento'
+  | 'melhoria'
   | 'outro';
 
 export interface SuporteTicket {
@@ -72,6 +73,7 @@ export const CATEGORIA_LABELS: Record<TicketCategoria, string> = {
   problema_tecnico: 'Problema técnico',
   duvida_conteudo: 'Dúvida sobre conteúdo',
   assinatura_pagamento: 'Assinatura / Pagamento',
+  melhoria: 'Melhoria',
   outro: 'Outro',
 };
 
