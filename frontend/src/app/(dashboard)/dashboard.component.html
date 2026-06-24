@@ -58,6 +58,11 @@
               <app-ui-icon [icon]="creditCardIcon" [size]="18" />
               <span>Assinatura</span>
             </a>
+            <div class="desktop-menu-divider"></div>
+            <a class="desktop-menu-item desktop-menu-item--community" [href]="WHATSAPP_COMMUNITY_URL" target="_blank" rel="noopener noreferrer" (click)="fecharMenu()" role="menuitem">
+              <app-ui-icon [icon]="communityIcon" [size]="18" />
+              <span>Comunidade</span>
+            </a>
             @if (isAdmin()) {
               <div class="desktop-menu-divider"></div>
               <a class="desktop-menu-item desktop-menu-item--admin" routerLink="/admin" (click)="fecharMenu()" role="menuitem">
@@ -109,6 +114,10 @@
           <a class="mobile-menu-item" routerLink="/dashboard/assinatura" (click)="fecharMenu()" role="menuitem">
             <app-ui-icon [icon]="creditCardIcon" [size]="18" />
             <span>Assinatura</span>
+          </a>
+          <a class="mobile-menu-item mobile-menu-item--community" [href]="WHATSAPP_COMMUNITY_URL" target="_blank" rel="noopener noreferrer" (click)="fecharMenu()" role="menuitem">
+            <app-ui-icon [icon]="communityIcon" [size]="18" />
+            <span>Comunidade</span>
           </a>
           @if (isAdmin()) {
             <a class="mobile-menu-item mobile-menu-item--admin" routerLink="/admin" (click)="fecharMenu()" role="menuitem">

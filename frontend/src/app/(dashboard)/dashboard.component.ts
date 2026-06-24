@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, CreditCard, History, Home, LogOut, LucideIconData, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, CreditCard, History, Home, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -49,6 +49,8 @@ export class DashboardComponent {
   protected readonly userIcon = User;
   protected readonly settingsIcon = Settings;
   protected readonly creditCardIcon = CreditCard;
+  protected readonly communityIcon = MessageCircle;
+  protected readonly WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/JriNxPNzlmp3JJLTrL9rFi';
   protected readonly isAdmin = computed(() => {
     const papel = this.profileService.profile()?.papel;
     return papel === 'admin' || papel === 'super_admin';

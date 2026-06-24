@@ -179,8 +179,20 @@
   background: #eef2ff;
 }
 
+.desktop-menu-item--community {
+  color: #16a34a;
+}
+
+.desktop-menu-item--community:hover {
+  background: #f0fdf4;
+}
+
 .mobile-menu-item--admin {
   color: #6366f1;
+}
+
+.mobile-menu-item--community {
+  color: #16a34a;
 }
 
 .desktop-menu-divider {
@@ -391,6 +403,10 @@
 
   .mobile-menu-item--danger:hover {
     background: #fee2e2;
+  }
+
+  .mobile-menu-item--community:hover {
+    background: #f0fdf4;
   }
 
   .bottom-nav {

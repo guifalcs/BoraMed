@@ -146,6 +146,7 @@ export class LandingComponent implements OnDestroy {
     'Histórico',
     'Laboratório',
     'Streak de estudo',
+    'Comunidade no WhatsApp',
   ];
 
   protected readonly trainingModes: readonly TrainingMode[] = [
@@ -276,6 +277,7 @@ export class LandingComponent implements OnDestroy {
         'Histórico e estatísticas de desempenho',
         'Ranking competitivo, XP e conquistas',
         'Revisão comentada das questões',
+        'Acesso à comunidade exclusiva no WhatsApp',
       ],
       featured: false,
     },
@@ -293,6 +295,7 @@ export class LandingComponent implements OnDestroy {
         'Histórico e estatísticas de desempenho',
         'Ranking competitivo, XP e conquistas',
         'Revisão comentada das questões',
+        'Acesso à comunidade exclusiva no WhatsApp',
       ],
       featured: true,
     },
@@ -336,6 +339,11 @@ export class LandingComponent implements OnDestroy {
       question: 'Consigo revisar meus erros?',
       answer:
         'Sim. Após finalizar, você pode revisar erros, temas críticos e refazer em modo estudo.',
+    },
+    {
+      question: 'Assinantes têm acesso à comunidade?',
+      answer:
+        'Sim. Toda assinatura inclui acesso à comunidade exclusiva do BoraMed no WhatsApp, onde alunos e colaboradores trocam dúvidas, materiais e dicas de estudo.',
     },
   ];
 

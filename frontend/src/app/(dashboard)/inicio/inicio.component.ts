@@ -20,6 +20,7 @@ import {
   Target,
   Sparkles,
   ChevronRight,
+  Users,
 } from 'lucide-angular';
 import { TentativaService } from '../../core/services/tentativa.service';
 import type { GamificacaoStats, MinhaPosicaoRanking, StreakEstudoV2, DesafioDiario } from '../../core/models/gamificacao';
@@ -104,6 +105,7 @@ export class InicioComponent {
   protected readonly temaIcon = Target;
   protected readonly xpIcon = Sparkles;
   protected readonly chevronIcon = ChevronRight;
+  protected readonly communityIcon = Users;
 
   // ── Anel SVG (gauge) ──────────────────────────────────
   protected readonly GAUGE_CIRC = 2 * Math.PI * 40; // r = 40 no viewBox 0 0 100 100
