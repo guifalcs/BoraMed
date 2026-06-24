@@ -40,10 +40,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # O build de teste usa a config development, que troca environment.ts por
+      # environment.local.ts (gitignored). No CI geramos a partir do exemplo.
+      - name: Gera environment.local.ts a partir do exemplo
+        run: cp src/environments/environment.local.example.ts src/environments/environment.local.ts
       - name: Testes unitários
         run: npm test
         env:
@@ -60,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
