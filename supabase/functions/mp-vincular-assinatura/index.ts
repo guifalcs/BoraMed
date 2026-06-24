@@ -55,6 +55,21 @@ Deno.serve(async (req) => {
   const planId = sub['preapproval_plan_id'] as string | undefined;
   const nextPayment = (sub['next_payment_date'] as string | undefined) ?? null;
 
+  // IDOR: sem isto, qualquer usuário logado que descobrisse um preapproval_id
+  // ainda-não-vinculado (ele vaza na back_url / logs do retorno) ligava a
+  // assinatura de outra pessoa à própria conta. Exige que o e-mail do pagador
+  // no MP seja o mesmo da conta autenticada. O webhook já depende de payer_email,
+  // então ele está presente nas nossas assinaturas.
+  const payerEmail = String(sub['payer_email'] ?? '').trim().toLowerCase();
+  const userEmail = String(user.email ?? '').trim().toLowerCase();
+  if (!payerEmail || !userEmail || payerEmail !== userEmail) {
+    console.error('mp-vincular: payer_email diverge da conta', { preapprovalId });
+    return reply(
+      { error: 'Esta assinatura foi paga com outro e-mail. Entre com a conta correta ou fale com o suporte.' },
+      403,
+    );
+  }
+
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });

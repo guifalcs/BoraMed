@@ -79,14 +79,14 @@ export const routes: Routes = [
   },
   {
     path: 'imprimir/simulado/montado',
-    canActivate: [lazyAuthGuard],
+    canActivate: [lazyAuthGuard, lazySubscriptionGuard],
     data: { modo: 'efemero' },
     loadComponent: () =>
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
   },
   {
     path: 'imprimir/simulado/:provaId',
-    canActivate: [lazyAuthGuard],
+    canActivate: [lazyAuthGuard, lazySubscriptionGuard],
     loadComponent: () =>
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
   },

@@ -94,6 +94,10 @@ Sem `with_check`, nada valida o valor escrito — contorna `salvar_resposta_tent
 
 ## 🟡 3. MÉDIA — Paywall aplicado só no cliente
 
+> **STATUS: ✅ APLICADO EM PROD** (2026-06-24, migration `20260624131517_seguranca_paywall_conteudo_assinantes`). Decisão de produto: **conteúdo só para assinantes**. Duas camadas: (1) RLS em `questao`/`alternativa` exige `tem_assinatura_ativa()`; (2) gate de assinatura nas RPCs `iniciar_tentativa`, `gerar_simulado_personalizado`, `gerar_simulado_impressao`, `get_simulado_impressao` (DEFINER não passam por RLS). Rotas `/imprimir/*` ganharam `lazySubscriptionGuard`. Verificado em prod: não-assinante → `questao` retorna 0 linhas e RPC lança `subscription_required`; admin → 748 questões e gera normal.
+>
+> **Fronteira escolhida:** gateamos a *aquisição* de conteúdo. `get_revisao_prova`/`get_revisao_tentativa` (tentativas que o próprio usuário já finalizou) e o desafio diário ficaram **abertos de propósito** — ajustar se a regra mudar. **Operacional:** hoje há **0 assinaturas ativas**; só admins acessam conteúdo (igual ao comportamento do guard que já estava no ar).
+
 Existe `tem_assinatura_ativa(uid)` (migration `20260620120000`), mas **nenhuma** das RPCs de conteúdo a chama (`iniciar_tentativa`, `gerar_simulado_personalizado`, `gerar_simulado_impressao`, `get_simulado_impressao`). O guard é só o `subscription.guard.ts` do Angular. Some-se a isso o #1 (tabelas abertas) e: **usuário grátis ou com assinatura vencida acessa todo o conteúdo** chamando RPC/tabela direto.
 
 **Correção:** validar entitlement no servidor — `IF NOT public.tem_assinatura_ativa() THEN RAISE EXCEPTION` no topo de cada RPC de conteúdo, e/ou incorporar a checagem na RPC/view de leitura criada no #1. (Decisão de produto: confirmar o que o tier grátis pode ver — mas a regra precisa ser server-side.)
@@ -101,6 +105,8 @@ Existe `tem_assinatura_ativa(uid)` (migration `20260620120000`), mas **nenhuma**
 ---
 
 ## 🟡 4. MÉDIA — `mp-vincular-assinatura`: vincular assinatura não reivindicada (IDOR)
+
+> **STATUS: ✅ APLICADO EM PROD** (2026-06-24, edge function `mp-vincular-assinatura` v9). Agora exige `sub.payer_email == user.email` (normalizado) antes do upsert; rejeita com 403 se divergir ou faltar. A trava "já vinculada a outra conta" permanece como segunda camada.
 
 A única trava de posse cobre assinatura **já vinculada**:
 ```ts
@@ -172,7 +178,14 @@ a menos que se adote uma salvaguarda. Recomendações (qualquer uma já ajuda):
    select 'escrita direta em tentativa'
    from information_schema.role_table_grants
    where table_schema='public' and table_name in ('tentativa','tentativa_resposta')
-     and grantee in ('authenticated','anon') and privilege_type in ('INSERT','UPDATE','DELETE');
+     and grantee in ('authenticated','anon') and privilege_type in ('INSERT','UPDATE','DELETE')
+   union all
+   -- #3: leitura de questao/alternativa tem que continuar exigindo assinatura
+   select 'questao/alternativa legivel sem assinatura ('||tablename||')'
+   from pg_policies
+   where schemaname='public'
+     and policyname in ('questao_select_authenticated','alternativa_select_authenticated')
+     and qual not like '%tem_assinatura_ativa%';
    ```
 3. **Manter uma migration de hardening sempre por último** (re-aplicável/idempotente)
    e re-gerá-la após qualquer `db pull` que mexa nessas tabelas.
