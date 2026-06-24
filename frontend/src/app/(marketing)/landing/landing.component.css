@@ -1624,3 +1624,15 @@
     animation-duration: 44s;
   }
 }
+
+/* A esteira de recursos deve estar SEMPRE em movimento. O reset global de
+   prefers-reduced-motion (styles.css) zera animation-duration/iteration de
+   tudo, congelando o ticker em máquinas com "menos movimento" ativo. O reset
+   preserva o animation-name, então basta restaurar duração e iteração — mesma
+   estratégia usada para os spinners. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation-duration: 36s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
