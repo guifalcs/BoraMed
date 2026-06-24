@@ -34,10 +34,10 @@ export class AuthService implements OnDestroy {
       (event: AuthChangeEvent, session: Session | null) => {
         this._user.set(session?.user ?? null);
 
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' && !this.router.getCurrentNavigation()) {
           void this.router.navigate(['/login']);
         }
-        if (event === 'PASSWORD_RECOVERY') {
+        if (event === 'PASSWORD_RECOVERY' && !this.router.getCurrentNavigation()) {
           void this.router.navigate(['/redefinir-senha']);
         }
       },
