@@ -13,6 +13,24 @@ type RawProvaQuestao = {
   questao: RawQuestao | null;
 };
 
+// Colunas de gabarito/solução foram revogadas das tabelas-base
+// (migration 20260624120000): `alternativa.correta` e
+// `questao.{resposta_correta_texto,respostas_aceitas,explicacao,
+// explicacao_alternativas}` só são retornadas por RPCs SECURITY DEFINER
+// (get_revisao_*, get_simulado_impressao, admin_get_questao). Selecionar `*`
+// aqui causaria permission denied — listamos apenas as colunas públicas.
+const QUESTAO_COLUNAS_PUBLICAS = [
+  'id', 'prova_id', 'ordem_na_prova', 'codigo_externo', 'enunciado_apoio',
+  'enunciado', 'imagem_url', 'imagem_legenda', 'formato', 'referencia', 'fonte',
+  'vezes_respondida', 'vezes_acertada', 'taxa_acerto', 'status', 'revisado',
+  'criado_em', 'atualizado_em', 'autor_id', 'revisor_id', 'aprovada_em',
+  'publicada_em', 'origem_geracao', 'nivel_bloom', 'formato_prova',
+  'apto_desafio_diario', 'disciplina_id', 'tipo_questao',
+].join(',');
+const ALTERNATIVA_COLUNAS_PUBLICAS = [
+  'id', 'questao_id', 'letra', 'texto', 'ordem', 'imagem_url',
+].join(',');
+
 @Injectable({ providedIn: 'root' })
 export class QuestaoService {
   private readonly supabase = inject(SupabaseService).client;
@@ -24,8 +42,8 @@ export class QuestaoService {
         .select(`
           ordem,
           questao:questao_id!inner(
-            *,
-            alternativas:alternativa(*),
+            ${QUESTAO_COLUNAS_PUBLICAS},
+            alternativas:alternativa(${ALTERNATIVA_COLUNAS_PUBLICAS}),
             temas:questao_tema(tema(*))
           )
         `)
@@ -55,8 +73,8 @@ export class QuestaoService {
       const { data, error } = await this.supabase
         .from('questao')
         .select(`
-          *,
-          alternativas:alternativa(*),
+          ${QUESTAO_COLUNAS_PUBLICAS},
+          alternativas:alternativa(${ALTERNATIVA_COLUNAS_PUBLICAS}),
           temas:questao_tema(tema(*))
         `)
         .eq('id', id)
@@ -64,10 +82,11 @@ export class QuestaoService {
 
       if (error) throw error;
 
+      const row = data as unknown as RawQuestao;
       const questao = {
-        ...data,
-        temas: ((data['temas'] as Array<{ tema: unknown }>) ?? []).map((qt) => qt.tema),
-      } as QuestaoComAlternativas;
+        ...row,
+        temas: (row.temas ?? []).map((qt) => qt.tema),
+      } as unknown as QuestaoComAlternativas;
 
       return { ok: true, data: questao };
     } catch {
