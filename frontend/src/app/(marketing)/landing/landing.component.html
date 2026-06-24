@@ -165,14 +165,14 @@
   </section>
 
   <section class="section-shell solution-section" id="solucao">
-    <div class="section-heading left">
+    <div class="solution-card">
       <span class="eyebrow">Solução</span>
-      <h2>Um sistema de estudo para simulado, revisão e evolução.</h2>
-      <p>Tudo que você precisa para transformar tentativa em diagnóstico e diagnóstico em próximo treino.</p>
-    </div>
+      <h2 class="solution-title">Um ciclo completo: simular, revisar e evoluir.</h2>
+      <p class="solution-lead">
+        Tudo que você precisa para transformar tentativa em diagnóstico — e diagnóstico no próximo treino.
+      </p>
 
-    <div class="solution-layout">
-      <div class="tab-list" role="tablist" aria-label="Fluxos do BoraMed">
+      <div class="tab-pills" role="tablist" aria-label="Fluxos do BoraMed">
         @for (tab of solutionTabs; track tab.id) {
           <button
             type="button"
@@ -191,88 +191,99 @@
         <div class="solution-copy">
           <h3>{{ selectedTab().title }}</h3>
           <p>{{ selectedTab().description }}</p>
-          <ul>
+          <ul class="feature-list">
             @for (feature of selectedTab().features; track feature) {
-              <li>{{ feature }}</li>
+              <li class="feature-item">
+                <span class="check-chip"><app-ui-icon [icon]="checkIcon" [size]="13" /></span>
+                {{ feature }}
+              </li>
             }
           </ul>
         </div>
 
-        <div class="product-panel">
-          <div class="panel-header">
-            <span>{{ selectedTab().label }}</span>
-            <strong>BoraMed</strong>
+        <div class="product-window">
+          <div class="window-bar">
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+            <span class="window-url"><span class="url-dot"></span>boramedoficial.com.br</span>
           </div>
 
-          @if (activeTab() === 'treinar') {
-            <div class="preview-block">
-              <div class="preview-timer-row">
-                <span class="preview-label">Tempo restante</span>
-                <strong class="preview-timer-value">12:45</strong>
-              </div>
-              <div class="preview-meta-row">
-                <span>Questão 8 de 20</span>
-                <span class="preview-pct">40%</span>
-              </div>
-              <div class="preview-bar-track"><i style="--w: 40%"></i></div>
-              <div class="preview-kpis">
-                <div class="preview-kpi-item">
-                  <strong>20</strong>
-                  <span>questões</span>
+          <div class="window-body">
+            @if (activeTab() === 'treinar') {
+              <div class="preview-block">
+                <div class="preview-timer-row">
+                  <span class="preview-label">Tempo restante</span>
+                  <strong class="preview-timer-value">12:45</strong>
                 </div>
-                <div class="preview-kpi-item">
-                  <strong>7</strong>
-                  <span>respondidas</span>
+                <div class="preview-meta-row">
+                  <span>Questão 8 de 20</span>
+                  <span class="preview-pct">40%</span>
                 </div>
-                <div class="preview-kpi-item">
-                  <strong>1</strong>
-                  <span>em branco</span>
-                </div>
-              </div>
-            </div>
-          }
-
-          @if (activeTab() === 'revisar') {
-            <div class="preview-block">
-              <span class="preview-label">Temas com menor acerto</span>
-              @for (topic of reviewTopics; track topic.name) {
-                <div class="preview-topic-row">
-                  <div class="preview-meta-row">
-                    <span>{{ topic.name }}</span>
-                    <span class="preview-pct">{{ topic.pct }}%</span>
+                <div class="preview-bar-track"><i style="--w: 40%"></i></div>
+                <div class="preview-kpis">
+                  <div class="preview-kpi-item">
+                    <strong>20</strong>
+                    <span>questões</span>
                   </div>
-                  <div class="preview-bar-track">
-                    <i [style.--w]="topic.pct + '%'"></i>
+                  <div class="preview-kpi-item">
+                    <strong>7</strong>
+                    <span>respondidas</span>
+                  </div>
+                  <div class="preview-kpi-item">
+                    <strong>1</strong>
+                    <span>em branco</span>
                   </div>
                 </div>
-              }
-            </div>
-          }
+              </div>
+            }
 
-          @if (activeTab() === 'acompanhar') {
-            <div class="preview-block">
-              <span class="preview-label">Constância — últimas 2 semanas</span>
-              <div class="preview-streak">
-                @for (active of streakDays; track $index) {
-                  <span [class]="active ? 'streak-dot streak-dot--on' : 'streak-dot'"></span>
+            @if (activeTab() === 'revisar') {
+              <div class="preview-block">
+                <span class="preview-label">Temas com menor acerto</span>
+                @for (topic of sortedReviewTopics; track topic.name) {
+                  <div class="preview-topic-row">
+                    <div class="preview-meta-row">
+                      <span>{{ topic.name }}</span>
+                      <span class="preview-pct">{{ topic.pct }}%</span>
+                    </div>
+                    <div class="preview-bar-track">
+                      <i [class]="'tier-' + topicTier(topic.pct)" [style.--w]="topic.pct + '%'"></i>
+                    </div>
+                  </div>
                 }
+                <a class="preview-link" href="#solucao">
+                  Revisar erros desses temas
+                  <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
+                </a>
               </div>
-              <div class="preview-kpis">
-                <div class="preview-kpi-item">
-                  <strong>82%</strong>
-                  <span>acertos</span>
+            }
+
+            @if (activeTab() === 'acompanhar') {
+              <div class="preview-block">
+                <span class="preview-label">Constância — últimas 2 semanas</span>
+                <div class="preview-streak">
+                  @for (active of streakDays; track $index) {
+                    <span [class]="active ? 'streak-dot streak-dot--on' : 'streak-dot'"></span>
+                  }
                 </div>
-                <div class="preview-kpi-item">
-                  <strong class="preview-trend-up">↑ 12%</strong>
-                  <span>esta semana</span>
-                </div>
-                <div class="preview-kpi-item">
-                  <strong>9</strong>
-                  <span>tentativas</span>
+                <div class="preview-kpis">
+                  <div class="preview-kpi-item">
+                    <strong>82%</strong>
+                    <span>acertos</span>
+                  </div>
+                  <div class="preview-kpi-item">
+                    <strong class="preview-trend-up">↑ 12%</strong>
+                    <span>esta semana</span>
+                  </div>
+                  <div class="preview-kpi-item">
+                    <strong>9</strong>
+                    <span>tentativas</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       </div>
     </div>

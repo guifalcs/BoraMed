@@ -13,6 +13,7 @@ import { SeoService } from '../../core/seo/seo.service';
 import { SITE_URL } from '../../core/seo/seo.config';
 import {
   Activity,
+  ArrowRight,
   BarChart3,
   BookOpenCheck,
   Brain,
@@ -109,6 +110,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly closeIcon = X;
   protected readonly chevronIcon = ChevronDown;
   protected readonly checkIcon = Check;
+  protected readonly arrowRightIcon = ArrowRight;
   protected readonly targetIcon = Target;
   protected readonly timerIcon = Timer;
   protected readonly activityIcon = Activity;
@@ -302,6 +304,9 @@ export class LandingComponent implements OnDestroy {
     { name: 'Anatomia', pct: 43 },
   ] as const;
 
+  // Temas ordenados do pior para o melhor aproveitamento (rota de revisão).
+  protected readonly sortedReviewTopics = [...this.reviewTopics].sort((a, b) => a.pct - b.pct);
+
   protected readonly streakDays = [
     true, true, false, true, true, true, false,
     true, true, true, false, false, true, true,
@@ -364,6 +369,13 @@ export class LandingComponent implements OnDestroy {
 
   protected setActiveTab(tabId: SolutionTab['id']): void {
     this.activeTab.set(tabId);
+  }
+
+  // Faixa de cor da barra por aproveitamento: crítico, atenção ou bom.
+  protected topicTier(pct: number): 'low' | 'mid' | 'high' {
+    if (pct < 50) return 'low';
+    if (pct < 70) return 'mid';
+    return 'high';
   }
 
   protected toggleFaq(index: number): void {
