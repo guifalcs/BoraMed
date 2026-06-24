@@ -126,16 +126,15 @@ export class LandingComponent implements OnDestroy {
   protected readonly navItems: readonly NavItem[] = [
     { label: 'Início', href: '#inicio' },
     { label: 'Treinos', href: '#treinos' },
-    { label: 'Simulados', href: '#solucao' },
-    { label: 'Laboratório', href: '#modulos' },
+    { label: 'Como funciona', href: '#solucao' },
     { label: 'Planos', href: '#planos' },
     { label: 'FAQ', href: '#faq' },
   ];
 
   protected readonly stats = [
     { value: '+2.400', label: 'questões autorais' },
-    { value: '3', label: 'módulos de treino' },
-    { value: '100%', label: 'conteúdo autoral' },
+    { value: '3', label: 'modos de treinar' },
+    { value: '100%', label: 'no modelo da prova' },
   ] as const;
 
   protected readonly tickerItems = [
@@ -198,28 +197,28 @@ export class LandingComponent implements OnDestroy {
     {
       id: 'treinar',
       label: 'Treinar',
-      title: 'Simulados com montagem inteligente',
+      title: 'Comece a treinar em segundos',
       description:
-        'Defina prova, temas ou modo de laboratório e comece uma tentativa com regras claras.',
-      features: ['Questões autorais', 'Sorteio server-side', 'Timer e progresso', 'Modo estudo', 'Retomar tentativa'],
+        'Escolha a prova, os temas ou o laboratório e comece um simulado na hora — com tempo cronometrado, como no dia da prova.',
+      features: ['Questões 100% autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Retome de onde parou'],
       icon: BookOpenCheck,
     },
     {
       id: 'revisar',
       label: 'Revisar',
-      title: 'Erros viram rota de revisão',
+      title: 'Cada erro vira uma rota de revisão',
       description:
-        'Depois do simulado, veja onde perdeu pontos e volte direto para os pontos críticos.',
-      features: ['Resumo da nota', 'Temas críticos', 'Revisão de erros', 'Explicação por questão', 'Refazer em modo estudo'],
+        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção.',
+      features: ['Nota e resumo na hora', 'Temas mais críticos', 'Revisão de cada erro', 'Comentário por questão', 'Refaça em modo estudo'],
       icon: Route,
     },
     {
       id: 'acompanhar',
       label: 'Acompanhar',
-      title: 'Histórico para medir consistência',
+      title: 'Sua evolução, prova após prova',
       description:
-        'Acompanhe tentativas, desempenho por tema e sinais de constância sem transformar o estudo em jogo infantil.',
-      features: ['Histórico', 'Evolução da nota', 'Desempenho por tema', 'Conquistas discretas', 'Ranking controlado'],
+        'Acompanhe cada tentativa, veja a nota subir e mantenha a constância que aprova — com ranking entre estudantes para te manter no ritmo.',
+      features: ['Histórico completo', 'Evolução da nota', 'Desempenho por tema', 'Sequência de estudo (streak)', 'Ranking entre estudantes'],
       icon: LineChart,
     },
   ];
@@ -228,19 +227,19 @@ export class LandingComponent implements OnDestroy {
     {
       label: 'Hoje',
       title: 'Crie sua conta',
-      points: ['Informe seus dados', 'Escolha seu objetivo', 'Entre no dashboard'],
+      points: ['Cadastro rápido e sem burocracia', 'Defina seu objetivo', 'Acesse a plataforma na hora'],
       icon: Sparkles,
     },
     {
       label: 'Primeiro treino',
-      title: 'Monte um simulado',
-      points: ['Escolha prova, tema ou laboratório', 'Defina quantidade', 'Responda com timer'],
+      title: 'Monte seu simulado',
+      points: ['Escolha prova, tema ou laboratório', 'Defina quantas questões', 'Treine com tempo real'],
       icon: BookOpenCheck,
     },
     {
       label: 'Depois',
-      title: 'Revise pelo diagnóstico',
-      points: ['Veja nota e temas críticos', 'Revise erros', 'Refaça em modo estudo'],
+      title: 'Evolua pelo diagnóstico',
+      points: ['Veja sua nota e pontos fracos', 'Revise cada erro comentado', 'Refaça até dominar'],
       icon: Activity,
     },
   ];
@@ -248,17 +247,17 @@ export class LandingComponent implements OnDestroy {
   protected readonly capabilities: readonly Capability[] = [
     {
       title: 'Diagnosticar',
-      description: 'Veja aproveitamento por tema, histórico e padrões de erro.',
+      description: 'Descubra, com dados, exatamente onde está perdendo pontos.',
       icon: BarChart3,
     },
     {
       title: 'Direcionar',
-      description: 'Volte direto para revisão de erros e temas com menor aproveitamento.',
+      description: 'Foque o estudo nos temas que mais impactam a sua nota.',
       icon: Route,
     },
     {
       title: 'Treinar',
-      description: 'Gere novas tentativas com regras consistentes e montagem no servidor.',
+      description: 'Monte novos simulados e treine até o conteúdo virar automático.',
       icon: Brain,
     },
   ];
@@ -267,10 +266,10 @@ export class LandingComponent implements OnDestroy {
     {
       slug: 'mensal',
       name: 'Mensal',
-      tagline: 'Flexível — cancele quando quiser',
+      tagline: 'Flexível — sem fidelidade, cancele quando quiser',
       price: 'R$ 49,90',
       period: '/mês',
-      note: 'Renova automaticamente. Sem fidelidade.',
+      note: 'Renova automaticamente. Cancele a qualquer momento.',
       features: [
         'Todos os simulados: nacionais, processuais e laboratório',
         'Banco completo de questões autorais',
@@ -317,33 +316,39 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly faqs: readonly FaqItem[] = [
     {
-      question: 'O BoraMed tem vínculo oficial com alguma instituição?',
+      question: 'As questões são iguais às da prova da Afya?',
       answer:
-        'Não. O BoraMed é uma plataforma independente com questões autorais no modelo das avaliações.',
+        'Não. As questões são 100% autorais, criadas no mesmo formato e nível de cobrança das avaliações — para você treinar o raciocínio que a prova exige, sem usar nenhum acervo oficial.',
     },
     {
-      question: 'As questões são oficiais?',
+      question: 'O BoraMed tem vínculo oficial com a Afya?',
       answer:
-        'Não. As questões são autorais e criadas para treinar raciocínio e formato de prova sem usar acervo oficial.',
+        'Não. O BoraMed é uma plataforma independente, sem vínculo com a Afya ou qualquer instituição. Apenas seguimos o modelo das avaliações para deixar o seu treino o mais realista possível.',
     },
     {
-      question: 'Como os simulados são montados?',
+      question: 'Posso cancelar quando quiser?',
       answer:
-        'A montagem e o sorteio das questões acontecem no servidor, preservando regras consistentes e evitando lógica sensível no cliente.',
+        'Sim. O plano mensal não tem fidelidade — você cancela a qualquer momento. O semestral sai mais barato por mês e pode ser parcelado em até 6x sem juros.',
+    },
+    {
+      question: 'Consigo estudar pelo celular?',
+      answer:
+        'Sim. O BoraMed funciona direto no navegador do celular, tablet ou computador — sem precisar instalar nada e com seu progresso salvo em todos os dispositivos.',
+    },
+    {
+      question: 'Como revisar meus erros depois do simulado?',
+      answer:
+        'Ao finalizar, você vê sua nota, os temas em que mais errou e a explicação de cada questão — e pode refazer tudo em modo estudo, sem tempo, até dominar o conteúdo.',
     },
     {
       question: 'Existe simulado de laboratório?',
-      answer: 'Sim. Questões de laboratório usam imagem como parte obrigatória do enunciado.',
+      answer:
+        'Sim. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra.',
     },
     {
-      question: 'Consigo revisar meus erros?',
+      question: 'A assinatura dá acesso à comunidade?',
       answer:
-        'Sim. Após finalizar, você pode revisar erros, temas críticos e refazer em modo estudo.',
-    },
-    {
-      question: 'Assinantes têm acesso à comunidade?',
-      answer:
-        'Sim. Toda assinatura inclui acesso à comunidade exclusiva do BoraMed no WhatsApp, onde alunos e colaboradores trocam dúvidas, materiais e dicas de estudo.',
+        'Sim. Toda assinatura inclui acesso à comunidade exclusiva do BoraMed no WhatsApp, onde estudantes trocam dúvidas, materiais e dicas de estudo.',
     },
   ];
 
@@ -402,7 +407,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Simulados de medicina autorais no modelo das provas da Afya: questões comentadas e revisão por desempenho. Plataforma independente — crie sua conta grátis.',
+        'Treine no modelo das provas da Afya: simulados de medicina autorais, questões comentadas e revisão guiada por desempenho. Plataforma independente — comece já.',
       path: '/',
       titleHasBrand: true,
     });

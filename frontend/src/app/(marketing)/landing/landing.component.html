@@ -41,23 +41,23 @@
   <section class="hero-section" [class.hero-ready]="heroReady()">
     <div class="hero-shell">
       <div class="hero-copy">
-        <span class="eyebrow">Simulados médicos autorais</span>
+        <span class="eyebrow">Simulados no modelo da sua prova</span>
         <h1>
-          Treine para a prova.<br />
-          Revise com direção.
+          Treine no formato real.<br />
+          Revise onde você erra.
         </h1>
         <p>
-          O BoraMed organiza treinos nacionais, simulados por tema e questões de laboratório
-          para estudantes de medicina que precisam estudar com foco.
+          Questões 100% autorais no modelo das avaliações da Afya para você simular a prova
+          de verdade, enxergar onde perde pontos e transformar cada erro no próximo acerto.
         </p>
 
         <div class="hero-actions" aria-label="Ações principais">
           <a class="primary-button" routerLink="/cadastro">Começar agora</a>
-          <a class="secondary-button" href="#modulos">Conhecer os módulos</a>
+          <a class="secondary-button" href="#treinos">Conhecer os módulos</a>
         </div>
 
         <p class="trust-note">
-          Plataforma independente. Questões autorais no modelo das avaliações.
+          Plataforma independente · Questões autorais · Comece em poucos minutos
         </p>
       </div>
 
@@ -133,9 +133,9 @@
   <section class="section-shell modules-bento-section" id="treinos">
     <div class="modules-bento-header">
       <div class="section-heading left">
-        <span class="eyebrow">Módulos</span>
-        <h2>Três frentes para treinar melhor.</h2>
-        <p>Do treino nacional à revisão por tema e ao laboratório com imagem — cada modo com regras próprias.</p>
+        <span class="eyebrow">Modos de treino</span>
+        <h2>Três formas de treinar. Um objetivo: a prova.</h2>
+        <p>Do simulado completo no modelo da prova à revisão por tema e ao laboratório com imagem real — escolha como quer estudar hoje.</p>
       </div>
       <a routerLink="/cadastro" class="modules-bento-btn">
         Ver todos os módulos
@@ -152,7 +152,7 @@
         <div class="bento-feature-content">
           <span class="bento-badge bento-badge--national">Modelo nacional</span>
           <h3>Treinos Nacionais</h3>
-          <p>Simulados autorais no modelo das avaliações nacionais, com foco inicial em alunos da rede Afya.</p>
+          <p>O simulado mais próximo da prova real: questões autorais no modelo das avaliações nacionais, pensadas para quem estuda na rede Afya.</p>
           <a routerLink="/cadastro" class="bento-link bento-link--light">
             Explorar módulo
             <app-ui-icon [icon]="arrowRightIcon" [size]="16" />
@@ -170,7 +170,7 @@
             <span class="bento-badge bento-badge--process">Por tema</span>
           </div>
           <h3>Simulados Processuais</h3>
-          <p>Escolha temas e quantidade de questões. A montagem aleatória acontece no servidor.</p>
+          <p>Escolha os temas que precisa dominar e a quantidade de questões — um simulado novo é montado a cada tentativa.</p>
           <a routerLink="/cadastro" class="bento-link bento-link--process">
             Explorar módulo
             <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
@@ -188,7 +188,7 @@
             <span class="bento-badge bento-badge--lab">Com imagem</span>
           </div>
           <h3>Laboratório</h3>
-          <p>Questões autorais com imagem de lâminas ou peças para treinar reconhecimento e raciocínio visual.</p>
+          <p>Lâminas e peças reais para treinar o olhar clínico e o raciocínio visual que a prova prática cobra.</p>
           <a routerLink="/cadastro" class="bento-link bento-link--lab">
             Explorar módulo
             <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
@@ -200,10 +200,10 @@
 
   <section class="section-shell solution-section" id="solucao">
     <div class="solution-card">
-      <span class="eyebrow">Solução</span>
+      <span class="eyebrow">Como funciona</span>
       <h2 class="solution-title">Um ciclo completo: simular, revisar e evoluir.</h2>
       <p class="solution-lead">
-        Tudo que você precisa para transformar tentativa em diagnóstico — e diagnóstico no próximo treino.
+        Cada simulado vira um diagnóstico — e cada diagnóstico, o seu próximo treino. É assim que a nota sobe.
       </p>
 
       <div class="tab-pills" role="tablist" aria-label="Fluxos do BoraMed">
@@ -326,7 +326,7 @@
   <section class="section-shell steps-section">
     <div class="section-heading">
       <span class="eyebrow">Passo a passo</span>
-      <h2>Comece pequeno, revise melhor e aumente a dificuldade.</h2>
+      <h2>Do cadastro ao primeiro diagnóstico em minutos.</h2>
     </div>
 
     <div class="timeline">
@@ -352,10 +352,10 @@
     <div class="intelligence-shell">
       <div class="intelligence-copy">
         <span class="eyebrow inverse">Inteligência de estudo</span>
-        <h2>A plataforma transforma desempenho em próximo passo.</h2>
+        <h2>Pare de adivinhar o que estudar.</h2>
         <p>
-          Use dados do simulado para entender prioridade de revisão, progresso por tema e
-          pontos de atenção antes da próxima tentativa.
+          A cada simulado, o BoraMed mostra exatamente onde focar: os temas que mais derrubam
+          sua nota, seu progresso real e o que revisar antes da próxima prova.
         </p>
         <a class="inverse-button" href="#solucao">Ver como funciona</a>
       </div>
@@ -388,9 +388,9 @@
 
   <section class="section-shell capability-section">
     <div class="section-heading">
-      <span class="eyebrow">Capacidades</span>
+      <span class="eyebrow">O ciclo BoraMed</span>
       <h2>Menos tentativa solta. Mais rotina de estudo.</h2>
-      <p>Um ciclo que se repete a cada simulado: você diagnostica, direciona o foco e treina de novo — sempre mais perto da prova.</p>
+      <p>Um ciclo que se repete a cada simulado: você diagnostica os pontos fracos, direciona o foco e treina de novo — sempre mais perto da nota que quer.</p>
     </div>
 
     <div class="cycle-track">
@@ -505,12 +505,12 @@
 
   <section class="final-cta">
     <div class="final-cta-shell">
-      <span class="eyebrow inverse">BoraMed</span>
-      <h2>Estude com simulados autorais e revise com direção.</h2>
-      <p>Entre na lista ou crie sua conta para acompanhar os próximos módulos do BoraMed.</p>
+      <span class="eyebrow inverse">Bora começar</span>
+      <h2>Sua próxima prova começa no próximo simulado.</h2>
+      <p>Crie sua conta e comece a treinar no modelo da prova hoje mesmo — com revisão guiada e acesso à comunidade.</p>
       <div>
         <a class="inverse-button" routerLink="/cadastro">Começar agora</a>
-        <a class="ghost-inverse-button" href="#modulos">Conhecer os módulos</a>
+        <a class="ghost-inverse-button" href="#planos">Ver os planos</a>
       </div>
     </div>
   </section>
