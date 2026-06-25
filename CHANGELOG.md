@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-25 | Fix | sem commit
+
+**Correcoes de pre-producao no admin**
+
+- Admin de questoes passa a validar alternativas preenchidas antes de salvar, impedindo questao objetiva ativa sem gabarito valido.
+- Drawer de questoes de uma prova agora carrega inicialmente respeitando o filtro visivel de status e o formato da prova aberta.
+- Importacao de disciplinas transforma siglas duplicadas em erro de validacao, cobrindo duplicatas ja cadastradas e duplicatas no proprio lote.
+- Admin de usuarios passa a usar paginacao server-side e busca normalizada, evitando carregar todos os perfis de uma vez e reduzindo falhas com caracteres especiais no filtro.
+- Build pode ser executado tambem a partir da raiz do repositorio via scripts que delegam para `frontend/`, evitando falha `ENOENT` por ausencia de `package.json` no diretorio raiz.
+- Landing page divide estilos de secoes grandes em stylesheets dedicados e remove CSS legado nao usado, eliminando o warning de budget `anyComponentStyle` no build.
+
+---
+
 ## 2026-06-23 | SEO | sem commit
 
 **Fundação técnica de SEO + motor de conteúdo indexável**
