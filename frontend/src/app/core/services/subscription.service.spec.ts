@@ -135,7 +135,7 @@ describe('SubscriptionService', () => {
       // Força o sinal interno via carregarAssinatura (simulado abaixo)
       userSignal.set(fakeUser());
       const ass = fakeAssinatura({ status: 'authorized' });
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: ass, error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
 
       return service.carregarAssinatura().then(() => {
         expect(service.temAcesso()).toBe(true);
@@ -145,7 +145,7 @@ describe('SubscriptionService', () => {
     it('retorna false quando status é "pending"', () => {
       userSignal.set(fakeUser());
       const ass = fakeAssinatura({ status: 'pending' });
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: ass, error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
 
       return service.carregarAssinatura().then(() => {
         expect(service.temAcesso()).toBe(false);
@@ -155,7 +155,7 @@ describe('SubscriptionService', () => {
     it('retorna false quando status é "paused"', () => {
       userSignal.set(fakeUser());
       const ass = fakeAssinatura({ status: 'paused' });
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: ass, error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
 
       return service.carregarAssinatura().then(() => {
         expect(service.temAcesso()).toBe(false);
@@ -165,7 +165,7 @@ describe('SubscriptionService', () => {
     it('retorna false quando status é "cancelled"', () => {
       userSignal.set(fakeUser());
       const ass = fakeAssinatura({ status: 'cancelled' });
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: ass, error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
 
       return service.carregarAssinatura().then(() => {
         expect(service.temAcesso()).toBe(false);
@@ -187,7 +187,7 @@ describe('SubscriptionService', () => {
     it('popula assinatura() com o resultado do Supabase', async () => {
       const ass = fakeAssinatura();
       userSignal.set(fakeUser());
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: ass, error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
 
       await service.carregarAssinatura();
 
@@ -215,7 +215,7 @@ describe('SubscriptionService', () => {
 
     it('chamadas concorrentes deduplicam o fetch (from chamado exatamente uma vez)', async () => {
       userSignal.set(fakeUser());
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: fakeAssinatura(), error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [fakeAssinatura()], error: null }));
 
       // Dispara dois carregarAssinatura ao mesmo tempo sem aguardar
       const p1 = service.carregarAssinatura();
@@ -494,7 +494,7 @@ describe('SubscriptionService', () => {
       userSignal.set(fakeUser());
       const ass = fakeAssinatura({ status: 'authorized' });
       mockFunctionsInvoke.mockResolvedValue({ data: {}, error: null });
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: ass, error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
 
       const result = await service.vincular('preapp-xyz');
 

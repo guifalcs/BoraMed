@@ -45,21 +45,39 @@ export class SubscriptionService {
   private async fetchAssinatura(userId: string): Promise<void> {
     this._isLoading.set(true);
     try {
-      // Assinatura mais recente do usuário (a ativa, se houver)
+      // Busca todas e escolhe a ATIVA (não apenas a mais recente): com múltiplas
+      // tentativas/reassinaturas, a mais recente por criado_em pode estar
+      // cancelled/pending enquanto o acesso vem de outra linha authorized — o que
+      // fazia a tela exibir "Cancelada" mesmo com acesso liberado.
       const { data, error } = await this.supabase
         .from('assinatura')
         .select('*, plano:plano_id(nome,slug,preco_centavos,moeda,frequency,frequency_type,recorrente)')
         .eq('user_id', userId)
-        .order('criado_em', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('criado_em', { ascending: false });
       if (error) throw error;
-      this._assinatura.set((data as Assinatura) ?? null);
+      this._assinatura.set(this.escolherAssinatura((data ?? []) as Assinatura[]));
     } catch {
       this._assinatura.set(null);
     } finally {
       this._isLoading.set(false);
     }
+  }
+
+  /**
+   * Escolhe a assinatura a exibir: prioriza a que dá ACESSO ativo (authorized com
+   * proxima_cobranca futura/nula, ou cancelled ainda em carência), espelhando
+   * `tem_assinatura_ativa`. Sem nenhuma ativa, cai na mais recente.
+   */
+  private escolherAssinatura(rows: Assinatura[]): Assinatura | null {
+    if (rows.length === 0) return null;
+    const now = Date.now();
+    const ativa = rows.find((a) => {
+      const prox = a.proxima_cobranca ? new Date(a.proxima_cobranca).getTime() : null;
+      if (a.status === 'authorized') return prox === null || prox > now;
+      if (a.status === 'cancelled') return prox !== null && prox > now;
+      return false;
+    });
+    return ativa ?? rows[0];
   }
 
   /** Verifica acesso no servidor (RPC), sem depender do estado local. */
