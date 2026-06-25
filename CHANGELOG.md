@@ -12,6 +12,7 @@
 - Build pode ser executado tambem a partir da raiz do repositorio via scripts que delegam para `frontend/`, evitando falha `ENOENT` por ausencia de `package.json` no diretorio raiz.
 - Landing page divide estilos de secoes grandes em stylesheets dedicados e remove CSS legado nao usado, eliminando o warning de budget `anyComponentStyle` no build.
 - Logout passa a redirecionar de forma centralizada para `/login` no `AuthService`, com limpeza imediata de usuario/cache local e fallback pelo evento `SIGNED_OUT`.
+- Desafio diario passa a renderizar imagens e legendas de questoes, cobrindo questoes de laboratorio no hub competitivo.
 
 ---
 

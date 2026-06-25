@@ -76,6 +76,7 @@
 * Alunos com opt-out continuam acumulando XP e conquistas, mas devem aparecer como anônimos em rankings
 * Ranking competitivo MVP tem recortes Global (`xp_total`) e Semana (`xp_semana_atual`)
 * Ranking não expõe e-mail; usa nome completo quando público ou `Anônimo` quando privado
+* Desafio diário deve renderizar `imagem_url` e `imagem_legenda` quando a questão possuir imagem, incluindo questões de laboratório.
 * Desafio diário deve exibir explicação pedagógica após a resposta quando a questão possuir `explicacao`
 * Desafio diário não deve depender de `questao.dificuldade`, pois a classificação de dificuldade foi removida do schema de questões.
 

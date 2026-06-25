@@ -19,6 +19,7 @@ const questaoRaw = {
   enunciado: 'Qual é a capital do Brasil?',
   enunciado_apoio: null,
   imagem_url: null,
+  imagem_legenda: null,
   disciplina: 'Geografia',
 };
 
@@ -70,7 +71,11 @@ describe('DesafioService', () => {
     const rpcData = {
       disponivel: true,
       data: '2026-05-15',
-      questao: questaoRaw,
+      questao: {
+        ...questaoRaw,
+        imagem_url: 'https://example.com/lamina.webp',
+        imagem_legenda: 'Lamina histologica',
+      },
       alternativas: [altRaw('a1', 'A'), altRaw('a2', 'B'), altRaw('a3', 'C')],
       minha_resposta: null,
       estatistica: estatisticaRaw,
@@ -94,6 +99,8 @@ describe('DesafioService', () => {
       expect(q?.id).toBe('q-1');
       expect(q?.enunciado).toBe('Qual é a capital do Brasil?');
       expect(q?.disciplina).toBe('Geografia');
+      expect(q?.imagem_url).toBe('https://example.com/lamina.webp');
+      expect(q?.imagem_legenda).toBe('Lamina histologica');
     });
 
     it('parseia 3 alternativas sem campo correta', async () => {

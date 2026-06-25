@@ -112,6 +112,7 @@ function parseQuestao(value: unknown): DesafioQuestao | null {
     enunciado,
     enunciado_apoio: typeof r['enunciado_apoio'] === 'string' ? r['enunciado_apoio'] : null,
     imagem_url: typeof r['imagem_url'] === 'string' ? r['imagem_url'] : null,
+    imagem_legenda: typeof r['imagem_legenda'] === 'string' ? r['imagem_legenda'] : null,
     disciplina: typeof r['disciplina'] === 'string' ? r['disciplina'] : null,
     explicacao: typeof r['explicacao'] === 'string' ? r['explicacao'] : null,
   };

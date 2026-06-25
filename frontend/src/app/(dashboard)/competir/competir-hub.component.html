@@ -90,6 +90,23 @@
                   {{ d.questao!.disciplina }}
                 </span>
               }
+              @if (d.questao?.imagem_url) {
+                <figure class="flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
+                  <img
+                    [src]="d.questao!.imagem_url!"
+                    [alt]="d.questao!.imagem_legenda ?? 'Imagem da questão do desafio diário'"
+                    class="max-h-[60vh] w-full max-w-2xl rounded-lg object-contain"
+                    width="768"
+                    height="432"
+                    decoding="async"
+                  />
+                  @if (d.questao?.imagem_legenda) {
+                    <figcaption class="text-center text-xs text-[var(--color-text-muted)]">
+                      {{ d.questao!.imagem_legenda }}
+                    </figcaption>
+                  }
+                </figure>
+              }
               <p class="text-sm leading-6 text-[var(--color-text)]">{{ d.questao?.enunciado }}</p>
             </div>
 

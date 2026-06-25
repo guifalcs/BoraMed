@@ -67,6 +67,7 @@ export interface DesafioQuestao {
   enunciado: string;
   enunciado_apoio: string | null;
   imagem_url: string | null;
+  imagem_legenda: string | null;
   disciplina: string | null;
   explicacao?: string | null;
 }

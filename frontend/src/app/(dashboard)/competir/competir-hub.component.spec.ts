@@ -46,6 +46,7 @@ function makeDesafioPendente(): DesafioDiario {
       enunciado: 'Questão teste',
       enunciado_apoio: null,
       imagem_url: null,
+      imagem_legenda: null,
       disciplina: 'Clínica Médica',
     },
     alternativas: [
@@ -298,6 +299,27 @@ describe('CompetirHubComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(el.textContent).toContain('Explicação');
       expect(el.textContent).toContain('A alternativa A está correta');
+    });
+  });
+
+  describe('imagem do desafio', () => {
+    it('exibe imagem e legenda quando a questão possui imagem_url', async () => {
+      desafioSignal.set({
+        ...makeDesafioPendente(),
+        questao: {
+          ...makeDesafioPendente().questao!,
+          imagem_url: 'https://example.com/lamina.webp',
+          imagem_legenda: 'Lamina de histologia',
+        },
+      });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const img = el.querySelector('img[src="https://example.com/lamina.webp"]');
+      expect(img).not.toBeNull();
+      expect(img?.getAttribute('alt')).toBe('Lamina de histologia');
+      expect(el.textContent).toContain('Lamina de histologia');
     });
   });
 
