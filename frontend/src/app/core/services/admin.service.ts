@@ -274,6 +274,11 @@ export interface ImpersonacaoResult {
   target_name: string | null;
 }
 
+export interface ListarUsuariosResult {
+  usuarios: Profile[];
+  total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private readonly supabase = inject(SupabaseService).client;
@@ -306,21 +311,48 @@ export class AdminService {
 
   // ---- Usuários ----
 
-  async listarUsuarios(busca = ''): Promise<ServiceResult<Profile[]>> {
+  async listarUsuarios(
+    busca = '',
+    pagina = 0,
+    porPagina = 50,
+  ): Promise<ServiceResult<ListarUsuariosResult>> {
     let query = this.supabase
       .from('profiles')
       .select('*')
-      .order('criado_em', { ascending: false });
+      .order('criado_em', { ascending: false })
+      .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
     if (busca.trim()) {
-      query = query.or(
-        `nome_completo.ilike.%${busca}%,email.ilike.%${busca}%`,
-      );
+      query = query.textSearch('fts', busca.trim(), {
+        type: 'websearch',
+        config: 'simple',
+      });
     }
 
     const { data, error } = await query;
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: (data ?? []) as Profile[] };
+
+    let countQuery = this.supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true });
+
+    if (busca.trim()) {
+      countQuery = countQuery.textSearch('fts', busca.trim(), {
+        type: 'websearch',
+        config: 'simple',
+      });
+    }
+
+    const { count, error: countError } = await countQuery;
+    if (countError) return { ok: false, error: countError.message };
+
+    return {
+      ok: true,
+      data: {
+        usuarios: (data ?? []) as Profile[],
+        total: count ?? 0,
+      },
+    };
   }
 
   async alterarPapelUsuario(
