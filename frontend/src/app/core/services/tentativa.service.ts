@@ -4,6 +4,7 @@ import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
+import { CacheService, CACHE_KEYS } from './cache.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { QuestaoComAlternativas } from '../models/questao';
 import type { ProvaResult } from './prova.service';
@@ -15,6 +16,7 @@ export class TentativaService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly gamificacao = inject(GamificacaoService);
   private readonly notifications = inject(NotificationService);
+  private readonly cache = inject(CacheService);
   private hydrationPromise: Promise<void> | null = null;
 
   private readonly _tentativaAtiva = signal<Tentativa | null>(null);
@@ -317,6 +319,12 @@ export class TentativaService {
       this._tentativaAtiva.update((t) =>
         t ? { ...t, status: 'finalizada', finalizada_em: new Date().toISOString() } : t,
       );
+
+      // Invalida os painéis que dependem das tentativas/estatísticas — sem isso,
+      // o Início e o Histórico exibem dados defasados (sem a nova tentativa, XP e
+      // streak antigos) por até 5 min, dando a impressão de que nada aconteceu.
+      this.cache.remove(CACHE_KEYS.inicio);
+      this.cache.remove(CACHE_KEYS.historico);
 
       await this.registrarXpTentativa(tentativaId);
 
