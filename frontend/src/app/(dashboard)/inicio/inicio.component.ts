@@ -34,7 +34,7 @@ import { HistoricoService } from '../../core/services/historico.service';
 import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
-import { CacheService } from '../../core/services/cache.service';
+import { CacheService, CACHE_KEYS } from '../../core/services/cache.service';
 import { NavigationProgressService } from '../../core/services/navigation-progress.service';
 
 type Variante = 'success' | 'warning' | 'danger' | 'neutral';
@@ -50,7 +50,7 @@ interface InicioData {
   desafioResult: SectionResult<DesafioDiario>;
 }
 
-const INICIO_CACHE_KEY = 'inicio_data';
+const INICIO_CACHE_KEY = CACHE_KEYS.inicio;
 
 interface BarraEvolucao {
   nota: number;
