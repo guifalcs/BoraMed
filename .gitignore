@@ -5,3 +5,6 @@ tests/e2e/fixtures/.auth.json
 supabase/functions/.env
 supabase/functions/.env.*
 !supabase/functions/.env.*.example
+
+# node_modules gerado pelo Deno (nodeModulesDir: auto) — recriado via deno.lock
+supabase/functions/node_modules/

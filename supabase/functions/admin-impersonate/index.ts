@@ -1,4 +1,4 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 // Origens permitidas para CORS. Configure APP_ALLOWED_ORIGINS (lista separada por
 // vírgula) nos secrets da função para travar na origem do app. Sem a env, cai para a

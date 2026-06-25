@@ -1,4 +1,4 @@
-import { assertEquals } from 'jsr:@std/assert@1';
+import { assertEquals } from '@std/assert';
 import { hasActiveAccess } from './access.ts';
 
 const NOW = new Date('2026-06-24T12:00:00.000Z').getTime();
