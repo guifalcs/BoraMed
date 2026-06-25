@@ -83,6 +83,18 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
             .maybeSingle();
           userId = byEmail?.id ?? null;
         }
+        // Fallback: o fluxo por redirect/plano não traz external_reference nem
+        // (guest) payer_email. Se o mp-vincular já criou a assinatura pela sessão
+        // autenticada, resolvemos o usuário pelo registro existente — assim
+        // atualizações de status (cancelamento, renovação) seguem funcionando.
+        if (!userId) {
+          const { data: existente } = await admin
+            .from('assinatura')
+            .select('user_id')
+            .eq('mp_preapproval_id', dataId)
+            .maybeSingle();
+          userId = (existente?.user_id as string | undefined) ?? null;
+        }
 
         // Resolver o plano pelo preapproval_plan_id
         let planoId: string | null = null;

@@ -26,15 +26,28 @@ Deno.test('vincular: sem Authorization → 401', async () => {
   assertEquals(res.status, 401);
 });
 
-Deno.test('vincular: IDOR — payer_email diferente da conta → 403', async () => {
+Deno.test('vincular: payer_email vazio (checkout guest) → vincula pela sessão', async () => {
+  const db = new FakeDb({ plano: [{ id: 'pl1', mp_preapproval_plan_id: 'PP-1' }], assinatura: [] });
+  const fetch = fakeFetch([{ match: '/preapproval/PRE-1', body: subBody({ payer_email: '' }) }]);
+  const res = await handleVincularAssinatura(
+    req({ preapproval_id: 'PRE-1' }),
+    makeDeps({ db, caller: { id: 'u1', email: 'me@b.com' }, fetch }),
+  );
+  assertEquals(res.status, 200);
+  const assin = db.rows('assinatura').find((r) => r.mp_preapproval_id === 'PRE-1');
+  assertEquals(assin?.user_id, 'u1', 'vincula ao usuário autenticado mesmo sem payer_email');
+});
+
+Deno.test('vincular: payer_email diferente, não vinculada → vincula pela sessão', async () => {
   const db = new FakeDb({ plano: [{ id: 'pl1', mp_preapproval_plan_id: 'PP-1' }], assinatura: [] });
   const fetch = fakeFetch([{ match: '/preapproval/PRE-1', body: subBody({ payer_email: 'outro@b.com' }) }]);
   const res = await handleVincularAssinatura(
     req({ preapproval_id: 'PRE-1' }),
     makeDeps({ db, caller: { id: 'u1', email: 'me@b.com' }, fetch }),
   );
-  assertEquals(res.status, 403);
-  assertEquals(db.rows('assinatura').length, 0, 'nada deve ser vinculado em caso de IDOR');
+  assertEquals(res.status, 200);
+  const assin = db.rows('assinatura').find((r) => r.mp_preapproval_id === 'PRE-1');
+  assertEquals(assin?.user_id, 'u1');
 });
 
 Deno.test('vincular: assinatura não encontrada no MP → 404', async () => {

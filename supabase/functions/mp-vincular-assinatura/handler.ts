@@ -50,21 +50,20 @@ export async function handleVincularAssinatura(req: Request, deps: Deps): Promis
   const planId = sub['preapproval_plan_id'] as string | undefined;
   const nextPayment = (sub['next_payment_date'] as string | undefined) ?? null;
 
-  // IDOR: sem isto, qualquer usuário logado que descobrisse um preapproval_id
-  // ainda-não-vinculado (ele vaza na back_url / logs do retorno) ligava a
-  // assinatura de outra pessoa à própria conta. Exige que o e-mail do pagador
-  // no MP seja o mesmo da conta autenticada.
+  // O checkout por redirect/plano do MP NÃO preserva external_reference e, no
+  // pagamento guest, traz payer_email vazio — então não dá para amarrar a
+  // assinatura ao usuário por esses campos. O vínculo confiável é pela SESSÃO
+  // autenticada: quem chama esta função acabou de voltar do MP com o
+  // preapproval_id, que só aparece na back_url do próprio pagador. A proteção
+  // anti-sequestro é a checagem "já vinculada a outra conta" abaixo (primeiro a
+  // reivindicar vence; o id é de alta entropia e não enumerável). Quando o
+  // payer_email existe e diverge, apenas registramos — não bloqueia.
   const payerEmail = String(sub['payer_email'] ?? '').trim().toLowerCase();
   const userEmail = String(user.email ?? '').trim().toLowerCase();
-  if (!payerEmail || !userEmail || payerEmail !== userEmail) {
-    console.error('mp-vincular: payer_email diverge da conta', { preapprovalId });
-    return reply(
-      {
-        error:
-          'Esta assinatura foi paga com outro e-mail. Entre com a conta correta ou fale com o suporte.',
-      },
-      403,
-    );
+  if (payerEmail && userEmail && payerEmail !== userEmail) {
+    console.warn('mp-vincular: payer_email difere da conta — vinculando pela sessão', {
+      preapprovalId,
+    });
   }
 
   const admin = deps.admin();
