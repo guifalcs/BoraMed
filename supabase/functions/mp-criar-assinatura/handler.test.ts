@@ -1,4 +1,4 @@
-import { assertEquals, assertStringIncludes } from '@std/assert';
+import { assertEquals } from '@std/assert';
 import { handleCriarAssinatura } from './handler.ts';
 import { FakeDb, fakeFetch, makeDeps } from '../_shared/test/fake.ts';
 
@@ -66,21 +66,42 @@ Deno.test('criar-assinatura: bloqueia quando já há acesso ativo → 409 (anti 
   assertEquals(res.status, 409);
 });
 
-Deno.test('criar-assinatura recorrente: devolve init_point com external_reference', async () => {
+Deno.test('criar-assinatura recorrente: cria preapproval (external_reference persistido) e assinatura pending', async () => {
   const db = new FakeDb({
     plano: [
-      { id: 'p1', slug: 'mensal', nome: 'Mensal', ativo: true, recorrente: true, mp_init_point: 'https://mp/checkout?x=1' },
+      {
+        id: 'p1',
+        slug: 'mensal',
+        nome: 'Mensal',
+        ativo: true,
+        recorrente: true,
+        preco_centavos: 4990,
+        frequency: 1,
+        frequency_type: 'months',
+        moeda: 'BRL',
+      },
     ],
     assinatura: [],
   });
+  const fetch = fakeFetch([
+    {
+      match: '/preapproval',
+      body: { id: 'PRE-NEW', init_point: 'https://mp/sub/PRE-NEW', external_reference: 'user-abc' },
+    },
+  ]);
   const res = await handleCriarAssinatura(
     req({ plano_slug: 'mensal' }),
-    makeDeps({ db, caller: { id: 'user-abc', email: 'a@b.com' }, now: NOW }),
+    makeDeps({ db, caller: { id: 'user-abc', email: 'a@b.com' }, fetch, now: NOW }),
   );
   assertEquals(res.status, 200);
   const json = await res.json();
-  assertStringIncludes(json.init_point, 'https://mp/checkout?x=1');
-  assertStringIncludes(json.init_point, 'external_reference=user-abc');
+  assertEquals(json.init_point, 'https://mp/sub/PRE-NEW');
+  // A assinatura nasce 'pending', já vinculada ao usuário e ao plano — não
+  // depende do retorno do usuário nem do external_reference no webhook.
+  const assin = db.rows('assinatura').find((r) => r.mp_preapproval_id === 'PRE-NEW');
+  assertEquals(assin?.user_id, 'user-abc');
+  assertEquals(assin?.plano_id, 'p1');
+  assertEquals(assin?.status, 'pending');
 });
 
 Deno.test('criar-assinatura único (semestral): cria preferência e devolve init_point', async () => {

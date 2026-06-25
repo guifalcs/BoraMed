@@ -125,12 +125,14 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
           // informa uma nova data.
           const row: Record<string, unknown> = {
             user_id: userId,
-            plano_id: planoId,
             mp_preapproval_id: dataId,
             status,
             data_inicio: (sub['date_created'] as string | undefined) ?? null,
             cancelada_em: status === 'cancelled' ? deps.now().toISOString() : null,
           };
+          // Só grava plano_id quando resolvido. O preapproval SEM plano associado
+          // não traz preapproval_plan_id — preserva o plano_id setado na criação.
+          if (planoId) row.plano_id = planoId;
           if (nextPayment) row.proxima_cobranca = nextPayment;
           await admin.from('assinatura').upsert(row, { onConflict: 'mp_preapproval_id' });
           console.log('assinatura upsert', { dataId, status, userId });

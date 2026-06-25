@@ -39,7 +39,7 @@ export async function handleCriarAssinatura(req: Request, deps: Deps): Promise<R
   // Buscar o plano
   const { data: plano, error: planoError } = await admin
     .from('plano')
-    .select('id, nome, slug, mp_init_point, ativo, recorrente, preco_centavos, frequency')
+    .select('id, nome, slug, mp_init_point, ativo, recorrente, preco_centavos, frequency, frequency_type, moeda')
     .eq('slug', planoSlug)
     .single();
   if (planoError || !plano) return reply({ error: 'plano não encontrado' }, 404);
@@ -56,15 +56,7 @@ export async function handleCriarAssinatura(req: Request, deps: Deps): Promise<R
     return reply({ error: 'Você já tem um acesso ativo no momento.' }, 409);
   }
 
-  // --- Plano recorrente: redirect para o init_point do plano (preapproval) ---
-  if (plano.recorrente) {
-    if (!plano.mp_init_point) return reply({ error: 'plano sem mp_init_point configurado' }, 500);
-    const sep = plano.mp_init_point.includes('?') ? '&' : '?';
-    const initPoint = `${plano.mp_init_point}${sep}external_reference=${encodeURIComponent(user.id)}`;
-    return reply({ init_point: initPoint });
-  }
-
-  // --- Pagamento único parcelável: cria uma preferência (Checkout Pro) ---
+  // Config compartilhada do checkout.
   const mpToken = deps.env('MP_ACCESS_TOKEN');
   if (!mpToken) return reply({ error: 'MP_ACCESS_TOKEN not configured' }, 500);
   const supabaseUrl = deps.env('SUPABASE_URL')!;
@@ -75,6 +67,51 @@ export async function handleCriarAssinatura(req: Request, deps: Deps): Promise<R
     ? `${appUrl}/assinatura/retorno`
     : `${supabaseUrl}/functions/v1/mp-retorno`;
 
+  // --- Plano recorrente: cria um preapproval SEM plano associado, com
+  // external_reference embutido. Ao contrário do redirect via init_point do
+  // plano (que o MP descarta), aqui o MP PERSISTE o external_reference — então o
+  // webhook resolve o usuário sozinho, sem depender do retorno do usuário à
+  // back_url. A assinatura é criada já em 'pending' (a linha existe desde o
+  // início; o webhook apenas a promove a 'authorized'). O preço vem do nosso
+  // banco, não de um plano fixo no MP.
+  if (plano.recorrente) {
+    const preRes = await deps.fetch('https://api.mercadopago.com/preapproval', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${mpToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reason: `BoraMed ${plano.nome}`,
+        external_reference: user.id,
+        payer_email: user.email,
+        back_url: retornoUrl,
+        status: 'pending',
+        auto_recurring: {
+          frequency: plano.frequency,
+          frequency_type: plano.frequency_type,
+          transaction_amount: plano.preco_centavos / 100,
+          currency_id: plano.moeda ?? 'BRL',
+        },
+      }),
+    });
+    const pre = await preRes.json().catch(() => ({}));
+    if (!preRes.ok || !pre.id || !pre.init_point) {
+      console.error('MP preapproval error:', preRes.status, JSON.stringify(pre));
+      return reply({ error: 'falha ao criar assinatura', detail: pre }, 502);
+    }
+    // Cria a assinatura já vinculada (pending). O webhook só promove o status.
+    await admin.from('assinatura').upsert(
+      {
+        user_id: user.id,
+        plano_id: plano.id,
+        mp_preapproval_id: pre.id,
+        status: 'pending',
+        cancelada_em: null,
+      },
+      { onConflict: 'mp_preapproval_id' },
+    );
+    return reply({ init_point: pre.init_point });
+  }
+
+  // --- Pagamento único parcelável: cria uma preferência (Checkout Pro) ---
   const prefRes = await deps.fetch('https://api.mercadopago.com/checkout/preferences', {
     method: 'POST',
     headers: { Authorization: `Bearer ${mpToken}`, 'Content-Type': 'application/json' },

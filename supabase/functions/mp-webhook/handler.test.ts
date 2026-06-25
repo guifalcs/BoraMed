@@ -88,6 +88,38 @@ Deno.test('webhook subscription_preapproval: resolve usuário por payer_email qu
   assertEquals(nova?.user_id, 'user-2');
 });
 
+Deno.test('webhook subscription_preapproval (sem plano associado): promove pending→authorized e preserva plano_id', async () => {
+  // Fluxo novo: mp-criar-assinatura já criou a assinatura 'pending' (preapproval
+  // SEM preapproval_plan_id). O webhook deve promover a authorized e NÃO zerar o
+  // plano_id (não há preapproval_plan_id para resolver).
+  const db = new FakeDb({
+    profiles: [{ id: 'user-7', email: 'p@b.com' }],
+    plano: [],
+    assinatura: [
+      { id: 'pend', user_id: 'user-7', plano_id: 'plano-pre', status: 'pending', mp_preapproval_id: 'SUB-7' },
+    ],
+  });
+  const fetch = fakeFetch([
+    {
+      match: '/preapproval/SUB-7',
+      body: {
+        status: 'authorized',
+        external_reference: 'user-7',
+        next_payment_date: '2026-07-24T12:00:00.000Z',
+        date_created: '2026-06-24T12:00:00.000Z',
+      },
+    },
+  ]);
+  const req = await signedWebhookRequest({ secret: SECRET, type: 'subscription_preapproval', dataId: 'SUB-7' });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(res.status, 200);
+
+  const assin = find(db, 'assinatura', (r) => r.mp_preapproval_id === 'SUB-7');
+  assertEquals(assin?.status, 'authorized', 'pending deve virar authorized');
+  assertEquals(assin?.user_id, 'user-7');
+  assertEquals(assin?.plano_id, 'plano-pre', 'plano_id setado na criação deve ser preservado');
+});
+
 Deno.test('webhook authorized_payment sem assinatura vinculada → 409 (pede retry, B1)', async () => {
   const db = new FakeDb({ assinatura: [] });
   const fetch = fakeFetch([
