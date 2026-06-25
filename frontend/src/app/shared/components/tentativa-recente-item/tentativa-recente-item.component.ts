@@ -27,7 +27,7 @@ export class TentativaRecenteItemComponent {
     const semanas = Math.floor(diffDias / 7);
     if (diffDias < 30) return `há ${semanas} semana${semanas > 1 ? 's' : ''}`;
     const meses = Math.floor(diffDias / 30);
-    return `há ${meses} mês${meses > 1 ? 'es' : ''}`;
+    return `há ${meses} ${meses > 1 ? 'meses' : 'mês'}`;
   });
 
   protected readonly notaBadgeClass = computed(() => {

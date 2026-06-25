@@ -10,6 +10,16 @@ const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const STORAGE_PREFIX = 'bm_cache_';
 
 /**
+ * Chaves de cache compartilhadas entre páginas e serviços. Centralizadas para
+ * que mutações (ex.: finalizar uma tentativa) possam invalidar os painéis que
+ * dependem desses dados.
+ */
+export const CACHE_KEYS = {
+  inicio: 'inicio_data',
+  historico: 'historico_data',
+} as const;
+
+/**
  * Lightweight stale-while-revalidate cache using sessionStorage.
  * Returns cached data instantly while the caller revalidates in background.
  */
