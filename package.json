@@ -1,0 +1,13 @@
+{
+  "name": "boramed",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend start",
+    "test": "npm --prefix frontend test",
+    "storybook": "npm --prefix frontend run storybook"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

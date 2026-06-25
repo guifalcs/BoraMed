@@ -97,7 +97,12 @@ interface FaqItem {
   standalone: true,
   imports: [RouterLink, UiIconComponent],
   templateUrl: './landing.component.html',
-  styleUrl: './landing.component.css',
+  styleUrls: [
+    './landing.component.css',
+    './landing-intelligence.component.css',
+    './landing-pricing.component.css',
+    './landing-bento.component.css',
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingComponent implements OnDestroy {
