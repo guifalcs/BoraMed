@@ -91,7 +91,7 @@
                 </span>
               }
               @if (d.questao?.imagem_url) {
-                <figure class="flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
+                <figure class="mb-3 flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
                   <img
                     [src]="d.questao!.imagem_url!"
                     [alt]="d.questao!.imagem_legenda ?? 'Imagem da questão do desafio diário'"
