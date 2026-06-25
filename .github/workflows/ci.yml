@@ -23,11 +23,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          # Versão fixa (não `v2.x`): toolchain flutuante já causou falhas
+          # intermitentes de type-check em código idêntico.
+          deno-version: v2.9.0
       - name: Type-check dos entrypoints de produção
-        run: deno check mp-webhook/index.ts mp-criar-assinatura/index.ts mp-vincular-assinatura/index.ts
+        # `--frozen` garante que o deno.lock commitado é respeitado à risca
+        # (sem resolver versões novas de dependências em runtime).
+        run: deno check --frozen mp-webhook/index.ts mp-criar-assinatura/index.ts mp-vincular-assinatura/index.ts
       - name: Testes (unitários + integração com fakes)
-        run: deno test -A --no-check
+        run: deno test -A --no-check --frozen
 
   # ── Frontend: testes unitários (Vitest via @angular/build) ───────────────────
   frontend-unit:

@@ -1,4 +1,4 @@
-import { assertEquals } from 'jsr:@std/assert@1';
+import { assertEquals } from '@std/assert';
 import { mapAuthorizedPaymentStatus, verifyMpSignature } from './mp-signature.ts';
 import { signWebhook } from './test/fake.ts';
 

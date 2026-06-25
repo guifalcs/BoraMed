@@ -1,4 +1,4 @@
-import { assertEquals, assertExists } from 'jsr:@std/assert@1';
+import { assertEquals, assertExists } from '@std/assert';
 import { handleWebhook } from './handler.ts';
 import { FakeDb, fakeFetch, makeDeps, signedWebhookRequest } from '../_shared/test/fake.ts';
 

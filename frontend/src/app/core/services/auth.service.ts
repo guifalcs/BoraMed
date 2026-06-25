@@ -27,6 +27,7 @@ export class AuthService implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private authSubscription?: { unsubscribe: () => void };
   private initializePromise: Promise<void> | null = null;
+  private isNavigatingToLogin = false;
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -34,8 +35,9 @@ export class AuthService implements OnDestroy {
       (event: AuthChangeEvent, session: Session | null) => {
         this._user.set(session?.user ?? null);
 
-        if (event === 'SIGNED_OUT' && !this.router.getCurrentNavigation()) {
-          void this.router.navigate(['/login']);
+        if (event === 'SIGNED_OUT') {
+          this.clearLocalAuthState();
+          void this.navigateToLogin();
         }
         if (event === 'PASSWORD_RECOVERY' && !this.router.getCurrentNavigation()) {
           void this.router.navigate(['/redefinir-senha']);
@@ -116,12 +118,10 @@ export class AuthService implements OnDestroy {
   }
 
   async signOut(): Promise<void> {
-    if (isPlatformBrowser(this.platformId)) {
-      sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
-      this._impersonando.set(null);
-      this.cache.clear();
-    }
+    this.clearLocalAuthState();
+    this._user.set(null);
     await this.supabase.auth.signOut();
+    await this.navigateToLogin();
   }
 
   async impersonar(
@@ -182,11 +182,30 @@ export class AuthService implements OnDestroy {
     this._impersonando.set(null);
     this.cache.clear();
     await this.supabase.auth.signOut();
-    void this.router.navigate(['/login']);
+    await this.navigateToLogin();
   }
 
   ngOnDestroy(): void {
     this.authSubscription?.unsubscribe();
+  }
+
+  private clearLocalAuthState(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+    this._impersonando.set(null);
+    this.cache.clear();
+  }
+
+  private async navigateToLogin(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || this.router.url === '/login' || this.isNavigatingToLogin) return;
+
+    this.isNavigatingToLogin = true;
+    try {
+      await this.router.navigate(['/login'], { replaceUrl: true });
+    } finally {
+      this.isNavigatingToLogin = false;
+    }
   }
 
   private mapError(message: string): AuthErrorCode {

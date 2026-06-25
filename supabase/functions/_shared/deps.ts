@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Dependências injetáveis das edge functions de pagamento. A produção usa
 // `realDeps()` (Deno.env, clientes Supabase reais, fetch global). Os testes
