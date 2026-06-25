@@ -63,7 +63,7 @@ export class AdminUsuariosComponent implements OnInit {
     this.isLoading.set(true);
     const result = await this.adminService.listarUsuarios(this.busca());
     if (result.ok) {
-      this.usuarios.set(result.data);
+      this.usuarios.set(result.data.usuarios);
     } else {
       this.toast.error('Erro ao carregar usuários.');
     }
