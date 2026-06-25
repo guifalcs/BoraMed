@@ -56,4 +56,33 @@ test.describe('Impressão de simulados', () => {
     await expect(toolbar).toBeHidden();
     await page.emulateMedia({ media: 'screen' });
   });
+
+  test('a impressão não preserva offset da sidebar em viewport de iPad landscape', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await simulados.gotoRedeAfya();
+    await simulados.waitForProvasLoaded();
+
+    const count = await simulados.provaCards.count();
+    test.skip(count === 0, 'Nenhum simulado disponível para imprimir');
+
+    await simulados.clickFirstProva();
+    await simulados.waitForDetalheLoaded();
+
+    const imprimirButton = page.getByRole('button', { name: /Imprimir/i });
+    const visivel = await imprimirButton.isVisible().catch(() => false);
+    test.skip(!visivel, 'Simulado sem questões ou com tentativa ativa');
+
+    await imprimirButton.click();
+    await page.waitForSelector('app-questao-impressao, app-empty-state', { timeout: 15000 });
+
+    const main = page.locator('.impressao-main');
+    const doc = page.locator('.doc-impressao');
+    await expect(main).toBeVisible();
+
+    await expect(main).toHaveCSS('margin-left', '224px');
+    await page.emulateMedia({ media: 'print' });
+    await expect(main).toHaveCSS('margin-left', '0px');
+    await expect(doc).toHaveCSS('max-width', 'none');
+    await page.emulateMedia({ media: 'screen' });
+  });
 });

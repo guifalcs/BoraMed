@@ -58,6 +58,7 @@
 * **Montado para impressão:** ao escolher "Apenas imprimir" na montagem, o sistema sorteia as questões via `gerar_simulado_impressao` **sem criar prova nem tentativa** (histórico permanece limpo). O conjunto não é resolvível no app nem persiste além da sessão do navegador.
 * O sorteio do montado para impressão segue a mesma priorização de questões inéditas da geração normal.
 * Seções opcionais antes de imprimir: espaço de marcação na questão, cartão-resposta (folha de bolhas), gabarito ao final e explicações no gabarito (estas duas só quando o gabarito está liberado), além de mostrar/ocultar imagens e tamanho da fonte.
+* Em midia de impressao, controles e sidebar de configuracao nao podem reservar espaco na folha; o conteudo impresso deve zerar offsets responsivos e ocupar toda a area imprimivel tambem em iPad/Safari.
 
 ### Gamificação Competitiva
 

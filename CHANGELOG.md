@@ -5,6 +5,7 @@
 **Correcoes de pre-producao no admin**
 
 - Admin de questoes passa a validar alternativas preenchidas antes de salvar, impedindo questao objetiva ativa sem gabarito valido.
+- Impressao de simulados zera o offset da sidebar em `@media print`, evitando coluna branca e conteudo espremido no Safari/iPad sem alterar a visualizacao normal no desktop.
 - Drawer de questoes de uma prova agora carrega inicialmente respeitando o filtro visivel de status e o formato da prova aberta.
 - Importacao de disciplinas transforma siglas duplicadas em erro de validacao, cobrindo duplicatas ja cadastradas e duplicatas no proprio lote.
 - Admin de usuarios passa a usar paginacao server-side e busca normalizada, evitando carregar todos os perfis de uma vez e reduzindo falhas com caracteres especiais no filtro.

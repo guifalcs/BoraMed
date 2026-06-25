@@ -15,3 +15,23 @@
     box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
   }
 }
+
+@media print {
+  :host {
+    display: block;
+    background: #fff !important;
+  }
+
+  .impressao-main {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .doc-impressao {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

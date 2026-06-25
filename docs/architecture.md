@@ -169,3 +169,9 @@
  **Data** : 2026-06
  **Decisao** : O logout da aplicacao deve passar por `AuthService.signOut()`, que limpa estado local de auth, impersonacao e cache, encerra a sessao no Supabase e navega para `/login` com `replaceUrl`. O evento `SIGNED_OUT` do Supabase permanece como fallback para encerramentos externos de sessao.
  **Motivo** : Botoes de sair existem em shells diferentes (aluno, admin, planos e conta suspensa). Centralizar a navegacao evita depender de cada componente ou da ordem de emissao do evento de auth para retirar o usuario de uma rota protegida.
+
+## ADR-027: Impressao de simulados sem offset responsivo no papel
+
+ **Data** : 2026-06
+ **Decisao** : Em `@media print`, a rota de impressao de simulados deve zerar explicitamente qualquer offset visual da sidebar de configuracao e deixar o documento ocupar 100% da area imprimivel. A regra vale mesmo quando o viewport ainda ativa breakpoints desktop, como no Safari/iPad em landscape.
+ **Motivo** : Alguns navegadores moveis preservam classes responsivas do layout de tela ao abrir o fluxo de impressao. Se o `margin-left` da sidebar continuar ativo depois que a sidebar e ocultada, a folha fica com uma coluna branca e o conteudo impresso e comprimido.
