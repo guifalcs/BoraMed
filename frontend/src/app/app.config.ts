@@ -5,7 +5,7 @@ import {
   withPreloading,
   withViewTransitions,
 } from '@angular/router';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { provideClientHydration } from '@angular/platform-browser';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -18,6 +18,10 @@ export const appConfig: ApplicationConfig = {
       // Transição suave entre rotas (progressive enhancement no browser).
       withViewTransitions(),
     ),
-    provideClientHydration(withEventReplay()),
+    // Hidratação sem withEventReplay: o event-replay injeta um <script> inline
+    // por página (lista de eventos via __jsaction_bootstrap), cujo hash varia por
+    // página — inviável de autorizar num CSP estático sem 'unsafe-inline'. Sem ele,
+    // o único script inline restante é estável e pode ser liberado por hash SHA-256.
+    provideClientHydration(),
   ],
 };

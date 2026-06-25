@@ -16,6 +16,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-VM2mZqyEQZoLzoTrp5EigFvzQ0+f1wSeBuoOn95WHCg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://gakvktwtdunljojghpff.supabase.co; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://gakvktwtdunljojghpff.supabase.co wss://gakvktwtdunljojghpff.supabase.co https://o4511458808561664.ingest.us.sentry.io; media-src 'self'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'" },
         { "key": "Access-Control-Allow-Origin", "value": "https://boramedoficial.com.br" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
         { "key": "Vary", "value": "Origin" }
