@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
@@ -32,6 +32,7 @@ function makeSupabaseMock() {
 describe('AuthService', () => {
   let service: AuthService;
   let supabaseMock: ReturnType<typeof makeSupabaseMock>;
+  let router: Router;
 
   beforeEach(async () => {
     supabaseMock = makeSupabaseMock();
@@ -45,6 +46,7 @@ describe('AuthService', () => {
     }).compileComponents();
 
     service = TestBed.inject(AuthService);
+    router = TestBed.inject(Router);
   });
 
   afterEach(() => {
@@ -184,9 +186,32 @@ describe('AuthService', () => {
   });
 
   describe('signOut()', () => {
-    it('chama supabase.auth.signOut', async () => {
+    it('chama supabase.auth.signOut e navega para /login', async () => {
+      const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
       await service.signOut();
+
       expect(supabaseMock.client.auth.signOut).toHaveBeenCalled();
+      expect(navigateSpy).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
+    });
+
+    it('limpa o usuario local antes de navegar', async () => {
+      const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+      const fakeUser = { id: 'u1', email: 'user@example.com' };
+      supabaseMock.triggerAuthState('SIGNED_IN', { user: fakeUser });
+
+      await service.signOut();
+
+      expect(service.user()).toBeNull();
+      expect(navigateSpy).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
+    });
+
+    it('usa SIGNED_OUT como fallback para navegar para /login', () => {
+      const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      supabaseMock.triggerAuthState('SIGNED_OUT', null);
+
+      expect(navigateSpy).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
     });
   });
 
