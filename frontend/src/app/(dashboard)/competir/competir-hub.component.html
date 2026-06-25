@@ -84,14 +84,14 @@
         @default {
           @if (desafio(); as d) {
             <!-- Enunciado -->
-            <div class="mb-4 space-y-2">
+            <div class="mb-5">
               @if (d.questao?.disciplina) {
-                <span class="inline-block rounded-full bg-[var(--color-bg-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
+                <span class="mb-3 inline-block rounded-full bg-[var(--color-bg-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
                   {{ d.questao!.disciplina }}
                 </span>
               }
               @if (d.questao?.imagem_url) {
-                <figure class="mb-3 flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
+                <figure class="mb-6 flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
                   <img
                     [src]="d.questao!.imagem_url!"
                     [alt]="d.questao!.imagem_legenda ?? 'Imagem da questão do desafio diário'"
