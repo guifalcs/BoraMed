@@ -8,6 +8,7 @@ import { NotificationService } from '../../core/services/notification.service';
 const mockAuth = {
   signup: vi.fn(),
   signInWithGoogle: vi.fn(),
+  resendConfirmation: vi.fn(),
 };
 
 const mockToast = { success: vi.fn(), error: vi.fn() };
@@ -30,6 +31,7 @@ describe('CadastroComponent', () => {
     vi.resetAllMocks();
     mockAuth.signup.mockResolvedValue({ ok: true, needsConfirmation: true });
     mockAuth.signInWithGoogle.mockResolvedValue({ ok: true });
+    mockAuth.resendConfirmation.mockResolvedValue({ ok: true });
 
     await TestBed.configureTestingModule({
       imports: [CadastroComponent],
@@ -162,6 +164,71 @@ describe('CadastroComponent', () => {
       await vi.runAllTimersAsync();
 
       expect((component as any).fieldErrors()['email']).toBe('Erro inesperado. Tente novamente.');
+    });
+  });
+
+  describe('reenvio de confirmação', () => {
+    // `runAllTimersAsync` drenaria o setInterval do cooldown até zerar; aqui
+    // aguardamos só o handler (microtasks) para inspecionar o cooldown intacto.
+    async function signupSuccess() {
+      fillForm();
+      await (component as any).handleSubmit(mockSubmitEvent());
+      // O signup inicia um cooldown de 60s; avançar para liberar o reenvio.
+      await vi.advanceTimersByTimeAsync(60_000);
+    }
+
+    it('signup com confirmação inicia cooldown de 60s', async () => {
+      fillForm();
+      await (component as any).handleSubmit(mockSubmitEvent());
+
+      expect((component as any).resendCooldown()).toBe(60);
+    });
+
+    it('reenvia confirmação para o e-mail cadastrado', async () => {
+      await signupSuccess();
+      await (component as any).handleResend();
+
+      expect(mockAuth.resendConfirmation).toHaveBeenCalledWith(validData.email);
+      expect((component as any).resendState()).toBe('sent');
+      expect(mockToast.success).toHaveBeenCalledWith('E-mail de confirmação reenviado.');
+    });
+
+    it('inicia cooldown de 60s após reenvio e zera ao fim', async () => {
+      await signupSuccess();
+      await (component as any).handleResend();
+      expect((component as any).resendCooldown()).toBe(60);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect((component as any).resendCooldown()).toBe(0);
+    });
+
+    it('não reenvia enquanto cooldown está ativo', async () => {
+      await signupSuccess();
+      await (component as any).handleResend();
+      expect(mockAuth.resendConfirmation).toHaveBeenCalledTimes(1);
+
+      await (component as any).handleResend();
+      expect(mockAuth.resendConfirmation).toHaveBeenCalledTimes(1);
+    });
+
+    it('trata RATE_LIMITED com toast e cooldown', async () => {
+      mockAuth.resendConfirmation.mockResolvedValue({ ok: false, error: 'RATE_LIMITED' });
+      await signupSuccess();
+      await (component as any).handleResend();
+
+      expect((component as any).resendState()).toBe('error');
+      expect(mockToast.error).toHaveBeenCalledWith('Muitas tentativas. Aguarde alguns minutos.');
+      expect((component as any).resendCooldown()).toBe(60);
+    });
+
+    it('trata erro genérico sem iniciar cooldown', async () => {
+      mockAuth.resendConfirmation.mockResolvedValue({ ok: false, error: 'UNKNOWN' });
+      await signupSuccess();
+      await (component as any).handleResend();
+
+      expect((component as any).resendState()).toBe('error');
+      expect(mockToast.error).toHaveBeenCalledWith('Não foi possível reenviar. Tente novamente.');
+      expect((component as any).resendCooldown()).toBe(0);
     });
   });
 

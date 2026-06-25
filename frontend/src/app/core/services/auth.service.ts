@@ -84,17 +84,31 @@ export class AuthService implements OnDestroy {
       email: input.email,
       password: input.password,
     });
-    return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
+    return error ? { ok: false, error: this.mapError(error.message, error.status) } : { ok: true };
   }
 
   async signup(input: SignupInput): Promise<AuthResult> {
     const { data, error } = await this.supabase.auth.signUp({
       email: input.email,
       password: input.password,
-      options: { data: { full_name: input.fullName } },
+      options: {
+        data: { full_name: input.fullName },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
     });
-    if (error) return { ok: false, error: this.mapError(error.message) };
+    if (error) return { ok: false, error: this.mapError(error.message, error.status) };
     return { ok: true, needsConfirmation: data.session === null };
+  }
+
+  async resendConfirmation(email: string): Promise<AuthResult> {
+    const { error } = await this.supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    });
+    return error ? { ok: false, error: this.mapError(error.message, error.status) } : { ok: true };
   }
 
   async recoverPassword(input: RecoverPasswordInput): Promise<AuthResult> {
@@ -208,13 +222,23 @@ export class AuthService implements OnDestroy {
     }
   }
 
-  private mapError(message: string): AuthErrorCode {
+  private mapError(message: string, status?: number): AuthErrorCode {
     const m = message.toLowerCase();
     if (m.includes('invalid login') || m.includes('invalid credentials')) return 'INVALID_CREDENTIALS';
     if (m.includes('email not confirmed')) return 'EMAIL_NOT_CONFIRMED';
     if (m.includes('already registered') || m.includes('already been registered')) return 'EMAIL_IN_USE';
     if (m.includes('password')) return 'WEAK_PASSWORD';
-    if (m.includes('rate limit') || m.includes('too many')) return 'RATE_LIMITED';
+    // 429 + a janela mínima por endereço ("you can only request this after N seconds")
+    // não contêm "rate limit" no texto — tratar como RATE_LIMITED para acionar o cooldown.
+    if (
+      status === 429 ||
+      m.includes('rate limit') ||
+      m.includes('too many') ||
+      m.includes('for security purposes') ||
+      m.includes('only request this')
+    ) {
+      return 'RATE_LIMITED';
+    }
     if (m.includes('fetch') || m.includes('network')) return 'NETWORK_ERROR';
     return 'UNKNOWN';
   }

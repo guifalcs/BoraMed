@@ -9,6 +9,7 @@ import { PrefetchService } from '../../core/services/prefetch.service';
 const mockAuth = {
   login: vi.fn(),
   signInWithGoogle: vi.fn(),
+  resendConfirmation: vi.fn(),
 };
 
 const mockToast = { success: vi.fn(), error: vi.fn() };
@@ -27,6 +28,7 @@ describe('LoginComponent', () => {
     vi.resetAllMocks();
     mockAuth.login.mockResolvedValue({ ok: true });
     mockAuth.signInWithGoogle.mockResolvedValue({ ok: true });
+    mockAuth.resendConfirmation.mockResolvedValue({ ok: true });
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
@@ -150,6 +152,79 @@ describe('LoginComponent', () => {
       await vi.runAllTimersAsync();
 
       expect((component as any).passwordError()).toBe('Erro inesperado. Tente novamente.');
+    });
+  });
+
+  describe('reenvio de confirmação', () => {
+    async function triggerNotConfirmed() {
+      mockAuth.login.mockResolvedValue({ ok: false, error: 'EMAIL_NOT_CONFIRMED' });
+      (component as any).email.set('user@example.com');
+      (component as any).password.set('abc123');
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+    }
+
+    it('showResend é true apenas quando erro é EMAIL_NOT_CONFIRMED', async () => {
+      expect((component as any).showResend()).toBe(false);
+      await triggerNotConfirmed();
+      expect((component as any).showResend()).toBe(true);
+    });
+
+    it('showResend é false para outros erros', async () => {
+      mockAuth.login.mockResolvedValue({ ok: false, error: 'INVALID_CREDENTIALS' });
+      (component as any).email.set('user@example.com');
+      (component as any).password.set('errada');
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect((component as any).showResend()).toBe(false);
+    });
+
+    it('reenvia confirmação para o e-mail informado', async () => {
+      await triggerNotConfirmed();
+      await (component as any).handleResend();
+
+      expect(mockAuth.resendConfirmation).toHaveBeenCalledWith('user@example.com');
+      expect((component as any).resendState()).toBe('sent');
+      expect(mockToast.success).toHaveBeenCalledWith('E-mail de confirmação reenviado.');
+    });
+
+    it('inicia cooldown de 60s e zera ao fim', async () => {
+      await triggerNotConfirmed();
+      await (component as any).handleResend();
+      expect((component as any).resendCooldown()).toBe(60);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect((component as any).resendCooldown()).toBe(0);
+    });
+
+    it('não reenvia durante o cooldown', async () => {
+      await triggerNotConfirmed();
+      await (component as any).handleResend();
+      expect(mockAuth.resendConfirmation).toHaveBeenCalledTimes(1);
+
+      await (component as any).handleResend();
+      expect(mockAuth.resendConfirmation).toHaveBeenCalledTimes(1);
+    });
+
+    it('trata RATE_LIMITED com toast e cooldown', async () => {
+      mockAuth.resendConfirmation.mockResolvedValue({ ok: false, error: 'RATE_LIMITED' });
+      await triggerNotConfirmed();
+      await (component as any).handleResend();
+
+      expect((component as any).resendState()).toBe('error');
+      expect(mockToast.error).toHaveBeenCalledWith('Muitas tentativas. Aguarde alguns minutos.');
+      expect((component as any).resendCooldown()).toBe(60);
+    });
+
+    it('trata erro genérico sem cooldown', async () => {
+      mockAuth.resendConfirmation.mockResolvedValue({ ok: false, error: 'UNKNOWN' });
+      await triggerNotConfirmed();
+      await (component as any).handleResend();
+
+      expect((component as any).resendState()).toBe('error');
+      expect(mockToast.error).toHaveBeenCalledWith('Não foi possível reenviar. Tente novamente.');
+      expect((component as any).resendCooldown()).toBe(0);
     });
   });
 

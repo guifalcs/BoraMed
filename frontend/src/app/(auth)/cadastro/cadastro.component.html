@@ -68,6 +68,23 @@
 
         @if (state() === 'success') {
           <p class="success">Conta criada! Verifique seu e-mail para confirmar o cadastro.</p>
+          <p class="resend-hint">
+            Não recebeu? Confira a caixa de spam ou
+            <button
+              type="button"
+              class="link"
+              [disabled]="resendState() === 'loading' || resendCooldown() > 0"
+              (click)="handleResend()"
+            >
+              @if (resendState() === 'loading') {
+                reenviando...
+              } @else if (resendCooldown() > 0) {
+                reenviar em {{ resendCooldown() }}s
+              } @else {
+                reenviar e-mail
+              }
+            </button>
+          </p>
         }
 
         <app-ui-button

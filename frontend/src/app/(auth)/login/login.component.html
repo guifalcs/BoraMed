@@ -53,6 +53,26 @@
         />
       </form>
 
+      @if (showResend()) {
+        <p class="resend-hint resend-hint--standalone">
+          E-mail ainda não confirmado.
+          <button
+            type="button"
+            class="link"
+            [disabled]="resendState() === 'loading' || resendCooldown() > 0"
+            (click)="handleResend()"
+          >
+            @if (resendState() === 'loading') {
+              reenviando...
+            } @else if (resendCooldown() > 0) {
+              reenviar em {{ resendCooldown() }}s
+            } @else {
+              reenviar confirmação
+            }
+          </button>
+        </p>
+      }
+
       <div class="auth-divider"><span>ou continue com</span></div>
 
       <button class="btn-google" type="button" (click)="handleGoogleSignIn()">
