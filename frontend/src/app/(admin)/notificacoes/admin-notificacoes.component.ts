@@ -118,8 +118,8 @@ export class AdminNotificacoesComponent implements OnInit {
     this.buscando.set(true);
     const result = await this.adminService.listarUsuarios(termo);
     if (result.ok) {
-      this.resultados.set(result.data.slice(0, 10));
-      this.dropdownAberto.set(result.data.length > 0);
+      this.resultados.set(result.data.usuarios.slice(0, 10));
+      this.dropdownAberto.set(result.data.usuarios.length > 0);
     }
     this.buscando.set(false);
   }

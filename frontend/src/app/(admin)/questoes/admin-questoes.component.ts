@@ -718,9 +718,21 @@ export class AdminQuestoesComponent implements OnInit {
       this.toast.error('Enunciado é obrigatório.');
       return;
     }
-    if (this.mostrarAlternativas() && !this.fAlternativas().some((a) => a.correta)) {
-      this.toast.error('Marque ao menos uma alternativa como correta.');
-      return;
+    const alternativas: AlternativaPayload[] = this.mostrarAlternativas()
+      ? this.fAlternativas()
+          .filter((a) => a.texto.trim())
+          .map((a, i) => ({ letra: a.letra, texto: a.texto.trim(), correta: a.correta, ordem: i + 1 }))
+      : [];
+
+    if (this.mostrarAlternativas()) {
+      if (alternativas.length < 2) {
+        this.toast.error('Preencha ao menos duas alternativas.');
+        return;
+      }
+      if (!alternativas.some((a) => a.correta)) {
+        this.toast.error('Marque ao menos uma alternativa preenchida como correta.');
+        return;
+      }
     }
     if (this.fTipoQuestao() === 'laboratorio' && !this.fImagemUrl()) {
       this.toast.error('Questões de laboratório exigem imagem.');
@@ -748,12 +760,6 @@ export class AdminQuestoesComponent implements OnInit {
       revisado: this.fRevisado(),
       apto_desafio_diario: this.fAptoDesafio(),
     };
-
-    const alternativas: AlternativaPayload[] = this.mostrarAlternativas()
-      ? this.fAlternativas()
-          .filter((a) => a.texto.trim())
-          .map((a, i) => ({ letra: a.letra, texto: a.texto.trim(), correta: a.correta, ordem: i + 1 }))
-      : [];
 
     const temaIds = this.fTemas();
     const modo = this.modoDrawer();

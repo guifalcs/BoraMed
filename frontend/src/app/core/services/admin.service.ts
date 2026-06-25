@@ -318,33 +318,17 @@ export class AdminService {
   ): Promise<ServiceResult<ListarUsuariosResult>> {
     let query = this.supabase
       .from('profiles')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('criado_em', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
-    if (busca.trim()) {
-      query = query.textSearch('fts', busca.trim(), {
-        type: 'websearch',
-        config: 'simple',
-      });
+    const termoBusca = this.normalizarBuscaPostgrest(busca);
+    if (termoBusca) {
+      query = query.or(`nome_completo.ilike.%${termoBusca}%,email.ilike.%${termoBusca}%`);
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };
-
-    let countQuery = this.supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true });
-
-    if (busca.trim()) {
-      countQuery = countQuery.textSearch('fts', busca.trim(), {
-        type: 'websearch',
-        config: 'simple',
-      });
-    }
-
-    const { count, error: countError } = await countQuery;
-    if (countError) return { ok: false, error: countError.message };
 
     return {
       ok: true,
@@ -353,6 +337,13 @@ export class AdminService {
         total: count ?? 0,
       },
     };
+  }
+
+  private normalizarBuscaPostgrest(busca: string): string {
+    return busca
+      .trim()
+      .replace(/[%(),]/g, ' ')
+      .replace(/\s+/g, ' ');
   }
 
   async alterarPapelUsuario(

@@ -40,8 +40,11 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly isSuperAdmin = computed(() => this.profileService.profile()?.papel === 'super_admin');
 
   protected readonly usuarios = signal<Profile[]>([]);
+  protected readonly total = signal(0);
   protected readonly isLoading = signal(true);
   protected readonly busca = signal('');
+  protected readonly pagina = signal(0);
+  protected readonly porPagina = 50;
   protected readonly processando = signal<string | null>(null);
   protected readonly usuarioParaRevogar = signal<Profile | null>(null);
   protected readonly impersonando = signal(false);
@@ -61,9 +64,14 @@ export class AdminUsuariosComponent implements OnInit {
 
   async carregar(): Promise<void> {
     this.isLoading.set(true);
-    const result = await this.adminService.listarUsuarios(this.busca());
+    const result = await this.adminService.listarUsuarios(
+      this.busca(),
+      this.pagina(),
+      this.porPagina,
+    );
     if (result.ok) {
-      this.usuarios.set(result.data);
+      this.usuarios.set(result.data.usuarios);
+      this.total.set(result.data.total);
     } else {
       this.toast.error('Erro ao carregar usuários.');
     }
@@ -72,6 +80,19 @@ export class AdminUsuariosComponent implements OnInit {
 
   async onBusca(valor: string): Promise<void> {
     this.busca.set(valor);
+    this.pagina.set(0);
+    await this.carregar();
+  }
+
+  async paginaAnterior(): Promise<void> {
+    if (this.pagina() === 0) return;
+    this.pagina.update((p) => p - 1);
+    await this.carregar();
+  }
+
+  async proximaPagina(): Promise<void> {
+    if ((this.pagina() + 1) * this.porPagina >= this.total()) return;
+    this.pagina.update((p) => p + 1);
     await this.carregar();
   }
 
@@ -170,6 +191,14 @@ export class AdminUsuariosComponent implements OnInit {
     if (papel === 'super_admin') return 'Super Admin';
     if (papel === 'admin') return 'Admin';
     return 'Aluno';
+  }
+
+  protected get totalPaginas(): number {
+    return Math.max(1, Math.ceil(this.total() / this.porPagina));
+  }
+
+  protected get paginaAtual(): number {
+    return this.pagina() + 1;
   }
 
   protected podeBanir(usuario: Profile): boolean {

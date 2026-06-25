@@ -351,11 +351,29 @@ function resolverTemasQuestao(
 }
 
 function parseDisciplinasBlocos(markdown: string, existentes: AdminDisciplina[]): DisciplinaParseada[] {
-  return markdown
+  const parsed = markdown
     .split(/^---$/m)
     .map((b) => b.trim())
     .filter((b) => b.length > 0)
     .map((b) => parseDisciplinaBloco(b, existentes));
+  const siglas = parsed
+    .map((d) => d.sigla.trim().toLowerCase())
+    .filter((sigla) => sigla.length > 0);
+
+  return parsed.map((d) => {
+    const duplicadaNoLote = d.sigla.trim()
+      ? siglas.filter((sigla) => sigla === d.sigla.trim().toLowerCase()).length > 1
+      : false;
+    if (!duplicadaNoLote) return d;
+    return {
+      ...d,
+      duplicada: true,
+      valida: false,
+      erros: d.erros.includes('SIGLA duplicada no lote')
+        ? d.erros
+        : [...d.erros, 'SIGLA duplicada no lote'],
+    };
+  });
 }
 
 function parseDisciplinaBloco(bloco: string, existentes: AdminDisciplina[]): DisciplinaParseada {
@@ -381,6 +399,7 @@ function parseDisciplinaBloco(bloco: string, existentes: AdminDisciplina[]): Dis
   const duplicada = sigla
     ? existentes.some((d) => d.sigla.toLowerCase() === sigla.toLowerCase())
     : false;
+  if (duplicada) erros.push('SIGLA jÃ¡ cadastrada');
 
   return { sigla, nome, periodo, duplicada, valida: erros.length === 0, erros };
 }

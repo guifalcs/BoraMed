@@ -425,9 +425,13 @@ export class AdminProvasComponent implements OnInit {
     this.carregandoEdicao.set(true);
     this.drawerAberto.set(true);
     this.provaId.set(prova.id);
+    this.fFormato.set(prova.formato ?? 'nacional');
     const [questoesRes, bancaoRes] = await Promise.all([
       this.adminService.listarIdsQuestoesVinculadas(prova.id),
-      this.adminService.listarQuestoesParaVincular(0, this.porPaginaQuestoes, {}),
+      this.adminService.listarQuestoesParaVincular(0, this.porPaginaQuestoes, {
+        status: this.statusFiltro() || undefined,
+        tipo_questao: prova.formato === 'laboratorio' ? 'laboratorio' : undefined,
+      }),
     ]);
     this.carregandoEdicao.set(false);
     if (questoesRes.ok) {
