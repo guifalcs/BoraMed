@@ -6,17 +6,60 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { parse, serialize } from 'cookie';
 import { createServerClient } from '@supabase/ssr';
 import { environment } from './environments/environment';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import type { CookieOptionsWithName } from '@supabase/ssr';
 import type { CookieSerializeOptions } from 'cookie';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
+// Placeholder presente no index.html (atributo ngCspNonce do <app-root>). O Angular
+// replica esse valor nos <script> inline de hidratação/event-replay durante o SSR; o
+// middleware abaixo o substitui pelo nonce real de cada requisição, alinhando o HTML
+// ao cabeçalho Content-Security-Policy.
+const NONCE_PLACEHOLDER = '__CSP_NONCE__';
+
+/**
+ * Content-Security-Policy. O `script-src` usa um nonce por requisição (gerado no
+ * middleware) em vez de 'unsafe-inline', mantendo a hidratação do Angular funcionando
+ * sem abrir brecha de XSS. As demais origens refletem os recursos externos legítimos
+ * (Google Fonts, Supabase, Sentry). Mercado Pago é redirect de página inteira, então
+ * não precisa de diretiva.
+ */
+function buildCsp(nonce: string): string {
+  return [
+    `default-src 'self'`,
+    `base-uri 'self'`,
+    `object-src 'none'`,
+    `script-src 'self' 'nonce-${nonce}'`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    `img-src 'self' data: https://gakvktwtdunljojghpff.supabase.co`,
+    `font-src 'self' https://fonts.gstatic.com`,
+    `connect-src 'self' https://gakvktwtdunljojghpff.supabase.co wss://gakvktwtdunljojghpff.supabase.co https://o4511458808561664.ingest.us.sentry.io`,
+    `media-src 'self'`,
+    `frame-src 'none'`,
+    `frame-ancestors 'none'`,
+    `form-action 'self'`,
+  ].join('; ');
+}
+
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+/**
+ * Gera um nonce por requisição e aplica o cabeçalho Content-Security-Policy a todas as
+ * respostas (HTML renderizado e arquivos estáticos). Deve rodar antes de qualquer
+ * handler que produza resposta.
+ */
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  const nonce = randomBytes(16).toString('base64');
+  res.locals['nonce'] = nonce;
+  res.setHeader('Content-Security-Policy', buildCsp(nonce));
+  next();
+});
 
 /**
  * Serve static files from /browser
@@ -81,11 +124,38 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
 
 /**
  * Handle all other requests by rendering the Angular application.
+ *
+ * O HTML renderizado contém o placeholder de nonce (vindo do ngCspNonce no index.html
+ * e replicado pelo Angular nos <script> inline). Substituímos pelo nonce real desta
+ * requisição — o mesmo já presente no cabeçalho Content-Security-Policy — antes de
+ * enviar. Respostas sem corpo HTML (redirects, etc.) seguem o caminho padrão.
  */
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   angularApp
     .handle(req)
-    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
+    .then(async (response) => {
+      if (!response) {
+        next();
+        return;
+      }
+
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('text/html')) {
+        await writeResponseToNodeResponse(response, res);
+        return;
+      }
+
+      const nonce = res.locals['nonce'] as string;
+      const html = (await response.text()).split(NONCE_PLACEHOLDER).join(nonce);
+
+      response.headers.forEach((value, key) => {
+        // Content-Length será recalculado pelo Express a partir do corpo transformado.
+        if (key.toLowerCase() !== 'content-length') {
+          res.setHeader(key, value);
+        }
+      });
+      res.status(response.status).send(html);
+    })
     .catch(next);
 });
 

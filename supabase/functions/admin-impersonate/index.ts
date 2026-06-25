@@ -1,8 +1,9 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // Origens permitidas para CORS. Configure APP_ALLOWED_ORIGINS (lista separada por
-// vírgula) nos secrets da função para travar na origem do app. Sem a env, mantém
-// `*` para não quebrar a chamada (baixo risco: a função exige JWT de admin).
+// vírgula) nos secrets da função para travar na origem do app. Sem a env, cai para a
+// origem oficial de produção (nunca `*`).
+const DEFAULT_ORIGIN = 'https://boramedoficial.com.br';
 const ALLOWED_ORIGINS = (Deno.env.get('APP_ALLOWED_ORIGINS') ?? '')
   .split(',')
   .map((s) => s.trim())
@@ -10,14 +11,11 @@ const ALLOWED_ORIGINS = (Deno.env.get('APP_ALLOWED_ORIGINS') ?? '')
 
 function corsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('Origin') ?? '';
-  const allowOrigin =
-    ALLOWED_ORIGINS.length === 0
-      ? '*'
-      : ALLOWED_ORIGINS.includes(origin)
-        ? origin
-        : ALLOWED_ORIGINS[0];
+  const allowList = ALLOWED_ORIGINS.length === 0 ? [DEFAULT_ORIGIN] : ALLOWED_ORIGINS;
+  const allowOrigin = allowList.includes(origin) ? origin : allowList[0];
   return {
     'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Vary': 'Origin',
   };
