@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { compressImage } from '../utils/image-compress.util';
 import type { Profile } from '../models/auth.types';
+import type { AssinaturaStatus } from '../models/subscription.types';
 
 export interface AdminDisciplina {
   id: string;
@@ -274,9 +275,29 @@ export interface ImpersonacaoResult {
   target_name: string | null;
 }
 
+export interface UsuarioAdminAssinatura {
+  status: AssinaturaStatus;
+  proxima_cobranca: string | null;
+  plano_nome: string | null;
+  plano_slug: string | null;
+  /** true quando a assinatura dá acesso ativo no momento (espelha tem_assinatura_ativa). */
+  ativa: boolean;
+}
+
+export interface UsuarioAdmin extends Profile {
+  assinatura: UsuarioAdminAssinatura | null;
+}
+
 export interface ListarUsuariosResult {
-  usuarios: Profile[];
+  usuarios: UsuarioAdmin[];
   total: number;
+}
+
+interface AssinaturaEmbed {
+  status: AssinaturaStatus;
+  proxima_cobranca: string | null;
+  criado_em: string;
+  plano: { nome: string | null; slug: string | null } | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -318,7 +339,10 @@ export class AdminService {
   ): Promise<ServiceResult<ListarUsuariosResult>> {
     let query = this.supabase
       .from('profiles')
-      .select('*', { count: 'exact' })
+      .select(
+        '*, assinaturas:assinatura(status,proxima_cobranca,criado_em,plano:plano_id(nome,slug))',
+        { count: 'exact' },
+      )
       .order('criado_em', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
@@ -330,12 +354,48 @@ export class AdminService {
     const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };
 
+    const usuarios = (data ?? []).map((row) => {
+      const { assinaturas, ...profile } = row as Profile & { assinaturas: AssinaturaEmbed[] | null };
+      return {
+        ...profile,
+        assinatura: this.resumirAssinatura(assinaturas ?? []),
+      } as UsuarioAdmin;
+    });
+
     return {
       ok: true,
       data: {
-        usuarios: (data ?? []) as Profile[],
+        usuarios,
         total: count ?? 0,
       },
+    };
+  }
+
+  /**
+   * Escolhe, entre as assinaturas do usuário, a mais relevante para exibir no admin:
+   * prioriza a que dá acesso ativo (authorized com próxima cobrança futura/nula ou
+   * cancelled ainda em carência), espelhando `tem_assinatura_ativa`. Sem nenhuma
+   * ativa, cai na mais recente por criado_em.
+   */
+  private resumirAssinatura(rows: AssinaturaEmbed[]): UsuarioAdminAssinatura | null {
+    if (rows.length === 0) return null;
+    const now = Date.now();
+    const estaAtiva = (a: AssinaturaEmbed): boolean => {
+      const prox = a.proxima_cobranca ? new Date(a.proxima_cobranca).getTime() : null;
+      if (a.status === 'authorized') return prox === null || prox > now;
+      if (a.status === 'cancelled') return prox !== null && prox > now;
+      return false;
+    };
+    const ordenadas = [...rows].sort(
+      (a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime(),
+    );
+    const escolhida = ordenadas.find(estaAtiva) ?? ordenadas[0];
+    return {
+      status: escolhida.status,
+      proxima_cobranca: escolhida.proxima_cobranca,
+      plano_nome: escolhida.plano?.nome ?? null,
+      plano_slug: escolhida.plano?.slug ?? null,
+      ativa: estaAtiva(escolhida),
     };
   }
 

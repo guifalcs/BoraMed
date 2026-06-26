@@ -16,6 +16,7 @@ import {
   Undo2,
 } from 'lucide-angular';
 import { AdminService } from '../../core/services/admin.service';
+import type { UsuarioAdmin } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
@@ -39,7 +40,7 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly currentUserId = computed(() => this.auth.user()?.id);
   protected readonly isSuperAdmin = computed(() => this.profileService.profile()?.papel === 'super_admin');
 
-  protected readonly usuarios = signal<Profile[]>([]);
+  protected readonly usuarios = signal<UsuarioAdmin[]>([]);
   protected readonly total = signal(0);
   protected readonly isLoading = signal(true);
   protected readonly busca = signal('');
@@ -193,6 +194,16 @@ export class AdminUsuariosComponent implements OnInit {
     return 'Aluno';
   }
 
+  protected assinaturaStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      authorized: 'Ativa',
+      pending: 'Pendente',
+      paused: 'Pausada',
+      cancelled: 'Cancelada',
+    };
+    return labels[status] ?? status;
+  }
+
   protected get totalPaginas(): number {
     return Math.max(1, Math.ceil(this.total() / this.porPagina));
   }
@@ -215,7 +226,7 @@ export class AdminUsuariosComponent implements OnInit {
     const result = await this.adminService.alterarPapelUsuario(usuario.id, papel);
     if (result.ok) {
       this.usuarios.update((lista) =>
-        lista.map((u) => (u.id === usuario.id ? result.data : u)),
+        lista.map((u) => (u.id === usuario.id ? { ...u, ...result.data } : u)),
       );
       this.toast.success(`Papel de ${usuario.nome_completo ?? usuario.email} atualizado.`);
     } else {
@@ -234,7 +245,7 @@ export class AdminUsuariosComponent implements OnInit {
     const result = await this.adminService.banirUsuario(usuario.id, this.motivoBanimento());
     if (result.ok) {
       this.usuarios.update((lista) =>
-        lista.map((u) => (u.id === usuario.id ? result.data : u)),
+        lista.map((u) => (u.id === usuario.id ? { ...u, ...result.data } : u)),
       );
       this.toast.success(`${usuario.nome_completo ?? usuario.email} foi suspenso.`);
     } else {
@@ -255,7 +266,7 @@ export class AdminUsuariosComponent implements OnInit {
     const result = await this.adminService.desbanirUsuario(usuario.id);
     if (result.ok) {
       this.usuarios.update((lista) =>
-        lista.map((u) => (u.id === usuario.id ? result.data : u)),
+        lista.map((u) => (u.id === usuario.id ? { ...u, ...result.data } : u)),
       );
       this.toast.success(`${usuario.nome_completo ?? usuario.email} foi reativado.`);
     } else {

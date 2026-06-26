@@ -25,6 +25,7 @@
           <th>Cadastro</th>
           <th>Último login</th>
           <th>Papel</th>
+          <th>Assinatura</th>
           <th>Status</th>
           <th>Ação</th>
         </tr>
@@ -53,6 +54,21 @@
                 [class.badge--super-admin]="u.papel === 'super_admin'">
                 {{ papelLabel(u.papel) }}
               </span>
+            </td>
+            <td>
+              @if (u.assinatura) {
+                <span class="assinatura-chip"
+                  [class.assinatura-chip--ativa]="u.assinatura.status === 'authorized'"
+                  [class.assinatura-chip--pendente]="u.assinatura.status === 'pending'"
+                  [class.assinatura-chip--pausada]="u.assinatura.status === 'paused'"
+                  [class.assinatura-chip--cancelada]="u.assinatura.status === 'cancelled'">
+                  <span class="assinatura-dot"></span>
+                  <span class="assinatura-plano">{{ u.assinatura.plano_nome ?? 'Plano' }}</span>
+                  <span class="assinatura-status">{{ assinaturaStatusLabel(u.assinatura.status) }}</span>
+                </span>
+              } @else {
+                <span class="no-action">Não assinante</span>
+              }
             </td>
             <td>
               @if (u.banido) {
@@ -326,6 +342,35 @@
   .badge--super-admin { background: #fef3c7; color: #92400e; }
   .badge--active { background: #dcfce7; color: #166534; }
   .badge--banned { background: #fee2e2; color: #991b1b; }
+  .assinatura-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    white-space: nowrap;
+  }
+  .assinatura-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #94a3b8;
+    flex-shrink: 0;
+  }
+  .assinatura-plano { font-weight: 600; color: #1e293b; font-size: 0.8rem; }
+  .assinatura-status { font-size: 0.72rem; color: #64748b; }
+  .assinatura-chip--ativa { border-color: #bbf7d0; background: #f0fdf4; }
+  .assinatura-chip--ativa .assinatura-dot { background: #16a34a; }
+  .assinatura-chip--ativa .assinatura-status { color: #166534; }
+  .assinatura-chip--pendente { border-color: #fde68a; background: #fffbeb; }
+  .assinatura-chip--pendente .assinatura-dot { background: #d97706; }
+  .assinatura-chip--pendente .assinatura-status { color: #92400e; }
+  .assinatura-chip--pausada .assinatura-dot { background: #64748b; }
+  .assinatura-chip--cancelada { border-color: #fecaca; background: #fef2f2; }
+  .assinatura-chip--cancelada .assinatura-dot { background: #dc2626; }
+  .assinatura-chip--cancelada .assinatura-status { color: #991b1b; }
   .no-action { font-size: 0.75rem; color: #94a3b8; }
   .status-cell { display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start; }
   .status-date { font-size: 0.72rem; color: #94a3b8; }
@@ -459,7 +504,7 @@
     .page-title { font-size: 1.35rem; }
     .search-input { max-width: none; min-height: 2.75rem; }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 880px; }
+    .data-table { min-width: 980px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
     .action-cell { align-items: stretch; }
