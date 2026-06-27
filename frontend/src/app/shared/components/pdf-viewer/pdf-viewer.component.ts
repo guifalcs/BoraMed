@@ -77,7 +77,7 @@ const ZOOM_STEP = 0.25;
             <div class="pdf-skeleton__bar"></div>
           </div>
         }
-        <div class="pdf-scroll" [class.pdf-scroll--hidden]="loading()">
+        <div class="pdf-scroll" #scroll [class.pdf-scroll--hidden]="loading()">
           <iframe
             [src]="safeUrl()"
             [style.width.%]="zoom() * 100"
@@ -180,7 +180,6 @@ const ZOOM_STEP = 0.25;
       .pdf-frame {
         display: block;
         height: 100%;
-        margin: 0 auto;
         border: none;
       }
 
@@ -228,6 +227,7 @@ const ZOOM_STEP = 0.25;
 export class PdfViewerComponent {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly viewer = viewChild.required<ElementRef<HTMLDivElement>>('viewer');
+  private readonly scrollEl = viewChild<ElementRef<HTMLDivElement>>('scroll');
 
   signedUrl = input<string | null>(null);
 
@@ -263,18 +263,38 @@ export class PdfViewerComponent {
 
   protected onLoad(): void {
     this.loading.set(false);
+    this.centerScroll();
   }
 
   protected zoomIn(): void {
     this.zoom.update((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
+    this.centerScroll();
   }
 
   protected zoomOut(): void {
     this.zoom.update((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
+    this.centerScroll();
   }
 
   protected zoomReset(): void {
     this.zoom.set(1);
+    this.centerScroll();
+  }
+
+  /**
+   * Centraliza a posição do scroll horizontal. Com `justify-content: safe center`
+   * o conteúdo que transborda é alinhado à esquerda (para não cortar nada); aqui
+   * reposicionamos o scroll no centro para a visão inicial ficar no meio da página.
+   * Aguarda dois frames para o reflow do iframe (mudança de largura) concluir.
+   */
+  private centerScroll(): void {
+    const el = this.scrollEl()?.nativeElement;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
+      });
+    });
   }
 
   protected async toggleFullscreen(): Promise<void> {
