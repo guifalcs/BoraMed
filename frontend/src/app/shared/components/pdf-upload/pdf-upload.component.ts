@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  effect,
   ElementRef,
   inject,
   input,
@@ -126,6 +127,17 @@ export class PdfUploadComponent {
   protected readonly erro = signal<string | null>(null);
 
   private _sessionPath: string | null = null;
+
+  constructor() {
+    // Quando o pai zera o currentPath (registro salvo ou removido), o arquivo
+    // já está persistido/limpo — descarta o sessionPath para que o PRÓXIMO
+    // upload não delete o arquivo recém-confirmado do storage.
+    effect(() => {
+      if (!this.currentPath()) {
+        this._sessionPath = null;
+      }
+    });
+  }
 
   protected readonly nomeExibido = computed(() => {
     const path = this.currentPath();
