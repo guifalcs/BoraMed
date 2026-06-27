@@ -11,8 +11,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { FileX2, Maximize2, Minimize2 } from 'lucide-angular';
+import { FileX2, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-angular';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
+
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3;
+const ZOOM_STEP = 0.25;
 
 @Component({
   selector: 'app-pdf-viewer',
@@ -22,15 +26,50 @@ import { UiIconComponent } from '../ui/icon/ui-icon.component';
   template: `
     <div class="pdf-viewer" #viewer [class.pdf-viewer--fullscreen]="isFullscreen()">
       @if (signedUrl()) {
-        <button
-          type="button"
-          class="pdf-fullscreen-btn"
-          [title]="isFullscreen() ? 'Sair da tela cheia' : 'Ver em tela cheia'"
-          [attr.aria-label]="isFullscreen() ? 'Sair da tela cheia' : 'Ver em tela cheia'"
-          (click)="toggleFullscreen()"
-        >
-          <app-ui-icon [icon]="isFullscreen() ? minimizeIcon : maximizeIcon" [size]="18" />
-        </button>
+        <div class="pdf-toolbar">
+          <button
+            type="button"
+            class="pdf-tool-btn"
+            [disabled]="zoom() <= zoomMin"
+            title="Diminuir zoom"
+            aria-label="Diminuir zoom"
+            (click)="zoomOut()"
+          >
+            <app-ui-icon [icon]="zoomOutIcon" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="pdf-tool-btn pdf-tool-btn--text"
+            title="Restaurar zoom (100%)"
+            aria-label="Restaurar zoom"
+            (click)="zoomReset()"
+          >
+            {{ zoomPercent() }}%
+          </button>
+          <button
+            type="button"
+            class="pdf-tool-btn"
+            [disabled]="zoom() >= zoomMax"
+            title="Aumentar zoom"
+            aria-label="Aumentar zoom"
+            (click)="zoomIn()"
+          >
+            <app-ui-icon [icon]="zoomInIcon" [size]="16" />
+          </button>
+
+          <span class="pdf-toolbar__sep"></span>
+
+          <button
+            type="button"
+            class="pdf-tool-btn"
+            [title]="isFullscreen() ? 'Sair da tela cheia' : 'Ver em tela cheia'"
+            [attr.aria-label]="isFullscreen() ? 'Sair da tela cheia' : 'Ver em tela cheia'"
+            (click)="toggleFullscreen()"
+          >
+            <app-ui-icon [icon]="isFullscreen() ? minimizeIcon : maximizeIcon" [size]="16" />
+          </button>
+        </div>
+
         @if (loading()) {
           <div class="pdf-skeleton">
             <div class="pdf-skeleton__bar"></div>
@@ -38,13 +77,15 @@ import { UiIconComponent } from '../ui/icon/ui-icon.component';
             <div class="pdf-skeleton__bar"></div>
           </div>
         }
-        <iframe
-          [src]="safeUrl()"
-          [class.pdf-frame--hidden]="loading()"
-          class="pdf-frame"
-          title="Visualizador de PDF"
-          (load)="onLoad()"
-        ></iframe>
+        <div class="pdf-scroll" [class.pdf-scroll--hidden]="loading()">
+          <iframe
+            [src]="safeUrl()"
+            [style.width.%]="zoom() * 100"
+            class="pdf-frame"
+            title="Visualizador de PDF"
+            (load)="onLoad()"
+          ></iframe>
+        </div>
       } @else {
         <div class="pdf-empty">
           <app-ui-icon [icon]="fileErrorIcon" [size]="40" class="pdf-empty__icon" />
@@ -69,40 +110,78 @@ import { UiIconComponent } from '../ui/icon/ui-icon.component';
         min-height: 100vh;
       }
 
-      .pdf-fullscreen-btn {
+      .pdf-toolbar {
         position: absolute;
         top: 0.75rem;
         right: 0.75rem;
         z-index: 10;
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 2.25rem;
-        height: 2.25rem;
-        border-radius: 8px;
+        gap: 0.125rem;
+        padding: 0.25rem;
+        border-radius: 10px;
         border: 1px solid var(--color-border);
-        background: var(--color-surface);
+        background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.14);
+      }
+
+      .pdf-toolbar__sep {
+        width: 1px;
+        height: 1.25rem;
+        margin: 0 0.125rem;
+        background: var(--color-border);
+      }
+
+      .pdf-tool-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0 0.375rem;
+        border: none;
+        border-radius: 7px;
+        background: transparent;
         color: var(--color-text);
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        font-family: inherit;
         transition: background 0.15s, color 0.15s;
       }
 
-      .pdf-fullscreen-btn:hover {
+      .pdf-tool-btn--text {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        min-width: 3rem;
+      }
+
+      .pdf-tool-btn:hover:not(:disabled) {
         background: var(--color-surface-2);
         color: var(--color-primary);
       }
 
-      .pdf-frame {
-        width: 100%;
-        height: 100%;
-        border: none;
-        display: block;
+      .pdf-tool-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
 
-      .pdf-frame--hidden {
-        opacity: 0;
+      .pdf-scroll {
         position: absolute;
+        inset: 0;
+        overflow: auto;
+      }
+
+      .pdf-scroll--hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .pdf-frame {
+        display: block;
+        height: 100%;
+        margin: 0 auto;
+        border: none;
       }
 
       .pdf-skeleton {
@@ -154,9 +233,18 @@ export class PdfViewerComponent {
 
   protected readonly loading = signal(false);
   protected readonly isFullscreen = signal(false);
+  protected readonly zoom = signal(1);
+
+  protected readonly zoomMin = ZOOM_MIN;
+  protected readonly zoomMax = ZOOM_MAX;
+
   protected readonly fileErrorIcon = FileX2;
   protected readonly maximizeIcon = Maximize2;
   protected readonly minimizeIcon = Minimize2;
+  protected readonly zoomInIcon = ZoomIn;
+  protected readonly zoomOutIcon = ZoomOut;
+
+  protected readonly zoomPercent = computed(() => Math.round(this.zoom() * 100));
 
   protected readonly safeUrl = computed(() => {
     const url = this.signedUrl();
@@ -166,13 +254,27 @@ export class PdfViewerComponent {
 
   constructor() {
     effect(() => {
+      // Reseta loading e zoom sempre que troca de arquivo.
       const url = this.signedUrl();
       this.loading.set(!!url);
+      this.zoom.set(1);
     }, { allowSignalWrites: true });
   }
 
   protected onLoad(): void {
     this.loading.set(false);
+  }
+
+  protected zoomIn(): void {
+    this.zoom.update((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
+  }
+
+  protected zoomOut(): void {
+    this.zoom.update((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
+  }
+
+  protected zoomReset(): void {
+    this.zoom.set(1);
   }
 
   protected async toggleFullscreen(): Promise<void> {

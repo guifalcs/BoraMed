@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-27 | Melhoria | sem commit
+
+**Viewer de PDF: tela cheia, zoom e correção de upload**
+
+- Viewer de PDF agora tem barra de controles com zoom (−/%/+, 50%–300%) e botão de tela cheia. O zoom varia a largura do iframe (visualizador nativo reflui a página nítida), sem recarregar o arquivo; reseta para 100% ao trocar de PDF.
+- Tela cheia via Fullscreen API, com saída por `Esc` e sincronização do estado/ícone.
+- Fix: `PdfUploadComponent` descartava o caminho de sessão apenas no reset visual, mas mantinha a referência interna — o upload seguinte apagava do storage o arquivo recém-salvo. Corrigido para limpar a referência quando o `currentPath` é zerado.
+
+---
+
 ## 2026-06-27 | Feature | sem commit
 
 **Novo módulo: Materiais de Estudo (APGs)**
