@@ -31,6 +31,11 @@ export const dashboardRoutes: Routes = [
       import('./historico/historico.component').then((m) => m.HistoricoComponent),
   },
   {
+    path: 'materiais',
+    loadChildren: () =>
+      import('./materiais/materiais.routes').then((m) => m.materiaisRoutes),
+  },
+  {
     path: 'assinatura',
     loadComponent: () =>
       import('./assinatura/minha-assinatura.component').then((m) => m.MinhaAssinaturaComponent),

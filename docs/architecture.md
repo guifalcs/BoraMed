@@ -175,3 +175,10 @@
  **Data** : 2026-06
  **Decisao** : Em `@media print`, a rota de impressao de simulados deve zerar explicitamente qualquer offset visual da sidebar de configuracao e deixar o documento ocupar 100% da area imprimivel. A regra vale mesmo quando o viewport ainda ativa breakpoints desktop, como no Safari/iPad em landscape.
  **Motivo** : Alguns navegadores moveis preservam classes responsivas do layout de tela ao abrir o fluxo de impressao. Se o `margin-left` da sidebar continuar ativo depois que a sidebar e ocultada, a folha fica com uma coluna branca e o conteudo impresso e comprimido.
+
+## ADR-028: Módulo de Materiais de Estudo — bucket privado + signed URLs
+
+ **Data** : 2026-06
+ **Decisão** : PDFs de materiais de estudo ficam em bucket privado `materiais` (Supabase Storage, public=false). O acesso do aluno é servido via `createSignedUrl` com TTL de 3600s, gerada on-demand ao clicar no arquivo. A visualização é feita via `<iframe>` embutido com parâmetro `#toolbar=0&navpanes=0` para suprimir a toolbar de download/impressão nativa do navegador (proteção "soft" — não impede captura de tela ou inspect; melhoria para pdf.js registrada como trabalho futuro). O acesso ao bucket e às tabelas é gateado por `tem_assinatura_ativa()` via RLS.
+ **Hierarquia** : `material_categoria` (mural) → `material_arquivo` (PDFs diretos). A tabela `material_topico` foi criada com FK nullable em `material_arquivo` para permitir agrupamento por tópico sem nova migration estrutural quando o volume crescer.
+ **Motivo** : Conteúdo autoral restrito a assinantes não deve ser acessível via URL pública. O bucket privado + signed URL segue o padrão já aplicado em `suporte-anexos`. A tabela de tópicos antecipa crescimento do módulo (APGs por sistema, por período etc.) sem forçar refatoração futura.

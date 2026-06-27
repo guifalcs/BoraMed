@@ -268,6 +268,32 @@ export interface AdminNotificacao {
 
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+export interface AdminMaterialCategoria {
+  id: string;
+  slug: string;
+  titulo: string;
+  descricao: string | null;
+  icone: string;
+  gradiente: string;
+  ordem: number;
+  ativo: boolean;
+  criado_em: string;
+}
+
+export interface AdminMaterialArquivo {
+  id: string;
+  categoria_id: string;
+  topico_id: string | null;
+  titulo: string;
+  descricao: string | null;
+  storage_path: string;
+  mime_type: string;
+  tamanho_bytes: number | null;
+  ordem: number;
+  ativo: boolean;
+  criado_em: string;
+}
+
 export interface ImpersonacaoResult {
   token_hash: string;
   target_user_id: string;
@@ -926,5 +952,93 @@ export class AdminService {
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as AdminNotificacao[] };
+  }
+
+  // ---- Materiais de Estudo ----
+
+  async listarMateriaisCategorias(): Promise<ServiceResult<AdminMaterialCategoria[]>> {
+    const { data, error } = await this.supabase
+      .from('material_categoria')
+      .select('*')
+      .order('ordem')
+      .order('criado_em');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminMaterialCategoria[] };
+  }
+
+  async criarMaterialCategoria(
+    input: Pick<AdminMaterialCategoria, 'slug' | 'titulo' | 'descricao' | 'ordem'>,
+  ): Promise<ServiceResult<AdminMaterialCategoria>> {
+    const { data, error } = await this.supabase
+      .from('material_categoria')
+      .insert(input)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminMaterialCategoria };
+  }
+
+  async atualizarMaterialCategoria(
+    id: string,
+    input: Partial<AdminMaterialCategoria>,
+  ): Promise<ServiceResult<AdminMaterialCategoria>> {
+    const { data, error } = await this.supabase
+      .from('material_categoria')
+      .update(input)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminMaterialCategoria };
+  }
+
+  async deletarMaterialCategoria(id: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.from('material_categoria').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
+  }
+
+  async listarMateriaisArquivos(categoriaId: string): Promise<ServiceResult<AdminMaterialArquivo[]>> {
+    const { data, error } = await this.supabase
+      .from('material_arquivo')
+      .select('*')
+      .eq('categoria_id', categoriaId)
+      .order('ordem')
+      .order('criado_em');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminMaterialArquivo[] };
+  }
+
+  async criarMaterialArquivo(
+    input: Pick<AdminMaterialArquivo, 'categoria_id' | 'titulo' | 'descricao' | 'storage_path' | 'mime_type' | 'tamanho_bytes'>,
+  ): Promise<ServiceResult<AdminMaterialArquivo>> {
+    const { data, error } = await this.supabase
+      .from('material_arquivo')
+      .insert(input)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminMaterialArquivo };
+  }
+
+  async atualizarMaterialArquivo(
+    id: string,
+    input: Partial<Pick<AdminMaterialArquivo, 'titulo' | 'descricao' | 'ordem' | 'ativo'>>,
+  ): Promise<ServiceResult<AdminMaterialArquivo>> {
+    const { data, error } = await this.supabase
+      .from('material_arquivo')
+      .update(input)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminMaterialArquivo };
+  }
+
+  async deletarMaterialArquivo(id: string, storagePath: string): Promise<ServiceResult<void>> {
+    await this.supabase.storage.from('materiais').remove([storagePath]);
+    const { error } = await this.supabase.from('material_arquivo').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
   }
 }

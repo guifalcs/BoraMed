@@ -1,0 +1,264 @@
+<div class="p-6">
+
+  <!-- ===== VIEW: CATEGORIAS ===== -->
+  @if (view() === 'categorias') {
+    <div class="mx-auto max-w-4xl">
+      <h1 class="mb-6 text-2xl font-bold text-[var(--color-text)]">Materiais de Estudo — Categorias</h1>
+
+      <!-- Formulário de criação -->
+      <div class="mb-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <h2 class="mb-4 text-sm font-semibold text-[var(--color-text)]">Nova categoria</h2>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label class="admin-label">Slug (URL)</label>
+            <input class="admin-input" [ngModel]="novoSlug()" (ngModelChange)="novoSlug.set($event)" placeholder="resumos-apg" />
+          </div>
+          <div>
+            <label class="admin-label">Título</label>
+            <input class="admin-input" [ngModel]="novoTitulo()" (ngModelChange)="novoTitulo.set($event)" placeholder="Resumos de APGs" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="admin-label">Descrição</label>
+            <input class="admin-input" [ngModel]="novaDescricao()" (ngModelChange)="novaDescricao.set($event)" placeholder="Descrição curta" />
+          </div>
+          <div>
+            <label class="admin-label">Ordem</label>
+            <input type="number" class="admin-input" [ngModel]="novaOrdem()" (ngModelChange)="novaOrdem.set(+$event)" />
+          </div>
+        </div>
+        <button
+          class="admin-btn admin-btn--primary mt-4"
+          [disabled]="criandoCat() || !novoSlug().trim() || !novoTitulo().trim()"
+          (click)="criarCategoria()"
+        >
+          {{ criandoCat() ? 'Criando…' : 'Criar categoria' }}
+        </button>
+      </div>
+
+      <!-- Lista de categorias -->
+      @if (isLoadingCat()) {
+        <p class="text-sm text-[var(--color-text-muted)]">Carregando…</p>
+      } @else if (categorias().length === 0) {
+        <p class="text-sm text-[var(--color-text-muted)]">Nenhuma categoria criada.</p>
+      } @else {
+        <div class="space-y-3">
+          @for (cat of categorias(); track cat.id) {
+            <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+
+              @if (editandoCatId() === cat.id) {
+                <!-- Edição inline -->
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label class="admin-label">Slug</label>
+                    <input class="admin-input" [ngModel]="editSlug()" (ngModelChange)="editSlug.set($event)" />
+                  </div>
+                  <div>
+                    <label class="admin-label">Título</label>
+                    <input class="admin-input" [ngModel]="editTitulo()" (ngModelChange)="editTitulo.set($event)" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="admin-label">Descrição</label>
+                    <input class="admin-input" [ngModel]="editDescricao()" (ngModelChange)="editDescricao.set($event)" />
+                  </div>
+                  <div>
+                    <label class="admin-label">Ordem</label>
+                    <input type="number" class="admin-input" [ngModel]="editOrdem()" (ngModelChange)="editOrdem.set(+$event)" />
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" [ngModel]="editAtivo()" (ngModelChange)="editAtivo.set($event)" id="edit-ativo-{{cat.id}}" />
+                    <label [for]="'edit-ativo-'+cat.id" class="text-sm text-[var(--color-text)]">Ativo</label>
+                  </div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                  <button class="admin-btn admin-btn--primary" [disabled]="processandoCat() === cat.id" (click)="salvarEdicaoCat(cat)">
+                    {{ processandoCat() === cat.id ? 'Salvando…' : 'Salvar' }}
+                  </button>
+                  <button class="admin-btn admin-btn--secondary" (click)="cancelarEdicaoCat()">Cancelar</button>
+                </div>
+              } @else {
+                <!-- Exibição -->
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <p class="font-semibold text-[var(--color-text)]">{{ cat.titulo }}</p>
+                    <p class="text-xs text-[var(--color-text-muted)]">
+                      /{{ cat.slug }} · ordem {{ cat.ordem }} · {{ cat.ativo ? 'ativa' : 'inativa' }}
+                    </p>
+                    @if (cat.descricao) {
+                      <p class="mt-1 text-sm text-[var(--color-text-muted)]">{{ cat.descricao }}</p>
+                    }
+                  </div>
+                  <div class="flex shrink-0 gap-2">
+                    <button class="admin-btn admin-btn--secondary" (click)="abrirArquivos(cat)">
+                      <app-ui-icon [icon]="iconFolder" [size]="15" />
+                      Arquivos
+                    </button>
+                    <button class="admin-icon-btn" title="Editar" (click)="iniciarEdicaoCat(cat)">
+                      <app-ui-icon [icon]="iconEdit" [size]="15" />
+                    </button>
+                    <button class="admin-icon-btn admin-icon-btn--danger" title="Deletar" (click)="solicitarDeleteCat(cat)">
+                      <app-ui-icon [icon]="iconDelete" [size]="15" />
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== VIEW: ARQUIVOS ===== -->
+  @if (view() === 'arquivos') {
+    <div class="mx-auto max-w-4xl">
+      <div class="mb-6 flex items-center gap-3">
+        <button class="admin-btn admin-btn--secondary" (click)="voltarParaCategorias()">
+          <app-ui-icon [icon]="iconBack" [size]="15" />
+          Categorias
+        </button>
+        <h1 class="text-xl font-bold text-[var(--color-text)]">{{ categoriaAtiva()?.titulo }}</h1>
+      </div>
+
+      <!-- Formulário de upload -->
+      <div class="mb-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <h2 class="mb-4 text-sm font-semibold text-[var(--color-text)]">Adicionar arquivo</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="admin-label">Título do arquivo</label>
+            <input class="admin-input" [ngModel]="novoArqTitulo()" (ngModelChange)="novoArqTitulo.set($event)" placeholder="Ex: APG — Cardiologia — Semana 3" />
+          </div>
+          <div>
+            <label class="admin-label">Descrição (opcional)</label>
+            <input class="admin-input" [ngModel]="novoArqDescricao()" (ngModelChange)="novoArqDescricao.set($event)" />
+          </div>
+          <div>
+            <label class="admin-label">Arquivo PDF</label>
+            <app-pdf-upload
+              [currentPath]="novoArqStoragePath() || null"
+              [prefix]="prefixSlug()"
+              (pathChange)="onPdfSelecionado($event)"
+            />
+          </div>
+        </div>
+        <button
+          class="admin-btn admin-btn--primary mt-4"
+          [disabled]="criandoArq() || !novoArqTitulo().trim() || !novoArqStoragePath()"
+          (click)="criarArquivo()"
+        >
+          {{ criandoArq() ? 'Salvando…' : 'Adicionar arquivo' }}
+        </button>
+      </div>
+
+      <!-- Lista de arquivos -->
+      @if (isLoadingArq()) {
+        <p class="text-sm text-[var(--color-text-muted)]">Carregando…</p>
+      } @else if (arquivos().length === 0) {
+        <p class="text-sm text-[var(--color-text-muted)]">Nenhum arquivo nesta categoria.</p>
+      } @else {
+        <div class="space-y-3">
+          @for (arq of arquivos(); track arq.id) {
+            <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+
+              @if (editandoArqId() === arq.id) {
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div class="sm:col-span-2">
+                    <label class="admin-label">Título</label>
+                    <input class="admin-input" [ngModel]="editArqTitulo()" (ngModelChange)="editArqTitulo.set($event)" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="admin-label">Descrição</label>
+                    <input class="admin-input" [ngModel]="editArqDescricao()" (ngModelChange)="editArqDescricao.set($event)" />
+                  </div>
+                  <div>
+                    <label class="admin-label">Ordem</label>
+                    <input type="number" class="admin-input" [ngModel]="editArqOrdem()" (ngModelChange)="editArqOrdem.set(+$event)" />
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" [ngModel]="editArqAtivo()" (ngModelChange)="editArqAtivo.set($event)" id="edit-arq-ativo-{{arq.id}}" />
+                    <label [for]="'edit-arq-ativo-'+arq.id" class="text-sm text-[var(--color-text)]">Ativo</label>
+                  </div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                  <button class="admin-btn admin-btn--primary" [disabled]="processandoArq() === arq.id" (click)="salvarEdicaoArq(arq)">
+                    {{ processandoArq() === arq.id ? 'Salvando…' : 'Salvar' }}
+                  </button>
+                  <button class="admin-btn admin-btn--secondary" (click)="cancelarEdicaoArq()">Cancelar</button>
+                </div>
+              } @else {
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <p class="font-semibold text-[var(--color-text)]">{{ arq.titulo }}</p>
+                    <p class="text-xs text-[var(--color-text-muted)]">
+                      {{ arq.storage_path }} · {{ formatarTamanho(arq.tamanho_bytes) }} · {{ arq.ativo ? 'ativo' : 'inativo' }}
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 gap-2">
+                    <button class="admin-icon-btn" title="Editar" (click)="iniciarEdicaoArq(arq)">
+                      <app-ui-icon [icon]="iconEdit" [size]="15" />
+                    </button>
+                    <button class="admin-icon-btn admin-icon-btn--danger" title="Deletar" (click)="solicitarDeleteArq(arq)">
+                      <app-ui-icon [icon]="iconDelete" [size]="15" />
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Confirmações de delete -->
+  @if (catParaDeletar()) {
+    <app-ui-confirm-dialog
+      titulo="Deletar categoria?"
+      [mensagem]="'Deletar &quot;' + catParaDeletar()!.titulo + '&quot;? Todos os arquivos vinculados serão removidos. Esta ação é irreversível.'"
+      labelConfirmar="Deletar"
+      variante="danger"
+      (confirmar)="confirmarDeleteCat()"
+      (cancelar)="cancelarDeleteCat()"
+    />
+  }
+
+  @if (arqParaDeletar()) {
+    <app-ui-confirm-dialog
+      titulo="Deletar arquivo?"
+      [mensagem]="'Deletar &quot;' + arqParaDeletar()!.titulo + '&quot;? O arquivo será removido do storage. Esta ação é irreversível.'"
+      labelConfirmar="Deletar"
+      variante="danger"
+      (confirmar)="confirmarDeleteArq()"
+      (cancelar)="cancelarDeleteArq()"
+    />
+  }
+</div>
+
+<style>
+  .admin-label { display: block; margin-bottom: 0.25rem; font-size: 0.8125rem; font-weight: 500; color: var(--color-text-muted); }
+  .admin-input {
+    width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border);
+    border-radius: 8px; font-size: 0.875rem; background: var(--color-surface-2);
+    color: var(--color-text); font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .admin-input:focus { outline: none; border-color: var(--color-primary-light); }
+  .admin-btn {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
+    cursor: pointer; border: 1px solid transparent; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .admin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .admin-btn--primary { background: var(--color-primary); color: #fff; }
+  .admin-btn--primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+  .admin-btn--secondary { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text); }
+  .admin-btn--secondary:hover:not(:disabled) { background: var(--color-surface); }
+  .admin-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; border-radius: 6px; border: 1px solid var(--color-border);
+    background: var(--color-surface-2); cursor: pointer; color: var(--color-text-muted);
+    transition: background 0.15s, color 0.15s;
+  }
+  .admin-icon-btn:hover { background: var(--color-surface); color: var(--color-text); }
+  .admin-icon-btn--danger:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+</style>

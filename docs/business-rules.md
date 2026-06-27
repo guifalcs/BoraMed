@@ -1,6 +1,33 @@
 
 # Regras de Negócio — BoraMed
 
+## Materiais de Estudo
+
+### Entidades
+
+* **MaterialCategoria** — card do mural. Identificada por `slug` único. Contém título, descrição, ícone (nome Lucide), gradiente CSS e ordem de exibição.
+* **MaterialTopico** — agrupamento opcional dentro de uma categoria (criado no schema, UI futura). FK nullable em `material_arquivo`.
+* **MaterialArquivo** — um PDF armazenado no bucket privado `materiais`. Vinculado obrigatoriamente a uma categoria, opcionalmente a um tópico.
+
+### Acesso e autenticação
+
+* Categorias, tópicos e arquivos só são visíveis para **assinantes ativos** (`tem_assinatura_ativa() = true`). Admins têm acesso irrestrito (incluindo registros `ativo = false`).
+* Alunos sem assinatura ativa são barrados pelo `lazySubscriptionGuard` antes de chegar à rota `/dashboard/materiais`.
+* A visualização de PDF é feita via **signed URL temporária** (TTL 3600s), gerada on-demand ao clicar no arquivo. A URL expira; não há link permanente.
+
+### Conteúdo
+
+* Todos os materiais são **100% autorais**, produzidos pelo time do BoraMed. Nenhum material reproduz, transcreve ou adapta conteúdo oficial de instituições (Afya ou outras).
+* Materiais no formato APG (Aprendizagem em Pequenos Grupos) seguem a lógica pedagógica do método, mas são independentes e não pertencem à Afya. Qualquer referência ao formato APG deve ser acompanhada de disclaimer de independência ("plataforma independente, sem vínculo com a Afya").
+* Administradores fazem upload via painel `/admin/materiais`. O arquivo é armazenado no path `{slug-da-categoria}/{uuid}.pdf` dentro do bucket `materiais`.
+
+### Regras de integridade
+
+* `storage_path` é único por arquivo — não pode haver dois registros apontando para o mesmo caminho.
+* Ao deletar um `material_arquivo`, o arquivo correspondente deve ser removido do bucket storage junto com o registro.
+* Ao deletar uma `material_categoria`, todos os `material_arquivo` vinculados são removidos em cascata (ON DELETE CASCADE). O admin deve ser alertado antes de confirmar.
+* `mime_type` de `material_arquivo` deve ser sempre `application/pdf` (enforced por CHECK constraint).
+
 ## Entidades Principais
 
 ### Questão

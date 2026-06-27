@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Headphones,
   LayoutDashboard,
+  Library,
   LucideIconData,
   LogOut,
   Menu,
@@ -64,6 +65,7 @@ export class AdminComponent {
     { label: 'Avisos', icon: Bell, route: '/admin/avisos' },
     { label: 'Notificações', icon: Send, route: '/admin/notificacoes' },
     { label: 'Suporte', icon: Headphones, route: '/admin/suporte' },
+    { label: 'Materiais', icon: Library, route: '/admin/materiais' },
   ];
 
   protected toggleMenu(): void {

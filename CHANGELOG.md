@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-27 | Feature | sem commit
+
+**Novo módulo: Materiais de Estudo (APGs)**
+
+- Módulo extensível de materiais de estudo: mural de categorias com cards, visualizador de PDF embutido, acesso gateado por assinatura.
+- Banco: bucket privado `materiais` (Supabase Storage, 50 MB, somente PDF), tabelas `material_categoria`, `material_topico` (preparado para UI futura) e `material_arquivo` com RLS completo via `tem_assinatura_ativa()`. Migration em `supabase/migrations/20260627120000_materiais_estudo.sql`.
+- Frontend (aluno): rota `/dashboard/materiais` (mural) e `/dashboard/materiais/:categoriaSlug` (lista de PDFs + viewer). PDF exibido em iframe com `#toolbar=0&navpanes=0` via signed URL temporária (TTL 1h). Protegido pelo `lazySubscriptionGuard` do dashboard pai.
+- Frontend (admin): `/admin/materiais` com CRUD de categorias e upload/gerenciamento de PDFs por categoria. Exclusão de arquivo remove também do storage.
+- Novos componentes shared (com Storybook): `MaterialCardComponent`, `PdfViewerComponent`, `PdfUploadComponent`.
+- Novo serviço `MaterialService` + métodos de materiais no `AdminService`.
+- Link "Materiais" adicionado ao menu do dashboard e ao sidebar admin.
+- ADR-028 adicionado em `docs/architecture.md`; seção "Materiais de Estudo" adicionada em `docs/business-rules.md`.
+
+---
+
 ## 2026-06-25 | Fix | sem commit
 
 **Correcoes de pre-producao no admin**

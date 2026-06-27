@@ -78,4 +78,11 @@ export const adminRoutes: Routes = [
         (m) => m.AdminSuporteComponent,
       ),
   },
+  {
+    path: 'materiais',
+    loadComponent: () =>
+      import('./materiais/admin-materiais.component').then(
+        (m) => m.AdminMateriaisComponent,
+      ),
+  },
 ];
