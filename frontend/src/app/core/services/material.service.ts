@@ -4,7 +4,7 @@ import type { MaterialArquivo, MaterialCategoria } from '../models/material';
 
 export type MaterialResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-const SIGNED_URL_TTL = 3600;
+const SIGNED_URL_TTL = 14400;
 
 @Injectable({ providedIn: 'root' })
 export class MaterialService {
