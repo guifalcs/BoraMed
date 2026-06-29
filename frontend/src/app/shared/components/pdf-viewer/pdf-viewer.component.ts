@@ -7,11 +7,13 @@ import {
   HostListener,
   inject,
   input,
+  PLATFORM_ID,
   signal,
   viewChild,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
-import { FileX2, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-angular';
+import { ExternalLink, FileX2, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-angular';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 const ZOOM_MIN = 0.5;
@@ -26,6 +28,29 @@ const ZOOM_STEP = 0.25;
   template: `
     <div class="pdf-viewer" #viewer [class.pdf-viewer--fullscreen]="isFullscreen()">
       @if (signedUrl()) {
+        @if (isMobile()) {
+          <!--
+            No iOS/Android o navegador renderiza apenas a primeira página de um PDF
+            embutido em <iframe> e não permite rolar o conteúdo. Por isso, no mobile,
+            abrimos o documento no visualizador nativo (em nova aba), onde a rolagem
+            funciona normalmente.
+          -->
+          <div class="pdf-mobile">
+            <app-ui-icon [icon]="fileErrorIcon" [size]="40" class="pdf-mobile__icon" />
+            <p class="pdf-mobile__text">
+              Para ler o documento completo no celular, abra em tela cheia.
+            </p>
+            <a
+              class="pdf-open-btn"
+              [href]="signedUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <app-ui-icon [icon]="externalLinkIcon" [size]="16" />
+              Abrir documento
+            </a>
+          </div>
+        } @else {
         <div class="pdf-toolbar">
           <button
             type="button"
@@ -86,6 +111,7 @@ const ZOOM_STEP = 0.25;
             (load)="onLoad()"
           ></iframe>
         </div>
+        }
       } @else {
         <div class="pdf-empty">
           <app-ui-icon [icon]="fileErrorIcon" [size]="40" class="pdf-empty__icon" />
@@ -221,11 +247,52 @@ const ZOOM_STEP = 0.25;
       .pdf-empty__text {
         font-size: 0.875rem;
       }
+
+      .pdf-mobile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 300px;
+        gap: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+      }
+
+      .pdf-mobile__icon {
+        color: var(--color-text-muted);
+      }
+
+      .pdf-mobile__text {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        max-width: 18rem;
+      }
+
+      .pdf-open-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        background: var(--color-primary);
+        color: #fff;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 0.15s;
+      }
+
+      .pdf-open-btn:hover {
+        opacity: 0.9;
+      }
     </style>
   `,
 })
 export class PdfViewerComponent {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly viewer = viewChild.required<ElementRef<HTMLDivElement>>('viewer');
   private readonly scrollEl = viewChild<ElementRef<HTMLDivElement>>('scroll');
 
@@ -235,10 +302,18 @@ export class PdfViewerComponent {
   protected readonly isFullscreen = signal(false);
   protected readonly zoom = signal(1);
 
+  /**
+   * iOS e Android renderizam apenas a primeira página de PDFs embutidos em
+   * <iframe> e não permitem rolagem do conteúdo. Nesses casos exibimos um
+   * botão para abrir o documento no visualizador nativo.
+   */
+  protected readonly isMobile = signal(this.detectMobile());
+
   protected readonly zoomMin = ZOOM_MIN;
   protected readonly zoomMax = ZOOM_MAX;
 
   protected readonly fileErrorIcon = FileX2;
+  protected readonly externalLinkIcon = ExternalLink;
   protected readonly maximizeIcon = Maximize2;
   protected readonly minimizeIcon = Minimize2;
   protected readonly zoomInIcon = ZoomIn;
@@ -259,6 +334,19 @@ export class PdfViewerComponent {
       this.loading.set(!!url);
       this.zoom.set(1);
     }, { allowSignalWrites: true });
+  }
+
+  /**
+   * Detecta dispositivos móveis (iOS/Android), incluindo iPadOS 13+, que se
+   * identifica como "MacIntel" mas possui múltiplos pontos de toque.
+   */
+  private detectMobile(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    const ua = navigator.userAgent ?? '';
+    const isIOS = /iP(hone|ad|od)/.test(ua);
+    const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    const isAndroid = /Android/.test(ua);
+    return isIOS || isIPadOS || isAndroid;
   }
 
   protected onLoad(): void {
