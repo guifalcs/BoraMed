@@ -49,6 +49,7 @@ export interface AdminFinanceiroPlano {
 
 export interface AdminFinanceiro {
   assinaturas_ativas: number;
+  cortesias_ativas: number;
   assinaturas_canceladas: number;
   novas_no_mes: number;
   cancelamentos_no_mes: number;
@@ -308,6 +309,8 @@ export interface UsuarioAdminAssinatura {
   plano_slug: string | null;
   /** true quando a assinatura dá acesso ativo no momento (espelha tem_assinatura_ativa). */
   ativa: boolean;
+  /** true = acesso de cortesia (liberado de graça, fora das métricas financeiras). */
+  cortesia: boolean;
 }
 
 export interface UsuarioAdmin extends Profile {
@@ -323,6 +326,7 @@ interface AssinaturaEmbed {
   status: AssinaturaStatus;
   proxima_cobranca: string | null;
   criado_em: string;
+  cortesia: boolean;
   plano: { nome: string | null; slug: string | null } | null;
 }
 
@@ -366,7 +370,7 @@ export class AdminService {
     let query = this.supabase
       .from('profiles')
       .select(
-        '*, assinaturas:assinatura(status,proxima_cobranca,criado_em,plano:plano_id(nome,slug))',
+        '*, assinaturas:assinatura(status,proxima_cobranca,criado_em,cortesia,plano:plano_id(nome,slug))',
         { count: 'exact' },
       )
       .order('criado_em', { ascending: false })
@@ -422,6 +426,7 @@ export class AdminService {
       plano_nome: escolhida.plano?.nome ?? null,
       plano_slug: escolhida.plano?.slug ?? null,
       ativa: estaAtiva(escolhida),
+      cortesia: escolhida.cortesia ?? false,
     };
   }
 
@@ -459,6 +464,28 @@ export class AdminService {
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as Profile };
+  }
+
+  /** Libera acesso de cortesia (grátis) por N meses, sem cobrança. */
+  async liberarAcessoGratuito(
+    userId: string,
+    meses: number,
+  ): Promise<ServiceResult<{ assinatura_id: string; proxima_cobranca: string }>> {
+    const { data, error } = await this.supabase.rpc('admin_liberar_acesso_gratuito', {
+      p_user_id: userId,
+      p_meses: meses,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as { assinatura_id: string; proxima_cobranca: string } };
+  }
+
+  /** Revoga o acesso de cortesia ativo do usuário (não afeta assinaturas pagas). */
+  async revogarAcessoGratuito(userId: string): Promise<ServiceResult<{ canceladas: number }>> {
+    const { data, error } = await this.supabase.rpc('admin_revogar_acesso_gratuito', {
+      p_user_id: userId,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as { canceladas: number } };
   }
 
   async gerarTokenImpersonacao(targetUserId: string): Promise<ServiceResult<ImpersonacaoResult>> {

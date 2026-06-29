@@ -130,7 +130,8 @@ export class AdminFinanceiroComponent implements OnInit {
       { label: 'Previsão 30 dias', value: this.brl(f.previsao_30d_centavos), sub: 'renovações previstas' },
       { label: 'Receita total (bruto)', value: this.brl(f.receita_total_centavos), sub: 'desde o início' },
       { label: 'Líquido total', value: this.brl(f.receita_liquida_total_centavos), sub: 'já descontadas as taxas' },
-      { label: 'Assinaturas ativas', value: String(f.assinaturas_ativas), sub: `${f.novas_no_mes} novas no mês` },
+      { label: 'Assinaturas ativas', value: String(f.assinaturas_ativas), sub: `${f.novas_no_mes} novas no mês (pagantes)` },
+      { label: 'Acessos cortesia', value: String(f.cortesias_ativas), sub: 'grátis — fora do financeiro' },
       { label: 'Cancelamentos no mês', value: String(f.cancelamentos_no_mes), sub: `${f.assinaturas_canceladas} canceladas no total` },
       { label: 'Pagamentos recusados', value: String(f.pagamentos_recusados), sub: 'no histórico' },
     ];

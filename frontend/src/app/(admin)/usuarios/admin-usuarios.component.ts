@@ -10,10 +10,12 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   Ban,
+  Gift,
   LogIn,
   ShieldCheck,
   ShieldMinus,
   Undo2,
+  XCircle,
 } from 'lucide-angular';
 import { AdminService } from '../../core/services/admin.service';
 import type { UsuarioAdmin } from '../../core/services/admin.service';
@@ -53,11 +55,16 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly usuarioParaBanir = signal<Profile | null>(null);
   protected readonly usuarioParaDesbanir = signal<Profile | null>(null);
   protected readonly motivoBanimento = signal('');
+  protected readonly usuarioParaCortesia = signal<UsuarioAdmin | null>(null);
+  protected readonly mesesCortesia = signal(12);
+  protected readonly usuarioParaRevogarCortesia = signal<UsuarioAdmin | null>(null);
   protected readonly iconPromoverAdmin = ShieldCheck;
   protected readonly iconEntrarComo = LogIn;
   protected readonly iconRevogarAdmin = ShieldMinus;
   protected readonly iconSuspender = Ban;
   protected readonly iconReativar = Undo2;
+  protected readonly iconCortesia = Gift;
+  protected readonly iconRevogarCortesia = XCircle;
 
   async ngOnInit(): Promise<void> {
     await this.carregar();
@@ -271,6 +278,68 @@ export class AdminUsuariosComponent implements OnInit {
       this.toast.success(`${usuario.nome_completo ?? usuario.email} foi reativado.`);
     } else {
       this.toast.error('Erro ao reativar usuário: ' + result.error);
+    }
+
+    this.processando.set(null);
+  }
+
+  // ---- Acesso de cortesia (grátis) ----
+
+  protected temCortesiaAtiva(usuario: UsuarioAdmin): boolean {
+    return !!usuario.assinatura?.cortesia && !!usuario.assinatura?.ativa;
+  }
+
+  protected solicitarCortesia(usuario: UsuarioAdmin): void {
+    this.mesesCortesia.set(12);
+    this.usuarioParaCortesia.set(usuario);
+  }
+
+  protected cancelarCortesia(): void {
+    this.usuarioParaCortesia.set(null);
+  }
+
+  async confirmarCortesia(): Promise<void> {
+    const usuario = this.usuarioParaCortesia();
+    if (!usuario || this.processando()) return;
+    const meses = Math.max(1, Math.floor(this.mesesCortesia()));
+
+    this.usuarioParaCortesia.set(null);
+    this.processando.set(usuario.id);
+
+    const result = await this.adminService.liberarAcessoGratuito(usuario.id, meses);
+    if (result.ok) {
+      this.toast.success(
+        `Acesso gratuito liberado para ${usuario.nome_completo ?? usuario.email} por ${meses} ${meses === 1 ? 'mês' : 'meses'}.`,
+      );
+      await this.carregar();
+    } else {
+      this.toast.error('Erro ao liberar acesso gratuito: ' + result.error);
+    }
+
+    this.processando.set(null);
+  }
+
+  protected solicitarRevogarCortesia(usuario: UsuarioAdmin): void {
+    this.usuarioParaRevogarCortesia.set(usuario);
+  }
+
+  protected cancelarRevogarCortesia(): void {
+    this.usuarioParaRevogarCortesia.set(null);
+  }
+
+  async confirmarRevogarCortesia(): Promise<void> {
+    const usuario = this.usuarioParaRevogarCortesia();
+    if (!usuario || this.processando()) return;
+
+    this.usuarioParaRevogarCortesia.set(null);
+    this.processando.set(usuario.id);
+
+    const result = await this.adminService.revogarAcessoGratuito(usuario.id);
+    if (result.ok) {
+      this.toast.success(`Cortesia de ${usuario.nome_completo ?? usuario.email} revogada.`);
+      await this.carregar();
+    } else {
+      this.toast.error('Erro ao revogar cortesia: ' + result.error);
     }
 
     this.processando.set(null);

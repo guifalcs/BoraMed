@@ -58,12 +58,13 @@
             <td>
               @if (u.assinatura) {
                 <span class="assinatura-chip"
-                  [class.assinatura-chip--ativa]="u.assinatura.status === 'authorized'"
+                  [class.assinatura-chip--ativa]="u.assinatura.status === 'authorized' && !u.assinatura.cortesia"
+                  [class.assinatura-chip--cortesia]="u.assinatura.status === 'authorized' && u.assinatura.cortesia"
                   [class.assinatura-chip--pendente]="u.assinatura.status === 'pending'"
                   [class.assinatura-chip--pausada]="u.assinatura.status === 'paused'"
                   [class.assinatura-chip--cancelada]="u.assinatura.status === 'cancelled'">
                   <span class="assinatura-dot"></span>
-                  <span class="assinatura-plano">{{ u.assinatura.plano_nome ?? 'Plano' }}</span>
+                  <span class="assinatura-plano">{{ u.assinatura.cortesia ? 'Cortesia' : (u.assinatura.plano_nome ?? 'Plano') }}</span>
                   <span class="assinatura-status">{{ assinaturaStatusLabel(u.assinatura.status) }}</span>
                 </span>
               } @else {
@@ -111,6 +112,31 @@
                   >
                     <app-ui-icon [icon]="iconEntrarComo" [size]="16" />
                   </button>
+                  @if (temCortesiaAtiva(u)) {
+                    <button
+                      class="icon-btn icon-btn--danger"
+                      type="button"
+                      [disabled]="processando() === u.id"
+                      aria-label="Revogar cortesia"
+                      title="Revogar cortesia"
+                      data-tooltip="Revogar cortesia"
+                      (click)="solicitarRevogarCortesia(u)"
+                    >
+                      <app-ui-icon [icon]="iconRevogarCortesia" [size]="16" />
+                    </button>
+                  } @else {
+                    <button
+                      class="icon-btn icon-btn--cortesia"
+                      type="button"
+                      [disabled]="processando() === u.id || u.banido"
+                      aria-label="Liberar acesso gratuito"
+                      title="Liberar acesso gratuito"
+                      data-tooltip="Liberar acesso gratuito"
+                      (click)="solicitarCortesia(u)"
+                    >
+                      <app-ui-icon [icon]="iconCortesia" [size]="16" />
+                    </button>
+                  }
                   @if (podeBanir(u)) {
                     <button
                       class="icon-btn icon-btn--danger"
@@ -273,6 +299,44 @@
   />
 }
 
+@if (usuarioParaCortesia()) {
+  <div class="modal-backdrop" role="presentation">
+    <section class="ban-dialog" role="dialog" aria-modal="true" aria-labelledby="cortesia-dialog-title">
+      <h2 id="cortesia-dialog-title">Liberar acesso gratuito</h2>
+      <p>
+        {{ usuarioParaCortesia()!.nome_completo ?? usuarioParaCortesia()!.email }}
+        terá acesso completo à plataforma, sem cobrança. Acessos de cortesia não
+        entram nas métricas financeiras (receita, MRR e previsão).
+      </p>
+      <label class="field-label" for="meses-cortesia">Duração (meses)</label>
+      <input
+        id="meses-cortesia"
+        class="reason-input reason-input--number"
+        type="number"
+        min="1"
+        max="120"
+        [ngModel]="mesesCortesia()"
+        (ngModelChange)="mesesCortesia.set($event)"
+      />
+      <div class="dialog-actions">
+        <button class="btn btn--ghost" type="button" (click)="cancelarCortesia()">Cancelar</button>
+        <button class="btn btn--cortesia" type="button" (click)="confirmarCortesia()">Liberar acesso</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (usuarioParaRevogarCortesia()) {
+  <app-ui-confirm-dialog
+    titulo="Revogar cortesia"
+    [mensagem]="'Encerrar o acesso gratuito de ' + (usuarioParaRevogarCortesia()!.nome_completo ?? usuarioParaRevogarCortesia()!.email) + '?'"
+    labelConfirmar="Revogar"
+    variante="danger"
+    (confirmar)="confirmarRevogarCortesia()"
+    (cancelar)="cancelarRevogarCortesia()"
+  />
+}
+
 <style>
   .page-header { margin-bottom: 1.5rem; }
   .page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
@@ -364,6 +428,10 @@
   .assinatura-chip--ativa { border-color: #bbf7d0; background: #f0fdf4; }
   .assinatura-chip--ativa .assinatura-dot { background: #16a34a; }
   .assinatura-chip--ativa .assinatura-status { color: #166534; }
+  .assinatura-chip--cortesia { border-color: #ddd6fe; background: #f5f3ff; }
+  .assinatura-chip--cortesia .assinatura-dot { background: #7c3aed; }
+  .assinatura-chip--cortesia .assinatura-plano { color: #6d28d9; }
+  .assinatura-chip--cortesia .assinatura-status { color: #6d28d9; }
   .assinatura-chip--pendente { border-color: #fde68a; background: #fffbeb; }
   .assinatura-chip--pendente .assinatura-dot { background: #d97706; }
   .assinatura-chip--pendente .assinatura-status { color: #92400e; }
@@ -396,6 +464,8 @@
   .action-cell { display: flex; gap: 0.375rem; flex-wrap: wrap; align-items: center; }
   .btn--ghost { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
   .btn--ghost:hover:not(:disabled) { background: #e2e8f0; }
+  .btn--cortesia { background: #7c3aed; border: 1px solid #7c3aed; color: #fff; }
+  .btn--cortesia:hover:not(:disabled) { background: #6d28d9; border-color: #6d28d9; }
   .icon-btn {
     position: relative;
     display: inline-flex;
@@ -415,6 +485,8 @@
   .icon-btn--neutral:hover:not(:disabled) { background: #e2e8f0; color: #334155; }
   .icon-btn--danger { background: #ef4444; border-color: #ef4444; color: #fff; }
   .icon-btn--danger:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
+  .icon-btn--cortesia { background: #f5f3ff; border-color: #ddd6fe; color: #7c3aed; }
+  .icon-btn--cortesia:hover:not(:disabled) { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
   .icon-btn::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -496,6 +568,8 @@
     outline: none;
   }
   .reason-input:focus { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.12); }
+  .reason-input--number { min-height: 0; max-width: 8rem; }
+  .reason-input--number:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
   .field-hint { display: block; margin-top: 0.25rem; color: #94a3b8; font-size: 0.75rem; }
   .dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 

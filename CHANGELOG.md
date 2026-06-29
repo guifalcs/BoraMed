@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-29 | Fix + Feature | sem commit
+
+**Métricas financeiras: receita completa e acesso de cortesia**
+
+- Fix (líquido das mensais): o endpoint `authorized_payment` do Mercado Pago não retorna o valor líquido, então as cobranças recorrentes ficavam com `liquido_centavos` nulo e sumiam de todas as métricas de "Líquido" (só o semestral aparecia). O `mp-webhook` passa a buscar o líquido e o método no pagamento real subjacente (`ap.payment.id`); a RPC `admin_get_financeiro` usa o bruto como fallback quando o líquido é desconhecido.
+- Fix (pagamentos por fora): assinaturas pagas fora do MP e ativadas manualmente não geravam registro em `pagamento`, ficando fora da receita. Nova RPC `admin_ativar_assinatura_manual` (registra assinatura + pagamento `manual`) e backfill das assinaturas pagas por fora.
+- Feature (acesso de cortesia): coluna `assinatura.cortesia` marca acessos liberados de graça. Cortesias concedem acesso normalmente, mas ficam fora de receita, MRR, previsão e "assinaturas ativas (pagantes)", aparecendo num indicador próprio ("Acessos cortesia"). RPCs `admin_liberar_acesso_gratuito` e `admin_revogar_acesso_gratuito`.
+- Admin de usuários: botão "Liberar acesso gratuito" (com duração em meses) e "Revogar cortesia" por usuário; o chip de assinatura distingue "Cortesia". Migration em `supabase/migrations/20260629120000_financeiro_liquido_e_pagamento_manual.sql`.
+
+---
+
 ## 2026-06-27 | Melhoria | sem commit
 
 **Viewer de PDF: tela cheia, zoom e correção de upload**
