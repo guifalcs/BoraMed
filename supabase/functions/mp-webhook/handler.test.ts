@@ -159,6 +159,43 @@ Deno.test('webhook authorized_payment processed: registra pagamento approved com
   assertEquals(pag?.assinatura_id, 'as-1');
 });
 
+Deno.test('webhook authorized_payment: busca líquido e método no pagamento real subjacente', async () => {
+  const db = new FakeDb({
+    assinatura: [{ id: 'as-2', user_id: 'user-2', mp_preapproval_id: 'PP-Y' }],
+  });
+  // O authorized_payment NÃO traz transaction_details; só referencia o pagamento
+  // real (payment.id). O líquido e o método vêm de /v1/payments/{id}.
+  const fetch = fakeFetch([
+    {
+      match: '/authorized_payments/AP-3',
+      body: {
+        preapproval_id: 'PP-Y',
+        status: 'processed',
+        transaction_amount: 49.9,
+        payment: { id: 'PAY-REAL', status: 'approved' },
+        date_created: '2026-06-24T12:00:00.000Z',
+      },
+    },
+    {
+      match: '/v1/payments/PAY-REAL',
+      body: {
+        transaction_details: { net_received_amount: 47.32 },
+        payment_method_id: 'master',
+      },
+    },
+  ]);
+  const req = await signedWebhookRequest({ secret: SECRET, type: 'subscription_authorized_payment', dataId: 'AP-3' });
+  const res = await handleWebhook(req, makeDeps({ db, fetch }));
+  assertEquals(res.status, 200);
+
+  const pag = find(db, 'pagamento', (r) => r.mp_authorized_payment_id === 'AP-3');
+  assertExists(pag);
+  assertEquals(pag?.status, 'approved');
+  assertEquals(pag?.valor_centavos, 4990);
+  assertEquals(pag?.liquido_centavos, 4732);
+  assertEquals(pag?.metodo_pagamento, 'master');
+});
+
 Deno.test('webhook payment acesso_unico approved: concede acesso por N meses e registra pagamento', async () => {
   const db = new FakeDb({
     plano: [{ id: 'pl-sem', slug: 'semestral' }],

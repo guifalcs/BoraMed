@@ -165,7 +165,29 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
         // não é revogado por 1 parcela estornada; quem governa o acesso é o
         // status do preapproval.
         const status = mapAuthorizedPaymentStatus(apStatus);
+        // O líquido (net_received_amount) e o método NÃO vêm no authorized_payment
+        // — vivem no pagamento real subjacente (ap.payment.id). Sem buscá-los, as
+        // cobranças recorrentes ficavam com liquido_centavos NULL e sumiam das
+        // métricas de "Líquido" do financeiro. Buscamos o pagamento real para
+        // refletir o líquido corretamente; mantemos o transaction_details do
+        // próprio authorized_payment como fallback.
         const apTd = ap['transaction_details'] as { net_received_amount?: number } | undefined;
+        let liquidoCentavos =
+          apTd?.net_received_amount != null ? Math.round(apTd.net_received_amount * 100) : null;
+        let metodo: string | null = null;
+        const payRef = ap['payment'] as { id?: string | number } | undefined;
+        if (payRef?.id != null) {
+          const realPay = await mpGet(`/v1/payments/${payRef.id}`);
+          if (realPay) {
+            const td = realPay['transaction_details'] as
+              | { net_received_amount?: number }
+              | undefined;
+            if (td?.net_received_amount != null) {
+              liquidoCentavos = Math.round(td.net_received_amount * 100);
+            }
+            metodo = (realPay['payment_method_id'] as string | undefined) ?? null;
+          }
+        }
         await admin.from('pagamento').upsert(
           {
             user_id: assin.user_id,
@@ -174,9 +196,9 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
             valor_centavos: ap['transaction_amount']
               ? Math.round(Number(ap['transaction_amount']) * 100)
               : null,
-            liquido_centavos:
-              apTd?.net_received_amount != null ? Math.round(apTd.net_received_amount * 100) : null,
+            liquido_centavos: liquidoCentavos,
             status,
+            metodo_pagamento: metodo,
             processado_em: (ap['date_created'] as string | undefined) ?? null,
           },
           { onConflict: 'mp_authorized_payment_id' },
