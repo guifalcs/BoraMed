@@ -112,4 +112,59 @@ describe('RecuperarSenhaComponent', () => {
       await vi.runAllTimersAsync();
     });
   });
+
+  describe('handleResend', () => {
+    beforeEach(async () => {
+      (component as any).email.set('user@example.com');
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+      vi.clearAllMocks();
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+
+    it('reenvia o link de recuperação para o e-mail informado', async () => {
+      mockAuth.recoverPassword.mockResolvedValue({ ok: true });
+      await (component as any).handleResend();
+
+      expect(mockAuth.recoverPassword).toHaveBeenCalledWith({ email: 'user@example.com' });
+      expect((component as any).resendState()).toBe('sent');
+      expect(mockToast.success).toHaveBeenCalledWith('Link de recuperação reenviado.');
+    });
+
+    it('inicia cooldown de 60s e zera ao fim', async () => {
+      mockAuth.recoverPassword.mockResolvedValue({ ok: true });
+      await (component as any).handleResend();
+      expect((component as any).resendCooldown()).toBe(60);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect((component as any).resendCooldown()).toBe(0);
+    });
+
+    it('não reenvia durante o cooldown', async () => {
+      mockAuth.recoverPassword.mockResolvedValue({ ok: true });
+      await (component as any).handleResend();
+      expect(mockAuth.recoverPassword).toHaveBeenCalledTimes(1);
+
+      await (component as any).handleResend();
+      expect(mockAuth.recoverPassword).toHaveBeenCalledTimes(1);
+    });
+
+    it('trata RATE_LIMITED com toast e cooldown', async () => {
+      mockAuth.recoverPassword.mockResolvedValue({ ok: false, error: 'RATE_LIMITED' });
+      await (component as any).handleResend();
+
+      expect((component as any).resendState()).toBe('error');
+      expect(mockToast.error).toHaveBeenCalledWith('Muitas tentativas. Aguarde alguns minutos.');
+      expect((component as any).resendCooldown()).toBe(60);
+    });
+
+    it('trata erro genérico sem cooldown', async () => {
+      mockAuth.recoverPassword.mockResolvedValue({ ok: false, error: 'UNKNOWN' });
+      await (component as any).handleResend();
+
+      expect((component as any).resendState()).toBe('error');
+      expect(mockToast.error).toHaveBeenCalledWith('Não foi possível reenviar. Tente novamente.');
+      expect((component as any).resendCooldown()).toBe(0);
+    });
+  });
 });

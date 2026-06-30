@@ -36,6 +36,26 @@
         />
       </form>
 
+      @if (state() === 'success') {
+        <p class="resend-hint resend-hint--standalone">
+          Não recebeu o e-mail?
+          <button
+            type="button"
+            class="link"
+            [disabled]="resendState() === 'loading' || resendCooldown() > 0"
+            (click)="handleResend()"
+          >
+            @if (resendState() === 'loading') {
+              reenviando...
+            } @else if (resendCooldown() > 0) {
+              reenviar em {{ resendCooldown() }}s
+            } @else {
+              reenviar e-mail
+            }
+          </button>
+        </p>
+      }
+
       <p class="footer-link"><a class="link" routerLink="/login">Voltar ao login</a></p>
     </div>
   </section>
