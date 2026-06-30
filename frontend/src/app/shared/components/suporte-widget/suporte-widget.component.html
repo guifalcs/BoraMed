@@ -330,19 +330,7 @@
                       </div>
                     } @else {
                       <div class="reopen-box">
-                        <p class="reopen-text">Este chamado está encerrado.</p>
-                        @if (erroMensagem()) {
-                          <span class="reply-error reply-error--block">{{ erroMensagem() }}</span>
-                        }
-                        <button
-                          class="btn-reabrir"
-                          type="button"
-                          [disabled]="reabrindoTicket()"
-                          (click)="reabrirTicket(ticket.id)"
-                        >
-                          <app-ui-icon [icon]="iconRefresh" [size]="15" />
-                          {{ reabrindoTicket() ? 'Reabrindo...' : 'Reabrir chamado' }}
-                        </button>
+                        <p class="reopen-text">Este chamado está encerrado. Caso ainda precise de ajuda, abra uma nova solicitação.</p>
                       </div>
                     }
                   </div>

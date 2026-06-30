@@ -160,7 +160,7 @@
 
 * O aluno pode abrir chamados e acompanhar o hist?rico de mensagens pelo widget de suporte.
 * Chamados resolvidos bloqueiam novas respostas at? serem reabertos.
-* Chamados resolvidos podem ser reabertos pelo dono do ticket ou por administradores.
+* Chamados resolvidos s? podem ser reabertos por administradores pelo painel do admin; o aluno n?o tem essa op??o (se ainda precisar de ajuda, deve abrir um novo chamado).
 * Ao reabrir, o status volta para `aberto` e uma mensagem de auditoria fica registrada no hist?rico do chamado.
 * Quando a equipe reabre um chamado, o aluno recebe uma notifica??o informativa.
 
