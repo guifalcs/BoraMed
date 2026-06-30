@@ -81,6 +81,20 @@
   color: #ffffff;
 }
 
+.admin-nav-badge {
+  margin-left: auto;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.3rem;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.125rem;
+  text-align: center;
+}
+
 .admin-nav-item--active {
   background: rgba(255, 255, 255, 0.22);
   color: #ffffff;

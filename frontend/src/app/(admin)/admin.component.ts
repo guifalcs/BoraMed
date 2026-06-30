@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   Bell,
@@ -24,6 +24,7 @@ import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.comp
 import { AuthService } from '../core/services/auth.service';
 import { ProfileService } from '../core/services/profile.service';
 import { NotificationService } from '../core/services/notification.service';
+import { SuporteService } from '../core/services/suporte.service';
 
 interface AdminNavItem {
   label: string;
@@ -44,6 +45,7 @@ export class AdminComponent {
   private readonly auth = inject(AuthService);
   private readonly profileService = inject(ProfileService);
   private readonly toast = inject(NotificationService);
+  private readonly suporteService = inject(SuporteService);
 
   protected readonly profile = this.profileService.profile;
   protected readonly user = this.auth.user;
@@ -52,6 +54,16 @@ export class AdminComponent {
   protected readonly menuIcon = Menu;
   protected readonly settingsIcon = Settings;
   protected readonly closeIcon = X;
+
+  protected readonly suporteRoute = '/admin/suporte';
+  protected readonly suporteBadgeLabel = computed(() => {
+    const n = this.suporteService.ticketsAbertosCount();
+    return n > 99 ? '99+' : n > 0 ? String(n) : '';
+  });
+
+  constructor() {
+    afterNextRender(() => { void this.suporteService.carregarContagemTicketsAbertos(); });
+  }
 
   protected readonly navItems: AdminNavItem[] = [
     { label: 'Dashboard', icon: LayoutDashboard, route: '/admin', exact: true },
