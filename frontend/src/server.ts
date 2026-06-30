@@ -68,6 +68,19 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
 
   if (error) {
     console.error('[auth/callback] error:', error.message);
+
+    // Code já foi consumido (clique duplo no link do e-mail). Se o usuário
+    // ainda possui uma sessão válida nos cookies, redireciona para o destino
+    // correto em vez de mostrar a página de erro genérica.
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const existingToken = sessionData.session?.access_token;
+      const destination = jwtHasRecoveryAMR(existingToken) ? '/redefinir-senha' : '/dashboard';
+      res.redirect(302, destination);
+      return;
+    }
+
     res.redirect(302, '/erro');
     return;
   }
@@ -75,19 +88,7 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
   // Detecta sessão de recuperação de senha via claim AMR no JWT,
   // para garantir o redirecionamento correto mesmo quando o parâmetro
   // `next` não está presente na URL (ex.: site_url usado como fallback pelo Supabase).
-  let isRecovery = false;
-  const accessToken = data.session?.access_token;
-  if (accessToken) {
-    try {
-      const payloadB64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const claims = JSON.parse(Buffer.from(payloadB64, 'base64').toString('utf-8')) as {
-        amr?: { method: string }[];
-      };
-      isRecovery = Array.isArray(claims.amr) && claims.amr.some((m) => m.method === 'recovery');
-    } catch { /* JWT malformado — ignorar */ }
-  }
-
-  const defaultNext = isRecovery ? '/redefinir-senha' : '/dashboard';
+  const defaultNext = jwtHasRecoveryAMR(data.session?.access_token) ? '/redefinir-senha' : '/dashboard';
   const resolvedNext = next ?? defaultNext;
 
   // Garante que next seja uma rota relativa segura.
@@ -120,6 +121,19 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
 
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
+}
+
+function jwtHasRecoveryAMR(accessToken: string | undefined): boolean {
+  if (!accessToken) return false;
+  try {
+    const payloadB64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(Buffer.from(payloadB64, 'base64').toString('utf-8')) as {
+      amr?: { method: string }[];
+    };
+    return Array.isArray(claims.amr) && claims.amr.some((m) => m.method === 'recovery');
+  } catch {
+    return false;
+  }
 }
 
 /**
