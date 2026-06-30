@@ -26,9 +26,25 @@ export class AuthCallbackComponent implements OnInit {
     const next = this.route.snapshot.queryParamMap.get('next') ?? '/dashboard';
 
     if (code) {
+      // Detecta recovery antes de trocar o code, pois o evento PASSWORD_RECOVERY
+      // é emitido de forma síncrona dentro de exchangeCodeForSession.
+      let isPasswordRecovery = false;
+      const { data: { subscription } } = this.supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') isPasswordRecovery = true;
+      });
+
       const { error } = await this.supabase.auth.exchangeCodeForSession(code);
+      subscription.unsubscribe();
+
       if (error) {
         void this.router.navigateByUrl('/erro', { replaceUrl: true });
+        return;
+      }
+
+      // Garante que recovery sempre vai para /redefinir-senha,
+      // mesmo que o parâmetro `next` não tenha chegado na URL.
+      if (isPasswordRecovery) {
+        void this.router.navigateByUrl('/redefinir-senha', { replaceUrl: true });
         return;
       }
     }

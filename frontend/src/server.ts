@@ -35,7 +35,7 @@ app.use(
  */
 app.get('/auth/callback', async (req: Request, res: Response) => {
   const code = req.query['code'] as string | undefined;
-  const next = (req.query['next'] as string | undefined) ?? '/dashboard';
+  const next = req.query['next'] as string | undefined;
 
   if (!code) {
     res.redirect(302, '/erro');
@@ -56,7 +56,7 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
     },
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   const cookieHeaders = cookiesToSet.map(({ name, value, options }) => {
     const { name: _n, ...serializeOpts } = options ?? {};
@@ -72,10 +72,28 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
     return;
   }
 
+  // Detecta sessão de recuperação de senha via claim AMR no JWT,
+  // para garantir o redirecionamento correto mesmo quando o parâmetro
+  // `next` não está presente na URL (ex.: site_url usado como fallback pelo Supabase).
+  let isRecovery = false;
+  const accessToken = data.session?.access_token;
+  if (accessToken) {
+    try {
+      const payloadB64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const claims = JSON.parse(Buffer.from(payloadB64, 'base64').toString('utf-8')) as {
+        amr?: { method: string }[];
+      };
+      isRecovery = Array.isArray(claims.amr) && claims.amr.some((m) => m.method === 'recovery');
+    } catch { /* JWT malformado — ignorar */ }
+  }
+
+  const defaultNext = isRecovery ? '/redefinir-senha' : '/dashboard';
+  const resolvedNext = next ?? defaultNext;
+
   // Garante que next seja uma rota relativa segura.
   // `startsWith('/')` sozinho deixa passar `//evil.com` (protocol-relative),
   // que é um open redirect — por isso bloqueamos também o prefixo `//`.
-  const safePath = next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+  const safePath = resolvedNext.startsWith('/') && !resolvedNext.startsWith('//') ? resolvedNext : defaultNext;
   res.redirect(302, safePath);
 });
 
