@@ -50,6 +50,17 @@ export class SuporteService {
   readonly faqItems = signal<SuporteFaq[]>([]);
   readonly tickets = signal<SuporteTicketComMensagens[]>([]);
 
+  // Indicativo de chamados novos na sidebar do admin
+  readonly ticketsAbertosCount = signal<number>(0);
+
+  async carregarContagemTicketsAbertos(): Promise<void> {
+    const { count, error } = await this.supabase
+      .from('suporte_tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'aberto');
+    if (!error) this.ticketsAbertosCount.set(count ?? 0);
+  }
+
   // ─── Usuário ──────────────────────────────────────────────────────────────
 
   validarArquivos(arquivos: File[], atuais: File[] = []): { ok: true; data: File[] } | { ok: false; error: string } {

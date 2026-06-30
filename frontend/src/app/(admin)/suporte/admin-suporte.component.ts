@@ -128,10 +128,16 @@ export class AdminSuporteComponent {
         })
       );
       this.tickets.set(detalhados as AdminTicketDetalhe[]);
+      this.sincronizarContagemAbertos();
     } else {
       this.toast.error('Erro ao carregar tickets.');
     }
     this.isLoading.set(false);
+  }
+
+  private sincronizarContagemAbertos(): void {
+    const abertos = this.tickets().filter(t => t.status === 'aberto').length;
+    this.suporteService.ticketsAbertosCount.set(abertos);
   }
 
   protected setPainel(p: PainelAtivo): void {
@@ -166,6 +172,7 @@ export class AdminSuporteComponent {
       this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
       this.ticketSelecionado.set(ticketAtualizado);
       this.novaResposta.set('');
+      this.sincronizarContagemAbertos();
       this.toast.success('Resposta enviada.');
     } else {
       this.toast.error('Erro ao enviar resposta.');
@@ -182,6 +189,7 @@ export class AdminSuporteComponent {
       const ticketAtualizado: AdminTicketDetalhe = { ...ticket, status: 'resolvido' };
       this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
       this.ticketSelecionado.set(ticketAtualizado);
+      this.sincronizarContagemAbertos();
       this.toast.success('Ticket marcado como resolvido.');
     } else {
       this.toast.error('Erro ao atualizar status.');
@@ -206,6 +214,7 @@ export class AdminSuporteComponent {
         this.tickets.update(ts => ts.map(t => t.id === ticket.id ? ticketAtualizado : t));
         this.ticketSelecionado.set(ticketAtualizado);
         this.novaResposta.set('');
+        this.sincronizarContagemAbertos();
         this.toast.success('Ticket reaberto.');
       } else {
         this.toast.error('Erro ao reabrir ticket.');

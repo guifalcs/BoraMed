@@ -25,6 +25,9 @@
         >
           <app-ui-icon [icon]="item.icon" [size]="18" />
           <span>{{ item.label }}</span>
+          @if (item.route === suporteRoute && suporteBadgeLabel()) {
+            <span class="admin-nav-badge" aria-label="Chamados novos">{{ suporteBadgeLabel() }}</span>
+          }
         </a>
       }
     </nav>
