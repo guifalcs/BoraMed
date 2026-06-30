@@ -42,6 +42,7 @@ export type AuthErrorCode =
   | 'EMAIL_NOT_CONFIRMED'
   | 'EMAIL_IN_USE'
   | 'WEAK_PASSWORD'
+  | 'SAME_PASSWORD'
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN';

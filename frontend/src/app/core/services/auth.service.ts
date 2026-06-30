@@ -253,6 +253,8 @@ export class AuthService implements OnDestroy {
     if (m.includes('invalid login') || m.includes('invalid credentials')) return 'INVALID_CREDENTIALS';
     if (m.includes('email not confirmed')) return 'EMAIL_NOT_CONFIRMED';
     if (m.includes('already registered') || m.includes('already been registered')) return 'EMAIL_IN_USE';
+    // Precisa vir antes do catch-all de "password" abaixo, senão cairia em WEAK_PASSWORD.
+    if (m.includes('different from the old password') || m.includes('should be different')) return 'SAME_PASSWORD';
     if (m.includes('password')) return 'WEAK_PASSWORD';
     // 429 + a janela mínima por endereço ("you can only request this after N seconds")
     // não contêm "rate limit" no texto — tratar como RATE_LIMITED para acionar o cooldown.

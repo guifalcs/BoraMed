@@ -183,6 +183,14 @@ describe('AuthService', () => {
       const result = await service.resetPassword({ password: 'fraca', confirmPassword: 'fraca' });
       expect(result).toEqual({ ok: false, error: 'WEAK_PASSWORD' });
     });
+
+    it('retorna SAME_PASSWORD quando a nova senha é igual à anterior', async () => {
+      supabaseMock.client.auth.updateUser.mockResolvedValue({
+        error: { message: 'New password should be different from the old password.' },
+      });
+      const result = await service.resetPassword({ password: 'Abc1!', confirmPassword: 'Abc1!' });
+      expect(result).toEqual({ ok: false, error: 'SAME_PASSWORD' });
+    });
   });
 
   describe('signOut()', () => {

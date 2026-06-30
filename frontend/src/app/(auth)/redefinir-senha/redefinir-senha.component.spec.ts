@@ -112,7 +112,7 @@ describe('RedefinirSenhaComponent', () => {
   });
 
   describe('redefinição com erro do servidor', () => {
-    it('define estado error e erro no campo de senha', async () => {
+    it('define estado error e erro genérico no campo de senha', async () => {
       mockAuth.resetPassword.mockResolvedValue({ ok: false, error: 'UNKNOWN' });
       fillForm();
       (component as any).handleSubmit(mockSubmitEvent());
@@ -120,6 +120,25 @@ describe('RedefinirSenhaComponent', () => {
 
       expect((component as any).state()).toBe('error');
       expect((component as any).passwordError()).toBe('Erro ao redefinir senha. Tente novamente.');
+    });
+
+    it('exibe mensagem clara quando a nova senha é igual à anterior', async () => {
+      mockAuth.resetPassword.mockResolvedValue({ ok: false, error: 'SAME_PASSWORD' });
+      fillForm();
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect((component as any).state()).toBe('error');
+      expect((component as any).passwordError()).toBe('A nova senha precisa ser diferente da senha atual.');
+    });
+
+    it('exibe mensagem de rate limit', async () => {
+      mockAuth.resetPassword.mockResolvedValue({ ok: false, error: 'RATE_LIMITED' });
+      fillForm();
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect((component as any).passwordError()).toBe('Muitas tentativas. Aguarde alguns minutos.');
     });
   });
 

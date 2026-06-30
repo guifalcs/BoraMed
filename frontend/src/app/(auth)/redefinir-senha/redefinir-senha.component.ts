@@ -6,6 +6,7 @@ import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-p
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { resetPasswordSchema } from '../../core/models/auth.schemas';
+import type { AuthErrorCode } from '../../core/models/auth.types';
 
 type RedefinirSenhaState = 'idle' | 'error' | 'loading' | 'success';
 
@@ -57,8 +58,16 @@ export class RedefinirSenhaComponent {
       this.state.set('success');
       setTimeout(() => void this.router.navigate(['/login']), 2000);
     } else {
-      this.fieldErrors.set({ password: 'Erro ao redefinir senha. Tente novamente.' });
+      this.fieldErrors.set({ password: this.mapErrorMessage(result.error) });
       this.state.set('error');
     }
+  }
+
+  private mapErrorMessage(code: AuthErrorCode): string {
+    if (code === 'SAME_PASSWORD') return 'A nova senha precisa ser diferente da senha atual.';
+    if (code === 'WEAK_PASSWORD') return 'Senha muito curta ou fraca. Escolha uma senha mais forte.';
+    if (code === 'RATE_LIMITED') return 'Muitas tentativas. Aguarde alguns minutos.';
+    if (code === 'NETWORK_ERROR') return 'Erro de conexão. Tente novamente.';
+    return 'Erro ao redefinir senha. Tente novamente.';
   }
 }
