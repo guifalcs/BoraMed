@@ -17,7 +17,6 @@ import {
   LifeBuoy,
   MessageCircle,
   Paperclip,
-  RefreshCw,
   Send,
   X,
 } from 'lucide-angular';
@@ -52,7 +51,6 @@ export class SuporteWidgetComponent {
   protected readonly iconPaperclip = Paperclip;
   protected readonly iconFileImage = FileImage;
   protected readonly iconFileVideo = FileVideo;
-  protected readonly iconRefresh = RefreshCw;
 
   protected readonly categoriaLabels = CATEGORIA_LABELS;
   protected readonly statusLabels = STATUS_LABELS;
@@ -81,7 +79,6 @@ export class SuporteWidgetComponent {
   protected readonly respostaAnexos = signal<File[]>([]);
   protected readonly erroMensagem = signal('');
   protected readonly enviandoMensagem = signal(false);
-  protected readonly reabrindoTicket = signal(false);
 
   // FAQ
   protected readonly faqItems = this.suporteService.faqItems;
@@ -185,26 +182,6 @@ export class SuporteWidgetComponent {
       this.erroMensagem.set(result.error || 'Não foi possível enviar.');
     }
     this.enviandoMensagem.set(false);
-  }
-
-  protected async reabrirTicket(ticketId: string): Promise<void> {
-    if (this.reabrindoTicket()) return;
-
-    this.reabrindoTicket.set(true);
-    this.erroMensagem.set('');
-    try {
-      const result = await this.suporteService.reabrirTicket(ticketId);
-      if (result.ok) {
-        this.novaMensagem.set('');
-        this.respostaAnexos.set([]);
-      } else {
-        this.erroMensagem.set(result.error || 'Não foi possível reabrir o chamado.');
-      }
-    } catch {
-      this.erroMensagem.set('Não foi possível reabrir o chamado.');
-    } finally {
-      this.reabrindoTicket.set(false);
-    }
   }
 
   protected onNovosAnexosChange(event: Event): void {
