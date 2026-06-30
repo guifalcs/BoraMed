@@ -10,6 +10,10 @@ export const authGuard: CanActivateFn = async (_route, state) => {
   await auth.initialize();
   if (!auth.isAuthenticated()) return router.createUrlTree(['/login']);
 
+  // Sessão de recovery não pode acessar rotas protegidas — o usuário ainda
+  // não fez login de verdade, apenas provou controle do e-mail.
+  if (auth.isRecoverySession()) return router.createUrlTree(['/redefinir-senha']);
+
   if (!profileService.profile()) {
     await profileService.loadProfile();
   }

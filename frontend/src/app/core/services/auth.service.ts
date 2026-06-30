@@ -15,10 +15,12 @@ export class AuthService implements OnDestroy {
 
   private readonly _user = signal<User | null>(null);
   private readonly _isReady = signal(false);
+  private readonly _isRecovery = signal(false);
 
   readonly user = this._user.asReadonly();
   readonly isReady = this._isReady.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
+  readonly isRecoverySession = this._isRecovery.asReadonly();
 
   private readonly ADMIN_SESSION_KEY = 'boramed_admin_session';
   private readonly _impersonando = signal<ImpersonacaoInfo | null>(null);
@@ -35,12 +37,25 @@ export class AuthService implements OnDestroy {
       (event: AuthChangeEvent, session: Session | null) => {
         this._user.set(session?.user ?? null);
 
+        // Detecta sessão de recovery em qualquer evento que carregue sessão
+        // (INITIAL_SESSION cobre reload com cookie; SIGNED_IN cobre client-side exchange;
+        // PASSWORD_RECOVERY cobre exchangeCodeForSession com código de recovery).
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+          this._isRecovery.set(this.hasRecoveryAMR(session?.access_token));
+        }
+        if (event === 'PASSWORD_RECOVERY') {
+          this._isRecovery.set(true);
+          if (!this.router.getCurrentNavigation()) {
+            void this.router.navigate(['/redefinir-senha']);
+          }
+        }
+        if (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+          this._isRecovery.set(false);
+        }
         if (event === 'SIGNED_OUT') {
+          this._isRecovery.set(false);
           this.clearLocalAuthState();
           void this.navigateToLogin();
-        }
-        if (event === 'PASSWORD_RECOVERY' && !this.router.getCurrentNavigation()) {
-          void this.router.navigate(['/redefinir-senha']);
         }
       },
     );
@@ -219,6 +234,17 @@ export class AuthService implements OnDestroy {
       await this.router.navigate(['/login'], { replaceUrl: true });
     } finally {
       this.isNavigatingToLogin = false;
+    }
+  }
+
+  private hasRecoveryAMR(accessToken: string | undefined): boolean {
+    if (!accessToken) return false;
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return Array.isArray(payload['amr']) &&
+        (payload['amr'] as { method: string }[]).some((m) => m.method === 'recovery');
+    } catch {
+      return false;
     }
   }
 
