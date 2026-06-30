@@ -6,5 +6,12 @@ export const guestGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   await auth.initialize();
-  return auth.isAuthenticated() ? router.createUrlTree(['/dashboard']) : true;
+
+  // Sessão de recovery não conta como "logado de verdade" — sem isso, o
+  // usuário fica preso num loop: guestGuard manda pro /dashboard, authGuard
+  // detecta a sessão de recovery e manda de volta pro /redefinir-senha.
+  if (auth.isAuthenticated() && !auth.isRecoverySession()) {
+    return router.createUrlTree(['/dashboard']);
+  }
+  return true;
 };
