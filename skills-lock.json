@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "revenue-centric-design": {
+      "source": "heliocosta-dev/revenue-centric-design",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "92c046afb8e296bcad7079268c218cb22b8d20233063f2947c867b8dd0364eb3"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
