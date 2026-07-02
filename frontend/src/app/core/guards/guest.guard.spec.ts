@@ -9,6 +9,7 @@ describe('guestGuard', () => {
     const authMock = {
       initialize: vi.fn().mockResolvedValue(undefined),
       isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
+      isRecoverySession: vi.fn().mockReturnValue(false),
     };
     const routerMock = { createUrlTree: vi.fn().mockReturnValue('/dashboard-tree') };
 
