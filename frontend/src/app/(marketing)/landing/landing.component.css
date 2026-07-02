@@ -7,6 +7,16 @@
   background: var(--color-bg);
 }
 
+/* Compensa o header sticky (72px) na navegação por âncora. */
+#demo,
+#treinos,
+#solucao,
+#depoimentos,
+#planos,
+#faq {
+  scroll-margin-top: 84px;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -259,6 +269,13 @@
 .trust-note {
   margin-top: 0.7rem;
   font-size: 0.86rem;
+}
+
+.hero-copy .cta-microcopy {
+  margin: 0.85rem auto 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .hero-product {
@@ -1014,75 +1031,6 @@
   color: var(--color-text-inverse);
 }
 
-.capability-section {
-  background: var(--color-bg);
-}
-
-.cycle-track {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  margin-top: 3.5rem;
-}
-
-.cycle-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.cycle-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 22px;
-  color: #fff;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  box-shadow: 0 16px 34px -14px rgba(37, 99, 235, 0.6);
-  flex-shrink: 0;
-}
-
-.cycle-step:nth-child(2) .cycle-icon {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  box-shadow: 0 16px 34px -14px rgba(91, 33, 182, 0.55);
-}
-
-.cycle-step:nth-child(3) .cycle-icon {
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
-  box-shadow: 0 16px 34px -14px rgba(147, 51, 234, 0.5);
-}
-
-.cycle-card {
-  margin-top: 1.625rem;
-  width: 100%;
-  border: 1px solid #eceff3;
-  border-radius: 20px;
-  background: var(--color-surface);
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 18px 40px -30px rgba(16, 24, 40, 0.25);
-  padding: 1.75rem 1.625rem;
-}
-
-.cycle-card h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-}
-
-.cycle-card p {
-  margin: 0.7rem 0 0;
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: var(--color-text-muted);
-}
-
 .faq-list {
   display: grid;
   max-width: 860px;
@@ -1182,24 +1130,6 @@
 }
 
 @media (min-width: 720px) {
-  .cycle-track {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2.125rem;
-  }
-
-  .cycle-track::before {
-    content: '';
-    position: absolute;
-    top: 38px;
-    left: 11%;
-    right: 11%;
-    height: 3px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #2563eb, #7c3aed);
-    opacity: 0.25;
-    pointer-events: none;
-  }
-
   .float-card--score,
   .float-card--badge,
   .float-card--topics {
@@ -1261,10 +1191,6 @@
 
   .section-shell {
     padding: 7rem 0;
-  }
-
-  .capability-section {
-    padding-inline: 1.5rem;
   }
 
   .intelligence-shell,

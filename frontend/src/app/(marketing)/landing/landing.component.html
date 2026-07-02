@@ -13,7 +13,7 @@
 
       <div class="desktop-actions">
         <a class="link-button" routerLink="/login">Entrar</a>
-        <a class="primary-button" routerLink="/cadastro">Começar agora</a>
+        <a class="primary-button" routerLink="/cadastro">Criar conta grátis</a>
       </div>
 
       <button
@@ -33,7 +33,7 @@
           <a [href]="item.href" (click)="closeMenu()">{{ item.label }}</a>
         }
         <a routerLink="/login" (click)="closeMenu()">Entrar</a>
-        <a class="primary-button" routerLink="/cadastro" (click)="closeMenu()">Começar agora</a>
+        <a class="primary-button" routerLink="/cadastro" (click)="closeMenu()">Criar conta grátis</a>
       </div>
     }
   </header>
@@ -43,21 +43,22 @@
       <div class="hero-copy">
         <span class="eyebrow">Simulados no modelo da sua prova</span>
         <h1>
-          Treine no formato real.<br />
-          Revise onde você erra.
+          Saiba exatamente onde você perde pontos<br />
+          — antes da prova.
         </h1>
         <p>
-          Questões 100% autorais no modelo das avaliações da Afya para você simular a prova
-          de verdade, enxergar onde perde pontos e transformar cada erro no próximo acerto.
+          Simulados 100% autorais no modelo das avaliações da Afya: treine no formato real,
+          descubra seus temas críticos e chegue no dia da prova sem surpresa.
         </p>
 
         <div class="hero-actions" aria-label="Ações principais">
-          <a class="primary-button" routerLink="/cadastro">Começar agora</a>
-          <a class="secondary-button" href="#treinos">Conhecer os módulos</a>
+          <a class="primary-button" routerLink="/cadastro">Criar conta grátis</a>
+          <a class="secondary-button" href="#demo">Testar 3 questões agora</a>
         </div>
+        <p class="cta-microcopy">Leva 1 minuto · Sem cartão de crédito</p>
 
         <p class="trust-note">
-          Plataforma independente · Questões autorais · Comece em poucos minutos
+          A próxima prova não espera. Plataforma independente · Questões autorais
         </p>
       </div>
 
@@ -128,13 +129,30 @@
         @if (!last) { <div class="stat-divider"></div> }
       }
     </div>
+    <!-- TODO(prova-social): substituir pelo micro-depoimento REAL antes de publicar. -->
+    <figure class="stats-quote">
+      <blockquote>“{{ statsQuote.quote }}”</blockquote>
+      <figcaption>{{ statsQuote.author }}</figcaption>
+    </figure>
+  </section>
+
+  <section class="section-shell demo-section" id="demo">
+    <div class="section-heading">
+      <span class="eyebrow">Experimente antes de se cadastrar</span>
+      <h2>Você acertaria estas 3 questões na prova?</h2>
+      <p>
+        Questões autorais no estilo da sua prova. Responda sem cadastro e veja o diagnóstico
+        que o BoraMed montaria para você.
+      </p>
+    </div>
+    <app-landing-demo-quiz />
   </section>
 
   <section class="section-shell modules-bento-section" id="treinos">
     <div class="modules-bento-header">
       <div class="section-heading left">
         <span class="eyebrow">Modos de treino</span>
-        <h2>Três formas de treinar. Um objetivo: a prova.</h2>
+        <h2>Três formas de treinar. Nenhum tema deixado para trás.</h2>
         <p>Do simulado completo no modelo da prova à revisão por tema e ao laboratório com imagem real — escolha como quer estudar hoje.</p>
       </div>
       <a routerLink="/cadastro" class="modules-bento-btn">
@@ -323,39 +341,15 @@
     </div>
   </section>
 
-  <section class="section-shell steps-section">
-    <div class="section-heading">
-      <span class="eyebrow">Passo a passo</span>
-      <h2>Do cadastro ao primeiro diagnóstico em minutos.</h2>
-    </div>
-
-    <div class="timeline">
-      @for (step of steps; track step.label; let index = $index) {
-        <article class="timeline-card">
-          <div class="timeline-icon-wrap">
-            <app-ui-icon [icon]="step.icon" [size]="20" />
-            <span class="step-number">{{ index + 1 }}</span>
-          </div>
-          <small>{{ step.label }}</small>
-          <h3>{{ step.title }}</h3>
-          <ul>
-            @for (point of step.points; track point) {
-              <li>{{ point }}</li>
-            }
-          </ul>
-        </article>
-      }
-    </div>
-  </section>
-
   <section class="intelligence-section">
     <div class="intelligence-shell">
       <div class="intelligence-copy">
         <span class="eyebrow inverse">Inteligência de estudo</span>
         <h2>Pare de adivinhar o que estudar.</h2>
         <p>
-          A cada simulado, o BoraMed mostra exatamente onde focar: os temas que mais derrubam
-          sua nota, seu progresso real e o que revisar antes da próxima prova.
+          Sem diagnóstico, você estuda o que já sabe — e descobre o resto na prova. A cada
+          simulado, o BoraMed mostra os temas que mais derrubam sua nota e o que revisar
+          primeiro.
         </p>
         <a class="inverse-button" href="#solucao">Ver como funciona</a>
       </div>
@@ -386,34 +380,89 @@
     </div>
   </section>
 
-  <section class="section-shell capability-section">
+  <section class="section-shell steps-section">
     <div class="section-heading">
-      <span class="eyebrow">O ciclo BoraMed</span>
-      <h2>Menos tentativa solta. Mais rotina de estudo.</h2>
-      <p>Um ciclo que se repete a cada simulado: você diagnostica os pontos fracos, direciona o foco e treina de novo — sempre mais perto da nota que quer.</p>
+      <span class="eyebrow">Passo a passo</span>
+      <h2>Do cadastro ao primeiro diagnóstico em minutos.</h2>
     </div>
 
-    <div class="cycle-track">
-      @for (capability of capabilities; track capability.title) {
-        <div class="cycle-step">
-          <div class="cycle-icon">
-            <app-ui-icon [icon]="capability.icon" [size]="32" />
+    <div class="timeline">
+      @for (step of steps; track step.label; let index = $index) {
+        <article class="timeline-card">
+          <div class="timeline-icon-wrap">
+            <app-ui-icon [icon]="step.icon" [size]="20" />
+            <span class="step-number">{{ index + 1 }}</span>
           </div>
-          <div class="cycle-card">
-            <h3>{{ capability.title }}</h3>
-            <p>{{ capability.description }}</p>
-          </div>
-        </div>
+          <small>{{ step.label }}</small>
+          <h3>{{ step.title }}</h3>
+          <ul>
+            @for (point of step.points; track point) {
+              <li>{{ point }}</li>
+            }
+          </ul>
+        </article>
       }
+    </div>
+  </section>
+
+  <section class="section-shell testimonials-section" id="depoimentos">
+    <div class="section-heading">
+      <span class="eyebrow">Depoimentos</span>
+      <h2>Quem treina no BoraMed chega diferente na prova</h2>
+    </div>
+
+    <!-- TODO(prova-social): substituir os depoimentos placeholder por depoimentos REAIS
+         (nome, período e autorização de uso) antes de publicar. -->
+    <div class="testimonials-grid">
+      @for (testimonial of testimonials; track testimonial.quote) {
+        <figure class="testimonial-card">
+          <app-ui-icon [icon]="quoteIcon" [size]="20" />
+          <blockquote>{{ testimonial.quote }}</blockquote>
+          <figcaption>
+            <strong>{{ testimonial.name }}</strong>
+            <span>{{ testimonial.context }}</span>
+          </figcaption>
+        </figure>
+      }
+    </div>
+  </section>
+
+  <section class="section-shell founders-section">
+    <div class="founders-card">
+      <div class="founders-copy">
+        <span class="eyebrow">Quem fez</span>
+        <h2>Feito por quem faz a mesma prova que você</h2>
+        <p>
+          O BoraMed nasceu quando Arthur Barata, estudante de medicina da rede Afya, procurou
+          onde treinar no formato real das avaliações — e não encontrou. Junto com Guilherme,
+          criou a plataforma que ele mesmo usa para estudar: questões autorais no modelo da
+          prova, revisão guiada e diagnóstico por tema.
+        </p>
+        <p class="founders-note">
+          O BoraMed é uma plataforma independente, sem vínculo com a Afya ou qualquer
+          instituição.
+        </p>
+      </div>
+      <div class="founders-panel" aria-hidden="true">
+        <span class="founders-avatar">AB</span>
+        <strong>Arthur Barata</strong>
+        <span class="founders-badge">Estudante da rede Afya</span>
+      </div>
     </div>
   </section>
 
   <section class="section-shell pricing-section" id="planos">
     <div class="section-heading">
       <span class="eyebrow">Planos</span>
-      <h2>Acesso completo. Você escolhe o compromisso.</h2>
-      <p>O mesmo acesso a todos os módulos nos dois planos. A diferença está só no preço e na flexibilidade.</p>
+      <h2>Acesso completo. Risco zero por 7 dias.</h2>
+      <p>Os dois planos liberam tudo. A diferença é só quanto você paga por mês.</p>
     </div>
+
+    <!-- TODO(prova-social): substituir [N] pelo número REAL de assinantes antes de publicar. -->
+    <p class="pricing-social-proof">
+      <app-ui-icon [icon]="usersIcon" [size]="15" />
+      [N] estudantes já treinam com o BoraMed
+    </p>
 
     <div class="pricing-grid">
       @for (plan of pricingPlans; track plan.slug) {
@@ -426,6 +475,13 @@
             <h3>{{ plan.name }}</h3>
             <p class="pricing-tagline">{{ plan.tagline }}</p>
           </div>
+
+          @if (plan.anchorPrice) {
+            <p class="pricing-anchor">
+              <s [attr.aria-label]="plan.anchorPrice + ', ' + plan.anchorNote">{{ plan.anchorPrice }}</s>
+              {{ plan.anchorNote }}
+            </p>
+          }
 
           <div class="pricing-price">
             <strong class="pricing-amount">{{ plan.price }}</strong>
@@ -456,10 +512,25 @@
             [class.pricing-cta--primary]="plan.featured"
             routerLink="/cadastro"
           >
-            Começar agora
+            {{ plan.ctaLabel }}
           </a>
+          <p class="pricing-cta-note">Garantia de 7 dias · Cancele quando quiser</p>
         </article>
       }
+    </div>
+
+    <div class="guarantee-callout">
+      <div class="guarantee-callout-icon" aria-hidden="true">
+        <app-ui-icon [icon]="shieldIcon" [size]="24" />
+      </div>
+      <div class="guarantee-callout-copy">
+        <strong>Garantia incondicional de 7 dias</strong>
+        <p>
+          Assinou e não gostou? Devolvemos 100% do valor em até 7 dias após a compra, sem
+          perguntas — direito garantido pelo Código de Defesa do Consumidor.
+        </p>
+      </div>
+      <span class="guarantee-callout-badge">Risco zero</span>
     </div>
 
     <div class="community-callout">
@@ -506,10 +577,10 @@
   <section class="final-cta">
     <div class="final-cta-shell">
       <span class="eyebrow inverse">Bora começar</span>
-      <h2>Sua próxima prova começa no próximo simulado.</h2>
-      <p>Crie sua conta e comece a treinar no modelo da prova hoje mesmo — com revisão guiada e acesso à comunidade.</p>
+      <h2>A prova já tem data marcada. Seu diagnóstico ainda não.</h2>
+      <p>Crie sua conta grátis, faça o primeiro simulado hoje e descubra o que estudar antes que a prova descubra por você.</p>
       <div>
-        <a class="inverse-button" routerLink="/cadastro">Começar agora</a>
+        <a class="inverse-button" routerLink="/cadastro">Criar conta grátis</a>
         <a class="ghost-inverse-button" href="#planos">Ver os planos</a>
       </div>
     </div>

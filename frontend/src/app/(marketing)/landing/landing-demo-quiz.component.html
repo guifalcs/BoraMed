@@ -1,0 +1,124 @@
+<div class="demo-quiz">
+  @if (!finished()) {
+    <div
+      class="quiz-card"
+      role="group"
+      [attr.aria-labelledby]="'demo-statement-' + currentQuestion().id"
+    >
+      <div class="quiz-meta">
+        <span class="quiz-topic">{{ currentQuestion().topic }}</span>
+        <span class="quiz-progress">
+          Questão {{ currentIndex() + 1 }} de {{ questions.length }}
+        </span>
+      </div>
+
+      <p class="quiz-statement" [id]="'demo-statement-' + currentQuestion().id">
+        {{ currentQuestion().statement }}
+      </p>
+
+      <div class="quiz-options">
+        @for (option of currentQuestion().options; track option.letter; let i = $index) {
+          <button
+            type="button"
+            class="quiz-option"
+            [class.is-correct]="currentAnswer() !== null && i === currentQuestion().correctIndex"
+            [class.is-wrong]="currentAnswer() === i && i !== currentQuestion().correctIndex"
+            [disabled]="currentAnswer() !== null"
+            (click)="selectOption(i)"
+          >
+            <span class="quiz-option-letter">{{ option.letter }}</span>
+            <span class="quiz-option-text">{{ option.text }}</span>
+            @if (currentAnswer() !== null && i === currentQuestion().correctIndex) {
+              <span class="quiz-option-state quiz-option-state--correct">
+                <app-ui-icon [icon]="checkIcon" [size]="14" />
+                Correta
+              </span>
+            } @else if (currentAnswer() === i) {
+              <span class="quiz-option-state quiz-option-state--wrong">
+                <app-ui-icon [icon]="xIcon" [size]="14" />
+                Incorreta
+              </span>
+            }
+          </button>
+        }
+      </div>
+
+      <div class="quiz-live" aria-live="polite">
+        @if (currentAnswer() !== null) {
+          <div
+            class="quiz-feedback"
+            [class.quiz-feedback--correct]="answeredCorrectly()"
+            [class.quiz-feedback--wrong]="!answeredCorrectly()"
+          >
+            <strong>{{ answeredCorrectly() ? 'Você acertou!' : 'Não foi dessa vez.' }}</strong>
+            <p>{{ currentQuestion().explanation }}</p>
+          </div>
+        }
+      </div>
+
+      @if (currentAnswer() !== null) {
+        <button type="button" class="quiz-next" (click)="next()">
+          {{ isLastQuestion() ? 'Ver meu diagnóstico' : 'Próxima questão' }}
+          <app-ui-icon [icon]="arrowRightIcon" [size]="16" />
+        </button>
+      }
+    </div>
+  }
+
+  <div aria-live="polite">
+    @if (finished()) {
+      <div class="quiz-result">
+        <span class="quiz-result-eyebrow">Seu mini-diagnóstico</span>
+        <h3>Você acertou {{ score() }} de {{ questions.length }}</h3>
+
+        @if (missedTopics().length > 0) {
+          <p class="quiz-result-lead">
+            Na plataforma, cada erro vira uma rota de revisão: tema crítico identificado, questão
+            comentada e um novo treino direcionado.
+          </p>
+          <div class="quiz-result-topics">
+            <span class="quiz-result-label">Temas para revisar</span>
+            <div class="quiz-topic-chips">
+              @for (topic of missedTopics(); track topic) {
+                <span class="quiz-topic-chip">{{ topic }}</span>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="quiz-result-lead">
+            Gabaritou! Na plataforma, você descobre se mantém esse nível em um simulado completo —
+            com tempo cronometrado, como no dia da prova.
+          </p>
+        }
+
+        <ul class="quiz-locked-list" aria-label="Recursos liberados ao criar conta">
+          <li>
+            <app-ui-icon [icon]="lockIcon" [size]="14" />
+            Rota de revisão por tema
+          </li>
+          <li>
+            <app-ui-icon [icon]="lockIcon" [size]="14" />
+            Comentário completo de cada questão
+          </li>
+          <li>
+            <app-ui-icon [icon]="lockIcon" [size]="14" />
+            Comparação com outros estudantes
+          </li>
+        </ul>
+
+        <a class="quiz-cta" routerLink="/cadastro">
+          Criar conta grátis e ver o diagnóstico completo
+        </a>
+        <p class="quiz-cta-note">
+          Aqui, seu resultado se perde ao fechar a página. Lá dentro, cada tentativa vira
+          histórico.
+        </p>
+
+        <button type="button" class="quiz-restart" (click)="restart()">
+          <app-ui-icon [icon]="restartIcon" [size]="14" />
+          Refazer questões
+        </button>
+      </div>
+    }
+  </div>
+</div>
