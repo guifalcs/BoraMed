@@ -26,7 +26,6 @@ import {
   ShieldCheck,
   Sparkles,
   Stethoscope,
-  Users,
   X,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
@@ -123,7 +122,6 @@ export class LandingComponent implements OnDestroy {
   protected readonly sparklesIcon = Sparkles;
   protected readonly shieldIcon = ShieldCheck;
   protected readonly quoteIcon = Quote;
-  protected readonly usersIcon = Users;
 
   protected readonly heroReady = signal(false);
   protected readonly isScrolled = signal(false);
@@ -139,14 +137,14 @@ export class LandingComponent implements OnDestroy {
     { label: 'FAQ', href: '#faq' },
   ];
 
+  protected readonly stats = [
+    { value: '+2.400', label: 'questões autorais' },
+    { value: '3', label: 'modos de treinar' },
+    { value: '100%', label: 'no modelo da prova' },
+  ] as const;
+
   // ===== PLACEHOLDERS DE PROVA SOCIAL — NÃO PUBLICAR SEM SUBSTITUIR =====
   // Gate de release: `grep -r "PLACEHOLDER" frontend/src` deve retornar vazio.
-  // TODO(prova-social): substituir [N] e [X mil] pelos números REAIS de uso.
-  protected readonly stats = [
-    { value: '[N]', label: 'estudantes treinando' },
-    { value: '[X mil]', label: 'questões respondidas' },
-    { value: '+2.400', label: 'questões autorais' },
-  ] as const;
 
   // TODO(prova-social): substituir por micro-depoimento REAL (nome, período e autorização de uso).
   protected readonly statsQuote = {

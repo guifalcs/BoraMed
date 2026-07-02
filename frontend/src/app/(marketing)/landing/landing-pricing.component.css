@@ -59,22 +59,6 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-.pricing-social-proof {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  margin: -0.75rem auto 1.5rem;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-}
-
-.pricing-social-proof app-ui-icon {
-  flex-shrink: 0;
-  color: var(--color-primary-light);
-}
-
 .pricing-anchor {
   margin: 1.4rem 0 0;
   font-size: 0.82rem;
