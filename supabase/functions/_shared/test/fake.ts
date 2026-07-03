@@ -9,7 +9,7 @@ type Row = Record<string, any>;
 type Result = { data: unknown; error: unknown };
 
 interface Filter {
-  type: 'eq' | 'in';
+  type: 'eq' | 'in' | 'gte';
   col: string;
   val: unknown;
 }
@@ -62,6 +62,10 @@ class FakeBuilder {
     this.filters.push({ type: 'in', col, val });
     return this;
   }
+  gte(col: string, val: unknown): this {
+    this.filters.push({ type: 'gte', col, val });
+    return this;
+  }
   order(): this {
     return this;
   }
@@ -86,9 +90,11 @@ class FakeBuilder {
   }
 
   private matches(r: Row): boolean {
-    return this.filters.every((f) =>
-      f.type === 'eq' ? r[f.col] === f.val : (f.val as unknown[]).includes(r[f.col]),
-    );
+    return this.filters.every((f) => {
+      if (f.type === 'eq') return r[f.col] === f.val;
+      if (f.type === 'gte') return String(r[f.col]) >= String(f.val);
+      return (f.val as unknown[]).includes(r[f.col]);
+    });
   }
 
   private run(): { rows: Row[]; error: unknown } {
