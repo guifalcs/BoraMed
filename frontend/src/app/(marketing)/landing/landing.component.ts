@@ -14,25 +14,23 @@ import { SITE_URL } from '../../core/seo/seo.config';
 import {
   Activity,
   ArrowRight,
-  BarChart3,
   BookOpenCheck,
-  Brain,
   Check,
   ChevronDown,
   ClipboardList,
   FlaskConical,
   LineChart,
   Menu,
+  // Quote, // reativar junto com a seção de depoimentos (ver bloco comentado abaixo)
   Route,
   ShieldCheck,
   Sparkles,
   Stethoscope,
-  Target,
-  Timer,
   X,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { LandingDemoQuizComponent } from './landing-demo-quiz.component';
 
 interface NavItem {
   readonly label: string;
@@ -69,11 +67,14 @@ interface TimelineStep {
   readonly icon: LucideIconData;
 }
 
-interface Capability {
-  readonly title: string;
-  readonly description: string;
-  readonly icon: LucideIconData;
-}
+// Depoimentos desativados temporariamente — sem prova social real ainda.
+// Reativar (interface, array, quoteIcon, import de Quote e as seções em
+// landing.component.html) quando houver depoimentos reais de alunos.
+// interface Testimonial {
+//   readonly quote: string;
+//   readonly name: string;
+//   readonly context: string;
+// }
 
 interface PricingPlan {
   readonly slug: string;
@@ -83,6 +84,9 @@ interface PricingPlan {
   readonly period: string;
   readonly note?: string;
   readonly economy?: string;
+  readonly anchorPrice?: string;
+  readonly anchorNote?: string;
+  readonly ctaLabel: string;
   readonly features: readonly string[];
   readonly featured: boolean;
 }
@@ -95,13 +99,14 @@ interface FaqItem {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, UiIconComponent],
+  imports: [RouterLink, UiIconComponent, LandingDemoQuizComponent],
   templateUrl: './landing.component.html',
   styleUrls: [
     './landing.component.css',
     './landing-intelligence.component.css',
     './landing-pricing.component.css',
     './landing-bento.component.css',
+    './landing-social-proof.component.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -116,11 +121,10 @@ export class LandingComponent implements OnDestroy {
   protected readonly chevronIcon = ChevronDown;
   protected readonly checkIcon = Check;
   protected readonly arrowRightIcon = ArrowRight;
-  protected readonly targetIcon = Target;
-  protected readonly timerIcon = Timer;
   protected readonly activityIcon = Activity;
   protected readonly sparklesIcon = Sparkles;
   protected readonly shieldIcon = ShieldCheck;
+  // protected readonly quoteIcon = Quote; // ver nota sobre depoimentos desativados
 
   protected readonly heroReady = signal(false);
   protected readonly isScrolled = signal(false);
@@ -130,8 +134,8 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly navItems: readonly NavItem[] = [
     { label: 'Início', href: '#inicio' },
+    { label: 'Teste grátis', href: '#demo' },
     { label: 'Treinos', href: '#treinos' },
-    { label: 'Como funciona', href: '#solucao' },
     { label: 'Planos', href: '#planos' },
     { label: 'FAQ', href: '#faq' },
   ];
@@ -141,6 +145,14 @@ export class LandingComponent implements OnDestroy {
     { value: '3', label: 'modos de treinar' },
     { value: '100%', label: 'no modelo da prova' },
   ] as const;
+
+  // Depoimentos desativados temporariamente — sem prova social real ainda.
+  // Reativar junto com a interface Testimonial, o array testimonials, o
+  // quoteIcon e o import de Quote quando houver depoimentos reais de alunos.
+  // protected readonly statsQuote = {
+  //   quote: 'Micro-depoimento de uma frase sobre resultado na prova.',
+  //   author: 'Nome, período · Medicina',
+  // } as const;
 
   protected readonly tickerItems = [
     'Treinos nacionais',
@@ -249,23 +261,23 @@ export class LandingComponent implements OnDestroy {
     },
   ];
 
-  protected readonly capabilities: readonly Capability[] = [
-    {
-      title: 'Diagnosticar',
-      description: 'Descubra, com dados, exatamente onde está perdendo pontos.',
-      icon: BarChart3,
-    },
-    {
-      title: 'Direcionar',
-      description: 'Foque o estudo nos temas que mais impactam a sua nota.',
-      icon: Route,
-    },
-    {
-      title: 'Treinar',
-      description: 'Monte novos simulados e treine até o conteúdo virar automático.',
-      icon: Brain,
-    },
-  ];
+  // protected readonly testimonials: readonly Testimonial[] = [
+  //   {
+  //     quote: 'Depoimento real de aluno — 2 a 3 frases sobre o resultado que teve na prova depois de treinar aqui.',
+  //     name: 'Nome do aluno',
+  //     context: 'Período · Medicina',
+  //   },
+  //   {
+  //     quote: 'Depoimento real de aluno — foco em como o diagnóstico por tema mudou a forma de estudar.',
+  //     name: 'Nome do aluno',
+  //     context: 'Período · Medicina',
+  //   },
+  //   {
+  //     quote: 'Depoimento real de aluno — foco na semelhança dos simulados com o formato da prova.',
+  //     name: 'Nome do aluno',
+  //     context: 'Período · Medicina',
+  //   },
+  // ];
 
   protected readonly pricingPlans: readonly PricingPlan[] = [
     {
@@ -275,6 +287,7 @@ export class LandingComponent implements OnDestroy {
       price: 'R$ 49,90',
       period: '/mês',
       note: 'Renova automaticamente. Cancele a qualquer momento.',
+      ctaLabel: 'Começar no mensal',
       features: [
         'Todos os simulados: nacionais, processuais e laboratório',
         'Banco completo de questões autorais',
@@ -293,6 +306,9 @@ export class LandingComponent implements OnDestroy {
       period: '/mês',
       note: 'R$ 199,90 no semestre, em até 6x sem juros.',
       economy: 'R$ 99,50',
+      anchorPrice: 'R$ 299,40',
+      anchorNote: 'preço de 6 meses no plano mensal',
+      ctaLabel: 'Garantir 6 meses com desconto',
       features: [
         'Tudo do plano mensal incluso',
         'Banco completo de questões autorais',
@@ -334,6 +350,11 @@ export class LandingComponent implements OnDestroy {
       question: 'Posso cancelar quando quiser?',
       answer:
         'Sim. O plano mensal não tem fidelidade — você cancela a qualquer momento. O semestral sai mais barato por mês e pode ser parcelado em até 6x sem juros.',
+    },
+    {
+      question: 'Como funciona a garantia de 7 dias?',
+      answer:
+        'Assinou e não gostou? Em até 7 dias após a compra você pede o reembolso e devolvemos 100% do valor, sem perguntas — conforme o Código de Defesa do Consumidor.',
     },
     {
       question: 'Consigo estudar pelo celular?',
@@ -412,7 +433,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Treine no modelo das provas da Afya: simulados de medicina autorais, questões comentadas e revisão guiada por desempenho. Plataforma independente — comece já.',
+        'Descubra o que estudar antes da prova: simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema. Comece a treinar hoje.',
       path: '/',
       titleHasBrand: true,
     });
@@ -439,7 +460,7 @@ export class LandingComponent implements OnDestroy {
       },
       offers: {
         '@type': 'Offer',
-        price: '0',
+        price: '33.32',
         priceCurrency: 'BRL',
       },
     });

@@ -1,0 +1,165 @@
+/* ===== Prova social: micro-depoimento, depoimentos e fundadores ===== */
+
+/* .stats-quote e .testimonials-* estão temporariamente sem uso — as seções
+   correspondentes em landing.component.html/.ts estão comentadas (sem
+   depoimentos reais ainda). Regras mantidas para quando forem reativadas. */
+
+.stats-quote {
+  width: min(1180px, calc(100% - 2rem));
+  margin: -0.75rem auto 0;
+  padding: 0 0 2.5rem;
+  text-align: center;
+}
+
+.stats-quote blockquote {
+  margin: 0 auto;
+  max-width: 640px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.stats-quote figcaption {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.testimonials-section {
+  background: var(--color-bg);
+}
+
+.testimonials-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.testimonial-card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.testimonial-card app-ui-icon {
+  color: var(--color-primary-light);
+}
+
+.testimonial-card blockquote {
+  flex: 1;
+  margin: 0.9rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.testimonial-card figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.testimonial-card figcaption strong {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.testimonial-card figcaption span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.founders-card {
+  display: grid;
+  gap: 2rem;
+  border: 1px solid #eceff3;
+  border-radius: clamp(18px, 3vw, 26px);
+  padding: clamp(1.75rem, 4vw, 3.25rem) clamp(1.5rem, 4vw, 3rem);
+  background: var(--color-surface);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 30px 70px -44px rgba(37, 99, 235, 0.18);
+}
+
+.founders-copy h2 {
+  margin: 0.9rem 0 0;
+  font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--color-text);
+}
+
+.founders-copy p {
+  margin: 1rem 0 0;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+}
+
+.founders-note {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.founders-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border-radius: 18px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background:
+    radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.18), transparent 26%),
+    linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
+  color: var(--color-text-inverse);
+}
+
+.founders-photo {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+}
+
+.founders-panel strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.founders-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-inverse);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (min-width: 720px) {
+  .testimonials-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .founders-card {
+    grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+    align-items: center;
+  }
+}
