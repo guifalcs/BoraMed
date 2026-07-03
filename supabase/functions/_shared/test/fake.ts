@@ -9,7 +9,7 @@ type Row = Record<string, any>;
 type Result = { data: unknown; error: unknown };
 
 interface Filter {
-  type: 'eq' | 'in' | 'gte';
+  type: 'eq' | 'in' | 'gte' | 'neq';
   col: string;
   val: unknown;
 }
@@ -46,6 +46,8 @@ class FakeBuilder {
   private payload: Row | Row[] | null = null;
   private conflict?: string;
   private wantSelect = false;
+  private orderBy?: { col: string; asc: boolean };
+  private limitN?: number;
 
   constructor(private db: FakeDb, private table: string) {}
 
@@ -66,10 +68,16 @@ class FakeBuilder {
     this.filters.push({ type: 'gte', col, val });
     return this;
   }
-  order(): this {
+  neq(col: string, val: unknown): this {
+    this.filters.push({ type: 'neq', col, val });
     return this;
   }
-  limit(): this {
+  order(col?: string, opts?: { ascending?: boolean }): this {
+    this.orderBy = col ? { col, asc: opts?.ascending !== false } : undefined;
+    return this;
+  }
+  limit(n?: number): this {
+    this.limitN = n;
     return this;
   }
   insert(payload: Row | Row[]): this {
@@ -92,6 +100,7 @@ class FakeBuilder {
   private matches(r: Row): boolean {
     return this.filters.every((f) => {
       if (f.type === 'eq') return r[f.col] === f.val;
+      if (f.type === 'neq') return r[f.col] !== f.val;
       if (f.type === 'gte') return String(r[f.col]) >= String(f.val);
       return (f.val as unknown[]).includes(r[f.col]);
     });
@@ -99,7 +108,18 @@ class FakeBuilder {
 
   private run(): { rows: Row[]; error: unknown } {
     const store = this.db.rows(this.table);
-    if (this.op === 'select') return { rows: store.filter((r) => this.matches(r)), error: null };
+    if (this.op === 'select') {
+      let rows = store.filter((r) => this.matches(r));
+      if (this.orderBy) {
+        const { col, asc } = this.orderBy;
+        rows = [...rows].sort((a, b) =>
+          (String(a[col]) < String(b[col]) ? -1 : String(a[col]) > String(b[col]) ? 1 : 0) *
+          (asc ? 1 : -1),
+        );
+      }
+      if (this.limitN != null) rows = rows.slice(0, this.limitN);
+      return { rows, error: null };
+    }
 
     if (this.op === 'insert') {
       const items = (Array.isArray(this.payload) ? this.payload : [this.payload!]).map((r) => ({
