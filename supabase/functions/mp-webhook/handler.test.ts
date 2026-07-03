@@ -282,3 +282,34 @@ Deno.test('webhook payment sem metadata acesso_unico: ignorado (evita contagem d
   assertEquals(db.rows('pagamento').length, 0);
   assertEquals(db.rows('assinatura').length, 0);
 });
+
+Deno.test('webhook payment cancelled (checkout embutido): intenção vira expirada', async () => {
+  const db = new FakeDb({
+    plano: [{ id: 'pl-sem', slug: 'semestral' }],
+    assinatura: [],
+    pagamento: [],
+    pagamento_intencao: [{ id: 'int-9', user_id: 'user-9', status: 'pendente' }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: '/v1/payments/PAY-PIX',
+      body: {
+        external_reference: 'user-9',
+        status: 'cancelled',
+        status_detail: 'expired',
+        payment_method_id: 'pix',
+        metadata: { tipo: 'acesso_unico', plano_slug: 'semestral', intencao_id: 'int-9' },
+        transaction_amount: 199.9,
+      },
+    },
+  ]);
+  const req = await signedWebhookRequest({ secret: SECRET, type: 'payment', dataId: 'PAY-PIX' });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(res.status, 200);
+
+  const int = find(db, 'pagamento_intencao', (r) => r.id === 'int-9');
+  assertEquals(int?.status, 'expirada');
+  assertEquals(int?.mp_payment_id, 'PAY-PIX');
+  assertEquals(db.rows('assinatura').length, 0);
+  assertEquals(find(db, 'pagamento', (r) => r.mp_payment_id === 'PAY-PIX')?.status, 'cancelled');
+});
