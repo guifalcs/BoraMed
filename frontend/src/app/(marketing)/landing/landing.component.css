@@ -1141,6 +1141,12 @@
     display: inline;
   }
 
+  /* Garante que a frase após a quebra nunca volte a quebrar sozinha numa
+     terceira linha (variações de fonte/zoom entre navegadores). */
+  .heading-break-tail {
+    white-space: nowrap;
+  }
+
   .float-card--score,
   .float-card--badge,
   .float-card--topics {
