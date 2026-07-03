@@ -129,11 +129,13 @@
         @if (!last) { <div class="stat-divider"></div> }
       }
     </div>
-    <!-- TODO(prova-social): substituir pelo micro-depoimento REAL antes de publicar. -->
+    <!-- Depoimentos desativados temporariamente — sem prova social real ainda.
+         Reativar junto com statsQuote em landing.component.ts.
     <figure class="stats-quote">
-      <blockquote>“{{ statsQuote.quote }}”</blockquote>
+      <blockquote>"{{ statsQuote.quote }}"</blockquote>
       <figcaption>{{ statsQuote.author }}</figcaption>
     </figure>
+    -->
   </section>
 
   <section class="section-shell demo-section" id="demo">
@@ -405,14 +407,15 @@
     </div>
   </section>
 
+  <!-- Seção de depoimentos desativada temporariamente — sem prova social real
+       ainda. Reativar junto com a interface Testimonial, o array testimonials
+       e o quoteIcon em landing.component.ts.
   <section class="section-shell testimonials-section" id="depoimentos">
     <div class="section-heading">
       <span class="eyebrow">Depoimentos</span>
       <h2>Quem treina no BoraMed chega diferente na prova</h2>
     </div>
 
-    <!-- TODO(prova-social): substituir os depoimentos placeholder por depoimentos REAIS
-         (nome, período e autorização de uso) antes de publicar. -->
     <div class="testimonials-grid">
       @for (testimonial of testimonials; track testimonial.quote) {
         <figure class="testimonial-card">
@@ -426,6 +429,7 @@
       }
     </div>
   </section>
+  -->
 
   <section class="section-shell founders-section">
     <div class="founders-card">

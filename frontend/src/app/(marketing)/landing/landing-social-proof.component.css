@@ -1,5 +1,9 @@
 /* ===== Prova social: micro-depoimento, depoimentos e fundadores ===== */
 
+/* .stats-quote e .testimonials-* estão temporariamente sem uso — as seções
+   correspondentes em landing.component.html/.ts estão comentadas (sem
+   depoimentos reais ainda). Regras mantidas para quando forem reativadas. */
+
 .stats-quote {
   width: min(1180px, calc(100% - 2rem));
   margin: -0.75rem auto 0;

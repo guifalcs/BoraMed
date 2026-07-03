@@ -21,7 +21,7 @@ import {
   FlaskConical,
   LineChart,
   Menu,
-  Quote,
+  // Quote, // reativar junto com a seção de depoimentos (ver bloco comentado abaixo)
   Route,
   ShieldCheck,
   Sparkles,
@@ -67,11 +67,14 @@ interface TimelineStep {
   readonly icon: LucideIconData;
 }
 
-interface Testimonial {
-  readonly quote: string;
-  readonly name: string;
-  readonly context: string;
-}
+// Depoimentos desativados temporariamente — sem prova social real ainda.
+// Reativar (interface, array, quoteIcon, import de Quote e as seções em
+// landing.component.html) quando houver depoimentos reais de alunos.
+// interface Testimonial {
+//   readonly quote: string;
+//   readonly name: string;
+//   readonly context: string;
+// }
 
 interface PricingPlan {
   readonly slug: string;
@@ -121,7 +124,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly activityIcon = Activity;
   protected readonly sparklesIcon = Sparkles;
   protected readonly shieldIcon = ShieldCheck;
-  protected readonly quoteIcon = Quote;
+  // protected readonly quoteIcon = Quote; // ver nota sobre depoimentos desativados
 
   protected readonly heroReady = signal(false);
   protected readonly isScrolled = signal(false);
@@ -143,14 +146,13 @@ export class LandingComponent implements OnDestroy {
     { value: '100%', label: 'no modelo da prova' },
   ] as const;
 
-  // ===== PLACEHOLDERS DE PROVA SOCIAL — NÃO PUBLICAR SEM SUBSTITUIR =====
-  // Gate de release: `grep -r "PLACEHOLDER" frontend/src` deve retornar vazio.
-
-  // TODO(prova-social): substituir por micro-depoimento REAL (nome, período e autorização de uso).
-  protected readonly statsQuote = {
-    quote: '[PLACEHOLDER] Micro-depoimento de uma frase sobre resultado na prova.',
-    author: '[Nome], [período] · Medicina',
-  } as const;
+  // Depoimentos desativados temporariamente — sem prova social real ainda.
+  // Reativar junto com a interface Testimonial, o array testimonials, o
+  // quoteIcon e o import de Quote quando houver depoimentos reais de alunos.
+  // protected readonly statsQuote = {
+  //   quote: 'Micro-depoimento de uma frase sobre resultado na prova.',
+  //   author: 'Nome, período · Medicina',
+  // } as const;
 
   protected readonly tickerItems = [
     'Treinos nacionais',
@@ -259,27 +261,23 @@ export class LandingComponent implements OnDestroy {
     },
   ];
 
-  // TODO(prova-social): substituir pelos depoimentos REAIS (nome, período e autorização de uso).
-  protected readonly testimonials: readonly Testimonial[] = [
-    {
-      quote:
-        '[PLACEHOLDER] Depoimento real de aluno — 2 a 3 frases sobre o resultado que teve na prova depois de treinar aqui.',
-      name: '[Nome do aluno]',
-      context: '[Período] · Medicina',
-    },
-    {
-      quote:
-        '[PLACEHOLDER] Depoimento real de aluno — foco em como o diagnóstico por tema mudou a forma de estudar.',
-      name: '[Nome do aluno]',
-      context: '[Período] · Medicina',
-    },
-    {
-      quote:
-        '[PLACEHOLDER] Depoimento real de aluno — foco na semelhança dos simulados com o formato da prova.',
-      name: '[Nome do aluno]',
-      context: '[Período] · Medicina',
-    },
-  ];
+  // protected readonly testimonials: readonly Testimonial[] = [
+  //   {
+  //     quote: 'Depoimento real de aluno — 2 a 3 frases sobre o resultado que teve na prova depois de treinar aqui.',
+  //     name: 'Nome do aluno',
+  //     context: 'Período · Medicina',
+  //   },
+  //   {
+  //     quote: 'Depoimento real de aluno — foco em como o diagnóstico por tema mudou a forma de estudar.',
+  //     name: 'Nome do aluno',
+  //     context: 'Período · Medicina',
+  //   },
+  //   {
+  //     quote: 'Depoimento real de aluno — foco na semelhança dos simulados com o formato da prova.',
+  //     name: 'Nome do aluno',
+  //     context: 'Período · Medicina',
+  //   },
+  // ];
 
   protected readonly pricingPlans: readonly PricingPlan[] = [
     {
