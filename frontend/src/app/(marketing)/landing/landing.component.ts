@@ -435,7 +435,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Descubra o que estudar antes da prova: simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema. Crie sua conta grátis.',
+        'Descubra o que estudar antes da prova: simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema. Comece a treinar hoje.',
       path: '/',
       titleHasBrand: true,
     });
@@ -462,7 +462,7 @@ export class LandingComponent implements OnDestroy {
       },
       offers: {
         '@type': 'Offer',
-        price: '0',
+        price: '33.32',
         priceCurrency: 'BRL',
       },
     });
