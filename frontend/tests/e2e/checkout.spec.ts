@@ -264,11 +264,15 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
   });
 
   test('pagamento aprovado → tela de sucesso → dashboard', async ({ page }) => {
+    // O guard inicial do checkout usa o MESMO RPC tem_assinatura_ativa que a
+    // confirmação pós-aprovação — o flag só vira true depois do pagamento,
+    // simulando o acesso concedido pelo sync/webhook.
+    let acessoLiberado = false;
     await setupCheckout(page, '/checkout/semestral', {
-      temAcesso: false,
       intencao: () => ({ ...intencaoBase, status: 'aprovada', status_detail: 'accredited' }),
       extraRoutes: async (p) => {
         await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          acessoLiberado = true;
           void route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -280,18 +284,16 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
             }),
           });
         });
-        // O pós-aprovação confirma o acesso via RPC → true
-        await p.route('**/rest/v1/rpc/tem_assinatura_ativa**', (route, request) => {
-          void request;
-          void route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+        await p.route('**/rest/v1/rpc/tem_assinatura_ativa**', (route) => {
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(acessoLiberado),
+          });
         });
       },
     });
 
-    // O guard inicial do checkout usa o mesmo RPC; como o extraRoute devolve
-    // true, precisamos entrar direto: sobrescreve após a montagem não é
-    // possível — então este cenário monta com RPC false e troca para true
-    // somente após o clique (ver stub abaixo).
     await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
     await page.getByTestId('stub-pagar').click();
 
