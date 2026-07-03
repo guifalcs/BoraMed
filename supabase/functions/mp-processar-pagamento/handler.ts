@@ -263,7 +263,11 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
     },
     statement_descriptor: 'BORAMED',
     external_reference: user.id,
-    notification_url: `${supabaseUrl}/functions/v1/mp-webhook`,
+    // MP rejeita notification_url não-https (400) — no stack local (http://127.0.0.1)
+    // o campo é omitido e a confirmação fica por conta do polling/reconciliação.
+    ...(supabaseUrl.startsWith('https://')
+      ? { notification_url: `${supabaseUrl}/functions/v1/mp-webhook` }
+      : {}),
     metadata: {
       tipo: 'acesso_unico',
       plano_slug: plano.slug,

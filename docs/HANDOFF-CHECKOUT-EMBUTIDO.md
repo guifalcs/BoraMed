@@ -81,27 +81,49 @@ SECU/CALL/DUPL, 3DS `5483 9281 6457 4623`, CPF `12345678909`).
 
 ## O que falta (em ordem)
 
-1. **F5-manual (parcialmente preparado em 2026-07-03)**: o MCP do Mercado Pago
-   está autenticado nesta máquina e o ambiente já foi montado:
-   - `supabase/functions/.env.local` **já existe** (gitignored), com o
-     `MP_ACCESS_TOKEN` TEST da aplicação (a public key TEST do
-     `environment.local.ts` é da MESMA aplicação — par correto);
-     `MP_WEBHOOK_SECRET` está com valor dummy (nenhum webhook de teste
-     registrado ainda — falta o túnel ngrok + `save_webhook`).
-   - Comprador de teste MLB já existe (nickname `TESTUSER3564881035891632645`,
-     id 3487525400) — obtido via MCP `create_test_user`.
-   - Para servir as edges: `npx supabase functions serve --env-file
-     ./supabase/functions/.env.local` (validado: sobe e o Brick real monta).
-   - Verificar `BORAMED_OWNER_EMAIL` no `.env.local` (foi copiado de forma
-     aproximada do `.env`; confirmar o valor com o usuário se for relevante).
-   Falta executar: cenários 1–11 do `TESTE-PAGAMENTO-LOCAL.md` (cartões
-   APRO/FUND/SECU/CALL, Pix, boleto, 3DS, trocar cartão), túnel + webhook de
-   TESTE para confirmar Pix/boleto, e `quality_evaluation` via MCP com um
-   payment de teste (`is_ca=true`), corrigindo itens até score alto.
-   Pegadinha conhecida: o comprador NÃO pode ser a mesma conta/e-mail do
-   vendedor (botão do checkout trava). Nota: `notification_url` aponta para o
-   SUPABASE_URL local (http://127.0.0.1) — se o MP recusar a URL não-pública no
-   `POST /v1/payments`, condicionar o campo a URLs https no handler.
+1. **F5-manual (executada em 2026-07-03 — maior parte VALIDADA com MP TEST real)**.
+   Runner Playwright headless (sem mocks, Brick real + edges locais + MP TEST):
+   scripts em `<scratchpad>/f5/` (`f5-cartoes.mjs`, `f5-pix-boleto-3ds.mjs`,
+   `api-409.mjs`). Resultados por cenário do `TESTE-PAGAMENTO-LOCAL.md`:
+   - ✅ **C2 recusas** FUND/SECU/CALL → mensagens específicas corretas, permanece
+     no checkout. De quebra validou o **rate limit** (6ª tentativa em 15min →
+     429 com mensagem amigável).
+   - ✅ **C6 semestral APRO 6x** → aprovado, tela de status, `pagamento`
+     approved/`parcelas=6`/`accredited`, `assinatura` authorized,
+     `proxima_cobranca = +6 meses`, intenção `aprovada`.
+   - ✅ **C4 anti cobrança dupla** → UI redireciona `/checkout/*` para o
+     dashboard com acesso ativo; forçando a API, 409 "Você já tem um acesso
+     ativo" sem criar preapproval/intenção.
+   - ✅ **C7 reembolso revoga** (sem webhook): refund via API TEST +
+     `mp-consultar-pagamento` → `pagamento=refunded`, `assinatura=cancelled`,
+     `tem_assinatura_ativa()=false`.
+   - ✅ **C8 Pix**: QR + copia-e-cola + countdown 30min na plataforma;
+     **boleto**: gerado com "Abrir boleto" + "Já paguei, verificar".
+     (Aprovação real de Pix/boleto continua dependendo de webhook/túnel.)
+   - ✅ **C9 3DS**: cartão `5483...` → tela "Confirmação do seu banco" com
+     challenge embutido (conclusão do challenge ficou para teste manual).
+   - ⛔ **C1/C3/C5/C10 (fluxos de PREAPPROVAL — mensal)**: bloqueados pela
+     limitação do sandbox: `POST /preapproval` com credenciais TEST- da conta
+     produtiva → `404 Card token service not found` (payer de teste não muda o
+     resultado — confirmado empiricamente). Documentação: assinaturas exigem
+     credenciais de um **vendedor de teste**. Já existe o seller
+     `TESTUSER7012000526337652922` (id 3486450558, criado 20/06); **ação do
+     usuário**: logar como ele no painel (senha em
+     https://www.mercadopago.com.br/developers/panel/app/7353629886544639/test-users),
+     criar aplicação e trocar `MP_ACCESS_TOKEN` (.env.local) + public key
+     (environment.local.ts) pelas credenciais APP_USR do vendedor de teste;
+     re-rodar mensal/cancelar/pausar/trocar cartão.
+   - **Fix aplicado nesta fase**: `notification_url` só é enviado quando o
+     `SUPABASE_URL` é https (MP rejeita URL não-pública com 400) — com teste.
+   - Achados menores para F6: erro de console `<svg> attribute width/height`
+     vazio na tela de status (ícone; cosmético); box do challenge 3DS vaza a
+     borda direita do card; consulta de CEP do Brick dá 401 no sandbox (usuário
+     preenche endereço na mão — considerar normalizar `federal_unit` por
+     extenso → UF na edge, senão boleto falha com erro genérico).
+   Falta ainda: túnel ngrok + `save_webhook` TEST para confirmar Pix/boleto via
+   webhook, challenge 3DS até o fim, e `quality_evaluation` via MCP
+   (`is_ca=true`), corrigindo itens até score alto. Pegadinha conhecida: o
+   comprador NÃO pode ser a mesma conta/e-mail do vendedor (botão trava).
 2. **F6**: code review completo da branch (segurança + regressão legado);
    opcional preview branch do Supabase via MCP para ensaio; escrever checklist de
    go-live e revisar com o usuário.

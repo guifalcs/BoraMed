@@ -267,6 +267,29 @@ Deno.test('processar-pagamento aprovado (cartão): preço DO BANCO no body, idem
   assertEquals(pag?.parcelas, 6);
 });
 
+Deno.test('processar-pagamento: SUPABASE_URL http (stack local) → payload SEM notification_url', async () => {
+  const db = baseDb();
+  const { fn, calls } = captureFetch({ body: approvedPayment() });
+  const res = await handleProcessarPagamento(
+    request(cardBody()),
+    makeDeps({
+      db,
+      fetch: fn,
+      now: NOW,
+      caller: { id: 'user-1', email: 'aluno@boramed.com' },
+      env: { SUPABASE_URL: 'http://127.0.0.1:54321' },
+    }),
+  );
+  assertEquals(res.status, 200);
+  const sent = JSON.parse(String(calls[0].init?.body));
+  assertEquals(
+    sent.notification_url,
+    undefined,
+    'MP rejeita notification_url não-https; no local o campo é omitido',
+  );
+  await res.body?.cancel();
+});
+
 Deno.test('processar-pagamento recusado: intenção recusada, SEM assinatura, resposta com status_detail', async () => {
   const db = baseDb();
   const { fn } = captureFetch({
