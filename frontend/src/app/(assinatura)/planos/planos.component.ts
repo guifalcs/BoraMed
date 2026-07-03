@@ -174,17 +174,22 @@ import type { Plano } from '../../core/models/subscription.types';
       <!-- Rodapé -->
       <footer class="border-t border-gray-200 bg-white px-6 py-8 lg:px-10">
         <div
-          class="mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-gray-400 md:flex-row md:justify-between md:gap-8"
+          class="mx-auto flex max-w-7xl flex-col items-center gap-5 md:flex-row md:items-start md:justify-between md:gap-10"
         >
-          <p class="flex items-center gap-1.5 text-center md:text-left">
-            <app-ui-icon [icon]="shieldIcon" [size]="14" class="shrink-0 text-gray-400" />
-            Pague sem sair da plataforma. Os dados do seu cartão são digitados em campos seguros do
-            <span class="font-medium text-gray-500">Mercado Pago</span> e nunca passam pelos servidores do BoraMed.
-          </p>
-          <div class="flex items-center gap-4">
-            <a routerLink="/termos-de-uso" class="hover:text-gray-600">Termos de uso</a>
-            <a routerLink="/politica-de-privacidade" class="hover:text-gray-600">Política de privacidade</a>
-            <span class="text-gray-300">© {{ ano }} BoraMed</span>
+          <div class="flex max-w-xl flex-col items-center gap-2 md:flex-row md:items-start md:gap-2.5">
+            <app-ui-icon [icon]="shieldIcon" [size]="16" class="shrink-0 text-gray-400 md:mt-0.5" />
+            <p class="text-center text-xs leading-relaxed text-gray-400 md:text-left">
+              Pague sem sair da plataforma. Os dados do seu cartão são digitados em campos
+              seguros do <span class="font-medium text-gray-500">Mercado&nbsp;Pago</span> e nunca
+              passam pelos servidores do BoraMed.
+            </p>
+          </div>
+          <div
+            class="flex shrink-0 flex-col items-center gap-2 text-xs text-gray-400 sm:flex-row sm:gap-5"
+          >
+            <a routerLink="/termos-de-uso" class="whitespace-nowrap hover:text-gray-600">Termos de uso</a>
+            <a routerLink="/politica-de-privacidade" class="whitespace-nowrap hover:text-gray-600">Política de privacidade</a>
+            <span class="whitespace-nowrap text-gray-300">© {{ ano }} BoraMed</span>
           </div>
         </div>
       </footer>
