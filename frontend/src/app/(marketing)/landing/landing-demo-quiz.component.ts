@@ -18,54 +18,92 @@ interface DemoQuizQuestion {
   readonly explanation: string;
 }
 
-// TODO(boramed-team): substituir pelas 3 questões autorais REAIS (validadas pelo
-// time de conteúdo) antes de publicar. As questões abaixo são exemplos de
-// estrutura e nível de cobrança — não passaram por revisão de conteúdo.
+// Questões reais do banco de questões do BoraMed (tabela `questao`, tipo
+// processual, status ativa), escolhidas entre as mais respondidas e com
+// alternativas completas — não são exemplos escritos para a demo.
+// ids de origem: 37781255-87c0-44c6-8cfb-224ab3c16328,
+// dcc06d15-27f4-4d1f-824c-fe9ed144dc19, 9001e8a0-9319-417f-a0f5-483f096c9763.
 const DEMO_QUESTIONS: readonly DemoQuizQuestion[] = [
   {
     id: 'demo-cardio',
     topic: 'Cardiologia',
     statement:
-      'Paciente de 58 anos, hipertenso, chega ao pronto atendimento com dor torácica em aperto há 40 minutos, irradiando para o membro superior esquerdo, associada a sudorese. O ECG mostra supradesnivelamento do segmento ST em DII, DIII e aVF. Qual parede ventricular está mais provavelmente acometida?',
+      'Um professor de anatomia apresenta aos alunos um esquema da face posterior do coração e destaca o seio coronário, explicando sua importância como principal estrutura de drenagem venosa cardíaca. Um aluno pergunta quais são as tributárias do seio coronário e quais territórios miocárdicos elas drenam. Qual das alternativas a seguir descreve corretamente as principais veias tributárias do seio coronário e seus territórios de drenagem?',
     options: [
-      { letter: 'A', text: 'Parede anterior' },
-      { letter: 'B', text: 'Parede inferior' },
-      { letter: 'C', text: 'Parede lateral alta' },
-      { letter: 'D', text: 'Parede septal' },
+      {
+        letter: 'A',
+        text: 'A veia cardíaca magna drena a face anterior do coração (territórios da artéria descendente anterior); a veia cardíaca média drena a face inferior (território da artéria descendente posterior); e a veia cardíaca pequena drena a face direita (território marginal da coronária direita), todas desembocando no seio coronário, que drena para o átrio direito.',
+      },
+      {
+        letter: 'B',
+        text: 'A veia cardíaca magna drena exclusivamente o ventrículo direito; a veia cardíaca média drena o septo interventricular; e a veia cardíaca pequena drena os átrios, todas desembocando no seio coronário, que drena para o ventrículo direito durante a diástole.',
+      },
+      {
+        letter: 'C',
+        text: 'A veia de Tebesio drena a maior parte do miocárdio ventricular esquerdo diretamente para o interior das câmaras cardíacas, sendo a principal via de drenagem venosa cardíaca, enquanto o seio coronário drena apenas a periferia epicárdica do coração.',
+      },
+      {
+        letter: 'D',
+        text: 'O seio coronário é formado pela confluência das veias pulmonares e das veias cardíacas, drenando sangue misto (venoso cardíaco e oxigenado pulmonar) para o átrio esquerdo, onde se mistura ao sangue das veias pulmonares.',
+      },
     ],
-    correctIndex: 1,
+    correctIndex: 0,
     explanation:
-      'DII, DIII e aVF exploram a parede inferior do ventrículo esquerdo. Supradesnivelamento de ST nessas derivações indica infarto de parede inferior, geralmente por oclusão da coronária direita.',
+      'O sistema venoso cardíaco é composto principalmente por: veia cardíaca magna, que drena a face anterior e lateral do coração (territórios da descendente anterior e circunflexa); veia cardíaca média, que drena a face inferior; e veia cardíaca pequena, que drena a face direita. Todas convergem para o seio coronário, que desemboca no átrio direito.',
   },
   {
-    id: 'demo-farmaco',
-    topic: 'Farmacologia',
+    id: 'demo-pneumo',
+    topic: 'Pneumologia',
     statement:
-      'Sobre o mecanismo de ação dos inibidores da bomba de prótons, como o omeprazol, é correto afirmar que eles atuam por meio de:',
+      'Em uma aula de fisiologia integrada sobre os mecanismos protetores das vias aéreas, o professor descreve o reflexo da tosse como uma das respostas mais eficazes do organismo para expulsar corpos estranhos e secreções das vias aéreas. Ele divide o mecanismo da tosse em suas etapas sequenciais e questiona os alunos sobre qual fase é a responsável pela geração da força expulsiva que desloca o material retido nas vias aéreas durante esse reflexo.',
     options: [
-      { letter: 'A', text: 'Bloqueio dos receptores H2 da histamina nas células parietais' },
-      { letter: 'B', text: 'Neutralização direta do ácido clorídrico na luz gástrica' },
-      { letter: 'C', text: 'Inibição irreversível da H+/K+-ATPase nas células parietais' },
-      { letter: 'D', text: 'Estímulo da secreção de muco e bicarbonato pela mucosa' },
+      {
+        letter: 'A',
+        text: 'A fase expulsiva da tosse é gerada pela abertura súbita da glote após uma inspiração profunda, que cria uma onda de pressão negativa intrapulmonar capaz de aspirar corpos estranhos das vias inferiores em direção à laringe, onde são então expelidos.',
+      },
+      {
+        letter: 'B',
+        text: 'A força expulsiva da tosse resulta da contração coordenada dos músculos elevadores da laringe, que comprimem a traqueia por pressão extrínseca e expelem as secreções pela elevação mecânica da árvore traqueobrônquica em direção à faringe.',
+      },
+      {
+        letter: 'C',
+        text: 'A tosse envolve uma inspiração inicial, seguida de fechamento glótico com contração intensa da musculatura expiratória que eleva a pressão intratorácica, e então abertura súbita da glote com liberação de fluxo aéreo de alta velocidade que arrasta secreções e corpos estranhos das vias aéreas.',
+      },
+      {
+        letter: 'D',
+        text: 'A tosse é gerada exclusivamente pela contração do músculo diafragma em sentido inverso ao habitual, que empurra o ar dos pulmões para as vias aéreas superiores sem necessidade de fechamento glótico ou elevação prévia da pressão intratorácica.',
+      },
     ],
     correctIndex: 2,
     explanation:
-      'Os inibidores da bomba de prótons inibem de forma irreversível a H+/K+-ATPase, etapa final da secreção ácida — por isso são mais potentes que os antagonistas H2, que atuam em uma via a montante.',
+      'O reflexo da tosse ocorre em três fases: inspiratória (inspiração profunda), compressiva (glote fechada com contração intensa da musculatura expiratória, elevando a pressão intratorácica) e expulsiva (abertura súbita da glote, liberando fluxo aéreo de alta velocidade que arrasta secreções e corpos estranhos).',
   },
   {
-    id: 'demo-anato',
-    topic: 'Anatomia',
+    id: 'demo-imuno',
+    topic: 'Imunologia',
     statement:
-      'Após uma tireoidectomia total, a paciente evolui no pós-operatório imediato com rouquidão persistente. Qual estrutura foi mais provavelmente lesada durante o procedimento?',
+      'Integrando os conceitos estudados, considere o seguinte cenário didático: um professor apresenta quatro situações que ilustram, cada uma, um mecanismo distinto de hipersensibilidade, e pede aos alunos que relacionem cada situação ao tipo correto e ao seu mediador. Qual alternativa relaciona corretamente os quatro tipos de hipersensibilidade aos seus respectivos mecanismos?',
     options: [
-      { letter: 'A', text: 'Nervo frênico' },
-      { letter: 'B', text: 'Nervo hipoglosso' },
-      { letter: 'C', text: 'Alça cervical' },
-      { letter: 'D', text: 'Nervo laríngeo recorrente' },
+      {
+        letter: 'A',
+        text: 'Uma reação imediata a pólen mediada por linfócitos T; uma reação contra antígenos de superfície celular mediada por IgE; uma reação por imunocomplexos mediada por mastócitos; uma reação tardia mediada por IgG.',
+      },
+      {
+        letter: 'B',
+        text: 'Uma reação imediata a pólen mediada por imunocomplexos; uma reação contra antígenos de superfície celular mediada por linfócitos T; uma reação por deposição de complexos mediada por IgE; uma reação tardia mediada por IgM.',
+      },
+      {
+        letter: 'C',
+        text: 'Uma reação imediata a pólen mediada por IgG contra antígenos solúveis; uma reação contra antígenos de superfície celular mediada por imunocomplexos; uma reação por deposição mediada por linfócitos T; uma reação tardia mediada por mastócitos.',
+      },
+      {
+        letter: 'D',
+        text: 'Uma reação imediata a pólen mediada por IgE e mastócitos (tipo I); uma reação contra antígenos de superfície celular mediada por IgG e IgM (tipo II); uma reação por deposição de imunocomplexos circulantes (tipo III); uma reação tardia mediada por linfócitos T e macrófagos (tipo IV).',
+      },
     ],
     correctIndex: 3,
     explanation:
-      'O nervo laríngeo recorrente inerva quase todos os músculos intrínsecos da laringe e tem relação íntima com a glândula tireoide — sua lesão em tireoidectomias causa paralisia de prega vocal e rouquidão.',
+      'O tipo I é mediado por IgE fixada a mastócitos, com resposta imediata (minutos). O tipo II envolve IgG/IgM contra antígenos de superfície celular, com dano por complemento e citotoxicidade. O tipo III é causado por imunocomplexos circulantes que se depositam em tecidos. O tipo IV é uma reação tardia mediada por linfócitos T que recrutam macrófagos, sem participação de anticorpos.',
   },
 ];
 
