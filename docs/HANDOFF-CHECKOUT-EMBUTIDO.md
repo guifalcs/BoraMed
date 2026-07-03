@@ -115,6 +115,16 @@ SECU/CALL/DUPL, 3DS `5483 9281 6457 4623`, CPF `12345678909`).
      re-rodar mensal/cancelar/pausar/trocar cartão.
    - **Fix aplicado nesta fase**: `notification_url` só é enviado quando o
      `SUPABASE_URL` é https (MP rejeita URL não-pública com 400) — com teste.
+   - **Acessos manuais/cortesia (admin)**: a Minha Assinatura mostrava
+     "Cancelar assinatura"/"Trocar cartão"/"Próxima cobrança" para assinaturas
+     SEM `mp_preapproval_id` (cortesia `plano_id NULL` caía em `recorrente()`
+     default true) — clicar dava 404 "assinatura não encontrada" cru na tela.
+     **Corrigido**: botões de gestão só com `gerenciavelNoMp()`; rótulo vira
+     "Acesso até" sem valor; aviso explicativo (cortesia vs. manual); plano
+     "Cortesia" quando `cortesia=true`. Validado nos 3 casos + regressão com
+     preapproval real (botões continuam e o PUT chega ao MP).
+   - Achado para F6: `mp-gerenciar-assinatura` devolve `detail: <body cru do MP>`
+     no 502 (contrato legado) — avaliar sanitizar como nas edges novas.
    - Achados menores para F6: erro de console `<svg> attribute width/height`
      vazio na tela de status (ícone; cosmético); box do challenge 3DS vaza a
      borda direita do card; consulta de CEP do Brick dá 401 no sandbox (usuário

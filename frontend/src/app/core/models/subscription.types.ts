@@ -43,6 +43,7 @@ export interface Assinatura {
   data_inicio: string | null;
   proxima_cobranca: string | null;
   cancelada_em: string | null;
+  cortesia: boolean;
   criado_em: string;
   atualizado_em: string;
   plano: AssinaturaPlano | null;

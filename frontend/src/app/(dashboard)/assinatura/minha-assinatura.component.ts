@@ -121,6 +121,17 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               Não renova automaticamente; você poderá renovar quando expirar.
             </p>
           }
+          @if (acessoManualAtivo()) {
+            <p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
+              @if (assinatura()!.cortesia) {
+                Acesso liberado pela equipe BoraMed até
+                {{ data(assinatura()!.proxima_cobranca) }} — sem nenhuma cobrança.
+              } @else {
+                Acesso liberado até {{ data(assinatura()!.proxima_cobranca) }} — sem cobrança
+                automática. Quando expirar, você poderá assinar um plano por aqui.
+              }
+            </p>
+          }
           @if (recorrente() && assinatura()!.status === 'paused') {
             <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
               Sua assinatura está pausada e o acesso aos simulados está suspenso. Reative para
@@ -129,7 +140,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
           }
 
           <div class="mt-6 flex flex-wrap gap-3">
-            @if (recorrente() && assinatura()!.status === 'authorized') {
+            @if (gerenciavelNoMp() && recorrente() && assinatura()!.status === 'authorized') {
               <button
                 type="button"
                 (click)="abrirTrocarCartao()"
@@ -147,7 +158,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               >
                 Cancelar assinatura
               </button>
-            } @else if (recorrente() && assinatura()!.status === 'paused') {
+            } @else if (gerenciavelNoMp() && recorrente() && assinatura()!.status === 'paused') {
               <button
                 type="button"
                 (click)="reativar()"
@@ -156,7 +167,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               >
                 {{ processando() ? 'Reativando…' : 'Reativar assinatura' }}
               </button>
-            } @else if (!acessoUnicoAtivo() && !emCarencia()) {
+            } @else if (!acessoAtivo()) {
               <button
                 type="button"
                 (click)="verPlanos()"
@@ -166,7 +177,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               </button>
             }
           </div>
-          @if (recorrente() && assinatura()!.status === 'authorized') {
+          @if (gerenciavelNoMp() && recorrente() && assinatura()!.status === 'authorized') {
             <p class="mt-2 text-xs text-gray-500">
               Ao cancelar, você mantém o acesso até a data da próxima cobrança.
             </p>
@@ -271,7 +282,9 @@ export class MinhaAssinaturaComponent implements OnInit {
   }
 
   planoNome(): string {
-    return this.assinatura()?.plano?.nome ?? '—';
+    const a = this.assinatura();
+    if (a?.plano?.nome) return a.plano.nome;
+    return a?.cortesia ? 'Cortesia' : '—';
   }
 
   valorPeriodicidade(): string | null {
@@ -320,6 +333,25 @@ export class MinhaAssinaturaComponent implements OnInit {
     return this.assinatura()?.plano?.recorrente ?? true;
   }
 
+  /**
+   * Só assinaturas com preapproval no Mercado Pago podem ser geridas
+   * (cancelar/pausar/reativar/trocar cartão). Acessos manuais e cortesias
+   * (concedidos pelo admin, sem vínculo com o MP) apenas expiram na data.
+   */
+  gerenciavelNoMp(): boolean {
+    return !!this.assinatura()?.mp_preapproval_id;
+  }
+
+  /** Acesso manual/cortesia (sem MP) ainda válido — não renova nem cobra. */
+  acessoManualAtivo(): boolean {
+    return (
+      !this.gerenciavelNoMp() &&
+      this.recorrente() &&
+      this.assinatura()?.status === 'authorized' &&
+      this.temAcessoAgora()
+    );
+  }
+
   private temAcessoAgora(): boolean {
     const a = this.assinatura();
     if (!a) return false;
@@ -353,14 +385,19 @@ export class MinhaAssinaturaComponent implements OnInit {
   }
 
   rotuloData(): string {
-    if (this.recorrente() && this.assinatura()?.status === 'authorized' && !this.emCarencia()) {
-      return 'Próxima cobrança';
-    }
+    if (this.mostrarValorProxima()) return 'Próxima cobrança';
     return 'Acesso até';
   }
 
   mostrarValorProxima(): boolean {
-    return this.recorrente() && this.assinatura()?.status === 'authorized' && !this.emCarencia();
+    // "Próxima cobrança" só faz sentido com um preapproval real no MP;
+    // acessos manuais/cortesia mostram "Acesso até" sem valor.
+    return (
+      this.gerenciavelNoMp() &&
+      this.recorrente() &&
+      this.assinatura()?.status === 'authorized' &&
+      !this.emCarencia()
+    );
   }
 
   data(iso: string | null): string {
