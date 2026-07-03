@@ -369,6 +369,63 @@ Deno.test('processar-pagamento boleto: resposta traz url do boleto', async () =>
   assertEquals(out.boleto.url, 'https://mp.com/boleto/1');
 });
 
+Deno.test('processar-pagamento boleto: endereço do Brick repassado ao MP (whitelist, exigência do boleto)', async () => {
+  const db = baseDb();
+  const { fn, calls } = captureFetch({
+    body: approvedPayment({
+      status: 'pending',
+      status_detail: 'pending_waiting_payment',
+      payment_method_id: 'bolbradesco',
+      date_approved: undefined,
+      transaction_details: { external_resource_url: 'https://mp.com/boleto/1' },
+    }),
+  });
+  const body = {
+    attempt_id: ATTEMPT,
+    plano_slug: 'semestral',
+    form_data: {
+      payment_method_id: 'bolbradesco',
+      payer: {
+        email: 'aluno@boramed.com',
+        first_name: 'Ana',
+        last_name: 'Souza',
+        identification: { type: 'CPF', number: '12345678909' },
+        address: {
+          zip_code: '01310-100',
+          street_name: 'Av. Paulista',
+          street_number: 1000,
+          neighborhood: 'Bela Vista',
+          city: 'São Paulo',
+          federal_unit: 'SP',
+          campo_estranho: 'nao-deve-passar',
+        },
+      },
+    },
+  };
+  const res = await handleProcessarPagamento(
+    request(body),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 200);
+  const sent = JSON.parse(String(calls[0].init?.body));
+  assertEquals(sent.payer.address.zip_code, '01310-100');
+  assertEquals(sent.payer.address.street_number, '1000', 'normalizado para string');
+  assertEquals(sent.payer.address.federal_unit, 'SP');
+  assertEquals(sent.payer.address.campo_estranho, undefined, 'whitelist estrita');
+  assertEquals(sent.payer.identification.number, '12345678909');
+});
+
+Deno.test('processar-pagamento cartão: sem endereço no form, payer não leva address', async () => {
+  const db = baseDb();
+  const { fn, calls } = captureFetch({ body: approvedPayment() });
+  await handleProcessarPagamento(
+    request(cardBody()),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  const sent = JSON.parse(String(calls[0].init?.body));
+  assertEquals(sent.payer.address, undefined);
+});
+
 Deno.test('processar-pagamento replay do MESMO usuário: reconsulta o payment e não cria outro', async () => {
   const db = baseDb({
     pagamento_intencao: [

@@ -33,8 +33,28 @@ interface FormDataIn {
     first_name?: string;
     last_name?: string;
     identification?: { type?: string; number?: string };
-    address?: Record<string, unknown>;
+    address?: {
+      zip_code?: string;
+      street_name?: string;
+      street_number?: string | number;
+      neighborhood?: string;
+      city?: string;
+      federal_unit?: string;
+    };
   };
+}
+
+/** Whitelist do endereço do pagador (obrigatório no boleto; o Brick coleta). */
+function sanitizeAddress(
+  address: NonNullable<FormDataIn['payer']>['address'],
+): Record<string, string> | undefined {
+  if (!address || typeof address !== 'object') return undefined;
+  const out: Record<string, string> = {};
+  for (const key of ['zip_code', 'street_name', 'street_number', 'neighborhood', 'city', 'federal_unit'] as const) {
+    const val = address[key];
+    if (val != null && val !== '') out[key] = String(val);
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 /** Data no formato aceito pelo MP (offset explícito, mesmo instante em -03:00). */
@@ -227,6 +247,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     req.headers.get('cf-connecting-ip') ??
     undefined;
+  const address = sanitizeAddress(fd.payer?.address);
 
   const payload: Record<string, unknown> = {
     transaction_amount: plano.preco_centavos / 100,
@@ -238,6 +259,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
       ...(fd.payer?.first_name ? { first_name: fd.payer.first_name } : {}),
       ...(fd.payer?.last_name ? { last_name: fd.payer.last_name } : {}),
       ...(identification ? { identification } : {}),
+      ...(address ? { address } : {}),
     },
     statement_descriptor: 'BORAMED',
     external_reference: user.id,
