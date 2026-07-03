@@ -535,6 +535,13 @@
   text-align: center;
 }
 
+/* Quebra de linha controlada em headings específicos — só ativa a partir do
+   breakpoint desktop (ver @media 720px abaixo); no mobile o texto quebra
+   naturalmente conforme o espaço disponível. */
+.heading-break {
+  display: none;
+}
+
 .section-heading.left {
   margin-inline: 0;
   text-align: left;
@@ -1130,6 +1137,10 @@
 }
 
 @media (min-width: 720px) {
+  .heading-break {
+    display: inline;
+  }
+
   .float-card--score,
   .float-card--badge,
   .float-card--topics {
