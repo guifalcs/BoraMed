@@ -222,6 +222,10 @@
 
 .hero-copy h1 {
   font-size: clamp(2.25rem, 5.5vw, 4.5rem);
+  color: var(--color-text);
+}
+
+.hero-highlight {
   background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #7c3aed 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
