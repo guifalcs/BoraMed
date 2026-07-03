@@ -81,12 +81,27 @@ SECU/CALL/DUPL, 3DS `5483 9281 6457 4623`, CPF `12345678909`).
 
 ## O que falta (em ordem)
 
-1. **F5-manual (bloqueado por credenciais)**: criar `supabase/functions/.env.local`
-   com credenciais TEST do MP + túnel ngrok + webhook de TESTE apontando ao túnel;
-   rodar os cenários 1–11 do `TESTE-PAGAMento-LOCAL.md`; rodar `quality_evaluation`
-   via MCP do Mercado Pago com um payment de teste (`is_ca=true`) e corrigir itens
-   até score alto. Atenção à pegadinha conhecida: comprador de teste NÃO pode ser a
-   mesma conta/e-mail do vendedor (botão do checkout trava).
+1. **F5-manual (parcialmente preparado em 2026-07-03)**: o MCP do Mercado Pago
+   está autenticado nesta máquina e o ambiente já foi montado:
+   - `supabase/functions/.env.local` **já existe** (gitignored), com o
+     `MP_ACCESS_TOKEN` TEST da aplicação (a public key TEST do
+     `environment.local.ts` é da MESMA aplicação — par correto);
+     `MP_WEBHOOK_SECRET` está com valor dummy (nenhum webhook de teste
+     registrado ainda — falta o túnel ngrok + `save_webhook`).
+   - Comprador de teste MLB já existe (nickname `TESTUSER3564881035891632645`,
+     id 3487525400) — obtido via MCP `create_test_user`.
+   - Para servir as edges: `npx supabase functions serve --env-file
+     ./supabase/functions/.env.local` (validado: sobe e o Brick real monta).
+   - Verificar `BORAMED_OWNER_EMAIL` no `.env.local` (foi copiado de forma
+     aproximada do `.env`; confirmar o valor com o usuário se for relevante).
+   Falta executar: cenários 1–11 do `TESTE-PAGAMENTO-LOCAL.md` (cartões
+   APRO/FUND/SECU/CALL, Pix, boleto, 3DS, trocar cartão), túnel + webhook de
+   TESTE para confirmar Pix/boleto, e `quality_evaluation` via MCP com um
+   payment de teste (`is_ca=true`), corrigindo itens até score alto.
+   Pegadinha conhecida: o comprador NÃO pode ser a mesma conta/e-mail do
+   vendedor (botão do checkout trava). Nota: `notification_url` aponta para o
+   SUPABASE_URL local (http://127.0.0.1) — se o MP recusar a URL não-pública no
+   `POST /v1/payments`, condicionar o campo a URLs https no handler.
 2. **F6**: code review completo da branch (segurança + regressão legado);
    opcional preview branch do Supabase via MCP para ensaio; escrever checklist de
    go-live e revisar com o usuário.
