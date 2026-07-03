@@ -214,21 +214,39 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 
 * **Modelo**: paywall total. Todo o conteúdo (`/dashboard/*`) exige assinatura
   ativa (`assinatura.status = 'authorized'`). Sem assinatura, o aluno só acessa
-  `/planos`, `/assinatura/retorno` e telas públicas. Admins/super_admins não
-  passam pelo paywall.
-* **Gateway**: Mercado Pago, assinaturas recorrentes (`preapproval`) no modelo
-  **com plano associado**, checkout por **redirecionamento** (init_point do
-  plano). O BoraMed não manuseia dados de cartão (PCI fica no Mercado Pago).
-* **Planos**: definidos na tabela `plano` (mensal e anual no MVP). Preço,
-  frequência e o `mp_preapproval_plan_id`/`mp_init_point` correspondente ficam
-  por linha. Preços iniciais provisórios (mensal R$29,90 / anual R$288,00),
-  ajustáveis sem deploy.
+  `/planos`, `/checkout/*`, `/assinatura/retorno` (legado) e telas públicas.
+  Admins/super_admins não passam pelo paywall.
+* **Gateway**: Mercado Pago com **checkout embutido** na plataforma (Payment
+  Brick + Checkout API, ver ADR-029). O aluno paga sem sair do BoraMed; os
+  dados de cartão são digitados em campos seguros (iframes) do Mercado Pago —
+  o BoraMed segue fora do escopo PCI.
+* **Mensal (recorrente)**: Payment Brick só-cartão (1x) gera um `card_token` →
+  edge `mp-processar-assinatura` cria o `preapproval` com `status:'authorized'`
+  (e-mail da conta, preço do banco, `external_reference` = `profiles.id`).
+  Recusa do cartão volta síncrona com `status_detail` mapeado na UI. Troca de
+  cartão via `mp-gerenciar-assinatura` (`trocar_cartao` → `PUT /preapproval`).
+* **Semestral (pagamento único)**: cartão em até 6x, Pix (expira em 30min) ou
+  boleto (3 dias) via edge `mp-processar-pagamento` → `POST /v1/payments`.
+  Preço sempre do banco (nunca do cliente), idempotência por
+  `attempt_id`/`X-Idempotency-Key`, rate limit de 5 tentativas/15min por
+  usuário, bloqueio 409 com acesso ativo. Cada tentativa vira uma linha em
+  `pagamento_intencao` (o frontend acompanha por polling; RLS "select own").
+* **Planos**: definidos na tabela `plano` (mensal R$49,90 e semestral
+  R$199,90). Preço e frequência ficam por linha, ajustáveis sem deploy. As
+  colunas `mp_preapproval_plan_id`/`mp_init_point` são legadas (redirect) e
+  não são usadas em compras novas.
 * **Estados da assinatura** (espelham o Mercado Pago): `pending` →
-  `authorized` (ativa) → `paused`/`cancelled`. Fonte da verdade: webhook do MP.
+  `authorized` (ativa) → `paused`/`cancelled`. **Fonte da verdade: webhook do
+  MP** (a resposta síncrona do checkout apenas antecipa o mesmo sync,
+  idempotente). Reconciliação ativa via `mp-consultar-pagamento` ("Já paguei",
+  webhook atrasado, pós-3DS).
 * **Retry de cobrança** (regra do MP): após 3 parcelas recusadas a assinatura é
   cancelada automaticamente.
-* **Vínculo aluno↔assinatura**: `external_reference` = `profiles.id` anexado ao
-  init_point; fallback de reconciliação por `payer_email` no webhook.
+* **Vínculo aluno↔assinatura**: `external_reference` = `profiles.id` nos
+  payments e preapprovals novos; fallbacks legados do webhook (payer_email,
+  linha de assinatura existente) preservados para assinantes antigos.
+* **Assinantes legados (pré-checkout embutido)**: continuam nos preapprovals
+  criados via redirect, cobrados e geridos normalmente — não há migração.
 
 ## Conteúdo por Período
 

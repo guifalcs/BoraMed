@@ -355,6 +355,11 @@ export class LandingComponent implements OnDestroy {
       answer:
         'Sim. Toda assinatura inclui acesso à comunidade exclusiva do BoraMed no WhatsApp, onde estudantes trocam dúvidas, materiais e dicas de estudo.',
     },
+    {
+      question: 'Quais formas de pagamento posso usar?',
+      answer:
+        'Tudo acontece sem sair da plataforma, em campos seguros do Mercado Pago. No plano mensal, o pagamento é recorrente no cartão de crédito. No semestral, você escolhe cartão em até 6x, Pix ou boleto.',
+    },
   ];
 
   constructor() {

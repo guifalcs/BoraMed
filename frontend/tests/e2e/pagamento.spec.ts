@@ -280,31 +280,9 @@ test.describe('Módulo de Pagamento', () => {
     });
   });
 
-  test.describe('Iniciar checkout ao clicar em Assinar', () => {
-    test('redireciona para o init_point retornado pela edge function', async ({ page }) => {
-      // URL de retorno dentro do próprio app para que a navegação seja testável
-      const RETORNO_URL = 'http://localhost:4210/assinatura/retorno?status=approved';
-
-      let checkoutBody: Record<string, unknown> | null = null;
-
-      await setupMocksAndGoto(page, '/planos', false, async (p) => {
-        await p.route('**/functions/v1/mp-criar-assinatura**', (route) => {
-          // postDataJSON() is synchronous in Playwright
-          try {
-            checkoutBody = route.request().postDataJSON() as Record<string, unknown>;
-          } catch {
-            checkoutBody = null;
-          }
-
-          void route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            // A edge function retorna init_point (underscore);
-            // SubscriptionService.iniciarCheckout() mapeia para initPoint
-            body: JSON.stringify({ init_point: RETORNO_URL }),
-          });
-        });
-      });
+  test.describe('Iniciar checkout ao clicar em Assinar (checkout embutido)', () => {
+    test('navega para /checkout/:slug do plano escolhido, sem redirect ao MP', async ({ page }) => {
+      await setupMocksAndGoto(page, '/planos');
 
       await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({
         timeout: 10_000,
@@ -313,32 +291,8 @@ test.describe('Módulo de Pagamento', () => {
       // Clica no primeiro "Assinar" (Plano Mensal — ordem=1)
       await page.getByRole('button', { name: 'Assinar' }).first().click();
 
-      // O componente seta window.location.href = init_point; aguarda a navegação
-      await expect(page).toHaveURL(/assinatura\/retorno/, { timeout: 10_000 });
-
-      expect(checkoutBody).not.toBeNull();
-      expect((checkoutBody as Record<string, unknown>)['plano_slug']).toBe('mensal');
-    });
-
-    test('exibe mensagem de erro quando a edge function falha', async ({ page }) => {
-      await setupMocksAndGoto(page, '/planos', false, async (p) => {
-        await p.route('**/functions/v1/mp-criar-assinatura**', (route) => {
-          void route.fulfill({
-            status: 500,
-            contentType: 'application/json',
-            body: JSON.stringify({ error: 'Serviço indisponível no momento.' }),
-          });
-        });
-      });
-
-      await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({
-        timeout: 10_000,
-      });
-
-      await page.getByRole('button', { name: 'Assinar' }).first().click();
-
-      // O componente exibe: <p class="...text-red-600">{{ erro() }}</p>
-      await expect(page.locator('p.text-red-600')).toBeVisible({ timeout: 10_000 });
+      // O checkout agora é embutido: a navegação fica dentro da plataforma.
+      await expect(page).toHaveURL(/\/checkout\/mensal/, { timeout: 10_000 });
     });
   });
 
