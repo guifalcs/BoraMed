@@ -151,15 +151,14 @@ import type { Plano } from '../../core/models/subscription.types';
                   <button
                     type="button"
                     (click)="assinar(plano)"
-                    [disabled]="processando() === plano.slug"
-                    class="mt-8 w-full rounded-xl px-4 py-3 font-semibold transition disabled:opacity-60"
+                    class="mt-8 w-full rounded-xl px-4 py-3 font-semibold transition"
                     [ngClass]="
                       destaque(plano)
                         ? 'bg-white text-blue-700 hover:bg-gray-100'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     "
                   >
-                    {{ processando() === plano.slug ? 'Redirecionando…' : 'Assinar' }}
+                    Assinar
                   </button>
                 </div>
               }
@@ -179,8 +178,8 @@ import type { Plano } from '../../core/models/subscription.types';
         >
           <p class="flex items-center gap-1.5 text-center md:text-left">
             <app-ui-icon [icon]="shieldIcon" [size]="14" class="shrink-0 text-gray-400" />
-            Pagamentos processados com segurança pelo
-            <span class="font-medium text-gray-500">Mercado Pago</span>. O BoraMed não armazena os dados do seu cartão.
+            Pague sem sair da plataforma. Os dados do seu cartão são digitados em campos seguros do
+            <span class="font-medium text-gray-500">Mercado Pago</span> e nunca passam pelos servidores do BoraMed.
           </p>
           <div class="flex items-center gap-4">
             <a routerLink="/termos-de-uso" class="hover:text-gray-600">Termos de uso</a>
@@ -224,7 +223,6 @@ export class PlanosComponent implements OnInit {
 
   readonly planos = signal<Plano[]>([]);
   readonly loading = signal(true);
-  readonly processando = signal<string | null>(null);
   readonly erro = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
@@ -292,16 +290,9 @@ export class PlanosComponent implements OnInit {
     return `por ${plano.frequency} dias`;
   }
 
-  async assinar(plano: Plano): Promise<void> {
-    this.erro.set(null);
-    this.processando.set(plano.slug);
-    const res = await this.subscription.iniciarCheckout(plano.slug);
-    if (res.ok) {
-      window.location.href = res.initPoint;
-    } else {
-      this.erro.set(res.error);
-      this.processando.set(null);
-    }
+  assinar(plano: Plano): void {
+    // Checkout embutido: o pagamento acontece dentro da plataforma.
+    this.router.navigate(['/checkout', plano.slug]);
   }
 
   async sair(): Promise<void> {

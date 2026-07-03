@@ -5,6 +5,7 @@ import { ShieldCheck, type LucideIconData } from 'lucide-angular';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { TrocarCartaoModalComponent } from './trocar-cartao-modal.component';
 import type { Assinatura, Pagamento } from '../../core/models/subscription.types';
 
 const STATUS_LABEL: Record<Assinatura['status'], string> = {
@@ -41,7 +42,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
 @Component({
   selector: 'app-minha-assinatura',
   standalone: true,
-  imports: [CommonModule, UiConfirmDialogComponent, UiIconComponent],
+  imports: [CommonModule, UiConfirmDialogComponent, UiIconComponent, TrocarCartaoModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mx-auto max-w-2xl px-4 py-8">
@@ -127,8 +128,17 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
             </p>
           }
 
-          <div class="mt-6 flex gap-3">
+          <div class="mt-6 flex flex-wrap gap-3">
             @if (recorrente() && assinatura()!.status === 'authorized') {
+              <button
+                type="button"
+                (click)="abrirTrocarCartao()"
+                [disabled]="processando()"
+                class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                data-testid="trocar-cartao"
+              >
+                Trocar cartão
+              </button>
               <button
                 type="button"
                 (click)="abrirConfirmacao()"
@@ -196,9 +206,9 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
       <div class="relative mt-10 space-y-1.5 pl-6 text-xs leading-relaxed text-gray-400">
         <app-ui-icon [icon]="segurancaIcon" [size]="14" class="absolute left-0 top-0.5 text-gray-400" />
         <p>
-          Pagamentos processados com segurança pelo
-          <span class="font-medium text-gray-500">Mercado Pago</span>.
-          O BoraMed não tem acesso nem armazena os dados do seu cartão.
+          Pague sem sair da plataforma: os dados do cartão são digitados em campos seguros e
+          criptografados do <span class="font-medium text-gray-500">Mercado Pago</span> e nunca
+          passam pelos servidores do BoraMed.
         </p>
         <p>
           No plano <span class="font-medium text-gray-500">mensal</span> a cobrança é recorrente e você
@@ -210,6 +220,14 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
         </p>
         <p>Dúvidas sobre cobrança? Fale com o suporte pelo app.</p>
       </div>
+
+      @if (mostrarTrocarCartao()) {
+        <app-trocar-cartao-modal
+          [valorCentavos]="assinatura()!.plano?.preco_centavos ?? 0"
+          (fechar)="mostrarTrocarCartao.set(false)"
+          (trocado)="aoTrocarCartao()"
+        />
+      }
 
       @if (mostrarConfirm()) {
         <app-ui-confirm-dialog
@@ -235,6 +253,7 @@ export class MinhaAssinaturaComponent implements OnInit {
   readonly processando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly mostrarConfirm = signal(false);
+  readonly mostrarTrocarCartao = signal(false);
   readonly segurancaIcon: LucideIconData = ShieldCheck;
 
   async ngOnInit(): Promise<void> {
@@ -364,6 +383,15 @@ export class MinhaAssinaturaComponent implements OnInit {
   abrirConfirmacao(): void {
     this.erro.set(null);
     this.mostrarConfirm.set(true);
+  }
+
+  abrirTrocarCartao(): void {
+    this.erro.set(null);
+    this.mostrarTrocarCartao.set(true);
+  }
+
+  aoTrocarCartao(): void {
+    this.mostrarTrocarCartao.set(false);
   }
 
   mensagemCancelamento(): string {

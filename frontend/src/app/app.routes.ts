@@ -66,6 +66,22 @@ export const routes: Routes = [
       import('./(assinatura)/planos/planos.component').then((m) => m.PlanosComponent),
   },
   {
+    path: 'checkout/status/:intencaoId',
+    canActivate: [lazyAuthGuard],
+    loadComponent: () =>
+      import('./(assinatura)/checkout/pagamento-status.component').then(
+        (m) => m.PagamentoStatusComponent,
+      ),
+  },
+  {
+    path: 'checkout/:plano',
+    canActivate: [lazyAuthGuard],
+    loadComponent: () =>
+      import('./(assinatura)/checkout/checkout.component').then((m) => m.CheckoutComponent),
+  },
+  {
+    // Rota LEGADA (redirect do Checkout Pro): permanece durante a janela de
+    // observação para checkouts em voo. Remoção prevista na F8.
     path: 'assinatura/retorno',
     loadComponent: () =>
       import('./(assinatura)/retorno/assinatura-retorno.component').then(
