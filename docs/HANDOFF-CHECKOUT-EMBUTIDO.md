@@ -3,7 +3,8 @@
 > Documento de contexto para o próximo agente/dev continuar o trabalho.
 > Plano original completo: `PLANO-CHECKOUT-EMBUTIDO.md` (raiz do repo). Leia-o
 > primeiro — este handoff registra **o que já foi feito, como validar e o que falta**.
-> Última atualização: **2026-07-03 (fim do dia)**, após a execução da F5-manual.
+> Última atualização: **2026-07-05**, após restaurar o ambiente na segunda máquina
+> (Windows). Ver seção "Estado por máquina" no fim.
 
 ## TL;DR
 
@@ -261,3 +262,30 @@ Runners reais: `scripts/teste-manual-mp/` (README lá).
   get_credentials, save_webhook, quality_evaluation, search_documentation).
 - A extensão Claude-in-Chrome NÃO estava conectada — por isso os testes de
   browser usam Playwright headless (chromium de `frontend/node_modules`).
+
+## Estado por máquina (2026-07-05, PC Windows `G:\BoraMed`)
+
+Ambiente restaurado do zero nesta segunda máquina:
+- `environment.local.ts` estava apontando para **PRODUÇÃO** (cópia antiga, sem
+  `mercadoPagoPublicKey`) — recriado do example (stack local + public key TEST).
+- `supabase/functions/.env.local` não existia — criado com `MP_ACCESS_TOKEN`
+  TEST obtido via MCP (`get_credentials`, app Boramed 6161911882101170);
+  `MP_WEBHOOK_SECRET` segue dummy.
+- Suítes re-validadas aqui: Deno **104 passed**, `ng build` OK, E2E `mocked`
+  **23 passed**.
+- Runners de `scripts/teste-manual-mp/` tinham caminho absoluto do PC Linux —
+  corrigidos para caminhos relativos (portáveis).
+- Pegadinha local: `ng serve` com `.angular/cache` velho da `main` quebra a
+  extração de rotas SSR (`checkout/* server route does not match`) — resolver
+  com `rm -rf frontend/.angular/cache`.
+- `.tools/` (gitignored): `cloudflared.exe` baixado como opção de túnel para o
+  webhook TEST (ngrok não instalado nesta máquina).
+- **⚠️ Sandbox do MP instável em 2026-07-05 com credenciais TEST-**: BIN search
+  (`/v1/payment_methods/search`) → 500 para qualquer BIN e `POST /v1/payments`
+  Pix mínimo → `internal_error 500`, direto na API (nada do nosso stack; com a
+  public key de produção o BIN search responde 200). Efeito colateral positivo:
+  validou fim-a-fim o caminho de erro 5xx real — edge → 502 sanitizado, intenção
+  volta a `criada`, banner "Pagamento temporariamente indisponível. Tente
+  novamente." e usuário permanece no checkout. Re-testar cartões/Pix quando o
+  sandbox voltar (ou migrar de vez para as credenciais do vendedor de teste, que
+  destravam também o preapproval).

@@ -8,3 +8,4 @@ supabase/functions/.env.*
 
 # node_modules gerado pelo Deno (nodeModulesDir: auto) — recriado via deno.lock
 supabase/functions/node_modules/
+.tools/

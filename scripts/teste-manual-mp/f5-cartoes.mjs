@@ -1,7 +1,7 @@
 // F5-manual — Cenários 2 e 6 do TESTE-PAGAMENTO-LOCAL.md no /checkout/semestral:
 // recusas FUND/SECU/CALL (mensagens específicas, permanece no checkout) e
 // APRO em 6x (aprovado → /checkout/status). MP TEST real, sem mocks.
-import { chromium } from '/home/guilherme/Documentos/BoraMed/frontend/node_modules/playwright/index.mjs';
+import { chromium } from '../../frontend/node_modules/playwright/index.mjs';
 
 const OUT = process.env.OUT_DIR ?? '.';
 const CARD = '5031 4332 1540 6351';
