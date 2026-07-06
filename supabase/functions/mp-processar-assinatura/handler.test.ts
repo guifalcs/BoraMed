@@ -185,6 +185,28 @@ Deno.test('processar-assinatura authorized: payload correto (preço do banco, st
   assertEquals(db.rows('pagamento').length, 0, 'cobrança de verificação não vira pagamento');
 });
 
+Deno.test('processar-assinatura: APP_URL e SUPABASE_URL http (stack local) → back_url https de fallback', async () => {
+  const db = baseDb();
+  const { fn, calls } = captureFetch({ body: authorizedPre });
+  const res = await handleProcessarAssinatura(
+    request(goodBody()),
+    makeDeps({
+      db,
+      fetch: fn,
+      now: NOW,
+      caller: { id: 'user-1', email: 'aluno@boramed.com' },
+      env: { APP_URL: 'http://localhost:4200', SUPABASE_URL: 'http://127.0.0.1:54321' },
+    }),
+  );
+  assertEquals(res.status, 200);
+  const sent = JSON.parse(String(calls[0].init?.body));
+  assertEquals(
+    sent.back_url,
+    'https://www.boramedoficial.com.br/assinatura/retorno',
+    'MP rejeita back_url não-https; no local cai no domínio de produção',
+  );
+});
+
 Deno.test('processar-assinatura authorized supera assinatura anterior (B5)', async () => {
   const db = baseDb({
     assinatura: [

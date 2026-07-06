@@ -167,9 +167,13 @@ export async function handleProcessarAssinatura(req: Request, deps: Deps): Promi
   const appUrl = (deps.env('APP_URL') ?? '').replace(/\/$/, '');
   const supabaseUrl = deps.env('SUPABASE_URL')!;
   // back_url é exigido pela API mas não há redirect neste fluxo (API direta).
+  // O MP valida o formato e recusa URLs não-https — no stack local (APP_URL e
+  // SUPABASE_URL em http) cai no domínio de produção só para passar na validação.
   const backUrl = appUrl.startsWith('https://')
     ? `${appUrl}/assinatura/retorno`
-    : `${supabaseUrl}/functions/v1/mp-retorno`;
+    : supabaseUrl.startsWith('https://')
+      ? `${supabaseUrl}/functions/v1/mp-retorno`
+      : 'https://www.boramedoficial.com.br/assinatura/retorno';
 
   const res = await mpPost(
     { fetch: deps.fetch, token: mpToken },
