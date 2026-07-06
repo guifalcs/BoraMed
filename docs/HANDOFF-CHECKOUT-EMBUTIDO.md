@@ -3,20 +3,23 @@
 > Documento de contexto para o próximo agente/dev continuar o trabalho.
 > Plano original completo: `PLANO-CHECKOUT-EMBUTIDO.md` (raiz do repo). Leia-o
 > primeiro — este handoff registra **o que já foi feito, como validar e o que falta**.
-> Última atualização: **2026-07-03 (fim do dia)**, após a execução da F5-manual.
+> Última atualização: **2026-07-06**, após destravar o preapproval e o webhook TEST.
 
 ## TL;DR
 
 Migração do checkout de pagamento de **redirect** (Checkout Pro / init_point do
 Mercado Pago) para **checkout embutido** na plataforma (Payment Brick + Checkout
-API). **F1–F5 concluídas; F5-manual executada com MP TEST real: 7 de 10 cenários
-validados fim-a-fim.** Os 4 cenários de PREAPPROVAL (mensal) estão bloqueados por
-uma limitação do sandbox do MP que **exige ação manual do usuário** (credenciais
-de vendedor de teste — ver seção "Bloqueio do preapproval"). Nada foi enviado ao
-Supabase remoto (que é o de PRODUÇÃO — ref `gakvktwtdunljojghpff`): sem `db push`,
-sem `functions deploy`, sem mexer em secrets/webhook. Faltam: destravar o
-preapproval, webhook via ngrok, F6 (revisão/checklist), F7 (deploy faseado com
-aprovação explícita) e F8 (limpeza pós-observação).
+API). **F1–F5 concluídas. F5-manual: 10 de 10 cenários exercitados** — 2026-07-03
+validou os 7 de pagamento único; 2026-07-06 destravou o preapproval (C1/C3/C5/C10
+✅ com MP TEST real) e o **webhook de teste via túnel** (notificações reais do MP
+chegando e escrevendo no banco local). Ressalvas: aprovação real de Pix/boleto e
+`quality_evaluation` ficaram bloqueadas por um **outage do POST /v1/payments no
+sandbox em 2026-07-06** (500 internal_error em qualquer credencial — refazer
+quando normalizar), e novos achados de UX/regra entraram na lista da F6. Nada foi
+enviado ao Supabase remoto (que é o de PRODUÇÃO — ref `gakvktwtdunljojghpff`):
+sem `db push`, sem `functions deploy`, sem mexer em secrets/webhook de produção.
+Faltam: itens F6 (revisão + achados), F7 (deploy faseado com aprovação explícita)
+e F8 (limpeza pós-observação).
 
 ## ⚠️ Restrições invioláveis (valem para qualquer continuação)
 
@@ -103,29 +106,85 @@ Pegadinhas descobertas nos testes (importam para reproduzir):
 - Login do runner é flaky se clicar antes da hidratação SSR — os scripts já têm
   retry.
 
-## ⛔ Bloqueio do preapproval (mensal) — AÇÃO DO USUÁRIO PENDENTE
+## ✅ Preapproval destravado (2026-07-06) — como ficou
 
-`POST /preapproval` com credenciais **TEST-** da conta produtiva retorna sempre
-`404 Card token service not found` (confirmado empiricamente; trocar o
-payer_email por e-mail de comprador de teste NÃO resolve). A documentação do MP
-confirma: o sandbox de **assinaturas** exige credenciais de um **vendedor de
-teste** (os payments avulsos/Bricks funcionam com TEST-, por isso o semestral
-passou e o mensal não).
+O bloqueio (`404 Card token service not found`) era mesmo credencial: o sandbox
+de assinaturas exige as credenciais **APP_USR do vendedor de teste**. Feito via
+Playwright (login como `TESTUSER7012000526337652922`, senha fornecida pelo
+usuário): a app **"BoraMed Teste" (908829636068202, integração CheckoutBricks)**
+já existia na conta do vendedor; extraí as credenciais e atualizei
+`supabase/functions/.env.local` + `frontend/src/environments/environment.local.ts`
+(ambos gitignored — os valores estão NOS ARQUIVOS nesta máquina). Script de login
+persistido: `scripts/teste-manual-mp/vendedor-login.mjs`.
 
-Já existe o vendedor de teste: `TESTUSER7012000526337652922` (id 3486450558,
-criado 20/06). Passos para destravar:
-1. Pegar a senha dele em
-   https://www.mercadopago.com.br/developers/panel/app/7353629886544639/test-users
-2. Logar no Mercado Pago como ele (janela anônima) e criar uma aplicação no
-   painel de dev dessa conta.
-3. Trocar `MP_ACCESS_TOKEN` (`supabase/functions/.env.local`) e a public key
-   (`frontend/src/environments/environment.local.ts`) pelas credenciais
-   **APP_USR** do vendedor de teste (test users usam as credenciais "produtivas"
-   deles — não há aba de credenciais de teste nessas contas).
-4. Re-rodar: C1 mensal APRO (`PLANO=mensal node scripts/teste-manual-mp/f5-cartoes.mjs APRO`),
-   C3 cancelar→carência, C5 pausar→reativar, C10 trocar cartão. O comprador de
-   teste é `TESTUSER3564881035891632645` (id 3487525400).
-   Lembrete: comprador ≠ conta/e-mail do vendedor (senão o botão do Brick trava).
+**Matriz de credenciais do sandbox (importante!):**
+
+| Endpoint | Funciona com | Falha com |
+|---|---|---|
+| `POST /preapproval` (mensal) | APP_USR do vendedor de teste | TEST- (404 card token service) |
+| `POST /v1/payments` (semestral/Pix/boleto) | TEST- (qualquer conta) | APP_USR do vendedor (401 unauthorized use of live credentials) |
+
+Ou seja: para testar o MENSAL use o par APP_USR do vendedor; para o SEMESTRAL
+troque para o par TEST- (original da conta produtiva, registrado no histórico
+git deste arquivo, ou o TEST- da app do vendedor). Sempre trocar **público
+(front) e access token (edge) juntos** e reiniciar `functions serve`.
+
+Pegadinhas que custaram tempo (não repetir):
+- Com o vendedor de teste, **payer e collector precisam ser test users**: o
+  e-mail da conta BoraMed logada deve ser o do comprador de teste
+  (`test_user_3564881035891632645@testuser.com`, senha da PLATAFORMA `Teste123!`
+  — troquei via UPDATE em auth.users/profiles; um `db reset` desfaz). Senão o MP
+  devolve 400 "Both payer and collector must be real or test users".
+- Com a public key APP_USR do vendedor o **BIN do Mastercard de teste (503143)
+  não resolve** no Brick ("no_payment_method_for_provided_bin") — usar o Visa
+  `4235 6477 2802 5682` (`CARD=` nos runners).
+- `back_url` não-https é rejeitado pelo MP (400) — corrigido na edge com
+  fallback https (commit desta sessão), mesmo padrão do notification_url.
+
+## F5-manual parte 2 — resultados (2026-07-06, MP TEST real)
+
+- ✅ **C1 mensal APRO** (Brick real → `mp-processar-assinatura` → preapproval
+  `authorized` no MP): `assinatura` authorized + `pagamento_intencao` aprovada +
+  zero linhas em `pagamento` (cobrança de verificação não registrada — correto).
+  **Ressalva de sandbox**: o MP devolve `next_payment_date` = agora (a 1ª fatura
+  processa assíncrono e no sandbox nunca processou), então `tem_assinatura_ativa`
+  fica false e a tela "Liberando seu acesso…" espera o webhook
+  `subscription_authorized_payment`. Em produção a 1ª cobrança processa rápido,
+  mas **decisão para F6**: conceder acesso provisório quando o preapproval nasce
+  `authorized` (ex.: proxima_cobranca = +1 mês provisório, webhook corrige)?
+- ✅ **Webhook TEST via túnel** (cloudflared; ngrok estava bloqueado na rede):
+  webhook configurado no painel do vendedor (abas teste+produção) com eventos
+  "Pagamentos" e "Planos e assinaturas"; secret real no `.env.local`.
+  **Notificações reais do MP chegaram (5–60s) e escreveram no banco** —
+  pause/cancel refletidos via `subscription_preapproval`, HMAC validando.
+  A URL do quick tunnel muda a cada sessão → reconfigurar no painel
+  (`vendedor-login.mjs` ajuda). As 2 primeiras notificações se perderam num
+  isolate morto por cold start do `functions serve` local (não é bug nosso).
+- ✅ **C5 pausar→reativar**: pause via API → webhook real → linha `paused`;
+  reativar via edge (`acao:'reativar'`) → `authorized` no MP e local.
+  **ACHADOS (F6)**: (1) usuário `paused` NÃO passa no paywall e o guard o manda
+  p/ `/planos` — o botão "Reativar assinatura" da Minha Assinatura é
+  **inalcançável** para ele; (2) o anti-dupla das edges consulta só
+  `['authorized','cancelled']` — um pausado consegue assinar de novo e ficar com
+  2 preapprovals vivos no MP.
+- ✅ **C10 trocar cartão** via UI (modal + Brick real): edge devolveu
+  `{status:'authorized', card_updated:true}`, `card_id` novo no preapproval do
+  MP. **ACHADOS (F6)**: o Brick do modal exige um campo E-mail que o usuário
+  digita à mão — pré-preencher via `initialization.payer.email`; o botão do
+  Brick diz "Pagar" num fluxo que não cobra nada (customizar rótulo).
+- ✅ **C3 cancelar→carência** via UI (runner `manual-mensal.mjs`): confirm
+  dialog → edge 200 cancelled → tela "Cancelada · Acesso até 06/08/2026";
+  webhook `cancelled` chegou em ~5s; ao cancelar o MP avança `next_payment_date`
+  p/ +1 mês e o sync grava — carência funcionando (`tem_assinatura_ativa` true
+  com o JWT do usuário; via psql sem `auth.uid()` retorna false por design).
+- ⛔ **Outage do sandbox em 2026-07-06**: `POST /v1/payments` retornando
+  `500 internal_error` para QUALQUER credencial/payload (inclusive o fluxo
+  idêntico ao que passou dia 03; GET/search funcionam; status page "operational";
+  a edge responde 502 + intenção volta a `criada` — comportamento correto).
+  Bloqueou: aprovação real de Pix/boleto pelo webhook (C8), re-teste semestral e
+  `quality_evaluation` (o payment de 03/07 dá 404/"payment not originated from
+  app" no homologator; precisa de payment novo ≤7 dias — tentar
+  `quality_evaluation` com `application_id=6161911882101170` quando voltar).
 
 ## Acessos manuais e cortesia (debatido e corrigido em 2026-07-03)
 
@@ -198,25 +257,42 @@ npx supabase functions serve --env-file /caminho/absoluto/para/supabase/function
 #  MP_WEBHOOK_SECRET ainda é dummy — nenhum webhook de teste registrado)
 ```
 
-Estado do ambiente ao fim de 2026-07-03: stack local rodando, `ng serve` no ar,
-banco local com as tabelas de pagamento **vazias** (limpei após os testes; um
-`db reset` recria tudo). Roteiro completo de cenários: `TESTE-PAGAMENTO-LOCAL.md`
-(cartões APRO/FUND/SECU/CALL/DUPL, 3DS `5483 9281 6457 4623`, CPF `12345678909`).
-Runners reais: `scripts/teste-manual-mp/` (README lá).
+Estado do ambiente ao fim de 2026-07-06: stack local + `ng serve` + `functions
+serve` rodando; `.env.local` com o par **APP_USR do vendedor de teste** e
+`MP_WEBHOOK_SECRET` real; túnel cloudflared ativo (URL efêmera — reconfigurar o
+webhook no painel ao recriar); usuário local `teste@boramed.com` renomeado para
+`test_user_3564881035891632645@testuser.com` (senha `Teste123!`; `db reset`
+desfaz); banco local com a assinatura do C3 em `cancelled` (carência até
+2026-08-06) — `delete from assinatura; delete from pagamento_intencao;` limpa.
+Roteiro completo de cenários: `TESTE-PAGAMENTO-LOCAL.md` (cartões
+APRO/FUND/SECU/CALL/DUPL, 3DS `5483 9281 6457 4623`, CPF `12345678909`).
+Runners reais: `scripts/teste-manual-mp/` (README lá — inclui a matriz de
+credenciais do sandbox e as envs `EMAIL`/`CARD`).
 
 ## O que falta (em ordem)
 
-1. **Destravar preapproval** (ação do usuário — seção do bloqueio acima) e
-   re-rodar C1/C3/C5/C10.
-2. **Webhook TEST**: túnel ngrok (`ngrok http 54321`) + registrar webhook no
-   painel/MCP (`save_webhook`) + `MP_WEBHOOK_SECRET` real no `.env.local` →
-   confirmar Pix/boleto aprovando de verdade e os eventos de preapproval.
-3. **`quality_evaluation`** via MCP do MP com um payment de teste (`is_ca=true`),
-   corrigindo itens até score alto.
-4. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
-5. **F6**: code review completo da branch (segurança + regressão legado);
+1. **Quando o sandbox de `/v1/payments` normalizar** (testar com o curl mínimo
+   do histórico ou re-rodar `f5-cartoes.mjs APRO 6` com par TEST-):
+   re-validar semestral, **C8 Pix/boleto aprovando de verdade via webhook**
+   (webhook do túnel já configurado e funcionando) e rodar
+   **`quality_evaluation`** via MCP (`is_ca=true`,
+   `application_id=6161911882101170`, payment novo ≤7 dias), corrigindo itens
+   até score alto.
+2. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
+3. **F6**: code review completo da branch (segurança + regressão legado);
    opcional preview branch do Supabase via MCP para ensaio; checklist de go-live
    revisado com o usuário. Itens já anotados para a F6:
+   - **Assinatura `paused` (achado 2026-07-06)**: usuário pausado não alcança o
+     botão "Reativar" (paywall guard → /planos) E não é barrado pelo anti-dupla
+     (`.in('status', ['authorized','cancelled'])` nas edges de processamento) —
+     decidir: liberar a rota Minha Assinatura fora do paywall e/ou incluir
+     `paused` no anti-dupla com CTA de reativação;
+   - **Acesso imediato do mensal**: preapproval nasce `authorized` com
+     `next_payment_date = agora` até a 1ª fatura processar — decidir se concede
+     acesso provisório na resposta síncrona (UX: hoje fica em "Liberando…");
+   - **Modal Trocar cartão**: pré-preencher e-mail
+     (`initialization.payer.email`) e customizar o rótulo do botão do Brick
+     (diz "Pagar" sem cobrar nada);
    - `mp-gerenciar-assinatura` devolve `detail: <body cru do MP>` no 502
      (contrato legado) — avaliar sanitizar como nas edges novas;
    - normalizar `federal_unit` extenso→UF na edge (boleto com CEP-lookup 401);
@@ -224,11 +300,11 @@ Runners reais: `scripts/teste-manual-mp/` (README lá).
      (ícone; cosmético); box do challenge 3DS vaza a borda direita do card;
    - 2 falhas pré-existentes de guards (mock sem `isRecoverySession`) — corrigir
      fora desta PR.
-6. **F7 (SÓ com aprovação explícita do usuário)**: deploy faseado — (1) migration
+4. **F7 (SÓ com aprovação explícita do usuário)**: deploy faseado — (1) migration
    aditiva, (2) edges novas, (3) `mp-webhook`+`mp-gerenciar-assinatura`
    atualizados, (4) frontend, (5) janela de observação 2–4 semanas (rollback =
    reverter só o frontend). Lembrar do webhook de PRODUÇÃO (URL/secret) e da CSP.
-7. **F8 (pós zero tráfego legado)**: remover `mp-criar-assinatura/`,
+5. **F8 (pós zero tráfego legado)**: remover `mp-criar-assinatura/`,
    `mp-vincular-assinatura/`, `mp-retorno/`, `assinatura-retorno.component.ts` +
    rota, `PENDING_PREAPPROVAL_KEY` + trecho do `subscription.guard`, parte legada
    do `pagamento.spec.ts`, entradas do config.toml. Grep final por
