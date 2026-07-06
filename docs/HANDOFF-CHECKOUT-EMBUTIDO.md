@@ -3,7 +3,49 @@
 > Documento de contexto para o próximo agente/dev continuar o trabalho.
 > Plano original completo: `PLANO-CHECKOUT-EMBUTIDO.md` (raiz do repo). Leia-o
 > primeiro — este handoff registra **o que já foi feito, como validar e o que falta**.
-> Última atualização: **2026-07-06**, após destravar o preapproval e o webhook TEST.
+> Última atualização: **2026-07-06 (fim do dia)**, após destravar o preapproval,
+> o webhook TEST e fechar a F5-manual.
+
+## ⏯️ RETOMADA — exatamente onde paramos (2026-07-06)
+
+**F5-manual está ENCERRADA** (tudo que o sandbox permite foi validado). O
+próximo passo NÃO é código: são **2 decisões do usuário** que destravam a F6 —
+perguntar a ele logo no início da sessão:
+
+1. **Hotfix na main?** Produção tem o botão "Cancelar" quebrado para acessos
+   manuais/cortesia (seção "Acessos manuais"). Recomendação já dada: esperar a
+   F7, salvo volume relevante. Se ele optar pelo hotfix: backport manual (sem
+   cherry-pick — o commit `0f526a1` referencia o modal Trocar cartão que só
+   existe na branch).
+2. **Regras dos achados novos** (seção "F5-manual parte 2"): (a) liberar a rota
+   Minha Assinatura fora do paywall p/ usuário `paused` alcançar "Reativar"?
+   (b) incluir `paused` no anti-dupla das edges (hoje ele consegue assinar de
+   novo e ficar com 2 preapprovals)? (c) mensal recém-autorizado ganha acesso
+   provisório (hoje fica "Liberando…" até a 1ª fatura processar no MP)?
+
+Com as respostas → **F6**: implementar os achados decididos + itens anotados
+(lista completa em "O que falta"), rodar code review completo da branch e
+escrever o checklist de go-live. Depois F7 (deploy faseado, só com aprovação
+explícita) e F8.
+
+**Estado do ambiente ao encerrar a sessão** (processos de terminal morreram ao
+fechar; o Docker do Supabase continua de pé):
+- Para religar: `npx supabase start` (se preciso) + `functions serve --env-file
+  supabase/functions/.env.local` + `cd frontend && npx ng serve`.
+- **Túnel morto**: recriar com `cloudflared tunnel --url http://127.0.0.1:54321
+  --protocol http2` (http2 é OBRIGATÓRIO nesta rede) e **atualizar a URL do
+  webhook** nas 2 abas do painel do vendedor (app 908829636068202 → Webhooks) —
+  `scripts/teste-manual-mp/vendedor-login.mjs` loga lá (senha do vendedor:
+  painel da conta produtiva → Contas de teste). O `MP_WEBHOOK_SECRET` do
+  `.env.local` continua válido (não muda com a URL).
+- `.env.local` e `environment.local.ts` estão com o **par TEST do vendedor de
+  teste** (bom p/ pagamentos semestral/Pix/boleto); p/ mensal (preapproval),
+  trocar pro par APP_USR — os dois pares estão nos próprios arquivos/histórico
+  desta máquina e a matriz está em `scripts/teste-manual-mp/README.md`.
+- Usuário local: `test_user_3564881035891632645@testuser.com` / `Teste123!`
+  (era `teste@boramed.com`; um `db reset` volta ao seed). Banco local tem
+  sujeira de teste (pagamentos/assinatura) — limpar com
+  `delete from pagamento; delete from pagamento_intencao; delete from assinatura;`.
 
 ## TL;DR
 
