@@ -188,19 +188,35 @@ Pegadinhas que custaram tempo (não repetir):
   (400 "Invalid users involved" nos dois sentidos). Logo **a app do vendedor
   cobre tudo** (payments com par TEST, preapproval com par APP_USR, e-mail local
   fixo no comprador de teste) e o webhook dela já aponta p/ o túnel nas 2 abas.
-- ⚠️ **`quality_evaluation` via MCP bloqueado**: erro "Payment was not
-  originated from app" para payments TEST- da conta produtiva (até criado pelo
-  fluxo real do Brick — testado com 1348130165, com/sem `application_id`,
-  produto/plataforma). A app do vendedor não pertence à conta OAuth do MCP
-  ("application is not from the user"). Alternativas p/ F6: rodar a avaliação
-  manualmente no painel (app → Qualidade da integração; o painel do vendedor tem
-  a seção) ou criar app via MCP `create_application` (test automation).
-- 🔶 **C8 Pix parcial**: Pix criado pelo Brick real (QR + countdown + polling),
-  intenção/`pagamento` pending sincronizados; **aprovar Pix de teste é
-  impossível no sandbox** (PUT status→approved dá 403; ninguém "paga" o QR).
-  Topic `payment` validado com o simulador assinado do repo (200 idempotente).
-  `payment.created` de origem MP não foi observado no túnel em ~8min — conferir
-  na lista de notificações do painel (Ambiente=Teste) na próxima sessão.
+- ✅ **Topic `payment` real validado (2ª rodada de 2026-07-06)**: a lista de
+  notificações do painel (API `/developers/panel/applications/api/webhooks/notifications`)
+  revelou que o MP ENVIAVA os `payment.created` mas recebia **502 — o túnel QUIC
+  do cloudflared degrada nesta rede** (a mesma que bloqueia ngrok). Recriado com
+  `--protocol http2`: entrega real com **HTTP 200 em ~8s** e o MP fez retry
+  automático dos 502 antigos. **Sempre subir o túnel com
+  `cloudflared tunnel --url http://127.0.0.1:54321 --protocol http2`.**
+  Payment sem `metadata.tipo='acesso_unico'` é ignorado pelo sync (correto —
+  só payments de acesso concedem acesso; legados reais têm o metadata).
+- 🔶 **C8 Pix parcial (limite do sandbox)**: Pix criado pelo Brick real (QR +
+  countdown + polling), intenção/`pagamento` pending sincronizados e
+  `payment.created` entregue; **aprovar Pix de teste é impossível** (PUT
+  status→approved dá 403; ninguém "paga" o QR do sandbox). A aprovação
+  assíncrona Pix→webhook→acesso fica para a janela de observação da F7.
+- ⚠️ **Medição de qualidade: SÓ pós-deploy.** Todas as vias foram esgotadas:
+  `quality_evaluation` via MCP recusa payments TEST- ("Payment was not
+  originated from app", qualquer combinação de parâmetros); a ferramenta do
+  painel exige explicitamente "um ID em produção" (recusou payment TEST na
+  tela); payments com o par APP_USR do vendedor dão 401 (restrição da conta).
+  → Agendar a medição oficial na F7 com o 1º pagamento real.
+  **Auto-avaliação contra o checklist oficial (`quality_checklist` via MCP)**:
+  requisitos todos ✓ (webhook, external_reference, SDK JS V2/Bricks secure
+  fields, statement_descriptor, SSL/TLS do hosting, payer completo com email/
+  nome/CPF, items com id/title/description/category/quantity/unit_price) exceto
+  **backend SDK** (edges Deno chamam REST direto — não há SDK oficial p/ Deno;
+  justificar na homologação se pedirem). Boas práticas: reconsulta pós-webhook ✓,
+  mensagens de resposta ✓, address no boleto ✓; não usados por decisão/escopo:
+  chargebacks API, cancel de pending, relatórios, auth+capture, customer/cards
+  salvos; avaliar na F6: logo oficial do MP no checkout.
 
 ## Acessos manuais e cortesia (debatido e corrigido em 2026-07-03)
 
@@ -287,12 +303,10 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
 
 ## O que falta (em ordem)
 
-1. **Fechar as pontas do webhook/qualidade**: confirmar entrega real do topic
-   `payment` no túnel (lista de notificações do painel, Ambiente=Teste) e rodar
-   a **avaliação de qualidade** por uma das alternativas anotadas na seção
-   pós-outage (painel manual ou app via MCP create_application) — o caminho
-   `quality_evaluation` via MCP com payments TEST- está bloqueado (diagnóstico
-   na mesma seção).
+1. ~~Fechar as pontas do webhook/qualidade~~ **FEITO em 2026-07-06**: topic
+   `payment` real validado (túnel http2); medição oficial de qualidade só é
+   possível pós-deploy (diagnóstico na seção pós-outage) — **incluir na F7**:
+   rodar a medição no painel com o 1º pagamento real e corrigir apontamentos.
 2. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
 3. **F6**: code review completo da branch (segurança + regressão legado);
    opcional preview branch do Supabase via MCP para ensaio; checklist de go-live

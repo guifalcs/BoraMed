@@ -52,8 +52,10 @@ runners via `EMAIL=...`.)
 
 ## Webhook de teste (túnel)
 
-O webhook da app do vendedor aponta para um túnel local (`cloudflared tunnel
---url http://127.0.0.1:54321`; o ngrok estava bloqueado na rede em 2026-07-06).
+O webhook da app do vendedor aponta para um túnel local:
+`cloudflared tunnel --url http://127.0.0.1:54321 --protocol http2` — o
+`--protocol http2` é OBRIGATÓRIO nesta rede (QUIC degrada e o MP recebe 502;
+ngrok é bloqueado de vez).
 A URL do quick tunnel **muda a cada sessão** → reconfigure em
 painel → app 908829636068202 → Webhooks (abas teste E produção), eventos
 "Pagamentos" + "Planos e assinaturas". O secret (Assinatura secreta) vai em
