@@ -4,7 +4,12 @@
 import { chromium } from '/home/guilherme/Documentos/BoraMed/frontend/node_modules/playwright/index.mjs';
 
 const OUT = process.env.OUT_DIR ?? '.';
-const CARD = '5031 4332 1540 6351';
+// Mastercard de teste MLB por padrão; sobrescreva com CARD='4235 6477 2802 5682'
+// (Visa) se o BIN não resolver na conta usada (visto com o vendedor de teste).
+const CARD = process.env.CARD ?? '5031 4332 1540 6351';
+// Com vendedor de teste (preapproval), o e-mail da conta BoraMed precisa ser o
+// do COMPRADOR de teste do MP (payer e collector devem ser ambos test users).
+const EMAIL = process.env.EMAIL ?? 'teste@boramed.com';
 const CPF = '12345678909';
 const EXP = '11/30';
 const CVV = '123';
@@ -29,7 +34,7 @@ page.on('console', (m) => {
 await page.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });
 let logado = false;
 for (let i = 0; i < 4 && !logado; i++) {
-  await page.getByLabel(/e-?mail/i).fill('teste@boramed.com');
+  await page.getByLabel(/e-?mail/i).fill(EMAIL);
   await page.locator('input[type="password"]').fill('Teste123!');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   logado = await page

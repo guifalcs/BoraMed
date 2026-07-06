@@ -16,7 +16,7 @@ page.on('console', (m) => {
 await page.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });
 let logado = false;
 for (let i = 0; i < 4 && !logado; i++) {
-  await page.getByLabel(/e-?mail/i).fill('teste@boramed.com');
+  await page.getByLabel(/e-?mail/i).fill(process.env.EMAIL ?? 'teste@boramed.com');
   await page.locator('input[type="password"]').fill('Teste123!');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   logado = await page

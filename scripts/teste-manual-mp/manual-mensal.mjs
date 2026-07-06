@@ -13,7 +13,7 @@ page.on('response', async (r) => {
 await page.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });
 let ok = false;
 for (let i = 0; i < 4 && !ok; i++) {
-  await page.getByLabel(/e-?mail/i).fill('teste@boramed.com');
+  await page.getByLabel(/e-?mail/i).fill(process.env.EMAIL ?? 'teste@boramed.com');
   await page.locator('input[type="password"]').fill('Teste123!');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   ok = await page.waitForURL((u) => !/\/login/.test(String(u)), { timeout: 15000 }).then(() => true).catch(() => false);
