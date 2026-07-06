@@ -177,14 +177,30 @@ Pegadinhas que custaram tempo (não repetir):
   webhook `cancelled` chegou em ~5s; ao cancelar o MP avança `next_payment_date`
   p/ +1 mês e o sync grava — carência funcionando (`tem_assinatura_ativa` true
   com o JWT do usuário; via psql sem `auth.uid()` retorna false por design).
-- ⛔ **Outage do sandbox em 2026-07-06**: `POST /v1/payments` retornando
-  `500 internal_error` para QUALQUER credencial/payload (inclusive o fluxo
-  idêntico ao que passou dia 03; GET/search funcionam; status page "operational";
-  a edge responde 502 + intenção volta a `criada` — comportamento correto).
-  Bloqueou: aprovação real de Pix/boleto pelo webhook (C8), re-teste semestral e
-  `quality_evaluation` (o payment de 03/07 dá 404/"payment not originated from
-  app" no homologator; precisa de payment novo ≤7 dias — tentar
-  `quality_evaluation` com `application_id=6161911882101170` quando voltar).
+- ⚠️ **Outage do sandbox em 2026-07-06 (~13h–16h UTC, recuperou no mesmo dia)**:
+  `POST /v1/payments` retornou `500 internal_error` para qualquer
+  credencial/payload por ~3h (a edge respondeu 502 + intenção `criada` —
+  comportamento correto sob falha do MP, validado ao vivo).
+- ✅ **Pós-outage**: C6 semestral APRO 6x revalidado fim-a-fim (approved,
+  parcelas=6, acesso na hora). **Refinamento da matriz**: payments funcionam com
+  o par **TEST do vendedor de teste** desde que `payer.email` seja o comprador
+  de teste — e com o par TEST da conta produtiva o payer NÃO pode ser test user
+  (400 "Invalid users involved" nos dois sentidos). Logo **a app do vendedor
+  cobre tudo** (payments com par TEST, preapproval com par APP_USR, e-mail local
+  fixo no comprador de teste) e o webhook dela já aponta p/ o túnel nas 2 abas.
+- ⚠️ **`quality_evaluation` via MCP bloqueado**: erro "Payment was not
+  originated from app" para payments TEST- da conta produtiva (até criado pelo
+  fluxo real do Brick — testado com 1348130165, com/sem `application_id`,
+  produto/plataforma). A app do vendedor não pertence à conta OAuth do MCP
+  ("application is not from the user"). Alternativas p/ F6: rodar a avaliação
+  manualmente no painel (app → Qualidade da integração; o painel do vendedor tem
+  a seção) ou criar app via MCP `create_application` (test automation).
+- 🔶 **C8 Pix parcial**: Pix criado pelo Brick real (QR + countdown + polling),
+  intenção/`pagamento` pending sincronizados; **aprovar Pix de teste é
+  impossível no sandbox** (PUT status→approved dá 403; ninguém "paga" o QR).
+  Topic `payment` validado com o simulador assinado do repo (200 idempotente).
+  `payment.created` de origem MP não foi observado no túnel em ~8min — conferir
+  na lista de notificações do painel (Ambiente=Teste) na próxima sessão.
 
 ## Acessos manuais e cortesia (debatido e corrigido em 2026-07-03)
 
@@ -271,13 +287,12 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
 
 ## O que falta (em ordem)
 
-1. **Quando o sandbox de `/v1/payments` normalizar** (testar com o curl mínimo
-   do histórico ou re-rodar `f5-cartoes.mjs APRO 6` com par TEST-):
-   re-validar semestral, **C8 Pix/boleto aprovando de verdade via webhook**
-   (webhook do túnel já configurado e funcionando) e rodar
-   **`quality_evaluation`** via MCP (`is_ca=true`,
-   `application_id=6161911882101170`, payment novo ≤7 dias), corrigindo itens
-   até score alto.
+1. **Fechar as pontas do webhook/qualidade**: confirmar entrega real do topic
+   `payment` no túnel (lista de notificações do painel, Ambiente=Teste) e rodar
+   a **avaliação de qualidade** por uma das alternativas anotadas na seção
+   pós-outage (painel manual ou app via MCP create_application) — o caminho
+   `quality_evaluation` via MCP com payments TEST- está bloqueado (diagnóstico
+   na mesma seção).
 2. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
 3. **F6**: code review completo da branch (segurança + regressão legado);
    opcional preview branch do Supabase via MCP para ensaio; checklist de go-live

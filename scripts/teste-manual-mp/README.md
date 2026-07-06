@@ -11,15 +11,19 @@ Screenshots vão para o diretório atual (ou `OUT_DIR`).
 
 ## Credenciais — matriz do sandbox (descoberta em 2026-07-06)
 
-O sandbox exige **pares diferentes** conforme o endpoint:
+O sandbox exige **pares diferentes** conforme o endpoint. Recomendado: usar
+sempre a app do vendedor de teste ("BoraMed Teste" 908829636068202 — o webhook
+dela já aponta p/ o túnel) e trocar só o par:
 
-| Fluxo | Credenciais (front `environment.local.ts` + edge `.env.local`) |
-|---|---|
-| `/preapproval` (mensal C1/C3/C5/C10) | **APP_USR do vendedor de teste** (app "BoraMed Teste" 908829636068202) |
-| `/v1/payments` (semestral/Pix/boleto/3DS) | **TEST-** (da conta produtiva ou do vendedor) |
+| Fluxo | Credenciais (front `environment.local.ts` + edge `.env.local`) | payer (e-mail da conta logada) |
+|---|---|---|
+| `/preapproval` (mensal C1/C3/C5/C10) | **APP_USR do vendedor** | comprador de teste (obrigatório) |
+| `/v1/payments` (semestral/Pix/boleto/3DS) | **TEST- do vendedor** | comprador de teste (obrigatório) |
+| `/v1/payments` (alternativa) | TEST- da conta produtiva | **NÃO** pode ser test user (400 Invalid users involved) |
 
-Com o vendedor de teste, **payer e collector devem ser test users**: o e-mail da
-conta BoraMed logada precisa ser o do comprador de teste. No banco local:
+Sempre trocar public key (front) e access token (edge) **juntos** e reiniciar o
+`functions serve`. Com o par do vendedor, o e-mail da conta BoraMed logada
+precisa ser o do comprador de teste. No banco local:
 
 ```sql
 update auth.users  set email='test_user_3564881035891632645@testuser.com' where email='teste@boramed.com';
