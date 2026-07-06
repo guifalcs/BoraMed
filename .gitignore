@@ -9,3 +9,7 @@ supabase/functions/.env.*
 # node_modules gerado pelo Deno (nodeModulesDir: auto) — recriado via deno.lock
 supabase/functions/node_modules/
 .tools/
+# sessão/credenciais do vendedor de teste MP (scripts mp-seller-*)
+scripts/teste-manual-mp/session.json
+scripts/teste-manual-mp/creds.json
+scripts/teste-manual-mp/creds-page.png

@@ -15,6 +15,14 @@ diretório atual (ou `OUT_DIR`).
 | `f5-pix-boleto-3ds.mjs pix\|boleto\|3ds` | Pix (QR/countdown), boleto (endereço; **Estado = UF "SP"**, nome por extenso é recusado pelo MP) e challenge 3DS |
 | `api-409.mjs` | Direto na API: card token via public key TEST + `mp-processar-assinatura` → valida o 409 de acesso ativo |
 | `manual-mensal.mjs` | Abre `/dashboard/assinatura` e tenta cancelar — usado para validar acessos manuais/cortesia (criar a assinatura via SQL antes; ver handoff) |
+| `mp-seller-login.mjs` | Login headed no MP como vendedor de teste (humano resolve o captcha); salva `session.json` (gitignored). `MP_TEST_SELLER_PASS` obrigatória |
+| `mp-seller-credentials.mjs` | Com a sessão salva, captura as credenciais APP_USR da app "BoraMed Teste" → `creds.json` + screenshot (gitignored) |
+
+Overrides por env nos runners: `CARD='4509 9535 6623 3704'` (obrigatório com
+credenciais de vendedor de teste — BINs Mastercard de teste não resolvem) e
+`EMAIL='test_user_...@testuser.com'` (obrigatório no PLANO=mensal — payer
+precisa ser comprador de teste). Receita completa: seção "Preapproval
+DESTRAVADO" do `docs/HANDOFF-CHECKOUT-EMBUTIDO.md`.
 
 Atenção ao rate limit real (5 tentativas/15min por usuário): entre baterias,
 `delete from pagamento_intencao` no banco local libera.

@@ -115,11 +115,13 @@ completa do ambiente que funciona (reproduzir em qualquer máquina):
 1. **Vendedor de teste**: `TESTUSER7012000526337652922` (id 3486450558, senha
    com o Guilherme). Ele **já tem** a aplicação **"BoraMed Teste"
    (nº 908829636068202, produto CheckoutBricks)** — NÃO precisa criar outra.
-   Credenciais em: logar no MP como ele (janela anônima; captcha impede
-   automação total — ver `.tools/mp-seller/step1-login-headed2.mjs` que
-   automatiza tudo menos o captcha) → painel dev → app 908829636068202 →
-   Credenciais de produção (contas de teste usam as credenciais "produtivas"
-   delas; o token começa com APP_USR e funciona como sandbox).
+   Credenciais: rodar `MP_TEST_SELLER_PASS='<senha>' node
+   scripts/teste-manual-mp/mp-seller-login.mjs` (abre janela; você só resolve o
+   captcha) e depois `node scripts/teste-manual-mp/mp-seller-credentials.mjs`
+   (grava `creds.json` + screenshot ao lado do script; ambos gitignored). Ou
+   manualmente: painel dev → app 908829636068202 → Credenciais de produção
+   (contas de teste usam as credenciais "produtivas" delas; o token começa com
+   APP_USR e funciona como sandbox).
 2. **`supabase/functions/.env.local`**: `MP_ACCESS_TOKEN` = Access Token APP_USR
    do vendedor de teste; **`APP_URL` precisa ser https** (ex.
    `https://boramedoficial.com.br`) — o MP rejeita `back_url` http com
@@ -132,9 +134,19 @@ completa do ambiente que funciona (reproduzir em qualquer máquina):
    usuário no Supabase local com o e-mail do comprador de teste. Comprador em
    uso: `TESTUSER8444543486803681374` (id 3515110045,
    `test_user_8444543486803681374@testuser.com`); usuário local criado com esse
-   e-mail e senha `Teste123!` via admin API. (Criar novos compradores:
-   `POST /users/test_user` com o token de produção da conta principal — a
-   resposta traz e-mail e senha.)
+   e-mail e senha `Teste123!` via admin API — comando pronto (chaves demo do
+   stack local):
+
+   ```bash
+   curl -s -X POST http://127.0.0.1:54321/auth/v1/admin/users \
+     -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test_user_8444543486803681374@testuser.com","password":"Teste123!","email_confirm":true,"user_metadata":{"nome":"Comprador Teste MP"}}'
+   # SERVICE_ROLE_KEY = o do `npx supabase start` (chave demo padrão do CLI)
+   ```
+
+   (Criar novos compradores: `POST /users/test_user` com o token de produção da
+   conta principal — a resposta traz e-mail e senha.)
 5. **Cartão de teste**: com a public key do vendedor de teste os BINs da
    Mastercard de teste (503143/548392) **não resolvem** no BIN search do Brick
    (`no_payment_method_for_provided_bin`); a **Visa `4509 9535 6623 3704`**
