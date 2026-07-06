@@ -3,21 +3,23 @@
 > Documento de contexto para o próximo agente/dev continuar o trabalho.
 > Plano original completo: `PLANO-CHECKOUT-EMBUTIDO.md` (raiz do repo). Leia-o
 > primeiro — este handoff registra **o que já foi feito, como validar e o que falta**.
-> Última atualização: **2026-07-05**, após restaurar o ambiente na segunda máquina
-> (Windows). Ver seção "Estado por máquina" no fim.
+> Última atualização: **2026-07-05 (noite)** — ambiente Windows restaurado E
+> **preapproval destravado** (C1 mensal validado fim-a-fim). Ver seções
+> "Preapproval DESTRAVADO" e "Estado por máquina".
 
 ## TL;DR
 
 Migração do checkout de pagamento de **redirect** (Checkout Pro / init_point do
 Mercado Pago) para **checkout embutido** na plataforma (Payment Brick + Checkout
-API). **F1–F5 concluídas; F5-manual executada com MP TEST real: 7 de 10 cenários
-validados fim-a-fim.** Os 4 cenários de PREAPPROVAL (mensal) estão bloqueados por
-uma limitação do sandbox do MP que **exige ação manual do usuário** (credenciais
-de vendedor de teste — ver seção "Bloqueio do preapproval"). Nada foi enviado ao
-Supabase remoto (que é o de PRODUÇÃO — ref `gakvktwtdunljojghpff`): sem `db push`,
-sem `functions deploy`, sem mexer em secrets/webhook. Faltam: destravar o
-preapproval, webhook via ngrok, F6 (revisão/checklist), F7 (deploy faseado com
-aprovação explícita) e F8 (limpeza pós-observação).
+API). **F1–F5 concluídas; F5-manual: 8 de 10 cenários validados fim-a-fim com MP
+TEST real** (7 no dia 03/07 + C1 mensal no dia 05/07 após destravar o
+preapproval com credenciais do vendedor de teste — ver seção "Preapproval
+DESTRAVADO"). Nada foi enviado ao Supabase remoto (que é o de PRODUÇÃO — ref
+`gakvktwtdunljojghpff`): sem `db push`, sem `functions deploy`, sem mexer em
+secrets/webhook. Faltam: C3/C5/C10 (gestão da mensal), investigar
+`proxima_cobranca`=agora no preapproval novo (achado em aberto), webhook via
+túnel + Pix/boleto reais, `quality_evaluation`, F6 (revisão/checklist), F7
+(deploy faseado com aprovação explícita) e F8 (limpeza pós-observação).
 
 ## ⚠️ Restrições invioláveis (valem para qualquer continuação)
 
@@ -104,29 +106,63 @@ Pegadinhas descobertas nos testes (importam para reproduzir):
 - Login do runner é flaky se clicar antes da hidratação SSR — os scripts já têm
   retry.
 
-## ⛔ Bloqueio do preapproval (mensal) — AÇÃO DO USUÁRIO PENDENTE
+## ✅ Preapproval DESTRAVADO (2026-07-05) — C1 mensal validado fim-a-fim
 
-`POST /preapproval` com credenciais **TEST-** da conta produtiva retorna sempre
-`404 Card token service not found` (confirmado empiricamente; trocar o
-payer_email por e-mail de comprador de teste NÃO resolve). A documentação do MP
-confirma: o sandbox de **assinaturas** exige credenciais de um **vendedor de
-teste** (os payments avulsos/Bricks funcionam com TEST-, por isso o semestral
-passou e o mensal não).
+O bloqueio (`404 Card token service not found` com credenciais TEST-) foi
+resolvido usando as credenciais **APP_USR do vendedor de teste**. Receita
+completa do ambiente que funciona (reproduzir em qualquer máquina):
 
-Já existe o vendedor de teste: `TESTUSER7012000526337652922` (id 3486450558,
-criado 20/06). Passos para destravar:
-1. Pegar a senha dele em
-   https://www.mercadopago.com.br/developers/panel/app/7353629886544639/test-users
-2. Logar no Mercado Pago como ele (janela anônima) e criar uma aplicação no
-   painel de dev dessa conta.
-3. Trocar `MP_ACCESS_TOKEN` (`supabase/functions/.env.local`) e a public key
-   (`frontend/src/environments/environment.local.ts`) pelas credenciais
-   **APP_USR** do vendedor de teste (test users usam as credenciais "produtivas"
-   deles — não há aba de credenciais de teste nessas contas).
-4. Re-rodar: C1 mensal APRO (`PLANO=mensal node scripts/teste-manual-mp/f5-cartoes.mjs APRO`),
-   C3 cancelar→carência, C5 pausar→reativar, C10 trocar cartão. O comprador de
-   teste é `TESTUSER3564881035891632645` (id 3487525400).
-   Lembrete: comprador ≠ conta/e-mail do vendedor (senão o botão do Brick trava).
+1. **Vendedor de teste**: `TESTUSER7012000526337652922` (id 3486450558, senha
+   com o Guilherme). Ele **já tem** a aplicação **"BoraMed Teste"
+   (nº 908829636068202, produto CheckoutBricks)** — NÃO precisa criar outra.
+   Credenciais em: logar no MP como ele (janela anônima; captcha impede
+   automação total — ver `.tools/mp-seller/step1-login-headed2.mjs` que
+   automatiza tudo menos o captcha) → painel dev → app 908829636068202 →
+   Credenciais de produção (contas de teste usam as credenciais "produtivas"
+   delas; o token começa com APP_USR e funciona como sandbox).
+2. **`supabase/functions/.env.local`**: `MP_ACCESS_TOKEN` = Access Token APP_USR
+   do vendedor de teste; **`APP_URL` precisa ser https** (ex.
+   `https://boramedoficial.com.br`) — o MP rejeita `back_url` http com
+   `400 Invalid value for back_url`. Em PROD isso já é https; gap só local.
+3. **`frontend/src/environments/environment.local.ts`**:
+   `mercadoPagoPublicKey` = Public Key APP_USR do vendedor de teste.
+4. **Payer PRECISA ser comprador de teste** quando o collector é vendedor de
+   teste (`400 Both payer and collector must be real or test users`). O
+   `payer_email` do preapproval é o e-mail da CONTA logada no app → criar um
+   usuário no Supabase local com o e-mail do comprador de teste. Comprador em
+   uso: `TESTUSER8444543486803681374` (id 3515110045,
+   `test_user_8444543486803681374@testuser.com`); usuário local criado com esse
+   e-mail e senha `Teste123!` via admin API. (Criar novos compradores:
+   `POST /users/test_user` com o token de produção da conta principal — a
+   resposta traz e-mail e senha.)
+5. **Cartão de teste**: com a public key do vendedor de teste os BINs da
+   Mastercard de teste (503143/548392) **não resolvem** no BIN search do Brick
+   (`no_payment_method_for_provided_bin`); a **Visa `4509 9535 6623 3704`**
+   resolve. Runners aceitam `CARD=` e `EMAIL=` por env:
+   `PLANO=mensal CARD='4509 9535 6623 3704' EMAIL='test_user_8444543486803681374@testuser.com' node scripts/teste-manual-mp/f5-cartoes.mjs APRO`
+
+**Resultado do C1 (mensal APRO)**: aprovado fim-a-fim — Brick tokeniza, edge
+cria preapproval `authorized` no MP, `assinatura` local `authorized` com
+`mp_preapproval_id`, intenção `aprovada`, **0 linhas em `pagamento`** (cobrança
+de verificação corretamente não registrada), tela "Pagamento aprovado!".
+
+### ⚠️ ACHADO EM ABERTO (investigar antes da F7): `proxima_cobranca` = agora
+
+O MP devolveu o preapproval authorized com `next_payment_date` **igual ao
+`date_created`** (não +1 mês), e o upsert gravou `proxima_cobranca = agora` —
+ou seja, o acesso recém-comprado pode expirar imediatamente (a UI mostrou
+aprovado, mas `tem_assinatura_ativa()` pode virar false minutos depois).
+Hipóteses a validar:
+- Comportamento normal do MP: a 1ª cobrança acontece logo após autorizar e o
+  webhook `subscription_authorized_payment` atualiza `next_payment_date` → sem
+  webhook local (sem túnel) o valor nunca é corrigido. Se for isso, em prod
+  funciona, mas há uma janela de corrida entre autorizar e o 1º webhook.
+- Ou quirk do sandbox.
+Ações sugeridas: (a) reproduzir com túnel/webhook ligado e ver se o
+`next_payment_date` é corrigido pelo evento; (b) considerar na edge
+`mp-processar-assinatura` um piso defensivo (`proxima_cobranca = max(MP,
+agora+1 período)`) — discutir antes de implementar; (c) conferir como o fluxo
+legado (redirect) se comportava nesse campo.
 
 ## Acessos manuais e cortesia (debatido e corrigido em 2026-07-03)
 
@@ -207,15 +243,30 @@ Runners reais: `scripts/teste-manual-mp/` (README lá).
 
 ## O que falta (em ordem)
 
-1. **Destravar preapproval** (ação do usuário — seção do bloqueio acima) e
-   re-rodar C1/C3/C5/C10.
-2. **Webhook TEST**: túnel ngrok (`ngrok http 54321`) + registrar webhook no
-   painel/MCP (`save_webhook`) + `MP_WEBHOOK_SECRET` real no `.env.local` →
-   confirmar Pix/boleto aprovando de verdade e os eventos de preapproval.
-3. **`quality_evaluation`** via MCP do MP com um payment de teste (`is_ca=true`),
-   corrigindo itens até score alto.
-4. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
-5. **F6**: code review completo da branch (segurança + regressão legado);
+1. ~~Destravar preapproval~~ ✅ FEITO (2026-07-05, seção acima). Faltam ainda os
+   cenários **C3 (cancelar→carência), C5 (pausar→reativar), C10 (trocar cartão)**
+   — rodar com o ambiente da receita acima (já há assinatura authorized do C1 no
+   banco local para começar o C3). Re-rodar também os cenários de cartão do
+   semestral (C2/C6/C9) com as credenciais novas — foram validados dia 03/07 com
+   TEST-, mas a public key mudou.
+2. **Investigar `proxima_cobranca` = agora** (seção do achado em aberto) —
+   idealmente junto com o item 3 (webhook), que deve esclarecer a hipótese.
+3. **Webhook TEST**: túnel (`ngrok http 54321`, ou `.tools/cloudflared.exe
+   tunnel --url http://127.0.0.1:54321`) + registrar webhook **no painel do
+   VENDEDOR DE TESTE** (app 908829636068202 → Webhooks; NUNCA no app de
+   produção — `save_webhook` do MCP atua na conta principal e pode rotacionar o
+   secret de prod) + `MP_WEBHOOK_SECRET` real no `.env.local` → confirmar
+   Pix/boleto aprovando de verdade e os eventos de preapproval.
+   Atenção: a lista de payment_methods do vendedor de teste NÃO inclui `pix`
+   (master/visa/elo/amex/account_money/bolbradesco) — o cenário Pix pode exigir
+   voltar o token TEST- da conta principal (funciona p/ payments) ou verificar
+   se o Pix habilita na conta de teste.
+4. **`quality_evaluation`** via MCP com um payment de teste (`is_ca=true`).
+   Tentado dia 05/07 com payment do dia 03 (token TEST- da conta principal):
+   o homologador respondeu 404 "Payment not found" — usar um payment feito com
+   as credenciais do VENDEDOR DE TESTE e passar `application_id` dele.
+5. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
+6. **F6**: code review completo da branch (segurança + regressão legado);
    opcional preview branch do Supabase via MCP para ensaio; checklist de go-live
    revisado com o usuário. Itens já anotados para a F6:
    - `mp-gerenciar-assinatura` devolve `detail: <body cru do MP>` no 502
@@ -225,11 +276,11 @@ Runners reais: `scripts/teste-manual-mp/` (README lá).
      (ícone; cosmético); box do challenge 3DS vaza a borda direita do card;
    - 2 falhas pré-existentes de guards (mock sem `isRecoverySession`) — corrigir
      fora desta PR.
-6. **F7 (SÓ com aprovação explícita do usuário)**: deploy faseado — (1) migration
+7. **F7 (SÓ com aprovação explícita do usuário)**: deploy faseado — (1) migration
    aditiva, (2) edges novas, (3) `mp-webhook`+`mp-gerenciar-assinatura`
    atualizados, (4) frontend, (5) janela de observação 2–4 semanas (rollback =
    reverter só o frontend). Lembrar do webhook de PRODUÇÃO (URL/secret) e da CSP.
-7. **F8 (pós zero tráfego legado)**: remover `mp-criar-assinatura/`,
+8. **F8 (pós zero tráfego legado)**: remover `mp-criar-assinatura/`,
    `mp-vincular-assinatura/`, `mp-retorno/`, `assinatura-retorno.component.ts` +
    rota, `PENDING_PREAPPROVAL_KEY` + trecho do `subscription.guard`, parte legada
    do `pagamento.spec.ts`, entradas do config.toml. Grep final por
@@ -286,6 +337,15 @@ Ambiente restaurado do zero nesta segunda máquina:
   public key de produção o BIN search responde 200). Efeito colateral positivo:
   validou fim-a-fim o caminho de erro 5xx real — edge → 502 sanitizado, intenção
   volta a `criada`, banner "Pagamento temporariamente indisponível. Tente
-  novamente." e usuário permanece no checkout. Re-testar cartões/Pix quando o
-  sandbox voltar (ou migrar de vez para as credenciais do vendedor de teste, que
-  destravam também o preapproval).
+  novamente." e usuário permanece no checkout. Com as credenciais do vendedor de
+  teste (adotadas na mesma noite) o BIN search voltou a responder 200.
+- **Fechamento de 2026-07-05 (noite)**: preapproval destravado e C1 validado
+  (seção própria). Re-validados nesta máquina com MP TEST real: Pix
+  (QR+countdown+polling) e boleto (link + "Já paguei, verificar") — ainda com o
+  token TEST- antes da troca. Estado dos envs locais DESTA máquina:
+  `.env.local` e `environment.local.ts` já com as credenciais do vendedor de
+  teste e `APP_URL` https. Banco local: assinatura mensal `authorized` do C1
+  (usuário `test_user_8444543486803681374@testuser.com` / `Teste123!`) — bom
+  ponto de partida para o C3. Sessão do MP do vendedor de teste salva em
+  `.tools/mp-seller/session.json` (cookies; só esta máquina). Screenshots dos
+  runs em `.tools/f5-out/`.

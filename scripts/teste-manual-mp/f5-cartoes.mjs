@@ -4,7 +4,9 @@
 import { chromium } from '../../frontend/node_modules/playwright/index.mjs';
 
 const OUT = process.env.OUT_DIR ?? '.';
-const CARD = '5031 4332 1540 6351';
+// Com credenciais de vendedor de teste, o BIN da Mastercard de teste (503143)
+// não resolve no sandbox — a Visa 4509 9535 6623 3704 resolve. Override: CARD=...
+const CARD = process.env.CARD ?? '5031 4332 1540 6351';
 const CPF = '12345678909';
 const EXP = '11/30';
 const CVV = '123';
@@ -29,7 +31,7 @@ page.on('console', (m) => {
 await page.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });
 let logado = false;
 for (let i = 0; i < 4 && !logado; i++) {
-  await page.getByLabel(/e-?mail/i).fill('teste@boramed.com');
+  await page.getByLabel(/e-?mail/i).fill(process.env.EMAIL ?? 'teste@boramed.com');
   await page.locator('input[type="password"]').fill('Teste123!');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   logado = await page
