@@ -1,6 +1,6 @@
 // Reproduz a experiência de um assinante MENSAL MANUAL (sem preapproval no MP)
 // na tela Minha Assinatura: o que aparece e o que acontece ao clicar Cancelar.
-import { chromium } from '/home/guilherme/Documentos/BoraMed/frontend/node_modules/playwright/index.mjs';
+import { chromium } from '../../frontend/node_modules/playwright/index.mjs';
 
 const OUT = process.env.OUT_DIR ?? '.';
 const browser = await chromium.launch();

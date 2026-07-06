@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 
 const envLocal = readFileSync(
-  '/home/guilherme/Documentos/BoraMed/frontend/src/environments/environment.local.ts',
+  new URL('../../frontend/src/environments/environment.local.ts', import.meta.url),
   'utf8'
 );
 const publicKey = envLocal.match(/mercadoPagoPublicKey:\s*'([^']+)'/)?.[1];

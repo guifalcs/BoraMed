@@ -45,17 +45,19 @@ runners via `EMAIL=...`.)
 | Script | O que faz |
 |---|---|
 | `f5-cartoes.mjs [HOLDER] [parcelas]` | Cartões no `/checkout/<PLANO>`. Sem args roda FUND, SECU, CALL e APRO 6x. Ex.: `PLANO=mensal CARD='4235 6477 2802 5682' EMAIL=test_user_... node f5-cartoes.mjs APRO` |
-| `f5-pix-boleto-3ds.mjs pix\|boleto\|3ds` | Pix (QR/countdown), boleto (endereço; **Estado = UF "SP"**) e challenge 3DS |
+| `f5-pix-boleto-3ds.mjs pix\|boleto\|3ds` | Pix (QR/countdown), boleto (endereço; **Estado = UF "SP"**, nome por extenso é recusado pelo MP) e challenge 3DS |
 | `api-409.mjs` | Direto na API: card token via public key + `mp-processar-assinatura` → valida o 409 de acesso ativo |
 | `manual-mensal.mjs` | Abre `/dashboard/assinatura` e tenta cancelar — serve p/ C3 (cancelar → carência) e p/ acessos manuais/cortesia |
-| `vendedor-login.mjs [rota]` | Loga no painel de dev do MP como o **vendedor de teste** (`MP_TEST_SELLER_PASS` no env) e salva a sessão — use p/ reconfigurar a URL do webhook quando o túnel mudar, ver credenciais, notificações |
+| `mp-seller-login.mjs` | Login **headed** no MP como vendedor de teste (humano resolve o captcha, se aparecer); salva `session.json` (gitignored). `MP_TEST_SELLER_PASS` obrigatória |
+| `mp-seller-credentials.mjs` | Com a sessão salva, captura as credenciais APP_USR da app "BoraMed Teste" → `creds.json` + screenshot (gitignored) |
+| `vendedor-login.mjs [rota]` | Variante **headless** do login (funciona quando não há captcha — caso do Linux em 2026-07-06): loga e abre a rota do painel (default `webhooks`) — útil p/ reconfigurar a URL do webhook quando o túnel mudar |
 
 ## Webhook de teste (túnel)
 
 O webhook da app do vendedor aponta para um túnel local:
 `cloudflared tunnel --url http://127.0.0.1:54321 --protocol http2` — o
-`--protocol http2` é OBRIGATÓRIO nesta rede (QUIC degrada e o MP recebe 502;
-ngrok é bloqueado de vez).
+`--protocol http2` é OBRIGATÓRIO em redes que degradam QUIC (o MP recebe 502;
+caso da rede Linux em 2026-07-06, onde o ngrok é bloqueado de vez).
 A URL do quick tunnel **muda a cada sessão** → reconfigure em
 painel → app 908829636068202 → Webhooks (abas teste E produção), eventos
 "Pagamentos" + "Planos e assinaturas". O secret (Assinatura secreta) vai em

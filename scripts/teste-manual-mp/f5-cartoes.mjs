@@ -1,14 +1,15 @@
 // F5-manual — Cenários 2 e 6 do TESTE-PAGAMENTO-LOCAL.md no /checkout/semestral:
 // recusas FUND/SECU/CALL (mensagens específicas, permanece no checkout) e
 // APRO em 6x (aprovado → /checkout/status). MP TEST real, sem mocks.
-import { chromium } from '/home/guilherme/Documentos/BoraMed/frontend/node_modules/playwright/index.mjs';
+import { chromium } from '../../frontend/node_modules/playwright/index.mjs';
 
 const OUT = process.env.OUT_DIR ?? '.';
-// Mastercard de teste MLB por padrão; sobrescreva com CARD='4235 6477 2802 5682'
-// (Visa) se o BIN não resolver na conta usada (visto com o vendedor de teste).
+// Mastercard de teste MLB por padrão. Com credenciais do vendedor de teste o
+// BIN 503143 não resolve — use Visa: CARD='4235 6477 2802 5682' (ou 4509 9535
+// 6623 3704).
 const CARD = process.env.CARD ?? '5031 4332 1540 6351';
-// Com vendedor de teste (preapproval), o e-mail da conta BoraMed precisa ser o
-// do COMPRADOR de teste do MP (payer e collector devem ser ambos test users).
+// Com vendedor de teste, o e-mail da conta BoraMed precisa ser o do COMPRADOR
+// de teste do MP (payer e collector devem ser ambos test users).
 const EMAIL = process.env.EMAIL ?? 'teste@boramed.com';
 const CPF = '12345678909';
 const EXP = '11/30';

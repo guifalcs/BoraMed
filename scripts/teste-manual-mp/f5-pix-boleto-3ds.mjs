@@ -1,6 +1,6 @@
 // Cenários 8 (Pix/boleto) e 9 (3DS) no /checkout/semestral.
 // Uso: node f5-pix-boleto-3ds.mjs pix|boleto|3ds
-import { chromium } from '/home/guilherme/Documentos/BoraMed/frontend/node_modules/playwright/index.mjs';
+import { chromium } from '../../frontend/node_modules/playwright/index.mjs';
 
 const OUT = process.env.OUT_DIR ?? '.';
 const MODO = process.argv[2];

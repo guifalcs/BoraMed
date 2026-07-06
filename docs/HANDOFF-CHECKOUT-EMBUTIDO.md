@@ -4,7 +4,8 @@
 > Plano original completo: `PLANO-CHECKOUT-EMBUTIDO.md` (raiz do repo). Leia-o
 > primeiro — este handoff registra **o que já foi feito, como validar e o que falta**.
 > Última atualização: **2026-07-06 (fim do dia)**, após destravar o preapproval,
-> o webhook TEST e fechar a F5-manual.
+> o webhook TEST e fechar a F5-manual. (Mescla as sessões de 05/07 no Windows e
+> 06/07 no Linux — trabalharam em paralelo; ver "Estado por máquina".)
 
 ## ⏯️ RETOMADA — exatamente onde paramos (2026-07-06)
 
@@ -35,9 +36,12 @@ fechar; o Docker do Supabase continua de pé):
 - **Túnel morto**: recriar com `cloudflared tunnel --url http://127.0.0.1:54321
   --protocol http2` (http2 é OBRIGATÓRIO nesta rede) e **atualizar a URL do
   webhook** nas 2 abas do painel do vendedor (app 908829636068202 → Webhooks) —
-  `scripts/teste-manual-mp/vendedor-login.mjs` loga lá (senha do vendedor:
+  `scripts/teste-manual-mp/vendedor-login.mjs` (headless) ou
+  `mp-seller-login.mjs` (headed, p/ captcha) logam lá (senha do vendedor:
   painel da conta produtiva → Contas de teste). O `MP_WEBHOOK_SECRET` do
-  `.env.local` continua válido (não muda com a URL).
+  `.env.local` continua válido (não muda com a URL). **NUNCA usar o
+  `save_webhook` do MCP**: ele atua na conta principal (produção) e pode
+  rotacionar o secret de prod.
 - `.env.local` e `environment.local.ts` estão com o **par TEST do vendedor de
   teste** (bom p/ pagamentos semestral/Pix/boleto); p/ mensal (preapproval),
   trocar pro par APP_USR — os dois pares estão nos próprios arquivos/histórico
@@ -52,16 +56,16 @@ fechar; o Docker do Supabase continua de pé):
 Migração do checkout de pagamento de **redirect** (Checkout Pro / init_point do
 Mercado Pago) para **checkout embutido** na plataforma (Payment Brick + Checkout
 API). **F1–F5 concluídas. F5-manual: 10 de 10 cenários exercitados** — 2026-07-03
-validou os 7 de pagamento único; 2026-07-06 destravou o preapproval (C1/C3/C5/C10
-✅ com MP TEST real) e o **webhook de teste via túnel** (notificações reais do MP
-chegando e escrevendo no banco local). Ressalvas: aprovação real de Pix/boleto e
-`quality_evaluation` ficaram bloqueadas por um **outage do POST /v1/payments no
-sandbox em 2026-07-06** (500 internal_error em qualquer credencial — refazer
-quando normalizar), e novos achados de UX/regra entraram na lista da F6. Nada foi
-enviado ao Supabase remoto (que é o de PRODUÇÃO — ref `gakvktwtdunljojghpff`):
-sem `db push`, sem `functions deploy`, sem mexer em secrets/webhook de produção.
-Faltam: itens F6 (revisão + achados), F7 (deploy faseado com aprovação explícita)
-e F8 (limpeza pós-observação).
+validou os 7 de pagamento único; 2026-07-05 (Windows) destravou o preapproval e
+validou o C1; 2026-07-06 (Linux) validou C3/C5/C10 e o **webhook de teste via
+túnel** (notificações reais do MP chegando e escrevendo no banco local), além de
+sobreviver a um outage do sandbox no meio do caminho. A medição oficial de
+qualidade ficou para a F7 (exige pagamento de produção) e novos achados de
+UX/regra entraram na lista da F6. Nada foi enviado ao Supabase remoto (que é o
+de PRODUÇÃO — ref `gakvktwtdunljojghpff`): sem `db push`, sem `functions
+deploy`, sem mexer em secrets/webhook de produção. Faltam: 2 decisões do
+usuário (seção RETOMADA), F6 (revisão + achados), F7 (deploy faseado com
+aprovação explícita) e F8 (limpeza pós-observação).
 
 ## ⚠️ Restrições invioláveis (valem para qualquer continuação)
 
@@ -260,6 +264,45 @@ Pegadinhas que custaram tempo (não repetir):
   chargebacks API, cancel de pending, relatórios, auth+capture, customer/cards
   salvos; avaliar na F6: logo oficial do MP no checkout.
 
+### Receita alternativa (sessão Windows, 2026-07-05) — reproduzir em outra máquina
+
+1. Credenciais do vendedor via scripts portáveis: `MP_TEST_SELLER_PASS='<senha>'
+   node scripts/teste-manual-mp/mp-seller-login.mjs` (headed; humano resolve o
+   captcha) e depois `node scripts/teste-manual-mp/mp-seller-credentials.mjs`
+   (grava `creds.json` + screenshot, gitignored). No Linux (sem captcha em
+   2026-07-06) o `vendedor-login.mjs` headless resolveu direto.
+2. Usuário local com e-mail de comprador de teste — em vez de renomear o seed,
+   dá para CRIAR um usuário novo via admin API (chaves demo do stack local):
+
+   ```bash
+   curl -s -X POST http://127.0.0.1:54321/auth/v1/admin/users \
+     -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test_user_8444543486803681374@testuser.com","password":"Teste123!","email_confirm":true,"user_metadata":{"nome":"Comprador Teste MP"}}'
+   ```
+
+   Compradores de teste conhecidos: `TESTUSER3564881035891632645`
+   (test_user_3564881035891632645@testuser.com — usado no Linux) e
+   `TESTUSER8444543486803681374` (test_user_8444543486803681374@testuser.com —
+   usado no Windows). Criar novos: `POST /users/test_user` com o token da conta
+   principal.
+3. Cartões: no Windows a Visa MLA `4509 9535 6623 3704` resolveu; no Linux a
+   Visa MLB `4235 6477 2802 5682` também. (Mastercard de teste não resolve com
+   as keys do vendedor.)
+4. O workaround de `APP_URL` https usado no Windows ficou DESNECESSÁRIO: a edge
+   ganhou fallback https de `back_url` no código (commit `8cf4fee`, com teste).
+
+### ✅ Achado "proxima_cobranca = agora" — RESOLVIDO (2026-07-06)
+
+O Windows flagou que o preapproval nasce com `next_payment_date = date_created`.
+Confirmado com túnel/webhook ligados: é o comportamento normal do MP — a 1ª
+fatura processa assíncrono e o `subscription_authorized_payment` (ou qualquer
+update, ex. cancelamento) avança o `next_payment_date` (+1 mês), que o webhook
+sincroniza em `proxima_cobranca`. Em produção funciona; a janela entre autorizar
+e o 1º webhook é exatamente a decisão (c) da seção RETOMADA (acesso provisório).
+No sandbox a 1ª fatura nunca processou (limitação conhecida).
+
+
 ## Acessos manuais e cortesia (debatido e corrigido em 2026-07-03)
 
 Contexto: o admin concede acesso de duas formas (RPCs em
@@ -351,6 +394,7 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
    rodar a medição no painel com o 1º pagamento real e corrigir apontamentos.
 2. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
 3. **F6**: code review completo da branch (segurança + regressão legado);
+
    opcional preview branch do Supabase via MCP para ensaio; checklist de go-live
    revisado com o usuário. Itens já anotados para a F6:
    - **Assinatura `paused` (achado 2026-07-06)**: usuário pausado não alcança o
@@ -376,6 +420,7 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
    atualizados, (4) frontend, (5) janela de observação 2–4 semanas (rollback =
    reverter só o frontend). Lembrar do webhook de PRODUÇÃO (URL/secret) e da CSP.
 5. **F8 (pós zero tráfego legado)**: remover `mp-criar-assinatura/`,
+
    `mp-vincular-assinatura/`, `mp-retorno/`, `assinatura-retorno.component.ts` +
    rota, `PENDING_PREAPPROVAL_KEY` + trecho do `subscription.guard`, parte legada
    do `pagamento.spec.ts`, entradas do config.toml. Grep final por
@@ -408,3 +453,39 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
   get_credentials, save_webhook, quality_evaluation, search_documentation).
 - A extensão Claude-in-Chrome NÃO estava conectada — por isso os testes de
   browser usam Playwright headless (chromium de `frontend/node_modules`).
+
+## Estado por máquina (2026-07-05, PC Windows `G:\BoraMed`)
+
+Ambiente restaurado do zero nesta segunda máquina:
+- `environment.local.ts` estava apontando para **PRODUÇÃO** (cópia antiga, sem
+  `mercadoPagoPublicKey`) — recriado do example (stack local + public key TEST).
+- `supabase/functions/.env.local` não existia — criado com `MP_ACCESS_TOKEN`
+  TEST obtido via MCP (`get_credentials`, app Boramed 6161911882101170);
+  `MP_WEBHOOK_SECRET` segue dummy.
+- Suítes re-validadas aqui: Deno **104 passed**, `ng build` OK, E2E `mocked`
+  **23 passed**.
+- Runners de `scripts/teste-manual-mp/` tinham caminho absoluto do PC Linux —
+  corrigidos para caminhos relativos (portáveis).
+- Pegadinha local: `ng serve` com `.angular/cache` velho da `main` quebra a
+  extração de rotas SSR (`checkout/* server route does not match`) — resolver
+  com `rm -rf frontend/.angular/cache`.
+- `.tools/` (gitignored): `cloudflared.exe` baixado como opção de túnel para o
+  webhook TEST (ngrok não instalado nesta máquina).
+- **⚠️ Sandbox do MP instável em 2026-07-05 com credenciais TEST-**: BIN search
+  (`/v1/payment_methods/search`) → 500 para qualquer BIN e `POST /v1/payments`
+  Pix mínimo → `internal_error 500`, direto na API (nada do nosso stack; com a
+  public key de produção o BIN search responde 200). Efeito colateral positivo:
+  validou fim-a-fim o caminho de erro 5xx real — edge → 502 sanitizado, intenção
+  volta a `criada`, banner "Pagamento temporariamente indisponível. Tente
+  novamente." e usuário permanece no checkout. Com as credenciais do vendedor de
+  teste (adotadas na mesma noite) o BIN search voltou a responder 200.
+- **Fechamento de 2026-07-05 (noite)**: preapproval destravado e C1 validado
+  (seção própria). Re-validados nesta máquina com MP TEST real: Pix
+  (QR+countdown+polling) e boleto (link + "Já paguei, verificar") — ainda com o
+  token TEST- antes da troca. Estado dos envs locais DESTA máquina:
+  `.env.local` e `environment.local.ts` já com as credenciais do vendedor de
+  teste e `APP_URL` https. Banco local: assinatura mensal `authorized` do C1
+  (usuário `test_user_8444543486803681374@testuser.com` / `Teste123!`) — bom
+  ponto de partida para o C3. Sessão do MP do vendedor de teste salva em
+  `.tools/mp-seller/session.json` (cookies; só esta máquina). Screenshots dos
+  runs em `.tools/f5-out/`.
