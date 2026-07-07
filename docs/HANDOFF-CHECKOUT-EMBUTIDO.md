@@ -7,27 +7,136 @@
 > o webhook TEST e fechar a F5-manual. (Mescla as sessões de 05/07 no Windows e
 > 06/07 no Linux — trabalharam em paralelo; ver "Estado por máquina".)
 
-## ⏯️ RETOMADA — exatamente onde paramos (2026-07-06)
+## ⏯️ RETOMADA — exatamente onde paramos (2026-07-07)
 
-**F5-manual está ENCERRADA** (tudo que o sandbox permite foi validado). O
-próximo passo NÃO é código: são **2 decisões do usuário** que destravam a F6 —
-perguntar a ele logo no início da sessão:
+**F5-manual está ENCERRADA.** As 2 decisões que travavam a F6 foram tomadas pelo
+usuário em **2026-07-07** e os achados decididos já foram **implementados** (ver
+"F6 — implementado" abaixo). Decisões batidas:
 
-1. **Hotfix na main?** Produção tem o botão "Cancelar" quebrado para acessos
-   manuais/cortesia (seção "Acessos manuais"). Recomendação já dada: esperar a
-   F7, salvo volume relevante. Se ele optar pelo hotfix: backport manual (sem
-   cherry-pick — o commit `0f526a1` referencia o modal Trocar cartão que só
-   existe na branch).
-2. **Regras dos achados novos** (seção "F5-manual parte 2"): (a) liberar a rota
-   Minha Assinatura fora do paywall p/ usuário `paused` alcançar "Reativar"?
-   (b) incluir `paused` no anti-dupla das edges (hoje ele consegue assinar de
-   novo e ficar com 2 preapprovals)? (c) mensal recém-autorizado ganha acesso
-   provisório (hoje fica "Liberando…" até a 1ª fatura processar no MP)?
+1. **Hotfix na main?** → **Esperar a F7.** Nada a fazer na main agora (o botão
+   "Cancelar" quebrado p/ manuais/cortesia só corrige no deploy da branch).
+2. **Regras dos achados novos:** (a) liberar rota Minha Assinatura fora do
+   paywall p/ `paused` → **SIM**; (b) incluir `paused` no anti-dupla → **SIM**;
+   (c) mensal recém-autorizado ganha acesso provisório → **SIM**.
 
-Com as respostas → **F6**: implementar os achados decididos + itens anotados
-(lista completa em "O que falta"), rodar code review completo da branch e
-escrever o checklist de go-live. Depois F7 (deploy faseado, só com aprovação
-explícita) e F8.
+**Próximo passo (2026-07-07, fim da sessão):** F6 implementada, revisada e
+**validada manualmente** (cenários A–E, ver "Validação manual" abaixo).
+Commitado. Falta:
+1. **DECISÃO EM ABERTO — "sempre uma assinatura só"**: hoje um usuário `paused`
+   consegue comprar o semestral (correto — não bloqueamos pagamento único), mas
+   o **preapproval mensal pausado continua vivo no MP** (dormente, não cobra) e
+   vira lixo órfão → risco de lockout quando o semestral expirar (a Minha
+   Assinatura mostra o semestral, não o mensal pausado, então o botão Reativar
+   fica inalcançável e o anti-dupla do mensal barra sem saída). Recomendação
+   dada: **ao conceder acesso único (semestral), cancelar o preapproval
+   recorrente (paused/authorized) do usuário no MP** (estende o `B5` entre
+   produtos → garante uma assinatura viva só). Alternativa mais leve: fazer a
+   Minha Assinatura sempre expor a assinatura gerenciável (com preapproval)
+   mesmo com acesso único ativo. **Usuário não bateu o martelo — decidir e
+   implementar na próxima sessão.**
+2. Escrever o **checklist de go-live** revisado com o usuário.
+3. Depois F7 (deploy faseado, só com aprovação explícita) e F8.
+
+## ✅ F6 — implementado (2026-07-07)
+
+Os 3 achados decididos + 2 itens anotados do modal, com testes:
+
+- **Anti-dupla inclui `paused` — SÓ no fluxo recorrente**
+  (`mp-processar-assinatura/handler.ts`): a query passou a `['authorized',
+  'cancelled', 'paused']`; `hasActiveAccess` roda sobre as linhas **exceto**
+  `paused` (paused não é acesso ativo) e, se houver uma `paused`, retorna **409**
+  direcionando a reativar em Minha assinatura (evita 2º preapproval vivo). O
+  handler do **semestral** (`mp-processar-pagamento`, pagamento único via
+  `/v1/payments`) **NÃO** barra `paused` — não há preapproval, e comprar o
+  semestral é uma via legítima de o pausado voltar a ter acesso (ajuste feito no
+  code review; teste garante que o semestral não é bloqueado). A edge legada
+  `mp-criar-assinatura` NÃO foi alterada (fora do fluxo da UI, sai na F8).
+- **Acesso provisório do mensal** (`mp-processar-assinatura/handler.ts`): quando
+  o preapproval nasce `authorized` mas `next_payment_date` vem nulo ou ≤ agora,
+  grava `proxima_cobranca = agora + 1 período` (helper `addPeriodo`, UTC) para
+  `tem_assinatura_ativa()` liberar na hora; o webhook
+  `subscription_authorized_payment` corrige a data real na 1ª cobrança. Teste
+  novo cobrindo `next_payment_date = agora`. O caminho com data futura real
+  segue intacto (teste existente inalterado).
+- **Minha Assinatura fora do paywall** (`subscription.guard.ts`): o guard agora
+  recebe `(route, state)` e libera o **path exato** `/dashboard/assinatura`
+  (ignora query/fragment; não isenta rotas irmãs como `/dashboard/assinatura-x`
+  — ajuste do code review). Demais rotas do dashboard seguem no paywall; assim o
+  `paused` alcança "Reativar". 2 specs novos (libera assinatura / mantém paywall
+  nas outras). Descoberta: `planos.component.ts` mostra um banner "assinatura
+  pausada → Reativar" (link p/ `/dashboard/assinatura`) quando o usuário cai em
+  /planos pausado.
+- **Furo do guard corrigido — `canActivateChild`** (`app.routes.ts`): o
+  `subscriptionGuard` era só `canActivate` na rota-pai `/dashboard`, então um
+  pausado que entrasse pela rota isenta circulava por TODO o dashboard (o guard
+  não re-rodava nas navegações filhas). Adicionado `canActivateChild:
+  [lazySubscriptionGuard]` na rota `/dashboard` → o paywall é reavaliado a cada
+  navegação entre filhas; só `/dashboard/assinatura` passa. **Tradeoff anotado**:
+  isso faz 1 RPC `tem_assinatura_ativa` por navegação no dashboard (inclui
+  usuários ativos). Aceito por ora; se incomodar, a alternativa limpa é tirar a
+  Minha Assinatura de dentro do `/dashboard` (rota própria fora do paywall,
+  reusando o mesmo componente).
+- **Mensagens com aspas**: o 409 do paused agora diz `... em "Minha assinatura"
+  ...` (ajuste de UX pedido pelo usuário).
+- **Modal Trocar cartão** (`trocar-cartao-modal.component.ts`): pré-preenche
+  `initialization.payer.email` (do `auth.user()`) e customiza o rótulo do botão
+  do Brick via `customization.visual.texts.formSubmit = 'Salvar cartão'`
+  (confirmado na doc oficial do Payment Brick).
+
+Validação automatizada (2026-07-07): Deno `deno test --allow-env .` →
+**108 passed**; `ng build` OK; `ng test --watch=false` completo → **475 passed,
+2 failed** (as 2 falhas pré-existentes de guards `isRecoverySession`, alheias à
+PR — também quebram na main). E2E não rodado nesta sessão (stub do Brick não é
+afetado pelas mudanças).
+
+### Code review (2026-07-07)
+Rodado (4 finders paralelos + verificação). Refactor legado confirmado **fiel**
+(sem regressão). 2 achados das mudanças F6 → **corrigidos**: (1) `paused`
+bloqueava o semestral → removido o bloqueio do `mp-processar-pagamento`; (2)
+guard usava `startsWith` (isentaria rotas irmãs) → trocado por path exato.
+Residuais anotados (não corrigidos, baixo risco): ordenação replay×anti-dupla,
+overflow de fim-de-mês no `addPeriodo`, lockout do pausado antigo (ver decisão em
+aberto), falsy-zero em `mp-payment-sync`.
+
+### Validação manual F6 (2026-07-07, MP TEST real, stack local) — TUDO ✅
+Feita junto com o usuário, limpando o banco entre cenários:
+- **A — Mensal APRO → acesso provisório**: `authorized`, `proxima_cobranca` =
+  hoje **+1 mês**, `tem_assinatura_ativa=true` na hora, `pagamento`=0 linhas.
+  (Pegadinha: na 1ª tentativa a edge servia **código em cache** de um
+  `functions serve` ANTIGO de sessão anterior — havia 2 rodando; matei ambos,
+  reiniciei o edge runtime e subiu 1 só; aí o provisório funcionou.)
+- **B1** banner "pausada" em /planos; **B2** guard libera Minha Assinatura +
+  botão Reativar; **B3** anti-dupla mensal: pausado → **409** sem 2º preapproval
+  (confirmado em log + banco); **#2** com `canActivateChild`, pausado fica preso
+  só na Minha Assinatura; **B4** Reativar → `authorized`.
+- **C — Trocar cartão**: e-mail **pré-preenchido** (o Brick deixa de pedir o
+  campo) + botão **"Salvar cartão"**; troca concluiu (`card_updated`).
+- **D — Semestral APRO 6x**: `authorized`, `mp_payment_id` set,
+  `mp_preapproval_id` NULL, `proxima_cobranca` = **+6 meses**, `pagamento`
+  approved/parcelas=6. (Exigiu trocar credenciais p/ o par **TEST-** e logar como
+  `teste@boramed.com` — ver "Estado das credenciais".)
+- **E — Pausado compra semestral**: **NÃO** é bloqueado (a correção do review);
+  coexistem no banco a `paused` (mensal) + a `authorized` (semestral). Isso
+  expôs a **decisão em aberto** do topo (preapproval órfão).
+
+### Estado das credenciais/ambiente ao encerrar (2026-07-07)
+- **`.env.local` + `environment.local.ts` estão com o par de PRODUÇÃO `TEST-`**
+  (app Boramed `6161911882101170`, obtido via MCP `get_credentials`) — bom p/
+  **semestral/Pix/boleto/3DS** com usuário `teste@boramed.com` (e-mail normal;
+  com TEST- de produção o payer NÃO pode ser test user).
+- **Backup do par APP_USR do vendedor** (para o **mensal/preapproval**) em
+  `.tools/mp-seller/env.local.appusr.bak` e
+  `.tools/mp-seller/environment.local.ts.appusr.bak` — restaurar p/ testar mensal
+  (aí logar como `test_user_8444543486803681374@testuser.com`).
+- Senhas resetadas p/ `Teste123!`: `teste@boramed.com` e
+  `test_user_8444543486803681374@testuser.com`.
+- Banco local: tem dados de teste (paused mensal + authorized semestral do
+  `teste@boramed`) — `delete from pagamento; delete from pagamento_intencao;
+  delete from assinatura;` limpa.
+- `functions serve` + `ng serve` + Docker do Supabase ficaram de pé ao encerrar.
+- **Lição**: garantir **1 só** `functions serve`; se trocar código/env, matar os
+  antigos e reiniciar o edge runtime (`docker restart
+  supabase_edge_runtime_ProjetoMed`) p/ não servir módulo/env em cache.
 
 **Estado do ambiente ao encerrar a sessão** (processos de terminal morreram ao
 fechar; o Docker do Supabase continua de pé):
@@ -63,9 +172,11 @@ sobreviver a um outage do sandbox no meio do caminho. A medição oficial de
 qualidade ficou para a F7 (exige pagamento de produção) e novos achados de
 UX/regra entraram na lista da F6. Nada foi enviado ao Supabase remoto (que é o
 de PRODUÇÃO — ref `gakvktwtdunljojghpff`): sem `db push`, sem `functions
-deploy`, sem mexer em secrets/webhook de produção. Faltam: 2 decisões do
-usuário (seção RETOMADA), F6 (revisão + achados), F7 (deploy faseado com
-aprovação explícita) e F8 (limpeza pós-observação).
+deploy`, sem mexer em secrets/webhook de produção. **F6 implementada, revisada e
+validada manualmente (2026-07-07, cenários A–E ✅) — commitada.** Faltam: 1
+decisão em aberto ("sempre uma assinatura só" — ver RETOMADA), checklist de
+go-live, F7 (deploy faseado com aprovação explícita) e F8 (limpeza
+pós-observação).
 
 ## ⚠️ Restrições invioláveis (valem para qualquer continuação)
 
@@ -392,29 +503,44 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
    `payment` real validado (túnel http2); medição oficial de qualidade só é
    possível pós-deploy (diagnóstico na seção pós-outage) — **incluir na F7**:
    rodar a medição no painel com o 1º pagamento real e corrigir apontamentos.
-2. **Decidir o hotfix da main** (seção "Acessos manuais" — decisão em aberto).
+2. ~~**Decidir o hotfix da main**~~ **DECIDIDO em 2026-07-07: esperar a F7.**
 3. **F6**: code review completo da branch (segurança + regressão legado);
 
    opcional preview branch do Supabase via MCP para ensaio; checklist de go-live
-   revisado com o usuário. Itens já anotados para a F6:
-   - **Assinatura `paused` (achado 2026-07-06)**: usuário pausado não alcança o
-     botão "Reativar" (paywall guard → /planos) E não é barrado pelo anti-dupla
-     (`.in('status', ['authorized','cancelled'])` nas edges de processamento) —
-     decidir: liberar a rota Minha Assinatura fora do paywall e/ou incluir
-     `paused` no anti-dupla com CTA de reativação;
-   - **Acesso imediato do mensal**: preapproval nasce `authorized` com
-     `next_payment_date = agora` até a 1ª fatura processar — decidir se concede
-     acesso provisório na resposta síncrona (UX: hoje fica em "Liberando…");
-   - **Modal Trocar cartão**: pré-preencher e-mail
-     (`initialization.payer.email`) e customizar o rótulo do botão do Brick
-     (diz "Pagar" sem cobrar nada);
-   - `mp-gerenciar-assinatura` devolve `detail: <body cru do MP>` no 502
-     (contrato legado) — avaliar sanitizar como nas edges novas;
-   - normalizar `federal_unit` extenso→UF na edge (boleto com CEP-lookup 401);
-   - erro de console `<svg> attribute width/height` vazio na tela de status
-     (ícone; cosmético); box do challenge 3DS vaza a borda direita do card;
-   - 2 falhas pré-existentes de guards (mock sem `isRecoverySession`) — corrigir
-     fora desta PR.
+   revisado com o usuário. Itens da F6:
+   - ~~**Assinatura `paused`**~~ **FEITO (2026-07-07)**: rota Minha Assinatura
+     liberada do paywall + `paused` incluído no anti-dupla com CTA de reativação
+     (ver "F6 — implementado" no topo);
+   - ~~**Acesso imediato do mensal**~~ **FEITO (2026-07-07)**: acesso provisório
+     de 1 período quando `next_payment_date` nasce = agora;
+   - ~~**Modal Trocar cartão**~~ **FEITO (2026-07-07)**: e-mail pré-preenchido +
+     rótulo do botão `formSubmit = 'Salvar cartão'`;
+   - **PENDENTE** — `mp-gerenciar-assinatura` devolve `detail: <body cru do MP>`
+     no 502 (contrato legado) — avaliar sanitizar como nas edges novas;
+   - **PENDENTE** — normalizar `federal_unit` extenso→UF na edge (boleto com
+     CEP-lookup 401 no sandbox);
+   - **PENDENTE** — erro de console `<svg> attribute width/height` vazio na tela
+     de status (ícone; cosmético); box do challenge 3DS vaza a borda direita;
+   - **PENDENTE** — 2 falhas pré-existentes de guards (mock sem
+     `isRecoverySession`) — corrigir fora desta PR.
+   - **Achados do code review (2026-07-07), avaliados e NÃO corrigidos** (baixo
+     risco / pré-existentes):
+     - *Ordenação replay × anti-dupla* em `mp-processar-assinatura`: o check de
+       acesso (passo 4) roda antes do replay idempotente (passo 5); um retry com
+       o MESMO `attempt_id` de uma assinatura já `authorized` devolve 409 em vez
+       do 200 idempotente. Estreito (o front gera `attempt_id` novo por tentativa
+       + lock anti dupla-submissão) e pré-existente em produção. Se incomodar:
+       mover o passo 5 (replay por `mp_preapproval_id` do attempt) antes do 4.
+     - *`addPeriodo` estoura fim de mês* (31/jan +1 mês → 03/mar): valor
+       provisório, o webhook corrige na 1ª cobrança (minutos em prod). Também só
+       trata `months`/`days` — outros `frequency_type` viram dias.
+     - *Lockout do pausado há muito tempo*: se a única assinatura é `paused` com
+       carência vencida e o preapproval no MP já não reativa, o 409 do anti-dupla
+       do mensal o impede de reassinar o mensal — mas ele consegue comprar o
+       semestral (não barrado). Reavaliar se precisar de escape no mensal.
+     - *`valor_centavos`/`liquido_centavos` com falsy-zero* em
+       `mp-payment-sync.ts` (`transaction_amount` 0 → null): pré-existente,
+       `transaction_amount` real nunca é 0.
 4. **F7 (SÓ com aprovação explícita do usuário)**: deploy faseado — (1) migration
    aditiva, (2) edges novas, (3) `mp-webhook`+`mp-gerenciar-assinatura`
    atualizados, (4) frontend, (5) janela de observação 2–4 semanas (rollback =
