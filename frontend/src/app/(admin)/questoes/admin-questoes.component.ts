@@ -699,23 +699,73 @@ export class AdminQuestoesComponent implements OnInit {
     () => this.modoDrawer() === 'editar' && this.mostrarAlternativas(),
   );
 
+  /** Resposta modelo/pontos-chave sugeridos a partir da alternativa correta + explicação. */
+  private gabaritoAbertoSugerido(): { respostaModelo: string; pontosChave: string[] } {
+    const correta = this.fAlternativas().find((a) => a.correta)?.texto.trim();
+    const respostaModelo = this.fRespostaModelo().trim()
+      || [correta, this.fExplicacao().trim()].filter(Boolean).join('\n\n');
+    const pontosChave = this.fPontosChave().length > 0
+      ? this.fPontosChave()
+      : correta ? [correta] : [];
+    return { respostaModelo, pontosChave };
+  }
+
   protected converterParaDiscursiva(): void {
     if (!this.podeConverterParaDiscursiva()) return;
 
-    // Pré-preenche a resposta modelo com a alternativa correta + explicação
-    const correta = this.fAlternativas().find((a) => a.correta)?.texto.trim();
-    if (!this.fRespostaModelo().trim()) {
-      const partes = [correta, this.fExplicacao().trim()].filter(Boolean);
-      this.fRespostaModelo.set(partes.join('\n\n'));
-    }
-    if (this.fPontosChave().length === 0 && correta) {
-      this.fPontosChave.set([correta]);
-    }
+    const sugerido = this.gabaritoAbertoSugerido();
+    this.fRespostaModelo.set(sugerido.respostaModelo);
+    this.fPontosChave.set(sugerido.pontosChave);
 
     this.fFormato.set('resposta_aberta_curta');
     this.toast.success(
       'Convertida para discursiva. Revise a resposta modelo e os pontos-chave antes de salvar — as alternativas ficam preservadas caso queira reverter.',
     );
+  }
+
+  /** Cria uma NOVA questão discursiva (rascunho) a partir desta, sem alterar a original. */
+  protected async criarCopiaDiscursiva(): Promise<void> {
+    if (!this.podeConverterParaDiscursiva() || this.salvando()) return;
+
+    const sugerido = this.gabaritoAbertoSugerido();
+    this.salvando.set(true);
+
+    // A imagem não é copiada: as duas questões compartilhariam o mesmo arquivo
+    // no storage, e a limpeza ao trocar/remover a imagem de uma apagaria a da outra.
+    const payload: QuestaoPayload = {
+      enunciado: this.fEnunciado().trim(),
+      enunciado_apoio: this.fEnunciadoApoio().trim() || null,
+      imagem_url: null,
+      imagem_legenda: null,
+      formato: 'resposta_aberta_curta',
+      tipo_questao: this.fTipoQuestao(),
+      formato_prova: this.fFormatoProva() || null,
+      status: 'rascunho',
+      disciplina_id: this.fDisciplinaId() || null,
+      explicacao: this.fExplicacao().trim() || null,
+      referencia: this.fReferencia().trim() || null,
+      fonte: this.fFonte().trim() || null,
+      resposta_modelo: sugerido.respostaModelo || null,
+      pontos_chave: sugerido.pontosChave,
+      criterios_correcao: this.fCriterios().trim() || null,
+      autor_id: this.auth.user()?.id ?? null,
+    };
+
+    const result = await this.adminService.criarQuestaoCompleta(payload, [], this.fTemas());
+    this.salvando.set(false);
+
+    if (!result.ok) {
+      this.toast.error('Erro ao criar a cópia discursiva.');
+      return;
+    }
+
+    this.toast.success(
+      this.fImagemUrl()
+        ? 'Cópia discursiva criada como rascunho (a imagem não é copiada — anexe de novo se precisar). Abrindo para revisão…'
+        : 'Cópia discursiva criada como rascunho. Abrindo para revisão…',
+    );
+    await this.carregar();
+    await this.abrirEditar({ id: result.data } as AdminQuestao);
   }
 
   protected onTipoQuestaoChange(tipo: string): void {

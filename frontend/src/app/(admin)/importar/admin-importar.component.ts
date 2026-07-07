@@ -676,7 +676,7 @@ PARENT: Semiologia Cardiovascular
   protected readonly labelImportar = computed(() => {
     const n = this.validas();
     switch (this.tipoImportacao()) {
-      case 'questoes': return `Importar ${n} questão${n !== 1 ? 'ões' : ''}`;
+      case 'questoes': return `Importar ${n} ${n !== 1 ? 'questões' : 'questão'}`;
       case 'disciplinas': return `Importar ${n} disciplina${n !== 1 ? 's' : ''}`;
       case 'temas': return `Importar ${n} tema${n !== 1 ? 's' : ''}`;
     }

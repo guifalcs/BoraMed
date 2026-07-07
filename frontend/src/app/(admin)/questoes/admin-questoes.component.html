@@ -224,6 +224,31 @@
             }
           </dl>
 
+          @if (questaoVisualizada()?.formato === 'resposta_aberta_curta') {
+            <div class="preview-text-block">
+              <h4>Resposta modelo</h4>
+              <p class="whitespace-pre-wrap">{{ questaoVisualizada()?.resposta_modelo || 'Sem resposta modelo' }}</p>
+            </div>
+
+            @if ((questaoVisualizada()?.pontos_chave ?? []).length > 0) {
+              <div class="preview-text-block">
+                <h4>Pontos-chave da correção</h4>
+                <ul class="preview-lista">
+                  @for (ponto of questaoVisualizada()?.pontos_chave ?? []; track ponto) {
+                    <li>{{ ponto }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (questaoVisualizada()?.criterios_correcao) {
+              <div class="preview-text-block">
+                <h4>Critérios de correção</h4>
+                <p class="whitespace-pre-wrap">{{ questaoVisualizada()?.criterios_correcao }}</p>
+              </div>
+            }
+          }
+
           @if (questaoVisualizada()?.explicacao) {
             <div class="preview-text-block">
               <h4>Explicação</h4>
@@ -365,9 +390,14 @@
             </p>
 
             @if (podeConverterParaDiscursiva()) {
-              <div class="mb-3">
-                <button type="button" class="btn btn--sm btn--outline" (click)="converterParaDiscursiva()">
-                  Converter para discursiva
+              <div class="mb-3 flex flex-wrap items-center gap-2">
+                <button type="button" class="btn btn--sm btn--outline" (click)="converterParaDiscursiva()"
+                  title="Muda o formato desta questão para discursiva (as alternativas ficam guardadas caso queira reverter)">
+                  Converter esta questão em discursiva
+                </button>
+                <button type="button" class="btn btn--sm btn--outline" [disabled]="salvando()" (click)="criarCopiaDiscursiva()"
+                  title="Cria uma nova questão discursiva (rascunho) com base nesta, sem alterar a original">
+                  Criar cópia discursiva
                 </button>
               </div>
             }
@@ -815,6 +845,10 @@
   .preview-text-block p {
     margin: 0; color: #475569; font-size: 0.875rem; line-height: 1.5;
     white-space: pre-line;
+  }
+  .preview-lista {
+    margin: 0; padding-left: 1.25rem; color: #475569;
+    font-size: 0.875rem; line-height: 1.6; list-style: disc;
   }
 
   /* ── Seções do formulário ── */
