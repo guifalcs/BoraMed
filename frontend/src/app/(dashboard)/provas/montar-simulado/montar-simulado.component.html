@@ -52,6 +52,27 @@
       </div>
     </section>
 
+    <!-- Formato das questões -->
+    <section class="mb-8">
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Formato das questões</h2>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        @for (fq of formatosQuestao; track fq.value) {
+          <button
+            type="button"
+            (click)="formatoQuestaoSelecionado.set(fq.value)"
+            [class]="formatoQuestaoSelecionado() === fq.value
+              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 px-4 py-3 text-left transition-all'
+              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)]'"
+          >
+            <span class="text-sm font-semibold" [class]="formatoQuestaoSelecionado() === fq.value ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'">
+              {{ fq.label }}
+            </span>
+            <span class="text-xs leading-relaxed text-[var(--color-text-muted)]">{{ fq.descricao }}</span>
+          </button>
+        }
+      </div>
+    </section>
+
     <!-- Quantidade -->
     <section class="mb-8">
       <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Quantidade de questões</h2>

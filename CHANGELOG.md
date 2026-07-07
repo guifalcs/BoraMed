@@ -2,6 +2,18 @@
 
 ## 2026-07-07 | Feature | sem commit
 
+**Questões abertas (Fase 4) — simulado com discursivas e resultado bloqueante**
+
+- Migration `20260707140000_abertas_simulado_personalizado.sql`: `gerar_simulado_personalizado` ganha `p_formato_questao` (`fechadas` default | `discursivas` | `misto`). O default `fechadas` blinda simulados existentes de sortearem discursivas recém-cadastradas; o payload agora emite o gabarito aberto mascarado em modo simulado (mesmo padrão de `iniciar_tentativa`). Assinatura antiga removida (evita overload ambíguo no PostgREST). Smoke test no stack local: filtro por formato, default e mascaramento simulado/estudo.
+- Montar simulado: nova seção "Formato das questões" (Objetivas / Discursivas / Misto).
+- Execução (simulado): confirmação de finalização alerta discursivas escritas mas não enviadas (não serão corrigidas).
+- Tela de resultado bloqueante: com correções de IA pendentes, mostra progresso ("Corrigindo suas respostas discursivas… 2/3"), re-dispara a edge function para correções paradas (pendente/erro), faz poll de `get_status_correcoes` a cada 3s e consolida a nota ao terminar; timeout de 90s força `sem_ia` com banner explicando a exclusão da nota.
+- `resultado-summary` por pontos: card de acertos vira "Aproveitamento (≥70)" quando há discursivas (inclui abertas com pontos ≥ 70 e denominador `total_pontuaveis`); contagem de erradas inclui discursivas com pontos < 70.
+
+---
+
+## 2026-07-07 | Feature | sem commit
+
 **Questões abertas (Fase 3) — RPCs core + modo estudo de ponta a ponta**
 
 - Migration `20260707130000_abertas_rpcs_resposta_e_nota_pontos.sql`:

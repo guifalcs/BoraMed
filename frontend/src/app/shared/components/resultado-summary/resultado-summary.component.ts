@@ -51,8 +51,22 @@ export class ResultadoSummaryComponent {
     return 'Precisa de mais prática. Revise os conteúdos.';
   });
 
-  protected readonly acertos = computed(() => this.resultado().tentativa.acertos);
-  protected readonly total = computed(() => this.resultado().tentativa.total_questoes);
+  /** Há discursivas na tentativa (pontuação por pontos, não binária). */
+  protected readonly temDiscursivas = computed(() =>
+    this.resultado().respostas.some((r) => r.enviada_em || r.pontos != null),
+  );
+
+  /** Acertos = corretas (MC) + abertas com pontos >= 70 (mesmo threshold do app). */
+  protected readonly acertos = computed(() => {
+    if (!this.temDiscursivas()) return this.resultado().tentativa.acertos;
+    return this.resultado().respostas.filter(
+      (r) => r.correta === true || (r.pontos != null && r.pontos >= 70),
+    ).length;
+  });
+
+  protected readonly total = computed(
+    () => this.resultado().tentativa.total_pontuaveis ?? this.resultado().tentativa.total_questoes,
+  );
 
   protected readonly tempoFormatado = computed(() => {
     const total = this.resultado().tentativa.tempo_acumulado_segundos;
@@ -132,8 +146,13 @@ export class ResultadoSummaryComponent {
     this.temasPrioritarios().map((tema) => tema.nome).join(', '),
   );
 
+  /** Erradas: MC incorretas + discursivas com pontos abaixo de 70. */
   protected readonly questoesErradas = computed(() =>
-    this.resultado().respostas.filter((resposta) => resposta.correta === false).length,
+    this.resultado().respostas.filter(
+      (resposta) =>
+        resposta.correta === false ||
+        (resposta.pontos != null && resposta.correta == null && resposta.pontos < 70),
+    ).length,
   );
 
   protected readonly temQuestoesErradas = computed(() => this.questoesErradas() > 0);

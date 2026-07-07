@@ -444,11 +444,27 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     this.questoes().length - this.totalRespondidas(),
   );
 
+  /** Abertas com rascunho digitado mas nunca enviadas — perdem o texto na finalização. */
+  protected readonly abertasNaoEnviadas = computed(() =>
+    this.questoes().filter(
+      (q) =>
+        q.formato === 'resposta_aberta_curta' &&
+        !this.enviadas().has(q.id) &&
+        (this.respostasTexto().get(q.id) ?? '').trim().length > 0,
+    ).length,
+  );
+
   protected readonly mensagemFinalizacao = computed(() => {
     const naoResp = this.questoesNaoRespondidas();
     const marc = this.totalMarcadas();
+    const abertas = this.abertasNaoEnviadas();
     const parts: string[] = [];
 
+    if (abertas > 0) {
+      parts.push(
+        `${abertas} ${abertas === 1 ? 'resposta discursiva escrita mas não enviada (não será corrigida)' : 'respostas discursivas escritas mas não enviadas (não serão corrigidas)'}`,
+      );
+    }
     if (naoResp > 0) {
       parts.push(`${naoResp} ${naoResp === 1 ? 'questão sem resposta' : 'questões sem resposta'}`);
     }

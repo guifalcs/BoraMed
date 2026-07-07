@@ -21,6 +21,31 @@ import { ModoSelectorComponent } from '../../../shared/components/modo-selector/
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
 type FormatoSimulado = 'todos' | 'processual' | 'laboratorio';
+type FormatoQuestao = 'fechadas' | 'discursivas' | 'misto';
+
+interface OpcaoFormatoQuestao {
+  value: FormatoQuestao;
+  label: string;
+  descricao: string;
+}
+
+const FORMATOS_QUESTAO: OpcaoFormatoQuestao[] = [
+  {
+    value: 'fechadas',
+    label: 'Objetivas',
+    descricao: 'Múltipla escolha e verdadeiro/falso',
+  },
+  {
+    value: 'discursivas',
+    label: 'Discursivas',
+    descricao: 'Respostas escritas, corrigidas por IA com feedback',
+  },
+  {
+    value: 'misto',
+    label: 'Misto',
+    descricao: 'Combina questões objetivas e discursivas',
+  },
+];
 
 interface OpcaoFormato {
   value: FormatoSimulado;
@@ -77,8 +102,10 @@ export class MontarSimuladoComponent {
   protected readonly loaderIcon = LoaderCircle;
 
   protected readonly formatos = FORMATOS;
+  protected readonly formatosQuestao = FORMATOS_QUESTAO;
 
   protected readonly formatoSelecionado = signal<FormatoSimulado>('todos');
+  protected readonly formatoQuestaoSelecionado = signal<FormatoQuestao>('fechadas');
   protected readonly temas = signal<TemaComContagem[]>([]);
   protected readonly isLoadingTemas = signal(true);
   protected readonly isRecarregandoFormato = signal(false);
@@ -308,6 +335,7 @@ export class MontarSimuladoComponent {
       this.quantidade(),
       this.modoSelecionado(),
       this.formatoSelecionado(),
+      this.formatoQuestaoSelecionado(),
     );
 
     this.gerando.set(false);

@@ -469,6 +469,7 @@ export class TentativaService {
     qtd: number,
     modo: ModoProva = 'simulado',
     formato: 'todos' | 'nacional' | 'processual' | 'laboratorio' = 'todos',
+    formatoQuestao: 'fechadas' | 'discursivas' | 'misto' = 'fechadas',
   ): Promise<ProvaResult<{ prova_id: string; tentativa: Tentativa; questoes: QuestaoComAlternativas[] }>> {
     const tipoQuestao = formato === 'todos' ? null : formato;
     try {
@@ -478,6 +479,7 @@ export class TentativaService {
         p_modo: modo,
         p_tipo_questao: tipoQuestao,
         p_formato: formato === 'todos' ? null : formato,
+        p_formato_questao: formatoQuestao,
       });
 
       if (error) {
