@@ -201,7 +201,10 @@ export class MontarSimuladoComponent {
     this.isLoadingTemas.set(true);
     this.loadError.set(null);
     try {
-      const result = await this.temaService.listarTemasComContagem();
+      const result = await this.temaService.listarTemasComContagem(
+        this.formatoAtual().tipoQuestao,
+        this.formatoQuestaoSelecionado(),
+      );
       if (result.ok) {
         this.temas.set(result.data);
         this.aplicarPreSelecao();
@@ -253,13 +256,27 @@ export class MontarSimuladoComponent {
     await this.recarregarTemas();
   }
 
+  protected async selecionarFormatoQuestao(formato: FormatoQuestao): Promise<void> {
+    if (formato === this.formatoQuestaoSelecionado()) return;
+    if (this.isLoadingTemas()) return;
+    // A contagem por tema depende do formato (discursivas/fechadas/misto);
+    // recarrega para não oferecer temas sem questões daquele formato.
+    this.formatoQuestaoSelecionado.set(formato);
+    this.temasSelecionados.set(new Set());
+    this.erro.set(null);
+    await this.recarregarTemas();
+  }
+
   private async recarregarTemas(): Promise<void> {
     this.isLoadingTemas.set(true);
     this.isRecarregandoFormato.set(true);
     this.loadError.set(null);
     try {
       const tipoQuestao = this.formatoAtual().tipoQuestao;
-      const result = await this.temaService.listarTemasComContagem(tipoQuestao);
+      const result = await this.temaService.listarTemasComContagem(
+        tipoQuestao,
+        this.formatoQuestaoSelecionado(),
+      );
       if (result.ok) {
         this.temas.set(result.data);
       } else {

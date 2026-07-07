@@ -69,7 +69,9 @@
       />
     }
 
-    @if ((estadoRespostaAberta() === 'enviada' || modo() === 'visualizar') && correcao()) {
+    <!-- Feedback só quando o gabarito é revelado (estudo pós-envio, revisão,
+         visualização) — no simulado a correção fica escondida até o resultado. -->
+    @if (exibirGabaritoAberto() && correcao()) {
       <app-correcao-feedback
         [correcao]="correcao()!"
         (tentarNovamente)="tentarCorrecaoNovamente.emit()"
