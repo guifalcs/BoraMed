@@ -45,6 +45,21 @@ import type { Plano } from '../../core/models/subscription.types';
             <p class="mt-2 text-gray-600">Acesso completo aos simulados do BoraMed.</p>
           </header>
 
+          @if (assinaturaPausada()) {
+            <div class="mx-auto mb-8 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
+              <p class="text-sm text-amber-800">
+                Sua assinatura está <span class="font-semibold">pausada</span>. Reative sem assinar de
+                novo e retome o acesso na hora.
+              </p>
+              <a
+                routerLink="/dashboard/assinatura"
+                class="mt-3 inline-block whitespace-nowrap rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 sm:mt-0"
+              >
+                Reativar assinatura
+              </a>
+            </div>
+          }
+
           @if (loading()) {
             <div class="py-20 text-center text-gray-500">Carregando planos…</div>
           } @else if (planos().length === 0) {
@@ -232,8 +247,14 @@ export class PlanosComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     if (!this.profile()) void this.profileService.loadProfile();
+    void this.subscription.carregarAssinatura();
     this.planos.set(await this.subscription.listarPlanos());
     this.loading.set(false);
+  }
+
+  /** Usuário chega aqui pausado (paywall) — oferece atalho para reativar. */
+  assinaturaPausada(): boolean {
+    return this.subscription.assinatura()?.status === 'paused';
   }
 
   nomeExibicao(): string {

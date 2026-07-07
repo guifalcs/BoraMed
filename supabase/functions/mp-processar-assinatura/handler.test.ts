@@ -118,6 +118,50 @@ Deno.test('processar-assinatura: acesso ativo → 409', async () => {
   assertEquals(res.status, 409);
 });
 
+Deno.test('processar-assinatura: assinatura pausada → 409 direciona p/ reativar, sem 2º preapproval', async () => {
+  const db = baseDb({
+    assinatura: [
+      {
+        id: 'a1',
+        user_id: 'user-1',
+        status: 'paused',
+        mp_preapproval_id: 'PRE-P',
+        proxima_cobranca: '2026-12-01T00:00:00.000Z',
+      },
+    ],
+  });
+  const { fn, calls } = captureFetch({ body: authorizedPre });
+  const res = await handleProcessarAssinatura(
+    request(goodBody()),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 409);
+  assertEquals(calls.length, 0, 'não cria um 2º preapproval para quem está pausado');
+  const out = await res.json();
+  assertEquals(typeof out.error, 'string');
+});
+
+Deno.test('processar-assinatura authorized com next_payment_date = agora → acesso provisório (+1 período)', async () => {
+  const db = baseDb();
+  const { fn } = captureFetch({
+    body: {
+      id: 'PRE-2',
+      status: 'authorized',
+      date_created: NOW.toISOString(),
+      next_payment_date: NOW.toISOString(), // MP devolve = agora até a 1ª fatura processar
+    },
+  });
+  const res = await handleProcessarAssinatura(
+    request(goodBody()),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 200);
+  const assin = find(db, 'assinatura', (r) => r.mp_preapproval_id === 'PRE-2');
+  assertExists(assin);
+  // NOW = 2026-06-24 → concede +1 mês provisório (webhook corrige na 1ª cobrança).
+  assertEquals(assin?.proxima_cobranca, '2026-07-24T12:00:00.000Z');
+});
+
 Deno.test('processar-assinatura: attempt_id de outro usuário → 409', async () => {
   const db = baseDb({
     pagamento_intencao: [

@@ -140,7 +140,12 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   if (!plano.ativo) return reply({ error: 'plano inativo' }, 400);
   if (plano.recorrente) return reply({ error: 'plano não é de pagamento único' }, 400);
 
-  // 4. Bloqueia cobrança dupla enquanto houver acesso ativo
+  // 4. Bloqueia cobrança dupla enquanto houver acesso ativo.
+  //    NÃO barra assinatura `paused` aqui: este é o pagamento ÚNICO (semestral,
+  //    /v1/payments), que não cria preapproval — não há risco de 2ª recorrência
+  //    viva, e comprar o semestral é justamente uma forma de o pausado voltar a
+  //    ter acesso. O anti-dupla de `paused` vale só p/ o fluxo recorrente
+  //    (mp-processar-assinatura).
   const { data: assinaturas } = await admin
     .from('assinatura')
     .select('status, proxima_cobranca')

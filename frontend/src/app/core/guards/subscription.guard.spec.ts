@@ -186,6 +186,31 @@ describe('subscriptionGuard', () => {
     expect(result).toBe('/planos');
   });
 
+  // ── Minha assinatura fora do paywall ───────────────────────────────────────
+
+  it('libera /dashboard/assinatura mesmo sem acesso ativo (para reativar/reassinar)', async () => {
+    setup({ temAssinaturaAtiva: false });
+
+    const result = await TestBed.runInInjectionContext(() =>
+      subscriptionGuard({} as never, { url: '/dashboard/assinatura' } as never),
+    );
+
+    expect(result).toBe(true);
+    expect(subscriptionMock.temAssinaturaAtivaServidor).not.toHaveBeenCalled();
+    expect(routerMock.createUrlTree).not.toHaveBeenCalled();
+  });
+
+  it('mantém o paywall nas demais rotas do dashboard', async () => {
+    setup({ temAssinaturaAtiva: false });
+
+    const result = await TestBed.runInInjectionContext(() =>
+      subscriptionGuard({} as never, { url: '/dashboard/simulados' } as never),
+    );
+
+    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos']);
+    expect(result).toBe('/planos');
+  });
+
   // ── Fluxo de preapproval pendente ──────────────────────────────────────────
 
   it('quando há PENDING_PREAPPROVAL_KEY, remove do sessionStorage e chama vincular antes de verificar acesso', async () => {

@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { X, type LucideIconData } from 'lucide-angular';
+import { AuthService } from '../../core/services/auth.service';
 import { CheckoutService } from '../../core/services/checkout.service';
 import { MercadoPagoSdkService, SDK_ERRO_CARREGAMENTO } from '../../core/services/mercado-pago-sdk.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
@@ -75,6 +76,7 @@ export class TrocarCartaoModalComponent implements OnInit, OnDestroy {
 
   private readonly sdk = inject(MercadoPagoSdkService);
   private readonly checkout = inject(CheckoutService);
+  private readonly auth = inject(AuthService);
 
   readonly fecharIcon: LucideIconData = X;
   readonly containerId = CONTAINER_ID;
@@ -87,10 +89,16 @@ export class TrocarCartaoModalComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     try {
       this.brick = await this.sdk.createPaymentBrick(this.containerId, {
-        initialization: { amount: this.valorCentavos() / 100 },
+        initialization: {
+          amount: this.valorCentavos() / 100,
+          // Pré-preenche o e-mail (o Brick exige o campo; aqui não há cobrança).
+          payer: { email: this.auth.user()?.email ?? undefined },
+        },
         customization: {
           paymentMethods: { creditCard: 'all', maxInstallments: 1 },
           visual: {
+            // O fluxo não cobra nada; rotula o botão como troca, não "Pagar".
+            texts: { formSubmit: 'Salvar cartão' },
             style: {
               customVariables: { baseColor: '#2451D8', borderRadiusMedium: '12px' },
             },

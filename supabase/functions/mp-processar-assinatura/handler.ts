@@ -26,6 +26,18 @@ function intencaoStatusFromPreapproval(status: string): string {
   return 'recusada';
 }
 
+/**
+ * Soma o período do plano a partir de `from`. Usado como acesso provisório
+ * quando o MP ainda não definiu a 1ª data de cobrança real (next_payment_date
+ * nasce = agora, a fatura processa assíncrono).
+ */
+function addPeriodo(from: Date, frequency: number, frequencyType: string): string {
+  const d = new Date(from.getTime());
+  if (frequencyType === 'months') d.setUTCMonth(d.getUTCMonth() + frequency);
+  else d.setUTCDate(d.getUTCDate() + frequency);
+  return d.toISOString();
+}
+
 export async function handleProcessarAssinatura(req: Request, deps: Deps): Promise<Response> {
   const cors = corsHeaders(req);
   const reply = (data: unknown, status = 200) => json(data, status, cors);
@@ -78,14 +90,22 @@ export async function handleProcessarAssinatura(req: Request, deps: Deps): Promi
   if (!plano.ativo) return reply({ error: 'plano inativo' }, 400);
   if (!plano.recorrente) return reply({ error: 'plano não é recorrente' }, 400);
 
-  // 4. Bloqueia cobrança dupla enquanto houver acesso ativo
+  // 4. Bloqueia cobrança dupla enquanto houver acesso ativo; assinatura pausada
+  //    direciona para reativação (evita 2º preapproval vivo no MP).
   const { data: assinaturas } = await admin
     .from('assinatura')
     .select('status, proxima_cobranca')
     .eq('user_id', user.id)
-    .in('status', ['authorized', 'cancelled']);
-  if (hasActiveAccess(assinaturas ?? [], deps.now().getTime())) {
+    .in('status', ['authorized', 'cancelled', 'paused']);
+  const linhasAcesso = assinaturas ?? [];
+  if (hasActiveAccess(linhasAcesso.filter((a) => a.status !== 'paused'), deps.now().getTime())) {
     return reply({ error: 'Você já tem um acesso ativo no momento.' }, 409);
+  }
+  if (linhasAcesso.some((a) => a.status === 'paused')) {
+    return reply(
+      { error: 'Sua assinatura está pausada. Reative-a em "Minha assinatura" para voltar a estudar.' },
+      409,
+    );
   }
 
   // 5. Idempotência / anti-replay do attempt_id
@@ -237,6 +257,19 @@ export async function handleProcessarAssinatura(req: Request, deps: Deps): Promi
       .eq('user_id', user.id)
       .eq('status', 'authorized');
   }
+  // Acesso provisório: no sandbox (e na janela até a 1ª fatura processar em prod)
+  // o MP devolve next_payment_date = agora. Sem uma data futura,
+  // tem_assinatura_ativa() ficaria false e o usuário travaria em "Liberando…".
+  // Concede 1 período provisório; o webhook subscription_authorized_payment
+  // corrige a data real na 1ª cobrança.
+  let proximaCobranca = nextPayment;
+  if (status === 'authorized') {
+    const nextMs = nextPayment ? new Date(nextPayment).getTime() : 0;
+    if (!nextMs || nextMs <= deps.now().getTime()) {
+      proximaCobranca = addPeriodo(deps.now(), plano.frequency, plano.frequency_type);
+    }
+  }
+
   await admin.from('assinatura').upsert(
     {
       user_id: user.id,
@@ -244,7 +277,7 @@ export async function handleProcessarAssinatura(req: Request, deps: Deps): Promi
       mp_preapproval_id: preId,
       status,
       data_inicio: (pre['date_created'] as string | undefined) ?? deps.now().toISOString(),
-      ...(nextPayment ? { proxima_cobranca: nextPayment } : {}),
+      ...(proximaCobranca ? { proxima_cobranca: proximaCobranca } : {}),
       cancelada_em: null,
     },
     { onConflict: 'mp_preapproval_id' },

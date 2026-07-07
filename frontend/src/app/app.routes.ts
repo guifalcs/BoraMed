@@ -54,6 +54,11 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     canActivate: [lazyAuthGuard, lazySubscriptionGuard],
+    // canActivateChild re-aplica o paywall a CADA navegação entre rotas-filhas.
+    // Sem ele, um usuário sem acesso que entrasse pela rota isenta
+    // (/dashboard/assinatura) circularia livre pelo dashboard, pois o canActivate
+    // do pai só roda na 1ª ativação. O guard isenta apenas /dashboard/assinatura.
+    canActivateChild: [lazySubscriptionGuard],
     loadComponent: () =>
       import('./(dashboard)/dashboard.component').then((m) => m.DashboardComponent),
     loadChildren: () =>

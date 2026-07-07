@@ -165,6 +165,29 @@ Deno.test('processar-pagamento: acesso ativo → 409 e não chama o MP', async (
   assertEquals(db.rows('pagamento_intencao').length, 0);
 });
 
+Deno.test('processar-pagamento: mensal pausado NÃO bloqueia a compra do semestral (pagamento único)', async () => {
+  // paused é anti-dupla só no fluxo recorrente; comprar o semestral (one-time,
+  // sem preapproval) é uma via legítima de o pausado voltar a ter acesso.
+  const db = baseDb({
+    assinatura: [
+      {
+        id: 'a1',
+        user_id: 'user-1',
+        status: 'paused',
+        mp_preapproval_id: 'PRE-P',
+        proxima_cobranca: '2026-12-01T00:00:00.000Z',
+      },
+    ],
+  });
+  const { fn, calls } = captureFetch({ body: approvedPayment() });
+  const res = await handleProcessarPagamento(
+    request(cardBody()),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 200, 'não deve barrar em 409 por causa do paused');
+  assertEquals(calls.length >= 1, true, 'chega a chamar o MP (não barrado no anti-dupla)');
+});
+
 Deno.test('processar-pagamento: rate limit 5/15min → 429', async () => {
   const recentes = Array.from({ length: 5 }, (_, i) => ({
     id: `int-${i}`,
