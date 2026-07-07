@@ -227,7 +227,11 @@
           @if (questaoVisualizada()?.formato === 'resposta_aberta_curta') {
             <div class="preview-text-block">
               <h4>Resposta modelo</h4>
-              <p class="whitespace-pre-wrap">{{ questaoVisualizada()?.resposta_modelo || 'Sem resposta modelo' }}</p>
+              @if (questaoVisualizada()?.resposta_modelo) {
+                <div class="preview-markdown"><markdown [data]="questaoVisualizada()!.resposta_modelo!"></markdown></div>
+              } @else {
+                <p>Sem resposta modelo</p>
+              }
             </div>
 
             @if ((questaoVisualizada()?.pontos_chave ?? []).length > 0) {
@@ -252,7 +256,7 @@
           @if (questaoVisualizada()?.explicacao) {
             <div class="preview-text-block">
               <h4>Explicação</h4>
-              <p>{{ questaoVisualizada()?.explicacao }}</p>
+              <div class="preview-markdown"><markdown [data]="questaoVisualizada()!.explicacao!"></markdown></div>
             </div>
           }
         </section>
@@ -850,6 +854,13 @@
     margin: 0; padding-left: 1.25rem; color: #475569;
     font-size: 0.875rem; line-height: 1.6; list-style: disc;
   }
+  .preview-markdown {
+    color: #475569; font-size: 0.875rem; line-height: 1.5;
+  }
+  .preview-markdown :where(p) { margin: 0 0 0.5rem; }
+  .preview-markdown :where(p:last-child) { margin-bottom: 0; }
+  .preview-markdown :where(ul, ol) { margin: 0.25rem 0; padding-left: 1.25rem; }
+  .preview-markdown :where(strong) { color: #1e293b; font-weight: 700; }
 
   /* ── Seções do formulário ── */
   .form-section {

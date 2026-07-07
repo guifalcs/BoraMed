@@ -28,6 +28,7 @@ import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.compone
 import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-checkbox.component';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { QuestaoCardComponent } from '../../shared/components/questao-card/questao-card.component';
+import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 
 const DATE_FMT = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -70,8 +71,10 @@ function alternativasIniciais(formato: string): AlternativaForm[] {
     UiCheckboxComponent,
     ImageUploadComponent,
     QuestaoCardComponent,
+    MarkdownComponent,
   ],
   templateUrl: './admin-questoes.component.html',
+  providers: [provideMarkdown()],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminQuestoesComponent implements OnInit {
@@ -96,7 +99,7 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly porPagina = 50;
 
   // ---- Autores (filtro "quem criou") ----
-  protected readonly autoresDisponiveis = signal<{ id: string; nome_completo: string | null }[]>([]);
+  protected readonly autoresDisponiveis = signal<{ id: string; nome_completo: string | null; email: string | null }[]>([]);
 
   protected readonly temFiltrosAtivos = computed(
     () =>
@@ -195,7 +198,7 @@ export class AdminQuestoesComponent implements OnInit {
     { value: '', label: 'Todos os autores' },
     ...this.autoresDisponiveis().map((a) => ({
       value: a.id,
-      label: a.nome_completo?.trim() || 'Sem nome',
+      label: a.nome_completo?.trim() || a.email?.trim() || 'Sem nome',
     })),
   ]);
 
@@ -517,7 +520,8 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected autorNome(id: string | null | undefined): string {
     if (!id) return '—';
-    return this.autoresDisponiveis().find((a) => a.id === id)?.nome_completo?.trim() || 'Desconhecido';
+    const autor = this.autoresDisponiveis().find((a) => a.id === id);
+    return autor?.nome_completo?.trim() || autor?.email?.trim() || 'Desconhecido';
   }
 
   protected dataLabel(data: string | null | undefined): string {
@@ -723,49 +727,37 @@ export class AdminQuestoesComponent implements OnInit {
     );
   }
 
-  /** Cria uma NOVA questão discursiva (rascunho) a partir desta, sem alterar a original. */
-  protected async criarCopiaDiscursiva(): Promise<void> {
+  /**
+   * Prepara o formulário como uma NOVA questão discursiva a partir da atual
+   * (sem alterar a original). Só cria no banco quando o admin clicar em Salvar.
+   */
+  protected criarCopiaDiscursiva(): void {
     if (!this.podeConverterParaDiscursiva() || this.salvando()) return;
 
     const sugerido = this.gabaritoAbertoSugerido();
-    this.salvando.set(true);
+    const tinhaImagem = !!this.fImagemUrl();
 
-    // A imagem não é copiada: as duas questões compartilhariam o mesmo arquivo
-    // no storage, e a limpeza ao trocar/remover a imagem de uma apagaria a da outra.
-    const payload: QuestaoPayload = {
-      enunciado: this.fEnunciado().trim(),
-      enunciado_apoio: this.fEnunciadoApoio().trim() || null,
-      imagem_url: null,
-      imagem_legenda: null,
-      formato: 'resposta_aberta_curta',
-      tipo_questao: this.fTipoQuestao(),
-      formato_prova: this.fFormatoProva() || null,
-      status: 'rascunho',
-      disciplina_id: this.fDisciplinaId() || null,
-      explicacao: this.fExplicacao().trim() || null,
-      referencia: this.fReferencia().trim() || null,
-      fonte: this.fFonte().trim() || null,
-      resposta_modelo: sugerido.respostaModelo || null,
-      pontos_chave: sugerido.pontosChave,
-      criterios_correcao: this.fCriterios().trim() || null,
-      autor_id: this.auth.user()?.id ?? null,
-    };
+    // Passa a criar em vez de editar: o save() fará INSERT e definirá o autor.
+    this.questaoEditandoId.set(null);
+    this.modoDrawer.set('criar');
+    this.fFormato.set('resposta_aberta_curta');
+    this.fStatus.set('rascunho');
+    this.fRespostaModelo.set(sugerido.respostaModelo);
+    this.fPontosChave.set(sugerido.pontosChave);
+    this.fAlternativas.set([]);
 
-    const result = await this.adminService.criarQuestaoCompleta(payload, [], this.fTemas());
-    this.salvando.set(false);
-
-    if (!result.ok) {
-      this.toast.error('Erro ao criar a cópia discursiva.');
-      return;
-    }
+    // A imagem não é copiada: as duas questões compartilhariam o mesmo arquivo no
+    // storage, e a limpeza ao trocar/remover a imagem de uma apagaria a da outra.
+    this.fImagemUrl.set(null);
+    this.fImagemLegenda.set('');
+    // Zera a referência de limpeza para o save() não apagar a imagem da original.
+    this._urlAntesDeEditar = null;
 
     this.toast.success(
-      this.fImagemUrl()
-        ? 'Cópia discursiva criada como rascunho (a imagem não é copiada — anexe de novo se precisar). Abrindo para revisão…'
-        : 'Cópia discursiva criada como rascunho. Abrindo para revisão…',
+      tinhaImagem
+        ? 'Cópia discursiva preenchida (a imagem não é copiada — anexe de novo se precisar). Revise e clique em Salvar.'
+        : 'Cópia discursiva preenchida. Revise a resposta modelo e clique em Salvar para criar.',
     );
-    await this.carregar();
-    await this.abrirEditar({ id: result.data } as AdminQuestao);
   }
 
   protected onTipoQuestaoChange(tipo: string): void {

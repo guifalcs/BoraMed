@@ -543,14 +543,14 @@ export class AdminService {
   }
 
   /** Autores possíveis de questões: admins e super admins (usado no filtro). */
-  async listarAutores(): Promise<ServiceResult<{ id: string; nome_completo: string | null }[]>> {
+  async listarAutores(): Promise<ServiceResult<{ id: string; nome_completo: string | null; email: string | null }[]>> {
     const { data, error } = await this.supabase
       .from('profiles')
-      .select('id,nome_completo')
+      .select('id,nome_completo,email')
       .in('papel', ['admin', 'super_admin'])
       .order('nome_completo', { ascending: true });
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: (data ?? []) as { id: string; nome_completo: string | null }[] };
+    return { ok: true, data: (data ?? []) as { id: string; nome_completo: string | null; email: string | null }[] };
   }
 
   async buscarQuestaoCompleta(id: string): Promise<ServiceResult<AdminQuestaoCompleta>> {
