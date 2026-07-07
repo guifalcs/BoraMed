@@ -1,4 +1,7 @@
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2.108.2';
+import type { GradingProvider } from './grading-provider.ts';
+import { openAiCompatProvider } from './grading-openai-compat.ts';
+import { fakeProvider } from './grading-fake.ts';
 
 // Dependências injetáveis das edge functions de pagamento. A produção usa
 // `realDeps()` (Deno.env, clientes Supabase reais, fetch global). Os testes
@@ -14,6 +17,31 @@ export interface Deps {
   fetch: typeof fetch;
   /** Relógio injetável, para datas determinísticas em teste. */
   now(): Date;
+  /** Espera (backoff de retry); no-op nos testes. */
+  sleep(ms: number): Promise<void>;
+  /**
+   * Motor de correção de questões abertas, escolhido por env
+   * (AI_GRADING_PROVIDER = 'openai-compat' | 'fake'). `null` = IA
+   * indisponível/não configurada → correção vira `sem_ia`.
+   */
+  gradingProvider(): GradingProvider | null;
+}
+
+/** Resolve o provider de correção a partir das envs (exportado p/ testes). */
+export function gradingProviderFromEnv(
+  env: (key: string) => string | undefined,
+  fetchImpl: typeof fetch,
+): GradingProvider | null {
+  const tipo = env('AI_GRADING_PROVIDER');
+  if (tipo === 'fake') return fakeProvider();
+  if (tipo === 'openai-compat') {
+    const baseUrl = env('AI_GRADING_BASE_URL');
+    const modelo = env('AI_GRADING_MODEL');
+    const apiKey = env('AI_GRADING_API_KEY');
+    if (!baseUrl || !modelo || !apiKey) return null;
+    return openAiCompatProvider({ baseUrl, modelo, apiKey, fetch: fetchImpl });
+  }
+  return null;
 }
 
 export function realDeps(): Deps {
@@ -30,5 +58,8 @@ export function realDeps(): Deps {
       }),
     fetch: (input: string | URL | Request, init?: RequestInit) => fetch(input, init),
     now: () => new Date(),
+    sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+    gradingProvider: () =>
+      gradingProviderFromEnv((k) => Deno.env.get(k), (input, init) => fetch(input, init)),
   };
 }

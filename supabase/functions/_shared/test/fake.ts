@@ -2,14 +2,15 @@
 // em memória (suporta as cadeias usadas pelos handlers) e helpers para montar
 // `Deps` e assinar requisições do webhook. Nada de rede nem banco real.
 
-import type { Deps } from '../deps.ts';
+import { type Deps, gradingProviderFromEnv } from '../deps.ts';
+import type { GradingProvider } from '../grading-provider.ts';
 
 // deno-lint-ignore no-explicit-any
 type Row = Record<string, any>;
 type Result = { data: unknown; error: unknown };
 
 interface Filter {
-  type: 'eq' | 'in';
+  type: 'eq' | 'in' | 'gte';
   col: string;
   val: unknown;
 }
@@ -62,6 +63,10 @@ class FakeBuilder {
     this.filters.push({ type: 'in', col, val });
     return this;
   }
+  gte(col: string, val: unknown): this {
+    this.filters.push({ type: 'gte', col, val });
+    return this;
+  }
   order(): this {
     return this;
   }
@@ -86,9 +91,12 @@ class FakeBuilder {
   }
 
   private matches(r: Row): boolean {
-    return this.filters.every((f) =>
-      f.type === 'eq' ? r[f.col] === f.val : (f.val as unknown[]).includes(r[f.col]),
-    );
+    return this.filters.every((f) => {
+      if (f.type === 'eq') return r[f.col] === f.val;
+      if (f.type === 'in') return (f.val as unknown[]).includes(r[f.col]);
+      // gte: compara strings ISO ou números (semântica suficiente p/ testes)
+      return r[f.col] != null && (r[f.col] as string | number) >= (f.val as string | number);
+    });
   }
 
   private run(): { rows: Row[]; error: unknown } {
@@ -168,6 +176,8 @@ export interface FakeDepsOptions {
   env?: Record<string, string>;
   fetch?: typeof fetch;
   now?: Date;
+  /** Provider de correção; se omitido, deriva das envs (como em produção). */
+  gradingProvider?: GradingProvider | null;
 }
 
 const DEFAULT_ENV: Record<string, string> = {
@@ -192,6 +202,14 @@ export function makeDeps(opts: FakeDepsOptions = {}): Deps {
     caller: () => fakeCaller(opts.caller ?? null, opts.callerError) as any,
     fetch: opts.fetch ?? (() => Promise.reject(new Error('fetch não mockado'))),
     now: () => new Date(fixedNow.getTime()),
+    sleep: () => Promise.resolve(),
+    gradingProvider: () =>
+      'gradingProvider' in opts
+        ? opts.gradingProvider ?? null
+        : gradingProviderFromEnv(
+            (k) => env[k],
+            opts.fetch ?? (() => Promise.reject(new Error('fetch não mockado'))),
+          ),
   };
 }
 

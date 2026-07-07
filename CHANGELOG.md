@@ -2,6 +2,18 @@
 
 ## 2026-07-07 | Feature | sem commit
 
+**Questões abertas (Fase 2) — edge function de correção por IA**
+
+- Nova edge function `corrigir-resposta-aberta` (padrão `index.ts` fino + `handler.ts` com DI): corrige UMA resposta aberta por chamada (fan-out no cliente). Valida JWT/ownership, exige resposta enviada (`enviada_em`), faz claim idempotente em `resposta_correcao` (`pendente`/`erro` → `corrigindo`), 2 retries com backoff para 429/5xx/JSON inválido, persiste resultado (`corrigida` + `tentativa_resposta.pontos`) ou `erro`; sem env de IA → `sem_ia` (app segue funcionando sem IA).
+- Novos módulos compartilhados: `grading-provider.ts` (interface `GradingProvider` + tipos + clamp 0–100), `grading-openai-compat.ts` (chat completions JSON — OpenRouter/OpenAI/Gemini por config, temperature 0, timeout 60s, prompt PT com delimitação anti-injection da resposta do aluno) e `grading-fake.ts` (determinístico por cobertura de pontos-chave, para dev/e2e).
+- `Deps` ganha `gradingProvider()` (seleção por env `AI_GRADING_PROVIDER`/`_BASE_URL`/`_MODEL`/`_API_KEY`) e `sleep()`; cap diário por usuário via `AI_GRADING_DAILY_LIMIT` (default 200) contado em `resposta_correcao` do dia.
+- 15 novos testes Deno (58 no total passando): sucesso, retry de JSON inválido, 5xx esgota retries → `erro`, 4xx sem retry, claim duplo → 202, re-claim de `erro`, idempotência de `corrigida`, ownership → 404, rascunho → 409, cap diário → 429, `sem_ia`, provider fake.
+- Env vars documentadas em `supabase/functions/.env.local.example`; execução apenas local via `functions serve` (sem deploy/secrets remotos nesta fase).
+
+---
+
+## 2026-07-07 | Feature | sem commit
+
 **Questões abertas (Fase 1) — schema de correção por IA + cadastro de discursivas no admin**
 
 Primeira fase do plano `docs/plano-questoes-abertas-ia.md` (questões discursivas com correção por IA).
