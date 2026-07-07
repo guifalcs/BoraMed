@@ -52,14 +52,24 @@
 
   @if (ehDiscursiva()) {
     <!-- Resposta discursiva -->
-    <app-resposta-aberta-input
-      [textoInicial]="respostaTexto()"
-      [estado]="estadoRespostaAberta()"
-      (salvarRascunho)="salvarRascunho.emit($event)"
-      (enviar)="enviarTexto.emit($event)"
-    />
+    @if (modo() === 'visualizar' || gabaritioVisivel()) {
+      <!-- Revisão: somente leitura -->
+      @if (respostaTexto()) {
+        <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
+          <h4 class="mb-2 text-xs font-semibold text-[var(--color-text-muted)]">Sua resposta</h4>
+          <p class="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text)]">{{ respostaTexto() }}</p>
+        </div>
+      }
+    } @else {
+      <app-resposta-aberta-input
+        [textoInicial]="respostaTexto()"
+        [estado]="estadoRespostaAberta()"
+        (salvarRascunho)="salvarRascunho.emit($event)"
+        (enviar)="enviarTexto.emit($event)"
+      />
+    }
 
-    @if (estadoRespostaAberta() === 'enviada' && correcao()) {
+    @if ((estadoRespostaAberta() === 'enviada' || modo() === 'visualizar') && correcao()) {
       <app-correcao-feedback
         [correcao]="correcao()!"
         (tentarNovamente)="tentarCorrecaoNovamente.emit()"

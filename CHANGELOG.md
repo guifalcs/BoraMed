@@ -2,6 +2,22 @@
 
 ## 2026-07-07 | Feature | sem commit
 
+**Questões abertas (Fase 5) — revisão, histórico e métricas por pontos**
+
+- Migration `20260707150000_abertas_revisao_e_metricas.sql`:
+  - `get_revisao_tentativa` passa a delegar ao helper `montar_resultado_tentativa` (Fase 3): a revisão devolve também as `respostas` com a correção da IA embutida e as questões incluem `resposta_modelo`/`pontos_chave` — mesma classe de exposição pós-finalização de `explicacao`.
+  - `get_revisao_prova` inclui o gabarito aberto nas questões (ambos os ramos: aluno com tentativa e admin).
+  - `get_historico_kpis` e `get_desempenho_por_tema` migram das somas binárias para a expressão canônica `coalesce(tr.pontos, correta::int*100)`: aproveitamento geral pondera pontos/`total_pontuaveis` (tentativas antigas seguem por acertos, sem backfill); tema mais fraco/desempenho por tema usam média de pontos, incluem abertas corrigidas e excluem `sem_ia` naturalmente (o filtro `alternativa_id IS NOT NULL` foi substituído); "acertos" por tema = respostas com ≥ 70.
+  - Smoke test local: revisão com correção embutida, KPI misto (100+40)/2 = 70.
+- Frontend:
+  - `ProvaService.getQuestoesRevisao` devolve `{ questoes, respostas }`; `prova-visualizar` hidrata as respostas direto da RPC (funciona por URL direta, não só vindo do resultado) e renderiza discursivas: resposta do aluno (somente leitura), feedback da correção, resposta padrão e anotações; filtro de erros inclui abertas com pontos < 70.
+  - `questao-card` em modo revisão/gabarito mostra a resposta discursiva como cartão somente leitura (sem textarea editável).
+  - Histórico/labels: já usavam "aproveitamento" — sem mudança.
+
+---
+
+## 2026-07-07 | Feature | sem commit
+
 **Questões abertas (Fase 4) — simulado com discursivas e resultado bloqueante**
 
 - Migration `20260707140000_abertas_simulado_personalizado.sql`: `gerar_simulado_personalizado` ganha `p_formato_questao` (`fechadas` default | `discursivas` | `misto`). O default `fechadas` blinda simulados existentes de sortearem discursivas recém-cadastradas; o payload agora emite o gabarito aberto mascarado em modo simulado (mesmo padrão de `iniciar_tentativa`). Assinatura antiga removida (evita overload ambíguo no PostgREST). Smoke test no stack local: filtro por formato, default e mascaramento simulado/estudo.

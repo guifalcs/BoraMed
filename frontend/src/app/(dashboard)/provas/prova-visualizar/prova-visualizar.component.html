@@ -84,6 +84,9 @@
               [respostaSelecionada]="respostasMap().get(q.id) ?? null"
               [alternativaCorreta]="null"
               [gabaritioVisivel]="true"
+              [respostaTexto]="respostasTextoMap().get(q.id) ?? ''"
+              [estadoRespostaAberta]="enviadas().has(q.id) ? 'enviada' : 'rascunho'"
+              [correcao]="correcoesMap().get(q.id) ?? null"
               (responder)="$event"
             />
 

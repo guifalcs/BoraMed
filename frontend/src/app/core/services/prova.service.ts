@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import type { Faculdade } from '../models/faculdade';
 import type { FormatoProva, Prova, ProvaComFaculdade, FiltrosProvas } from '../models/prova';
 import type { QuestaoComAlternativas } from '../models/questao';
+import type { TentativaResposta } from '../models/tentativa';
 
 export type ProvaResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -103,15 +104,21 @@ export class ProvaService {
   async getQuestoesRevisao(
     provaId: string,
     tentativaId: string | null,
-  ): Promise<ProvaResult<QuestaoComAlternativas[]>> {
+  ): Promise<ProvaResult<{ questoes: QuestaoComAlternativas[]; respostas: TentativaResposta[] }>> {
     try {
       if (tentativaId) {
         const { data, error } = await this.supabase.rpc('get_revisao_tentativa', {
           p_tentativa_id: tentativaId,
         });
         if (error) throw error;
-        const payload = data as { questoes: unknown } | null;
-        return { ok: true, data: (payload?.questoes ?? []) as QuestaoComAlternativas[] };
+        const payload = data as { questoes: unknown; respostas?: unknown } | null;
+        return {
+          ok: true,
+          data: {
+            questoes: (payload?.questoes ?? []) as QuestaoComAlternativas[],
+            respostas: (payload?.respostas ?? []) as TentativaResposta[],
+          },
+        };
       }
 
       const { data, error } = await this.supabase.rpc('get_revisao_prova', {
@@ -119,7 +126,7 @@ export class ProvaService {
       });
       if (error) throw error;
       const questoes = ((data as { questoes: unknown } | null)?.questoes ?? []) as QuestaoComAlternativas[];
-      return { ok: true, data: questoes };
+      return { ok: true, data: { questoes, respostas: [] } };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '';
       if (message.includes('Revisao disponivel apenas apos finalizar')) {

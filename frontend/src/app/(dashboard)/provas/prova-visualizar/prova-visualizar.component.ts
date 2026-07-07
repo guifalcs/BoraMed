@@ -14,6 +14,8 @@ import { AnotacaoQuestaoService } from '../../../core/services/anotacao-questao.
 import { ProvaService } from '../../../core/services/prova.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
+import type { TentativaResposta } from '../../../core/models/tentativa';
+import type { RespostaCorrecao } from '../../../core/models/correcao';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-anotacao/questao-anotacao.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
@@ -41,6 +43,10 @@ export class ProvaVisualizarComponent {
   protected readonly questoes = signal<QuestaoComAlternativas[]>([]);
   protected readonly respostasMap = signal<Map<string, string>>(new Map());
   protected readonly respostasCorretasMap = signal<Map<string, boolean>>(new Map());
+  // ---- Discursivas ----
+  protected readonly respostasTextoMap = signal<Map<string, string>>(new Map());
+  protected readonly enviadas = signal<Set<string>>(new Set());
+  protected readonly correcoesMap = signal<Map<string, RespostaCorrecao>>(new Map());
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
   protected readonly filtro = signal<'todas' | 'erros'>('todas');
@@ -104,11 +110,41 @@ export class ProvaVisualizarComponent {
       this.provaNome.set(provaResult.data.nome);
     }
     if (questoesResult.ok) {
-      this.questoes.set(questoesResult.data);
+      this.questoes.set(questoesResult.data.questoes);
+      this.aplicarRespostas(questoesResult.data.respostas);
     } else {
       this.erro.set(questoesResult.error);
     }
     this.isLoading.set(false);
+  }
+
+  /** Hidrata respostas (objetivas e discursivas) vindas da RPC de revisão. */
+  private aplicarRespostas(respostas: TentativaResposta[]): void {
+    if (respostas.length === 0) return;
+    const map = new Map<string, string>();
+    const corretas = new Map<string, boolean>();
+    const textos = new Map<string, string>();
+    const enviadas = new Set<string>();
+    const correcoes = new Map<string, RespostaCorrecao>();
+
+    for (const r of respostas) {
+      if (r.alternativa_id) map.set(r.questao_id, r.alternativa_id);
+      if (r.correta !== null) {
+        corretas.set(r.questao_id, r.correta);
+      } else if (r.pontos != null) {
+        // Discursiva corrigida: "errada" abaixo do threshold 70 (filtro de erros)
+        corretas.set(r.questao_id, r.pontos >= 70);
+      }
+      if (r.resposta_texto) textos.set(r.questao_id, r.resposta_texto);
+      if (r.enviada_em) enviadas.add(r.questao_id);
+      if (r.correcao) correcoes.set(r.questao_id, r.correcao);
+    }
+
+    this.respostasMap.set(map);
+    this.respostasCorretasMap.set(corretas);
+    this.respostasTextoMap.set(textos);
+    this.enviadas.set(enviadas);
+    this.correcoesMap.set(correcoes);
   }
 
   /**
