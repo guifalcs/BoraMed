@@ -40,7 +40,13 @@
         [respostaSelecionada]="respostaSelecionadaAtual()"
         [alternativaCorreta]="alternativaCorretaAtual()"
         [gabaritioVisivel]="false"
+        [respostaTexto]="respostaTextoAtual()"
+        [estadoRespostaAberta]="estadoAbertaAtual()"
+        [correcao]="correcaoAtual()"
         (responder)="onResponder($event)"
+        (salvarRascunho)="onSalvarRascunho($event)"
+        (enviarTexto)="onEnviarTexto($event)"
+        (tentarCorrecaoNovamente)="onTentarCorrecaoNovamente()"
       />
 
       <!-- Botão marcar para revisão -->
@@ -125,7 +131,7 @@
                 [numero]="i + 1"
                 [isAtual]="i === questaoAtualIdx()"
                 [isMarcada]="marcadas().has(q.id)"
-                [respondida]="respostas().has(q.id)"
+                [respondida]="respostas().has(q.id) || enviadas().has(q.id)"
                 [errou]="errou(q.id)"
                 (navegarPara)="irParaQuestao(i); mostrarGrade.set(false)"
               />
@@ -140,7 +146,7 @@
               [numero]="i + 1"
               [isAtual]="i === questaoAtualIdx()"
               [isMarcada]="marcadas().has(q.id)"
-              [respondida]="respostas().has(q.id)"
+              [respondida]="respostas().has(q.id) || enviadas().has(q.id)"
               [errou]="errou(q.id)"
               (navegarPara)="irParaQuestao(i)"
             />

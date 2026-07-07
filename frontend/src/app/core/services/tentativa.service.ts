@@ -6,6 +6,7 @@ import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import { CacheService, CACHE_KEYS } from './cache.service';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
+import type { RespostaCorrecao, StatusCorrecoesTentativa } from '../models/correcao';
 import type { QuestaoComAlternativas } from '../models/questao';
 import type { ProvaResult } from './prova.service';
 
@@ -276,6 +277,124 @@ export class TentativaService {
     } catch {
       return { ok: false, error: 'Não foi possível salvar a resposta.' };
     }
+  }
+
+  /** Salva rascunho de resposta aberta (editável até o envio definitivo). */
+  async salvarRespostaTexto(
+    tentativaId: string,
+    questaoId: string,
+    texto: string,
+  ): Promise<ProvaResult<TentativaResposta>> {
+    try {
+      const { data, error } = await this.supabase.rpc('salvar_resposta_texto', {
+        p_tentativa_id: tentativaId,
+        p_questao_id: questaoId,
+        p_texto: texto,
+      });
+
+      if (error) throw error;
+
+      const resposta = data as TentativaResposta;
+      this.atualizarRespostaLocal(resposta);
+      return { ok: true, data: resposta };
+    } catch (e: unknown) {
+      if (getErrorMessage(e).includes('ja enviada')) {
+        return { ok: false, error: 'Esta resposta já foi enviada e não pode ser alterada.' };
+      }
+      return { ok: false, error: 'Não foi possível salvar o rascunho.' };
+    }
+  }
+
+  /** Envio definitivo da resposta aberta: trava a edição e registra a correção pendente. */
+  async enviarRespostaAberta(
+    tentativaId: string,
+    questaoId: string,
+    texto: string,
+  ): Promise<ProvaResult<{ resposta: TentativaResposta; correcao: RespostaCorrecao }>> {
+    try {
+      const { data, error } = await this.supabase.rpc('enviar_resposta_aberta', {
+        p_tentativa_id: tentativaId,
+        p_questao_id: questaoId,
+        p_texto: texto,
+      });
+
+      if (error) throw error;
+
+      const result = data as { resposta: TentativaResposta; correcao: RespostaCorrecao };
+      this.atualizarRespostaLocal(result.resposta);
+      return { ok: true, data: result };
+    } catch (e: unknown) {
+      const message = getErrorMessage(e);
+      if (message.includes('ja enviada')) {
+        return { ok: false, error: 'Esta resposta já foi enviada.' };
+      }
+      if (message.includes('vazia')) {
+        return { ok: false, error: 'Escreva uma resposta antes de enviar.' };
+      }
+      return { ok: false, error: 'Não foi possível enviar a resposta.' };
+    }
+  }
+
+  /** Correções de IA das respostas enviadas (restauração pós-F5; RLS: dono lê). */
+  async listarCorrecoes(
+    tentativaRespostaIds: string[],
+  ): Promise<ProvaResult<RespostaCorrecao[]>> {
+    if (tentativaRespostaIds.length === 0) return { ok: true, data: [] };
+    try {
+      const { data, error } = await this.supabase
+        .from('resposta_correcao')
+        .select('*')
+        .in('tentativa_resposta_id', tentativaRespostaIds);
+      if (error) throw error;
+      return { ok: true, data: (data ?? []) as RespostaCorrecao[] };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar as correções.' };
+    }
+  }
+
+  /** Status agregado das correções de IA da tentativa (polling do resultado). */
+  async getStatusCorrecoes(tentativaId: string): Promise<ProvaResult<StatusCorrecoesTentativa>> {
+    try {
+      const { data, error } = await this.supabase.rpc('get_status_correcoes', {
+        p_tentativa_id: tentativaId,
+      });
+      if (error) throw error;
+      return { ok: true, data: data as StatusCorrecoesTentativa };
+    } catch {
+      return { ok: false, error: 'Não foi possível consultar o status das correções.' };
+    }
+  }
+
+  /**
+   * Fecha a nota da tentativa quando todas as correções terminaram.
+   * `forcarSemIa` marca as restantes como sem_ia (timeout da tela de resultado).
+   */
+  async consolidarCorrecoes(
+    tentativaId: string,
+    forcarSemIa = false,
+  ): Promise<ProvaResult<ResultadoTentativa & { consolidada: boolean }>> {
+    try {
+      const { data, error } = await this.supabase.rpc('consolidar_correcoes_tentativa', {
+        p_tentativa_id: tentativaId,
+        p_forcar_sem_ia: forcarSemIa,
+      });
+      if (error) throw error;
+      return { ok: true, data: data as ResultadoTentativa & { consolidada: boolean } };
+    } catch {
+      return { ok: false, error: 'Não foi possível consolidar as correções.' };
+    }
+  }
+
+  private atualizarRespostaLocal(resposta: TentativaResposta): void {
+    this._respostas.update((prev) => {
+      const idx = prev.findIndex((r) => r.questao_id === resposta.questao_id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = resposta;
+        return next;
+      }
+      return [...prev, resposta];
+    });
   }
 
   async pausar(tentativaId: string, tempoSegundos?: number): Promise<ProvaResult<void>> {

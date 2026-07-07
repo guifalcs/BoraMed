@@ -15,8 +15,11 @@ import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FocoModoService } from '../../../core/services/foco-modo.service';
+import { CorrecaoIaService } from '../../../core/services/correcao-ia.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
+import type { RespostaCorrecao } from '../../../core/models/correcao';
+import type { EstadoRespostaAberta } from '../../../shared/components/resposta-aberta-input/resposta-aberta-input.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { ProvaHeaderComponent } from '../../../shared/components/prova-header/prova-header.component';
@@ -40,6 +43,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   private readonly provaService = inject(ProvaService);
   private readonly timer = inject(TimerService);
   private readonly notifications = inject(NotificationService);
+  private readonly correcaoIa = inject(CorrecaoIaService);
   protected readonly focoMode = inject(FocoModoService);
 
   protected readonly tentativa = signal<Tentativa | null>(null);
@@ -47,6 +51,15 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly questaoAtualIdx = signal(0);
   protected readonly respostas = signal<Map<string, string>>(new Map());
   protected readonly respostasCorretas = signal<Map<string, string>>(new Map());
+  // ---- Questões discursivas ----
+  /** Rascunho/texto por questão aberta. */
+  protected readonly respostasTexto = signal<Map<string, string>>(new Map());
+  /** Questões abertas já enviadas definitivamente. */
+  protected readonly enviadas = signal<Set<string>>(new Set());
+  /** Envio em andamento (questão atual). */
+  protected readonly enviandoAberta = signal<Set<string>>(new Set());
+  /** Correção por IA por questão aberta enviada. */
+  protected readonly correcoes = signal<Map<string, RespostaCorrecao>>(new Map());
   protected readonly isLoading = signal(true);
   protected readonly salvando = signal(false);
   protected readonly erro = signal<string | null>(null);
@@ -73,7 +86,34 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
   protected readonly modo = computed<ModoProva>(() => this.tentativa()?.modo ?? 'simulado');
 
-  protected readonly totalRespondidas = computed(() => this.respostas().size);
+  /** Respondidas = alternativas selecionadas + abertas enviadas. */
+  protected readonly totalRespondidas = computed(
+    () => this.respostas().size + this.enviadas().size,
+  );
+
+  protected readonly questaoAtualDiscursiva = computed(
+    () => this.questaoAtual()?.formato === 'resposta_aberta_curta',
+  );
+
+  protected readonly respostaTextoAtual = computed(() => {
+    const q = this.questaoAtual();
+    if (!q) return '';
+    return this.respostasTexto().get(q.id) ?? '';
+  });
+
+  protected readonly estadoAbertaAtual = computed<EstadoRespostaAberta>(() => {
+    const q = this.questaoAtual();
+    if (!q) return 'rascunho';
+    if (this.enviadas().has(q.id)) return 'enviada';
+    if (this.enviandoAberta().has(q.id)) return 'enviando';
+    return 'rascunho';
+  });
+
+  protected readonly correcaoAtual = computed(() => {
+    const q = this.questaoAtual();
+    if (!q) return null;
+    return this.correcoes().get(q.id) ?? null;
+  });
 
   protected readonly questaoAtualMarcada = computed(() => {
     const q = this.questaoAtual();
@@ -126,12 +166,41 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     this.questoes.set(this.tentativaService.questoes());
 
     const respostasMap = new Map<string, string>();
+    const textosMap = new Map<string, string>();
+    const enviadasSet = new Set<string>();
     for (const r of this.tentativaService.respostas()) {
       if (r.alternativa_id) {
         respostasMap.set(r.questao_id, r.alternativa_id);
       }
+      if (r.resposta_texto) {
+        textosMap.set(r.questao_id, r.resposta_texto);
+      }
+      if (r.enviada_em) {
+        enviadasSet.add(r.questao_id);
+      }
     }
     this.respostas.set(respostasMap);
+    this.respostasTexto.set(textosMap);
+    this.enviadas.set(enviadasSet);
+
+    // Restaura correções das abertas já enviadas (pós-F5)
+    if (enviadasSet.size > 0) {
+      const respostasEnviadas = this.tentativaService
+        .respostas()
+        .filter((r) => r.enviada_em);
+      const idPorResposta = new Map(respostasEnviadas.map((r) => [r.id, r.questao_id]));
+      const correcoesResult = await this.tentativaService.listarCorrecoes(
+        respostasEnviadas.map((r) => r.id),
+      );
+      if (correcoesResult.ok) {
+        const correcoesMap = new Map<string, RespostaCorrecao>();
+        for (const c of correcoesResult.data) {
+          const questaoId = idPorResposta.get(c.tentativa_resposta_id);
+          if (questaoId) correcoesMap.set(questaoId, c);
+        }
+        this.correcoes.set(correcoesMap);
+      }
+    }
 
     if (tentativaAtiva.modo === 'estudo') {
       const corretasMap = new Map<string, string>();
@@ -217,6 +286,108 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ---- Questões discursivas ----
+
+  protected async onSalvarRascunho(texto: string): Promise<void> {
+    const tentativa = this.tentativa();
+    const questao = this.questaoAtual();
+    if (!tentativa || !questao || this.enviadas().has(questao.id)) return;
+
+    this.respostasTexto.update((m) => {
+      const next = new Map(m);
+      next.set(questao.id, texto);
+      return next;
+    });
+
+    // Autosave silencioso — erro não interrompe a digitação.
+    await this.tentativaService.salvarRespostaTexto(tentativa.id, questao.id, texto);
+  }
+
+  protected async onEnviarTexto(texto: string): Promise<void> {
+    const tentativa = this.tentativa();
+    const questao = this.questaoAtual();
+    if (!tentativa || !questao || this.enviadas().has(questao.id)) return;
+
+    this.enviandoAberta.update((s) => new Set(s).add(questao.id));
+    this.respostasTexto.update((m) => {
+      const next = new Map(m);
+      next.set(questao.id, texto);
+      return next;
+    });
+
+    const result = await this.tentativaService.enviarRespostaAberta(tentativa.id, questao.id, texto);
+
+    if (!result.ok) {
+      this.enviandoAberta.update((s) => {
+        const next = new Set(s);
+        next.delete(questao.id);
+        return next;
+      });
+      this.notifications.error(result.error);
+      return;
+    }
+
+    this.enviadas.update((s) => new Set(s).add(questao.id));
+    this.correcoes.update((m) => {
+      const next = new Map(m);
+      next.set(questao.id, result.data.correcao);
+      return next;
+    });
+
+    if (this.modo() === 'estudo') {
+      // Estudo: aguarda a correção para exibir o feedback inline.
+      await this.corrigirQuestao(questao.id, result.data.resposta.id);
+    } else {
+      // Simulado: dispara em background; o resultado re-tenta se falhar.
+      void this.corrigirQuestao(questao.id, result.data.resposta.id, { silencioso: true });
+    }
+
+    this.enviandoAberta.update((s) => {
+      const next = new Set(s);
+      next.delete(questao.id);
+      return next;
+    });
+  }
+
+  protected async onTentarCorrecaoNovamente(): Promise<void> {
+    const questao = this.questaoAtual();
+    const tentativaRespostaId = this.correcaoAtual()?.tentativa_resposta_id;
+    if (!questao || !tentativaRespostaId) return;
+    this.correcoes.update((m) => {
+      const atual = m.get(questao.id);
+      if (!atual) return m;
+      const next = new Map(m);
+      next.set(questao.id, { ...atual, status: 'corrigindo' });
+      return next;
+    });
+    await this.corrigirQuestao(questao.id, tentativaRespostaId);
+  }
+
+  private async corrigirQuestao(
+    questaoId: string,
+    tentativaRespostaId: string,
+    opts: { silencioso?: boolean } = {},
+  ): Promise<void> {
+    const result = await this.correcaoIa.corrigir(tentativaRespostaId);
+    if (result.ok) {
+      this.correcoes.update((m) => {
+        const next = new Map(m);
+        next.set(questaoId, result.data);
+        return next;
+      });
+    } else if (!opts.silencioso) {
+      // Marca como erro para exibir o botão "tentar de novo".
+      this.correcoes.update((m) => {
+        const atual = m.get(questaoId);
+        if (!atual) return m;
+        const next = new Map(m);
+        next.set(questaoId, { ...atual, status: 'erro' });
+        return next;
+      });
+      this.notifications.error(result.error);
+    }
+  }
+
   protected toggleMarcar(): void {
     const q = this.questaoAtual();
     if (!q) return;
@@ -270,7 +441,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   }
 
   protected readonly questoesNaoRespondidas = computed(() =>
-    this.questoes().length - this.respostas().size,
+    this.questoes().length - this.totalRespondidas(),
   );
 
   protected readonly mensagemFinalizacao = computed(() => {

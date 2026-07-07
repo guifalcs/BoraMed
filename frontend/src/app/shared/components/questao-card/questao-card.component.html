@@ -50,18 +50,42 @@
     <markdown [data]="questao().enunciado"></markdown>
   </div>
 
-  <!-- Alternativas -->
-  <ul class="flex flex-col gap-2" role="radiogroup" [attr.aria-label]="'Alternativas da questão ' + numero()">
-    @for (alt of questao().alternativas; track alt.id) {
-      <li>
-        <app-alternativa-item
-          [alternativa]="alt"
-          [estado]="estadoAlternativa(alt.id)"
-          (selecionar)="responder.emit($event)"
-        />
-      </li>
+  @if (ehDiscursiva()) {
+    <!-- Resposta discursiva -->
+    <app-resposta-aberta-input
+      [textoInicial]="respostaTexto()"
+      [estado]="estadoRespostaAberta()"
+      (salvarRascunho)="salvarRascunho.emit($event)"
+      (enviar)="enviarTexto.emit($event)"
+    />
+
+    @if (estadoRespostaAberta() === 'enviada' && correcao()) {
+      <app-correcao-feedback
+        [correcao]="correcao()!"
+        (tentarNovamente)="tentarCorrecaoNovamente.emit()"
+      />
     }
-  </ul>
+
+    @if (exibirGabaritoAberto()) {
+      <app-resposta-padrao
+        [respostaModelo]="questao().resposta_modelo ?? null"
+        [pontosChave]="questao().pontos_chave ?? []"
+      />
+    }
+  } @else {
+    <!-- Alternativas -->
+    <ul class="flex flex-col gap-2" role="radiogroup" [attr.aria-label]="'Alternativas da questão ' + numero()">
+      @for (alt of questao().alternativas; track alt.id) {
+        <li>
+          <app-alternativa-item
+            [alternativa]="alt"
+            [estado]="estadoAlternativa(alt.id)"
+            (selecionar)="responder.emit($event)"
+          />
+        </li>
+      }
+    </ul>
+  }
 
   <!-- Explicação (modo Estudo após responder) -->
   @if (exibirExplicacao()) {

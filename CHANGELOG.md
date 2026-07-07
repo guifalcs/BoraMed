@@ -2,6 +2,26 @@
 
 ## 2026-07-07 | Feature | sem commit
 
+**Questões abertas (Fase 3) — RPCs core + modo estudo de ponta a ponta**
+
+- Migration `20260707130000_abertas_rpcs_resposta_e_nota_pontos.sql`:
+  - `tentativa` ganha `pontos` e `total_pontuaveis` (NULL em dados antigos — leituras usam coalesce, sem backfill).
+  - Novas RPCs: `salvar_resposta_texto` (rascunho, sobrevive a F5), `enviar_resposta_aberta` (trava a edição + cria `resposta_correcao` pendente), `consolidar_correcoes_tentativa` (fecha a nota quando as correções resolvem; `p_forcar_sem_ia` para o timeout da UI) e `get_status_correcoes` (polling).
+  - `finalizar_tentativa` v2: corrige só as objetivas, deixa `nota` NULL enquanto houver correção de IA pendente e retorna `correcoes_pendentes`; tentativa só-MC consolida inline (comportamento idêntico ao anterior). Nota = soma de pontos / `total_pontuaveis` (questões `sem_ia` saem do denominador).
+  - `iniciar_tentativa`/`retomar_tentativa` emitem o gabarito aberto (`resposta_modelo`/`pontos_chave`/`criterios_correcao`) mascarado em `modo='simulado'` — mesmo mecanismo do `alternativa.correta`.
+  - Helpers internos sem EXECUTE para clientes: `consolidar_pontos_tentativa` (idempotente; stats de abertas com threshold 70) e `montar_resultado_tentativa` (respostas incluem a `correcao`).
+  - Smoke test completo no stack local: mascaramento, rascunho, envio, re-envio rejeitado, nota mista (100+80)/2=90, `sem_ia` reduz denominador, só-MC inline.
+- Frontend:
+  - Novos models (`correcao.ts`) e campos em `Tentativa`/`TentativaResposta`/`ResultadoTentativa`; novos métodos no `TentativaService` (`salvarRespostaTexto`, `enviarRespostaAberta`, `getStatusCorrecoes`, `consolidarCorrecoes`, `listarCorrecoes`) e novo `CorrecaoIaService` (invoke da edge function).
+  - Novos shared components com stories: `resposta-aberta-input` (textarea com contador 3000, autosave com debounce, envio com confirmação, estados rascunho/enviando/enviada), `correcao-feedback` (nota 0–100 com thresholds 70/50, checklist atendidos/faltantes, erros, estados corrigindo/erro/sem_ia) e `resposta-padrao` (card da resposta modelo + pontos-chave).
+  - `questao-card` ramifica por `questao.formato`: bloco discursivo no lugar das alternativas.
+  - `tentativa-exec`: rascunho com autosave, envio definitivo, correção aguardada inline no estudo (feedback + resposta padrão) e fire-and-forget no simulado; contagem de respondidas e grade incluem abertas enviadas; estado restaurado após F5 (rascunho, envio e correções).
+- Testes: 24 novos specs (494 no total passando) — métodos do service e os dois componentes interativos.
+
+---
+
+## 2026-07-07 | Feature | sem commit
+
 **Questões abertas (Fase 2) — edge function de correção por IA**
 
 - Nova edge function `corrigir-resposta-aberta` (padrão `index.ts` fino + `handler.ts` com DI): corrige UMA resposta aberta por chamada (fan-out no cliente). Valida JWT/ownership, exige resposta enviada (`enviada_em`), faz claim idempotente em `resposta_correcao` (`pendente`/`erro` → `corrigindo`), 2 retries com backoff para 429/5xx/JSON inválido, persiste resultado (`corrigida` + `tentativa_resposta.pontos`) ou `erro`; sem env de IA → `sem_ia` (app segue funcionando sem IA).
