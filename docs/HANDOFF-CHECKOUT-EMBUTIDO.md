@@ -23,11 +23,12 @@ usuário em **2026-07-07** e os achados decididos já foram **implementados** (v
    "F6-b" abaixo).
 
 **Próximo passo (2026-07-07, fim da sessão 2):** todos os achados da F6
-implementados, revisados e validados por testes. Falta:
-1. **Validação manual** do fluxo "pausado/mensal → compra semestral → preapproval
-   cancelado no MP" contra o MP TEST real (o unit test já cobre a lógica; falta a
-   confirmação fim-a-fim com o painel do vendedor). Cenários A–E anteriores
-   seguem válidos.
+implementados, revisados e validados. F6-b commitada+pushed (`493483d`) e
+**validada manualmente contra o MP real** (happy-path: preapproval órfão → MP
+`cancelled` + acesso mantido — ver "Validação manual F6-b"). Falta:
+1. **Aprovação de cartão fim-a-fim no sandbox** ficou pendente (a conta sandbox
+   do vendedor não resolveu o BIN nesta janela — `Cannot infer Payment Method`);
+   validar na F7 com pagamento real (já no checklist de go-live).
 2. **Checklist de go-live** — rascunho abaixo (seção "Checklist de go-live");
    revisar com o usuário antes da F7.
 3. Depois F7 (deploy faseado, só com aprovação explícita) e F8.
@@ -124,6 +125,36 @@ acesso concedido; **fetch que LANÇA (rede) → acesso ainda concedido** (trava 
 try/catch); sem cliente MP → não cancela silenciosamente. **Deno: 112 passed /
 0 failed.** Frontend NÃO mudou (a alternativa "Minha Assinatura sempre expõe a
 gerenciável" foi descartada em favor do cancelamento na raiz).
+
+### ✅ Validação manual F6-b (2026-07-07, sessão 2, MP TEST real) — happy-path OK
+Feita com as credenciais do vendedor de teste (login headless
+`vendedor-login.mjs`; APP_USR de produção p/ preapproval + TEST/sandbox p/
+payments — ambos da app 908829636068202, extraídos p/ scratchpad gitignored):
+1. **Preapproval real criado** via `mp-processar-assinatura` (card token API +
+   edge) → `authorized`; depois `PUT status=paused` → linha local `paused` +
+   preapproval real pausado no MP.
+2. **Cancelamento exercido pelo CÓDIGO REAL**: rodei o próprio
+   `syncAcessoUnicoPayment` (deno, importando o módulo de produção) contra o
+   **banco local real + MP real** (token APP_USR), com um `pay` aprovado
+   `acesso_unico` fabricado. Resultado ao vivo:
+   - o **preapproval real no MP foi para `cancelled`** (confirmado via
+     `GET /preapproval/{id}` → `cancelled`);
+   - a linha recorrente local foi para `cancelled`;
+   - novo semestral concedido `authorized`, `proxima_cobranca` = +6 meses →
+     **acesso mantido**.
+   Como em produção uma única conta APP_USR faz pagamento **e** preapproval, esse
+   é fielmente o cenário real (o token que cancela = o token da conta).
+3. **Limitação do sandbox (não é bug da F6-b)**: o cartão via Brick/API **não
+   aprovou** — a conta sandbox do vendedor não resolveu o BIN (`Cannot infer
+   Payment Method` / `installments_excludes_country`; BIN search retornou 0 p/
+   todos os cartões de teste). Por isso a *aquisição do pagamento* foi
+   substituída pelo `pay` fabricado; a aprovação de cartão fim-a-fim continua
+   dependente da janela de observação da F7 (já no checklist). O passo
+   "cancelar durante a compra com token TEST" não foi observável (compra não
+   aprovou), mas é o MESMO código do caminho validado — só muda o token, e em
+   produção o token é sempre o da conta (APP_USR), que é o que foi provado.
+   `.gitignore` reforçado p/ ignorar `mp-seller-state.json`/`creds*.json`/`*.png`
+   dos runners (antes só cobria nomes específicos).
 
 ### Code review (2026-07-07)
 Rodado (4 finders paralelos + verificação). Refactor legado confirmado **fiel**
