@@ -198,6 +198,19 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Disciplina: delete físico; questões e temas vinculados ficam sem disciplina (`SET NULL`).
 * Tema: delete físico; subtemas sobem para o pai do tema removido e as questões apenas perdem a marcação (`questao_tema` em cascade).
 
+## Questões Abertas (Discursivas) com Correção por IA
+
+* `questao.formato = 'resposta_aberta_curta'` identifica discursivas. O gabarito aberto vive em 3 colunas SECRETAS (`resposta_modelo`, `pontos_chave`, `criterios_correcao`) — sem SELECT grant para `authenticated`; leitura só via RPC (mascarado como NULL em `modo='simulado'`, igual a `alternativa.correta`).
+* Resposta do aluno: rascunho editável via `salvar_resposta_texto` (sobrevive a F5); envio DEFINITIVO via `enviar_resposta_aberta` (trava a edição, marca `enviada_em` e cria `resposta_correcao` pendente). Limite de 3.000 caracteres.
+* Correção por IA: edge function `corrigir-resposta-aberta`, uma resposta por chamada, claim idempotente, 2 retries; provider por env (`AI_GRADING_PROVIDER`: `openai-compat` para OpenRouter/OpenAI/Gemini, ou `fake` determinístico). Cap diário por usuário (`AI_GRADING_DAILY_LIMIT`, default 200).
+* **A IA é motor adicional, não dependência**: sem IA configurada/disponível, a correção vira `sem_ia`, a questão sai do denominador da nota e a resposta padrão continua visível ao aluno.
+* Nota por pontos: cada questão vale 0–100 (`tentativa_resposta.pontos`; MC = `correta`×100). Expressão canônica das agregações: `coalesce(tr.pontos, (tr.correta)::int*100)`. Nota da tentativa = soma de pontos / `total_pontuaveis` (= total − `sem_ia`). Não respondida = 0 no denominador. Dados antigos ficam corretos por coalesce, sem backfill.
+* Simulado: a tela de resultado bloqueia até as correções resolverem (poll 3s + re-disparo), com timeout de 90s que força `sem_ia`. Estudo: correção síncrona inline com feedback + resposta padrão.
+* Threshold de "acerto" para stats/erradas/temas: pontos ≥ 70 (mesmo limiar visual do app). XP: base = pontos/10 (tentativas antigas: acertos×10), concedido só após a nota consolidar.
+* Desafio diário não sorteia discursivas (fluxo síncrono não combina com latência/custo de IA).
+* Conversão fechada→aberta é reversível: as alternativas ficam preservadas no banco e são ignoradas pelo formato.
+* Simulado personalizado: formato das questões é escolha do aluno (`fechadas` default | `discursivas` | `misto`).
+
 ## Público-Alvo
 
 * **Primário** : alunos de medicina do 1º período em instituições da rede Afya

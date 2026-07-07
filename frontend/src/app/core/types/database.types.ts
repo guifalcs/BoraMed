@@ -118,9 +118,11 @@ export type Database = {
         Row: {
           atualizado_em: string
           cancelada_em: string | null
+          cortesia: boolean
           criado_em: string
           data_inicio: string | null
           id: string
+          mp_payment_id: string | null
           mp_preapproval_id: string | null
           plano_id: string | null
           proxima_cobranca: string | null
@@ -130,9 +132,11 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           cancelada_em?: string | null
+          cortesia?: boolean
           criado_em?: string
           data_inicio?: string | null
           id?: string
+          mp_payment_id?: string | null
           mp_preapproval_id?: string | null
           plano_id?: string | null
           proxima_cobranca?: string | null
@@ -142,9 +146,11 @@ export type Database = {
         Update: {
           atualizado_em?: string
           cancelada_em?: string | null
+          cortesia?: boolean
           criado_em?: string
           data_inicio?: string | null
           id?: string
+          mp_payment_id?: string | null
           mp_preapproval_id?: string | null
           plano_id?: string | null
           proxima_cobranca?: string | null
@@ -447,6 +453,134 @@ export type Database = {
         }
         Relationships: []
       }
+      material_arquivo: {
+        Row: {
+          ativo: boolean
+          categoria_id: string
+          criado_em: string
+          descricao: string | null
+          id: string
+          mime_type: string
+          ordem: number
+          storage_path: string
+          tamanho_bytes: number | null
+          titulo: string
+          topico_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_id: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          mime_type?: string
+          ordem?: number
+          storage_path: string
+          tamanho_bytes?: number | null
+          titulo: string
+          topico_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria_id?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          mime_type?: string
+          ordem?: number
+          storage_path?: string
+          tamanho_bytes?: number | null
+          titulo?: string
+          topico_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_arquivo_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "material_categoria"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_arquivo_topico_id_fkey"
+            columns: ["topico_id"]
+            isOneToOne: false
+            referencedRelation: "material_topico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_categoria: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          descricao: string | null
+          gradiente: string
+          icone: string
+          id: string
+          ordem: number
+          slug: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          gradiente?: string
+          icone?: string
+          id?: string
+          ordem?: number
+          slug: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          gradiente?: string
+          icone?: string
+          id?: string
+          ordem?: number
+          slug?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
+      material_topico: {
+        Row: {
+          ativo: boolean
+          categoria_id: string
+          criado_em: string
+          id: string
+          ordem: number
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_id: string
+          criado_em?: string
+          id?: string
+          ordem?: number
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria_id?: string
+          criado_em?: string
+          id?: string
+          ordem?: number
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_topico_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "material_categoria"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes: {
         Row: {
           criado_em: string
@@ -486,6 +620,7 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           id: string
+          liquido_centavos: number | null
           metodo_pagamento: string | null
           moeda: string
           mp_authorized_payment_id: string | null
@@ -500,6 +635,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           id?: string
+          liquido_centavos?: number | null
           metodo_pagamento?: string | null
           moeda?: string
           mp_authorized_payment_id?: string | null
@@ -514,6 +650,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           id?: string
+          liquido_centavos?: number | null
           metodo_pagamento?: string | null
           moeda?: string
           mp_authorized_payment_id?: string | null
@@ -573,6 +710,7 @@ export type Database = {
           nome: string
           ordem: number
           preco_centavos: number
+          recorrente: boolean
           slug: string
         }
         Insert: {
@@ -589,6 +727,7 @@ export type Database = {
           nome: string
           ordem?: number
           preco_centavos: number
+          recorrente?: boolean
           slug: string
         }
         Update: {
@@ -605,6 +744,7 @@ export type Database = {
           nome?: string
           ordem?: number
           preco_centavos?: number
+          recorrente?: boolean
           slug?: string
         }
         Relationships: []
@@ -776,6 +916,7 @@ export type Database = {
           autor_id: string | null
           codigo_externo: string | null
           criado_em: string
+          criterios_correcao: string | null
           disciplina_id: string | null
           enunciado: string
           enunciado_apoio: string | null
@@ -790,10 +931,12 @@ export type Database = {
           nivel_bloom: number | null
           ordem_na_prova: number | null
           origem_geracao: string
+          pontos_chave: Json
           prova_id: string | null
           publicada_em: string | null
           referencia: string | null
           resposta_correta_texto: string | null
+          resposta_modelo: string | null
           respostas_aceitas: string[] | null
           revisado: boolean
           revisor_id: string | null
@@ -810,6 +953,7 @@ export type Database = {
           autor_id?: string | null
           codigo_externo?: string | null
           criado_em?: string
+          criterios_correcao?: string | null
           disciplina_id?: string | null
           enunciado: string
           enunciado_apoio?: string | null
@@ -824,10 +968,12 @@ export type Database = {
           nivel_bloom?: number | null
           ordem_na_prova?: number | null
           origem_geracao?: string
+          pontos_chave?: Json
           prova_id?: string | null
           publicada_em?: string | null
           referencia?: string | null
           resposta_correta_texto?: string | null
+          resposta_modelo?: string | null
           respostas_aceitas?: string[] | null
           revisado?: boolean
           revisor_id?: string | null
@@ -844,6 +990,7 @@ export type Database = {
           autor_id?: string | null
           codigo_externo?: string | null
           criado_em?: string
+          criterios_correcao?: string | null
           disciplina_id?: string | null
           enunciado?: string
           enunciado_apoio?: string | null
@@ -858,10 +1005,12 @@ export type Database = {
           nivel_bloom?: number | null
           ordem_na_prova?: number | null
           origem_geracao?: string
+          pontos_chave?: Json
           prova_id?: string | null
           publicada_em?: string | null
           referencia?: string | null
           resposta_correta_texto?: string | null
+          resposta_modelo?: string | null
           respostas_aceitas?: string[] | null
           revisado?: boolean
           revisor_id?: string | null
@@ -1052,6 +1201,71 @@ export type Database = {
             columns: ["tema_id"]
             isOneToOne: false
             referencedRelation: "tema"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resposta_correcao: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          erro_detalhe: string | null
+          erros: Json | null
+          feedback: string | null
+          id: string
+          modelo: string | null
+          num_tentativas: number
+          pontos: number | null
+          pontos_atendidos: Json | null
+          pontos_faltantes: Json | null
+          provider: string | null
+          status: string
+          tentativa_resposta_id: string
+          tokens_prompt: number | null
+          tokens_resposta: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          erro_detalhe?: string | null
+          erros?: Json | null
+          feedback?: string | null
+          id?: string
+          modelo?: string | null
+          num_tentativas?: number
+          pontos?: number | null
+          pontos_atendidos?: Json | null
+          pontos_faltantes?: Json | null
+          provider?: string | null
+          status?: string
+          tentativa_resposta_id: string
+          tokens_prompt?: number | null
+          tokens_resposta?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          erro_detalhe?: string | null
+          erros?: Json | null
+          feedback?: string | null
+          id?: string
+          modelo?: string | null
+          num_tentativas?: number
+          pontos?: number | null
+          pontos_atendidos?: Json | null
+          pontos_faltantes?: Json | null
+          provider?: string | null
+          status?: string
+          tentativa_resposta_id?: string
+          tokens_prompt?: number | null
+          tokens_resposta?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resposta_correcao_tentativa_resposta_id_fkey"
+            columns: ["tentativa_resposta_id"]
+            isOneToOne: true
+            referencedRelation: "tentativa_resposta"
             referencedColumns: ["id"]
           },
         ]
@@ -1274,10 +1488,12 @@ export type Database = {
           modo: string
           nota: number | null
           pausada_em: string | null
+          pontos: number | null
           prova_id: string | null
           prova_snapshot: Json | null
           status: string
           tempo_acumulado_segundos: number
+          total_pontuaveis: number | null
           total_questoes: number
           total_respondidas: number
           user_id: string
@@ -1292,10 +1508,12 @@ export type Database = {
           modo: string
           nota?: number | null
           pausada_em?: string | null
+          pontos?: number | null
           prova_id?: string | null
           prova_snapshot?: Json | null
           status?: string
           tempo_acumulado_segundos?: number
+          total_pontuaveis?: number | null
           total_questoes: number
           total_respondidas?: number
           user_id: string
@@ -1310,10 +1528,12 @@ export type Database = {
           modo?: string
           nota?: number | null
           pausada_em?: string | null
+          pontos?: number | null
           prova_id?: string | null
           prova_snapshot?: Json | null
           status?: string
           tempo_acumulado_segundos?: number
+          total_pontuaveis?: number | null
           total_questoes?: number
           total_respondidas?: number
           user_id?: string
@@ -1377,8 +1597,10 @@ export type Database = {
         Row: {
           alternativa_id: string | null
           correta: boolean | null
+          enviada_em: string | null
           id: string
           ordem_na_tentativa: number | null
+          pontos: number | null
           questao_id: string
           respondida_em: string | null
           resposta_texto: string | null
@@ -1388,8 +1610,10 @@ export type Database = {
         Insert: {
           alternativa_id?: string | null
           correta?: boolean | null
+          enviada_em?: string | null
           id?: string
           ordem_na_tentativa?: number | null
+          pontos?: number | null
           questao_id: string
           respondida_em?: string | null
           resposta_texto?: string | null
@@ -1399,8 +1623,10 @@ export type Database = {
         Update: {
           alternativa_id?: string | null
           correta?: boolean | null
+          enviada_em?: string | null
           id?: string
           ordem_na_tentativa?: number | null
+          pontos?: number | null
           questao_id?: string
           respondida_em?: string | null
           resposta_texto?: string | null
@@ -1549,6 +1775,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_ativar_assinatura_manual: {
+        Args: { p_pago_em?: string; p_plano_slug: string; p_user_email: string }
+        Returns: Json
+      }
       admin_atualizar_status_ticket: {
         Args: { p_status: string; p_ticket_id: string }
         Returns: {
@@ -1657,9 +1887,14 @@ export type Database = {
         }
         Returns: number
       }
+      admin_get_financeiro: { Args: never; Returns: Json }
       admin_get_questao: { Args: { p_id: string }; Returns: Json }
       admin_get_stats: { Args: never; Returns: Json }
       admin_get_uso_plataforma: { Args: never; Returns: Json }
+      admin_liberar_acesso_gratuito: {
+        Args: { p_meses?: number; p_user_id: string }
+        Returns: Json
+      }
       admin_listar_avisos: {
         Args: never
         Returns: {
@@ -1710,6 +1945,22 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_listar_pagamentos: {
+        Args: { p_limit?: number }
+        Returns: {
+          criado_em: string
+          id: string
+          liquido_centavos: number
+          metodo_pagamento: string
+          moeda: string
+          plano_nome: string
+          plano_slug: string
+          processado_em: string
+          status: string
+          user_email: string
+          valor_centavos: number
+        }[]
+      }
       admin_listar_tickets: {
         Args: { p_limit?: number; p_offset?: number; p_status?: string }
         Returns: {
@@ -1743,6 +1994,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_revogar_acesso_gratuito: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       admin_toggle_faq: {
         Args: { p_id: string }
@@ -1896,6 +2151,14 @@ export type Database = {
         }
       }
       conceder_xp_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
+      consolidar_correcoes_tentativa: {
+        Args: { p_forcar_sem_ia?: boolean; p_tentativa_id: string }
+        Returns: Json
+      }
+      consolidar_pontos_tentativa: {
+        Args: { p_tentativa_id: string }
+        Returns: undefined
+      }
       contem_palavra_proibida: { Args: { p_texto: string }; Returns: boolean }
       criar_comentario_questao: {
         Args: { p_conteudo: string; p_parent_id?: string; p_questao_id: string }
@@ -1945,6 +2208,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      enviar_resposta_aberta: {
+        Args: { p_questao_id: string; p_tentativa_id: string; p_texto?: string }
+        Returns: Json
+      }
       excluir_anotacao_questao: {
         Args: { p_questao_id: string; p_tentativa_id: string }
         Returns: undefined
@@ -1969,6 +2236,7 @@ export type Database = {
       gerar_simulado_personalizado: {
         Args: {
           p_formato?: string
+          p_formato_questao?: string
           p_modo?: string
           p_qtd?: number
           p_tema_ids?: string[]
@@ -1998,6 +2266,7 @@ export type Database = {
         Args: { p_com_gabarito?: boolean; p_prova_id: string }
         Returns: Json
       }
+      get_status_correcoes: { Args: { p_tentativa_id: string }; Returns: Json }
       get_streak_estudo: { Args: never; Returns: number }
       get_streak_estudo_v2: { Args: never; Returns: Json }
       iniciar_tentativa: {
@@ -2045,6 +2314,10 @@ export type Database = {
       marcar_aviso_visto: { Args: { p_aviso_id: string }; Returns: undefined }
       marcar_notificacao_lida: { Args: { p_id: string }; Returns: undefined }
       marcar_todas_notificacoes_lidas: { Args: never; Returns: undefined }
+      montar_resultado_tentativa: {
+        Args: { p_tentativa_id: string }
+        Returns: Json
+      }
       reabrir_ticket: {
         Args: { p_ticket_id: string }
         Returns: {
@@ -2120,8 +2393,32 @@ export type Database = {
         Returns: {
           alternativa_id: string | null
           correta: boolean | null
+          enviada_em: string | null
           id: string
           ordem_na_tentativa: number | null
+          pontos: number | null
+          questao_id: string
+          respondida_em: string | null
+          resposta_texto: string | null
+          tempo_gasto_segundos: number | null
+          tentativa_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tentativa_resposta"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      salvar_resposta_texto: {
+        Args: { p_questao_id: string; p_tentativa_id: string; p_texto: string }
+        Returns: {
+          alternativa_id: string | null
+          correta: boolean | null
+          enviada_em: string | null
+          id: string
+          ordem_na_tentativa: number | null
+          pontos: number | null
           questao_id: string
           respondida_em: string | null
           resposta_texto: string | null

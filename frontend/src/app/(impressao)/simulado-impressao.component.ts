@@ -37,6 +37,8 @@ interface GabaritoItem {
   numero: number;
   letra: string | null;
   explicacao: string | null;
+  /** Gabarito de questão discursiva (no lugar da letra). */
+  respostaModelo: string | null;
 }
 
 @Component({
@@ -109,6 +111,7 @@ export class SimuladoImpressaoComponent {
       numero: i + 1,
       letra: this.letraCorreta(q),
       explicacao: q.explicacao,
+      respostaModelo: q.formato === 'resposta_aberta_curta' ? (q.resposta_modelo ?? null) : null,
     }));
   });
 

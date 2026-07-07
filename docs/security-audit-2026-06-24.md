@@ -196,3 +196,28 @@ a menos que se adote uma salvaguarda. Recomendações (qualquer uma já ajuda):
 2. **#3**: checagem de assinatura server-side nas RPCs de conteúdo.
 3. **#4**: validar `payer_email` em `mp-vincular-assinatura`.
 4. **#5–#8 + higiene**: em sequência.
+
+---
+
+## Adendo 2026-07-07 — Questões abertas (novas colunas secretas)
+
+As migrations `20260707120000`+ estendem o modelo de gabarito secreto para
+questões discursivas:
+
+* **Novas colunas SECRETAS em `questao`**: `resposta_modelo`, `pontos_chave`,
+  `criterios_correcao` — nascem sem SELECT grant para `authenticated`
+  (comportamento do grant por coluna da `20260624125610`) e só saem por RPC
+  SECURITY DEFINER, mascaradas como NULL em `modo='simulado'`
+  (`iniciar/retomar_tentativa`, `gerar_simulado_personalizado`) e liberadas em
+  estudo/revisão/impressão-com-gabarito pós-finalização.
+* **Nova tabela `resposta_correcao`**: RLS de SELECT para o dono da tentativa;
+  INSERT/UPDATE/DELETE sem grant para clientes (escrita exclusiva de
+  service-role/SECURITY DEFINER).
+* **Colunas novas em `tentativa_resposta`** (`enviada_em`, `pontos`) e
+  `tentativa` (`pontos`, `total_pontuaveis`): legíveis pelo dono (grant de
+  tabela + RLS), escrita só via RPC.
+* ⚠️ **O aviso anti-regressão de grants continua valendo**: um `db pull`/`db diff`
+  autogerado dessas tabelas re-emitiria `GRANT SELECT` de tabela e **reexporia
+  `resposta_modelo` (o gabarito das discursivas)**. Verificação rápida:
+  `set role authenticated; select resposta_modelo from questao limit 1;`
+  → deve dar `permission denied`.

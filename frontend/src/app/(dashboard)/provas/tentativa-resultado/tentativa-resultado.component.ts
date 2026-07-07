@@ -144,6 +144,8 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
           if (consolidado.ok && consolidado.data.consolidada) {
             this.resultado.set(consolidado.data);
             this.tentativaService.setLastResultado(consolidado.data);
+            // XP só é concedido com a nota fechada (RPC idempotente)
+            await this.tentativaService.registrarXpTentativa(this.tentativaId);
             break;
           }
         }
@@ -165,6 +167,7 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
           this.resultado.set(forcado.data);
           this.tentativaService.setLastResultado(forcado.data);
           this.correcoesForcadas.set(true);
+          await this.tentativaService.registrarXpTentativa(this.tentativaId);
         }
         break;
       }

@@ -445,7 +445,11 @@ export class TentativaService {
       this.cache.remove(CACHE_KEYS.inicio);
       this.cache.remove(CACHE_KEYS.historico);
 
-      await this.registrarXpTentativa(tentativaId);
+      // Com correções de IA pendentes a nota ainda não fechou — o XP é
+      // concedido pela tela de resultado após a consolidação (RPC idempotente).
+      if (!resultado.correcoes_pendentes) {
+        await this.registrarXpTentativa(tentativaId);
+      }
 
       return { ok: true, data: resultado };
     } catch {
@@ -453,7 +457,7 @@ export class TentativaService {
     }
   }
 
-  private async registrarXpTentativa(tentativaId: string): Promise<void> {
+  async registrarXpTentativa(tentativaId: string): Promise<void> {
     const result = await this.gamificacao.concederXpTentativa(tentativaId);
     if (result.ok && result.data.xp_ganho > 0) {
       this.notifications.success(`+${result.data.xp_ganho} XP conquistados`);

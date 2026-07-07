@@ -35,6 +35,13 @@ export class QuestaoImpressaoComponent {
     () => this.mostrarImagem() && !!this.questao().imagem_url,
   );
 
+  protected readonly ehDiscursiva = computed(
+    () => this.questao().formato === 'resposta_aberta_curta',
+  );
+
+  /** Linhas em branco para resposta manuscrita na impressão. */
+  protected readonly linhasResposta = [1, 2, 3, 4, 5];
+
   protected ehCorreta(correta: boolean | null): boolean {
     return this.comGabarito() && correta === true;
   }

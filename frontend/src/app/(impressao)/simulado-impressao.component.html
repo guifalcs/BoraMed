@@ -278,17 +278,22 @@
           <h2 class="mb-4 text-[1.2em] font-bold">Gabarito</h2>
           <div class="mb-6 grid grid-cols-3 gap-x-6 gap-y-1 text-[0.9em] sm:grid-cols-5 print:grid-cols-5">
             @for (item of gabarito(); track item.numero) {
-              <span><strong>{{ item.numero }}.</strong> {{ item.letra ?? '—' }}</span>
+              <span><strong>{{ item.numero }}.</strong> {{ item.letra ?? (item.respostaModelo ? 'Discursiva' : '—') }}</span>
             }
           </div>
 
           @if (opcoes().explicacoesNoGabarito) {
             <div class="flex flex-col gap-3">
               @for (item of gabarito(); track item.numero) {
-                @if (item.explicacao) {
+                @if (item.explicacao || item.respostaModelo) {
                   <div class="break-inside-avoid text-[0.85em] leading-snug">
-                    <p class="font-semibold">{{ item.numero }}. Resposta: {{ item.letra ?? '—' }}</p>
-                    <p class="text-gray-700">{{ item.explicacao }}</p>
+                    <p class="font-semibold">{{ item.numero }}. Resposta: {{ item.letra ?? (item.respostaModelo ? 'discursiva' : '—') }}</p>
+                    @if (item.respostaModelo) {
+                      <p class="text-gray-700"><strong>Resposta padrão:</strong> {{ item.respostaModelo }}</p>
+                    }
+                    @if (item.explicacao) {
+                      <p class="text-gray-700">{{ item.explicacao }}</p>
+                    }
                   </div>
                 }
               }

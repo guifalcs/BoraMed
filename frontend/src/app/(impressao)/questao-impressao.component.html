@@ -76,29 +76,45 @@
     </div>
   }
 
-  <!-- Alternativas -->
-  <ol class="flex flex-col gap-1">
-    @for (alt of questao().alternativas; track alt.id) {
-      <li class="flex items-start gap-2 text-[0.95em] leading-snug" [class.font-semibold]="ehCorreta(alt.correta)">
-        @if (marcacao()) {
-          <span
-            class="mt-0.5 flex h-[1.1em] w-[1.1em] shrink-0 items-center justify-center rounded-full border border-gray-500 text-[0.7em] font-bold"
-            [class.bg-gray-800]="ehCorreta(alt.correta)"
-            [class.text-white]="ehCorreta(alt.correta)"
-            [class.border-gray-800]="ehCorreta(alt.correta)"
-          >
-            {{ alt.letra }}
-          </span>
-        } @else {
-          <span class="shrink-0 font-semibold">{{ alt.letra }})</span>
-        }
-        <span>
-          {{ alt.texto }}
-          @if (ehCorreta(alt.correta)) {
-            <span class="ml-1 font-bold">✓</span>
-          }
-        </span>
-      </li>
+  @if (ehDiscursiva()) {
+    <!-- Discursiva: linhas para resposta manuscrita -->
+    <div class="mt-2 flex flex-col gap-4" aria-hidden="true">
+      @for (linha of linhasResposta; track linha) {
+        <div class="border-b border-gray-400"></div>
+      }
+    </div>
+
+    @if (comGabarito() && questao().resposta_modelo) {
+      <div class="mt-3 rounded border border-gray-300 p-2 text-[0.9em] leading-snug">
+        <p class="font-semibold">Resposta padrão:</p>
+        <markdown [data]="questao().resposta_modelo!"></markdown>
+      </div>
     }
-  </ol>
+  } @else {
+    <!-- Alternativas -->
+    <ol class="flex flex-col gap-1">
+      @for (alt of questao().alternativas; track alt.id) {
+        <li class="flex items-start gap-2 text-[0.95em] leading-snug" [class.font-semibold]="ehCorreta(alt.correta)">
+          @if (marcacao()) {
+            <span
+              class="mt-0.5 flex h-[1.1em] w-[1.1em] shrink-0 items-center justify-center rounded-full border border-gray-500 text-[0.7em] font-bold"
+              [class.bg-gray-800]="ehCorreta(alt.correta)"
+              [class.text-white]="ehCorreta(alt.correta)"
+              [class.border-gray-800]="ehCorreta(alt.correta)"
+            >
+              {{ alt.letra }}
+            </span>
+          } @else {
+            <span class="shrink-0 font-semibold">{{ alt.letra }})</span>
+          }
+          <span>
+            {{ alt.texto }}
+            @if (ehCorreta(alt.correta)) {
+              <span class="ml-1 font-bold">✓</span>
+            }
+          </span>
+        </li>
+      }
+    </ol>
+  }
 </article>

@@ -2,6 +2,24 @@
 
 ## 2026-07-07 | Feature | sem commit
 
+**Questões abertas (Fase 7) — transversais: XP, desafio diário, impressão e docs**
+
+- Migration `20260707160000_abertas_transversais.sql`:
+  - `conceder_xp_tentativa`: XP base migra de acertos×10 para pontos/10 via coalesce canônico (tentativas antigas idênticas; verificado 83 XP = 18 base + 50 nota + 15 tempo em tentativa mista).
+  - `get_desafio_diario`: discursivas excluídas do sorteio (D14 — fluxo síncrono não combina com latência/custo de IA).
+  - `get_simulado_impressao`: emite `resposta_modelo`/`pontos_chave` apenas quando o gabarito está liberado; `gerar_simulado_impressao` (montado, sem gabarito) emite sempre NULL.
+- Frontend:
+  - XP só é concedido após a nota consolidar: `finalizar()` pula o XP quando há `correcoes_pendentes` e a tela de resultado concede após `consolidarCorrecoes` (RPC idempotente).
+  - Impressão: discursivas ganham linhas para resposta manuscrita; com gabarito, imprime a resposta padrão (inline e na seção Gabarito, no lugar da letra); alternativas preservadas de conversões não são impressas.
+  - `database.types.ts` regenerado do schema local (novas colunas, tabela `resposta_correcao` e RPCs).
+- Docs: seção "Questões Abertas (Discursivas) com Correção por IA" em `business-rules.md`, ADR-029 em `architecture.md` (correção plugável + nota por pontos sem backfill) e adendo no `security-audit-2026-06-24.md` (novas colunas secretas + aviso de regressão de grants).
+- Anotações, comentários e favoritos: agnósticos de formato — sem mudança (confirmado).
+- Verificação final: `db reset` completo aplica todas as migrations; 58 testes Deno e 501 specs frontend passando.
+
+---
+
+## 2026-07-07 | Feature | sem commit
+
 **Questões abertas (Fase 6) — import markdown/IA e conversão fechada→aberta**
 
 - Import de questões (mesma sessão/fluxo, lotes mistos): parser aceita por bloco `FORMATO: aberta`, `RESPOSTA_MODELO` (seção multilinha), `PONTOS_CHAVE` (lista `- item`) e `CRITERIOS:`. Matriz de validação: aberta ⇒ RESPOSTA_MODELO obrigatória e ALTERNATIVAS/GABARITO proibidos; fechada ⇒ vice-versa; `FORMATO` desconhecido é erro.
