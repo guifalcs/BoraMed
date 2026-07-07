@@ -2,6 +2,18 @@
 
 ## 2026-07-07 | Feature | sem commit
 
+**Questões abertas (Fase 6) — import markdown/IA e conversão fechada→aberta**
+
+- Import de questões (mesma sessão/fluxo, lotes mistos): parser aceita por bloco `FORMATO: aberta`, `RESPOSTA_MODELO` (seção multilinha), `PONTOS_CHAVE` (lista `- item`) e `CRITERIOS:`. Matriz de validação: aberta ⇒ RESPOSTA_MODELO obrigatória e ALTERNATIVAS/GABARITO proibidos; fechada ⇒ vice-versa; `FORMATO` desconhecido é erro.
+- `montarPromptQuestoes()` ensina a IA externa os dois formatos (fechada e aberta) e quando usar cada um.
+- Preview de import renderiza discursivas (badge "Discursiva", resposta modelo, pontos-chave, critérios); importação grava os campos abertos com `origem_geracao: ia_assistida`.
+- Admin > Questões (edição): botão "Converter para discursiva" — muda o formato, pré-preenche a resposta modelo com a alternativa correta + explicação e sugere stub de pontos-chave; as alternativas são mantidas no banco (conversão reversível — D12).
+- 7 novos specs do parser (501 no total passando): aberta completa, fechada intacta, lote misto e a matriz de validação.
+
+---
+
+## 2026-07-07 | Feature | sem commit
+
 **Questões abertas (Fase 5) — revisão, histórico e métricas por pontos**
 
 - Migration `20260707150000_abertas_revisao_e_metricas.sql`:

@@ -694,6 +694,30 @@ export class AdminQuestoesComponent implements OnInit {
     this.fAlternativas.set(alternativasIniciais(formato));
   }
 
+  /** Conversão fechada→aberta (reversível: alternativas são preservadas no banco). */
+  protected readonly podeConverterParaDiscursiva = computed(
+    () => this.modoDrawer() === 'editar' && this.mostrarAlternativas(),
+  );
+
+  protected converterParaDiscursiva(): void {
+    if (!this.podeConverterParaDiscursiva()) return;
+
+    // Pré-preenche a resposta modelo com a alternativa correta + explicação
+    const correta = this.fAlternativas().find((a) => a.correta)?.texto.trim();
+    if (!this.fRespostaModelo().trim()) {
+      const partes = [correta, this.fExplicacao().trim()].filter(Boolean);
+      this.fRespostaModelo.set(partes.join('\n\n'));
+    }
+    if (this.fPontosChave().length === 0 && correta) {
+      this.fPontosChave.set([correta]);
+    }
+
+    this.fFormato.set('resposta_aberta_curta');
+    this.toast.success(
+      'Convertida para discursiva. Revise a resposta modelo e os pontos-chave antes de salvar — as alternativas ficam preservadas caso queira reverter.',
+    );
+  }
+
   protected onTipoQuestaoChange(tipo: string): void {
     // O subtipo (formato_prova) só se aplica a questões nacionais (N1/N2/teste_progresso),
     // que é o único tipo com dropdown de "Subtipo da prova". Para processual e laboratório

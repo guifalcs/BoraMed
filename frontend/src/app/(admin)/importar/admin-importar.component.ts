@@ -32,7 +32,10 @@ interface QuestaoParseada {
   enunciado: string;
   enunciado_apoio: string | null;
   alternativas: AlternativaParseada[];
-  formato: 'multipla_escolha' | 'verdadeiro_falso';
+  formato: 'multipla_escolha' | 'verdadeiro_falso' | 'resposta_aberta_curta';
+  resposta_modelo: string | null;
+  pontos_chave: string[];
+  criterios_correcao: string | null;
   tipo_questao: 'nacional' | 'processual' | 'laboratorio' | null;
   disciplina_id: string | null;
   disciplinaDisplay: string;
@@ -94,7 +97,9 @@ export function montarPromptQuestoes(
 
   return `Você vai converter questões médicas de um arquivo para um formato de importação na plataforma BoraMed. Siga o template exatamente — o sistema lê esse formato automaticamente.
 
-FORMATO — separe cada questão com ---
+Há dois formatos de questão. Use FECHADA (padrão) para questões com alternativas; use ABERTA (discursiva) quando a questão do original pede uma resposta escrita, sem alternativas.
+
+FORMATO FECHADA — separe cada questão com ---
 
 ---
 ENUNCIADO
@@ -119,6 +124,32 @@ REFERENCIA: [referência bibliográfica, se disponível — omita se não houver
 FONTE: [ex: Afya P1 2024.1 — omita se não souber]
 ---
 
+FORMATO ABERTA (discursiva) — separe cada questão com ---
+
+---
+FORMATO: aberta
+ENUNCIADO
+[texto completo da questão, exatamente como está no original]
+
+ENUNCIADO_APOIO
+[texto de apoio/caso clínico — omita a seção inteira se não houver]
+
+RESPOSTA_MODELO
+[resposta esperada/ideal completa — obrigatória; será exibida ao aluno e usada como gabarito da correção por IA]
+
+PONTOS_CHAVE
+- [ponto que a resposta do aluno deve cobrir]
+- [outro ponto-chave]
+
+CRITERIOS: [rubrica/estilo de correção, ex: resposta curta e objetiva — omita se não houver]
+TIPO: [nacional | processual | laboratorio — omita se não souber]
+DISCIPLINA: [sigla exata da lista abaixo — omita se não souber]
+TEMA: [nome exato de um tema da lista abaixo — omita se não souber]
+EXPLICACAO: [explicação complementar, se disponível]
+REFERENCIA: [referência bibliográfica — omita se não houver]
+FONTE: [ex: Afya P1 2024.1 — omita se não souber]
+---
+
 DISCIPLINAS CADASTRADAS:
 ${listaDisciplinas}
 
@@ -128,8 +159,10 @@ ${listaTemas}
 REGRAS:
 • Copie o enunciado exatamente, sem resumir ou alterar
 • Se houver um caso clínico ou texto de apoio antes da pergunta, coloque em ENUNCIADO_APOIO e a pergunta final em ENUNCIADO
-• GABARITO deve ser apenas a letra (A, B, C, D ou E)
+• Questão FECHADA: GABARITO deve ser apenas a letra (A, B, C, D ou E); não use FORMATO/RESPOSTA_MODELO/PONTOS_CHAVE
 • Questões de verdadeiro/falso: use A) Verdadeiro e B) Falso como alternativas
+• Questão ABERTA: comece o bloco com "FORMATO: aberta"; RESPOSTA_MODELO é obrigatória; não use ALTERNATIVAS nem GABARITO
+• PONTOS_CHAVE: 2 a 6 itens curtos e verificáveis, um por linha começando com "- "
 • TIPO: use "nacional" para provas nacionais, "processual" para simulados por tema, "laboratorio" para questões com imagem de lâmina/peça
 • DISCIPLINA, TEMA, TIPO, EXPLICACAO, REFERENCIA e FONTE são campos opcionais
 • Se preencher DISCIPLINA ou TEMA, use exatamente uma opção cadastrada nas listas acima
@@ -175,7 +208,7 @@ REGRAS:
 
 // ──── Parsers ────
 
-function parseBlocos(
+export function parseBlocos(
   markdown: string,
   disciplinas: AdminDisciplina[],
   temas: AdminTema[],
@@ -195,12 +228,23 @@ function parseQuestaoBloco(
   const erros: string[] = [];
   const linhas = bloco.split('\n');
 
-  type Secao = 'nenhuma' | 'enunciado' | 'enunciado_apoio' | 'alternativas' | 'explicacao';
+  type Secao =
+    | 'nenhuma'
+    | 'enunciado'
+    | 'enunciado_apoio'
+    | 'alternativas'
+    | 'explicacao'
+    | 'resposta_modelo'
+    | 'pontos_chave';
   let secao: Secao = 'nenhuma';
 
   const enunciadoLinhas: string[] = [];
   const enunciadoApoioLinhas: string[] = [];
   const alternativaLinhas: string[] = [];
+  const respostaModeloLinhas: string[] = [];
+  const pontosChave: string[] = [];
+  let criterios: string | null = null;
+  let formatoDeclarado: string | null = null;
   let gabaritoLetra: string | null = null;
   let tipoQuestao: string | null = null;
   let disciplinaSigla: string | null = null;
@@ -215,6 +259,14 @@ function parseQuestaoBloco(
     if (t.toUpperCase() === 'ENUNCIADO') { secao = 'enunciado'; continue; }
     if (t.toUpperCase() === 'ENUNCIADO_APOIO') { secao = 'enunciado_apoio'; continue; }
     if (t.toUpperCase() === 'ALTERNATIVAS') { secao = 'alternativas'; continue; }
+    if (t.toUpperCase() === 'RESPOSTA_MODELO') { secao = 'resposta_modelo'; continue; }
+    if (t.toUpperCase() === 'PONTOS_CHAVE') { secao = 'pontos_chave'; continue; }
+
+    const mFormato = t.match(/^FORMATO:\s*(.+)/i);
+    if (mFormato) { formatoDeclarado = mFormato[1].trim().toLowerCase(); secao = 'nenhuma'; continue; }
+
+    const mCriterios = t.match(/^CRITERIOS:\s*(.+)/i);
+    if (mCriterios) { criterios = mCriterios[1].trim(); secao = 'nenhuma'; continue; }
 
     const mGabarito = t.match(/^GABARITO:\s*([A-Ea-e])/i);
     if (mGabarito) { gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue; }
@@ -244,6 +296,12 @@ function parseQuestaoBloco(
     if (secao === 'enunciado') { enunciadoLinhas.push(linha); continue; }
     if (secao === 'enunciado_apoio') { enunciadoApoioLinhas.push(linha); continue; }
     if (secao === 'alternativas') { alternativaLinhas.push(linha); continue; }
+    if (secao === 'resposta_modelo') { respostaModeloLinhas.push(linha); continue; }
+    if (secao === 'pontos_chave') {
+      const mPonto = t.match(/^[-•*]\s*(.+)/);
+      if (mPonto) pontosChave.push(mPonto[1].trim());
+      continue;
+    }
     if (secao === 'explicacao' && t) { explicacaoLinhas.push(linha); }
   }
 
@@ -256,6 +314,14 @@ function parseQuestaoBloco(
     ? tipoQuestao as 'nacional' | 'processual' | 'laboratorio'
     : null;
   if (tipoQuestao && !tipoResolvido) erros.push(`TIPO "${tipoQuestao}" inválido (use: nacional, processual ou laboratorio)`);
+
+  // FORMATO: aberta ⇒ discursiva; qualquer outro valor é erro; ausente ⇒ fechada
+  const ehAberta = formatoDeclarado === 'aberta';
+  if (formatoDeclarado && !ehAberta && formatoDeclarado !== 'fechada') {
+    erros.push(`FORMATO "${formatoDeclarado}" inválido (use: aberta)`);
+  }
+
+  const respostaModelo = respostaModeloLinhas.join('\n').trim() || null;
 
   const alternativas: AlternativaParseada[] = [];
   for (const linha of alternativaLinhas) {
@@ -270,8 +336,18 @@ function parseQuestaoBloco(
     alternativas.forEach((a) => (a.correta = a.letra === gabaritoLetra));
   }
 
-  if (alternativas.length < 2) erros.push('Mínimo de 2 alternativas');
-  else if (!alternativas.some((a) => a.correta)) erros.push('Gabarito não identificado');
+  // Matriz de validação: aberta ⇒ RESPOSTA_MODELO obrigatória, sem
+  // ALTERNATIVAS/GABARITO; fechada ⇒ alternativas + gabarito, sem campos abertos.
+  if (ehAberta) {
+    if (!respostaModelo) erros.push('RESPOSTA_MODELO é obrigatória em questão aberta');
+    if (alternativas.length > 0) erros.push('Questão aberta não deve ter ALTERNATIVAS');
+    if (gabaritoLetra) erros.push('Questão aberta não deve ter GABARITO');
+  } else {
+    if (respostaModelo) erros.push('RESPOSTA_MODELO só é válida com FORMATO: aberta');
+    if (pontosChave.length > 0) erros.push('PONTOS_CHAVE só é válido com FORMATO: aberta');
+    if (alternativas.length < 2) erros.push('Mínimo de 2 alternativas');
+    else if (!alternativas.some((a) => a.correta)) erros.push('Gabarito não identificado');
+  }
 
   const isVF =
     alternativas.length === 2 &&
@@ -292,8 +368,11 @@ function parseQuestaoBloco(
   return {
     enunciado,
     enunciado_apoio: enunciadoApoio,
-    alternativas,
-    formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha',
+    alternativas: ehAberta ? [] : alternativas,
+    formato: ehAberta ? 'resposta_aberta_curta' : isVF ? 'verdadeiro_falso' : 'multipla_escolha',
+    resposta_modelo: ehAberta ? respostaModelo : null,
+    pontos_chave: ehAberta ? pontosChave : [],
+    criterios_correcao: ehAberta ? criterios : null,
     tipo_questao: tipoResolvido,
     disciplina_id: disciplinaObj?.id ?? null,
     disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—',
@@ -706,6 +785,9 @@ PARENT: Semiologia Cardiovascular
         explicacao: q.explicacao,
         referencia: q.referencia,
         fonte: q.fonte,
+        resposta_modelo: q.resposta_modelo,
+        pontos_chave: q.pontos_chave,
+        criterios_correcao: q.criterios_correcao,
         origem_geracao: 'ia_assistida',
       };
       const alternativas: AlternativaPayload[] = q.alternativas.map((a, i) => ({
@@ -810,6 +892,9 @@ PARENT: Semiologia Cardiovascular
   }
 
   protected gabaritoLabel(q: QuestaoParseada): string {
+    if (q.formato === 'resposta_aberta_curta') {
+      return q.resposta_modelo ? 'Modelo' : '—';
+    }
     return q.alternativas.find((a) => a.correta)?.letra ?? '—';
   }
 }

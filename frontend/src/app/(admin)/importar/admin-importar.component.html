@@ -123,7 +123,7 @@
               <td class="enunciado-cell">{{ enunciadoCurto(q.enunciado) }}</td>
               <td>
                 <span class="format-badge format-badge--{{ q.formato }}">
-                  {{ q.formato === 'multipla_escolha' ? 'Múltipla' : 'V/F' }}
+                  {{ q.formato === 'multipla_escolha' ? 'Múltipla' : q.formato === 'resposta_aberta_curta' ? 'Discursiva' : 'V/F' }}
                 </span>
               </td>
               <td><span class="gabarito-badge">{{ gabaritoLabel(q) }}</span></td>
@@ -150,15 +150,27 @@
                       </div>
                     }
                     <p class="detail-enunciado">{{ q.enunciado }}</p>
-                    <div class="detail-alts">
-                      @for (a of q.alternativas; track a.letra) {
-                        <div class="detail-alt" [class.detail-alt--correta]="a.correta">
-                          <span class="alt-letra">{{ a.letra }})</span>
-                          <span>{{ a.texto }}</span>
-                          @if (a.correta) { <span class="correta-marker"><app-ui-icon [icon]="iconCheck" [size]="14" /></span> }
-                        </div>
+                    @if (q.formato === 'resposta_aberta_curta') {
+                      @if (q.resposta_modelo) {
+                        <p class="detail-meta"><strong>Resposta modelo:</strong> {{ q.resposta_modelo }}</p>
                       }
-                    </div>
+                      @if (q.pontos_chave.length > 0) {
+                        <p class="detail-meta"><strong>Pontos-chave:</strong> {{ q.pontos_chave.join('; ') }}</p>
+                      }
+                      @if (q.criterios_correcao) {
+                        <p class="detail-meta"><strong>Critérios:</strong> {{ q.criterios_correcao }}</p>
+                      }
+                    } @else {
+                      <div class="detail-alts">
+                        @for (a of q.alternativas; track a.letra) {
+                          <div class="detail-alt" [class.detail-alt--correta]="a.correta">
+                            <span class="alt-letra">{{ a.letra }})</span>
+                            <span>{{ a.texto }}</span>
+                            @if (a.correta) { <span class="correta-marker"><app-ui-icon [icon]="iconCheck" [size]="14" /></span> }
+                          </div>
+                        }
+                      </div>
+                    }
                     @if (q.explicacao) {
                       <p class="detail-meta"><strong>Explicação:</strong> {{ q.explicacao }}</p>
                     }

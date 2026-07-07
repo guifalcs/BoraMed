@@ -364,6 +364,14 @@
               }
             </p>
 
+            @if (podeConverterParaDiscursiva()) {
+              <div class="mb-3">
+                <button type="button" class="btn btn--sm btn--outline" (click)="converterParaDiscursiva()">
+                  Converter para discursiva
+                </button>
+              </div>
+            }
+
             <div class="alternativas-list">
               @for (alt of fAlternativas(); track alt.letra; let i = $index) {
                 <div class="alt-row" [class.alt-row--correta]="alt.correta">
