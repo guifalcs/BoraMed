@@ -12,6 +12,10 @@ export interface Questao {
   tipo_questao: 'nacional' | 'processual' | 'laboratorio';
   resposta_correta_texto: string | null;
   respostas_aceitas: string[] | null;
+  /** Gabarito de questão discursiva — mascarado (null) em modo simulado */
+  resposta_modelo?: string | null;
+  pontos_chave?: string[];
+  criterios_correcao?: string | null;
   explicacao: string | null;
   explicacao_alternativas: Record<string, string> | null;
   referencia: string | null;

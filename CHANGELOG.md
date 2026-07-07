@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-07 | Feature | sem commit
+
+**Questões abertas (Fase 1) — schema de correção por IA + cadastro de discursivas no admin**
+
+Primeira fase do plano `docs/plano-questoes-abertas-ia.md` (questões discursivas com correção por IA).
+
+- Migration `20260707120000_abertas_schema_correcao_e_grants.sql`:
+  - `questao` ganha `resposta_modelo`, `pontos_chave` (jsonb array) e `criterios_correcao` — colunas de gabarito aberto, SECRETAS (sem SELECT grant para `authenticated`; nascem ocultas pelo modelo de grants por coluna da `20260624125610`; escrita admin segue pelo grant de tabela).
+  - `tentativa_resposta` ganha `enviada_em` (lock de envio definitivo, NULL = rascunho) e `pontos` (0–100, NULL = não pontuável).
+  - Nova tabela `resposta_correcao` (1:1 com `tentativa_resposta`): estado/resultado/auditoria da correção por IA (status, pontos, feedback, pontos atendidos/faltantes, provider, tokens, retries). RLS de SELECT para o dono da tentativa; escrita exclusiva de service-role/SECURITY DEFINER; índice parcial para pendências.
+  - `admin_get_questao` não precisou mudar (usa `to_jsonb`, já devolve os campos novos ao admin).
+- Admin > Questões: novo formato **Discursiva** no formulário — textarea de resposta modelo (obrigatória), editor de lista de pontos-chave e critérios de correção; seção de alternativas oculta para discursivas. Ao editar uma discursiva as alternativas existentes são preservadas no banco (conversão fechada→aberta reversível — D12 do plano).
+- Verificado no banco local: `authenticated` recebe `permission denied` ao ler `resposta_modelo` e continua lendo colunas públicas; INSERT/UPDATE das colunas novas funcionam.
+
+---
+
 ## 2026-06-29 | Fix + Feature | sem commit
 
 **Métricas financeiras: receita completa e acesso de cortesia**

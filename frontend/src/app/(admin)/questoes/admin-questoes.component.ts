@@ -136,6 +136,10 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fRevisado = signal(false);
   protected readonly fAptoDesafio = signal(true);
   protected readonly fRespostaCorreta = signal('');
+  protected readonly fRespostaModelo = signal('');
+  protected readonly fPontosChave = signal<string[]>([]);
+  protected readonly fPontoChaveNovo = signal('');
+  protected readonly fCriterios = signal('');
   protected readonly fAlternativas = signal<AlternativaForm[]>(alternativasIniciais('multipla_escolha'));
   protected readonly fImagemUrl = signal<string | null>(null);
   protected readonly fImagemLegenda = signal('');
@@ -159,6 +163,7 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly opcoesFormato: SelectOption[] = [
     { value: 'multipla_escolha', label: 'Múltipla escolha' },
     { value: 'verdadeiro_falso', label: 'Verdadeiro / Falso' },
+    { value: 'resposta_aberta_curta', label: 'Discursiva' },
   ];
 
   protected readonly opcoesTipoQuestao: SelectOption[] = [
@@ -239,6 +244,8 @@ export class AdminQuestoesComponent implements OnInit {
     () => this.fFormato() === 'multipla_escolha' || this.fFormato() === 'verdadeiro_falso',
   );
 
+  protected readonly ehDiscursiva = computed(() => this.fFormato() === 'resposta_aberta_curta');
+
   protected readonly visualizacaoAberta = computed(
     () => this.carregandoVisualizacao() || this.questaoVisualizada() !== null,
   );
@@ -260,6 +267,9 @@ export class AdminQuestoesComponent implements OnInit {
       tipo_questao: questao.tipo_questao,
       resposta_correta_texto: questao.resposta_correta_texto ?? null,
       respostas_aceitas: questao.respostas_aceitas ?? null,
+      resposta_modelo: questao.resposta_modelo ?? null,
+      pontos_chave: questao.pontos_chave ?? [],
+      criterios_correcao: questao.criterios_correcao ?? null,
       explicacao: questao.explicacao ?? null,
       explicacao_alternativas: questao.explicacao_alternativas ?? null,
       referencia: questao.referencia ?? null,
@@ -304,6 +314,9 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly gabaritoVisualizacao = computed(() => {
     const questao = this.questaoVisualizada();
     if (!questao) return '—';
+    if (questao.formato === 'resposta_aberta_curta') {
+      return questao.resposta_modelo || 'Sem resposta modelo';
+    }
     const corretas = questao.alternativas
       .filter((alternativa) => alternativa.correta)
       .map((alternativa) => alternativa.letra);
@@ -458,6 +471,7 @@ export class AdminQuestoesComponent implements OnInit {
     const map: Record<string, string> = {
       multipla_escolha: 'Múltipla',
       verdadeiro_falso: 'V / F',
+      resposta_aberta_curta: 'Discursiva',
       discursiva: 'Discursiva',
     };
     return map[formato] ?? formato;
@@ -644,6 +658,9 @@ export class AdminQuestoesComponent implements OnInit {
     this.fRevisado.set(d.revisado ?? false);
     this.fAptoDesafio.set(d.apto_desafio_diario ?? true);
     this.fRespostaCorreta.set(d.resposta_correta_texto ?? '');
+    this.fRespostaModelo.set(d.resposta_modelo ?? '');
+    this.fPontosChave.set(d.pontos_chave ?? []);
+    this.fCriterios.set(d.criterios_correcao ?? '');
     this.fImagemUrl.set(d.imagem_url ?? null);
     this._urlAntesDeEditar = d.imagem_url ?? null;
     this.fImagemLegenda.set(d.imagem_legenda ?? '');
@@ -699,6 +716,21 @@ export class AdminQuestoesComponent implements OnInit {
     );
   }
 
+  protected adicionarPontoChave(): void {
+    const texto = this.fPontoChaveNovo().trim();
+    if (!texto) return;
+    this.fPontosChave.update((itens) => [...itens, texto]);
+    this.fPontoChaveNovo.set('');
+  }
+
+  protected removerPontoChave(index: number): void {
+    this.fPontosChave.update((itens) => itens.filter((_, i) => i !== index));
+  }
+
+  protected atualizarPontoChave(index: number, texto: string): void {
+    this.fPontosChave.update((itens) => itens.map((p, i) => (i === index ? texto : p)));
+  }
+
   protected toggleTema(temaId: string): void {
     this.fTemas.update((ids) =>
       ids.includes(temaId) ? ids.filter((t) => t !== temaId) : [...ids, temaId],
@@ -734,6 +766,10 @@ export class AdminQuestoesComponent implements OnInit {
         return;
       }
     }
+    if (this.ehDiscursiva() && !this.fRespostaModelo().trim()) {
+      this.toast.error('Questões discursivas exigem resposta modelo.');
+      return;
+    }
     if (this.fTipoQuestao() === 'laboratorio' && !this.fImagemUrl()) {
       this.toast.error('Questões de laboratório exigem imagem.');
       return;
@@ -757,6 +793,11 @@ export class AdminQuestoesComponent implements OnInit {
       referencia: this.fReferencia().trim() || null,
       fonte: this.fFonte().trim() || null,
       resposta_correta_texto: this.fRespostaCorreta().trim() || null,
+      resposta_modelo: this.ehDiscursiva() ? this.fRespostaModelo().trim() : null,
+      pontos_chave: this.ehDiscursiva()
+        ? this.fPontosChave().map((p) => p.trim()).filter(Boolean)
+        : [],
+      criterios_correcao: this.ehDiscursiva() ? (this.fCriterios().trim() || null) : null,
       revisado: this.fRevisado(),
       apto_desafio_diario: this.fAptoDesafio(),
     };
@@ -814,6 +855,10 @@ export class AdminQuestoesComponent implements OnInit {
     this.fRevisado.set(false);
     this.fAptoDesafio.set(true);
     this.fRespostaCorreta.set('');
+    this.fRespostaModelo.set('');
+    this.fPontosChave.set([]);
+    this.fPontoChaveNovo.set('');
+    this.fCriterios.set('');
     this.fAlternativas.set(alternativasIniciais('multipla_escolha'));
     this.fImagemUrl.set(null);
     this.fImagemLegenda.set('');

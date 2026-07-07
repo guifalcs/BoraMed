@@ -122,6 +122,9 @@ export interface AdminQuestaoCompleta {
   fonte: string | null;
   resposta_correta_texto: string | null;
   respostas_aceitas: string[] | null;
+  resposta_modelo: string | null;
+  pontos_chave: string[];
+  criterios_correcao: string | null;
   revisado: boolean;
   apto_desafio_diario: boolean;
   vezes_respondida: number;
@@ -155,6 +158,9 @@ export interface QuestaoPayload {
   referencia?: string | null;
   fonte?: string | null;
   resposta_correta_texto?: string | null;
+  resposta_modelo?: string | null;
+  pontos_chave?: string[];
+  criterios_correcao?: string | null;
   revisado?: boolean;
   apto_desafio_diario?: boolean;
   formato_prova?: string | null;
@@ -597,12 +603,16 @@ export class AdminService {
     const { error } = await this.supabase.from('questao').update(questao).eq('id', id);
     if (error) return { ok: false, error: error.message };
 
-    await this.supabase.from('alternativa').delete().eq('questao_id', id);
-    if (alternativas.length > 0) {
-      const { error: ae } = await this.supabase
-        .from('alternativa')
-        .insert(alternativas.map((a, i) => ({ ...a, questao_id: id, ordem: i + 1 })));
-      if (ae) return { ok: false, error: ae.message };
+    // Discursiva não usa alternativas, mas as existentes são preservadas no
+    // banco (conversão fechada→aberta reversível) — só não mexemos nelas.
+    if (questao.formato !== 'resposta_aberta_curta') {
+      await this.supabase.from('alternativa').delete().eq('questao_id', id);
+      if (alternativas.length > 0) {
+        const { error: ae } = await this.supabase
+          .from('alternativa')
+          .insert(alternativas.map((a, i) => ({ ...a, questao_id: id, ordem: i + 1 })));
+        if (ae) return { ok: false, error: ae.message };
+      }
     }
 
     await this.supabase.from('questao_tema').delete().eq('questao_id', id);

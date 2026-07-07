@@ -392,6 +392,74 @@
           </section>
         }
 
+        <!-- Seção: Gabarito da discursiva (correção por IA) -->
+        @if (ehDiscursiva()) {
+          <section class="form-section">
+            <h3 class="section-label">Resposta modelo e correção</h3>
+            <p class="section-hint">
+              A resposta modelo é mostrada ao aluno após responder e serve de gabarito
+              para a correção por IA. Pontos-chave e critérios orientam a nota.
+            </p>
+
+            <div class="field">
+              <label class="field-label">Resposta modelo <span class="req">*</span></label>
+              <textarea
+                class="form-textarea"
+                rows="4"
+                placeholder="Resposta esperada/ideal para a questão…"
+                [ngModel]="fRespostaModelo()"
+                (ngModelChange)="fRespostaModelo.set($event)"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Pontos-chave (checklist da correção)</label>
+              @for (ponto of fPontosChave(); track $index; let i = $index) {
+                <div class="flex items-center gap-2 mb-2">
+                  <input
+                    type="text"
+                    class="form-input flex-1"
+                    [value]="ponto"
+                    (input)="atualizarPontoChave(i, $any($event.target).value)"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn--sm btn--outline"
+                    title="Remover ponto-chave"
+                    (click)="removerPontoChave(i)"
+                  >
+                    <app-ui-icon [icon]="iconX" [size]="14" />
+                  </button>
+                </div>
+              }
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  class="form-input flex-1"
+                  placeholder="Ex: Cita a tríade de Charcot…"
+                  [ngModel]="fPontoChaveNovo()"
+                  (ngModelChange)="fPontoChaveNovo.set($event)"
+                  (keydown.enter)="$event.preventDefault(); adicionarPontoChave()"
+                />
+                <button type="button" class="btn btn--sm btn--outline" (click)="adicionarPontoChave()">
+                  Adicionar
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Critérios de correção</label>
+              <textarea
+                class="form-textarea"
+                rows="3"
+                placeholder="Rubrica e estilo: ex. resposta curta e objetiva; penalizar condutas perigosas…"
+                [ngModel]="fCriterios()"
+                (ngModelChange)="fCriterios.set($event)"
+              ></textarea>
+            </div>
+          </section>
+        }
+
         <!-- Seção: Explicação -->
         <section class="form-section">
           <h3 class="section-label">Explicação e referências</h3>
