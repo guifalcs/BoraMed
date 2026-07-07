@@ -215,7 +215,10 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
         // original; `cancelled` (Pix/boleto expirado) marca a intenção como
         // expirada quando ela existe. O id vem do dataId (o recurso do MP traz
         // o mesmo valor em pay.id).
-        await syncAcessoUnicoPayment(admin, { id: dataId, ...pay }, deps.now());
+        await syncAcessoUnicoPayment(admin, { id: dataId, ...pay }, deps.now(), {
+          fetch: deps.fetch,
+          token: mpToken,
+        });
       }
     }
   } catch (e) {

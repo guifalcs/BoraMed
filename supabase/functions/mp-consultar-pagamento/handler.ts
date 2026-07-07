@@ -56,12 +56,10 @@ export async function handleConsultarPagamento(req: Request, deps: Deps): Promis
   const mpToken = deps.env('MP_ACCESS_TOKEN');
   if (!mpToken) return reply({ error: 'MP_ACCESS_TOKEN not configured' }, 500);
 
-  const pay = await mpGet(
-    { fetch: deps.fetch, token: mpToken },
-    `/v1/payments/${intencao.mp_payment_id}`,
-  );
+  const mp = { fetch: deps.fetch, token: mpToken };
+  const pay = await mpGet(mp, `/v1/payments/${intencao.mp_payment_id}`);
   if (!pay) return reply({ error: 'falha ao consultar pagamento' }, 502);
 
-  const result = await syncAcessoUnicoPayment(admin, pay, deps.now());
+  const result = await syncAcessoUnicoPayment(admin, pay, deps.now(), mp);
   return reply({ status: result.status, status_detail: result.statusDetail });
 }

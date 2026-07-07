@@ -214,12 +214,14 @@ Deno.test('webhook payment acesso_unico approved: concede acesso por N meses e r
         payment_method_id: 'pix',
       },
     },
+    // Cancelamento do preapproval recorrente anterior (B5 — uma assinatura viva só).
+    { match: '/preapproval/Z', body: { id: 'Z', status: 'cancelled' } },
   ]);
   const req = await signedWebhookRequest({ secret: SECRET, type: 'payment', dataId: 'PAY-1' });
   const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
   assertEquals(res.status, 200);
 
-  // B5: assinatura anterior superada
+  // B5: assinatura recorrente anterior cancelada NO MP e superada localmente.
   assertEquals(find(db, 'assinatura', (r) => r.id === 'old2')?.status, 'cancelled');
 
   // Acesso único concedido até now + 6 meses (2026-12-24)

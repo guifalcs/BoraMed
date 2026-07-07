@@ -11,6 +11,30 @@ const find = (db: FakeDb, table: string, pred: (r: any) => boolean) =>
 // deno-lint-ignore no-explicit-any
 const admin = (db: FakeDb) => db.client() as any;
 
+/** fetch que registra as chamadas (p/ afirmar o PUT de cancelamento no MP). */
+function recordingFetch(status = 200) {
+  const calls: Array<{ url: string; method?: string; body: Record<string, unknown> }> = [];
+  // deno-lint-ignore no-explicit-any
+  const fn = ((input: any, init?: any) => {
+    const url = typeof input === 'string' ? input : input.url ?? String(input);
+    calls.push({
+      url,
+      method: init?.method,
+      body: init?.body ? JSON.parse(init.body) : {},
+    });
+    const ok = status >= 200 && status < 300;
+    return Promise.resolve({
+      ok,
+      status,
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve('{}'),
+    } as Response);
+  }) as typeof fetch;
+  return { fetch: fn, calls };
+}
+
+const mpClient = (fn: typeof fetch) => ({ fetch: fn, token: 'TEST-token' });
+
 /** Payment "novo" (checkout embutido): traz metadata.intencao_id. */
 function payEmbutido(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -58,13 +82,21 @@ function baseDb(extra: Record<string, unknown[]> = {}): FakeDb {
   });
 }
 
-Deno.test('sync approved: concede acesso, supera assinatura anterior (B5), grava pagamento e intenção', async () => {
+Deno.test('sync approved: concede acesso, cancela o preapproval recorrente anterior NO MP (B5 — inclui legado authorized), grava pagamento e intenção', async () => {
   const db = baseDb({
     assinatura: [{ id: 'old', user_id: 'user-1', status: 'authorized', mp_preapproval_id: 'OLD' }],
   });
-  const r = await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW);
+  const rec = recordingFetch(200);
+  const r = await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(rec.fetch));
   assertEquals(r.handled, true);
   assertEquals(r.status, 'approved');
+
+  // O recorrente anterior (mensal legado authorized) é cancelado NO MP, não só
+  // localmente — evita um preapproval órfão que continuaria cobrando.
+  const put = rec.calls.find((c) => c.url.includes('/preapproval/OLD'));
+  assertExists(put, 'PUT de cancelamento disparado no preapproval anterior');
+  assertEquals(put?.method, 'PUT');
+  assertEquals(put?.body.status, 'cancelled');
 
   const old = find(db, 'assinatura', (x) => x.mp_preapproval_id === 'OLD');
   assertEquals(old?.status, 'cancelled', 'assinatura anterior superada (B5)');
@@ -92,6 +124,74 @@ Deno.test('sync approved: concede acesso, supera assinatura anterior (B5), grava
   assertEquals(int?.mp_payment_id, '12345');
   assertEquals(int?.status_detail, 'accredited');
   assertEquals(int?.parcelas, 6);
+});
+
+Deno.test('sync approved: cancela o preapproval PAUSADO anterior no MP e supera localmente (uma assinatura viva só)', async () => {
+  const db = baseDb({
+    assinatura: [{ id: 'p', user_id: 'user-1', status: 'paused', mp_preapproval_id: 'PAUS' }],
+  });
+  const rec = recordingFetch(200);
+  await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(rec.fetch));
+
+  const put = rec.calls.find((c) => c.url.includes('/preapproval/PAUS'));
+  assertExists(put, 'preapproval pausado é cancelado no MP ao conceder acesso único');
+  assertEquals(put?.body.status, 'cancelled');
+  assertEquals(find(db, 'assinatura', (x) => x.id === 'p')?.status, 'cancelled');
+  assertExists(
+    find(db, 'assinatura', (x) => x.mp_payment_id === '12345'),
+    'acesso único concedido',
+  );
+});
+
+Deno.test('sync approved: falha ao cancelar o preapproval no MP mantém a recorrente VIVA/visível e ainda concede o acesso pago', async () => {
+  const db = baseDb({
+    assinatura: [{ id: 'p', user_id: 'user-1', status: 'paused', mp_preapproval_id: 'PAUS' }],
+  });
+  const rec = recordingFetch(500); // MP indisponível/erro no cancelamento
+  await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(rec.fetch));
+
+  assertExists(rec.calls.find((c) => c.url.includes('/preapproval/PAUS')), 'tentou cancelar no MP');
+  assertEquals(
+    find(db, 'assinatura', (x) => x.id === 'p')?.status,
+    'paused',
+    'com falha no MP a recorrente permanece viva/visível (recuperável), nunca órfã escondida',
+  );
+  assertExists(
+    find(db, 'assinatura', (x) => x.mp_payment_id === '12345'),
+    'acesso pago é concedido mesmo com falha no cancelamento (tolerante a falha)',
+  );
+});
+
+Deno.test('sync approved: erro de REDE (fetch lança) no cancelamento não derruba a concessão do acesso', async () => {
+  const db = baseDb({
+    assinatura: [{ id: 'p', user_id: 'user-1', status: 'paused', mp_preapproval_id: 'PAUS' }],
+  });
+  // fetch que LANÇA (rede/infra) — diferente de um 5xx com ok:false.
+  const throwing = (() => Promise.reject(new Error('network down'))) as typeof fetch;
+  const r = await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(throwing));
+
+  assertEquals(r.status, 'approved');
+  assertExists(
+    find(db, 'assinatura', (x) => x.mp_payment_id === '12345'),
+    'o acesso pago é concedido mesmo quando o cancelamento no MP lança exceção',
+  );
+  assertEquals(
+    find(db, 'assinatura', (x) => x.id === 'p')?.status,
+    'paused',
+    'a recorrente permanece viva/visível quando o cancelamento lança',
+  );
+});
+
+Deno.test('sync approved sem cliente MP: NÃO cancela silenciosamente um recorrente com preapproval', async () => {
+  const db = baseDb({
+    assinatura: [{ id: 'p', user_id: 'user-1', status: 'paused', mp_preapproval_id: 'PAUS' }],
+  });
+  await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW); // sem mp
+  assertEquals(
+    find(db, 'assinatura', (x) => x.id === 'p')?.status,
+    'paused',
+    'sem meio de cancelar no MP, mantém a recorrente visível em vez de virar órfã',
+  );
 });
 
 Deno.test('sync approved é idempotente: segunda chamada não duplica assinatura nem pagamento', async () => {

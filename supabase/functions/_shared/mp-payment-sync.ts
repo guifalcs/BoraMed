@@ -12,6 +12,8 @@
 // acesso). A atualização de pagamento_intencao só acontece quando o payment
 // traz metadata.intencao_id (checkout embutido).
 
+import { mpPut, type MpClientOpts } from './mp-api.ts';
+
 // deno-lint-ignore no-explicit-any
 type AdminClient = any;
 
@@ -53,6 +55,7 @@ export async function syncAcessoUnicoPayment(
   admin: AdminClient,
   pay: Record<string, unknown>,
   now: Date,
+  mp?: MpClientOpts,
 ): Promise<SyncResult> {
   const paymentId = String(pay['id'] ?? '');
   const userId = pay['external_reference'] as string | undefined;
@@ -77,13 +80,59 @@ export async function syncAcessoUnicoPayment(
   let assinaturaId: string | null = null;
 
   if (status === 'approved') {
-    // B5: supera outras assinaturas 'authorized' do usuário antes de conceder
-    // o acesso único, mantendo no máximo uma ativa.
-    await admin
+    // B5 — "uma assinatura viva só": ao conceder o acesso único, supera as
+    // assinaturas anteriores do usuário para no máximo uma ficar ativa.
+    //  - Recorrente (com mp_preapproval_id, `authorized` OU `paused`): CANCELA o
+    //    preapproval NO MP, senão um recorrente órfão continua vivo (o `paused`
+    //    não cobra, mas fica inalcançável e trava o anti-dupla; o `authorized`
+    //    ainda cobraria — double-charge latente). Inclui assinantes LEGADOS por
+    //    design. Tolerante a falha: a linha só é marcada `cancelled` localmente
+    //    quando o cancelamento no MP dá certo — uma falha deixa o preapproval
+    //    VISÍVEL (gerenciável em "Minha assinatura" / reconciliação), nunca um
+    //    órfão escondido, e nunca derruba a concessão do acesso pago.
+    //  - Acesso único anterior (`authorized` sem preapproval): supera localmente
+    //    (bookkeeping puro; não há nada a cancelar no MP).
+    const { data: anteriores } = await admin
       .from('assinatura')
-      .update({ status: 'cancelled', cancelada_em: now.toISOString() })
+      .select('id, mp_preapproval_id, status')
       .eq('user_id', userId)
-      .eq('status', 'authorized');
+      .in('status', ['authorized', 'paused']);
+    for (
+      const a of (anteriores ?? []) as Array<
+        { id: string; mp_preapproval_id: string | null; status: string }
+      >
+    ) {
+      if (a.mp_preapproval_id) {
+        if (!mp) {
+          console.error('preapproval recorrente sem cliente MP para cancelar — mantido vivo', {
+            assinaturaId: a.id,
+          });
+          continue;
+        }
+        try {
+          const res = await mpPut(mp, `/preapproval/${a.mp_preapproval_id}`, { status: 'cancelled' });
+          if (!res.ok) {
+            console.error('falha ao cancelar preapproval ao conceder acesso único — mantido vivo', {
+              preapprovalId: a.mp_preapproval_id,
+              status: res.status,
+            });
+            continue;
+          }
+        } catch (e) {
+          // Erro de rede/infra no cancelamento NUNCA derruba a concessão do
+          // acesso pago (que acontece adiante): mantém a recorrente viva/visível.
+          console.error('erro ao cancelar preapproval ao conceder acesso único — mantido vivo', {
+            preapprovalId: a.mp_preapproval_id,
+            message: (e as Error).message,
+          });
+          continue;
+        }
+      }
+      await admin
+        .from('assinatura')
+        .update({ status: 'cancelled', cancelada_em: now.toISOString() })
+        .eq('id', a.id);
+    }
     // Concede acesso por N meses (sem renovação automática).
     const meses = Number(meta['acesso_meses']) || 6;
     const fim = new Date(now.getTime());

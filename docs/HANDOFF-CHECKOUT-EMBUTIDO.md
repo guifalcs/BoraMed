@@ -18,23 +18,18 @@ usuário em **2026-07-07** e os achados decididos já foram **implementados** (v
 2. **Regras dos achados novos:** (a) liberar rota Minha Assinatura fora do
    paywall p/ `paused` → **SIM**; (b) incluir `paused` no anti-dupla → **SIM**;
    (c) mensal recém-autorizado ganha acesso provisório → **SIM**.
+3. **"Uma assinatura viva só" (era a decisão em aberto)** → **SIM, cancelar o
+   preapproval recorrente ao conceder acesso único.** Implementado (ver
+   "F6-b" abaixo).
 
-**Próximo passo (2026-07-07, fim da sessão):** F6 implementada, revisada e
-**validada manualmente** (cenários A–E, ver "Validação manual" abaixo).
-Commitado. Falta:
-1. **DECISÃO EM ABERTO — "sempre uma assinatura só"**: hoje um usuário `paused`
-   consegue comprar o semestral (correto — não bloqueamos pagamento único), mas
-   o **preapproval mensal pausado continua vivo no MP** (dormente, não cobra) e
-   vira lixo órfão → risco de lockout quando o semestral expirar (a Minha
-   Assinatura mostra o semestral, não o mensal pausado, então o botão Reativar
-   fica inalcançável e o anti-dupla do mensal barra sem saída). Recomendação
-   dada: **ao conceder acesso único (semestral), cancelar o preapproval
-   recorrente (paused/authorized) do usuário no MP** (estende o `B5` entre
-   produtos → garante uma assinatura viva só). Alternativa mais leve: fazer a
-   Minha Assinatura sempre expor a assinatura gerenciável (com preapproval)
-   mesmo com acesso único ativo. **Usuário não bateu o martelo — decidir e
-   implementar na próxima sessão.**
-2. Escrever o **checklist de go-live** revisado com o usuário.
+**Próximo passo (2026-07-07, fim da sessão 2):** todos os achados da F6
+implementados, revisados e validados por testes. Falta:
+1. **Validação manual** do fluxo "pausado/mensal → compra semestral → preapproval
+   cancelado no MP" contra o MP TEST real (o unit test já cobre a lógica; falta a
+   confirmação fim-a-fim com o painel do vendedor). Cenários A–E anteriores
+   seguem válidos.
+2. **Checklist de go-live** — rascunho abaixo (seção "Checklist de go-live");
+   revisar com o usuário antes da F7.
 3. Depois F7 (deploy faseado, só com aprovação explícita) e F8.
 
 ## ✅ F6 — implementado (2026-07-07)
@@ -89,14 +84,55 @@ Validação automatizada (2026-07-07): Deno `deno test --allow-env .` →
 PR — também quebram na main). E2E não rodado nesta sessão (stub do Brick não é
 afetado pelas mudanças).
 
+## ✅ F6-b — "uma assinatura viva só" (2026-07-07, sessão 2)
+
+Resolve a decisão que estava em aberto (preapproval órfão quando um `paused`
+compra o semestral). Implementado em `_shared/mp-payment-sync.ts` (o
+`syncAcessoUnicoPayment`, ponto único por onde TODO acesso único aprovado passa —
+resposta síncrona do cartão, **webhook** do Pix/boleto e reconciliação):
+
+- No branch `approved`, antes de conceder o acesso, o `B5` foi **estendido entre
+  produtos**: busca as assinaturas do usuário em `['authorized','paused']` e, para
+  as **recorrentes** (com `mp_preapproval_id`), faz `PUT /preapproval/{id}
+  {status:'cancelled'}` **no MP** — não deixa mais um preapproval vivo/órfão.
+  Acesso único anterior (`authorized` sem preapproval) segue superado só
+  localmente (bookkeeping, nada a cancelar no MP).
+- **Tolerante a falha (inviolável):** a linha só é marcada `cancelled` localmente
+  quando o cancelamento no MP dá certo. Se o MP responde erro **ou o fetch lança**
+  (rede), loga e `continue` — a recorrente fica **viva e visível** (gerenciável em
+  Minha Assinatura / reconciliação), nunca um órfão escondido, **e a concessão do
+  acesso pago (adiante no fluxo) NUNCA é derrubada**. Sem cliente MP (só em teste)
+  também não cancela silenciosamente uma recorrente com preapproval.
+- **Idempotente:** as recorrentes canceladas saem do filtro `authorized/paused`,
+  então uma 2ª chamada (webhook após a resposta síncrona) não redispara o PUT; se
+  o 1º PUT falhou, a 2ª chamada **reintenta** (recuperação natural).
+- Os 3 callers passam o cliente MP ao sync: `mp-processar-pagamento` (2 pontos),
+  `mp-webhook` (topic payment) e `mp-consultar-pagamento`.
+
+**⚠️ Restrição #2 (legado) — tocado de propósito e testado:** isto passa a
+cancelar no MP também um **mensal legado `authorized`** que complete um acesso
+único (via webhook/legado; pela UI o anti-dupla barra antes). É a correção de um
+**double-charge latente** (o `B5` antigo já parava de rastrear o mensal
+localmente, mas ele seguia cobrando no MP). Coberto por teste de regressão
+(`sync approved: ... B5 — inclui legado authorized`). Não altera os fallbacks de
+resolução de usuário do `mp-webhook`.
+
+Testes novos em `_shared/mp-payment-sync.test.ts` (+ ajuste do B5 do
+`mp-webhook/handler.test.ts` para mockar o `/preapproval/{id}`): PUT dispara e
+cancela (authorized e paused); PUT com erro 5xx → recorrente permanece viva +
+acesso concedido; **fetch que LANÇA (rede) → acesso ainda concedido** (trava o
+try/catch); sem cliente MP → não cancela silenciosamente. **Deno: 112 passed /
+0 failed.** Frontend NÃO mudou (a alternativa "Minha Assinatura sempre expõe a
+gerenciável" foi descartada em favor do cancelamento na raiz).
+
 ### Code review (2026-07-07)
 Rodado (4 finders paralelos + verificação). Refactor legado confirmado **fiel**
 (sem regressão). 2 achados das mudanças F6 → **corrigidos**: (1) `paused`
 bloqueava o semestral → removido o bloqueio do `mp-processar-pagamento`; (2)
 guard usava `startsWith` (isentaria rotas irmãs) → trocado por path exato.
 Residuais anotados (não corrigidos, baixo risco): ordenação replay×anti-dupla,
-overflow de fim-de-mês no `addPeriodo`, lockout do pausado antigo (ver decisão em
-aberto), falsy-zero em `mp-payment-sync`.
+overflow de fim-de-mês no `addPeriodo`, falsy-zero em `mp-payment-sync`. (O
+"lockout do pausado antigo" foi **RESOLVIDO** na F6-b — ver seção acima.)
 
 ### Validação manual F6 (2026-07-07, MP TEST real, stack local) — TUDO ✅
 Feita junto com o usuário, limpando o banco entre cenários:
@@ -173,10 +209,11 @@ qualidade ficou para a F7 (exige pagamento de produção) e novos achados de
 UX/regra entraram na lista da F6. Nada foi enviado ao Supabase remoto (que é o
 de PRODUÇÃO — ref `gakvktwtdunljojghpff`): sem `db push`, sem `functions
 deploy`, sem mexer em secrets/webhook de produção. **F6 implementada, revisada e
-validada manualmente (2026-07-07, cenários A–E ✅) — commitada.** Faltam: 1
-decisão em aberto ("sempre uma assinatura só" — ver RETOMADA), checklist de
-go-live, F7 (deploy faseado com aprovação explícita) e F8 (limpeza
-pós-observação).
+validada manualmente (2026-07-07, cenários A–E ✅) — commitada; F6-b (uma
+assinatura viva só — cancelamento do preapproval órfão) implementada e coberta
+por testes (Deno 112 passed).** Faltam: validação manual da F6-b fim-a-fim,
+checklist de go-live (rascunho pronto — ver seção própria), F7 (deploy faseado
+com aprovação explícita) e F8 (limpeza pós-observação).
 
 ## ⚠️ Restrições invioláveis (valem para qualquer continuação)
 
@@ -497,6 +534,65 @@ APRO/FUND/SECU/CALL/DUPL, 3DS `5483 9281 6457 4623`, CPF `12345678909`).
 Runners reais: `scripts/teste-manual-mp/` (README lá — inclui a matriz de
 credenciais do sandbox e as envs `EMAIL`/`CARD`).
 
+## Checklist de go-live (rascunho — revisar com o usuário antes da F7)
+
+Ordem pensada para **rollback barato** (o frontend antigo continua funcionando
+com as edges novas; reverter = só o deploy do frontend). Marcar cada item na
+janela de deploy.
+
+**Pré-deploy (na branch, antes de tocar produção)**
+- [ ] Suites verdes: Deno `deno test --allow-env .` (112), `ng build`, `ng test`
+      (475/2 pré-existentes), E2E `mocked`. Reconfirmar na hora.
+- [ ] Diff da migration `20260703120000_*` revisado: **aditivo** (nova tabela +
+      colunas + COMMENTs), sem DROP, sem reverter grants (cuidado do `db pull`).
+- [ ] `config.toml`: `verify_jwt=true` nas edges de processamento; `false` só no
+      `mp-webhook`. Conferir que nada legado foi removido (F8 é depois).
+- [ ] CSP do hosting (se houver): `script-src https://sdk.mercadopago.com
+      https://http2.mlstatic.com`, `frame-src https://*.mercadopago.com https:`,
+      `connect-src https://api.mercadopago.com https://events.mercadopago.com`.
+
+**Secrets/credenciais de PRODUÇÃO (conta principal, não o vendedor de teste)**
+- [ ] `MP_ACCESS_TOKEN` = **APP_USR de produção** nos secrets das edges.
+- [ ] `mercadoPagoPublicKey` = **public key de produção** no `environment.prod`.
+- [ ] `MP_WEBHOOK_SECRET` = secret do webhook de PRODUÇÃO (NÃO o do túnel de teste).
+- [ ] `SUPABASE_URL`/`APP_URL` https reais (habilitam `notification_url` e
+      `back_url` — em prod deixam de cair no fallback).
+
+**Deploy faseado (cada passo verificável isolado)**
+1. [ ] `supabase db push` da migration aditiva → conferir tabela/colunas no prod.
+2. [ ] `functions deploy` das edges NOVAS (`mp-processar-pagamento`,
+       `mp-processar-assinatura`, `mp-consultar-pagamento`) — ainda sem tráfego.
+3. [ ] `functions deploy` do `mp-webhook` + `mp-gerenciar-assinatura` atualizados
+       (contêm o cancelamento do órfão da F6-b e o `trocar_cartao`).
+4. [ ] Webhook de PRODUÇÃO no painel: URL = `${SUPABASE_URL}/functions/v1/mp-webhook`,
+       eventos **Pagamentos** + **Planos e assinaturas**; validar HMAC com 1 evento.
+       **NUNCA usar `save_webhook` do MCP** (atua na conta e pode rotacionar o
+       secret de prod).
+5. [ ] Deploy do **frontend** (checkout embutido vira o caminho ativo).
+
+**Smoke test em produção (1º pagamento real, valor real)**
+- [ ] Semestral cartão aprovado → acesso na hora; `pagamento`/`assinatura` ok.
+- [ ] Mensal aprovado → acesso provisório imediato; 1ª fatura corrige a data via
+      webhook (janela curta em prod).
+- [ ] Pix e boleto: geração + aprovação real → webhook concede acesso.
+- [ ] **Uma assinatura viva só (F6-b)**: pausar o mensal e comprar o semestral →
+      confirmar no painel do MP que o preapproval pausado ficou **cancelled** **E
+      que o usuário CONTINUA com acesso** logo depois (a notificação
+      `subscription_preapproval` cancelled que o próprio cancel dispara é
+      row-scoped por `mp_preapproval_id` no webhook — não deve revogar o acesso
+      único recém-concedido; validar ao vivo).
+- [ ] **Medição oficial de qualidade** no painel do MP com o 1º payment de
+      produção (não dá com TEST-) e corrigir apontamentos. Único gap conhecido do
+      `quality_checklist`: backend sem SDK oficial (edges Deno via REST) —
+      justificar se pedirem.
+
+**Observação (2–4 semanas)**
+- [ ] Monitorar logs das edges + entregas do webhook (retries/502).
+- [ ] Confirmar assinantes **legados** (mensal via redirect / semestral Checkout
+      Pro) intactos: renovação, refund/chargeback, cancelar/pausar/reativar.
+- [ ] Rollback disponível a qualquer momento = reverter só o frontend.
+- [ ] Só depois de tráfego legado zerado → **F8** (remoção do código legado).
+
 ## O que falta (em ordem)
 
 1. ~~Fechar as pontas do webhook/qualidade~~ **FEITO em 2026-07-06**: topic
@@ -515,6 +611,9 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
      de 1 período quando `next_payment_date` nasce = agora;
    - ~~**Modal Trocar cartão**~~ **FEITO (2026-07-07)**: e-mail pré-preenchido +
      rótulo do botão `formSubmit = 'Salvar cartão'`;
+   - ~~**Uma assinatura viva só / preapproval órfão**~~ **FEITO (2026-07-07,
+     F6-b)**: ao conceder acesso único, o preapproval recorrente do usuário é
+     cancelado no MP (ver seção "F6-b" no topo);
    - **PENDENTE** — `mp-gerenciar-assinatura` devolve `detail: <body cru do MP>`
      no 502 (contrato legado) — avaliar sanitizar como nas edges novas;
    - **PENDENTE** — normalizar `federal_unit` extenso→UF na edge (boleto com
@@ -537,7 +636,10 @@ credenciais do sandbox e as envs `EMAIL`/`CARD`).
      - *Lockout do pausado há muito tempo*: se a única assinatura é `paused` com
        carência vencida e o preapproval no MP já não reativa, o 409 do anti-dupla
        do mensal o impede de reassinar o mensal — mas ele consegue comprar o
-       semestral (não barrado). Reavaliar se precisar de escape no mensal.
+       semestral (não barrado), e ao comprá-lo o preapproval pausado agora é
+       **cancelado** (F6-b), então ele deixa de ficar preso na próxima vez.
+       Escape direto no mensal (reassinar quando o `paused` é irreversível) segue
+       como melhoria futura de baixa prioridade.
      - *`valor_centavos`/`liquido_centavos` com falsy-zero* em
        `mp-payment-sync.ts` (`transaction_amount` 0 → null): pré-existente,
        `transaction_amount` real nunca é 0.

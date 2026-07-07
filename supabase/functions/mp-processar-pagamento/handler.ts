@@ -174,7 +174,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   if (existente?.mp_payment_id) {
     const pay = await mpGet(mp, `/v1/payments/${existente.mp_payment_id}`);
     if (!pay) return reply({ error: 'falha ao consultar pagamento' }, 502);
-    await syncAcessoUnicoPayment(admin, pay, deps.now());
+    await syncAcessoUnicoPayment(admin, pay, deps.now(), mp);
     return reply(sanitizePaymentResponse(existente.id, pay));
   }
 
@@ -346,7 +346,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   // 11. Sincroniza o banco (idempotente; o webhook fará o mesmo depois) e
   // marca a expiração da intenção para Pix/boleto.
   const pay = res.body;
-  await syncAcessoUnicoPayment(admin, pay, deps.now());
+  await syncAcessoUnicoPayment(admin, pay, deps.now(), mp);
   if (pay['date_of_expiration']) {
     await admin
       .from('pagamento_intencao')
