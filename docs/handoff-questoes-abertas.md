@@ -3,8 +3,10 @@
 **Branch:** `claude/open-ended-questions-plan-un8m3l` (pushed)
 **Plano original:** `docs/plano-questoes-abertas-ia.md`
 **Status:** Fases 1–7 implementadas, validadas manualmente (blocos A, B e C) e no
-stack **local**. Falta: confirmar o e2e Playwright verde, decidir merge e fazer
-deploy (migrations + edge function + secrets de IA). **Nada foi para produção.**
+stack **local**. E2e Playwright **verde** (2026-07-08): os 2 testes de
+`questoes-abertas.spec.ts` passam e a suíte chromium completa (34 testes) segue
+verde. Falta: decidir merge e fazer deploy (migrations + edge function +
+secrets de IA). **Nada foi para produção.**
 
 ---
 
@@ -109,20 +111,21 @@ colangite" cobre os 4 pontos → nota alta. Resposta vazia/sem relação → 0.
 
 ## PRÓXIMOS PASSOS (para retomar)
 
-### 1. Confirmar o e2e Playwright verde  ⚠️ pendente
-Os testes foram escritos (`frontend/tests/e2e/questoes-abertas.spec.ts` +
-`pages/montar-simulado.page.ts`), projeto **chromium** (backend local real + seed).
-Requer os 3 processos acima no ar (**functions com `fake`** é essencial).
+### 1. Confirmar o e2e Playwright verde  ✅ feito (2026-07-08)
+Os testes (`frontend/tests/e2e/questoes-abertas.spec.ts` +
+`pages/montar-simulado.page.ts`), projeto **chromium** (backend local real + seed),
+passam. Requer os 3 processos acima no ar (**functions com `fake`** é essencial):
+```bash
+cd frontend && npx playwright test questoes-abertas --project=setup --project=chromium
+```
 
-- Na última execução, 2 testes falhavam porque o **tour de onboarding** cobria a
-  tela. Correção aplicada: onboarding marcado como `completed` no `seed.sql` +
-  dispensa defensiva no page object. **Não deu tempo de confirmar um run verde
-  após essa correção** — rodar e ajustar se necessário:
-  ```bash
-  cd frontend && npx playwright test questoes-abertas --project=setup --project=chromium
-  ```
-- Possíveis ajustes finos: timeouts da correção (fake é instantâneo, mas a UI
-  faz poll de 3s no simulado) e seletores por texto pt-BR.
+- O fix do onboarding no `seed.sql` funcionou. Um último ajuste foi necessário no
+  teste do simulado: `getByRole('button', { name: 'Finalizar' })` batia por
+  substring em "Finalizar prova" E "Finalizar" (strict mode violation engolida
+  pelo `.catch`), então o diálogo de pendência nunca era confirmado. Corrigido
+  escopando o botão dentro do `dialog "Finalizar prova?"` com `exact: true`.
+- A suíte chromium completa também foi rodada: 34 passed, 11 skipped, 0 failed —
+  o seed novo (2 discursivas) não regrediu os demais specs.
 - Observação de CI: segundo o histórico, o CI usa o projeto `mocked`; estes
   testes são de backend real (como `simulados.spec.ts`) e rodam localmente. Se
   quiser cobertura em CI, avaliar subir o stack + functions no pipeline ou

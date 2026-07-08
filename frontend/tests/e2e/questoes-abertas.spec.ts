@@ -67,12 +67,12 @@ test.describe('Questões abertas — modo simulado', () => {
     await expect(page.getByText(/\/100/)).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Resposta padrão' })).toHaveCount(0);
 
-    // Finaliza (única questão respondida → sem alerta de pendência, mas confirma mesmo assim)
+    // Finaliza — o seed tem 2 discursivas e só 1 foi respondida, então o diálogo
+    // de pendência ("Finalizar prova?") sempre aparece; confirma dentro dele.
     await page.getByRole('button', { name: 'Finalizar prova' }).click();
-    const confirmar = page.getByRole('button', { name: 'Finalizar' });
-    if (await confirmar.isVisible().catch(() => false)) {
-      await confirmar.click();
-    }
+    const dialogo = page.getByRole('dialog', { name: 'Finalizar prova?' });
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Finalizar', exact: true }).click();
 
     // Tela de resultado: consolida e mostra a nota
     await expect(page).toHaveURL(/\/resultado$/, { timeout: 30_000 });
