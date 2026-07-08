@@ -8,8 +8,10 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   Ban,
+  BarChart3,
   Gift,
   LogIn,
   ShieldCheck,
@@ -29,7 +31,7 @@ import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.compone
 @Component({
   selector: 'app-admin-usuarios',
   standalone: true,
-  imports: [FormsModule, DatePipe, UiConfirmDialogComponent, UiIconComponent],
+  imports: [FormsModule, DatePipe, RouterLink, UiConfirmDialogComponent, UiIconComponent],
   templateUrl: './admin-usuarios.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -64,6 +66,7 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly iconSuspender = Ban;
   protected readonly iconReativar = Undo2;
   protected readonly iconCortesia = Gift;
+  protected readonly iconMetricas = BarChart3;
   protected readonly iconRevogarCortesia = XCircle;
 
   async ngOnInit(): Promise<void> {

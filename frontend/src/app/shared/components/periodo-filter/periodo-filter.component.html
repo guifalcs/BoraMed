@@ -1,0 +1,94 @@
+<div class="periodo-filter">
+  <div class="periodo-presets" role="group" aria-label="Período">
+    @for (p of presets; track p.value) {
+      <button
+        type="button"
+        class="periodo-btn"
+        [class.periodo-btn--ativo]="presetAtivo() === p.value"
+        (click)="selecionarPreset(p.value)"
+      >
+        {{ p.label }}
+      </button>
+    }
+  </div>
+
+  @if (presetAtivo() === 'custom') {
+    <div class="periodo-custom">
+      <label class="periodo-custom-field">
+        <span class="periodo-custom-label">De</span>
+        <input
+          class="periodo-custom-input"
+          type="date"
+          [ngModel]="customDesde()"
+          (ngModelChange)="customDesde.set($event)"
+        />
+      </label>
+      <label class="periodo-custom-field">
+        <span class="periodo-custom-label">Até</span>
+        <input
+          class="periodo-custom-input"
+          type="date"
+          [ngModel]="customAte()"
+          (ngModelChange)="customAte.set($event)"
+        />
+      </label>
+      <button
+        type="button"
+        class="periodo-aplicar"
+        [disabled]="!customValido()"
+        (click)="aplicarCustom()"
+      >
+        Aplicar
+      </button>
+    </div>
+    @if (erroCustom(); as erro) {
+      <p class="periodo-erro">{{ erro }}</p>
+    }
+  }
+</div>
+
+<style>
+  .periodo-filter { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .periodo-presets {
+    display: inline-flex; gap: 0.25rem; flex-wrap: wrap;
+    background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 0.25rem; width: fit-content;
+  }
+  .periodo-btn {
+    border: none; background: transparent; cursor: pointer;
+    padding: 0.35rem 0.75rem; border-radius: 6px;
+    font-size: 0.8125rem; font-weight: 500; color: #475569;
+    font-family: inherit; transition: background 0.15s, color 0.15s;
+  }
+  .periodo-btn:hover { color: #1e293b; }
+  .periodo-btn--ativo { background: #fff; color: #6d28d9; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+  .periodo-custom {
+    display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap;
+  }
+  .periodo-custom-field { display: flex; flex-direction: column; gap: 0.25rem; }
+  .periodo-custom-label { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+  .periodo-custom-input {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.4rem 0.75rem; color: #1e293b; font-size: 0.8125rem;
+    outline: none; font-family: inherit;
+  }
+  .periodo-custom-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+
+  .periodo-aplicar {
+    border: none; cursor: pointer; border-radius: 6px;
+    padding: 0.45rem 0.875rem; background: #7c3aed; color: #fff;
+    font-size: 0.8125rem; font-weight: 500; font-family: inherit;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .periodo-aplicar:hover:not(:disabled) { background: #6d28d9; }
+  .periodo-aplicar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .periodo-erro { margin: 0; font-size: 0.75rem; color: #dc2626; }
+
+  @media (max-width: 640px) {
+    .periodo-custom { align-items: stretch; flex-direction: column; }
+    .periodo-aplicar { width: 100%; }
+  }
+</style>

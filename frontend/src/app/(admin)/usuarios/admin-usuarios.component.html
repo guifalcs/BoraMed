@@ -85,6 +85,15 @@
             </td>
             <td>
               <div class="action-cell">
+                <a
+                  class="icon-btn icon-btn--neutral"
+                  [routerLink]="['/admin/usuarios', u.id, 'metricas']"
+                  aria-label="Ver métricas"
+                  title="Ver métricas"
+                  data-tooltip="Ver métricas"
+                >
+                  <app-ui-icon [icon]="iconMetricas" [size]="16" />
+                </a>
                 @if (u.papel === 'super_admin') {
                   <span class="no-action">—</span>
                 } @else if (u.papel === 'aluno') {
