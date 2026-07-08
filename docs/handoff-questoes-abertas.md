@@ -132,6 +132,14 @@ cd frontend && npx playwright test questoes-abertas --project=setup --project=ch
   portar para o padrão `mocked` (mais frágil — mockaria todo o protocolo de correção).
 
 ### 2. Deploy (quando o dono decidir)
+**Decisão em aberto (retomar em outra sessão):** qual modelo de IA usar no
+provider real. Uma pesquisa de custo-benefício foi iniciada mas não concluída;
+critérios a comparar: benchmarks de raciocínio/medicina (HealthBench, MedQA),
+qualidade em pt-BR, JSON estruturado confiável e preço por correção — incluindo
+opções fora do trio OpenAI/Anthropic/Google (DeepSeek, Qwen, Kimi, GLM, Mistral).
+Sinais preliminares (não verificados a fundo): GLM e DeepSeek aparecem como
+candidatos fortes de custo-benefício entre os open-weights; literatura de
+LLM-as-judge valida a abordagem de correção com rubrica + resposta modelo.
 Tudo foi feito **só no local**. Para produção:
 - `supabase db push` das 6 migrations `20260707*`.
 - `supabase functions deploy corrigir-resposta-aberta`.

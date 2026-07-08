@@ -1,14 +1,15 @@
 {
-  "cookies": [],
-  "origins": [
+  "cookies": [
     {
-      "origin": "http://localhost:4210",
-      "localStorage": [
-        {
-          "name": "sb-127-auth-token",
-          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6ImI4MTI2OWYxLTIxZDgtNGYyZS1iNzE5LWMyMjQwYTg0MGQ5MCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc4NTI2ODE0LCJpYXQiOjE3Nzg1MjMyMTQsImVtYWlsIjoidGVzdGVAYm9yYW1lZC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImZ1bGxfbmFtZSI6IlVzdcOhcmlvIGRlIFRlc3RlIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3Nzg1MjMyMTR9XSwic2Vzc2lvbl9pZCI6ImQzNzJhODUzLWMwYmYtNGU3Mi1hY2YxLTg0MTY3NmIwYTE3MiIsImlzX2Fub255bW91cyI6ZmFsc2V9.7TTykJnm9xIgxm7m2ysTaaFDpI8-YI0VXmY9bKw7dy70NGnubz7EKNzDB19fq3FXE6FxZG4w7hbc1SXE2dRUqQ\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1778526814,\"refresh_token\":\"wfechgsvnlto\",\"user\":{\"id\":\"11111111-1111-1111-1111-111111111111\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"teste@boramed.com\",\"email_confirmed_at\":\"2026-05-11T17:26:08.860887Z\",\"phone\":\"\",\"confirmed_at\":\"2026-05-11T17:26:08.860887Z\",\"last_sign_in_at\":\"2026-05-11T18:13:34.773517609Z\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"full_name\":\"Usuário de Teste\"},\"identities\":[],\"created_at\":\"2026-05-11T17:26:08.860887Z\",\"updated_at\":\"2026-05-11T18:13:34.779292Z\",\"is_anonymous\":false},\"weak_password\":null}"
-        }
-      ]
+      "name": "sb-127-auth-token",
+      "value": "base64-eyJhY2Nlc3NfdG9rZW4iOiJleUpoYkdjaU9pSkZVekkxTmlJc0ltdHBaQ0k2SW1JNE1USTJPV1l4TFRJeFpEZ3ROR1l5WlMxaU56RTVMV015TWpRd1lUZzBNR1E1TUNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUpvZEhSd09pOHZNVEkzTGpBdU1DNHhPalUwTXpJeEwyRjFkR2d2ZGpFaUxDSnpkV0lpT2lJeE1URXhNVEV4TVMweE1URXhMVEV4TVRFdE1URXhNUzB4TVRFeE1URXhNVEV4TVRFaUxDSmhkV1FpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWlhod0lqb3hOemd6TlRJd01EUTJMQ0pwWVhRaU9qRTNPRE0xTVRZME5EWXNJbVZ0WVdsc0lqb2lkR1Z6ZEdWQVltOXlZVzFsWkM1amIyMGlMQ0p3YUc5dVpTSTZJaUlzSW1Gd2NGOXRaWFJoWkdGMFlTSTZleUp3Y205MmFXUmxjaUk2SW1WdFlXbHNJaXdpY0hKdmRtbGtaWEp6SWpwYkltVnRZV2xzSWwxOUxDSjFjMlZ5WDIxbGRHRmtZWFJoSWpwN0ltWjFiR3hmYm1GdFpTSTZJbFZ6ZGNPaGNtbHZJR1JsSUZSbGMzUmxJbjBzSW5KdmJHVWlPaUpoZFhSb1pXNTBhV05oZEdWa0lpd2lZV0ZzSWpvaVlXRnNNU0lzSW1GdGNpSTZXM3NpYldWMGFHOWtJam9pY0dGemMzZHZjbVFpTENKMGFXMWxjM1JoYlhBaU9qRTNPRE0xTVRZME5EWjlYU3dpYzJWemMybHZibDlwWkNJNkltSXdNelUxWkRjd0xXWXdaamN0TkdRMk1DMWhNalF4TFRrMk5qRm1PR05sTUdKalpTSXNJbWx6WDJGdWIyNTViVzkxY3lJNlptRnNjMlY5Llp1MkNsX2FBMXd4SkhEcmx2ZmZxQ2M2cVhWcVR5cDB6a19sUy11OHdzMHRzQVRjSVBrTkw4UXBsMzdlVTRUSERPOUtxV0QyNDlrNXZPdm1JZnpJSXZBIiwidG9rZW5fdHlwZSI6ImJlYXJlciIsImV4cGlyZXNfaW4iOjM2MDAsImV4cGlyZXNfYXQiOjE3ODM1MjAwNDYsInJlZnJlc2hfdG9rZW4iOiJleWJvenNwenhzcngiLCJ1c2VyIjp7ImlkIjoiMTExMTExMTEtMTExMS0xMTExLTExMTEtMTExMTExMTExMTExIiwiYXVkIjoiYXV0aGVudGljYXRlZCIsInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiZW1haWwiOiJ0ZXN0ZUBib3JhbWVkLmNvbSIsImVtYWlsX2NvbmZpcm1lZF9hdCI6IjIwMjYtMDctMDhUMTM6MTA6NDcuMTQ0MDIxWiIsInBob25lIjoiIiwiY29uZmlybWVkX2F0IjoiMjAyNi0wNy0wOFQxMzoxMDo0Ny4xNDQwMjFaIiwibGFzdF9zaWduX2luX2F0IjoiMjAyNi0wNy0wOFQxMzoxNDowNi44ODc0NTU4MzhaIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZnVsbF9uYW1lIjoiVXN1w6FyaW8gZGUgVGVzdGUifSwiaWRlbnRpdGllcyI6W10sImNyZWF0ZWRfYXQiOiIyMDI2LTA3LTA4VDEzOjEwOjQ3LjE0NDAyMVoiLCJ1cGRhdGVkX2F0IjoiMjAyNi0wNy0wOFQxMzoxNDowNi44OTU5MjNaIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0sIndlYWtfcGFzc3dvcmQiOm51bGx9",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1818076446.950711,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
     }
-  ]
+  ],
+  "origins": []
 }
