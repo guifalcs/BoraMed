@@ -62,6 +62,7 @@
       }
     } @else {
       <app-resposta-aberta-input
+        [chave]="questao().id"
         [textoInicial]="respostaTexto()"
         [estado]="estadoRespostaAberta()"
         (salvarRascunho)="salvarRascunho.emit($event)"

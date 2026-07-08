@@ -47,8 +47,7 @@ describe('RespostaAbertaInputComponent', () => {
     expect(botaoEnviar()!.disabled).toBe(true);
   });
 
-  it('emite salvarRascunho com debounce ao digitar', async () => {
-    vi.useFakeTimers();
+  it('emite salvarRascunho imediatamente ao digitar', async () => {
     await setup('rascunho');
     let emitido: string | null = null;
     component.salvarRascunho.subscribe((v: string) => (emitido = v));
@@ -56,10 +55,28 @@ describe('RespostaAbertaInputComponent', () => {
     const ta = textarea()!;
     ta.value = 'nova resposta';
     ta.dispatchEvent(new Event('input'));
-    expect(emitido).toBeNull(); // ainda dentro do debounce
 
-    vi.advanceTimersByTime(1500);
     expect(emitido).toBe('nova resposta');
+  });
+
+  it('descarta o texto digitado ao mudar de questão (chave)', async () => {
+    await setup('rascunho', 'rascunho da Q1');
+    fixture.componentRef.setInput('chave', 'q1');
+    fixture.detectChanges();
+
+    const ta = textarea()!;
+    ta.value = 'texto novo na Q1';
+    ta.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(textarea()!.value).toBe('texto novo na Q1');
+
+    // Navega para a Q2: a nova questão traz seu próprio textoInicial e o texto
+    // digitado na Q1 não pode vazar.
+    fixture.componentRef.setInput('chave', 'q2');
+    fixture.componentRef.setInput('textoInicial', 'rascunho da Q2');
+    fixture.detectChanges();
+
+    expect(textarea()!.value).toBe('rascunho da Q2');
   });
 
   it('envio exige confirmação e então emite enviar', async () => {

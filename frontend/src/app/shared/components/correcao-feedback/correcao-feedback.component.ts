@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { Check, CircleAlert, RefreshCw, X } from 'lucide-angular';
+import { Check, CircleAlert, RefreshCw, Sparkles, X } from 'lucide-angular';
 import type { RespostaCorrecao } from '../../../core/models/correcao';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
+
+/** Nome/persona da IA corretora do BoraMed. */
+export const AGENTE_IA_NOME = 'Aurora';
 
 /**
  * Feedback da correção por IA de uma resposta aberta: badge de nota 0–100
@@ -26,6 +29,8 @@ export class CorrecaoFeedbackComponent {
   protected readonly xIcon = X;
   protected readonly alertIcon = CircleAlert;
   protected readonly retryIcon = RefreshCw;
+  protected readonly sparklesIcon = Sparkles;
+  protected readonly agenteNome = AGENTE_IA_NOME;
 
   protected readonly notaClasse = computed(() => {
     const pontos = this.correcao().pontos ?? 0;

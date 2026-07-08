@@ -41,6 +41,22 @@ adicional, não dependência**: sem IA o app continua funcionando (a questão vi
 | F7 | XP por pontos, desafio diário sem discursivas, impressão, docs (ADR-029, business-rules, security-audit) | `2564a63` |
 
 **Ajustes pós-validação manual:**
+- **Sessão 2026-07-08 (teste no app com IA real):**
+  - **Bug do autosave discursivo (isolamento por questão):** o rascunho vazava
+    entre questões (mesma instância de `RespostaAbertaInputComponent` reutilizada;
+    signal `texto` stale) e um autosave pendente podia salvar na questão errada ao
+    navegar. Correção: emit imediato do rascunho no filho (sem debounce interno) +
+    reset do `texto` por `chave` (id da questão) + debounce da persistência movido
+    para o pai (`tentativa-exec`), isolado por questão com id capturado em closure,
+    com flush no `ngOnDestroy`.
+  - **Identidade da IA (Aurora):** `correcao-feedback` agora tem persona — ícone
+    Sparkles em círculo com `--gradient-brand`, "Corrigido por Aurora / IA
+    corretora · BoraMed", e a identidade também nos estados corrigindo/erro/sem_ia.
+    Nome exportado como `AGENTE_IA_NOME`.
+  - **Prompt — pontuação por comando do enunciado:** `montarPrompt` reforçado para
+    exigir o formato pedido: "cite/liste" tolera explicação extra; "explique/
+    justifique/descreva" penaliza quem só cita. Regra "na dúvida, mais rigoroso que
+    leniente" e feedback deve declarar o desconto por formato.
 - `98cfecd` — bloco A: visualização admin, cópia discursiva, badge do import, plural do botão.
 - `652e782` — markdown na visualização, autor por email, cópia discursiva só preenche (não grava).
 - `63da320` — contagem de temas por formato (corrige contradição "1 questão" vs "nenhuma"); feedback só no resultado do simulado.

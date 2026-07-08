@@ -75,6 +75,10 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
   private _finalizado = false;
 
+  /** Debounce da persistência de rascunho no servidor, isolado por questão. */
+  private readonly rascunhoTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly RASCUNHO_DEBOUNCE_MS = 1000;
+
   protected readonly timerSeconds = this.timer.seconds;
   protected readonly provaNome = this.tentativaService.provaNome;
 
@@ -232,6 +236,20 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     this.timer.stop();
     this.focoMode.desativar();
     const tentativa = this.tentativa();
+
+    // Flush de rascunhos ainda em debounce, para não perder o que foi digitado.
+    if (tentativa) {
+      for (const [questaoId, timer] of this.rascunhoTimers) {
+        clearTimeout(timer);
+        if (this.enviadas().has(questaoId)) continue;
+        const texto = this.respostasTexto().get(questaoId);
+        if (texto !== undefined) {
+          void this.tentativaService.salvarRespostaTexto(tentativa.id, questaoId, texto);
+        }
+      }
+    }
+    this.rascunhoTimers.clear();
+
     if (!this._finalizado && tentativa) {
       void this.tentativaService.pausar(tentativa.id, segundos);
     }
@@ -288,25 +306,45 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
   // ---- Questões discursivas ----
 
-  protected async onSalvarRascunho(texto: string): Promise<void> {
+  protected onSalvarRascunho(texto: string): void {
     const tentativa = this.tentativa();
     const questao = this.questaoAtual();
     if (!tentativa || !questao || this.enviadas().has(questao.id)) return;
 
+    // Estado local imediato, sempre na questão correta.
     this.respostasTexto.update((m) => {
       const next = new Map(m);
       next.set(questao.id, texto);
       return next;
     });
 
-    // Autosave silencioso — erro não interrompe a digitação.
-    await this.tentativaService.salvarRespostaTexto(tentativa.id, questao.id, texto);
+    // Debounce da persistência, isolado por questão. O id é capturado agora —
+    // navegar antes do disparo não muda o destino do rascunho. Autosave
+    // silencioso: erro não interrompe a digitação.
+    const tentativaId = tentativa.id;
+    const questaoId = questao.id;
+    const timerAtual = this.rascunhoTimers.get(questaoId);
+    if (timerAtual) clearTimeout(timerAtual);
+    this.rascunhoTimers.set(
+      questaoId,
+      setTimeout(() => {
+        this.rascunhoTimers.delete(questaoId);
+        void this.tentativaService.salvarRespostaTexto(tentativaId, questaoId, texto);
+      }, this.RASCUNHO_DEBOUNCE_MS),
+    );
   }
 
   protected async onEnviarTexto(texto: string): Promise<void> {
     const tentativa = this.tentativa();
     const questao = this.questaoAtual();
     if (!tentativa || !questao || this.enviadas().has(questao.id)) return;
+
+    // Cancela autosave pendente: o envio já persiste o texto definitivo.
+    const timerRascunho = this.rascunhoTimers.get(questao.id);
+    if (timerRascunho) {
+      clearTimeout(timerRascunho);
+      this.rascunhoTimers.delete(questao.id);
+    }
 
     this.enviandoAberta.update((s) => new Set(s).add(questao.id));
     this.respostasTexto.update((m) => {

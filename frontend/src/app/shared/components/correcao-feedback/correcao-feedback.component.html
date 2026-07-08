@@ -1,11 +1,23 @@
 @switch (correcao().status) {
   @case ('corrigida') {
     <div class="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <div class="mb-3 flex items-center gap-2">
-        <h4 class="text-sm font-semibold text-[var(--color-text)]">Correção</h4>
-        <span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-bold" [class]="notaClasse()">
-          {{ correcao().pontos }}/100
+      <div class="mb-3 flex items-center gap-3">
+        <span
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+          style="background: var(--gradient-brand)"
+          aria-hidden="true"
+        >
+          <app-ui-icon [icon]="sparklesIcon" [size]="18" />
         </span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <h4 class="text-sm font-semibold text-[var(--color-text)]">Corrigido por {{ agenteNome }}</h4>
+            <span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-bold" [class]="notaClasse()">
+              {{ correcao().pontos }}/100
+            </span>
+          </div>
+          <p class="text-xs text-[var(--color-text-muted)]">IA corretora · BoraMed</p>
+        </div>
       </div>
 
       @if (correcao().feedback) {
@@ -46,7 +58,7 @@
     <div class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
       <div class="flex items-center gap-2 text-sm text-amber-900">
         <app-ui-icon [icon]="alertIcon" [size]="16" class="shrink-0" />
-        <span>Não foi possível corrigir sua resposta.</span>
+        <span>{{ agenteNome }} não conseguiu corrigir sua resposta.</span>
       </div>
       <button
         type="button"
@@ -63,8 +75,8 @@
     <div class="mt-4 flex items-start gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 text-sm text-[var(--color-text-muted)]">
       <app-ui-icon [icon]="alertIcon" [size]="16" class="mt-0.5 shrink-0" />
       <span>
-        A correção automática não está disponível. Esta questão não contou na sua nota —
-        compare sua resposta com a resposta padrão.
+        {{ agenteNome }} não pôde corrigir esta resposta agora. Esta questão não contou na sua
+        nota — compare sua resposta com a resposta padrão.
       </span>
     </div>
   }
@@ -72,8 +84,14 @@
   @default {
     <!-- pendente / corrigindo -->
     <div class="mt-4 flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
-      <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" aria-hidden="true"></span>
-      <span class="text-sm text-[var(--color-text-muted)]">Corrigindo sua resposta…</span>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+        style="background: var(--gradient-brand)"
+        aria-hidden="true"
+      >
+        <app-ui-icon [icon]="sparklesIcon" [size]="18" class="animate-pulse" />
+      </span>
+      <span class="text-sm text-[var(--color-text-muted)]">{{ agenteNome }} está corrigindo sua resposta…</span>
     </div>
   }
 }

@@ -37,13 +37,14 @@ describe('CorrecaoFeedbackComponent', () => {
     fixture.detectChanges();
   }
 
-  it('corrigida: exibe nota, feedback e checklist', async () => {
+  it('corrigida: exibe nota, feedback, checklist e identidade da IA', async () => {
     await setup();
     const texto = fixture.nativeElement.textContent as string;
     expect(texto).toContain('85/100');
     expect(texto).toContain('Boa resposta.');
     expect(texto).toContain('Cita febre');
     expect(texto).toContain('Cita icterícia');
+    expect(texto).toContain('Corrigido por Aurora');
   });
 
   it('corrigida com erros: exibe pontos de atenção', async () => {
@@ -52,9 +53,9 @@ describe('CorrecaoFeedbackComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('pêntade de Reynolds');
   });
 
-  it('corrigindo: exibe spinner de progresso', async () => {
+  it('corrigindo: exibe progresso com a identidade da IA', async () => {
     await setup({ status: 'corrigindo', pontos: null, feedback: null });
-    expect(fixture.nativeElement.textContent).toContain('Corrigindo sua resposta');
+    expect(fixture.nativeElement.textContent).toContain('Aurora está corrigindo sua resposta');
   });
 
   it('erro: botão tentar de novo emite tentarNovamente', async () => {
