@@ -62,6 +62,11 @@ export class DashboardComponent {
     return 'Aluno';
   });
   protected readonly profile = this.profileService.profile;
+  protected readonly primeiroNome = computed(() => {
+    const nome = this.profileService.profile()?.nome_completo?.trim();
+    if (nome) return nome.split(/\s+/)[0];
+    return this.auth.user()?.email ?? '';
+  });
   protected readonly user = this.auth.user;
   protected readonly menuAberto = signal(false);
   protected readonly impersonando = this.auth.impersonando;
