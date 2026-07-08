@@ -2,17 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { AdminService, AdminFinanceiro, AdminPagamento } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
-
-const STATUS_PT: Record<string, string> = {
-  approved: 'Aprovado',
-  pending: 'Pendente',
-  authorized: 'Autorizado',
-  in_process: 'Processando',
-  rejected: 'Recusado',
-  refunded: 'Reembolsado',
-  cancelled: 'Cancelado',
-  charged_back: 'Estornado',
-};
+import { formatarCentavos, pagamentoStatusLabel } from '../../shared/utils/admin-labels.util';
 
 interface FinKpi {
   label: string;
@@ -149,7 +139,7 @@ export class AdminFinanceiroComponent implements OnInit {
   }
 
   statusPt(status: string): string {
-    return STATUS_PT[status] ?? status;
+    return pagamentoStatusLabel(status);
   }
 
   data(iso: string | null): string {
@@ -158,11 +148,10 @@ export class AdminFinanceiroComponent implements OnInit {
   }
 
   valor(centavos: number | null, moeda: string): string {
-    if (centavos == null) return '—';
-    return this.brl(centavos, moeda);
+    return formatarCentavos(centavos, moeda);
   }
 
   private brl(centavos: number, moeda = 'BRL'): string {
-    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: moeda || 'BRL' });
+    return formatarCentavos(centavos, moeda);
   }
 }

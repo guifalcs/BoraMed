@@ -344,7 +344,6 @@ export interface MetricasPagamentoUsuario {
 export interface SerieTentativasPonto {
   dia: string;
   quantidade: number;
-  acertos: number;
 }
 
 export interface SerieXpPonto {

@@ -27,6 +27,11 @@ import { ProfileService } from '../../core/services/profile.service';
 import type { Profile } from '../../core/models/auth.types';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import {
+  assinaturaStatusLabel,
+  papelLabel,
+  tipoUsuarioLabel,
+} from '../../shared/utils/admin-labels.util';
 
 @Component({
   selector: 'app-admin-usuarios',
@@ -186,33 +191,9 @@ export class AdminUsuariosComponent implements OnInit {
     }
   }
 
-  protected tipoUsuarioLabel(tipo: string | null): string {
-    const labels: Record<string, string> = {
-      estudante_medicina: 'Estudante de Medicina',
-      medico: 'Médico',
-      residente: 'Residente',
-      cursinho: 'Cursinho',
-      ensino_medio: 'Ensino Médio',
-      outro: 'Outro',
-    };
-    return tipo ? (labels[tipo] ?? tipo) : '—';
-  }
-
-  protected papelLabel(papel: string): string {
-    if (papel === 'super_admin') return 'Super Admin';
-    if (papel === 'admin') return 'Admin';
-    return 'Aluno';
-  }
-
-  protected assinaturaStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      authorized: 'Ativa',
-      pending: 'Pendente',
-      paused: 'Pausada',
-      cancelled: 'Cancelada',
-    };
-    return labels[status] ?? status;
-  }
+  protected readonly tipoUsuarioLabel = tipoUsuarioLabel;
+  protected readonly papelLabel = papelLabel;
+  protected readonly assinaturaStatusLabel = assinaturaStatusLabel;
 
   protected get totalPaginas(): number {
     return Math.max(1, Math.ceil(this.total() / this.porPagina));

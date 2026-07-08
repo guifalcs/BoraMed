@@ -6,8 +6,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { DatePipe, Location } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import {
   Clock,
   ClipboardList,
@@ -33,29 +33,18 @@ import {
   PontoSerieDiaria,
 } from '../../../shared/components/serie-diaria-chart/serie-diaria-chart.component';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
+import {
+  assinaturaStatusLabel,
+  formatarCentavos,
+  pagamentoStatusLabel,
+  papelLabel,
+  tipoUsuarioLabel,
+} from '../../../shared/utils/admin-labels.util';
 
 const MODO_LABELS: Record<string, string> = {
   simulado: 'Simulado',
   estudo: 'Estudo',
   visualizar: 'Visualização',
-};
-
-const PAGAMENTO_STATUS_LABELS: Record<string, string> = {
-  approved: 'Aprovado',
-  pending: 'Pendente',
-  authorized: 'Autorizado',
-  in_process: 'Processando',
-  rejected: 'Recusado',
-  refunded: 'Reembolsado',
-  cancelled: 'Cancelado',
-  charged_back: 'Estornado',
-};
-
-const ASSINATURA_STATUS_LABELS: Record<string, string> = {
-  authorized: 'Ativa',
-  pending: 'Pendente',
-  paused: 'Pausada',
-  cancelled: 'Cancelada',
 };
 
 @Component({
@@ -74,7 +63,7 @@ const ASSINATURA_STATUS_LABELS: Record<string, string> = {
 export class AdminUsuarioMetricasComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   protected readonly isLoading = signal(false);
   protected readonly erro = signal<string | null>(null);
@@ -132,10 +121,10 @@ export class AdminUsuarioMetricasComponent implements OnInit {
     this.usuarioSelecionado.set(usuario);
     this.metricas.set(null);
     this.erro.set(null);
-    // Mantém a URL compartilhável refletindo o usuário em análise.
-    void this.router.navigate(
-      usuario ? ['/admin/usuarios', usuario.id, 'metricas'] : ['/admin/usuarios/metricas'],
-      { replaceUrl: true },
+    // Mantém a URL compartilhável sem navegação de rota: trocar de config de
+    // rota recriaria o componente e dispararia um segundo fetch no ngOnInit.
+    this.location.replaceState(
+      usuario ? `/admin/usuarios/${usuario.id}/metricas` : '/admin/usuarios/metricas',
     );
     if (usuario) void this.carregar();
   }
@@ -159,16 +148,19 @@ export class AdminUsuarioMetricasComponent implements OnInit {
       periodo?.ate ?? null,
     );
 
+    // Descarta respostas obsoletas: o admin pode ter trocado de usuário
+    // enquanto a requisição estava em voo.
+    if (this.usuarioSelecionado()?.id !== usuario.id) return;
+
     if (result.ok) {
       this.metricas.set(result.data);
-      // Deep-link: completa o nome/email no seletor a partir do perfil.
-      if (!usuario.email) {
-        this.usuarioSelecionado.set({
-          id: result.data.perfil.id,
-          email: result.data.perfil.email,
-          nome_completo: result.data.perfil.nome_completo,
-        });
-      }
+      // Sincroniza o seletor com o perfil retornado (preenche nome/email no
+      // deep-link; no fluxo de busca os valores já são iguais e nada muda).
+      this.usuarioSelecionado.set({
+        id: result.data.perfil.id,
+        email: result.data.perfil.email,
+        nome_completo: result.data.perfil.nome_completo,
+      });
     } else {
       this.metricas.set(null);
       this.erro.set(
@@ -190,13 +182,11 @@ export class AdminUsuarioMetricasComponent implements OnInit {
     return `${h}h ${m}min`;
   }
 
-  protected formatarCentavos(centavos: number | null): string {
-    if (centavos === null) return '—';
-    return (centavos / 100).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-  }
+  protected readonly formatarCentavos = formatarCentavos;
+  protected readonly assinaturaStatusLabel = assinaturaStatusLabel;
+  protected readonly pagamentoStatusLabel = pagamentoStatusLabel;
+  protected readonly papelLabel = papelLabel;
+  protected readonly tipoUsuarioLabel = tipoUsuarioLabel;
 
   protected periodicidadeLabel(
     frequency: number | null,
@@ -209,31 +199,5 @@ export class AdminUsuarioMetricasComponent implements OnInit {
       return `A cada ${frequency} meses`;
     }
     return frequency === 1 ? 'Diária' : `A cada ${frequency} dias`;
-  }
-
-  protected assinaturaStatusLabel(status: string): string {
-    return ASSINATURA_STATUS_LABELS[status] ?? status;
-  }
-
-  protected pagamentoStatusLabel(status: string): string {
-    return PAGAMENTO_STATUS_LABELS[status] ?? status;
-  }
-
-  protected papelLabel(papel: string): string {
-    if (papel === 'super_admin') return 'Super Admin';
-    if (papel === 'admin') return 'Admin';
-    return 'Aluno';
-  }
-
-  protected tipoUsuarioLabel(tipo: string | null): string {
-    const labels: Record<string, string> = {
-      estudante_medicina: 'Estudante de Medicina',
-      medico: 'Médico',
-      residente: 'Residente',
-      cursinho: 'Cursinho',
-      ensino_medio: 'Ensino Médio',
-      outro: 'Outro',
-    };
-    return tipo ? (labels[tipo] ?? tipo) : '—';
   }
 }

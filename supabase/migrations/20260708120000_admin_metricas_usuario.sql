@@ -17,6 +17,9 @@
 -- admin_get_financeiro / admin_get_uso_plataforma). Nenhuma policy nova é
 -- aberta nas tabelas base — esta RPC é o único canal de leitura cross-user.
 -- Os baldes diários usam o fuso de Brasília (America/Sao_Paulo).
+--
+-- Performance: cada tabela é lida uma única vez em CTEs compartilhados
+-- (tent, xp_eventos, assinaturas); os agregados derivam desses CTEs.
 -- ============================================================
 
 -- Filtro frequente da RPC: tentativas de um usuário dentro de um intervalo.
@@ -55,6 +58,51 @@ BEGIN
     RAISE EXCEPTION 'invalid_period';
   END IF;
 
+  WITH
+  -- Tentativas do período: lida UMA vez (com o formato da prova já anexado);
+  -- todos os agregados de tentativa derivam deste CTE.
+  tent AS (
+    SELECT t.modo, t.status, t.acertos, t.nota, t.tempo_acumulado_segundos,
+           p2.formato AS prova_formato,
+           (timezone('America/Sao_Paulo', t.iniciada_em))::date AS dia
+    FROM tentativa t
+    LEFT JOIN prova p2 ON p2.id = t.prova_id
+    WHERE t.user_id = p_user_id
+      AND t.iniciada_em >= v_desde AND t.iniciada_em <= v_ate
+  ),
+  -- Eventos de XP do período: lidos UMA vez; total do período = soma da série.
+  xp_dia AS (
+    SELECT (timezone('America/Sao_Paulo', e.criado_em))::date AS dia,
+           sum(e.xp) AS xp
+    FROM gamificacao_evento e
+    WHERE e.user_id = p_user_id
+      AND e.criado_em >= v_desde AND e.criado_em <= v_ate
+    GROUP BY 1
+  ),
+  dias AS (
+    SELECT generate_series(
+      (timezone('America/Sao_Paulo', v_desde))::date,
+      (timezone('America/Sao_Paulo', v_ate))::date,
+      interval '1 day'
+    )::date AS dia
+  ),
+  -- Assinaturas do usuário: lidas UMA vez, com a regra de "dá acesso ativo
+  -- agora" computada num único lugar (espelha tem_assinatura_ativa e a
+  -- lógica resumirAssinatura do frontend). assinatura_atual = primeira linha
+  -- na ordem (ativa primeiro, depois mais recente); historico = todas.
+  assinaturas AS (
+    SELECT a.id, a.status, a.data_inicio, a.proxima_cobranca, a.cancelada_em,
+           a.cortesia, a.criado_em,
+           pl.nome AS plano_nome, pl.slug AS plano_slug,
+           pl.preco_centavos, pl.frequency, pl.frequency_type,
+           (
+             (a.status = 'authorized' AND (a.proxima_cobranca IS NULL OR a.proxima_cobranca > now()))
+             OR (a.status = 'cancelled' AND a.proxima_cobranca IS NOT NULL AND a.proxima_cobranca > now())
+           ) AS ativa
+    FROM assinatura a
+    LEFT JOIN plano pl ON pl.id = a.plano_id
+    WHERE a.user_id = p_user_id
+  )
   SELECT jsonb_build_object(
     'periodo', jsonb_build_object('desde', v_desde, 'ate', v_ate),
 
@@ -75,62 +123,31 @@ BEGIN
     'tentativas', (
       SELECT jsonb_build_object(
         'total', count(*),
-        'finalizadas', count(*) FILTER (WHERE t.status = 'finalizada'),
-        'em_andamento', count(*) FILTER (WHERE t.status = 'em_andamento'),
-        'acertos', coalesce(sum(t.acertos) FILTER (WHERE t.status = 'finalizada'), 0),
-        'nota_media', round(avg(t.nota) FILTER (WHERE t.status = 'finalizada' AND t.nota IS NOT NULL), 1),
-        'tempo_total_segundos', coalesce(sum(t.tempo_acumulado_segundos), 0),
+        'finalizadas', count(*) FILTER (WHERE status = 'finalizada'),
+        'em_andamento', count(*) FILTER (WHERE status = 'em_andamento'),
+        'acertos', coalesce(sum(acertos) FILTER (WHERE status = 'finalizada'), 0),
+        'nota_media', round(avg(nota) FILTER (WHERE status = 'finalizada' AND nota IS NOT NULL), 1),
+        'tempo_total_segundos', coalesce(sum(tempo_acumulado_segundos), 0),
         'por_modo', coalesce((
           SELECT jsonb_object_agg(m.modo, m.qtd)
-          FROM (
-            SELECT t2.modo, count(*) AS qtd
-            FROM tentativa t2
-            WHERE t2.user_id = p_user_id
-              AND t2.iniciada_em >= v_desde AND t2.iniciada_em <= v_ate
-            GROUP BY t2.modo
-          ) m
+          FROM (SELECT modo, count(*) AS qtd FROM tent GROUP BY modo) m
         ), '{}'::jsonb),
         'por_formato', coalesce((
-          SELECT jsonb_object_agg(coalesce(f.formato, 'outro'), f.qtd)
-          FROM (
-            SELECT p2.formato, count(*) AS qtd
-            FROM tentativa t3
-            LEFT JOIN prova p2 ON p2.id = t3.prova_id
-            WHERE t3.user_id = p_user_id
-              AND t3.iniciada_em >= v_desde AND t3.iniciada_em <= v_ate
-            GROUP BY p2.formato
-          ) f
+          SELECT jsonb_object_agg(coalesce(f.prova_formato, 'outro'), f.qtd)
+          FROM (SELECT prova_formato, count(*) AS qtd FROM tent GROUP BY prova_formato) f
         ), '{}'::jsonb)
       )
-      FROM tentativa t
-      WHERE t.user_id = p_user_id
-        AND t.iniciada_em >= v_desde AND t.iniciada_em <= v_ate
+      FROM tent
     ),
 
     'serie_tentativas_por_dia', (
-      WITH dias AS (
-        SELECT generate_series(
-          (timezone('America/Sao_Paulo', v_desde))::date,
-          (timezone('America/Sao_Paulo', v_ate))::date,
-          interval '1 day'
-        )::date AS dia
-      ),
-      agg AS (
-        SELECT (timezone('America/Sao_Paulo', t.iniciada_em))::date AS dia,
-               count(*) AS quantidade,
-               coalesce(sum(t.acertos), 0) AS acertos
-        FROM tentativa t
-        WHERE t.user_id = p_user_id
-          AND t.iniciada_em >= v_desde AND t.iniciada_em <= v_ate
-        GROUP BY 1
-      )
       SELECT jsonb_agg(
         jsonb_build_object(
           'dia', to_char(d.dia, 'YYYY-MM-DD'),
-          'quantidade', coalesce(a.quantidade, 0),
-          'acertos', coalesce(a.acertos, 0)
+          'quantidade', coalesce(a.quantidade, 0)
         ) ORDER BY d.dia)
-      FROM dias d LEFT JOIN agg a USING (dia)
+      FROM dias d
+      LEFT JOIN (SELECT dia, count(*) AS quantidade FROM tent GROUP BY dia) a USING (dia)
     ),
 
     'gamificacao', (
@@ -141,74 +158,40 @@ BEGIN
         'streak_atual', coalesce(s.streak_atual, 0),
         'streak_recorde', coalesce(s.streak_recorde, 0),
         'freezes_disponiveis', coalesce(s.freezes_disponiveis, 0),
-        'xp_no_periodo', coalesce((
-          SELECT sum(e.xp) FROM gamificacao_evento e
-          WHERE e.user_id = p_user_id
-            AND e.criado_em >= v_desde AND e.criado_em <= v_ate
-        ), 0)
+        'xp_no_periodo', coalesce((SELECT sum(xp) FROM xp_dia), 0)
       )
       FROM (SELECT 1) one
       LEFT JOIN user_gamificacao_stats s ON s.user_id = p_user_id
     ),
 
     'serie_xp_por_dia', (
-      WITH dias AS (
-        SELECT generate_series(
-          (timezone('America/Sao_Paulo', v_desde))::date,
-          (timezone('America/Sao_Paulo', v_ate))::date,
-          interval '1 day'
-        )::date AS dia
-      ),
-      agg AS (
-        SELECT (timezone('America/Sao_Paulo', e.criado_em))::date AS dia,
-               sum(e.xp) AS xp
-        FROM gamificacao_evento e
-        WHERE e.user_id = p_user_id
-          AND e.criado_em >= v_desde AND e.criado_em <= v_ate
-        GROUP BY 1
-      )
       SELECT jsonb_agg(
         jsonb_build_object(
           'dia', to_char(d.dia, 'YYYY-MM-DD'),
-          'xp', coalesce(a.xp, 0)
+          'xp', coalesce(x.xp, 0)
         ) ORDER BY d.dia)
-      FROM dias d LEFT JOIN agg a USING (dia)
+      FROM dias d LEFT JOIN xp_dia x USING (dia)
     ),
 
-    -- Assinatura relevante: a que dá acesso ativo agora (authorized com
-    -- próxima cobrança futura/nula, ou cancelled ainda na carência); sem
-    -- nenhuma ativa, a mais recente. Espelha tem_assinatura_ativa e a
-    -- lógica resumirAssinatura do frontend.
     'assinatura_atual', (
       SELECT jsonb_build_object(
         'id', a.id,
         'status', a.status,
-        'plano_nome', pl.nome,
-        'plano_slug', pl.slug,
-        'preco_centavos', pl.preco_centavos,
-        'frequency', pl.frequency,
-        'frequency_type', pl.frequency_type,
+        'plano_nome', a.plano_nome,
+        'plano_slug', a.plano_slug,
+        'preco_centavos', a.preco_centavos,
+        'frequency', a.frequency,
+        'frequency_type', a.frequency_type,
         'data_inicio', a.data_inicio,
         'proxima_cobranca', a.proxima_cobranca,
         'cancelada_em', a.cancelada_em,
         'cortesia', a.cortesia,
-        'ativa', (
-          (a.status = 'authorized' AND (a.proxima_cobranca IS NULL OR a.proxima_cobranca > now()))
-          OR (a.status = 'cancelled' AND a.proxima_cobranca IS NOT NULL AND a.proxima_cobranca > now())
-        ),
-        'renovacao_cancelada', (
-          a.status = 'cancelled' AND a.proxima_cobranca IS NOT NULL AND a.proxima_cobranca > now()
-        )
+        'ativa', a.ativa,
+        -- cancelou a renovação mas segue com acesso (carência)
+        'renovacao_cancelada', (a.status = 'cancelled' AND a.ativa)
       )
-      FROM assinatura a
-      LEFT JOIN plano pl ON pl.id = a.plano_id
-      WHERE a.user_id = p_user_id
-      ORDER BY
-        (
-          (a.status = 'authorized' AND (a.proxima_cobranca IS NULL OR a.proxima_cobranca > now()))
-          OR (a.status = 'cancelled' AND a.proxima_cobranca IS NOT NULL AND a.proxima_cobranca > now())
-        ) DESC,
-        a.criado_em DESC
+      FROM assinaturas a
+      ORDER BY a.ativa DESC, a.criado_em DESC
       LIMIT 1
     ),
 
@@ -217,17 +200,15 @@ BEGIN
         jsonb_build_object(
           'id', a.id,
           'status', a.status,
-          'plano_nome', pl.nome,
-          'plano_slug', pl.slug,
+          'plano_nome', a.plano_nome,
+          'plano_slug', a.plano_slug,
           'data_inicio', a.data_inicio,
           'proxima_cobranca', a.proxima_cobranca,
           'cancelada_em', a.cancelada_em,
           'cortesia', a.cortesia,
           'criado_em', a.criado_em
         ) ORDER BY a.criado_em DESC)
-      FROM assinatura a
-      LEFT JOIN plano pl ON pl.id = a.plano_id
-      WHERE a.user_id = p_user_id
+      FROM assinaturas a
     ), '[]'::jsonb),
 
     'pagamentos', coalesce((
