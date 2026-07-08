@@ -1,12 +1,20 @@
 # Handoff — Questões Abertas (Discursivas) com Correção por IA
 
-**Branch:** `claude/open-ended-questions-plan-un8m3l` (pushed)
+**Branch:** `claude/open-ended-questions-plan-un8m3l` (pushed — HEAD `7bd4455`)
 **Plano original:** `docs/plano-questoes-abertas-ia.md`
 **Status:** Fases 1–7 implementadas, validadas manualmente (blocos A, B e C) e no
 stack **local**. E2e Playwright **verde** (2026-07-08): os 2 testes de
 `questoes-abertas.spec.ts` passam e a suíte chromium completa (34 testes) segue
-verde. Falta: decidir merge e fazer deploy (migrations + edge function +
-secrets de IA). **Nada foi para produção.**
+verde. IA real (DeepSeek V4 Flash) validada por **smoke test direto na API**
+(playground OpenRouter), mas **ainda não testada dentro do app** com provider
+real. Falta: (1) teste manual no app com a IA real num PC limpo, (2) merge/PR,
+(3) deploy (migrations + edge function). **Nada foi para produção.**
+
+> **RETOMADA EM OUTRO PC (próxima sessão):** todo o código está pushado. O único
+> arquivo que NÃO vem no clone é `supabase/functions/.env.local` (gitignored) —
+> recrie-o pelo passo-a-passo da seção "Como rodar localmente" abaixo antes de
+> testar. Sem ele com `AI_GRADING_PROVIDER=openai-compat` + chave, a correção
+> cai em `sem_ia`.
 
 ---
 
@@ -73,13 +81,36 @@ adicional, não dependência**: sem IA o app continua funcionando (a questão vi
 
 ## Como rodar localmente (para continuar a validação)
 
+### 0. Recriar o `.env.local` (obrigatório em PC limpo — arquivo é gitignored)
+```bash
+cd supabase/functions
+cp .env.local.example .env.local   # já traz o bloco de IA preenchido com o modelo/rota
+```
+Depois edite `supabase/functions/.env.local`:
+- **Mercado Pago** (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`): só se for testar
+  pagamento; para testar questões abertas pode deixar como está.
+- **IA — escolha um dos dois modos:**
+  - **Real (DeepSeek V4 Flash)** para validar o app de verdade:
+    ```
+    AI_GRADING_PROVIDER=openai-compat
+    AI_GRADING_BASE_URL=https://openrouter.ai/api/v1
+    AI_GRADING_MODEL=deepseek/deepseek-v4-flash
+    AI_GRADING_API_KEY=<sua chave sk-or-... do painel OpenRouter>
+    AI_GRADING_ROUTER_ORDER=gmicloud,baidu,deepinfra,digitalocean,streamlake
+    AI_GRADING_DAILY_LIMIT=200
+    ```
+    A chave **não** está no repo (é secret) — pegue em https://openrouter.ai/keys.
+    Os mesmos valores já estão nos secrets do projeto remoto.
+  - **Fake (determinístico, sem rede)** — obrigatório para os e2e Playwright:
+    basta `AI_GRADING_PROVIDER=fake` (ignora as demais linhas de IA).
+
+### 1–3. Subir o stack, functions e app
 ```bash
 # 1. Stack local + seed (cria admin, assinatura e 2 discursivas de Cardiologia)
 npx supabase start
 npx supabase db reset --local
 
-# 2. Edge functions com o provider fake (correção determinística, sem rede)
-#    confira AI_GRADING_PROVIDER=fake em supabase/functions/.env.local
+# 2. Edge functions (lê o .env.local do passo 0)
 npx supabase functions serve --env-file ./supabase/functions/.env.local
 
 # 3. App
@@ -131,16 +162,14 @@ cd frontend && npx playwright test questoes-abertas --project=setup --project=ch
   quiser cobertura em CI, avaliar subir o stack + functions no pipeline ou
   portar para o padrão `mocked` (mais frágil — mockaria todo o protocolo de correção).
 
-### 2. Deploy (quando o dono decidir)
-**Decisão em aberto (retomar em outra sessão):** qual modelo de IA usar no
-provider real. Uma pesquisa de custo-benefício foi iniciada mas não concluída;
-critérios a comparar: benchmarks de raciocínio/medicina (HealthBench, MedQA),
-qualidade em pt-BR, JSON estruturado confiável e preço por correção — incluindo
-opções fora do trio OpenAI/Anthropic/Google (DeepSeek, Qwen, Kimi, GLM, Mistral).
-Sinais preliminares (não verificados a fundo): GLM e DeepSeek aparecem como
-candidatos fortes de custo-benefício entre os open-weights; literatura de
-LLM-as-judge valida a abordagem de correção com rubrica + resposta modelo.
-Tudo foi feito **só no local**. Para produção:
+### 2. Deploy (quando o dono decidir — DEPOIS do teste manual no app)
+**Decisão do modelo: RESOLVIDA (2026-07-08) — `deepseek/deepseek-v4-flash`** via
+OpenRouter, com roteamento de fallback por custo-benefício. Custo medido: ~US$
+0,0003 por correção complexa (pior caso, em fallback) — irrisório em qualquer
+volume realista; o `AI_GRADING_DAILY_LIMIT=200/usuário` cobre abuso.
+**Pré-requisito antes de subir:** teste manual no app com a IA real (passo 3
+abaixo) num PC limpo — o feedback só foi visto no playground, não dentro do app.
+Depois disso, o deploy em produção é:
 - `supabase db push` das 6 migrations `20260707*`.
 - `supabase functions deploy corrigir-resposta-aberta`.
 - **Secrets de IA** ✅ já configurados no projeto remoto `gakvktwtdunljojghpff`
@@ -167,20 +196,30 @@ Tudo foi feito **só no local**. Para produção:
   nele (cache quente + menor preço) usar BYOK (cadastrar chave própria do
   DeepInfra no OpenRouter). Sem isso, o fallback cobre e o custo segue irrisório.
 
-### 3. Validar as respostas da IA real (dono)  ⚠️ pendente — próxima sessão
-O prompt/contrato atual foi definido no plano e está em
+### 3. Validar a IA real DENTRO DO APP (dono)  ⚠️ PRÓXIMO PASSO — PC limpo
+O prompt/contrato atual está em
 `supabase/functions/_shared/grading-openai-compat.ts:24` (`montarPrompt`):
 persona "corretor de provas discursivas de medicina, rigoroso e justo",
 temperatura 0, JSON `{pontos, feedback, pontos_atendidos, pontos_faltantes, erros}`.
-**O dono ainda não viu o feedback de um modelo real** — só o fake. Antes de ir
-a produção:
-- Rodar correções reais com questões de verdade e avaliar: qualidade/tom do
-  feedback, justiça da nota, comprimento, pt-BR. Dá para testar **sem deploy**:
-  apontar o stack local para o provider real (`AI_GRADING_PROVIDER=openai-compat`
-  + chave no `supabase/functions/.env.local`) e responder discursivas no app.
-- Calibrar o prompt com base no resultado (estilo do feedback é só editar
-  `montarPrompt`; mudar a ESTRUTURA — ex. nota por critério — mexe no JSON,
-  no schema `resposta_correcao` e na UI).
+
+**Já feito (2026-07-08):** smoke test do DeepSeek V4 Flash **direto na API**
+(playground OpenRouter) com 2 questões (Charcot simples + caso clínico de CAD).
+Notas justas (100 / 65), feedback pt-BR de bom tom, pontos atendidos/faltantes
+corretos, erro do bicarbonato pego, prompt injection ignorada. Contrato JSON 100%
+compatível com o parser.
+
+**Falta (o que fazer no PC limpo):** ver esse mesmo feedback **renderizado dentro
+do app**, respondendo discursivas de verdade em estudo e simulado, com o provider
+real (passo 0 da seção "Como rodar localmente" → modo Real). Avaliar tom/justiça/
+comprimento no contexto da UI e o fluxo completo (poll de correção no simulado,
+`sem_ia` no timeout, revisão, histórico).
+- Nuance de calibração observada no smoke test: um mesmo tema pode aparecer em
+  `pontos_atendidos` E `pontos_faltantes` quando o aluno cobre a ideia geral mas
+  não o específico (visto no caso de CAD: "correção gradual" creditada e "evitar
+  edema cerebral" listada como faltante). Não é bug; se incomodar na UI, pedir no
+  prompt que cada ponto apareça em uma lista só.
+- Calibrar o prompt é só editar `montarPrompt` (estilo/tom). Mudar a ESTRUTURA
+  do JSON (ex. nota por critério) mexe no schema `resposta_correcao` e na UI.
 
 ### 4. Painel de configurações de IA no admin (ideia do dono — avaliar/planejar)
 O dono quer uma seção no admin dedicada às configurações da correção por IA,
