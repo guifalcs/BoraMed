@@ -155,11 +155,42 @@ Tudo foi feito **só no local**. Para produção:
 - Ao ativar o provider real, o **contrato de dados é idêntico ao fake** — muda só
   a qualidade do feedback. Vale um teste manual de fumaça com uma questão real.
 
-### 3. Merge / PR
-Branch pronta para revisão. Sugestão: abrir PR de
-`claude/open-ended-questions-plan-un8m3l` → `main` após o e2e verde.
+### 3. Validar as respostas da IA real (dono)  ⚠️ pendente — próxima sessão
+O prompt/contrato atual foi definido no plano e está em
+`supabase/functions/_shared/grading-openai-compat.ts:24` (`montarPrompt`):
+persona "corretor de provas discursivas de medicina, rigoroso e justo",
+temperatura 0, JSON `{pontos, feedback, pontos_atendidos, pontos_faltantes, erros}`.
+**O dono ainda não viu o feedback de um modelo real** — só o fake. Antes de ir
+a produção:
+- Rodar correções reais com questões de verdade e avaliar: qualidade/tom do
+  feedback, justiça da nota, comprimento, pt-BR. Dá para testar **sem deploy**:
+  apontar o stack local para o provider real (`AI_GRADING_PROVIDER=openai-compat`
+  + chave no `supabase/functions/.env.local`) e responder discursivas no app.
+- Calibrar o prompt com base no resultado (estilo do feedback é só editar
+  `montarPrompt`; mudar a ESTRUTURA — ex. nota por critério — mexe no JSON,
+  no schema `resposta_correcao` e na UI).
 
-### 4. Itens fora de escopo desta feature (registrados no plano, não implementados)
+### 4. Painel de configurações de IA no admin (ideia do dono — avaliar/planejar)
+O dono quer uma seção no admin dedicada às configurações da correção por IA,
+para ele mesmo ajustar sem mexer em código/secrets. Candidatos a configuração:
+modelo, prompt/persona, tom e tamanho do feedback, limite diário, threshold de
+acerto (hoje 70), liga/desliga do provider. Exige decidir onde persistir
+(tabela de config com RLS admin-only lida pela edge function, em vez de env
+vars) — planejar antes de implementar.
+
+### 5. Landing page: usar a IA como propaganda  ⚠️ pendente — próxima sessão
+Atualizar os textos/seções da landing page para destacar a correção de questões
+discursivas por IA como diferencial do produto (feedback individualizado por
+resposta, estilo "corretor particular"). **Usar a skill `revenue-centric-design`**
+para orientar copy/posicionamento/CRO.
+
+### 6. Merge / PR
+Branch pronta para revisão. Sugestão: abrir PR de
+`claude/open-ended-questions-plan-un8m3l` → `main` (e2e já verde). O `gh` CLI
+não está instalado na máquina — abrir pelo GitHub:
+https://github.com/guifalcs/BoraMed/compare/main...claude/open-ended-questions-plan-un8m3l
+
+### 7. Itens fora de escopo desta feature (registrados no plano, não implementados)
 - Nenhum backlog crítico. Desafio diário permanece sem discursivas por decisão (D14).
 
 ---
