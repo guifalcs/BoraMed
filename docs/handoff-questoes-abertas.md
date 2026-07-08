@@ -143,12 +143,15 @@ LLM-as-judge valida a abordagem de correção com rubrica + resposta modelo.
 Tudo foi feito **só no local**. Para produção:
 - `supabase db push` das 6 migrations `20260707*`.
 - `supabase functions deploy corrigir-resposta-aberta`.
-- **Secrets de IA** no projeto remoto (documentados em `supabase/functions/.env.local.example`):
+- **Secrets de IA** ✅ já configurados no projeto remoto `gakvktwtdunljojghpff`
+  (2026-07-08, via `supabase secrets set`; documentados em
+  `supabase/functions/.env.local.example`):
   - `AI_GRADING_PROVIDER=openai-compat`
-  - `AI_GRADING_BASE_URL` (ex.: `https://openrouter.ai/api/v1`)
-  - `AI_GRADING_MODEL` (ex.: `openai/gpt-4o-mini`)
-  - `AI_GRADING_API_KEY` (chave do OpenRouter/OpenAI)
-  - `AI_GRADING_DAILY_LIMIT` (opcional, default 200)
+  - `AI_GRADING_BASE_URL=https://openrouter.ai/api/v1`
+  - `AI_GRADING_MODEL=openai/gpt-4o-mini` ← **provisório**; trocar quando a
+    pesquisa de modelo for concluída (só `secrets set`, sem redeploy)
+  - `AI_GRADING_API_KEY` (chave do OpenRouter — rotacionável no painel)
+  - `AI_GRADING_DAILY_LIMIT=200`
 - Ao ativar o provider real, o **contrato de dados é idêntico ao fake** — muda só
   a qualidade do feedback. Vale um teste manual de fumaça com uma questão real.
 
