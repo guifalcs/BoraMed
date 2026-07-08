@@ -25,6 +25,9 @@ export interface GradingResult {
   modelo: string;
   tokens_prompt: number | null;
   tokens_resposta: number | null;
+  /** Custo real da chamada em USD (OpenRouter retorna em `usage.cost`); null se
+   * o provider não informar. O fake reporta 0 (não consome dinheiro). */
+  custo_usd: number | null;
 }
 
 export interface GradingProvider {

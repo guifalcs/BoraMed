@@ -207,6 +207,7 @@ export async function handleCorrigirRespostaAberta(req: Request, deps: Deps): Pr
       modelo: resultado.modelo,
       tokens_prompt: resultado.tokens_prompt,
       tokens_resposta: resultado.tokens_resposta,
+      custo_usd: resultado.custo_usd,
       erro_detalhe: null,
       atualizado_em: deps.now().toISOString(),
     })

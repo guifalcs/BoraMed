@@ -48,6 +48,7 @@ export function fakeProvider(): GradingProvider {
         modelo: 'fake-v1',
         tokens_prompt: null,
         tokens_resposta: null,
+        custo_usd: 0,
       });
     },
   };

@@ -64,6 +64,35 @@ export interface AdminFinanceiro {
   por_plano: AdminFinanceiroPlano[];
 }
 
+export interface AdminIaJanela {
+  correcoes: number;
+  tokens_prompt: number;
+  tokens_resposta: number;
+  tokens_total: number;
+  custo_usd: number;
+}
+
+export interface AdminIaSerieDia {
+  dia: string;
+  correcoes: number;
+  tokens_total: number;
+  custo_usd: number;
+}
+
+export interface AdminIaModelo {
+  modelo: string;
+  correcoes: number;
+  tokens_total: number;
+  custo_usd: number;
+}
+
+export interface AdminMetricasIa {
+  janelas: { hoje: AdminIaJanela; d7: AdminIaJanela; d30: AdminIaJanela; total: AdminIaJanela };
+  serie_diaria: AdminIaSerieDia[];
+  por_modelo: AdminIaModelo[];
+  falhas: { erro: number; sem_ia: number };
+}
+
 export interface AdminPagamento {
   id: string;
   criado_em: string;
@@ -364,6 +393,12 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_listar_pagamentos', { p_limit: limit });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as AdminPagamento[] };
+  }
+
+  async getMetricasIa(): Promise<ServiceResult<AdminMetricasIa>> {
+    const { data, error } = await this.supabase.rpc('admin_get_metricas_ia');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminMetricasIa };
   }
 
   // ---- Usuários ----

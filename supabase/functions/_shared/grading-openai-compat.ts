@@ -139,6 +139,9 @@ export function openAiCompatProvider(config: OpenAiCompatConfig): GradingProvide
         tokens_prompt: typeof usage?.['prompt_tokens'] === 'number' ? usage['prompt_tokens'] : null,
         tokens_resposta:
           typeof usage?.['completion_tokens'] === 'number' ? usage['completion_tokens'] : null,
+        // OpenRouter devolve o custo real da chamada (em USD) em `usage.cost` —
+        // reflete o provider efetivo, inclusive quando cai no fallback.
+        custo_usd: typeof usage?.['cost'] === 'number' ? usage['cost'] : null,
       };
     },
   };

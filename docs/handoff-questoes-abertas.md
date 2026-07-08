@@ -57,6 +57,14 @@ adicional, não dependência**: sem IA o app continua funcionando (a questão vi
     exigir o formato pedido: "cite/liste" tolera explicação extra; "explique/
     justifique/descreva" penaliza quem só cita. Regra "na dúvida, mais rigoroso que
     leniente" e feedback deve declarar o desconto por formato.
+  - **Métricas de gasto com IA no admin (Financeiro):** nova coluna
+    `resposta_correcao.custo_usd` (custo real capturado de `usage.cost` do
+    OpenRouter na edge function) + RPC `admin_get_metricas_ia()` (admin-only) com
+    volume/tokens/custo por janelas (hoje/7d/30d/total), série diária 30d e quebra
+    por modelo. UI: seção "Gasto com IA (Aurora)" em `(admin)/financeiro`.
+    Migration `20260708120000_ia_custo_e_metricas.sql`. Correções feitas antes
+    desta mudança ficam com `custo_usd` NULL (contam como 0); novas capturam o
+    custo real.
 - `98cfecd` — bloco A: visualização admin, cópia discursiva, badge do import, plural do botão.
 - `652e782` — markdown na visualização, autor por email, cópia discursiva só preenche (não grava).
 - `63da320` — contagem de temas por formato (corrige contradição "1 questão" vs "nenhuma"); feedback só no resultado do simulado.
@@ -87,6 +95,7 @@ adicional, não dependência**: sem IA o app continua funcionando (a questão vi
 20260707150000_abertas_revisao_e_metricas.sql
 20260707160000_abertas_transversais.sql
 20260707170000_abertas_contagem_temas_por_formato.sql
+20260708120000_ia_custo_e_metricas.sql   # custo_usd + admin_get_metricas_ia (métricas de IA no admin)
 ```
 
 ### Edge function

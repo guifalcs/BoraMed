@@ -76,7 +76,7 @@ function sequencialFetch(
     const body = r.content !== undefined
       ? {
           choices: [{ message: { content: r.content } }],
-          usage: { prompt_tokens: 100, completion_tokens: 50 },
+          usage: { prompt_tokens: 100, completion_tokens: 50, cost: 0.0012 },
         }
       : { error: 'upstream' };
     return Promise.resolve({
@@ -151,6 +151,7 @@ Deno.test('sucesso: corrige, persiste resultado e pontos da resposta', async () 
   assertEquals(correcao.provider, 'openai-compat');
   assertEquals(correcao.modelo, 'test-model');
   assertEquals(correcao.tokens_prompt, 100);
+  assertEquals(correcao.custo_usd, 0.0012);
 
   const tr = db.rows('tentativa_resposta')[0];
   assertEquals(tr.pontos, 85);

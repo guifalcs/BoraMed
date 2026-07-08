@@ -1,7 +1,21 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AdminService, AdminFinanceiro, AdminPagamento } from '../../core/services/admin.service';
+import {
+  AdminService,
+  AdminFinanceiro,
+  AdminPagamento,
+  AdminMetricasIa,
+  AdminIaJanela,
+} from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
+
+type JanelaIaKey = 'hoje' | 'd7' | 'd30' | 'total';
+const JANELAS_IA: { key: JanelaIaKey; label: string }[] = [
+  { key: 'hoje', label: 'Hoje' },
+  { key: 'd7', label: '7 dias' },
+  { key: 'd30', label: '30 dias' },
+  { key: 'total', label: 'Total' },
+];
 
 const STATUS_PT: Record<string, string> = {
   approved: 'Aprovado',
@@ -106,6 +120,111 @@ interface FinKpi {
             </table>
           </div>
         }
+
+        <!-- Gasto com IA (Aurora) -->
+        <div class="mt-10 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
+              style="background: var(--gradient-brand)"
+              aria-hidden="true"
+            >✦</span>
+            <div>
+              <h2 class="text-lg font-semibold text-gray-900">Gasto com IA (Aurora)</h2>
+              <p class="text-xs text-gray-500">Correção de questões discursivas · custo em US$ (OpenRouter)</p>
+            </div>
+          </div>
+          @if (ia()) {
+            <div class="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
+              @for (j of janelasIa; track j.key) {
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                  [ngClass]="janelaSel() === j.key ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                  (click)="janelaSel.set(j.key)"
+                >{{ j.label }}</button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (ia()) {
+          <div class="mt-3 grid gap-4 sm:grid-cols-3">
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Custo</p>
+              <p class="mt-2 text-2xl font-bold text-gray-900">{{ usd(janelaIa().custo_usd) }}</p>
+              <p class="mt-1 text-xs text-gray-500">na janela selecionada</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Correções</p>
+              <p class="mt-2 text-2xl font-bold text-gray-900">{{ num(janelaIa().correcoes) }}</p>
+              <p class="mt-1 text-xs text-gray-500">respostas corrigidas</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Tokens</p>
+              <p class="mt-2 text-2xl font-bold text-gray-900">{{ num(janelaIa().tokens_total) }}</p>
+              <p class="mt-1 text-xs text-gray-500">
+                {{ num(janelaIa().tokens_prompt) }} entrada · {{ num(janelaIa().tokens_resposta) }} saída
+              </p>
+            </div>
+          </div>
+
+          <!-- Série diária (volume por dia, últimos 30d) -->
+          <div class="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+            <div class="mb-3 flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-gray-900">Uso diário (últimos 30 dias)</h3>
+              <span class="text-xs text-gray-500">barra = tokens · passe o mouse para detalhes</span>
+            </div>
+            @if (maxTokensSerie() === 0) {
+              <p class="py-6 text-center text-sm text-gray-500">Nenhuma correção no período.</p>
+            } @else {
+              <div class="flex h-24 items-end gap-0.5">
+                @for (d of ia()!.serie_diaria; track d.dia) {
+                  <div
+                    class="flex-1 rounded-t bg-blue-500/80 transition-colors hover:bg-blue-600"
+                    [style.height.%]="barra(d.tokens_total)"
+                    [style.minHeight.px]="d.correcoes > 0 ? 2 : 0"
+                    [title]="d.dia + ' — ' + num(d.correcoes) + ' correções · ' + num(d.tokens_total) + ' tokens · ' + usd(d.custo_usd)"
+                  ></div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Por modelo + falhas -->
+          <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 class="mb-3 text-sm font-semibold text-gray-900">Por modelo (total)</h3>
+              @if (ia()!.por_modelo.length === 0) {
+                <p class="text-sm text-gray-500">Sem dados ainda.</p>
+              } @else {
+                <ul class="flex flex-col gap-2">
+                  @for (m of ia()!.por_modelo; track m.modelo) {
+                    <li class="flex items-center justify-between gap-3 text-sm">
+                      <span class="truncate font-medium text-gray-900">{{ m.modelo }}</span>
+                      <span class="shrink-0 text-gray-500">
+                        {{ num(m.correcoes) }} corr · {{ num(m.tokens_total) }} tok · <span class="font-semibold text-gray-900">{{ usd(m.custo_usd) }}</span>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 class="mb-3 text-sm font-semibold text-gray-900">Falhas de correção (total)</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-2xl font-bold text-amber-600">{{ num(ia()!.falhas.erro) }}</p>
+                  <p class="text-xs text-gray-500">com erro (esgotou retries)</p>
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-gray-400">{{ num(ia()!.falhas.sem_ia) }}</p>
+                  <p class="text-xs text-gray-500">sem IA (fora da nota)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
       } @else {
         <p class="py-16 text-center text-red-600">Não foi possível carregar os dados financeiros.</p>
       }
@@ -118,7 +237,28 @@ export class AdminFinanceiroComponent implements OnInit {
 
   readonly fin = signal<AdminFinanceiro | null>(null);
   readonly pagamentos = signal<AdminPagamento[]>([]);
+  readonly ia = signal<AdminMetricasIa | null>(null);
+  readonly janelaSel = signal<JanelaIaKey>('d30');
   readonly isLoading = signal(true);
+
+  readonly janelasIa = JANELAS_IA;
+
+  readonly janelaIa = computed<AdminIaJanela>(() => {
+    const m = this.ia();
+    const vazia: AdminIaJanela = {
+      correcoes: 0,
+      tokens_prompt: 0,
+      tokens_resposta: 0,
+      tokens_total: 0,
+      custo_usd: 0,
+    };
+    return m ? m.janelas[this.janelaSel()] : vazia;
+  });
+
+  readonly maxTokensSerie = computed(() => {
+    const s = this.ia()?.serie_diaria ?? [];
+    return s.reduce((max, d) => Math.max(max, d.tokens_total), 0);
+  });
 
   readonly kpis = computed<FinKpi[]>(() => {
     const f = this.fin();
@@ -138,14 +278,38 @@ export class AdminFinanceiroComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const [fin, pags] = await Promise.all([
+    const [fin, pags, ia] = await Promise.all([
       this.admin.getFinanceiro(),
       this.admin.listarPagamentos(100),
+      this.admin.getMetricasIa(),
     ]);
     if (fin.ok) this.fin.set(fin.data);
     else this.toast.error('Erro ao carregar dados financeiros.');
     if (pags.ok) this.pagamentos.set(pags.data);
+    if (ia.ok) this.ia.set(ia.data);
     this.isLoading.set(false);
+  }
+
+  /** Altura relativa da barra (0–100) proporcional ao pico de tokens da série. */
+  barra(tokens: number): number {
+    const max = this.maxTokensSerie();
+    return max > 0 ? Math.round((tokens / max) * 100) : 0;
+  }
+
+  num(v: number): string {
+    return (v ?? 0).toLocaleString('pt-BR');
+  }
+
+  /** Custo em US$; usa mais casas para valores muito pequenos (frações de centavo). */
+  usd(v: number): string {
+    const n = v ?? 0;
+    const casas = n > 0 && n < 0.01 ? 6 : 2;
+    return n.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: casas,
+      maximumFractionDigits: casas,
+    });
   }
 
   statusPt(status: string): string {
