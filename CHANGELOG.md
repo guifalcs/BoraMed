@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-08 | Feature | 9609153
+
+**Admin: métricas individuais por usuário**
+
+- Nova tela `/admin/usuarios/:id/metricas` (também acessível por `/admin/usuarios/metricas` e pelo botão "Ver métricas" na listagem de usuários): busca de usuário por nome/e-mail e visão completa das métricas dele com filtro de período (7/30/90 dias ou intervalo personalizado).
+- Métricas exibidas: tentativas (total, finalizadas, em andamento, acertos, nota média, tempo de estudo, distribuição por modo e formato de prova), gamificação (XP no período, XP total, nível, streak atual/recorde, freezes), atividade diária (gráficos de tentativas/dia e XP/dia) e último login.
+- Assinatura em detalhe: status, plano e periodicidade (mensal/anual), valor, próxima cobrança/acesso até quando, cortesia e flag "renovação cancelada" (cancelou mas segue na carência), além do histórico completo de assinaturas e dos pagamentos do período.
+- Backend: RPC única `admin_get_metricas_usuario(p_user_id, p_desde, p_ate)` `SECURITY DEFINER` com checagem `is_admin()` e `REVOKE` de `PUBLIC`/`anon` — nenhuma policy nova foi aberta nas tabelas sensíveis; período das séries limitado a 366 dias; novo índice `tentativa (user_id, iniciada_em)`. Migration em `supabase/migrations/20260708120000_admin_metricas_usuario.sql`.
+- Novos componentes shared (com Storybook e specs): `AdminUserSearchComponent` (autocomplete de usuário, extraído de admin-notificações, que passou a reutilizá-lo), `PeriodoFilterComponent` e `SerieDiariaChartComponent`.
+
+---
+
 ## 2026-06-29 | Fix + Feature | sem commit
 
 **Métricas financeiras: receita completa e acesso de cortesia**
