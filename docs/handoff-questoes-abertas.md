@@ -148,12 +148,24 @@ Tudo foi feito **só no local**. Para produção:
   `supabase/functions/.env.local.example`):
   - `AI_GRADING_PROVIDER=openai-compat`
   - `AI_GRADING_BASE_URL=https://openrouter.ai/api/v1`
-  - `AI_GRADING_MODEL=openai/gpt-4o-mini` ← **provisório**; trocar quando a
-    pesquisa de modelo for concluída (só `secrets set`, sem redeploy)
+  - `AI_GRADING_MODEL=deepseek/deepseek-v4-flash` ← escolhido pelo dono
+    (2026-07-08). Custo-benefício: ~US$0,09/1M prompt + US$0,18/1M completion,
+    contexto 1M. Smoke test direto na API OpenRouter aprovado (nota coerente em
+    resposta boa/parcial/vazia + prompt injection ignorada). Trocar é só
+    `secrets set`, sem redeploy.
   - `AI_GRADING_API_KEY` (chave do OpenRouter — rotacionável no painel)
-  - `AI_GRADING_DAILY_LIMIT=200`
+  - `AI_GRADING_ROUTER_ORDER=gmicloud,baidu,deepinfra,digitalocean,streamlake`
+    ← (novo) ordem de fallback de provider do OpenRouter, custo-benefício com
+    preferência por fp8 (qualidade) sobre o fp4 mais barato do deepinfra. Slugs
+    **minúsculos** (o nome de exibição não bate). Vazio = OpenRouter decide.
+    Só `order`; `allow_fallbacks: true` é fixo no código.
 - Ao ativar o provider real, o **contrato de dados é idêntico ao fake** — muda só
-  a qualidade do feedback. Vale um teste manual de fumaça com uma questão real.
+  a qualidade do feedback. Validado (2026-07-08) com 2 questões reais no
+  playground: nota/feedback/pontos coerentes; prompt injection ignorada; custo
+  ~US$0,0003 por correção complexa (pior caso, em fallback). **Nota de custo:**
+  DeepInfra vive rate-limitado no pool compartilhado do OpenRouter — para grudar
+  nele (cache quente + menor preço) usar BYOK (cadastrar chave própria do
+  DeepInfra no OpenRouter). Sem isso, o fallback cobre e o custo segue irrisório.
 
 ### 3. Validar as respostas da IA real (dono)  ⚠️ pendente — próxima sessão
 O prompt/contrato atual foi definido no plano e está em

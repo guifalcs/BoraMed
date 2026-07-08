@@ -19,6 +19,10 @@ export interface OpenAiCompatConfig {
   modelo: string;
   apiKey: string;
   fetch: typeof fetch;
+  // Roteamento de provider do OpenRouter (ignorado por OpenAI/Gemini). Primeiro
+  // da lista tem prioridade; os demais viram fallback. Ex.: ['DeepInfra'].
+  // Fixar um provider mantém o prompt caching quente (cache é por-provider).
+  providerOrder?: string[];
 }
 
 function montarPrompt(input: GradingInput): { system: string; user: string } {
@@ -76,6 +80,9 @@ export function openAiCompatProvider(config: OpenAiCompatConfig): GradingProvide
               { role: 'system', content: system },
               { role: 'user', content: user },
             ],
+            ...(config.providerOrder && config.providerOrder.length
+              ? { provider: { order: config.providerOrder, allow_fallbacks: true } }
+              : {}),
           }),
           signal: AbortSignal.timeout(TIMEOUT_MS),
         });

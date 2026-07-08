@@ -39,7 +39,11 @@ export function gradingProviderFromEnv(
     const modelo = env('AI_GRADING_MODEL');
     const apiKey = env('AI_GRADING_API_KEY');
     if (!baseUrl || !modelo || !apiKey) return null;
-    return openAiCompatProvider({ baseUrl, modelo, apiKey, fetch: fetchImpl });
+    const providerOrder = (env('AI_GRADING_ROUTER_ORDER') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return openAiCompatProvider({ baseUrl, modelo, apiKey, fetch: fetchImpl, providerOrder });
   }
   return null;
 }
