@@ -21,6 +21,7 @@ import {
   FlaskConical,
   LineChart,
   Menu,
+  MessageCircle,
   // Quote, // reativar junto com a seção de depoimentos (ver bloco comentado abaixo)
   Route,
   ShieldCheck,
@@ -124,6 +125,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly activityIcon = Activity;
   protected readonly sparklesIcon = Sparkles;
   protected readonly shieldIcon = ShieldCheck;
+  protected readonly communityIcon = MessageCircle;
   // protected readonly quoteIcon = Quote; // ver nota sobre depoimentos desativados
 
   protected readonly heroReady = signal(false);
