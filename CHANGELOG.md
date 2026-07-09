@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-09 | Fix | sem commit
+
+**Impersonação: voltar para a conta de admin sem deslogar**
+
+- Fix: ao entrar como um usuário pela tela de admin e clicar em "voltar" no banner de impersonação, o admin era completamente deslogado do app (a sessão só era encerrada e caía no login), porque nenhum token do admin era guardado. Agora os tokens da sessão do admin são mantidos **apenas em memória** durante a impersonação (nunca em storage, que é exfiltrável por XSS) e `voltarParaAdmin` restaura essa sessão via `setSession`, retornando direto para `/admin/usuarios`.
+- Se os tokens não estiverem em memória (ex.: reload da página durante a impersonação) ou a sessão do admin tiver expirado, mantém-se o comportamento seguro anterior: encerra a sessão e envia para o login.
+
+---
+
 ## 2026-07-08 | Feature | 9609153
 
 **Admin: métricas individuais por usuário**
