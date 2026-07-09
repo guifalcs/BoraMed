@@ -188,6 +188,7 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Administradores suspensos não contam como `admin` ou `super_admin` em funções de autorização. Nenhum administrador pode suspender a própria conta, e `super_admin` não pode ser suspenso.
 * Telas de aluno acessadas por impersonação devem usar o usuário autenticado efetivo como escopo; consultas de histórico/tentativas devem filtrar `user_id` explicitamente e gravações em `tentativa_resposta` devem passar por RPC que valida o dono da tentativa.
 * Buckets públicos de imagens podem expor arquivos por URL pública, mas não devem permitir listagem ampla de objetos pelo cliente.
+* Métricas individuais de um usuário (tentativas, XP, atividade, assinatura, pagamentos) são visíveis apenas para administradores, exclusivamente via RPC `admin_get_metricas_usuario` (SECURITY DEFINER, exige `is_admin()`); nenhuma policy de SELECT cross-user é aberta nas tabelas `assinatura`, `pagamento` ou `gamificacao_evento` para o cliente.
 
 ## Integridade de Dados
 

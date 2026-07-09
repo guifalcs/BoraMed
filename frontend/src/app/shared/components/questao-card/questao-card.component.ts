@@ -66,6 +66,11 @@ export class QuestaoCardComponent {
     () => new Map(this.questao().alternativas.map((a) => [a.id, a])),
   );
 
+  /** Letras das alternativas corretas, para o componente de explicação pintar o verde pelo gabarito. */
+  protected readonly letrasCorretas = computed(() =>
+    this.questao().alternativas.filter((a) => a.correta).map((a) => a.letra),
+  );
+
   protected estadoAlternativa(altId: string): EstadoAlternativa {
     const selecionada = this.respostaSelecionada();
     const corretaId = this.alternativaCorreta();

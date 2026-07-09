@@ -1,0 +1,115 @@
+<div class="autocomplete-wrapper">
+  <div class="autocomplete-input-row">
+    <input
+      class="form-input autocomplete-input"
+      type="text"
+      [placeholder]="selecionado() ? '' : placeholder()"
+      [ngModel]="buscaTexto()"
+      (ngModelChange)="onBuscaInput($event)"
+      autocomplete="off"
+    />
+    @if (buscando()) {
+      <span class="autocomplete-spinner"></span>
+    } @else if (selecionado()) {
+      <button class="autocomplete-clear" type="button" aria-label="Limpar seleção" (click)="limpar()">
+        <app-ui-icon [icon]="iconX" [size]="14" />
+      </button>
+    }
+  </div>
+
+  @if (selecionado(); as u) {
+    <div class="usuario-selecionado">
+      <span class="usuario-nome">{{ u.nome_completo ?? u.email }}</span>
+      @if (u.nome_completo) {
+        <span class="usuario-email">{{ u.email }}</span>
+      }
+    </div>
+  }
+
+  @if (dropdownAberto()) {
+    <ul class="autocomplete-dropdown" role="listbox">
+      @for (u of resultados(); track u.id) {
+        <li
+          class="autocomplete-item"
+          role="option"
+          (click)="selecionar(u)"
+        >
+          <span class="autocomplete-item-nome">{{ u.nome_completo ?? u.email }}</span>
+          @if (u.nome_completo) {
+            <span class="autocomplete-item-email">{{ u.email }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+<style>
+  .autocomplete-wrapper { position: relative; }
+
+  .form-input {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.5rem 0.875rem; color: #1e293b; font-size: 0.875rem;
+    outline: none; width: 100%; font-family: inherit; box-sizing: border-box;
+  }
+  .form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+
+  .autocomplete-input-row {
+    position: relative; display: flex; align-items: center;
+  }
+  .autocomplete-input { padding-right: 2.25rem; }
+
+  .autocomplete-spinner {
+    position: absolute; right: 0.75rem;
+    width: 1rem; height: 1rem;
+    border: 2px solid #e2e8f0; border-top-color: #7c3aed;
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Spinner é feedback funcional: continua girando mesmo com motion reduzido. */
+  @media (prefers-reduced-motion: reduce) {
+    .autocomplete-spinner {
+      animation-duration: 0.6s !important;
+      animation-iteration-count: infinite !important;
+    }
+  }
+
+  .autocomplete-clear {
+    position: absolute; right: 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    border: none; background: #e5e7eb; color: #6b7280; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .autocomplete-clear:hover { background: #d1d5db; color: #374151; }
+
+  .autocomplete-dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1); list-style: none; margin: 0; padding: 0;
+    max-height: 220px; overflow-y: auto;
+  }
+  .autocomplete-item {
+    display: flex; flex-direction: column; gap: 0.125rem;
+    padding: 0.625rem 0.875rem; cursor: pointer; transition: background 0.1s;
+  }
+  .autocomplete-item:hover { background: #f5f3ff; }
+  .autocomplete-item + .autocomplete-item { border-top: 1px solid #f1f5f9; }
+  .autocomplete-item-nome { font-size: 0.875rem; font-weight: 500; color: #1e293b; }
+  .autocomplete-item-email { font-size: 0.75rem; color: #94a3b8; }
+
+  .usuario-selecionado {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    padding: 0.375rem 0.875rem; background: #f5f3ff;
+    border: 1px solid #ddd6fe; border-top: none;
+    border-radius: 0 0 8px 8px;
+  }
+  .usuario-nome { font-size: 0.8125rem; font-weight: 600; color: #5b21b6; }
+  .usuario-email { font-size: 0.75rem; color: #8b5cf6; }
+
+  @media (max-width: 640px) {
+    .usuario-selecionado { flex-direction: column; align-items: stretch; gap: 0.125rem; }
+  }
+</style>

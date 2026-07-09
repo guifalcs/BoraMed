@@ -10,6 +10,7 @@ describe('authGuard', () => {
     const authMock = {
       initialize: vi.fn().mockResolvedValue(undefined),
       isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
+      isRecoverySession: vi.fn().mockReturnValue(false),
     };
     const profileMock = {
       profile: vi.fn().mockReturnValue(null),

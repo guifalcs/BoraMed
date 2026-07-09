@@ -59,6 +59,24 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+.pricing-anchor {
+  margin: 1.4rem 0 0;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.pricing-card.is-featured .pricing-anchor {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.pricing-anchor s {
+  font-weight: 700;
+}
+
+.pricing-anchor + .pricing-price {
+  margin-top: 0.35rem;
+}
+
 .pricing-price {
   display: flex;
   flex-wrap: wrap;
@@ -161,6 +179,69 @@
 
 .pricing-cta--primary:hover {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.28);
+}
+
+.pricing-cta-note {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.pricing-card.is-featured .pricing-cta-note {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.guarantee-callout {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem auto 0;
+  max-width: 680px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.guarantee-callout-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.guarantee-callout-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.guarantee-callout-copy strong {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.2rem;
+}
+
+.guarantee-callout-copy p {
+  font-size: 0.82rem;
+  color: var(--color-primary-dark);
+  line-height: 1.45;
+}
+
+.guarantee-callout-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  background: #dbeafe;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 0.875rem;
+  border-radius: 2rem;
+  white-space: nowrap;
+  border: 1px solid #bfdbfe;
 }
 
 .pricing-disclaimer {

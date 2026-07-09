@@ -31,6 +31,13 @@ export class AuthService implements OnDestroy {
   private initializePromise: Promise<void> | null = null;
   private isNavigatingToLogin = false;
 
+  // Tokens da sessão do admin guardados apenas em memória durante a
+  // impersonação (nunca em storage, que é exfiltrável por XSS) para permitir
+  // voltar à conta de admin sem reautenticar. Perdidos em reload da página,
+  // caso em que a volta cai no fluxo de logout + login.
+  private adminAccessToken: string | null = null;
+  private adminRefreshToken: string | null = null;
+
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     const { data } = this.supabase.auth.onAuthStateChange(
@@ -166,11 +173,13 @@ export class AuthService implements OnDestroy {
     if (!session) return { ok: false, error: 'Sem sessão ativa' };
 
     try {
-      // Não persistir tokens: refresh token de admin em sessionStorage é
-      // exfiltrável por XSS. Guardamos só o nome do admin para exibir o banner;
-      // a reversão imediata (mismatch abaixo) usa a `session` em memória, e a
-      // saída da impersonação re-autentica o admin (voltarParaAdmin).
+      // Não persistir tokens em storage: refresh token de admin em
+      // sessionStorage é exfiltrável por XSS. Guardamos só o nome do admin
+      // (para o banner) em sessionStorage e os tokens apenas em memória, o que
+      // permite voltar à conta de admin (voltarParaAdmin) sem reautenticar.
       sessionStorage.setItem(this.ADMIN_SESSION_KEY, JSON.stringify({ adminName }));
+      this.adminAccessToken = session.access_token;
+      this.adminRefreshToken = session.refresh_token;
     } catch {
       return { ok: false, error: 'Erro ao salvar sessão' };
     }
@@ -192,6 +201,8 @@ export class AuthService implements OnDestroy {
         refresh_token: session.refresh_token,
       });
       sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+      this.adminAccessToken = null;
+      this.adminRefreshToken = null;
       this._impersonando.set(null);
       return { ok: false, error: 'Sessão incorporada não corresponde ao usuário selecionado.' };
     }
@@ -205,13 +216,35 @@ export class AuthService implements OnDestroy {
   async voltarParaAdmin(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // Sem tokens de admin persistidos (por segurança): encerramos a sessão
-    // impersonada e enviamos o admin para re-autenticar.
-    sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
-    this._impersonando.set(null);
-    this.cache.clear();
-    await this.supabase.auth.signOut();
-    await this.navigateToLogin();
+    const accessToken = this.adminAccessToken;
+    const refreshToken = this.adminRefreshToken;
+
+    // Sem os tokens do admin em memória (ex.: reload da página durante a
+    // impersonação): não há como restaurar a sessão, encerra e reautentica.
+    if (!accessToken || !refreshToken) {
+      this.clearLocalAuthState();
+      await this.supabase.auth.signOut();
+      await this.navigateToLogin();
+      return;
+    }
+
+    // Restaura a sessão do admin a partir dos tokens em memória.
+    const { data, error } = await this.supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    this.clearLocalAuthState();
+
+    if (error || !data.session) {
+      // Sessão do admin expirou/inválida: não há retorno possível, reautentica.
+      await this.supabase.auth.signOut();
+      await this.navigateToLogin();
+      return;
+    }
+
+    this._user.set(data.session.user);
+    await this.router.navigate(['/admin/usuarios']);
   }
 
   ngOnDestroy(): void {
@@ -222,6 +255,8 @@ export class AuthService implements OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
 
     sessionStorage.removeItem(this.ADMIN_SESSION_KEY);
+    this.adminAccessToken = null;
+    this.adminRefreshToken = null;
     this._impersonando.set(null);
     this.cache.clear();
   }

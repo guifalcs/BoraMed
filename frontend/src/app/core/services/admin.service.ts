@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { compressImage } from '../utils/image-compress.util';
-import type { Profile } from '../models/auth.types';
+import type { PapelUsuario, Profile } from '../models/auth.types';
 import type { AssinaturaStatus } from '../models/subscription.types';
 
 export interface AdminDisciplina {
@@ -269,6 +269,100 @@ export interface AdminNotificacao {
 
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+export interface MetricasPerfilUsuario {
+  id: string;
+  nome_completo: string | null;
+  email: string;
+  papel: PapelUsuario;
+  tipo_usuario: string | null;
+  criado_em: string;
+  ultimo_login: string | null;
+  banido: boolean;
+}
+
+export interface MetricasTentativasUsuario {
+  total: number;
+  finalizadas: number;
+  em_andamento: number;
+  acertos: number;
+  nota_media: number | null;
+  tempo_total_segundos: number;
+  por_modo: Record<string, number>;
+  por_formato: Record<string, number>;
+}
+
+export interface MetricasGamificacaoUsuario {
+  xp_total: number;
+  xp_semana_atual: number;
+  nivel: number;
+  streak_atual: number;
+  streak_recorde: number;
+  freezes_disponiveis: number;
+  xp_no_periodo: number;
+}
+
+export interface MetricasAssinaturaUsuario {
+  id: string;
+  status: AssinaturaStatus;
+  plano_nome: string | null;
+  plano_slug: string | null;
+  preco_centavos: number | null;
+  frequency: number | null;
+  frequency_type: 'days' | 'months' | null;
+  data_inicio: string | null;
+  proxima_cobranca: string | null;
+  cancelada_em: string | null;
+  cortesia: boolean;
+  /** true quando a assinatura dá acesso ativo no momento. */
+  ativa: boolean;
+  /** true = cancelou a renovação mas ainda está no período de carência. */
+  renovacao_cancelada: boolean;
+}
+
+export interface MetricasAssinaturaHistoricoItem {
+  id: string;
+  status: AssinaturaStatus;
+  plano_nome: string | null;
+  plano_slug: string | null;
+  data_inicio: string | null;
+  proxima_cobranca: string | null;
+  cancelada_em: string | null;
+  cortesia: boolean;
+  criado_em: string;
+}
+
+export interface MetricasPagamentoUsuario {
+  id: string;
+  criado_em: string;
+  processado_em: string | null;
+  valor_centavos: number | null;
+  moeda: string;
+  status: string;
+  metodo_pagamento: string | null;
+}
+
+export interface SerieTentativasPonto {
+  dia: string;
+  quantidade: number;
+}
+
+export interface SerieXpPonto {
+  dia: string;
+  xp: number;
+}
+
+export interface AdminMetricasUsuario {
+  periodo: { desde: string; ate: string };
+  perfil: MetricasPerfilUsuario;
+  tentativas: MetricasTentativasUsuario;
+  serie_tentativas_por_dia: SerieTentativasPonto[] | null;
+  gamificacao: MetricasGamificacaoUsuario;
+  serie_xp_por_dia: SerieXpPonto[] | null;
+  assinatura_atual: MetricasAssinaturaUsuario | null;
+  assinaturas_historico: MetricasAssinaturaHistoricoItem[];
+  pagamentos: MetricasPagamentoUsuario[];
+}
+
 export interface AdminMaterialCategoria {
   id: string;
   slug: string;
@@ -435,6 +529,21 @@ export class AdminService {
       .trim()
       .replace(/[%(),]/g, ' ')
       .replace(/\s+/g, ' ');
+  }
+
+  /** Métricas individuais de um usuário (tentativas, XP, assinatura) por período. */
+  async getMetricasUsuario(
+    userId: string,
+    desde: string | null = null,
+    ate: string | null = null,
+  ): Promise<ServiceResult<AdminMetricasUsuario>> {
+    const { data, error } = await this.supabase.rpc('admin_get_metricas_usuario', {
+      p_user_id: userId,
+      p_desde: desde,
+      p_ate: ate,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminMetricasUsuario };
   }
 
   async alterarPapelUsuario(
