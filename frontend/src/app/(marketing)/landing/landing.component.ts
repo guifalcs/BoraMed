@@ -21,6 +21,7 @@ import {
   FlaskConical,
   LineChart,
   Menu,
+  PenLine,
   // Quote, // reativar junto com a seção de depoimentos (ver bloco comentado abaixo)
   Route,
   ShieldCheck,
@@ -103,6 +104,7 @@ interface FaqItem {
   templateUrl: './landing.component.html',
   styleUrls: [
     './landing.component.css',
+    './landing-aurora.component.css',
     './landing-intelligence.component.css',
     './landing-pricing.component.css',
     './landing-bento.component.css',
@@ -123,6 +125,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly arrowRightIcon = ArrowRight;
   protected readonly activityIcon = Activity;
   protected readonly sparklesIcon = Sparkles;
+  protected readonly penIcon = PenLine;
   protected readonly shieldIcon = ShieldCheck;
   // protected readonly quoteIcon = Quote; // ver nota sobre depoimentos desativados
 
@@ -135,6 +138,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly navItems: readonly NavItem[] = [
     { label: 'Início', href: '#inicio' },
     { label: 'Teste grátis', href: '#demo' },
+    { label: 'Correção por IA', href: '#aurora' },
     { label: 'Treinos', href: '#treinos' },
     { label: 'Planos', href: '#planos' },
     { label: 'FAQ', href: '#faq' },
@@ -156,6 +160,8 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly tickerItems = [
     'Treinos nacionais',
+    'Correção por IA · Aurora',
+    'Questões discursivas',
     'Simulados por tema',
     'Questões autorais',
     'Revisão guiada',
@@ -163,6 +169,37 @@ export class LandingComponent implements OnDestroy {
     'Laboratório',
     'Streak de estudo',
     'Comunidade no WhatsApp',
+  ];
+
+  // Exemplo real (estático) de correção da Aurora exibido na seção #aurora —
+  // "prova > promessa": mostra a nota 0–100, os pontos atendidos/faltantes e o
+  // comentário, exatamente como o aluno vê ao responder uma questão discursiva.
+  protected readonly auroraDemo = {
+    topic: 'Cirurgia · Vias biliares',
+    question: 'Descreva a tríade de Charcot e seu significado clínico na colangite aguda.',
+    answer:
+      'Febre com calafrios, icterícia e dor no hipocôndrio direito. Indica infecção das vias biliares por obstrução, geralmente por cálculo.',
+    score: 90,
+    atendidos: [
+      'Febre com calafrios',
+      'Icterícia',
+      'Dor em hipocôndrio direito',
+      'Associou à obstrução biliar',
+    ],
+    faltantes: ['Pêntade de Reynolds (confusão + hipotensão) como sinal de gravidade'],
+    comentario:
+      'Boa resposta: você acertou os três componentes da tríade e relacionou à obstrução das vias biliares. Para a nota máxima, cite a evolução para a pêntade de Reynolds, que indica colangite grave e muda a conduta.',
+  } as const;
+
+  // Disclaimer da Aurora na landing — mesma expectativa da correção no app
+  // (apoio ao estudo, não a correção oficial; independência em relação à Afya).
+  protected readonly auroraDisclaimer =
+    'A Aurora é um apoio ao seu estudo: aponta a direção da resposta e os pontos esperados, não substitui a correção oficial. O BoraMed é uma plataforma independente, sem vínculo com a Afya.';
+
+  protected readonly auroraBenefits: readonly string[] = [
+    'Nota de 0 a 100 e feedback na hora — sem esperar ninguém corrigir.',
+    'Aponta ponto a ponto: o que você acertou e o que faltou dizer.',
+    'Funciona no modo estudo e no simulado, em toda questão discursiva.',
   ];
 
   protected readonly trainingModes: readonly TrainingMode[] = [
@@ -225,8 +262,8 @@ export class LandingComponent implements OnDestroy {
       label: 'Revisar',
       title: 'Cada erro vira uma rota de revisão',
       description:
-        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção.',
-      features: ['Nota e resumo na hora', 'Temas mais críticos', 'Revisão de cada erro', 'Comentário por questão', 'Refaça em modo estudo'],
+        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção — inclusive nas questões discursivas, corrigidas pela Aurora.',
+      features: ['Nota e resumo na hora', 'Correção das discursivas pela Aurora (IA)', 'Temas mais críticos', 'Revisão de cada erro', 'Refaça em modo estudo'],
       icon: Route,
     },
     {
@@ -256,7 +293,7 @@ export class LandingComponent implements OnDestroy {
     {
       label: 'Depois',
       title: 'Evolua pelo diagnóstico',
-      points: ['Veja sua nota e pontos fracos', 'Revise cada erro comentado', 'Refaça até dominar'],
+      points: ['Veja sua nota e pontos fracos', 'Discursivas corrigidas pela Aurora', 'Refaça até dominar'],
       icon: Activity,
     },
   ];
@@ -290,6 +327,7 @@ export class LandingComponent implements OnDestroy {
       ctaLabel: 'Começar no mensal',
       features: [
         'Todos os simulados: nacionais, processuais e laboratório',
+        'Correção de questões discursivas pela Aurora (IA)',
         'Banco completo de questões autorais',
         'Histórico e estatísticas de desempenho',
         'Ranking competitivo, XP e conquistas',
@@ -311,6 +349,7 @@ export class LandingComponent implements OnDestroy {
       ctaLabel: 'Garantir 6 meses com desconto',
       features: [
         'Tudo do plano mensal incluso',
+        'Correção de questões discursivas pela Aurora (IA)',
         'Banco completo de questões autorais',
         'Histórico e estatísticas de desempenho',
         'Ranking competitivo, XP e conquistas',
@@ -345,6 +384,16 @@ export class LandingComponent implements OnDestroy {
       question: 'O BoraMed tem vínculo oficial com a Afya?',
       answer:
         'Não. O BoraMed é uma plataforma independente, sem vínculo com a Afya ou qualquer instituição. Apenas seguimos o modelo das avaliações para deixar o seu treino o mais realista possível.',
+    },
+    {
+      question: 'Como funciona a correção das questões discursivas por IA?',
+      answer:
+        'Você escreve a resposta e a Aurora, nossa IA corretora, avalia na hora: dá uma nota de 0 a 100, aponta os pontos que você acertou, os que faltaram e comenta os erros. Funciona tanto no modo estudo quanto no simulado, em toda questão discursiva.',
+    },
+    {
+      question: 'A nota da Aurora é a correção oficial da prova?',
+      answer:
+        'Não. A Aurora é um apoio ao seu estudo: mostra a direção da resposta e os pontos esperados para você treinar, mas não reproduz os critérios exatos dos professores nem substitui a correção oficial. O BoraMed é uma plataforma independente, sem vínculo com a Afya.',
     },
     {
       question: 'Posso cancelar quando quiser?',
@@ -433,7 +482,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Descubra o que estudar antes da prova: simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema. Comece a treinar hoje.',
+        'Simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema e correção de questões discursivas por IA (Aurora): nota e feedback na hora. Comece a treinar hoje.',
       path: '/',
       titleHasBrand: true,
     });
@@ -453,7 +502,7 @@ export class LandingComponent implements OnDestroy {
       operatingSystem: 'Web',
       inLanguage: 'pt-BR',
       description:
-        'Plataforma independente de simulados de medicina com questões autorais no modelo das provas da Afya. Sem vínculo oficial com a Afya.',
+        'Plataforma independente de simulados de medicina com questões autorais no modelo das provas da Afya, incluindo correção de questões discursivas por IA (Aurora). Sem vínculo oficial com a Afya.',
       audience: {
         '@type': 'Audience',
         audienceType: 'Estudantes de medicina',

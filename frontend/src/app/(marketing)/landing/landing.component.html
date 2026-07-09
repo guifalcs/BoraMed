@@ -51,6 +51,12 @@
           descubra seus temas críticos e chegue no dia da prova sem surpresa.
         </p>
 
+        <a class="hero-badge-new" href="#aurora">
+          <span class="hero-badge-new-icon"><app-ui-icon [icon]="sparklesIcon" [size]="13" /></span>
+          A Aurora corrige suas questões discursivas por IA
+          <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
+        </a>
+
         <div class="hero-actions" aria-label="Ações principais">
           <a class="primary-button" routerLink="/cadastro">Criar minha conta</a>
           <a class="secondary-button" href="#demo">Testar 3 questões agora</a>
@@ -73,6 +79,17 @@
         <div class="float-card float-card--badge" aria-hidden="true">
           <span class="float-dot"></span>
           Questão inédita
+        </div>
+
+        <div class="float-card float-card--aurora" aria-hidden="true">
+          <span class="float-aurora-head">
+            <span class="float-aurora-icon"><app-ui-icon [icon]="sparklesIcon" [size]="13" /></span>
+            Corrigido por Aurora
+          </span>
+          <div class="float-aurora-body">
+            <strong class="float-aurora-score">90<small>/100</small></strong>
+            <span class="float-aurora-sub">resposta discursiva</span>
+          </div>
         </div>
 
         <div class="float-card float-card--topics" aria-hidden="true">
@@ -148,6 +165,100 @@
       </p>
     </div>
     <app-landing-demo-quiz />
+  </section>
+
+  <section class="aurora-section" id="aurora">
+    <div class="aurora-shell">
+      <div class="aurora-copy">
+        <span class="eyebrow">Correção por IA</span>
+        <h2>
+          Múltipla escolha você confere sozinho.<br class="heading-break" />
+          <span class="aurora-title-accent">As discursivas, a Aurora corrige.</span>
+        </h2>
+        <p class="aurora-lead">
+          As questões abertas valem nota — e, até agora, ninguém te dizia se a sua resposta estava
+          boa. A <strong>Aurora</strong>, nossa IA corretora, lê o que você escreveu, dá uma nota de
+          0 a 100 e mostra, ponto a ponto, o que faltou. Na hora.
+        </p>
+
+        <ul class="aurora-benefits">
+          @for (benefit of auroraBenefits; track benefit) {
+            <li>
+              <span class="aurora-check"><app-ui-icon [icon]="checkIcon" [size]="13" /></span>
+              {{ benefit }}
+            </li>
+          }
+        </ul>
+
+        <a class="primary-button" routerLink="/cadastro">Criar conta e testar a Aurora</a>
+
+        <p class="aurora-disclaimer">
+          <app-ui-icon [icon]="shieldIcon" [size]="14" />
+          {{ auroraDisclaimer }}
+        </p>
+      </div>
+
+      <!-- Prova > promessa: a correção da Aurora renderizada como o aluno vê -->
+      <div class="aurora-demo" aria-label="Exemplo de correção da Aurora">
+        <div class="aurora-window">
+          <div class="aurora-window-bar" aria-hidden="true">
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+          </div>
+
+          <div class="aurora-q">
+            <span class="aurora-q-topic">{{ auroraDemo.topic }}</span>
+            <p class="aurora-q-text">{{ auroraDemo.question }}</p>
+          </div>
+
+          <div class="aurora-answer">
+            <span class="aurora-answer-label">
+              <app-ui-icon [icon]="penIcon" [size]="13" />
+              Sua resposta
+            </span>
+            <p>{{ auroraDemo.answer }}</p>
+          </div>
+
+          <div class="aurora-feedback">
+            <div class="aurora-feedback-head">
+              <span class="aurora-agent">
+                <span class="aurora-agent-icon"><app-ui-icon [icon]="sparklesIcon" [size]="15" /></span>
+                <span class="aurora-agent-name">
+                  Corrigido por Aurora
+                  <small>IA corretora · BoraMed</small>
+                </span>
+              </span>
+              <span class="aurora-score">{{ auroraDemo.score }}<small>/100</small></span>
+            </div>
+
+            <div class="aurora-points">
+              <span class="aurora-points-title aurora-points-title--ok">Você acertou</span>
+              <ul class="aurora-points-list">
+                @for (point of auroraDemo.atendidos; track point) {
+                  <li>
+                    <span class="aurora-mark aurora-mark--ok"><app-ui-icon [icon]="checkIcon" [size]="12" /></span>
+                    {{ point }}
+                  </li>
+                }
+              </ul>
+
+              <span class="aurora-points-title aurora-points-title--miss">Faltou dizer</span>
+              <ul class="aurora-points-list">
+                @for (point of auroraDemo.faltantes; track point) {
+                  <li>
+                    <span class="aurora-mark aurora-mark--miss" aria-hidden="true"></span>
+                    {{ point }}
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <p class="aurora-comment">{{ auroraDemo.comentario }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="section-shell modules-bento-section" id="treinos">

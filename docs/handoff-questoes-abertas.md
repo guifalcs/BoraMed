@@ -1,7 +1,18 @@
 # Handoff — Questões Abertas (Discursivas) com Correção por IA
 
-**Branch:** `claude/open-ended-questions-plan-un8m3l` (pushed — HEAD `7bd4455`)
+**Branch:** `claude/open-ended-questions-plan-un8m3l` (HEAD local `f48495f`)
 **Plano original:** `docs/plano-questoes-abertas-ia.md`
+
+> **SESSÃO 2026-07-09 — ambiente local no ar para validar a IA real dentro do app.**
+> Subido e verificado: stack Supabase (API `:54321`, Studio `:54323`, DB `:54322`),
+> edge functions com `corrigir-resposta-aberta` servindo, e o app em
+> **http://localhost:4200** (HTTP 200). Provider de IA **real** ativo
+> (`openai-compat` → `deepseek/deepseek-v4-flash`, chave `sk-or-…` presente no
+> `.env.local`). **Drift corrigido:** o DB local estava parado em `20260707170000`
+> (faltavam as 3 migrations de 08/07: custo/métricas de IA, equivalência e
+> dedup/rodízio) e sem discursivas no seed — `npx supabase db reset --local`
+> reaplicou tudo. Seed atual: admin `teste@boramed.com`, 15 MC + 2 discursivas
+> (`resposta_aberta_curta`). **Pronto para o passo 3 (validar a IA real na UI).**
 **Status:** Fases 1–7 implementadas, validadas manualmente (blocos A, B e C) e no
 stack **local**. E2e Playwright **verde** (2026-07-08): os 2 testes de
 `questoes-abertas.spec.ts` passam e a suíte chromium completa (34 testes) segue
@@ -263,11 +274,31 @@ acerto (hoje 70), liga/desliga do provider. Exige decidir onde persistir
 (tabela de config com RLS admin-only lida pela edge function, em vez de env
 vars) — planejar antes de implementar.
 
-### 5. Landing page: usar a IA como propaganda  ⚠️ pendente — próxima sessão
-Atualizar os textos/seções da landing page para destacar a correção de questões
-discursivas por IA como diferencial do produto (feedback individualizado por
-resposta, estilo "corretor particular"). **Usar a skill `revenue-centric-design`**
-para orientar copy/posicionamento/CRO.
+### 5. Landing page: usar a IA como propaganda  ✅ feito (2026-07-09)
+Aurora posicionada como **diferencial de categoria** na landing, com copy
+orientada pela skill `revenue-centric-design` (prova > promessa; múltipla escolha
+você confere sozinho, discursiva ninguém corrigia). Mudanças em
+`frontend/src/app/(marketing)/landing/`:
+- **Nova seção `#aurora`** (após o demo): renderiza uma correção real da Aurora
+  (nota 90/100, pontos atendidos/faltantes, comentário) ao lado da copy +
+  disclaimer honesto (apoio ao estudo, não oficial, independência da Afya). Novo
+  CSS `landing-aurora.component.css`.
+- **Hero:** pill "A Aurora corrige suas questões discursivas por IA" (âncora p/
+  #aurora) + float card de prova "Corrigido por Aurora · 90/100". Enquadramento
+  "Novo" removido a pedido do dono (2026-07-09): em landing de tráfego frio +
+  base pequena, "novo" é ruído/risco; guardar a carta do "Novo" para o lançamento
+  in-app + comunidade WhatsApp à base atual (RCD: novidade re-engaja quem já usa).
+- **Toques transversais:** item no nav, ticker ("Correção por IA · Aurora" +
+  "Questões discursivas"), tab "Revisar" e passo "Evolua pelo diagnóstico",
+  feature nos 2 planos de preço, 2 FAQs (como funciona / não é a nota oficial —
+  alimentam o FAQ schema), e `description`/schema de SEO.
+- Nota: a skill só tem o `SKILL.md` no repo (os `references/*.md` de aprofundamento
+  nunca foram versionados, nem na `main`) — trabalhei a partir do framework central.
+- **Ainda não visualizado em browser** (extensão do Chrome não conectada nesta
+  sessão): typecheck ok, SSR renderiza a copy, build limpo — falta o dono conferir
+  o visual em http://localhost:4200. **Cuidado:** só mergear/deployar a landing
+  junto com a feature (a Aurora ainda não está em produção — senão vira promessa
+  sem entrega).
 
 ### 6. Merge / PR
 Branch pronta para revisão. Sugestão: abrir PR de

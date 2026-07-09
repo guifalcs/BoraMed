@@ -1,0 +1,338 @@
+/* Seção "Correção por IA · Aurora" (#aurora) — diferencial de categoria.
+   Prova > promessa: renderiza uma correção real da Aurora ao lado da copy. */
+.aurora-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(124, 58, 237, 0.08), transparent 42%),
+    radial-gradient(circle at 92% 100%, rgba(37, 99, 235, 0.08), transparent 40%),
+    var(--color-surface, #f8fafc);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.aurora-shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  display: grid;
+  gap: 2.5rem;
+  padding: 4.5rem 0;
+}
+
+.aurora-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.aurora-copy h2 {
+  margin: 0;
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: clamp(1.75rem, 3.4vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+
+.aurora-title-accent {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.aurora-lead {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.aurora-lead strong {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.aurora-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aurora-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.aurora-check {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-top: 0.05rem;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.aurora-copy .primary-button {
+  margin-top: 0.25rem;
+}
+
+.aurora-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  max-width: 56ch;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.aurora-disclaimer app-ui-icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--color-primary);
+}
+
+/* --- Janela de prova: a correção da Aurora --- */
+.aurora-demo {
+  display: flex;
+  justify-content: center;
+}
+
+.aurora-window {
+  width: 100%;
+  max-width: 480px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(37, 99, 235, 0.14), 0 2px 8px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.aurora-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: #f8fafc;
+}
+
+.aurora-window-bar .window-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.aurora-q {
+  padding: 1.1rem 1.25rem 0.9rem;
+  border-bottom: 1px dashed var(--color-border, #e2e8f0);
+}
+
+.aurora-q-topic {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.09);
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.aurora-q-text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--color-text);
+}
+
+.aurora-answer {
+  padding: 0.9rem 1.25rem;
+  background: #f8fafc;
+}
+
+.aurora-answer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.aurora-answer p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.aurora-feedback {
+  padding: 1.1rem 1.25rem 1.25rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.06), transparent 45%),
+    #fff;
+}
+
+.aurora-feedback-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.aurora-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.aurora-agent-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--gradient-brand, linear-gradient(135deg, #2563eb, #7c3aed));
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+}
+
+.aurora-agent-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.aurora-agent-name small {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.aurora-score {
+  flex-shrink: 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 10px;
+  background: #d1fae5;
+  color: #047857;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.aurora-score small {
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.aurora-points-title {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aurora-points-title--ok {
+  color: #047857;
+}
+
+.aurora-points-title--miss {
+  margin-top: 0.9rem;
+  color: #b45309;
+}
+
+.aurora-points-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aurora-points-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.aurora-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.08rem;
+}
+
+.aurora-mark--ok {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  color: #fff;
+  background: #10b981;
+}
+
+.aurora-mark--miss {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.32rem;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.aurora-comment {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--color-primary, #2563eb);
+  border-radius: 0 8px 8px 0;
+  background: rgba(37, 99, 235, 0.05);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+@media (min-width: 860px) {
+  .aurora-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 0.95fr);
+    align-items: center;
+    gap: 3.5rem;
+    padding: 5.5rem 0;
+  }
+
+  .aurora-demo {
+    justify-content: flex-end;
+  }
+}

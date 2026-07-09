@@ -9,6 +9,7 @@
 
 /* Compensa o header sticky (72px) na navegação por âncora. */
 #demo,
+#aurora,
 #treinos,
 #solucao,
 #depoimentos,
@@ -159,6 +160,7 @@
 .hero-copy .eyebrow,
 .hero-copy h1,
 .hero-copy > p,
+.hero-badge-new,
 .hero-actions {
   opacity: 0;
   transform: translateY(22px);
@@ -168,9 +170,53 @@
 .hero-ready .hero-copy .eyebrow,
 .hero-ready .hero-copy h1,
 .hero-ready .hero-copy > p,
+.hero-ready .hero-badge-new,
 .hero-ready .hero-actions {
   opacity: 1;
   transform: none;
+}
+
+.hero-badge-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem auto 0;
+  padding: 0.4rem 0.85rem 0.4rem 0.45rem;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.05);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.hero-badge-new:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(37, 99, 235, 0.09);
+  transform: translateY(-1px);
+}
+
+.hero-badge-new-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+}
+
+.hero-badge-new app-ui-icon:last-of-type {
+  color: var(--color-primary);
+}
+
+@media (max-width: 560px) {
+  .hero-badge-new {
+    font-size: 0.78rem;
+  }
 }
 
 .eyebrow {
@@ -354,6 +400,69 @@
   color: #065f46;
   white-space: nowrap;
   animation: float 4s ease-in-out infinite 1.4s;
+}
+
+.float-card--aurora {
+  position: absolute;
+  bottom: 2.5rem;
+  right: -1rem;
+  z-index: 11;
+  display: none;
+  flex-direction: column;
+  gap: 0.55rem;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.16), 0 1px 4px rgba(15, 23, 42, 0.06);
+  min-width: 176px;
+  animation: float 4s ease-in-out infinite 0.7s;
+}
+
+.float-aurora-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.float-aurora-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--gradient-brand, linear-gradient(135deg, #2563eb, #7c3aed));
+}
+
+.float-aurora-body {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.float-aurora-score {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #047857;
+}
+
+.float-aurora-score small {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.float-aurora-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .float-dot {
@@ -1153,7 +1262,8 @@
 
   .float-card--score,
   .float-card--badge,
-  .float-card--topics {
+  .float-card--topics,
+  .float-card--aurora {
     display: flex;
   }
 
