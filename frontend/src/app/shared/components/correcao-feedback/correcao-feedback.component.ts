@@ -2,9 +2,20 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { Check, CircleAlert, RefreshCw, Sparkles, X } from 'lucide-angular';
 import type { RespostaCorrecao } from '../../../core/models/correcao';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
+import { UiInfoTooltipComponent } from '../ui/info-tooltip/ui-info-tooltip.component';
 
 /** Nome/persona da IA corretora do BoraMed. */
 export const AGENTE_IA_NOME = 'Aurora';
+
+/**
+ * Disclaimer da correção por IA: define expectativa (guia de estudo, não a
+ * correção oficial) e reforça a independência em relação à Afya (regra de
+ * negócio: menção comparativa sempre acompanhada do disclaimer de independência).
+ */
+export const AGENTE_IA_DISCLAIMER =
+  'A ' +
+  AGENTE_IA_NOME +
+  ' é um apoio ao seu estudo, não a correção oficial. Ela aponta a direção da resposta e os principais pontos esperados para você treinar — não reproduz os critérios exatos dos professores da Afya. O BoraMed é uma plataforma independente, sem vínculo com a Afya.';
 
 /**
  * Feedback da correção por IA de uma resposta aberta: badge de nota 0–100
@@ -15,7 +26,7 @@ export const AGENTE_IA_NOME = 'Aurora';
 @Component({
   selector: 'app-correcao-feedback',
   standalone: true,
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, UiInfoTooltipComponent],
   templateUrl: './correcao-feedback.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -31,6 +42,7 @@ export class CorrecaoFeedbackComponent {
   protected readonly retryIcon = RefreshCw;
   protected readonly sparklesIcon = Sparkles;
   protected readonly agenteNome = AGENTE_IA_NOME;
+  protected readonly disclaimer = AGENTE_IA_DISCLAIMER;
 
   protected readonly notaClasse = computed(() => {
     const pontos = this.correcao().pontos ?? 0;

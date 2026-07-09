@@ -47,6 +47,20 @@ describe('CorrecaoFeedbackComponent', () => {
     expect(texto).toContain('Corrigido por Aurora');
   });
 
+  it('corrigida: expõe o disclaimer da IA (guia de estudo, independente da Afya)', async () => {
+    await setup();
+    const texto = fixture.nativeElement.textContent as string;
+    // O balão do tooltip fica no DOM (oculto por opacidade), então dá para asseverar o texto.
+    expect(texto).toContain('apoio ao seu estudo');
+    expect(texto).toContain('não a correção oficial');
+    expect(texto).toContain('independente');
+    expect(texto).toContain('Afya');
+    const gatilho = fixture.nativeElement.querySelector(
+      '[aria-label="Como interpretar a correção da Aurora"]',
+    );
+    expect(gatilho).toBeTruthy();
+  });
+
   it('corrigida com erros: exibe pontos de atenção', async () => {
     await setup({ erros: ['Confundiu com a pêntade de Reynolds.'] });
     expect(fixture.nativeElement.textContent).toContain('Pontos de atenção');

@@ -212,6 +212,16 @@ box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
 }
 ```
 
+### InfoTooltip (`app-ui-info-tooltip`)
+
+Ícone de informação discreto (lucide `Info`, muted) com balão no hover/foco. Sem
+JS: visibilidade por CSS (`group-hover` + `group-focus-within`) — funciona com
+mouse e teclado. Gatilho é um `button` focável com `aria-label`; balão tem
+`role="tooltip"`, largura limitada (`max-w-[calc(100vw-3rem)]`) para não estourar
+em telas pequenas. Props: `text` (obrigatório), `ariaLabel`, `size` (default 14).
+Uso atual: disclaimer da correção da IA (Aurora) — deixa claro que é apoio ao
+estudo, não a correção oficial, e reforça a independência em relação à Afya.
+
 ## Componentes De Simulado
 
 ### QuestaoCard

@@ -16,7 +16,10 @@
               {{ correcao().pontos }}/100
             </span>
           </div>
-          <p class="text-xs text-[var(--color-text-muted)]">IA corretora · BoraMed</p>
+          <p class="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
+            <span>IA corretora · BoraMed</span>
+            <app-ui-info-tooltip [text]="disclaimer" ariaLabel="Como interpretar a correção da Aurora" />
+          </p>
         </div>
       </div>
 
