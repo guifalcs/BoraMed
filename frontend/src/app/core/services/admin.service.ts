@@ -93,6 +93,30 @@ export interface AdminMetricasIa {
   falhas: { erro: number; sem_ia: number };
 }
 
+/**
+ * Comportamento NÃO-SECRETO de um agente de IA (tabela `ia_agente`), gerenciável
+ * no painel /admin/ia. Modelo/conexão/chave NÃO vivem aqui — ficam em env/secrets
+ * (controlados pelo dev + painel do OpenRouter).
+ */
+export interface AdminIaAgente {
+  id: string;
+  slug: string;
+  nome: string;
+  ativo: boolean;
+  temperatura: number;
+  limite_diario: number;
+  max_resposta_chars: number;
+  persona: string | null;
+  tom: string | null;
+  tamanho_feedback: string | null;
+  regras_correcao: string | null;
+  regras_extras: string | null;
+  atualizado_em: string;
+}
+
+/** Campos editáveis no painel (id identifica a linha; o resto é opcional). */
+export type AdminIaAgentePatch = Partial<Omit<AdminIaAgente, 'id' | 'atualizado_em'>>;
+
 export interface AdminPagamento {
   id: string;
   criado_em: string;
@@ -405,6 +429,39 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_metricas_ia');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminMetricasIa };
+  }
+
+  // ---- Agentes de IA (Aurora) ----
+  // Leitura/escrita direta na tabela: RLS admin-only (is_admin) gate no banco.
+
+  async listarIaAgentes(): Promise<ServiceResult<AdminIaAgente[]>> {
+    const { data, error } = await this.supabase
+      .from('ia_agente')
+      .select(
+        'id, slug, nome, ativo, temperatura, ' +
+        'limite_diario, max_resposta_chars, persona, tom, tamanho_feedback, regras_correcao, regras_extras, atualizado_em',
+      )
+      .order('nome', { ascending: true });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as unknown as AdminIaAgente[] };
+  }
+
+  async salvarIaAgente(
+    id: string,
+    patch: AdminIaAgentePatch,
+  ): Promise<ServiceResult<AdminIaAgente>> {
+    const { data: userData } = await this.supabase.auth.getUser();
+    const { data, error } = await this.supabase
+      .from('ia_agente')
+      .update({ ...patch, atualizado_por: userData.user?.id ?? null })
+      .eq('id', id)
+      .select(
+        'id, slug, nome, ativo, temperatura, ' +
+        'limite_diario, max_resposta_chars, persona, tom, tamanho_feedback, regras_correcao, regras_extras, atualizado_em',
+      )
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminIaAgente };
   }
 
   // ---- Usuários ----

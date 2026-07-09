@@ -1,7 +1,6 @@
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2.108.2';
 import type { GradingProvider } from './grading-provider.ts';
-import { openAiCompatProvider } from './grading-openai-compat.ts';
-import { fakeProvider } from './grading-fake.ts';
+import { gradingProviderFromConfig, type IaConfig, loadIaConfig } from './ia-config.ts';
 
 // Dependências injetáveis das edge functions de pagamento. A produção usa
 // `realDeps()` (Deno.env, clientes Supabase reais, fetch global). Os testes
@@ -20,42 +19,27 @@ export interface Deps {
   /** Espera (backoff de retry); no-op nos testes. */
   sleep(ms: number): Promise<void>;
   /**
-   * Motor de correção de questões abertas, escolhido por env
-   * (AI_GRADING_PROVIDER = 'openai-compat' | 'fake'). `null` = IA
-   * indisponível/não configurada → correção vira `sem_ia`.
+   * Config NÃO-SECRETA do agente de IA (tabela `ia_agente`), lida via
+   * service_role. `null` = agente inexistente.
    */
-  gradingProvider(): GradingProvider | null;
-}
-
-/** Resolve o provider de correção a partir das envs (exportado p/ testes). */
-export function gradingProviderFromEnv(
-  env: (key: string) => string | undefined,
-  fetchImpl: typeof fetch,
-): GradingProvider | null {
-  const tipo = env('AI_GRADING_PROVIDER');
-  if (tipo === 'fake') return fakeProvider();
-  if (tipo === 'openai-compat') {
-    const baseUrl = env('AI_GRADING_BASE_URL');
-    const modelo = env('AI_GRADING_MODEL');
-    const apiKey = env('AI_GRADING_API_KEY');
-    if (!baseUrl || !modelo || !apiKey) return null;
-    const providerOrder = (env('AI_GRADING_ROUTER_ORDER') ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    return openAiCompatProvider({ baseUrl, modelo, apiKey, fetch: fetchImpl, providerOrder });
-  }
-  return null;
+  loadIaConfig(slug: string): Promise<IaConfig | null>;
+  /**
+   * Motor de correção de questões abertas, resolvido a partir da config do DB
+   * (provider/modelo/base_url/...) combinada com a chave da API do env. `null`
+   * = IA indisponível/desligada → correção vira `sem_ia`.
+   */
+  gradingProvider(config: IaConfig | null): GradingProvider | null;
 }
 
 export function realDeps(): Deps {
   const url = () => Deno.env.get('SUPABASE_URL')!;
+  const adminClient = () =>
+    createClient(url(), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
   return {
     env: (k) => Deno.env.get(k),
-    admin: () =>
-      createClient(url(), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      }),
+    admin: adminClient,
     caller: (authHeader) =>
       createClient(url(), Deno.env.get('SUPABASE_ANON_KEY')!, {
         global: { headers: { Authorization: authHeader } },
@@ -63,7 +47,8 @@ export function realDeps(): Deps {
     fetch: (input: string | URL | Request, init?: RequestInit) => fetch(input, init),
     now: () => new Date(),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-    gradingProvider: () =>
-      gradingProviderFromEnv((k) => Deno.env.get(k), (input, init) => fetch(input, init)),
+    loadIaConfig: (slug) => loadIaConfig(adminClient(), slug),
+    gradingProvider: (config) =>
+      gradingProviderFromConfig(config, (k) => Deno.env.get(k), (input, init) => fetch(input, init)),
   };
 }

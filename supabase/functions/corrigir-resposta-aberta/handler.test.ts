@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from '@std/assert';
 import { FakeDb, makeDeps } from '../_shared/test/fake.ts';
+import type { IaConfig } from '../_shared/ia-config.ts';
 import { handleCorrigirRespostaAberta } from './handler.ts';
 
 // ---------------------------------------------------------------------------
@@ -57,12 +58,27 @@ function request(body: unknown = { tentativa_resposta_id: 'tr-1' }): Request {
   });
 }
 
-/** Env para provider openai-compat apontando para um fetch fake. */
+/** Conexão openai-compat no env (dev/secrets); a config do DB não guarda isso. */
 const OPENAI_ENV = {
   AI_GRADING_PROVIDER: 'openai-compat',
   AI_GRADING_BASE_URL: 'https://openrouter.fake/api/v1',
   AI_GRADING_MODEL: 'test-model',
   AI_GRADING_API_KEY: 'sk-test',
+};
+
+/** Config do agente 'aurora' ativo (só comportamento; conexão vem do env). */
+const ACTIVE_CONFIG: IaConfig = {
+  slug: 'aurora',
+  nome: 'Aurora',
+  ativo: true,
+  temperatura: 0,
+  limite_diario: 200,
+  max_resposta_chars: 3000,
+  persona: null,
+  tom: null,
+  tamanho_feedback: null,
+  regras_correcao: null,
+  regras_extras: null,
 };
 
 /** fetch fake stateful: devolve as respostas na ordem, uma por chamada. */
@@ -115,21 +131,21 @@ Deno.test('rejeita body sem tentativa_resposta_id', async () => {
 
 Deno.test('rejeita resposta de outro usuário (404, sem vazar existência)', async () => {
   const db = seedDb({ tentativaUserId: 'outro-user' });
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG });
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 404);
 });
 
 Deno.test('rejeita resposta ainda não enviada (rascunho)', async () => {
   const db = seedDb({ enviadaEm: null });
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG });
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 409);
 });
 
 Deno.test('rejeita questão que não é discursiva', async () => {
   const db = seedDb({ formato: 'multipla_escolha' });
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG });
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 400);
 });
@@ -141,7 +157,7 @@ Deno.test('rejeita questão que não é discursiva', async () => {
 Deno.test('sucesso: corrige, persiste resultado e pontos da resposta', async () => {
   const db = seedDb();
   const { fetch } = sequencialFetch([{ content: CORRECAO_OK }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 200);
@@ -161,7 +177,7 @@ Deno.test('sucesso: corrige, persiste resultado e pontos da resposta', async () 
 Deno.test('retry: JSON inválido na 1ª chamada, sucesso na 2ª', async () => {
   const db = seedDb();
   const seq = sequencialFetch([{ content: 'não é json {' }, { content: CORRECAO_OK }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch: seq.fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 200);
@@ -173,7 +189,7 @@ Deno.test('retry: JSON inválido na 1ª chamada, sucesso na 2ª', async () => {
 Deno.test('5xx persistente esgota retries e marca erro', async () => {
   const db = seedDb();
   const seq = sequencialFetch([{ status: 500 }, { status: 502 }, { status: 503 }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch: seq.fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 502);
@@ -186,7 +202,7 @@ Deno.test('5xx persistente esgota retries e marca erro', async () => {
 Deno.test('4xx (não retryable) falha direto, sem retry', async () => {
   const db = seedDb();
   const seq = sequencialFetch([{ status: 400 }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch: seq.fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 502);
@@ -197,7 +213,7 @@ Deno.test('4xx (não retryable) falha direto, sem retry', async () => {
 Deno.test('claim duplo: status corrigindo devolve 202 sem chamar a IA', async () => {
   const db = seedDb({ correcaoStatus: 'corrigindo' });
   const seq = sequencialFetch([{ content: CORRECAO_OK }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch: seq.fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 202);
@@ -209,7 +225,7 @@ Deno.test('claim duplo: status corrigindo devolve 202 sem chamar a IA', async ()
 Deno.test('status erro pode ser re-claimado e corrigido', async () => {
   const db = seedDb({ correcaoStatus: 'erro' });
   const seq = sequencialFetch([{ content: CORRECAO_OK }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch: seq.fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 200);
@@ -219,16 +235,16 @@ Deno.test('status erro pode ser re-claimado e corrigido', async () => {
 Deno.test('já corrigida: devolve o resultado existente sem nova chamada', async () => {
   const db = seedDb({ correcaoStatus: 'corrigida' });
   const seq = sequencialFetch([{ content: CORRECAO_OK }]);
-  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, fetch: seq.fetch });
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 200);
   assertEquals(seq.chamadas(), 0);
 });
 
-Deno.test('env de IA ausente marca sem_ia (app funciona sem IA)', async () => {
+Deno.test('IA não configurada (sem agente) marca sem_ia (app funciona sem IA)', async () => {
   const db = seedDb();
-  const deps = makeDeps({ db, caller: USER }); // sem AI_GRADING_*
+  const deps = makeDeps({ db, caller: USER }); // sem iaConfig e sem chave
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 200);
   const { correcao } = await res.json();
@@ -251,7 +267,8 @@ Deno.test('cap diário: usuário no limite recebe 429', async () => {
   const deps = makeDeps({
     db,
     caller: USER,
-    env: { ...OPENAI_ENV, AI_GRADING_DAILY_LIMIT: '2' },
+    env: OPENAI_ENV,
+    iaConfig: { ...ACTIVE_CONFIG, limite_diario: 2 },
     fetch: seq.fetch,
   });
 
@@ -264,7 +281,12 @@ Deno.test('cap diário: usuário no limite recebe 429', async () => {
 
 Deno.test('provider fake: corrige deterministicamente por pontos-chave', async () => {
   const db = seedDb();
-  const deps = makeDeps({ db, caller: USER, env: { AI_GRADING_PROVIDER: 'fake' } });
+  const deps = makeDeps({
+    db,
+    caller: USER,
+    env: { AI_GRADING_PROVIDER: 'fake' },
+    iaConfig: ACTIVE_CONFIG,
+  });
 
   const res = await handleCorrigirRespostaAberta(request(), deps);
   assertEquals(res.status, 200);

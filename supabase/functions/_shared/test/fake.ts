@@ -2,8 +2,9 @@
 // em memória (suporta as cadeias usadas pelos handlers) e helpers para montar
 // `Deps` e assinar requisições do webhook. Nada de rede nem banco real.
 
-import { type Deps, gradingProviderFromEnv } from '../deps.ts';
+import type { Deps } from '../deps.ts';
 import type { GradingProvider } from '../grading-provider.ts';
+import { gradingProviderFromConfig, type IaConfig } from '../ia-config.ts';
 
 // deno-lint-ignore no-explicit-any
 type Row = Record<string, any>;
@@ -176,7 +177,12 @@ export interface FakeDepsOptions {
   env?: Record<string, string>;
   fetch?: typeof fetch;
   now?: Date;
-  /** Provider de correção; se omitido, deriva das envs (como em produção). */
+  /** Config do agente de IA (tabela ia_agente); default null (nenhum agente). */
+  iaConfig?: IaConfig | null;
+  /**
+   * Provider de correção; se omitido, deriva da config + env (como em produção,
+   * via gradingProviderFromConfig).
+   */
   gradingProvider?: GradingProvider | null;
 }
 
@@ -194,22 +200,22 @@ export function makeDeps(opts: FakeDepsOptions = {}): Deps {
   const db = opts.db ?? new FakeDb();
   const env = { ...DEFAULT_ENV, ...(opts.env ?? {}) };
   const fixedNow = opts.now ?? new Date('2026-06-24T12:00:00.000Z');
+  const iaConfig = 'iaConfig' in opts ? opts.iaConfig ?? null : null;
+  const rejectFetch = () => Promise.reject(new Error('fetch não mockado'));
   return {
     env: (k) => env[k],
     // deno-lint-ignore no-explicit-any
     admin: () => db.client() as any,
     // deno-lint-ignore no-explicit-any
     caller: () => fakeCaller(opts.caller ?? null, opts.callerError) as any,
-    fetch: opts.fetch ?? (() => Promise.reject(new Error('fetch não mockado'))),
+    fetch: opts.fetch ?? rejectFetch,
     now: () => new Date(fixedNow.getTime()),
     sleep: () => Promise.resolve(),
-    gradingProvider: () =>
+    loadIaConfig: () => Promise.resolve(iaConfig),
+    gradingProvider: (config) =>
       'gradingProvider' in opts
         ? opts.gradingProvider ?? null
-        : gradingProviderFromEnv(
-            (k) => env[k],
-            opts.fetch ?? (() => Promise.reject(new Error('fetch não mockado'))),
-          ),
+        : gradingProviderFromConfig(config, (k) => env[k], opts.fetch ?? rejectFetch),
   };
 }
 

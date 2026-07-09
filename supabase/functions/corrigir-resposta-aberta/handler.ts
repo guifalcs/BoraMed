@@ -16,7 +16,8 @@ import { GradingError, type GradingResult } from '../_shared/grading-provider.ts
 
 const MAX_TENTATIVAS_LLM = 3; // 1 chamada + 2 retries
 const DEFAULT_DAILY_LIMIT = 200;
-const MAX_RESPOSTA_ALUNO = 3_000;
+const DEFAULT_MAX_RESPOSTA_ALUNO = 3_000;
+const AGENTE_SLUG = 'aurora';
 
 interface RespostaCorrecaoRow {
   id: string;
@@ -53,6 +54,10 @@ export async function handleCorrigirRespostaAberta(req: Request, deps: Deps): Pr
 
   const admin = deps.admin();
 
+  // Config do agente (não-secreta) — governa provider/modelo/limites/prompt.
+  const cfg = await deps.loadIaConfig(AGENTE_SLUG);
+  const maxRespostaAluno = cfg?.max_resposta_chars ?? DEFAULT_MAX_RESPOSTA_ALUNO;
+
   // ---- Carrega resposta + tentativa (ownership) + questão (gabarito) ----
   const { data: tr } = await admin
     .from('tentativa_resposta')
@@ -72,7 +77,7 @@ export async function handleCorrigirRespostaAberta(req: Request, deps: Deps): Pr
   }
 
   if (!tr.enviada_em) return reply({ error: 'resposta ainda não enviada' }, 409);
-  const respostaAluno = String(tr.resposta_texto ?? '').slice(0, MAX_RESPOSTA_ALUNO);
+  const respostaAluno = String(tr.resposta_texto ?? '').slice(0, maxRespostaAluno);
 
   const { data: questao } = await admin
     .from('questao')
@@ -95,8 +100,8 @@ export async function handleCorrigirRespostaAberta(req: Request, deps: Deps): Pr
     return reply({ correcao });
   }
 
-  // ---- IA indisponível → sem_ia (o app segue funcionando sem IA) ----
-  const provider = deps.gradingProvider();
+  // ---- IA indisponível/desligada → sem_ia (o app segue funcionando sem IA) ----
+  const provider = deps.gradingProvider(cfg);
   if (!provider) {
     const { data: semIa } = await admin
       .from('resposta_correcao')
@@ -109,7 +114,7 @@ export async function handleCorrigirRespostaAberta(req: Request, deps: Deps): Pr
   }
 
   // ---- Cap diário de correções por usuário (D16) ----
-  const limite = Number(deps.env('AI_GRADING_DAILY_LIMIT') ?? DEFAULT_DAILY_LIMIT);
+  const limite = cfg?.limite_diario ?? Number(deps.env('AI_GRADING_DAILY_LIMIT') ?? DEFAULT_DAILY_LIMIT);
   const inicioDia = new Date(deps.now());
   inicioDia.setUTCHours(0, 0, 0, 0);
   const { data: rcHoje } = await admin

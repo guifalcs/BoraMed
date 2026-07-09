@@ -453,6 +453,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ia_agente: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          atualizado_por: string | null
+          criado_em: string
+          id: string
+          limite_diario: number
+          max_resposta_chars: number
+          nome: string
+          persona: string | null
+          regras_correcao: string | null
+          regras_extras: string | null
+          slug: string
+          tamanho_feedback: string | null
+          temperatura: number
+          tom: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          criado_em?: string
+          id?: string
+          limite_diario?: number
+          max_resposta_chars?: number
+          nome: string
+          persona?: string | null
+          regras_correcao?: string | null
+          regras_extras?: string | null
+          slug: string
+          tamanho_feedback?: string | null
+          temperatura?: number
+          tom?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          criado_em?: string
+          id?: string
+          limite_diario?: number
+          max_resposta_chars?: number
+          nome?: string
+          persona?: string | null
+          regras_correcao?: string | null
+          regras_extras?: string | null
+          slug?: string
+          tamanho_feedback?: string | null
+          temperatura?: number
+          tom?: string | null
+        }
+        Relationships: []
+      }
       material_arquivo: {
         Row: {
           ativo: boolean
@@ -925,6 +979,7 @@ export type Database = {
           fonte: string | null
           formato: string
           formato_prova: string | null
+          grupo_equivalencia_id: string | null
           id: string
           imagem_legenda: string | null
           imagem_url: string | null
@@ -939,6 +994,7 @@ export type Database = {
           resposta_modelo: string | null
           respostas_aceitas: string[] | null
           revisado: boolean
+          revisao_conversao: string | null
           revisor_id: string | null
           status: string
           taxa_acerto: number | null
@@ -962,6 +1018,7 @@ export type Database = {
           fonte?: string | null
           formato: string
           formato_prova?: string | null
+          grupo_equivalencia_id?: string | null
           id?: string
           imagem_legenda?: string | null
           imagem_url?: string | null
@@ -976,6 +1033,7 @@ export type Database = {
           resposta_modelo?: string | null
           respostas_aceitas?: string[] | null
           revisado?: boolean
+          revisao_conversao?: string | null
           revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
@@ -999,6 +1057,7 @@ export type Database = {
           fonte?: string | null
           formato?: string
           formato_prova?: string | null
+          grupo_equivalencia_id?: string | null
           id?: string
           imagem_legenda?: string | null
           imagem_url?: string | null
@@ -1013,6 +1072,7 @@ export type Database = {
           resposta_modelo?: string | null
           respostas_aceitas?: string[] | null
           revisado?: boolean
+          revisao_conversao?: string | null
           revisor_id?: string | null
           status?: string
           taxa_acerto?: number | null
@@ -1209,6 +1269,7 @@ export type Database = {
         Row: {
           atualizado_em: string
           criado_em: string
+          custo_usd: number | null
           erro_detalhe: string | null
           erros: Json | null
           feedback: string | null
@@ -1227,6 +1288,7 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           criado_em?: string
+          custo_usd?: number | null
           erro_detalhe?: string | null
           erros?: Json | null
           feedback?: string | null
@@ -1245,6 +1307,7 @@ export type Database = {
         Update: {
           atualizado_em?: string
           criado_em?: string
+          custo_usd?: number | null
           erro_detalhe?: string | null
           erros?: Json | null
           feedback?: string | null
@@ -1888,6 +1951,7 @@ export type Database = {
         Returns: number
       }
       admin_get_financeiro: { Args: never; Returns: Json }
+      admin_get_metricas_ia: { Args: never; Returns: Json }
       admin_get_questao: { Args: { p_id: string }; Returns: Json }
       admin_get_stats: { Args: never; Returns: Json }
       admin_get_uso_plataforma: { Args: never; Returns: Json }
@@ -2299,7 +2363,7 @@ export type Database = {
         Returns: Json
       }
       listar_temas_com_contagem: {
-        Args: { p_tipo_questao?: string }
+        Args: { p_formato_questao?: string; p_tipo_questao?: string }
         Returns: {
           criado_em: string
           disciplina: string

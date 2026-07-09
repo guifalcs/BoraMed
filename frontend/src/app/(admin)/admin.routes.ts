@@ -30,6 +30,11 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'ia',
+    loadComponent: () =>
+      import('./ia/admin-ia.component').then((m) => m.AdminIaComponent),
+  },
+  {
     path: 'provas',
     loadComponent: () =>
       import('./provas/admin-provas.component').then(
