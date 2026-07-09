@@ -119,6 +119,8 @@ export interface AdminQuestao {
   vezes_respondida: number;
   criado_em: string;
   autor_id: string | null;
+  grupo_equivalencia_id: string | null;
+  revisao_conversao: string | null;
   prova?: { nome: string } | null;
 }
 
@@ -165,6 +167,8 @@ export interface AdminQuestaoCompleta {
   publicada_em: string | null;
   origem_geracao: 'manual' | 'ia_assistida';
   nivel_bloom: number | null;
+  grupo_equivalencia_id: string | null;
+  revisao_conversao: string | null;
   criado_em: string;
   atualizado_em: string;
   alternativas: AdminAlternativa[];
@@ -195,6 +199,8 @@ export interface QuestaoPayload {
   formato_prova?: string | null;
   autor_id?: string | null;
   origem_geracao?: 'manual' | 'ia_assistida';
+  grupo_equivalencia_id?: string | null;
+  revisao_conversao?: string | null;
 }
 
 export type AlternativaPayload = Omit<AdminAlternativa, 'id' | 'questao_id'>;
@@ -547,15 +553,19 @@ export class AdminService {
       busca?: string;
       tipoQuestao?: string;
       formato?: string;
+      // 'abertas' | 'fechadas' — agrupa por discursiva × múltipla escolha/V-F.
+      grupoFormato?: string;
       disciplinaId?: string;
       autorId?: string;
       dataDe?: string;
       dataAte?: string;
+      // 'pendente' | 'revisada' — filtro da fila de revisão de conversão.
+      revisaoConversao?: string;
     } = {},
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,autor_id,prova!questao_prova_id_fkey(nome)', {
+      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,autor_id,grupo_equivalencia_id,revisao_conversao,prova!questao_prova_id_fkey(nome)', {
         count: 'exact',
       })
       .neq('status', 'deletada')
@@ -566,8 +576,11 @@ export class AdminService {
     if (filtros.busca?.trim()) query = query.ilike('enunciado', `%${filtros.busca}%`);
     if (filtros.tipoQuestao) query = query.eq('tipo_questao', filtros.tipoQuestao);
     if (filtros.formato) query = query.eq('formato', filtros.formato);
+    if (filtros.grupoFormato === 'abertas') query = query.eq('formato', 'resposta_aberta_curta');
+    if (filtros.grupoFormato === 'fechadas') query = query.neq('formato', 'resposta_aberta_curta');
     if (filtros.disciplinaId) query = query.eq('disciplina_id', filtros.disciplinaId);
     if (filtros.autorId) query = query.eq('autor_id', filtros.autorId);
+    if (filtros.revisaoConversao) query = query.eq('revisao_conversao', filtros.revisaoConversao);
     if (filtros.dataDe) query = query.gte('criado_em', filtros.dataDe);
     // criado_em é timestamp; comparar com a data pura excluiria o próprio dia final.
     if (filtros.dataAte) query = query.lte('criado_em', `${filtros.dataAte}T23:59:59.999`);
@@ -575,6 +588,44 @@ export class AdminService {
     const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: { questoes: (data ?? []) as unknown as AdminQuestao[], total: count ?? 0 } };
+  }
+
+  /** Contadores da aba de questões: total, fechadas, abertas e pendentes de revisão de conversão. */
+  async contarQuestoesPorFormato(): Promise<
+    ServiceResult<{ total: number; fechadas: number; abertas: number; pendentesRevisao: number }>
+  > {
+    const base = () => this.supabase.from('questao').select('id', { count: 'exact', head: true }).neq('status', 'deletada');
+    const [total, abertas, pendentes] = await Promise.all([
+      base(),
+      base().eq('formato', 'resposta_aberta_curta'),
+      base().eq('revisao_conversao', 'pendente'),
+    ]);
+    const err = total.error || abertas.error || pendentes.error;
+    if (err) return { ok: false, error: err.message };
+    const totalN = total.count ?? 0;
+    const abertasN = abertas.count ?? 0;
+    return {
+      ok: true,
+      data: {
+        total: totalN,
+        abertas: abertasN,
+        fechadas: totalN - abertasN,
+        pendentesRevisao: pendentes.count ?? 0,
+      },
+    };
+  }
+
+  /** Marca/limpa a flag discreta de revisão de conversão de uma questão. */
+  async marcarRevisaoConversao(
+    id: string,
+    valor: 'pendente' | 'revisada' | null,
+  ): Promise<ServiceResult<null>> {
+    const { error } = await this.supabase
+      .from('questao')
+      .update({ revisao_conversao: valor })
+      .eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: null };
   }
 
   /** Autores possíveis de questões: admins e super admins (usado no filtro). */

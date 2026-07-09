@@ -96,6 +96,8 @@ adicional, não dependência**: sem IA o app continua funcionando (a questão vi
 20260707160000_abertas_transversais.sql
 20260707170000_abertas_contagem_temas_por_formato.sql
 20260708120000_ia_custo_e_metricas.sql   # custo_usd + admin_get_metricas_ia (métricas de IA no admin)
+20260708130000_equivalencia_e_revisao_conversao.sql  # grupo_equivalencia_id + revisao_conversao em questao
+20260708140000_sorteio_dedup_e_rodizio_grupo.sql     # gerar_simulado_personalizado ciente de equivalência
 ```
 
 ### Edge function
@@ -270,6 +272,54 @@ https://github.com/guifalcs/BoraMed/compare/main...claude/open-ended-questions-p
 - Nenhum backlog crítico. Desafio diário permanece sem discursivas por decisão (D14).
 
 ---
+
+## Gerenciamento de duplicatas aberta×fechada + revisão de conversão (2026-07-08)
+
+Contexto: a base de produção é 100% fechada. Ao converter parte dela em discursivas
+gêmeas, surgem duplicatas de conteúdo. Esta entrega é a **infra de gerenciamento**
+(a conversão em massa em si ainda não foi executada — ver "Pendente" abaixo).
+
+**Implementado (ADR-030):**
+- **Schema** (`20260708130000`): `questao.grupo_equivalencia_id` (uuid) liga as
+  gêmeas — questão lógica = `coalesce(grupo_equivalencia_id, id)`;
+  `questao.revisao_conversao` (`'pendente'`/`'revisada'`/NULL) = flag discreta de
+  curadoria. Ambas com SELECT grant por coluna (não são gabarito). Índices parciais.
+- **Sorteio** (`20260708140000`): `gerar_simulado_personalizado` reescrito —
+  dedup por grupo (`row_number() over (partition by grupo)`, nunca traz as duas
+  gêmeas juntas) + rodízio agregando "entregues" por grupo lógico. Segue soft.
+  Validado por SQL: 0 violações de dedup em 100 sorteios; gêmea da questão feita
+  marcada `entregue=true`; smoke ponta-a-ponta do RPC em `misto` colapsa o par → 1.
+- **Frontend admin (`(admin)/questoes`):** a cópia discursiva (`criarCopiaDiscursiva`)
+  grava o grupo na gêmea e carimba a original quando ela não tinha grupo. Aba de
+  questões ganhou contadores (total/fechadas/abertas/a revisar) clicáveis como
+  quick-filters, badge "revisar" por linha e ação "✓ revisada". `admin.service`:
+  `contarQuestoesPorFormato`, `marcarRevisaoConversao`, filtros `grupoFormato`/
+  `revisaoConversao` em `listarQuestoes`.
+- **Segurança:** advisor limpo; `resposta_modelo` segue `permission denied` para
+  `authenticated` após o reset; colunas novas legíveis.
+
+**Testes desta feature (persistidos, versionados):**
+- **SQL** (`supabase/tests/equivalencia_sorteio_test.sql`): 3 casos determinísticos
+  contra o stack local via RPC real — (1) dedup no `misto` (par gêmeo → 1 questão),
+  (2) rodízio cross-format (fez a discursiva ⇒ a fechada gêmea sai quando há
+  inéditas), (3) soft (sem inéditas, a gêmea vista reentra). Asserts via
+  `RAISE EXCEPTION` (psql sai != 0 em falha). Rodar após `db reset --local`:
+  `docker exec -i supabase_db_ProjetoMed psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < supabase/tests/equivalencia_sorteio_test.sql`
+- **Frontend (Vitest):** `admin.service.equivalencia.spec.ts` (contadores/marcação/
+  filtros novos) + `admin-questoes.conversao.spec.ts` (a cópia discursiva vincula o
+  grupo: cria+carimba a original quando não havia grupo, reusa quando havia, e
+  questão avulsa não recebe grupo). Suíte total: **512 passando**.
+
+**Decisões (dono, 2026-07-08):** vínculo por `grupo_equivalencia_id` (não self-FK);
+flag em coluna dedicada `revisao_conversao` (não no enum `status`); rodízio soft
+group-aware (não exclusão dura); discursiva convertida nasce **ativa** (a flag é só
+lembrete, não bloqueia o aluno).
+
+**Pendente (próxima sessão):** executar a **conversão em massa** das fechadas — um
+script/RPC que, por questão fechada escolhida, cria a discursiva gêmea (resposta_modelo/
+pontos_chave derivados da alternativa correta + explicação), `status='ativa'`,
+mesmo `grupo_equivalencia_id` e `revisao_conversao='pendente'`. Definir o recorte
+(todas? por disciplina/tema?) com o dono. A infra acima já suporta.
 
 ## Riscos conhecidos
 1. **Regressão de grants via `db pull`** reexpõe `resposta_modelo`. Todas as

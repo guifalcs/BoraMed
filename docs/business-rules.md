@@ -57,6 +57,8 @@
 * Provas prontas exibidas ao aluno devem listar apenas treinos nacionais; processuais e laboratório ficam restritos ao fluxo de montagem personalizada.
 * Ao montar simulado, o sorteio deve priorizar questões ainda não entregues ao usuário dentro dos filtros escolhidos; questões já vistas só entram aleatoriamente quando as inéditas acabam.
 * O histórico de questões já entregues ao usuário é derivado de `tentativa_resposta` vinculada às tentativas do próprio usuário, excluindo modo `visualizar`.
+* **Questões equivalentes (aberta × fechada):** questões gêmeas — mesma questão em formatos diferentes (fechada convertida em discursiva) — compartilham `questao.grupo_equivalencia_id`. O aluno **nunca** recebe as duas variantes no mesmo simulado (dedup: uma por grupo). O rodízio/priorização de inéditas trata o grupo como **uma única questão lógica** (`coalesce(grupo_equivalencia_id, id)`): fez a fechada ⇒ a discursiva gêmea também conta como "já vista", e vice-versa. A priorização segue soft (o pool nunca seca).
+* **Revisão de conversão (admin):** questões convertidas em massa carregam `questao.revisao_conversao='pendente'` — flag discreta, invisível ao aluno e sem efeito no sorteio. Serve só para curadoria: a aba de questões do admin mostra contador/quick-filter "a revisar" e badge por linha; o sócio confere e marca como `'revisada'`.
 * Uma vez iniciado, o tempo corre
 * Pode ser pausado e retomado (estado salvo no banco)
 * Não pode ser refeito com as mesmas questões na mesma ordem

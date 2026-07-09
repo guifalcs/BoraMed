@@ -90,6 +90,10 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly filtroStatus = signal('');
   protected readonly filtroTipo = signal('');
   protected readonly filtroFormato = signal('');
+  // Agrupamento abertas × fechadas ('' | 'abertas' | 'fechadas').
+  protected readonly filtroGrupoFormato = signal('');
+  // Fila de revisão de conversão ('' | 'pendente').
+  protected readonly filtroRevisao = signal('');
   protected readonly filtroDisciplina = signal('');
   protected readonly filtroAutor = signal('');
   protected readonly filtroDataDe = signal('');
@@ -97,6 +101,14 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly busca = signal('');
   protected readonly processando = signal<string | null>(null);
   protected readonly porPagina = 50;
+
+  // ---- Contadores (abertas × fechadas + pendentes de revisão de conversão) ----
+  protected readonly contadores = signal<{
+    total: number;
+    fechadas: number;
+    abertas: number;
+    pendentesRevisao: number;
+  } | null>(null);
 
   // ---- Autores (filtro "quem criou") ----
   protected readonly autoresDisponiveis = signal<{ id: string; nome_completo: string | null; email: string | null }[]>([]);
@@ -106,6 +118,8 @@ export class AdminQuestoesComponent implements OnInit {
       !!this.filtroStatus() ||
       !!this.filtroTipo() ||
       !!this.filtroFormato() ||
+      !!this.filtroGrupoFormato() ||
+      !!this.filtroRevisao() ||
       !!this.filtroDisciplina() ||
       !!this.filtroAutor() ||
       !!this.filtroDataDe() ||
@@ -116,6 +130,10 @@ export class AdminQuestoesComponent implements OnInit {
   // ---- Drawer ----
   protected readonly modoDrawer = signal<'fechado' | 'criar' | 'editar'>('fechado');
   protected readonly questaoEditandoId = signal<string | null>(null);
+  // Grupo de equivalência da questão aberta no drawer de edição (para vincular cópias).
+  private readonly grupoOriginalCarregado = signal<string | null>(null);
+  // Origem de uma cópia discursiva em andamento (vincula a gêmea à fechada original).
+  private readonly conversaoOrigem = signal<{ origemId: string; grupoExistente: string | null } | null>(null);
   protected readonly salvando = signal(false);
   protected readonly carregandoForm = signal(false);
 
@@ -388,6 +406,8 @@ export class AdminQuestoesComponent implements OnInit {
       busca: this.busca() || undefined,
       tipoQuestao: this.filtroTipo() || undefined,
       formato: this.filtroFormato() || undefined,
+      grupoFormato: this.filtroGrupoFormato() || undefined,
+      revisaoConversao: this.filtroRevisao() || undefined,
       disciplinaId: this.filtroDisciplina() || undefined,
       autorId: this.filtroAutor() || undefined,
       dataDe: this.filtroDataDe() || undefined,
@@ -400,6 +420,12 @@ export class AdminQuestoesComponent implements OnInit {
       this.toast.error('Erro ao carregar questões.');
     }
     this.isLoading.set(false);
+    void this.atualizarContadores();
+  }
+
+  private async atualizarContadores(): Promise<void> {
+    const res = await this.adminService.contarQuestoesPorFormato();
+    if (res.ok) this.contadores.set(res.data);
   }
 
   async aplicarFiltros(): Promise<void> {
@@ -411,12 +437,47 @@ export class AdminQuestoesComponent implements OnInit {
     this.filtroStatus.set('');
     this.filtroTipo.set('');
     this.filtroFormato.set('');
+    this.filtroGrupoFormato.set('');
+    this.filtroRevisao.set('');
     this.filtroDisciplina.set('');
     this.filtroAutor.set('');
     this.filtroDataDe.set('');
     this.filtroDataAte.set('');
     this.busca.set('');
     await this.aplicarFiltros();
+  }
+
+  /** Quick-filter: só as convertidas aguardando revisão do sócio. */
+  async filtrarPendentesRevisao(): Promise<void> {
+    this.filtroRevisao.set(this.filtroRevisao() === 'pendente' ? '' : 'pendente');
+    await this.aplicarFiltros();
+  }
+
+  /** Alterna o agrupamento abertas × fechadas (chip do topo). */
+  async filtrarGrupoFormato(valor: 'abertas' | 'fechadas'): Promise<void> {
+    this.filtroGrupoFormato.set(this.filtroGrupoFormato() === valor ? '' : valor);
+    await this.aplicarFiltros();
+  }
+
+  /** Marca uma questão convertida como já revisada pelo sócio (limpa a flag da fila). */
+  async marcarRevisada(questao: AdminQuestao): Promise<void> {
+    if (this.processando()) return;
+    this.processando.set(questao.id);
+    const result = await this.adminService.marcarRevisaoConversao(questao.id, 'revisada');
+    if (result.ok) {
+      this.questoes.update((lista) =>
+        lista.map((q) => (q.id === questao.id ? { ...q, revisao_conversao: 'revisada' } : q)),
+      );
+      // Se o filtro atual é "pendentes", a questão sai da lista visível.
+      if (this.filtroRevisao() === 'pendente') {
+        this.questoes.update((lista) => lista.filter((q) => q.id !== questao.id));
+      }
+      void this.atualizarContadores();
+      this.toast.success('Marcada como revisada.');
+    } else {
+      this.toast.error('Erro ao marcar como revisada.');
+    }
+    this.processando.set(null);
   }
 
   async paginaAnterior(): Promise<void> {
@@ -605,6 +666,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.resetForm();
     this._urlAntesDeEditar = null;
     this.questaoEditandoId.set(null);
+    this.conversaoOrigem.set(null);
     this.modoDrawer.set('criar');
   }
 
@@ -669,6 +731,7 @@ export class AdminQuestoesComponent implements OnInit {
     this._urlAntesDeEditar = d.imagem_url ?? null;
     this.fImagemLegenda.set(d.imagem_legenda ?? '');
     this.fTemas.set(d.temas ?? []);
+    this.grupoOriginalCarregado.set(d.grupo_equivalencia_id ?? null);
 
     if (d.alternativas.length > 0) {
       this.fAlternativas.set(
@@ -736,6 +799,14 @@ export class AdminQuestoesComponent implements OnInit {
 
     const sugerido = this.gabaritoAbertoSugerido();
     const tinhaImagem = !!this.fImagemUrl();
+
+    // Vincula a gêmea à fechada original: reaproveita o grupo existente ou marca
+    // para o save() criar um novo (e carimbar a original também). Garante que o
+    // aluno nunca receba as duas no mesmo simulado e alimenta o rodízio por grupo.
+    const origemId = this.questaoEditandoId();
+    if (origemId) {
+      this.conversaoOrigem.set({ origemId, grupoExistente: this.grupoOriginalCarregado() });
+    }
 
     // Passa a criar em vez de editar: o save() fará INSERT e definirá o autor.
     this.questaoEditandoId.set(null);
@@ -875,6 +946,25 @@ export class AdminQuestoesComponent implements OnInit {
 
     if (modo === 'criar') {
       questaoPayload.autor_id = this.auth.user()?.id ?? null;
+
+      // Cópia discursiva (gêmea): compartilha grupo de equivalência com a original.
+      const conv = this.conversaoOrigem();
+      if (conv) {
+        const grupo = conv.grupoExistente ?? crypto.randomUUID();
+        questaoPayload.grupo_equivalencia_id = grupo;
+        // Se a original ainda não estava em nenhum grupo, vincula-a agora (par simétrico).
+        if (!conv.grupoExistente) {
+          const patch = await this.adminService.atualizarQuestao(conv.origemId, {
+            grupo_equivalencia_id: grupo,
+          });
+          if (!patch.ok) {
+            this.toast.error('Não foi possível vincular a questão original ao grupo.');
+            this.salvando.set(false);
+            return;
+          }
+        }
+      }
+
       result = await this.adminService.criarQuestaoCompleta(questaoPayload, alternativas, temaIds);
     } else {
       result = await this.adminService.atualizarQuestaoCompleta(
@@ -930,5 +1020,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.fImagemLegenda.set('');
     this.fTemas.set([]);
     this.fTemaBusca.set('');
+    this.grupoOriginalCarregado.set(null);
+    this.conversaoOrigem.set(null);
   }
 }
