@@ -20,17 +20,20 @@ export class QuestaoExplicacaoComponent {
   /** Explicação separada por alternativa, quando o texto segue o padrão "A) … B) …". */
   protected readonly estruturada = computed(() => parseExplicacaoEstruturada(this.explicacao()));
 
-  /** Cor da linha: fundo verde para a correta, vermelho para as incorretas. */
+  /**
+   * Cor da linha: as mesmas cores suaves usadas na alternativa respondida
+   * (estados 'correta'/'errada' do alternativa-item) — verde/vermelho fracos.
+   */
   protected linhaClasses(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'border-emerald-600 bg-emerald-600 text-white';
-    if (status === 'incorreta') return 'border-rose-600 bg-rose-600 text-white';
+    if (status === 'correta') return 'border-[var(--color-success)] bg-emerald-50 text-[var(--color-success)]';
+    if (status === 'incorreta') return 'border-[var(--color-danger)] bg-red-50 text-[var(--color-danger)]';
     return 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]';
   }
 
-  /** A letra fica num círculo branco sobre o fundo colorido. */
+  /** A letra fica num círculo sólido na cor do status, com texto branco. */
   protected chipClasses(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'bg-white text-emerald-700';
-    if (status === 'incorreta') return 'bg-white text-rose-700';
+    if (status === 'correta') return 'bg-[var(--color-success)] text-white';
+    if (status === 'incorreta') return 'bg-[var(--color-danger)] text-white';
     return 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]';
   }
 }
