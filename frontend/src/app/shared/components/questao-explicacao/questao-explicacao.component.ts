@@ -20,27 +20,17 @@ export class QuestaoExplicacaoComponent {
   /** Explicação separada por alternativa, quando o texto segue o padrão "A) … B) …". */
   protected readonly estruturada = computed(() => parseExplicacaoEstruturada(this.explicacao()));
 
-  protected statusLabel(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'Correta';
-    if (status === 'incorreta') return 'Incorreta';
-    return '';
-  }
-
+  /** Cor da linha: fundo verde para a correta, vermelho para as incorretas. */
   protected linhaClasses(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'border-emerald-200 bg-emerald-50';
-    if (status === 'incorreta') return 'border-[var(--color-border)] bg-[var(--color-surface)]';
-    return 'border-[var(--color-border)] bg-[var(--color-surface)]';
+    if (status === 'correta') return 'border-emerald-600 bg-emerald-600 text-white';
+    if (status === 'incorreta') return 'border-rose-600 bg-rose-600 text-white';
+    return 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]';
   }
 
+  /** A letra fica num círculo branco sobre o fundo colorido. */
   protected chipClasses(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'bg-emerald-600 text-white';
-    if (status === 'incorreta') return 'bg-rose-100 text-rose-600';
+    if (status === 'correta') return 'bg-white text-emerald-700';
+    if (status === 'incorreta') return 'bg-white text-rose-700';
     return 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]';
-  }
-
-  protected labelClasses(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'text-emerald-700';
-    if (status === 'incorreta') return 'text-rose-600';
-    return 'text-[var(--color-text-muted)]';
   }
 }

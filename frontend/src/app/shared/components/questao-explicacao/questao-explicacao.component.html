@@ -18,14 +18,7 @@
             >
               {{ alt.letra }}
             </span>
-            <p class="min-w-0 flex-1 text-sm leading-relaxed text-[var(--color-text)]">
-              @if (statusLabel(alt.status)) {
-                <span class="mr-1 text-xs font-bold uppercase tracking-wide" [class]="labelClasses(alt.status)">
-                  {{ statusLabel(alt.status) }}
-                </span>
-              }
-              {{ alt.texto }}
-            </p>
+            <p class="min-w-0 flex-1 text-sm leading-relaxed">{{ alt.texto }}</p>
           </li>
         }
       </ul>
