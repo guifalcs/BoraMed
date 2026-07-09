@@ -182,6 +182,57 @@ Deno.test('sync approved: erro de REDE (fetch lança) no cancelamento não derru
   );
 });
 
+Deno.test('sync approved: PUT falha com recorrente AUTHORIZED → índice único barra a concessão; intenção fica PENDENTE (nunca finge sucesso)', async () => {
+  // Diferente do caso `paused` acima: uma recorrente que sobrevive AUTHORIZED
+  // colide com o índice único parcial (1 'authorized' por usuário). O sync não
+  // pode marcar a intenção como aprovada sem o acesso existir.
+  const db = baseDb({
+    assinatura: [{ id: 'old', user_id: 'user-1', status: 'authorized', mp_preapproval_id: 'OLD' }],
+  });
+  const rec = recordingFetch(500); // MP indisponível no cancelamento
+  const r = await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(rec.fetch));
+
+  assertEquals(r.status, 'approved');
+  assertEquals(r.concessaoPendente, true, 'sinaliza a concessão pendente para o caller pedir retry');
+  assertEquals(r.assinaturaId, null);
+  assertEquals(
+    find(db, 'assinatura', (x) => x.id === 'old')?.status,
+    'authorized',
+    'a recorrente permanece viva/visível (não vira órfã escondida)',
+  );
+  assertEquals(
+    find(db, 'assinatura', (x) => x.mp_payment_id === '12345'),
+    undefined,
+    'o índice único impede a nova authorized enquanto a antiga sobrevive',
+  );
+  assertExists(find(db, 'pagamento', (x) => x.mp_payment_id === '12345'), 'pagamento registrado (bookkeeping)');
+  assertEquals(
+    find(db, 'pagamento_intencao', (x) => x.id === 'int-1')?.status,
+    'pendente',
+    'intenção NÃO vira aprovada — a UI segue acompanhando até o retry conceder',
+  );
+});
+
+Deno.test('sync approved: retry após a falha do PUT recupera — cancela a recorrente e concede o acesso', async () => {
+  const db = baseDb({
+    assinatura: [{ id: 'old', user_id: 'user-1', status: 'authorized', mp_preapproval_id: 'OLD' }],
+  });
+  const down = recordingFetch(500);
+  const first = await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(down.fetch));
+  assertEquals(first.concessaoPendente, true);
+
+  // MP recuperado: o retry (webhook não-2xx / reconciliação / "Já paguei")
+  // reexecuta o MESMO sync — reintenta o PUT e conclui a concessão.
+  const up = recordingFetch(200);
+  const second = await syncAcessoUnicoPayment(admin(db), payEmbutido(), NOW, mpClient(up.fetch));
+  assertEquals(second.concessaoPendente, false);
+  assertEquals(find(db, 'assinatura', (x) => x.id === 'old')?.status, 'cancelled');
+  const nova = find(db, 'assinatura', (x) => x.mp_payment_id === '12345');
+  assertExists(nova, 'acesso concedido no retry');
+  assertEquals(second.assinaturaId, nova?.id);
+  assertEquals(find(db, 'pagamento_intencao', (x) => x.id === 'int-1')?.status, 'aprovada');
+});
+
 Deno.test('sync approved sem cliente MP: NÃO cancela silenciosamente um recorrente com preapproval', async () => {
   const db = baseDb({
     assinatura: [{ id: 'p', user_id: 'user-1', status: 'paused', mp_preapproval_id: 'PAUS' }],

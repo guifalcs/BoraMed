@@ -88,11 +88,10 @@ export async function handleGerenciarAssinatura(req: Request, deps: Deps): Promi
     status: novoStatus,
   });
   if (!mpRes.ok) {
-    console.error('MP PUT preapproval error:', mpRes.status, JSON.stringify(mpRes.body));
-    return reply(
-      { error: 'falha ao atualizar assinatura no Mercado Pago', detail: mpRes.body },
-      502,
-    );
+    // Nem o log nem a resposta carregam o body cru do MP (pode conter dados do
+    // pagador) — mesmo padrão das edges do checkout embutido.
+    console.error('MP PUT preapproval error:', mpRes.status);
+    return reply({ error: 'falha ao atualizar assinatura no Mercado Pago' }, 502);
   }
 
   await admin

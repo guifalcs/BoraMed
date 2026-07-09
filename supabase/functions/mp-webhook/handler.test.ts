@@ -237,6 +237,35 @@ Deno.test('webhook payment acesso_unico approved: concede acesso por N meses e r
   assertEquals(pag?.metodo_pagamento, 'pix');
 });
 
+Deno.test('webhook payment approved com concessão pendente (falha ao cancelar a recorrente) → 409 pede retry', async () => {
+  const db = new FakeDb({
+    plano: [{ id: 'pl-sem', slug: 'semestral' }],
+    assinatura: [{ id: 'viva', user_id: 'user-9', status: 'authorized', mp_preapproval_id: 'Z' }],
+    pagamento_intencao: [{ id: 'int-8', user_id: 'user-9', status: 'processando' }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: '/v1/payments/PAY-8',
+      body: {
+        external_reference: 'user-9',
+        status: 'approved',
+        metadata: { tipo: 'acesso_unico', plano_slug: 'semestral', acesso_meses: 6, intencao_id: 'int-8' },
+        transaction_amount: 199.9,
+        date_approved: '2026-06-24T12:00:00.000Z',
+      },
+    },
+    // O cancelamento do preapproval falha (MP 5xx): a recorrente sobrevive
+    // 'authorized' e o índice único barra a concessão do acesso único.
+    { match: '/preapproval/Z', status: 500, body: {} },
+  ]);
+  const req = await signedWebhookRequest({ secret: SECRET, type: 'payment', dataId: 'PAY-8' });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(res.status, 409, 'não-2xx faz o MP reenviar — o retry conclui a concessão (mesmo padrão do B1)');
+  assertEquals(find(db, 'assinatura', (r) => r.id === 'viva')?.status, 'authorized', 'recorrente segue visível');
+  assertEquals(find(db, 'assinatura', (r) => r.mp_payment_id === 'PAY-8'), undefined, 'acesso não concedido ainda');
+  assertEquals(find(db, 'pagamento_intencao', (r) => r.id === 'int-8')?.status, 'pendente', 'intenção não finge aprovação');
+});
+
 Deno.test('webhook payment acesso_unico refunded: revoga o acesso (proxima_cobranca = agora)', async () => {
   const db = new FakeDb({
     plano: [{ id: 'pl-sem', slug: 'semestral' }],

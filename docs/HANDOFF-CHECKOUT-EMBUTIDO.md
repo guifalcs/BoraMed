@@ -156,6 +156,48 @@ payments — ambos da app 908829636068202, extraídos p/ scratchpad gitignored):
    `.gitignore` reforçado p/ ignorar `mp-seller-state.json`/`creds*.json`/`*.png`
    dos runners (antes só cobria nomes específicos).
 
+### ✅ Review completo pré-go-live + correções (2026-07-09)
+
+Code review integral da branch (4 revisores paralelos + verificação manual de
+cada achado; suítes re-rodadas). Banco/RLS aprovado sem ressalvas. Achados
+falsos descartados após verificação (replay de webhook é inócuo — o handler
+re-consulta o estado no MP; `NaN` em `next_payment_date` CONCEDE o provisório,
+pois `!NaN` é true). Dois achados reais, **corrigidos**:
+
+- **Concessão engolida pelo índice único (CORRIGIDO)** — `mp-payment-sync.ts`:
+  quando o PUT de cancelamento da F6-b falhava com uma recorrente `authorized`
+  sobrevivente (legada/vencida), o upsert do acesso único violava
+  `assinatura_um_authorized_por_user` (índice parcial da migration
+  `20260622130000`), o erro era **ignorado na desestruturação** e a intenção
+  virava `aprovada` SEM acesso — pagou sem acesso e, sem acesso, o anti-dupla
+  não barra uma 2ª compra (cobrança dupla). Os testes passavam porque o FakeDb
+  não emulava a constraint. Agora: o erro do upsert é checado;
+  `SyncResult.concessaoPendente=true`; a intenção fica **`pendente`** (nunca
+  `aprovada` sem acesso); `mp-webhook` responde **409** (o MP reenvia —
+  recuperação automática, mesmo padrão do B1) e `mp-consultar-pagamento`
+  responde `in_process` (a UI não mostra sucesso sem o acesso existir). Cada
+  retry reexecuta o sync inteiro — reintenta o PUT e concede quando o MP
+  voltar. O caso `paused` (happy-path validado da F6-b) **não muda**: o índice
+  é parcial em `authorized`.
+- **`detail` cru do MP no 502 do gerenciar (CORRIGIDO)** — removido da resposta
+  e do log (o teste de contrato legado não fixava o campo; era o pendente de F6).
+
+Infra de teste: **FakeDb agora emula o índice único parcial** (erro 23505,
+escrita não aplicada, como no Postgres real) — vale para todos os testes atuais
+e futuros. 4 testes novos: sync com authorized+PUT falho → intenção pendente;
+retry recupera e concede; webhook → 409; consultar → in_process.
+Validação (2026-07-09): Deno **116 passed / 0 failed**; `ng build` OK;
+`ng test` 475 passed / 2 falhas pré-existentes (guards, também na main);
+E2E `mocked` 23 passed.
+
+Residuais do review anotados e aceitos (baixo risco, não corrigidos):
+`setMonth` (sync) vs `setUTCMonth` (addPeriodo) — inócuo, runtime é UTC; o B5
+do `mp-processar-assinatura` cancela `authorized` anteriores só localmente (sem
+PUT no MP — cenário exige recorrente vencida anômala); janela de corrida do
+rate limit (2 simultâneas podem virar 6/15min); boleto sem link nem CTA de
+regenerar quando a sessão se perde (escape via "Voltar aos planos");
+`sanitizeAddress` sem limite de tamanho.
+
 ### Code review (2026-07-07)
 Rodado (4 finders paralelos + verificação). Refactor legado confirmado **fiel**
 (sem regressão). 2 achados das mudanças F6 → **corrigidos**: (1) `paused`
@@ -572,7 +614,7 @@ com as edges novas; reverter = só o deploy do frontend). Marcar cada item na
 janela de deploy.
 
 **Pré-deploy (na branch, antes de tocar produção)**
-- [ ] Suites verdes: Deno `deno test --allow-env .` (112), `ng build`, `ng test`
+- [ ] Suites verdes: Deno `deno test --allow-env .` (116), `ng build`, `ng test`
       (475/2 pré-existentes), E2E `mocked`. Reconfirmar na hora.
 - [ ] Diff da migration `20260703120000_*` revisado: **aditivo** (nova tabela +
       colunas + COMMENTs), sem DROP, sem reverter grants (cuidado do `db pull`).

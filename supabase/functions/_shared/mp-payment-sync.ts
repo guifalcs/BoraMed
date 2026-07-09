@@ -24,6 +24,15 @@ export interface SyncResult {
   status: string;
   statusDetail: string | null;
   assinaturaId: string | null;
+  /**
+   * true quando o payment está approved mas a CONCESSÃO do acesso falhou (ex.:
+   * o índice único `assinatura_um_authorized_por_user` barrou o upsert porque
+   * uma recorrente 'authorized' sobreviveu a um cancelamento com falha no MP).
+   * A intenção fica 'pendente' — NUNCA 'aprovada' sem acesso — e o retry
+   * (webhook com não-2xx / reconciliação / "Já paguei") reexecuta o sync, que
+   * reintenta o cancelamento e concede assim que o MP se recuperar.
+   */
+  concessaoPendente: boolean;
 }
 
 /** Mapeia o status do payment (MP) para o status da pagamento_intencao. */
@@ -67,7 +76,7 @@ export async function syncAcessoUnicoPayment(
   // assinatura recorrente são registradas no branch subscription_authorized_payment
   // do webhook — evita registrar a mesma cobrança 2x.
   if (!paymentId || !userId || String(meta['tipo']) !== 'acesso_unico') {
-    return { handled: false, status, statusDetail, assinaturaId: null };
+    return { handled: false, status, statusDetail, assinaturaId: null, concessaoPendente: false };
   }
 
   const planoSlug = String(meta['plano_slug'] ?? '');
@@ -78,6 +87,7 @@ export async function syncAcessoUnicoPayment(
     .maybeSingle();
 
   let assinaturaId: string | null = null;
+  let concessaoPendente = false;
 
   if (status === 'approved') {
     // B5 — "uma assinatura viva só": ao conceder o acesso único, supera as
@@ -137,7 +147,7 @@ export async function syncAcessoUnicoPayment(
     const meses = Number(meta['acesso_meses']) || 6;
     const fim = new Date(now.getTime());
     fim.setMonth(fim.getMonth() + meses);
-    const { data: assin } = await admin
+    const { data: assin, error: assinError } = await admin
       .from('assinatura')
       .upsert(
         {
@@ -153,8 +163,21 @@ export async function syncAcessoUnicoPayment(
       )
       .select('id')
       .maybeSingle();
-    assinaturaId = assin?.id ?? null;
-    console.log('acesso único concedido', { paymentId, userId, planoSlug, meses });
+    if (assinError || !assin?.id) {
+      // Ex.: índice único parcial (1 'authorized' por usuário) quando a
+      // recorrente anterior sobreviveu à falha do cancelamento acima. Não
+      // finge sucesso: a intenção fica 'pendente' (abaixo) e o retry reexecuta
+      // este sync inteiro — inclusive o PUT de cancelamento — até conceder.
+      concessaoPendente = true;
+      console.error('CRÍTICO: payment approved sem acesso concedido — aguardando retry', {
+        paymentId,
+        userId,
+        message: (assinError as { message?: string } | null)?.message ?? 'upsert sem retorno',
+      });
+    } else {
+      assinaturaId = assin.id;
+      console.log('acesso único concedido', { paymentId, userId, planoSlug, meses });
+    }
   } else if (status === 'refunded' || status === 'charged_back') {
     // C4: estorno/chargeback revoga o acesso concedido por este pagamento.
     const agora = now.toISOString();
@@ -202,12 +225,14 @@ export async function syncAcessoUnicoPayment(
   );
 
   // Checkout embutido: reflete o resultado na intenção (polling do frontend).
+  // Concessão pendente NÃO marca 'aprovada' — a UI ficaria em sucesso sem o
+  // acesso existir; 'pendente' mantém a tela de acompanhamento até o retry.
   if (intencaoId) {
     await admin
       .from('pagamento_intencao')
       .update({
         mp_payment_id: paymentId,
-        status: mapIntencaoStatus(status),
+        status: concessaoPendente ? 'pendente' : mapIntencaoStatus(status),
         status_detail: statusDetail,
         metodo,
         parcelas,
@@ -215,5 +240,5 @@ export async function syncAcessoUnicoPayment(
       .eq('id', intencaoId);
   }
 
-  return { handled: true, status, statusDetail, assinaturaId };
+  return { handled: true, status, statusDetail, assinaturaId, concessaoPendente };
 }

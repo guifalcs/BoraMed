@@ -215,10 +215,18 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
         // original; `cancelled` (Pix/boleto expirado) marca a intenção como
         // expirada quando ela existe. O id vem do dataId (o recurso do MP traz
         // o mesmo valor em pay.id).
-        await syncAcessoUnicoPayment(admin, { id: dataId, ...pay }, deps.now(), {
+        const r = await syncAcessoUnicoPayment(admin, { id: dataId, ...pay }, deps.now(), {
           fetch: deps.fetch,
           token: mpToken,
         });
+        if (r.concessaoPendente) {
+          // Payment approved cuja concessão falhou (ex.: recorrente 'authorized'
+          // sobreviveu a um cancelamento com falha no MP e o índice único barrou
+          // o acesso). Responder não-2xx faz o MP REENVIAR — cada retry reexecuta
+          // o cancelamento e concede quando o MP voltar (mesmo padrão do B1).
+          console.warn('payment approved sem acesso concedido; pedindo retry', { dataId });
+          return new Response('grant pending, retry', { status: 409 });
+        }
       }
     }
   } catch (e) {

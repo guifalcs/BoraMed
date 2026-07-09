@@ -61,5 +61,10 @@ export async function handleConsultarPagamento(req: Request, deps: Deps): Promis
   if (!pay) return reply({ error: 'falha ao consultar pagamento' }, 502);
 
   const result = await syncAcessoUnicoPayment(admin, pay, deps.now(), mp);
+  // Approved no MP mas com a concessão do acesso pendente (retry em andamento):
+  // não devolve 'approved' — a UI mostraria sucesso sem o acesso existir.
+  if (result.concessaoPendente) {
+    return reply({ status: 'in_process', status_detail: result.statusDetail });
+  }
   return reply({ status: result.status, status_detail: result.statusDetail });
 }
