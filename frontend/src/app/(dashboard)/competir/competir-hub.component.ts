@@ -191,6 +191,11 @@ export class CompetirHubComponent {
     }
   }
 
+  /** Letras corretas do desafio, para o componente de explicação pintar o verde pelo gabarito. */
+  protected letrasCorretas(alts: DesafioAlternativa[]): string[] {
+    return alts.filter((a) => a.correta === true).map((a) => a.letra);
+  }
+
   protected alternativaClass(alt: DesafioAlternativa): string {
     const estado = this.desafioEstado();
     const selecionada = this.alternativaSelecionada();

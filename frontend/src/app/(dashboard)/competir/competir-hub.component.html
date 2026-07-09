@@ -162,7 +162,10 @@
                 }
 
                 @if (d.questao?.explicacao) {
-                  <app-questao-explicacao [explicacao]="d.questao!.explicacao!" />
+                  <app-questao-explicacao
+                    [explicacao]="d.questao!.explicacao!"
+                    [letrasCorretas]="letrasCorretas(d.alternativas)"
+                  />
                 }
               </div>
             }

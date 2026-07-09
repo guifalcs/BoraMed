@@ -14,22 +14,15 @@
       @for (alt of e.alternativas; track alt.letra) {
         <div
           class="flex gap-3 border-b border-[var(--color-border)] px-4 py-3.5 last:border-b-0"
-          [class]="linhaClasses(alt.status)"
+          [class]="linhaClasses(statusDaAlt(alt))"
         >
           <span
             class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-            [class]="chipClasses(alt.status)"
+            [class]="chipClasses(statusDaAlt(alt))"
           >
             {{ alt.letra }}
           </span>
-          <p class="min-w-0 flex-1 text-sm leading-relaxed">
-            @if (statusLabel(alt.status)) {
-              <span class="mr-1.5 text-xs font-extrabold uppercase tracking-wide" [class]="labelClasses(alt.status)">
-                {{ statusLabel(alt.status) }}
-              </span>
-            }
-            {{ alt.texto }}
-          </p>
+          <p class="min-w-0 flex-1 text-sm leading-relaxed">{{ alt.texto }}</p>
         </div>
       }
     } @else {

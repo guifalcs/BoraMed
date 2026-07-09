@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 import {
   parseExplicacaoEstruturada,
+  type AlternativaExplicacao,
   type StatusAlternativaExplicacao,
 } from './questao-explicacao.parser';
 
@@ -16,9 +17,25 @@ import {
 export class QuestaoExplicacaoComponent {
   explicacao = input<string | null>(null);
   referencia = input<string | null>(null);
+  /**
+   * Letras das alternativas corretas (vindas do banco). Quando informadas, o
+   * verde é decidido pela letra — não pelo texto — o que permite manter a
+   * explicação verbatim (sem precisar do prefixo "Correta"/"Incorreta").
+   * Vazio: cai no fallback de detecção pelo texto.
+   */
+  letrasCorretas = input<string[]>([]);
 
   /** Explicação separada por alternativa, quando o texto segue o padrão "A) … B) …". */
   protected readonly estruturada = computed(() => parseExplicacaoEstruturada(this.explicacao()));
+
+  /** Status efetivo: pela letra correta do banco quando disponível; senão, pelo texto. */
+  protected statusDaAlt(alt: AlternativaExplicacao): StatusAlternativaExplicacao {
+    const corretas = this.letrasCorretas();
+    if (corretas.length > 0) {
+      return corretas.includes(alt.letra) ? 'correta' : 'incorreta';
+    }
+    return alt.status;
+  }
 
   /**
    * Cor da linha dentro do card único: a correta vira uma faixa verde suave
@@ -36,17 +53,5 @@ export class QuestaoExplicacaoComponent {
   protected chipClasses(status: StatusAlternativaExplicacao): string {
     if (status === 'correta') return 'bg-[var(--color-success)] text-white';
     return 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]';
-  }
-
-  /** Rótulo antes do texto: "Correta" (verde) ou "Errada" (cinza discreto). */
-  protected statusLabel(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'Correta';
-    if (status === 'incorreta') return 'Errada';
-    return '';
-  }
-
-  protected labelClasses(status: StatusAlternativaExplicacao): string {
-    if (status === 'correta') return 'text-[var(--color-success)]';
-    return 'text-[var(--color-text-muted)]';
   }
 }
