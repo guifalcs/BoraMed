@@ -53,6 +53,13 @@ adicional, não dependência**: sem IA o app continua funcionando (a questão vi
     Sparkles em círculo com `--gradient-brand`, "Corrigido por Aurora / IA
     corretora · BoraMed", e a identidade também nos estados corrigindo/erro/sem_ia.
     Nome exportado como `AGENTE_IA_NOME`.
+  - **Disclaimer da correção (tooltip):** novo componente reutilizável
+    `app-ui-info-tooltip` (ícone Info + balão no hover/foco, CSS puro, acessível)
+    ao lado de "IA corretora · BoraMed". Texto em `AGENTE_IA_DISCLAIMER`
+    (`correcao-feedback.component.ts`): a correção é apoio ao estudo (direção +
+    pontos principais), não a oficial, e não reproduz os critérios exatos dos
+    professores da Afya — com disclaimer de independência (regra de negócio Afya).
+    Doc em `design-system.md`.
   - **Prompt — pontuação por comando do enunciado:** `montarPrompt` reforçado para
     exigir o formato pedido: "cite/liste" tolera explicação extra; "explique/
     justifique/descreva" penaliza quem só cita. Regra "na dúvida, mais rigoroso que
