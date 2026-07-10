@@ -234,9 +234,10 @@ export async function handleProcessarAssinatura(
     {
       // O reason é a "description" das faturas recorrentes: aparece no e-mail
       // do MP, na fatura do cartão e pesa na análise de risco. Específico e
-      // reconhecível reduz high_risk e contestação por desconhecimento.
-      reason:
-        `Assinatura BoraMed - Plano ${plano.nome} - Plataforma de estudos de medicina`,
+      // reconhecível reduz high_risk e contestação. LIMITE DO MP: 60 chars —
+      // acima disso o POST /preapproval falha com
+      // "reason has more than 60 characters" (visto em produção em 2026-07-10).
+      reason: `Assinatura BoraMed - Plano ${plano.nome}`,
       external_reference: user.id,
       payer_email: user.email,
       card_token_id: body.card_token_id,

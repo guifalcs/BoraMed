@@ -491,3 +491,25 @@ Deno.test("processar-assinatura: device_id vai no header X-meli-session-id (whit
   const badHeaders = bad.calls[0].init?.headers as Record<string, string>;
   assertEquals(badHeaders["X-meli-session-id"], undefined);
 });
+
+Deno.test("processar-assinatura: reason respeita o limite de 60 chars do MP", async () => {
+  // O MP recusa POST /preapproval com "reason has more than 60 characters"
+  // (quebrou em produção em 2026-07-10 com um reason descritivo demais).
+  const ok = captureFetch({ body: authorizedPre });
+  await handleProcessarAssinatura(
+    request(goodBody()),
+    makeDeps({
+      db: baseDb(),
+      fetch: ok.fn,
+      now: NOW,
+      caller: { id: "user-1", email: "aluno@boramed.com" },
+    }),
+  );
+  const payload = JSON.parse(ok.calls[0].init?.body as string);
+  assertEquals(typeof payload.reason, "string");
+  assertEquals(
+    payload.reason.length <= 60,
+    true,
+    `reason com ${payload.reason.length} chars: "${payload.reason}"`,
+  );
+});

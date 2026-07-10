@@ -94,8 +94,8 @@ export async function handleCriarAssinatura(
       body: JSON.stringify({
         // Mesmo reason do checkout embutido: descrição específica e
         // reconhecível nas faturas reduz high_risk e contestação.
-        reason:
-          `Assinatura BoraMed - Plano ${plano.nome} - Plataforma de estudos de medicina`,
+        // LIMITE DO MP: 60 chars (visto em produção em 2026-07-10).
+        reason: `Assinatura BoraMed - Plano ${plano.nome}`,
         external_reference: user.id,
         payer_email: user.email,
         back_url: retornoUrl,
