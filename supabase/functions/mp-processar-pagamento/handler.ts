@@ -110,7 +110,12 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   const user = callerData.user;
 
   // 2. Body + attempt_id UUID
-  let body: { attempt_id?: string; plano_slug?: string; form_data?: FormDataIn };
+  let body: {
+    attempt_id?: string;
+    plano_slug?: string;
+    form_data?: FormDataIn;
+    device_id?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -127,6 +132,12 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   if (!fd || typeof fd !== 'object' || typeof fd.payment_method_id !== 'string') {
     return reply({ error: 'invalid form_data' }, 400);
   }
+  // Device ID do SDK JS (MP_DEVICE_SESSION_ID) — vai no header X-meli-session-id
+  // para melhorar a aprovação antifraude. Opcional e whitelisted (nunca cru).
+  const deviceId =
+    typeof body.device_id === 'string' && /^[\w.:-]{1,256}$/.test(body.device_id)
+      ? body.device_id
+      : undefined;
 
   const admin = deps.admin();
 
@@ -317,7 +328,13 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   }
 
   // 10. POST /v1/payments com X-Idempotency-Key = attempt_id
-  const res = await mpPost(mp, '/v1/payments', payload, attemptId);
+  const res = await mpPost(
+    mp,
+    '/v1/payments',
+    payload,
+    attemptId,
+    deviceId ? { 'X-meli-session-id': deviceId } : undefined,
+  );
 
   if (!res.ok) {
     // 4xx = recusa/erro de dados (resultado de negócio); 5xx = infra do MP.

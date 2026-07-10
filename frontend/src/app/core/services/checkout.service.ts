@@ -22,6 +22,16 @@ export class CheckoutService {
   private readonly supabase = inject(SupabaseService).client;
   private processando = false;
 
+  /**
+   * Device ID gerado pelo SDK JS do MP (variável global MP_DEVICE_SESSION_ID).
+   * Enviado à edge, que o repassa no header X-meli-session-id — o fingerprint
+   * do dispositivo melhora a taxa de aprovação do antifraude do MP.
+   */
+  private deviceId(): string | undefined {
+    const id = (window as { MP_DEVICE_SESSION_ID?: unknown }).MP_DEVICE_SESSION_ID;
+    return typeof id === 'string' && id.length > 0 ? id : undefined;
+  }
+
   /** Extrai a mensagem de erro (campo `error`) devolvida por uma edge function. */
   private async mensagemErro(error: unknown, fallback: string): Promise<string> {
     try {
@@ -53,6 +63,7 @@ export class CheckoutService {
           attempt_id: crypto.randomUUID(),
           plano_slug: planoSlug,
           form_data: formData,
+          ...(this.deviceId() ? { device_id: this.deviceId() } : {}),
         },
       });
       if (error) return { ok: false, error: await this.mensagemErro(error, ERRO_PROCESSAMENTO) };

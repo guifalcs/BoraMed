@@ -244,6 +244,26 @@ Deno.test('processar-pagamento: attempt_id de OUTRO usuário → 409 (anti-repla
   assertEquals(res.status, 409);
 });
 
+Deno.test('processar-pagamento: device_id vai no header X-meli-session-id (whitelisted)', async () => {
+  // Válido → repassado.
+  const ok = captureFetch({ body: approvedPayment() });
+  await handleProcessarPagamento(
+    request(cardBody({ device_id: 'armor.abc123-DEF_456:seg' })),
+    makeDeps({ db: baseDb(), fetch: ok.fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  const okHeaders = ok.calls[0].init?.headers as Record<string, string>;
+  assertEquals(okHeaders['X-meli-session-id'], 'armor.abc123-DEF_456:seg');
+
+  // Malformado (charset fora da whitelist) → descartado, sem header.
+  const bad = captureFetch({ body: approvedPayment() });
+  await handleProcessarPagamento(
+    request(cardBody({ attempt_id: crypto.randomUUID(), device_id: 'x"; DROP TABLE --' })),
+    makeDeps({ db: baseDb(), fetch: bad.fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  const badHeaders = bad.calls[0].init?.headers as Record<string, string>;
+  assertEquals(badHeaders['X-meli-session-id'], undefined);
+});
+
 Deno.test('processar-pagamento aprovado (cartão): preço DO BANCO no body, idempotency no header, acesso concedido', async () => {
   const db = baseDb();
   const { fn, calls } = captureFetch({ body: approvedPayment() });

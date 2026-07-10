@@ -40,10 +40,12 @@ export async function mpPost(
   path: string,
   payload: Record<string, unknown>,
   idempotencyKey?: string,
+  extraHeaders?: Record<string, string>,
 ): Promise<MpPostResult> {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${opts.token}`,
     'Content-Type': 'application/json',
+    ...extraHeaders,
   };
   if (idempotencyKey) headers['X-Idempotency-Key'] = idempotencyKey;
   const res = await opts.fetch(`${MP_API}${path}`, {
