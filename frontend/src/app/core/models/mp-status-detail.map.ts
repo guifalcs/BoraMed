@@ -154,5 +154,9 @@ const FALLBACK_RECUSA: StatusDetailInfo = {
 /** Mensagem acionável para um status_detail do MP (fallback genérico). */
 export function mapStatusDetail(detail: string | null | undefined): StatusDetailInfo {
   if (!detail) return FALLBACK_RECUSA;
-  return MAPA[detail] ?? FALLBACK_RECUSA;
+  // O backend pode anexar o motivo bruto do MP após ':' (ex.:
+  // 'card_rejected:cc_validation_failed') — diagnóstico para o financeiro;
+  // a mensagem ao usuário mapeia pelo código-base.
+  const base = detail.split(':', 1)[0];
+  return MAPA[detail] ?? MAPA[base] ?? FALLBACK_RECUSA;
 }

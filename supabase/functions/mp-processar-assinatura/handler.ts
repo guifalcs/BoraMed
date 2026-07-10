@@ -267,14 +267,23 @@ export async function handleProcessarAssinatura(
       }, 502);
     }
     // 4xx: cartão recusado na cobrança de verificação (resultado de negócio).
+    // Persiste o MOTIVO real do MP (slug da message, sem dados do pagador) —
+    // o 'card_rejected' genérico exigia forense nos logs para saber se era
+    // antifraude, token inválido etc. (visto em produção em 2026-07-10).
+    const slug = detail
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 80);
+    const statusDetail = slug ? `card_rejected:${slug}` : "card_rejected";
     await admin
       .from("pagamento_intencao")
-      .update({ status: "recusada", status_detail: "card_rejected" })
+      .update({ status: "recusada", status_detail: statusDetail })
       .eq("id", intencaoId);
     return reply({
       intencao_id: intencaoId,
       status: "rejected",
-      status_detail: "card_rejected",
+      status_detail: statusDetail,
     });
   }
 

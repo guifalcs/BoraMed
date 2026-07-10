@@ -386,7 +386,8 @@ Deno.test("processar-assinatura: cartão recusado (4xx do MP) → 200 rejected +
   assertEquals(res.status, 200, "recusa é resultado de negócio, não erro");
   const out = await res.json();
   assertEquals(out.status, "rejected");
-  assertEquals(out.status_detail, "card_rejected");
+  // Motivo real do MP preservado como slug (diagnóstico sem forense nos logs).
+  assertEquals(out.status_detail, "card_rejected:cannot_process_card");
   assertEquals(db.rows("assinatura").length, 0);
   const int = find(
     db,
@@ -394,6 +395,7 @@ Deno.test("processar-assinatura: cartão recusado (4xx do MP) → 200 rejected +
     (r) => r.idempotency_key === ATTEMPT,
   );
   assertEquals(int?.status, "recusada");
+  assertEquals(int?.status_detail, "card_rejected:cannot_process_card");
 });
 
 Deno.test("processar-assinatura: 5xx do MP → 502 e intenção volta a criada", async () => {
