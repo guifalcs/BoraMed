@@ -7,6 +7,31 @@
 > o webhook TEST e fechar a F5-manual. (Mescla as sessões de 05/07 no Windows e
 > 06/07 no Linux — trabalharam em paralelo; ver "Estado por máquina".)
 
+## 🚀 F7 EXECUTADA — go-live em produção (2026-07-09)
+
+Deploy faseado concluído com aprovação explícita do usuário:
+1. **Reconciliação de migrations**: o prod tinha migrations aplicadas via MCP sob
+   outros timestamps (`20260629124446`, `20260708133958`, `20260708171611`,
+   `20260709183724`) — arquivos locais renomeados para os timestamps reais (isso
+   também resolveu a colisão dupla de `20260708120000`) e criado o arquivo local
+   da migration remota faltante.
+2. **Migration do checkout aplicada via MCP `apply_migration`** (respeitando a
+   regra "nunca db push no prod") — registrada como `20260710000113`; tabela
+   `pagamento_intencao` + colunas de `pagamento` verificadas no prod.
+3. **Edges deployadas** (CLI): `mp-processar-pagamento`, `mp-processar-assinatura`,
+   `mp-consultar-pagamento` (novas, v1) e `mp-webhook` + `mp-gerenciar-assinatura`
+   atualizadas. `verify_jwt` conferido (false só em mp-webhook/mp-retorno).
+4. **Merge na `main`** (`d0a112b`) após integrar a main na branch (conflito único
+   em `docs/architecture.md`: ADR do checkout renumerado para **ADR-030**) e
+   re-validar TUDO verde: Deno 116, `ng build` OK, unit **488/0** (as 2 falhas de
+   guards foram corrigidas na main), E2E mocked 23. Push disparou o deploy do
+   frontend na Vercel.
+
+**Pendências pós-deploy (checklist "Smoke test" + "Observação" abaixo):**
+verificar no painel do MP que o webhook de produção tem os eventos Pagamentos +
+Planos e assinaturas; smoke test com pagamento real; medição oficial de
+qualidade; janela de observação 2–4 semanas; depois F8.
+
 ## ⏯️ RETOMADA — exatamente onde paramos (2026-07-07)
 
 **F5-manual está ENCERRADA.** As 2 decisões que travavam a F6 foram tomadas pelo

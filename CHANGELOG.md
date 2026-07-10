@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-09 | Feature | d0a112b
+
+**Checkout embutido (Mercado Pago Payment Brick + Checkout API) — go-live F7**
+
+- O pagamento agora acontece dentro da plataforma (`/checkout/:plano` e `/checkout/status/:intencaoId`), substituindo o redirect ao Mercado Pago para compras novas: cartão em até 6x (semestral), assinatura mensal via preapproval com card token, Pix (QR + copia-e-cola, 30min) e boleto, com 3DS embutido e mensagens específicas por recusa.
+- Backend: migration aditiva `pagamento_intencao` + colunas em `pagamento` (aplicada no prod como `20260710000113`); edges novas `mp-processar-pagamento`, `mp-processar-assinatura`, `mp-consultar-pagamento`; `mp-webhook` e `mp-gerenciar-assinatura` atualizados (F6/F6-b: acesso provisório do mensal, regras de `paused`, "uma assinatura viva só" — cancela preapproval órfão ao conceder acesso único, ação `trocar_cartao`).
+- Fluxo legado (redirect) permanece deployado durante a janela de observação; rollback = reverter só o frontend. Detalhes e ADR-030 em `docs/architecture.md`; histórico completo em `docs/HANDOFF-CHECKOUT-EMBUTIDO.md`.
+
+---
+
 ## 2026-07-09 | Fix | sem commit
 
 **Impersonação: voltar para a conta de admin sem deslogar**
