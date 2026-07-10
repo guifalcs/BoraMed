@@ -22,13 +22,13 @@ import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.compone
 
 // ──── Questões ────
 
-interface AlternativaParseada {
+export interface AlternativaParseada {
   letra: string;
   texto: string;
   correta: boolean;
 }
 
-interface QuestaoParseada {
+export interface QuestaoParseada {
   enunciado: string;
   enunciado_apoio: string | null;
   alternativas: AlternativaParseada[];

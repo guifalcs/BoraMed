@@ -12,125 +12,9 @@ import { UiSelectComponent, SelectOption } from '../../shared/components/ui/sele
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-checkbox.component';
-import { montarPromptQuestoes } from '../importar/admin-importar.component';
-
-// Reuse same parse types and logic as admin-importar
-interface AlternativaParseada { letra: string; texto: string; correta: boolean; }
-interface QuestaoParseada {
-  enunciado: string;
-  enunciado_apoio: string | null;
-  alternativas: AlternativaParseada[];
-  formato: 'multipla_escolha' | 'verdadeiro_falso';
-  tipo_questao: 'nacional' | 'processual' | 'laboratorio' | null;
-  disciplina_id: string | null;
-  disciplinaDisplay: string;
-  tema_ids: string[];
-  temasDisplay: string;
-  explicacao: string | null;
-  referencia: string | null;
-  fonte: string | null;
-  valida: boolean;
-  erros: string[];
-}
+import { montarPromptQuestoes, parseBlocos, QuestaoParseada } from '../importar/admin-importar.component';
 
 type Etapa = 'detalhes' | 'metodo' | 'importar_input' | 'importar_preview' | 'importando' | 'selecionar' | 'vinculando' | 'concluido';
-
-// Same parse functions as admin-importar (copy them here)
-function parseBlocos(markdown: string, disciplinas: AdminDisciplina[], temas: AdminTema[]): QuestaoParseada[] {
-  return markdown.split(/^---$/m).map((b) => b.trim()).filter((b) => b.length > 0).map((b) => parseQuestaoBloco(b, disciplinas, temas));
-}
-
-function parseQuestaoBloco(bloco: string, disciplinas: AdminDisciplina[], temas: AdminTema[]): QuestaoParseada {
-  const erros: string[] = [];
-  const linhas = bloco.split('\n');
-  type Secao = 'nenhuma' | 'enunciado' | 'enunciado_apoio' | 'alternativas' | 'explicacao';
-  let secao: Secao = 'nenhuma';
-  const enunciadoLinhas: string[] = [];
-  const enunciadoApoioLinhas: string[] = [];
-  const alternativaLinhas: string[] = [];
-  let gabaritoLetra: string | null = null;
-  let tipoQuestao: string | null = null;
-  let disciplinaSigla: string | null = null;
-  let temaLinha: string | null = null;
-  const explicacaoLinhas: string[] = [];
-  let referencia: string | null = null;
-  let fonte: string | null = null;
-  for (const linha of linhas) {
-    const t = linha.trim();
-    if (t.toUpperCase() === 'ENUNCIADO') { secao = 'enunciado'; continue; }
-    if (t.toUpperCase() === 'ENUNCIADO_APOIO') { secao = 'enunciado_apoio'; continue; }
-    if (t.toUpperCase() === 'ALTERNATIVAS') { secao = 'alternativas'; continue; }
-    const mGabarito = t.match(/^GABARITO:\s*([A-Ea-e])/i);
-    if (mGabarito) { gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue; }
-    const mTipo = t.match(/^TIPO:\s*(.+)/i);
-    if (mTipo) { tipoQuestao = mTipo[1].trim().toLowerCase(); secao = 'nenhuma'; continue; }
-    const mDisciplina = t.match(/^DISCIPLINA:\s*(.+)/i);
-    if (mDisciplina) { disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue; }
-    const mTema = t.match(/^TEMAS?:\s*(.+)/i);
-    if (mTema) { temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue; }
-    const mReferencia = t.match(/^REFERENCIA:\s*(.+)/i);
-    if (mReferencia) { referencia = mReferencia[1].trim(); secao = 'nenhuma'; continue; }
-    const mFonte = t.match(/^FONTE:\s*(.+)/i);
-    if (mFonte) { fonte = mFonte[1].trim(); secao = 'nenhuma'; continue; }
-    const mExplicacao = t.match(/^EXPLICACAO:\s*(.*)/i);
-    if (mExplicacao) { secao = 'explicacao'; if (mExplicacao[1].trim()) explicacaoLinhas.push(mExplicacao[1]); continue; }
-    if (secao === 'enunciado') { enunciadoLinhas.push(linha); continue; }
-    if (secao === 'enunciado_apoio') { enunciadoApoioLinhas.push(linha); continue; }
-    if (secao === 'alternativas') { alternativaLinhas.push(linha); continue; }
-    if (secao === 'explicacao' && t) { explicacaoLinhas.push(linha); }
-  }
-  const enunciado = enunciadoLinhas.join('\n').trim();
-  const enunciadoApoio = enunciadoApoioLinhas.join('\n').trim() || null;
-  if (!enunciado) erros.push('Enunciado ausente');
-  const tiposValidos = ['nacional', 'processual', 'laboratorio'];
-  const tipoResolvido = tipoQuestao && tiposValidos.includes(tipoQuestao) ? tipoQuestao as 'nacional' | 'processual' | 'laboratorio' : null;
-  if (tipoQuestao && !tipoResolvido) erros.push(`TIPO "${tipoQuestao}" inválido (use: nacional, processual ou laboratorio)`);
-  const alternativas: AlternativaParseada[] = [];
-  for (const linha of alternativaLinhas) {
-    const m = linha.match(/^([A-Ea-e])\)\s*(.*)/);
-    if (m) { const texto = m[2].replace('✓', '').trim(); alternativas.push({ letra: m[1].toUpperCase(), texto, correta: m[2].includes('✓') }); }
-  }
-  if (gabaritoLetra) alternativas.forEach((a) => (a.correta = a.letra === gabaritoLetra));
-  if (alternativas.length < 2) erros.push('Mínimo de 2 alternativas');
-  else if (!alternativas.some((a) => a.correta)) erros.push('Gabarito não identificado');
-  const isVF = alternativas.length === 2 && alternativas.some((a) => /^verdadeiro$/i.test(a.texto)) && alternativas.some((a) => /^falso$/i.test(a.texto));
-  const disciplinaObj = disciplinaSigla ? (disciplinas.find((d) => d.sigla.toLowerCase() === disciplinaSigla!.toLowerCase()) ?? null) : null;
-  if (disciplinaSigla && !disciplinaObj) erros.push(`Disciplina "${disciplinaSigla}" não encontrada`);
-  const temasResolvidos = resolverTemasQuestao(temaLinha, temas, disciplinaObj?.id ?? null);
-  erros.push(...temasResolvidos.erros);
-  return { enunciado, enunciado_apoio: enunciadoApoio, alternativas, formato: isVF ? 'verdadeiro_falso' : 'multipla_escolha', tipo_questao: tipoResolvido, disciplina_id: disciplinaObj?.id ?? null, disciplinaDisplay: disciplinaObj?.sigla ?? disciplinaSigla ?? '—', tema_ids: temasResolvidos.ids, temasDisplay: temasResolvidos.display, explicacao: explicacaoLinhas.join('\n').trim() || null, referencia, fonte, valida: erros.length === 0, erros };
-}
-
-function resolverTemasQuestao(
-  temaLinha: string | null,
-  temas: AdminTema[],
-  disciplinaId: string | null,
-): { ids: string[]; display: string; erros: string[] } {
-  if (!temaLinha) return { ids: [], display: '—', erros: [] };
-  const nomes = temaLinha.split(';').map((nome) => nome.trim().replace(/^\[[^\]]+\]\s*/, '')).filter((nome) => nome.length > 0);
-  const ids: string[] = [];
-  const displays: string[] = [];
-  const erros: string[] = [];
-  for (const nome of nomes) {
-    const candidatos = temas.filter((t) => t.nome.toLowerCase() === nome.toLowerCase());
-    const candidatosDaDisciplina = disciplinaId ? candidatos.filter((t) => t.disciplina_id === disciplinaId) : candidatos;
-    const matches = candidatosDaDisciplina.length > 0 ? candidatosDaDisciplina : candidatos;
-    if (matches.length === 0) {
-      erros.push(`Tema "${nome}" não encontrado`);
-      displays.push(nome);
-      continue;
-    }
-    if (matches.length > 1 && !disciplinaId) {
-      erros.push(`Tema "${nome}" é ambíguo; informe a disciplina`);
-      displays.push(nome);
-      continue;
-    }
-    const tema = matches[0];
-    if (!ids.includes(tema.id)) ids.push(tema.id);
-    displays.push(tema.nome);
-  }
-  return { ids, display: displays.length > 0 ? displays.join('; ') : '—', erros };
-}
 
 const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -509,6 +393,9 @@ export class AdminProvasComponent implements OnInit {
         explicacao: q.explicacao,
         referencia: q.referencia,
         fonte: q.fonte,
+        resposta_modelo: q.resposta_modelo,
+        pontos_chave: q.pontos_chave,
+        criterios_correcao: q.criterios_correcao,
         origem_geracao: 'ia_assistida',
       };
       const alternativas: AlternativaPayload[] = q.alternativas.map((a, idx) => ({ letra: a.letra, texto: a.texto, correta: a.correta, ordem: idx + 1 }));
@@ -591,7 +478,10 @@ export class AdminProvasComponent implements OnInit {
   protected tipoLabel(tipo: string | null): string { return this.opcoesTipo.find((o) => o.value === tipo)?.label ?? tipo ?? '—'; }
   protected formatarData(data: string | null | undefined): string { return data ? DATA_CURTA_FMT.format(new Date(data)) : '—'; }
   protected enunciadoCurto(texto: string): string { return texto.length > 100 ? texto.slice(0, 100) + '…' : texto; }
-  protected gabaritoLabel(q: QuestaoParseada): string { return q.alternativas.find((a) => a.correta)?.letra ?? '—'; }
+  protected gabaritoLabel(q: QuestaoParseada): string {
+    if (q.formato === 'resposta_aberta_curta') return q.resposta_modelo ? 'Modelo' : '—';
+    return q.alternativas.find((a) => a.correta)?.letra ?? '—';
+  }
 
   protected get totalPaginas(): number { return Math.ceil(this.total() / this.porPagina); }
   protected get paginaAtual(): number { return this.pagina() + 1; }

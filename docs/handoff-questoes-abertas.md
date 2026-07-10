@@ -405,6 +405,14 @@ flag em coluna dedicada `revisao_conversao` (não no enum `status`); rodízio so
 group-aware (não exclusão dura); discursiva convertida nasce **ativa** (a flag é só
 lembrete, não bloqueia o aluno).
 
+**Import de prova (2026-07-09):** o fluxo "Importar questões" ao criar prova
+(`admin-provas.component.ts`) tinha uma cópia desatualizada do parser que só
+entendia fechadas. Removida a duplicação: agora importa `parseBlocos`/`QuestaoParseada`
+de `admin-importar.component.ts` (parser único, com suporte a `FORMATO: aberta` +
+RESPOSTA_MODELO/PONTOS_CHAVE/CRITERIOS), o payload envia `resposta_modelo`/
+`pontos_chave`/`criterios_correcao` e o preview exibe os campos da discursiva.
+O prompt já era compartilhado (`montarPromptQuestoes`).
+
 **Pendente (próxima sessão):** executar a **conversão em massa** das fechadas — um
 script/RPC que, por questão fechada escolhida, cria a discursiva gêmea (resposta_modelo/
 pontos_chave derivados da alternativa correta + explicação), `status='ativa'`,
