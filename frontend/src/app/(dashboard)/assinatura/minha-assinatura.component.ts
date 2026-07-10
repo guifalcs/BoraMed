@@ -302,7 +302,15 @@ export class MinhaAssinaturaComponent implements OnInit {
   }
 
   formaPagamento(): string | null {
-    const m = this.pagamentos()[0]?.metodo_pagamento;
+    // Só pagamentos APROVADOS DESTA assinatura: o último pagamento do usuário
+    // pode ser de outra assinatura (ex.: compra anterior estornada) e o mensal
+    // recém-autorizado ainda não tem pagamento registrado (validação de R$0).
+    const a = this.assinatura();
+    if (!a) return null;
+    const pg = this.pagamentos().find(
+      (p) => p.assinatura_id === a.id && p.status === 'approved',
+    );
+    const m = pg?.metodo_pagamento;
     if (!m) return null;
     return METODO_PAGAMENTO_LABEL[m] ?? m;
   }
