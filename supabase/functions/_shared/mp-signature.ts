@@ -73,6 +73,8 @@ export function mapAuthorizedPaymentStatus(apStatus: string): PagamentoStatus {
       return 'refunded';
     case 'charged_back':
       return 'charged_back';
+    case 'cancelled':
+      return 'cancelled';
     case 'waiting for gateway':
     case 'scheduled':
       return 'in_process';

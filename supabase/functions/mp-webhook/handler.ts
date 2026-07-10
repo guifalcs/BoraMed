@@ -172,7 +172,14 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
         // recorrente para refletir corretamente no financeiro. Acesso recorrente
         // não é revogado por 1 parcela estornada; quem governa o acesso é o
         // status do preapproval.
-        const status = mapAuthorizedPaymentStatus(apStatus);
+        let status = mapAuthorizedPaymentStatus(apStatus);
+        // O ap.status fica 'pending'/'recycling' enquanto o MP reagenda retries,
+        // mas a recusa real vive no pagamento subjacente (ap.payment.status).
+        // Sem isto, cobrança recusada ficava 'pending' eterno no financeiro.
+        const apPay = ap['payment'] as
+          | { id?: string | number; status?: string; status_detail?: string }
+          | undefined;
+        if (status !== 'approved' && apPay?.status === 'rejected') status = 'rejected';
         // O líquido (net_received_amount) e o método NÃO vêm no authorized_payment
         // — vivem no pagamento real subjacente (ap.payment.id). Sem buscá-los, as
         // cobranças recorrentes ficavam com liquido_centavos NULL e sumiam das
@@ -183,9 +190,8 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
         let liquidoCentavos =
           apTd?.net_received_amount != null ? Math.round(apTd.net_received_amount * 100) : null;
         let metodo: string | null = null;
-        const payRef = ap['payment'] as { id?: string | number } | undefined;
-        if (payRef?.id != null) {
-          const realPay = await mpGet(`/v1/payments/${payRef.id}`);
+        if (apPay?.id != null) {
+          const realPay = await mpGet(`/v1/payments/${apPay.id}`);
           if (realPay) {
             const td = realPay['transaction_details'] as
               | { net_received_amount?: number }
@@ -206,6 +212,7 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
               : null,
             liquido_centavos: liquidoCentavos,
             status,
+            status_detail: apPay?.status_detail ?? null,
             metodo_pagamento: metodo,
             processado_em: (ap['date_created'] as string | undefined) ?? null,
           },
