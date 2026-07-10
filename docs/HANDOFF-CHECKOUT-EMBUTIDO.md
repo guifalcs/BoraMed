@@ -27,6 +27,25 @@ Deploy faseado concluído com aprovação explícita do usuário:
    guards foram corrigidas na main), E2E mocked 23. Push disparou o deploy do
    frontend na Vercel.
 
+### Hotfixes da noite de smoke test (2026-07-09/10, com pagamentos reais de R$1)
+- **`mp-webhook` (`01c6eba`)**: em prod o preapproval nasce com
+  `next_payment_date = date_created` e o webhook `subscription_preapproval`
+  imediato SOBRESCREVIA o acesso provisório do `mp-processar-assinatura`,
+  trancando o assinante no paywall. Agora só grava `proxima_cobranca` futura.
+- **`minha-assinatura` (`e579639`)**: "Forma de pagamento" pegava o último
+  pagamento do usuário de QUALQUER assinatura (mostrava o Pix estornado de uma
+  compra anterior); agora só pagamentos aprovados da assinatura atual.
+- **`mp-processar-assinatura` (`9eacb89`)**: acesso provisório do mensal
+  reduzido de 1 período para **3 dias** (decisão do usuário) — se a 1ª fatura
+  falhar e o MP cancelar, a carência expira em 72h; a cobrança real grava a
+  data verdadeira via `subscription_authorized_payment`.
+- Aprendizado do MP em prod: a 1ª fatura do preapproval é gerada por fila
+  assíncrona (minutos a horas) — cancelar antes dela = nunca cobra. A validação
+  do cartão aparece como payment de R$ 0 "Recurring payment validation" (não
+  registrada em `pagamento`, correto). Notificações formato legado
+  (`?topic=payment`) levam 401 do HMAC e o MP reenvia — inócuo (o formato
+  `?type=` processa), mas gera ruído de retry.
+
 **Pendências pós-deploy (checklist "Smoke test" + "Observação" abaixo):**
 verificar no painel do MP que o webhook de produção tem os eventos Pagamentos +
 Planos e assinaturas; smoke test com pagamento real; medição oficial de
