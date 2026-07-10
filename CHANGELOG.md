@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-09 | Fix | sem commit
+
+**Criação atômica de provas no admin**
+
+- A nova prova, as questões importadas e os vínculos com questões existentes permanecem em rascunho até a confirmação final em `Salvar prova`.
+- Nova RPC `admin_criar_prova_com_questoes` persiste toda a criação em uma única transação; uma falha não deixa provas, questões, alternativas, temas ou vínculos parciais no banco.
+- O fluxo agora mostra uma etapa de revisão antes da gravação definitiva.
+
+---
+
 ## 2026-07-09 | Feature | d0a112b
 
 **Checkout embutido (Mercado Pago Payment Brick + Checkout API) — go-live F7**

@@ -180,6 +180,7 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Cadastro: manual por ora
 * Dados de desempenho: privados por aluno
 * Admin: Arthur e Guilherme têm acesso total
+* Na criação administrativa de provas, os detalhes, as questões importadas e as questões existentes selecionadas ficam somente no rascunho do navegador até a confirmação final em **Salvar prova**. A gravação é transacional: se qualquer validação ou inserção falhar, nenhuma prova, questão, alternativa, tema ou vínculo é persistido.
 * Alterações de papel (`aluno`/`admin`) devem passar pela RPC `alterar_papel_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.
 * Apenas administradores podem alterar papéis, e um administrador não pode revogar o próprio acesso.
 * Suspensões de usuários devem passar pelas RPCs `admin_banir_usuario` e `admin_desbanir_usuario`, nunca por `UPDATE` direto em `profiles` no cliente.

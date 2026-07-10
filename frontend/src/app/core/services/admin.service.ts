@@ -164,6 +164,13 @@ export interface QuestaoPayload {
 
 export type AlternativaPayload = Omit<AdminAlternativa, 'id' | 'questao_id'>;
 
+/** Questão ainda não persistida, mantida no rascunho de criação da prova. */
+export interface NovaQuestaoDaProva {
+  questao: QuestaoPayload;
+  alternativas: AlternativaPayload[];
+  tema_ids: string[];
+}
+
 export interface DeletarProvaResultado {
   tentativas_preservadas: number;
 }
@@ -815,6 +822,24 @@ export class AdminService {
       .insert(payload)
       .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
       .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminProva };
+  }
+
+  async criarProvaComQuestoes(
+    prova: ProvaInput,
+    questoesNovas: NovaQuestaoDaProva[],
+    questoesExistentes: string[],
+  ): Promise<ServiceResult<AdminProva>> {
+    const { data, error } = await this.supabase.rpc('admin_criar_prova_com_questoes', {
+      p_prova: prova,
+      p_questoes_novas: questoesNovas.map(({ questao, alternativas, tema_ids }) => ({
+        ...questao,
+        alternativas,
+        tema_ids,
+      })),
+      p_questoes_existentes: questoesExistentes,
+    });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminProva };
   }

@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Check, X, ArrowLeft, ArrowRight, AlertTriangle, Bot, Copy, ListChecks, Pencil, Trash2 } from 'lucide-angular';
 import {
   AdminService, AdminProva, AdminProvaDetalhe, AdminFaculdade, AdminDisciplina,
-  AdminTema, AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload,
+  AdminTema, AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload, NovaQuestaoDaProva,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
@@ -362,23 +362,11 @@ export class AdminProvasComponent implements OnInit {
   async salvarDetalhes(): Promise<void> {
     if (!this.fNome().trim()) { this.toast.error('Nome é obrigatório.'); return; }
     if (!this.fPeriodo() || Number(this.fPeriodo()) < 1) { this.toast.error('Período inválido.'); return; }
-    this.salvando.set(true);
-    const input: ProvaInput = {
-      nome: this.fNome().trim(),
-      tipo: this.fTipo() === 'faculdade' ? 'faculdade' : 'autoral',
-      origem: this.fTipo(),
-      formato: this.fFormato(),
-      rede: this.fRede() || null,
-      faculdade_id: this.fFaculdadeId(),
-      periodo: Number(this.fPeriodo()),
-      subtipo: this.fSubtipoNacional() || null,
-      subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
-      publicada: this.fPublicada(),
-      arquivada: this.fArquivada(),
-    };
+    const input = this.montarInputProva();
     if (this.modoEdicao()) {
       const id = this.provaId();
       if (!id) return;
+      this.salvando.set(true);
       const res = await this.adminService.atualizarProva(id, input);
       this.salvando.set(false);
       if (!res.ok) { this.toast.error(this.traduzirErroProva(res.error)); return; }
@@ -387,14 +375,7 @@ export class AdminProvasComponent implements OnInit {
       this.fecharDrawer();
       return;
     }
-    const res = await this.adminService.criarProva(input);
-    this.salvando.set(false);
-    if (!res.ok) {
-      const msg = this.traduzirErroProva(res.error);
-      this.toast.error(msg);
-      return;
-    }
-    this.provaId.set(res.data.id);
+    // A criação nova permanece somente em memória até a confirmação final.
     this.etapa.set('metodo');
   }
 
@@ -486,40 +467,12 @@ export class AdminProvasComponent implements OnInit {
 
   protected voltarParaInput(): void { this.etapa.set('importar_input'); this.expandido.set(null); }
 
-  async importarQuestoes(): Promise<void> {
+  protected revisarQuestoesImportadas(): void {
     const validas = this.questoesValidas();
     if (validas.length === 0) { this.toast.error('Nenhuma questão válida para importar.'); return; }
-    const provaId = this.provaId();
-    if (!provaId) return;
     this.totalImportar.set(validas.length);
-    this.progresso.set(0);
-    this.importados.set(0);
-    this.errosImportCount.set(0);
-    this.etapa.set('importando');
-    const questoesParaVincular: { questao_id: string; ordem: number }[] = [];
-    for (let i = 0; i < validas.length; i++) {
-      const q = validas[i];
-      const payload: QuestaoPayload = {
-        enunciado: q.enunciado,
-        enunciado_apoio: q.enunciado_apoio,
-        formato: q.formato,
-        tipo_questao: q.tipo_questao ?? (this.fFormato() as 'nacional' | 'processual' | 'laboratorio'),
-        status: 'ativa',
-        disciplina_id: q.disciplina_id,
-        explicacao: q.explicacao,
-        referencia: q.referencia,
-        fonte: q.fonte,
-        origem_geracao: 'ia_assistida',
-      };
-      const alternativas: AlternativaPayload[] = q.alternativas.map((a, idx) => ({ letra: a.letra, texto: a.texto, correta: a.correta, ordem: idx + 1 }));
-      const res = await this.adminService.criarQuestaoCompleta(payload, alternativas, q.tema_ids);
-      if (res.ok) { questoesParaVincular.push({ questao_id: res.data, ordem: i + 1 }); this.importados.update((n) => n + 1); }
-      else this.errosImportCount.update((n) => n + 1);
-      this.progresso.update((n) => n + 1);
-    }
-    if (questoesParaVincular.length > 0) {
-      await this.adminService.vincularQuestoesAProva(provaId, questoesParaVincular);
-    }
+    this.importados.set(validas.length);
+    this.errosImportCount.set(this.questoesInvalidas().length);
     this.etapa.set('concluido');
   }
 
@@ -557,21 +510,73 @@ export class AdminProvasComponent implements OnInit {
     });
   }
 
-  async vincularSelecionadas(): Promise<void> {
+  protected revisarSelecionadas(): void {
     const ids = Array.from(this.selecionadas());
     if (ids.length === 0) { this.toast.error('Selecione ao menos uma questão.'); return; }
-    const provaId = this.provaId();
-    if (!provaId) return;
-    this.etapa.set('vinculando');
-    const questoes = ids.map((id, i) => ({ questao_id: id, ordem: i + 1 }));
-    const res = await this.adminService.vincularQuestoesAProva(provaId, questoes);
-    if (!res.ok) { this.toast.error('Não foi possível vincular as questões. Tente novamente.'); this.etapa.set('selecionar'); return; }
     this.etapa.set('concluido');
   }
 
-  protected async concluir(): Promise<void> {
+  protected async salvarNovaProva(): Promise<void> {
+    const questoesNovas = this.montarQuestoesNovas();
+    const questoesExistentes = Array.from(this.selecionadas());
+    if (questoesNovas.length === 0 && questoesExistentes.length === 0) {
+      this.toast.error('Selecione ou importe ao menos uma questão antes de salvar.');
+      return;
+    }
+    this.salvando.set(true);
+    const res = await this.adminService.criarProvaComQuestoes(
+      this.montarInputProva(),
+      questoesNovas,
+      questoesExistentes,
+    );
+    this.salvando.set(false);
+    if (!res.ok) {
+      this.toast.error(this.traduzirErroProva(res.error));
+      return;
+    }
+    this.toast.success('Prova criada com sucesso.');
     this.fecharDrawer();
     await this.carregar();
+  }
+
+  private montarInputProva(): ProvaInput {
+    return {
+      nome: this.fNome().trim(),
+      tipo: this.fTipo() === 'faculdade' ? 'faculdade' : 'autoral',
+      origem: this.fTipo(),
+      formato: this.fFormato(),
+      rede: this.fRede() || null,
+      faculdade_id: this.fFaculdadeId(),
+      periodo: Number(this.fPeriodo()),
+      subtipo: this.fSubtipoNacional() || null,
+      subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
+      publicada: this.fPublicada(),
+      arquivada: this.fArquivada(),
+    };
+  }
+
+  private montarQuestoesNovas(): NovaQuestaoDaProva[] {
+    return this.questoesValidas().map((q) => ({
+      questao: {
+        enunciado: q.enunciado,
+        enunciado_apoio: q.enunciado_apoio,
+        formato: q.formato,
+        tipo_questao: q.tipo_questao ?? (this.fFormato() as 'nacional' | 'processual' | 'laboratorio'),
+        status: 'ativa',
+        disciplina_id: q.disciplina_id,
+        explicacao: q.explicacao,
+        referencia: q.referencia,
+        fonte: q.fonte,
+        origem_geracao: 'ia_assistida',
+      },
+      alternativas: q.alternativas.map((a, index): AlternativaPayload => ({
+        letra: a.letra,
+        texto: a.texto,
+        correta: a.correta,
+        ordem: index + 1,
+      })),
+      tema_ids: q.tema_ids,
+    }));
   }
 
   // ── Helpers ──
