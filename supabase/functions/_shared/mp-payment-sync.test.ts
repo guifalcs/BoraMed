@@ -342,11 +342,15 @@ Deno.test('sync LEGADO refunded: revoga acesso de pagamento antigo (regressão d
   assertEquals(assin?.cancelada_em, NOW.toISOString());
 });
 
-Deno.test('sync ignora payment sem external_reference ou de outro tipo', async () => {
+Deno.test('sync ignora payment sem usuário resolvível ou de outro tipo', async () => {
   const db = baseDb();
+  // Sem metadata.user_id E sem external_reference: não há como resolver o dono.
   const semRef = await syncAcessoUnicoPayment(
     admin(db),
-    payEmbutido({ external_reference: undefined }),
+    payEmbutido({
+      external_reference: undefined,
+      metadata: { tipo: 'acesso_unico', plano_slug: 'semestral', acesso_meses: 6, intencao_id: 'int-1' },
+    }),
     NOW,
   );
   assertEquals(semRef.handled, false);
@@ -359,6 +363,32 @@ Deno.test('sync ignora payment sem external_reference ou de outro tipo', async (
   assertEquals(outroTipo.handled, false);
   assertEquals(db.rows('pagamento').length, 0);
   assertEquals(db.rows('assinatura').length, 0);
+});
+
+Deno.test('sync resolve o usuário: metadata.user_id (novo) e external_reference (legado)', async () => {
+  // Novo fluxo: external_reference é a INTENÇÃO (único por transação); o dono
+  // vem de metadata.user_id.
+  const dbNovo = baseDb();
+  const novo = await syncAcessoUnicoPayment(
+    admin(dbNovo),
+    payEmbutido({ external_reference: 'int-1' }),
+    NOW,
+  );
+  assertEquals(novo.handled, true);
+  assertEquals(dbNovo.rows('pagamento')[0]?.user_id, 'user-1');
+
+  // Legado (Checkout Pro): metadata sem user_id; cai no external_reference.
+  const dbLegado = baseDb();
+  const legado = await syncAcessoUnicoPayment(
+    admin(dbLegado),
+    payEmbutido({
+      external_reference: 'user-1',
+      metadata: { tipo: 'acesso_unico', plano_slug: 'semestral', acesso_meses: 6 },
+    }),
+    NOW,
+  );
+  assertEquals(legado.handled, true);
+  assertEquals(dbLegado.rows('pagamento')[0]?.user_id, 'user-1');
 });
 
 Deno.test('mapIntencaoStatus cobre todos os grupos', () => {

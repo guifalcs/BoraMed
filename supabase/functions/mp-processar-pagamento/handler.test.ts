@@ -261,11 +261,15 @@ Deno.test('processar-pagamento aprovado (cartão): preço DO BANCO no body, idem
   assertEquals(sent.token, 'tok-abc');
   assertEquals(sent.installments, 6);
   assertEquals(sent.statement_descriptor, 'BORAMED');
-  assertEquals(sent.external_reference, 'user-1');
+  assertExists(sent.metadata.intencao_id);
+  assertEquals(
+    sent.external_reference,
+    sent.metadata.intencao_id,
+    'external_reference é a intenção: único por transação, como o MP orienta',
+  );
   assertEquals(sent.three_d_secure_mode, 'optional');
   assertEquals(sent.binary_mode, false);
   assertEquals(sent.metadata.tipo, 'acesso_unico');
-  assertExists(sent.metadata.intencao_id);
   assertEquals(sent.additional_info.items[0].unit_price, 199.9);
   assertEquals(sent.additional_info.ip_address, '200.10.20.30');
   assertEquals(sent.notification_url, 'https://proj.supabase.co/functions/v1/mp-webhook');

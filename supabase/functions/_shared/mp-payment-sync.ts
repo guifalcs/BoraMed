@@ -18,7 +18,7 @@ import { mpPut, type MpClientOpts } from './mp-api.ts';
 type AdminClient = any;
 
 export interface SyncResult {
-  /** false quando o payment não é de acesso único (ou sem external_reference). */
+  /** false quando o payment não é de acesso único (ou sem usuário resolvível). */
   handled: boolean;
   /** Status do payment no MP (approved, rejected, pending, ...). */
   status: string;
@@ -67,10 +67,15 @@ export async function syncAcessoUnicoPayment(
   mp?: MpClientOpts,
 ): Promise<SyncResult> {
   const paymentId = String(pay['id'] ?? '');
-  const userId = pay['external_reference'] as string | undefined;
   const status = String(pay['status'] ?? 'pending');
   const statusDetail = (pay['status_detail'] as string | undefined) ?? null;
   const meta = (pay['metadata'] ?? {}) as Record<string, unknown>;
+  // Usuário: metadata.user_id (checkout embutido; external_reference passou a
+  // ser a intenção, único por transação). Fallback: payments LEGADOS do
+  // Checkout Pro, cujo external_reference era o id do usuário.
+  const userId = typeof meta['user_id'] === 'string' && meta['user_id']
+    ? (meta['user_id'] as string)
+    : (pay['external_reference'] as string | undefined);
 
   // Trata SOMENTE pagamentos de ACESSO ÚNICO (semestral). As cobranças de
   // assinatura recorrente são registradas no branch subscription_authorized_payment

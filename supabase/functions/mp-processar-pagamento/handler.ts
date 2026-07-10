@@ -267,7 +267,9 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
       ...(address ? { address } : {}),
     },
     statement_descriptor: 'BORAMED',
-    external_reference: user.id,
+    // Único por transação, como o MP orienta (correlaciona payment ↔ intenção
+    // na conciliação). O usuário é resolvido pelo metadata.user_id no sync.
+    external_reference: intencaoId,
     // MP rejeita notification_url não-https (400) — no stack local (http://127.0.0.1)
     // o campo é omitido e a confirmação fica por conta do polling/reconciliação.
     ...(supabaseUrl.startsWith('https://')
