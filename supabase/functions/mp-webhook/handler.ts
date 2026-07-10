@@ -134,7 +134,14 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
           // Só grava plano_id quando resolvido. O preapproval SEM plano associado
           // não traz preapproval_plan_id — preserva o plano_id setado na criação.
           if (planoId) row.plano_id = planoId;
-          if (nextPayment) row.proxima_cobranca = nextPayment;
+          // Só sobrescreve proxima_cobranca com data FUTURA. O preapproval nasce
+          // com next_payment_date = date_created (a 1ª fatura processa assíncrono);
+          // gravar essa data ≤ agora apagaria o acesso provisório concedido pelo
+          // mp-processar-assinatura e trancaria o assinante no paywall até a 1ª
+          // cobrança real (bug visto em produção em 2026-07-09).
+          if (nextPayment && new Date(nextPayment).getTime() > deps.now().getTime()) {
+            row.proxima_cobranca = nextPayment;
+          }
           await admin.from('assinatura').upsert(row, { onConflict: 'mp_preapproval_id' });
           console.log('assinatura upsert', { dataId, status, userId });
         } else {
