@@ -213,11 +213,17 @@ export async function handleReconciliarAssinaturas(
         },
         { onConflict: "mp_authorized_payment_id" },
       );
-      // Cancela local preservando proxima_cobranca: a carência do acesso
-      // provisório vira o prazo para o usuário assinar de novo.
+      // Cancela local REVOGANDO o acesso na hora (proxima_cobranca = agora):
+      // não houve pagamento, e sem canal de aviso a carência só adiaria um
+      // corte sem explicação para o dia 3. Revogando já, o usuário reencontra
+      // o paywall ainda no contexto da compra e reassina com outro cartão.
       await admin
         .from("assinatura")
-        .update({ status: "cancelled", cancelada_em: deps.now().toISOString() })
+        .update({
+          status: "cancelled",
+          cancelada_em: deps.now().toISOString(),
+          proxima_cobranca: deps.now().toISOString(),
+        })
         .eq("id", assin.id);
       await admin
         .from("pagamento_intencao")

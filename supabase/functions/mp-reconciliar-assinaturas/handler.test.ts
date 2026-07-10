@@ -189,11 +189,9 @@ Deno.test("reconciliar: 1ª cobrança recusada → cancela preapproval, assinatu
   const assin = find(db, "assinatura", (r) => r.id === "as-1");
   assertEquals(assin?.status, "cancelled");
   assertExists(assin?.cancelada_em);
-  // Carência preservada: o acesso provisório vira prazo p/ assinar de novo.
-  assertEquals(
-    assin?.proxima_cobranca,
-    new Date(NOW.getTime() + 24 * 60 * 60 * 1000).toISOString(),
-  );
+  // Acesso revogado NA HORA (sem carência): não houve pagamento e não há
+  // canal de aviso — o paywall é o alerta para reassinar com outro cartão.
+  assertEquals(assin?.proxima_cobranca, NOW.toISOString());
 
   const pg = find(db, "pagamento", (r) => r.mp_authorized_payment_id === "333");
   assertEquals(pg?.status, "rejected");
