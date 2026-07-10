@@ -1,22 +1,40 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .flip-card {
   display: block;
   width: 100%;
+  height: 100%;
   min-height: 260px;
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
-  perspective: 1200px;
+  perspective: 1400px;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .flip-card__inner {
   position: relative;
   width: 100%;
+  height: 100%;
   min-height: 260px;
   text-align: left;
   transform-style: preserve-3d;
-  transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transition: transform 0.55s cubic-bezier(0.34, 1.3, 0.4, 1);
+  animation: flip-card-entrada 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.flip-card:hover .flip-card__inner {
+  scale: 1.01;
+}
+
+.flip-card:active .flip-card__inner {
+  scale: 0.985;
 }
 
 .flip-card--virado .flip-card__inner {
@@ -30,39 +48,136 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 1.5rem;
-  border-radius: 14px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: clamp(0.75rem, 2vh, 1.25rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: 22px;
+  overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   text-align: center;
+  color: #ffffff;
+}
+
+.flip-card__face--frente {
+  background:
+    var(--gradient-brand-highlight),
+    var(--gradient-brand-accent),
+    var(--gradient-brand);
+  box-shadow: 0 22px 44px -20px rgba(30, 64, 175, 0.55);
 }
 
 .flip-card__face--verso {
   transform: rotateY(180deg);
-  background: var(--color-bg-soft);
+  background:
+    radial-gradient(circle at 80% 18%, rgba(255, 255, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 15% 88%, rgba(251, 191, 36, 0.2), transparent 30%),
+    linear-gradient(145deg, #0f766e 0%, #0d9488 42%, #2563eb 100%);
+  box-shadow: 0 22px 44px -20px rgba(13, 148, 136, 0.55);
+}
+
+/* Círculos decorativos, no estilo dos heroes da marca */
+.flip-card__face::before,
+.flip-card__face::after {
+  content: '';
+  position: absolute;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+
+.flip-card__face::before {
+  width: 190px;
+  height: 190px;
+  top: -70px;
+  right: -55px;
+}
+
+.flip-card__face::after {
+  width: 130px;
+  height: 130px;
+  bottom: -50px;
+  left: -40px;
+}
+
+.flip-card__selo {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .flip-card__texto {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--color-text);
+  max-width: 52ch;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #ffffff;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+/* Escala do texto conforme o conteúdo: quanto menor o texto, maior a fonte. */
+.flip-card__texto--xl {
+  font-size: clamp(1.5rem, 2.5vw + 2vh, 2.75rem);
+  line-height: 1.25;
+}
+
+.flip-card__texto--lg {
+  font-size: clamp(1.25rem, 1.6vw + 1.4vh, 2rem);
+  line-height: 1.3;
+}
+
+.flip-card__texto--md {
+  font-size: clamp(1.05rem, 1vw + 0.9vh, 1.5rem);
+}
+
+.flip-card__texto--sm {
+  font-size: 1rem;
+  overflow-y: auto;
 }
 
 .flip-card__imagem {
-  max-height: 140px;
+  max-height: min(38%, 220px);
   max-width: 100%;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .flip-card__dica {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  animation: flip-card-dica 2.4s ease-in-out infinite;
+}
+
+@keyframes flip-card-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes flip-card-dica {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Degrada para troca instantânea sob reduced-motion, evitando o congelamento
@@ -70,5 +185,10 @@
 @media (prefers-reduced-motion: reduce) {
   .flip-card__inner {
     transition: none;
+    animation: none;
+  }
+
+  .flip-card__dica {
+    animation: none;
   }
 }

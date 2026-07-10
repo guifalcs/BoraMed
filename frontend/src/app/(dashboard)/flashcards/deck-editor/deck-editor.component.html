@@ -36,61 +36,93 @@
           [checked]="publico()"
           (checkedChange)="publico.set($event)"
           ariaLabel="Tornar público"
-        />
-        <span class="-mt-3 text-xs text-[var(--color-text-muted)]">Tornar este deck público (aparece na Comunidade)</span>
+        >
+          <span class="whitespace-nowrap text-sm text-[var(--color-text)]">
+            Tornar este deck público
+            <span class="text-xs text-[var(--color-text-muted)]">(aparece na Comunidade)</span>
+          </span>
+        </app-ui-checkbox>
       </div>
     </section>
 
-    <section class="mt-6 flex flex-col gap-4">
-      @for (card of cards(); track $index) {
-        <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <div class="mb-3 flex items-center justify-between">
-            <span class="text-sm font-semibold text-[var(--color-text)]">Card {{ $index + 1 }}</span>
-            <div class="flex items-center gap-1">
-              <button
-                type="button"
-                class="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-30"
-                [disabled]="$index === 0"
-                aria-label="Mover card para cima"
-                (click)="moverCard($index, -1)"
-              >
-                <app-ui-icon [icon]="upIcon" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] disabled:opacity-30"
-                [disabled]="$index === cards().length - 1"
-                aria-label="Mover card para baixo"
-                (click)="moverCard($index, 1)"
-              >
-                <app-ui-icon [icon]="downIcon" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="rounded p-1 text-red-600 hover:bg-red-50"
-                aria-label="Remover card"
-                (click)="removerCard($index)"
-              >
-                <app-ui-icon [icon]="trashIcon" [size]="16" />
-              </button>
-            </div>
-          </div>
+    <section class="mt-6">
+      <div class="mb-3 flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <button
+            type="button"
+            class="rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
+            [disabled]="indiceCardAtivo() === 0"
+            title="Card anterior"
+            aria-label="Card anterior"
+            (click)="irParaCard(indiceCardAtivo() - 1)"
+          >
+            <app-ui-icon [icon]="navAnteriorIcon" [size]="16" />
+          </button>
+          <span class="min-w-24 text-center text-sm font-semibold text-[var(--color-text)]">
+            Card {{ indiceCardAtivo() + 1 }} de {{ cards().length }}
+          </span>
+          <button
+            type="button"
+            class="rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
+            [disabled]="indiceCardAtivo() === cards().length - 1"
+            title="Próximo card"
+            aria-label="Próximo card"
+            (click)="irParaCard(indiceCardAtivo() + 1)"
+          >
+            <app-ui-icon [icon]="navProximoIcon" [size]="16" />
+          </button>
+        </div>
 
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            class="rounded p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
+            [disabled]="indiceCardAtivo() === 0"
+            title="Trocar com o card anterior"
+            aria-label="Trocar com o card anterior"
+            (click)="moverCard(indiceCardAtivo(), -1)"
+          >
+            <app-ui-icon [icon]="moverTrasIcon" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="rounded p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
+            [disabled]="indiceCardAtivo() === cards().length - 1"
+            title="Trocar com o próximo card"
+            aria-label="Trocar com o próximo card"
+            (click)="moverCard(indiceCardAtivo(), 1)"
+          >
+            <app-ui-icon [icon]="moverFrenteIcon" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="rounded p-1.5 text-red-600 transition-colors hover:bg-red-50"
+            title="Remover card"
+            aria-label="Remover card"
+            (click)="removerCard(indiceCardAtivo())"
+          >
+            <app-ui-icon [icon]="trashIcon" [size]="16" />
+          </button>
+        </div>
+      </div>
+
+      @if (cardAtivo(); as card) {
+        <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <div class="grid gap-4 md:grid-cols-2">
             <div class="flex flex-col gap-2">
               <span class="text-xs font-semibold text-[var(--color-text-muted)]">Frente</span>
               <textarea
                 class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                rows="3"
+                rows="4"
                 [value]="card.frente"
-                (input)="atualizarCard($index, 'frente', $any($event.target).value)"
+                (input)="atualizarCard(indiceCardAtivo(), 'frente', $any($event.target).value)"
                 maxlength="2000"
               ></textarea>
               <app-image-upload
                 [currentUrl]="card.frenteImagemUrl"
                 [bucket]="bucket"
                 [pathPrefix]="pathPrefix"
-                (urlChange)="atualizarCard($index, 'frenteImagemUrl', $event)"
+                (urlChange)="atualizarCard(indiceCardAtivo(), 'frenteImagemUrl', $event)"
               />
             </div>
 
@@ -98,48 +130,54 @@
               <span class="text-xs font-semibold text-[var(--color-text-muted)]">Verso</span>
               <textarea
                 class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                rows="3"
+                rows="4"
                 [value]="card.verso"
-                (input)="atualizarCard($index, 'verso', $any($event.target).value)"
+                (input)="atualizarCard(indiceCardAtivo(), 'verso', $any($event.target).value)"
                 maxlength="2000"
               ></textarea>
               <app-image-upload
                 [currentUrl]="card.versoImagemUrl"
                 [bucket]="bucket"
                 [pathPrefix]="pathPrefix"
-                (urlChange)="atualizarCard($index, 'versoImagemUrl', $event)"
+                (urlChange)="atualizarCard(indiceCardAtivo(), 'versoImagemUrl', $event)"
               />
             </div>
           </div>
         </article>
       }
-
-      <app-ui-button
-        label="Adicionar card"
-        variant="secondary"
-        [fullWidth]="false"
-        (buttonClick)="adicionarCard()"
-      />
     </section>
 
     @if (erro()) {
       <p class="mt-4 text-sm font-semibold text-red-600">{{ erro() }}</p>
     }
 
-    <div class="mt-6 flex items-center gap-3">
-      <app-ui-button
-        [label]="modoEdicao() ? 'Salvar alterações' : 'Criar deck'"
-        [fullWidth]="false"
-        [loading]="salvando()"
-        (buttonClick)="salvar()"
-      />
-      <app-ui-button
-        label="Cancelar"
-        variant="secondary"
-        [fullWidth]="false"
-        [disabled]="salvando()"
-        (buttonClick)="cancelar()"
-      />
+    <div class="mt-6 flex items-center justify-between gap-3">
+      <button
+        type="button"
+        class="inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-lg shadow-blue-600/30 transition-transform hover:scale-110 active:scale-95"
+        style="background: var(--gradient-brand)"
+        title="Adicionar card"
+        aria-label="Adicionar card"
+        (click)="adicionarCard()"
+      >
+        <app-ui-icon [icon]="plusIcon" [size]="20" />
+      </button>
+
+      <div class="flex items-center gap-3">
+        <app-ui-button
+          [label]="modoEdicao() ? 'Salvar alterações' : 'Criar deck'"
+          [fullWidth]="false"
+          [loading]="salvando()"
+          (buttonClick)="salvar()"
+        />
+        <app-ui-button
+          label="Cancelar"
+          variant="secondary"
+          [fullWidth]="false"
+          [disabled]="salvando()"
+          (buttonClick)="cancelar()"
+        />
+      </div>
     </div>
   }
 </div>

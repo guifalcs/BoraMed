@@ -89,6 +89,59 @@ describe('DeckEditorComponent', () => {
     expect(component['cards']()[1].frente).toBe('Primeiro');
   });
 
+  describe('carrossel', () => {
+    it('adicionarCard insere após o card ativo e navega até ele', () => {
+      const component = fixture.componentInstance;
+      component['atualizarCard'](0, 'frente', 'Primeiro');
+      component['adicionarCard']();
+
+      expect(component['indiceCardAtivo']()).toBe(1);
+
+      component['irParaCard'](0);
+      component['adicionarCard']();
+
+      expect(component['cards']().length).toBe(3);
+      expect(component['indiceCardAtivo']()).toBe(1);
+      expect(component['cards']()[0].frente).toBe('Primeiro');
+      expect(component['cards']()[1].frente).toBe('');
+    });
+
+    it('removerCard mantém o índice ativo dentro dos limites', () => {
+      const component = fixture.componentInstance;
+      component['adicionarCard']();
+      component['adicionarCard']();
+      expect(component['indiceCardAtivo']()).toBe(2);
+
+      component['removerCard'](2);
+      expect(component['indiceCardAtivo']()).toBe(1);
+
+      component['removerCard'](0);
+      expect(component['indiceCardAtivo']()).toBe(0);
+      expect(component['cards']().length).toBe(1);
+    });
+
+    it('moverCard acompanha o card movido no carrossel', () => {
+      const component = fixture.componentInstance;
+      component['atualizarCard'](0, 'frente', 'A');
+      component['adicionarCard']();
+      component['atualizarCard'](1, 'frente', 'B');
+      component['irParaCard'](0);
+
+      component['moverCard'](0, 1);
+
+      expect(component['cards']()[1].frente).toBe('A');
+      expect(component['indiceCardAtivo']()).toBe(1);
+    });
+
+    it('irParaCard ignora índices fora dos limites', () => {
+      const component = fixture.componentInstance;
+      component['irParaCard'](-1);
+      expect(component['indiceCardAtivo']()).toBe(0);
+      component['irParaCard'](5);
+      expect(component['indiceCardAtivo']()).toBe(0);
+    });
+  });
+
   it('exige título com ao menos 3 caracteres', async () => {
     const component = fixture.componentInstance;
     component['titulo'].set('ab');

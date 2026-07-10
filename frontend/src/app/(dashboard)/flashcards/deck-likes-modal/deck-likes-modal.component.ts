@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, input, output, signal, type OnInit } from '@angular/core';
 import { X } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import type { DeckLikeUsuario } from '../../../core/models/flashcard';
@@ -15,7 +15,7 @@ const PAGE_SIZE = 20;
   styleUrl: './deck-likes-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DeckLikesModalComponent {
+export class DeckLikesModalComponent implements OnInit {
   private readonly flashcardService = inject(FlashcardService);
 
   deckId = input.required<string>();
@@ -27,7 +27,9 @@ export class DeckLikesModalComponent {
   protected readonly temMais = signal(true);
   protected readonly erro = signal<string | null>(null);
 
-  constructor() {
+  // No construtor o input required ainda não está disponível (NG0950): a promise
+  // rejeitava e o modal ficava em "Carregando…" para sempre.
+  ngOnInit(): void {
     void this.carregar(0);
   }
 

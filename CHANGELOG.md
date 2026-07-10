@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-10 | Tweak | sem commit
+
+**Flashcards: refinos de UX na execução e no editor + fix do modal de curtidas**
+
+- Execução: botão "Voltar", contadores ao vivo de acertos × erros (com animação de pop, sem persistência), barra de progresso, card muito maior centralizado no espaço disponível e visual lúdico — frente com gradiente da marca (azul→roxo), verso em teal→azul, selos "Pergunta"/"Resposta", texto escala conforme o tamanho do conteúdo, animações de entrada/flip.
+- Editor: cards em carrossel (um por vez, com navegação e contador "Card X de Y"), checkbox "Tornar este deck público" com o texto na mesma linha, ações por ícone com tooltip (trocar posição, remover), botão de adicionar vira ícone "+" à esquerda e Salvar/Cancelar alinhados à direita.
+- Fix: modal "Quem curtiu" ficava preso em "Carregando…" — a carga inicial lia o input `deckId` no construtor, antes de ele estar disponível (NG0950); movida para `ngOnInit`, com spec de regressão.
+
+---
+
 ## 2026-07-10 | Feature | 767238c
 
 **Módulo de Flashcards**

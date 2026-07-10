@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Plus, Trash2, ChevronUp, ChevronDown, LucideIconData } from 'lucide-angular';
+import { Plus, Trash2, ChevronLeft, ChevronRight, MoveLeft, MoveRight, LucideIconData } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -43,8 +43,10 @@ export class DeckEditorComponent {
   protected readonly bucket = BUCKET;
   protected readonly plusIcon: LucideIconData = Plus;
   protected readonly trashIcon: LucideIconData = Trash2;
-  protected readonly upIcon: LucideIconData = ChevronUp;
-  protected readonly downIcon: LucideIconData = ChevronDown;
+  protected readonly navAnteriorIcon: LucideIconData = ChevronLeft;
+  protected readonly navProximoIcon: LucideIconData = ChevronRight;
+  protected readonly moverTrasIcon: LucideIconData = MoveLeft;
+  protected readonly moverFrenteIcon: LucideIconData = MoveRight;
 
   protected readonly deckId = signal<string | null>(null);
   protected readonly modoEdicao = signal(false);
@@ -56,6 +58,10 @@ export class DeckEditorComponent {
   protected readonly publico = signal(false);
   protected readonly cards = signal<CardForm[]>([cardVazio()]);
   protected readonly erro = signal<string | null>(null);
+
+  // Carrossel: apenas um card é editado por vez.
+  protected readonly indiceCardAtivo = signal(0);
+  protected readonly cardAtivo = computed<CardForm | null>(() => this.cards()[this.indiceCardAtivo()] ?? null);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -94,6 +100,7 @@ export class DeckEditorComponent {
             }))
           : [cardVazio()],
       );
+      this.indiceCardAtivo.set(0);
     } else {
       this.toast.error(result.error);
     }
@@ -105,7 +112,9 @@ export class DeckEditorComponent {
       this.toast.error(`Máximo de ${MAX_CARDS} cards por deck.`);
       return;
     }
-    this.cards.update((prev) => [...prev, cardVazio()]);
+    const posicao = this.indiceCardAtivo() + 1;
+    this.cards.update((prev) => [...prev.slice(0, posicao), cardVazio(), ...prev.slice(posicao)]);
+    this.indiceCardAtivo.set(posicao);
   }
 
   protected removerCard(index: number): void {
@@ -114,6 +123,10 @@ export class DeckEditorComponent {
       return;
     }
     this.cards.update((prev) => prev.filter((_, i) => i !== index));
+    this.indiceCardAtivo.update((atual) => {
+      const novo = index < atual ? atual - 1 : atual;
+      return Math.max(0, Math.min(novo, this.cards().length - 1));
+    });
   }
 
   protected moverCard(index: number, direcao: -1 | 1): void {
@@ -123,6 +136,14 @@ export class DeckEditorComponent {
     const copia = [...atual];
     [copia[index], copia[destino]] = [copia[destino], copia[index]];
     this.cards.set(copia);
+    // O carrossel acompanha o card movido.
+    if (this.indiceCardAtivo() === index) this.indiceCardAtivo.set(destino);
+    else if (this.indiceCardAtivo() === destino) this.indiceCardAtivo.set(index);
+  }
+
+  protected irParaCard(indice: number): void {
+    if (indice < 0 || indice >= this.cards().length) return;
+    this.indiceCardAtivo.set(indice);
   }
 
   protected atualizarCard(index: number, campo: keyof CardForm, valor: string | null): void {

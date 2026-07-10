@@ -8,17 +8,19 @@
 >
   <div class="flip-card__inner">
     <div class="flip-card__face flip-card__face--frente">
+      <span class="flip-card__selo">Pergunta</span>
       @if (frenteImagemUrl()) {
         <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" />
       }
-      <p class="flip-card__texto">{{ frente() }}</p>
+      <p class="flip-card__texto {{ frenteFontClass() }}">{{ frente() }}</p>
       <span class="flip-card__dica">Toque para ver a resposta</span>
     </div>
     <div class="flip-card__face flip-card__face--verso">
+      <span class="flip-card__selo">Resposta</span>
       @if (versoImagemUrl()) {
         <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" />
       }
-      <p class="flip-card__texto">{{ verso() }}</p>
+      <p class="flip-card__texto {{ versoFontClass() }}">{{ verso() }}</p>
     </div>
   </div>
 </button>

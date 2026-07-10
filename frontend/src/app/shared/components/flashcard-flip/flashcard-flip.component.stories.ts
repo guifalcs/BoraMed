@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/angular';
+import { componentWrapperDecorator, type Meta, type StoryObj } from '@storybook/angular';
 import { FlashcardFlipComponent } from './flashcard-flip.component';
 
 const meta: Meta<FlashcardFlipComponent> = {
@@ -9,6 +9,8 @@ const meta: Meta<FlashcardFlipComponent> = {
     frente: 'Qual o principal neurotransmissor excitatório do SNC?',
     verso: 'Glutamato.',
   },
+  // O componente preenche a altura do container pai (como na tela de execução).
+  decorators: [componentWrapperDecorator((story) => `<div style="height: 420px; max-width: 720px;">${story}</div>`)],
 };
 
 export default meta;

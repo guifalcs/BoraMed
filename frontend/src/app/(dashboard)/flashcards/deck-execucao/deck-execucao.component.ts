@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CircleCheck, CircleX, LucideIconData, Shuffle } from 'lucide-angular';
+import { ArrowLeft, CircleCheck, CircleX, LucideIconData, Shuffle } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import type { Flashcard } from '../../../core/models/flashcard';
@@ -27,6 +27,7 @@ export class DeckExecucaoComponent {
   protected readonly checkIcon: LucideIconData = CircleCheck;
   protected readonly xIcon: LucideIconData = CircleX;
   protected readonly shuffleIcon: LucideIconData = Shuffle;
+  protected readonly voltarIcon: LucideIconData = ArrowLeft;
 
   protected readonly deckId = signal<string | null>(null);
   protected readonly deckTitulo = signal('');
@@ -38,6 +39,10 @@ export class DeckExecucaoComponent {
   protected readonly virado = signal(false);
   protected readonly respostas = signal<Record<string, EstadoResposta>>({});
   protected readonly finalizado = signal(false);
+
+  // Dispara a animação de "pop" nos contadores quando o valor muda.
+  protected readonly popAcerto = signal(false);
+  protected readonly popErro = signal(false);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -62,6 +67,10 @@ export class DeckExecucaoComponent {
   protected readonly cardsErrados = computed<Flashcard[]>(() =>
     this.cards().filter((c) => this.respostas()[c.id] === 'errou'),
   );
+  protected readonly progressoPct = computed(() => {
+    const total = this.cards().length;
+    return total === 0 ? 0 : Math.round((Object.keys(this.respostas()).length / total) * 100);
+  });
 
   constructor() {
     const deckId = this.route.snapshot.paramMap.get('deckId');
@@ -92,6 +101,8 @@ export class DeckExecucaoComponent {
     if (!card) return;
 
     this.respostas.update((prev) => ({ ...prev, [card.id]: estado }));
+    if (estado === 'acertou') this.popAcerto.set(true);
+    else this.popErro.set(true);
 
     if (this.indiceAtual() >= this.cards().length - 1) {
       this.finalizado.set(true);

@@ -223,7 +223,7 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Likes: só em decks públicos/oficiais, contagem denormalizada (`likes_count`) recalculada por trigger; UI atualiza de forma otimista.
 * Feed da comunidade (`flashcards_feed`): ordenação por recentes ou mais curtidos, paginado (limite ≤ 100).
 * Imagens de cards no bucket `flashcard-imagens` (público, 2 MB, webp/png/jpeg).
-* Execução do deck: flip frente/verso, aluno marca acerto/erro por card e vê percentual ao final (sem persistência de resultado por card no MVP).
+* Execução do deck: flip frente/verso, aluno marca acerto/erro por card, acompanha contadores de acertos × erros durante a sessão e vê percentual ao final (contagem só em memória — sem persistência de resultado por card no MVP).
 
 ## Público-Alvo
 

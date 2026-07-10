@@ -122,6 +122,31 @@ describe('DeckExecucaoComponent', () => {
     expect(el.textContent).toContain('Pergunta 2');
   });
 
+  it('exibe os contadores de acertos e erros acumulados durante a sessão', () => {
+    const component = fixture.componentInstance;
+
+    const contadorAcertos = (): string =>
+      el.querySelector('[aria-label="Acertos na sessão"]')?.textContent?.trim() ?? '';
+    const contadorErros = (): string =>
+      el.querySelector('[aria-label="Erros na sessão"]')?.textContent?.trim() ?? '';
+
+    expect(contadorAcertos()).toContain('0');
+    expect(contadorErros()).toContain('0');
+
+    component['flip'](true);
+    component['responder']('acertou');
+    fixture.detectChanges();
+
+    expect(contadorAcertos()).toContain('1');
+    expect(contadorErros()).toContain('0');
+    expect(component['popAcerto']()).toBe(true);
+  });
+
+  it('exibe o botão de voltar durante a sessão', () => {
+    const botoes = Array.from(el.querySelectorAll('button'));
+    expect(botoes.some((b) => b.textContent?.includes('Voltar'))).toBe(true);
+  });
+
   it('nunca chama métodos de escrita do FlashcardService durante a sessão', () => {
     const component = fixture.componentInstance;
 
