@@ -208,7 +208,18 @@ cd frontend && npx playwright test questoes-abertas --project=setup --project=ch
   quiser cobertura em CI, avaliar subir o stack + functions no pipeline ou
   portar para o padrão `mocked` (mais frágil — mockaria todo o protocolo de correção).
 
-### 2. Deploy (quando o dono decidir — DEPOIS do teste manual no app)
+### 2. Deploy  ✅ EM PRODUÇÃO (2026-07-09)
+Branch mergeada na main (com integração do checkout embutido; ADRs das abertas
+renumerados p/ 031/032). Aplicadas as 11 migrations pendentes via
+`db push --include-all` (20260707120000 … 20260710120000) +
+`functions deploy corrigir-resposta-aberta`. Verificado em prod:
+`resposta_modelo` segue com permission denied p/ authenticated; secrets
+`AI_GRADING_*` presentes. A migration 20260710120000 adaptou
+`admin_criar_prova_com_questoes` (da main) p/ aceitar abertas e trocou
+`RETURNING *` por `RETURNING id` (as colunas secretas quebravam a função
+SECURITY INVOKER para qualquer inserção).
+
+### 2b. Plano original de deploy (referência)
 **Decisão do modelo: RESOLVIDA (2026-07-08) — `deepseek/deepseek-v4-flash`** via
 OpenRouter, com roteamento de fallback por custo-benefício. Custo medido: ~US$
 0,0003 por correção complexa (pior caso, em fallback) — irrisório em qualquer
