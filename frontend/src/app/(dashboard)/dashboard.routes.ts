@@ -36,6 +36,11 @@ export const dashboardRoutes: Routes = [
       import('./materiais/materiais.routes').then((m) => m.materiaisRoutes),
   },
   {
+    path: 'flashcards',
+    loadChildren: () =>
+      import('./flashcards/flashcards.routes').then((m) => m.flashcardsRoutes),
+  },
+  {
     path: 'assinatura',
     loadComponent: () =>
       import('./assinatura/minha-assinatura.component').then((m) => m.MinhaAssinaturaComponent),

@@ -1,0 +1,110 @@
+.likes-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.likes-modal {
+  width: 100%;
+  max-width: 24rem;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.likes-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.likes-modal__titulo {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.likes-modal__close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+
+.likes-modal__close:hover {
+  background: var(--color-surface-2);
+}
+
+.likes-modal__body {
+  overflow-y: auto;
+  padding: 0.5rem 1.25rem 1.25rem;
+}
+
+.likes-modal__mensagem {
+  padding: 1.5rem 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.likes-modal__mensagem--erro {
+  color: #b91c1c;
+}
+
+.likes-modal__lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.likes-modal__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.likes-modal__item:last-child {
+  border-bottom: none;
+}
+
+.likes-modal__nome {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.likes-modal__data {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.likes-modal__carregar-mais {
+  margin-top: 0.75rem;
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.likes-modal__carregar-mais:hover {
+  background: var(--color-surface-2);
+}

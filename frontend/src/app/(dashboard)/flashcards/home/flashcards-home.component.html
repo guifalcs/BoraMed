@@ -1,0 +1,162 @@
+<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
+  <app-page-header titulo="Flashcards" subtitulo="Estude com cards de pergunta e resposta." [breadcrumbs]="breadcrumbs" />
+
+  <div class="mb-6 inline-flex rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-1">
+    <button
+      type="button"
+      class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+      [class.bg-white]="abaAtiva() === 'oficiais'"
+      [class.text-[var(--color-text)]]="abaAtiva() === 'oficiais'"
+      [class.text-[var(--color-text-muted)]]="abaAtiva() !== 'oficiais'"
+      (click)="mudarAba('oficiais')"
+    >
+      Oficiais
+    </button>
+    <button
+      type="button"
+      class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+      [class.bg-white]="abaAtiva() === 'meus'"
+      [class.text-[var(--color-text)]]="abaAtiva() === 'meus'"
+      [class.text-[var(--color-text-muted)]]="abaAtiva() !== 'meus'"
+      (click)="mudarAba('meus')"
+    >
+      Meus decks
+    </button>
+    <button
+      type="button"
+      class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+      [class.bg-white]="abaAtiva() === 'comunidade'"
+      [class.text-[var(--color-text)]]="abaAtiva() === 'comunidade'"
+      [class.text-[var(--color-text-muted)]]="abaAtiva() !== 'comunidade'"
+      (click)="mudarAba('comunidade')"
+    >
+      Comunidade
+    </button>
+  </div>
+
+  <!-- Oficiais -->
+  @if (abaAtiva() === 'oficiais') {
+    @if (loadingOficiais()) {
+      <div class="grid gap-3 sm:grid-cols-2">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <app-skeleton variant="card" />
+        }
+      </div>
+    } @else if (decksOficiais().length > 0) {
+      <div class="grid gap-3 sm:grid-cols-2">
+        @for (deck of decksOficiais(); track deck.id) {
+          <app-deck-card [deck]="deck" (estudar)="irParaEstudar($event)" />
+        }
+      </div>
+    } @else {
+      <app-empty-state
+        titulo="Nenhum deck oficial ainda"
+        descricao="Em breve novos decks oficiais estarão disponíveis."
+        [icone]="layersIcon"
+      />
+    }
+  }
+
+  <!-- Meus decks -->
+  @if (abaAtiva() === 'meus') {
+    <div class="mb-4 flex justify-end">
+      <app-ui-button label="Criar deck" [fullWidth]="false" (buttonClick)="irParaNovo()" />
+    </div>
+
+    @if (loadingMeus()) {
+      <div class="grid gap-3 sm:grid-cols-2">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <app-skeleton variant="card" />
+        }
+      </div>
+    } @else if (meusDecks().length > 0) {
+      <div class="grid gap-3 sm:grid-cols-2">
+        @for (deck of meusDecks(); track deck.id) {
+          <app-deck-card
+            [deck]="deck"
+            [mostrarAcoes]="true"
+            (estudar)="irParaEstudar($event)"
+            (editar)="irParaEditar($event)"
+            (excluir)="pedirExclusao($event)"
+            (verCurtidas)="abrirVerCurtidas($event)"
+          />
+        }
+      </div>
+    } @else {
+      <app-empty-state
+        titulo="Você ainda não criou nenhum deck"
+        descricao="Crie seu primeiro deck de flashcards para estudar."
+        [icone]="layersIcon"
+        labelBotao="Criar deck"
+        (acao)="irParaNovo()"
+      />
+    }
+  }
+
+  <!-- Comunidade -->
+  @if (abaAtiva() === 'comunidade') {
+    <div class="mb-4 flex justify-end">
+      <div class="w-48">
+        <app-ui-select
+          label="Ordenar por"
+          name="ordenacao-feed"
+          [options]="ordenacaoOptions"
+          [value]="feedOrdenacao()"
+          (valueChange)="mudarOrdenacaoFeed($event)"
+        />
+      </div>
+    </div>
+
+    @if (feedLoading() && feed().length === 0) {
+      <div class="grid gap-3 sm:grid-cols-2">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <app-skeleton variant="card" />
+        }
+      </div>
+    } @else if (feed().length > 0) {
+      <div class="grid gap-3 sm:grid-cols-2">
+        @for (deck of feed(); track deck.id) {
+          <app-deck-card
+            [deck]="deck"
+            [mostrarAutor]="true"
+            (estudar)="irParaEstudar($event)"
+            (toggleLike)="handleToggleLike($event)"
+          />
+        }
+      </div>
+
+      @if (feedTemMais()) {
+        <div class="mt-4 flex justify-center">
+          <app-ui-button
+            label="Carregar mais"
+            variant="secondary"
+            [fullWidth]="false"
+            [loading]="feedLoading()"
+            (buttonClick)="carregarMaisFeed()"
+          />
+        </div>
+      }
+    } @else {
+      <app-empty-state
+        titulo="Nenhum deck público ainda"
+        descricao="Torne um dos seus decks público para ele aparecer aqui."
+        [icone]="layersIcon"
+      />
+    }
+  }
+</div>
+
+@if (deckParaExcluir()) {
+  <app-ui-confirm-dialog
+    titulo="Excluir deck"
+    mensagem="Tem certeza que deseja excluir este deck? Essa ação não pode ser desfeita."
+    labelConfirmar="Excluir"
+    variante="danger"
+    (confirmar)="confirmarExclusao()"
+    (cancelar)="cancelarExclusao()"
+  />
+}
+
+@if (deckParaVerCurtidas(); as deckId) {
+  <app-deck-likes-modal [deckId]="deckId" (fechar)="fecharVerCurtidas()" />
+}

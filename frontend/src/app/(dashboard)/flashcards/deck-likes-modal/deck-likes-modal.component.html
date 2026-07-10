@@ -1,0 +1,35 @@
+<div class="likes-modal__backdrop" (click)="handleFechar()" role="dialog" aria-modal="true" aria-label="Quem curtiu o deck">
+  <div class="likes-modal" (click)="$event.stopPropagation()">
+    <div class="likes-modal__header">
+      <h2 class="likes-modal__titulo">Quem curtiu</h2>
+      <button class="likes-modal__close" type="button" (click)="handleFechar()" aria-label="Fechar">
+        <app-ui-icon [icon]="iconX" [size]="18" />
+      </button>
+    </div>
+
+    <div class="likes-modal__body">
+      @if (loading() && likes().length === 0) {
+        <p class="likes-modal__mensagem">Carregando…</p>
+      } @else if (erro()) {
+        <p class="likes-modal__mensagem likes-modal__mensagem--erro">{{ erro() }}</p>
+      } @else if (likes().length === 0) {
+        <p class="likes-modal__mensagem">Ninguém curtiu este deck ainda.</p>
+      } @else {
+        <ul class="likes-modal__lista">
+          @for (like of likes(); track like.user_id) {
+            <li class="likes-modal__item">
+              <span class="likes-modal__nome">{{ like.nome }}</span>
+              <span class="likes-modal__data">{{ like.criado_em | timeAgo }}</span>
+            </li>
+          }
+        </ul>
+
+        @if (temMais()) {
+          <button type="button" class="likes-modal__carregar-mais" (click)="carregarMais()">
+            Carregar mais
+          </button>
+        }
+      }
+    </div>
+  </div>
+</div>

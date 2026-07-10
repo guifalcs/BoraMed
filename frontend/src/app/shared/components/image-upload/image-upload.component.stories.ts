@@ -31,3 +31,11 @@ export const ComImagemQuadrada: Story = {
     currentUrl: 'https://placehold.co/500x500/e2e8f0/64748b?text=Quadrada',
   },
 };
+
+export const BucketEPathPrefixCustom: Story = {
+  args: {
+    currentUrl: null,
+    bucket: 'flashcards-imagens',
+    pathPrefix: 'flashcards',
+  },
+};

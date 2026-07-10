@@ -1,0 +1,24 @@
+<button
+  type="button"
+  class="flip-card"
+  [class.flip-card--virado]="virado()"
+  [attr.aria-pressed]="virado()"
+  aria-label="Virar card"
+  (click)="toggle()"
+>
+  <div class="flip-card__inner">
+    <div class="flip-card__face flip-card__face--frente">
+      @if (frenteImagemUrl()) {
+        <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" />
+      }
+      <p class="flip-card__texto">{{ frente() }}</p>
+      <span class="flip-card__dica">Toque para ver a resposta</span>
+    </div>
+    <div class="flip-card__face flip-card__face--verso">
+      @if (versoImagemUrl()) {
+        <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" />
+      }
+      <p class="flip-card__texto">{{ verso() }}</p>
+    </div>
+  </div>
+</button>

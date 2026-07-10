@@ -109,6 +109,7 @@ export class AdminComponent {
         { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },
         { label: 'Temas', icon: Tag, route: '/admin/temas' },
         { label: 'Materiais', icon: Library, route: '/admin/materiais' },
+        { label: 'Flashcards', icon: Layers, route: '/admin/flashcards' },
         { label: 'Importar', icon: Upload, route: '/admin/importar' },
       ],
     },

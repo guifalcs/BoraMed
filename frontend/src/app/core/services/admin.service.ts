@@ -461,6 +461,54 @@ export interface AdminMaterialArquivo {
   criado_em: string;
 }
 
+export interface AdminFlashcardDeck {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  publico: boolean;
+  likes_count: number;
+  cards_count: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface AdminFlashcardCard {
+  id: string;
+  posicao: number;
+  frente: string;
+  verso: string;
+  frente_imagem_url: string | null;
+  verso_imagem_url: string | null;
+}
+
+export interface AdminFlashcardDeckCompleto extends AdminFlashcardDeck {
+  cards: AdminFlashcardCard[];
+}
+
+export interface AdminFlashcardCardPayload {
+  frente: string;
+  verso: string;
+  frente_imagem_url: string | null;
+  verso_imagem_url: string | null;
+}
+
+export interface AdminFlashcardDeckPayload {
+  titulo: string;
+  descricao: string | null;
+  cards: AdminFlashcardCardPayload[];
+}
+
+export interface AdminFlashcardsStats {
+  total_decks_oficiais: number;
+  total_decks_usuarios: number;
+  total_decks_publicos: number;
+  total_cards: number;
+  total_likes: number;
+  total_criadores: number;
+  serie_decks_por_dia: { dia: string; total: number }[];
+  top_publicos_por_likes: { id: string; titulo: string; likes_count: number; cards_count: number }[];
+}
+
 export interface ImpersonacaoResult {
   token_hash: string;
   target_user_id: string;
@@ -1357,5 +1405,124 @@ export class AdminService {
     const { error } = await this.supabase.from('material_arquivo').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: undefined };
+  }
+
+  // ---- Flashcards (decks oficiais) ----
+
+  async listarFlashcardDecksOficiais(): Promise<ServiceResult<AdminFlashcardDeck[]>> {
+    const { data, error } = await this.supabase
+      .from('flashcard_decks')
+      .select('id,titulo,descricao,publico,likes_count,cards_count,criado_em,atualizado_em')
+      .eq('oficial', true)
+      .order('atualizado_em', { ascending: false });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminFlashcardDeck[] };
+  }
+
+  async obterFlashcardDeckOficial(id: string): Promise<ServiceResult<AdminFlashcardDeckCompleto>> {
+    const { data: deck, error } = await this.supabase
+      .from('flashcard_decks')
+      .select('id,titulo,descricao,publico,likes_count,cards_count,criado_em,atualizado_em')
+      .eq('id', id)
+      .eq('oficial', true)
+      .single();
+    if (error) return { ok: false, error: error.message };
+
+    const { data: cards, error: cardsError } = await this.supabase
+      .from('flashcard_cards')
+      .select('id,posicao,frente,verso,frente_imagem_url,verso_imagem_url')
+      .eq('deck_id', id)
+      .order('posicao', { ascending: true });
+    if (cardsError) return { ok: false, error: cardsError.message };
+
+    return {
+      ok: true,
+      data: { ...(deck as AdminFlashcardDeck), cards: (cards ?? []) as AdminFlashcardCard[] },
+    };
+  }
+
+  async criarFlashcardDeckOficial(
+    input: AdminFlashcardDeckPayload,
+  ): Promise<ServiceResult<string>> {
+    const { data: deck, error } = await this.supabase
+      .from('flashcard_decks')
+      .insert({
+        user_id: null,
+        oficial: true,
+        titulo: input.titulo,
+        descricao: input.descricao,
+        publico: false,
+      })
+      .select('id')
+      .single();
+    if (error) return { ok: false, error: error.message };
+    const deckId = (deck as { id: string }).id;
+
+    if (input.cards.length > 0) {
+      const { error: cardsError } = await this.supabase.from('flashcard_cards').insert(
+        input.cards.map((c, i) => ({
+          deck_id: deckId,
+          posicao: i,
+          frente: c.frente,
+          verso: c.verso,
+          frente_imagem_url: c.frente_imagem_url,
+          verso_imagem_url: c.verso_imagem_url,
+        })),
+      );
+      if (cardsError) {
+        // Rollback manual: sem os cards o deck fica inconsistente, então desfazemos.
+        await this.supabase.from('flashcard_decks').delete().eq('id', deckId);
+        return { ok: false, error: cardsError.message };
+      }
+    }
+
+    return { ok: true, data: deckId };
+  }
+
+  async atualizarFlashcardDeckOficial(
+    id: string,
+    input: AdminFlashcardDeckPayload,
+  ): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase
+      .from('flashcard_decks')
+      .update({ titulo: input.titulo, descricao: input.descricao })
+      .eq('id', id)
+      .eq('oficial', true);
+    if (error) return { ok: false, error: error.message };
+
+    const { error: deleteError } = await this.supabase.from('flashcard_cards').delete().eq('deck_id', id);
+    if (deleteError) return { ok: false, error: deleteError.message };
+
+    if (input.cards.length > 0) {
+      const { error: cardsError } = await this.supabase.from('flashcard_cards').insert(
+        input.cards.map((c, i) => ({
+          deck_id: id,
+          posicao: i,
+          frente: c.frente,
+          verso: c.verso,
+          frente_imagem_url: c.frente_imagem_url,
+          verso_imagem_url: c.verso_imagem_url,
+        })),
+      );
+      if (cardsError) return { ok: false, error: cardsError.message };
+    }
+
+    return { ok: true, data: undefined };
+  }
+
+  async excluirFlashcardDeckOficial(id: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase
+      .from('flashcard_decks')
+      .delete()
+      .eq('id', id)
+      .eq('oficial', true);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
+  }
+
+  async getFlashcardsStats(): Promise<ServiceResult<AdminFlashcardsStats>> {
+    const { data, error } = await this.supabase.rpc('admin_get_flashcards_stats');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminFlashcardsStats };
   }
 }

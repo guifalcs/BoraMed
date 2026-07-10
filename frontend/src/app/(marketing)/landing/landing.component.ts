@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ClipboardList,
   FlaskConical,
+  Layers,
   LineChart,
   Menu,
   MessageCircle,
@@ -44,7 +45,7 @@ interface TrainingMode {
   readonly description: string;
   readonly badge: string;
   readonly icon: LucideIconData;
-  readonly variant: 'national' | 'process' | 'lab';
+  readonly variant: 'national' | 'process' | 'lab' | 'flashcards';
   readonly image?: {
     readonly src: string;
     readonly alt: string;
@@ -148,7 +149,7 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly stats = [
     { value: '+2.400', label: 'questões autorais' },
-    { value: '3', label: 'modos de treinar' },
+    { value: '4', label: 'modos de treinar' },
     { value: '100%', label: 'no modelo da prova' },
   ] as const;
 
@@ -167,6 +168,8 @@ export class LandingComponent implements OnDestroy {
     'Simulados por tema',
     'Questões autorais',
     'Revisão guiada',
+    'Flashcards com imagens',
+    'Decks da comunidade',
     'Histórico',
     'Laboratório',
     'Streak de estudo',
@@ -247,6 +250,14 @@ export class LandingComponent implements OnDestroy {
         height: 941,
       },
     },
+    {
+      title: 'Flashcards',
+      badge: 'Novo · Comunidade',
+      description:
+        'Estude com decks oficiais, crie os seus com imagens e destrave os decks da comunidade — os melhores sobem com as curtidas dos próprios estudantes.',
+      icon: Layers,
+      variant: 'flashcards',
+    },
   ];
 
   protected readonly solutionTabs: readonly SolutionTab[] = [
@@ -256,7 +267,7 @@ export class LandingComponent implements OnDestroy {
       title: 'Comece a treinar em segundos',
       description:
         'Escolha a prova, os temas ou o laboratório e comece um simulado na hora — com tempo cronometrado, como no dia da prova.',
-      features: ['Questões 100% autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Retome de onde parou'],
+      features: ['Questões 100% autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Flashcards seus e da comunidade', 'Retome de onde parou'],
       icon: BookOpenCheck,
     },
     {
@@ -331,6 +342,7 @@ export class LandingComponent implements OnDestroy {
         'Todos os simulados: nacionais, processuais e laboratório',
         'Correção de questões discursivas pela Aurora (IA)',
         'Banco completo de questões autorais',
+        'Flashcards: decks oficiais, seus e da comunidade',
         'Histórico e estatísticas de desempenho',
         'Ranking competitivo, XP e conquistas',
         'Revisão comentada das questões',
@@ -353,6 +365,7 @@ export class LandingComponent implements OnDestroy {
         'Tudo do plano mensal incluso',
         'Correção de questões discursivas pela Aurora (IA)',
         'Banco completo de questões autorais',
+        'Flashcards: decks oficiais, seus e da comunidade',
         'Histórico e estatísticas de desempenho',
         'Ranking competitivo, XP e conquistas',
         'Revisão comentada das questões',
@@ -423,6 +436,11 @@ export class LandingComponent implements OnDestroy {
         'Sim. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra.',
     },
     {
+      question: 'Como funcionam os flashcards?',
+      answer:
+        'Você estuda com decks prontos do BoraMed ou cria os seus, com imagens na pergunta e na resposta. Toque para revelar a resposta e marque o que acertou. Se quiser, publique seus decks no feed da comunidade — outros estudantes usam e curtem os melhores, e você vê quem curtiu os seus.',
+    },
+    {
       question: 'A assinatura dá acesso à comunidade?',
       answer:
         'Sim. Toda assinatura inclui acesso à comunidade exclusiva do BoraMed no WhatsApp, onde estudantes trocam dúvidas, materiais e dicas de estudo.',
@@ -489,7 +507,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema e correção de questões discursivas por IA (Aurora): nota e feedback na hora. Comece a treinar hoje.',
+        'Simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema, correção de questões discursivas por IA (Aurora) e flashcards da comunidade. Comece a treinar hoje.',
       path: '/',
       titleHasBrand: true,
     });

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, CreditCard, History, Home, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, CreditCard, History, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -138,6 +138,7 @@ export class DashboardComponent {
     { label: 'Início', icon: Home, route: '/dashboard', exact: true },
     { label: 'Simulados', icon: BookOpen, route: '/dashboard/simulados', onboardingTarget: 'nav-simulados' },
     { label: 'Materiais', icon: Library, route: '/dashboard/materiais' },
+    { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico' },
   ];

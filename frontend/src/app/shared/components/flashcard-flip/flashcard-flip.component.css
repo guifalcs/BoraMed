@@ -1,0 +1,74 @@
+.flip-card {
+  display: block;
+  width: 100%;
+  min-height: 260px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  perspective: 1200px;
+  font-family: inherit;
+}
+
+.flip-card__inner {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+  text-align: left;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.flip-card--virado .flip-card__inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  text-align: center;
+}
+
+.flip-card__face--verso {
+  transform: rotateY(180deg);
+  background: var(--color-bg-soft);
+}
+
+.flip-card__texto {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.flip-card__imagem {
+  max-height: 140px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.flip-card__dica {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* Degrada para troca instantânea sob reduced-motion, evitando o congelamento
+   descrito na memória do projeto (reset global de reduced-motion). */
+@media (prefers-reduced-motion: reduce) {
+  .flip-card__inner {
+    transition: none;
+  }
+}

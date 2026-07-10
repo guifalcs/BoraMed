@@ -423,6 +423,115 @@ export type Database = {
           },
         ]
       }
+      flashcard_cards: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          deck_id: string
+          frente: string
+          frente_imagem_url: string | null
+          id: string
+          posicao: number
+          verso: string
+          verso_imagem_url: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          deck_id: string
+          frente: string
+          frente_imagem_url?: string | null
+          id?: string
+          posicao?: number
+          verso: string
+          verso_imagem_url?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          deck_id?: string
+          frente?: string
+          frente_imagem_url?: string | null
+          id?: string
+          posicao?: number
+          verso?: string
+          verso_imagem_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_cards_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_deck_likes: {
+        Row: {
+          criado_em: string
+          deck_id: string
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string
+          deck_id: string
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          deck_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_deck_likes_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_decks: {
+        Row: {
+          atualizado_em: string
+          cards_count: number
+          criado_em: string
+          descricao: string | null
+          id: string
+          likes_count: number
+          oficial: boolean
+          publico: boolean
+          titulo: string
+          user_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cards_count?: number
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          likes_count?: number
+          oficial?: boolean
+          publico?: boolean
+          titulo: string
+          user_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cards_count?: number
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          likes_count?: number
+          oficial?: boolean
+          publico?: boolean
+          titulo?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       gamificacao_evento: {
         Row: {
           criado_em: string
@@ -674,13 +783,16 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           id: string
+          intencao_id: string | null
           liquido_centavos: number | null
           metodo_pagamento: string | null
           moeda: string
           mp_authorized_payment_id: string | null
           mp_payment_id: string | null
+          parcelas: number | null
           processado_em: string | null
           status: string
+          status_detail: string | null
           user_id: string
           valor_centavos: number | null
         }
@@ -689,13 +801,16 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           id?: string
+          intencao_id?: string | null
           liquido_centavos?: number | null
           metodo_pagamento?: string | null
           moeda?: string
           mp_authorized_payment_id?: string | null
           mp_payment_id?: string | null
+          parcelas?: number | null
           processado_em?: string | null
           status?: string
+          status_detail?: string | null
           user_id: string
           valor_centavos?: number | null
         }
@@ -704,13 +819,16 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           id?: string
+          intencao_id?: string | null
           liquido_centavos?: number | null
           metodo_pagamento?: string | null
           moeda?: string
           mp_authorized_payment_id?: string | null
           mp_payment_id?: string | null
+          parcelas?: number | null
           processado_em?: string | null
           status?: string
+          status_detail?: string | null
           user_id?: string
           valor_centavos?: number | null
         }
@@ -723,7 +841,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pagamento_intencao_id_fkey"
+            columns: ["intencao_id"]
+            isOneToOne: false
+            referencedRelation: "pagamento_intencao"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pagamento_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamento_intencao: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          expira_em: string | null
+          id: string
+          idempotency_key: string
+          metodo: string | null
+          mp_payment_id: string | null
+          mp_preapproval_id: string | null
+          parcelas: number | null
+          plano_id: string | null
+          status: string
+          status_detail: string | null
+          tipo: string
+          user_id: string
+          valor_centavos: number
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          expira_em?: string | null
+          id?: string
+          idempotency_key: string
+          metodo?: string | null
+          mp_payment_id?: string | null
+          mp_preapproval_id?: string | null
+          parcelas?: number | null
+          plano_id?: string | null
+          status?: string
+          status_detail?: string | null
+          tipo: string
+          user_id: string
+          valor_centavos: number
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          expira_em?: string | null
+          id?: string
+          idempotency_key?: string
+          metodo?: string | null
+          mp_payment_id?: string | null
+          mp_preapproval_id?: string | null
+          parcelas?: number | null
+          plano_id?: string | null
+          status?: string
+          status_detail?: string | null
+          tipo?: string
+          user_id?: string
+          valor_centavos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamento_intencao_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "plano"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_intencao_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -976,6 +1170,7 @@ export type Database = {
           enunciado_apoio: string | null
           explicacao: string | null
           explicacao_alternativas: Json | null
+          explicacao_original: string | null
           fonte: string | null
           formato: string
           formato_prova: string | null
@@ -1015,6 +1210,7 @@ export type Database = {
           enunciado_apoio?: string | null
           explicacao?: string | null
           explicacao_alternativas?: Json | null
+          explicacao_original?: string | null
           fonte?: string | null
           formato: string
           formato_prova?: string | null
@@ -1054,6 +1250,7 @@ export type Database = {
           enunciado_apoio?: string | null
           explicacao?: string | null
           explicacao_alternativas?: Json | null
+          explicacao_original?: string | null
           fonte?: string | null
           formato?: string
           formato_prova?: string | null
@@ -1931,7 +2128,7 @@ export type Database = {
           tipo: string
         }
         SetofOptions: {
-          from: "prova"
+          from: "*"
           to: "prova"
           isOneToOne: true
           isSetofReturn: false
@@ -1982,7 +2179,12 @@ export type Database = {
         Returns: number
       }
       admin_get_financeiro: { Args: never; Returns: Json }
+      admin_get_flashcards_stats: { Args: never; Returns: Json }
       admin_get_metricas_ia: { Args: never; Returns: Json }
+      admin_get_metricas_usuario: {
+        Args: { p_ate?: string; p_desde?: string; p_user_id: string }
+        Returns: Json
+      }
       admin_get_questao: { Args: { p_id: string }; Returns: Json }
       admin_get_stats: { Args: never; Returns: Json }
       admin_get_uso_plataforma: { Args: never; Returns: Json }
@@ -2318,6 +2520,44 @@ export type Database = {
       finalizar_tentativa: {
         Args: { p_tempo_segundos?: number; p_tentativa_id: string }
         Returns: Json
+      }
+      flashcards_atualizar_deck: {
+        Args: {
+          p_cards: Json
+          p_deck_id: string
+          p_descricao: string
+          p_publico: boolean
+          p_titulo: string
+        }
+        Returns: undefined
+      }
+      flashcards_criar_deck: {
+        Args: {
+          p_cards: Json
+          p_descricao: string
+          p_publico: boolean
+          p_titulo: string
+        }
+        Returns: string
+      }
+      flashcards_excluir_deck: {
+        Args: { p_deck_id: string }
+        Returns: undefined
+      }
+      flashcards_feed: {
+        Args: { p_limit?: number; p_offset?: number; p_ordenacao?: string }
+        Returns: Json
+      }
+      flashcards_listar_likes_deck: {
+        Args: { p_deck_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      flashcards_toggle_like: {
+        Args: { p_deck_id: string }
+        Returns: {
+          curtido: boolean
+          likes_count: number
+        }[]
       }
       gerar_simulado_impressao: {
         Args: {
@@ -2675,3 +2915,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

@@ -104,4 +104,11 @@ export const adminRoutes: Routes = [
         (m) => m.AdminMateriaisComponent,
       ),
   },
+  {
+    path: 'flashcards',
+    loadComponent: () =>
+      import('./flashcards/admin-flashcards.component').then(
+        (m) => m.AdminFlashcardsComponent,
+      ),
+  },
 ];

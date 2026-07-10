@@ -265,8 +265,8 @@
     <div class="modules-bento-header">
       <div class="section-heading left">
         <span class="eyebrow">Modos de treino</span>
-        <h2>Três formas de treinar.<br class="heading-break" /> <span class="heading-break-tail">Nenhum tema deixado para trás.</span></h2>
-        <p>Do simulado completo no modelo da prova à revisão por tema e ao laboratório com imagem real — escolha como quer estudar hoje.</p>
+        <h2>Quatro formas de treinar.<br class="heading-break" /> <span class="heading-break-tail">Nenhum tema deixado para trás.</span></h2>
+        <p>Do simulado completo no modelo da prova à revisão por tema, ao laboratório com imagem real e aos flashcards da comunidade — escolha como quer estudar hoje.</p>
       </div>
       <a routerLink="/cadastro" class="modules-bento-btn">
         Ver todos os módulos
@@ -324,6 +324,39 @@
             Explorar módulo
             <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
           </a>
+        </div>
+      </article>
+
+      <!-- Wide card: Flashcards (novo) — mock CSS com flip no hover, sem screenshot -->
+      <article class="bento-wide bento-wide--flashcards">
+        <div class="bento-compact-content">
+          <div class="bento-compact-meta">
+            <span class="bento-badge bento-badge--flashcards">Novo · Comunidade</span>
+          </div>
+          <h3>Flashcards</h3>
+          <p>
+            Estude com decks prontos do BoraMed ou crie os seus, com imagens. Publique no feed da
+            comunidade, curta os melhores decks e veja quem curtiu os seus — a memorização que
+            faltava entre um simulado e outro.
+          </p>
+          <a routerLink="/cadastro" class="bento-link bento-link--flashcards">
+            Explorar módulo
+            <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
+          </a>
+        </div>
+        <div class="flash-mock" aria-hidden="true">
+          <div class="flash-mock-inner">
+            <div class="flash-mock-face flash-mock-front">
+              <span class="flash-mock-label">Pergunta</span>
+              <p>Quais são os componentes da tríade de Virchow?</p>
+              <span class="flash-mock-hint">passe o mouse para revelar</span>
+            </div>
+            <div class="flash-mock-face flash-mock-back">
+              <span class="flash-mock-label">Resposta</span>
+              <p>Estase venosa, lesão endotelial e hipercoagulabilidade.</p>
+              <span class="flash-mock-hint">Acertei ✓ &nbsp;·&nbsp; Errei ✗</span>
+            </div>
+          </div>
         </div>
       </article>
     </div>

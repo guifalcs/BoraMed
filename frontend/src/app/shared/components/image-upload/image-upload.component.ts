@@ -14,7 +14,6 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { compressImage } from '../../../core/utils/image-compress.util';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
-const BUCKET = 'questao-imagens';
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
 
@@ -130,6 +129,8 @@ export class ImageUploadComponent {
   protected readonly iconImage = Image;
 
   readonly currentUrl = input<string | null>(null);
+  readonly bucket = input<string>('questao-imagens');
+  readonly pathPrefix = input<string>('questoes');
   readonly urlChange = output<string | null>();
 
   protected readonly uploading = signal(false);
@@ -178,8 +179,8 @@ export class ImageUploadComponent {
       processedFile = file;
     }
 
-    const path = `questoes/${crypto.randomUUID()}.webp`;
-    const { data, error } = await this.supabase.storage.from(BUCKET).upload(path, processedFile, {
+    const path = `${this.pathPrefix()}/${crypto.randomUUID()}.webp`;
+    const { data, error } = await this.supabase.storage.from(this.bucket()).upload(path, processedFile, {
       contentType: processedFile.type,
     });
 
@@ -190,7 +191,7 @@ export class ImageUploadComponent {
       return;
     }
 
-    const { data: { publicUrl } } = this.supabase.storage.from(BUCKET).getPublicUrl(data.path);
+    const { data: { publicUrl } } = this.supabase.storage.from(this.bucket()).getPublicUrl(data.path);
     this._sessionUrl = publicUrl;
     this._localUrl.set(publicUrl);
     this.urlChange.emit(publicUrl);
@@ -209,10 +210,10 @@ export class ImageUploadComponent {
   }
 
   private async deletarDoStorage(url: string): Promise<void> {
-    const marker = `/object/public/${BUCKET}/`;
+    const marker = `/object/public/${this.bucket()}/`;
     const idx = url.indexOf(marker);
     if (idx === -1) return;
     const path = url.substring(idx + marker.length);
-    await this.supabase.storage.from(BUCKET).remove([path]);
+    await this.supabase.storage.from(this.bucket()).remove([path]);
   }
 }

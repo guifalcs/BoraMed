@@ -114,6 +114,11 @@
   background: #ccfbf1;
 }
 
+.bento-badge--flashcards {
+  color: #b45309;
+  background: #fef3c7;
+}
+
 .bento-feature-content h3 {
   margin: 1.1rem 0 0;
   font-size: clamp(1.5rem, 3vw, 1.875rem);
@@ -149,6 +154,7 @@
 .bento-link--light { color: #fff; }
 .bento-link--process { color: #5b21b6; }
 .bento-link--lab { color: #0f766e; }
+.bento-link--flashcards { color: #b45309; }
 
 .bento-compact {
   display: flex;
@@ -227,6 +233,105 @@
   padding-top: 1rem;
 }
 
+/* ---- Card largo de Flashcards (novo módulo) ---- */
+
+.bento-wide {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow: hidden;
+  border: 1px solid #eceff3;
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 18px 40px -28px rgba(16, 24, 40, 0.2);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.bento-wide:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 34px 60px -28px rgba(180, 83, 9, 0.3);
+}
+
+.bento-wide .bento-compact-content {
+  padding-bottom: 0;
+}
+
+/* Mock de flashcard em CSS puro — gira no hover/focus, demonstrando o flip real do app */
+.flash-mock {
+  perspective: 1000px;
+  padding: 0 1.75rem 1.75rem;
+}
+
+.flash-mock-inner {
+  position: relative;
+  width: 100%;
+  min-height: 150px;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.bento-wide:hover .flash-mock-inner,
+.bento-wide:focus-within .flash-mock-inner {
+  transform: rotateY(180deg);
+}
+
+.flash-mock-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: 16px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flash-mock-front {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+}
+
+.flash-mock-back {
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  transform: rotateY(180deg);
+}
+
+.flash-mock-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #b45309;
+}
+
+.flash-mock-back .flash-mock-label { color: #047857; }
+
+.flash-mock-face p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.45;
+}
+
+.flash-mock-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash-mock-inner {
+    transition: none;
+  }
+}
+
 @media (min-width: 720px) {
   .modules-bento-header {
     flex-direction: row;
@@ -252,5 +357,27 @@
 
   .bento-compact {
     min-height: unset;
+  }
+
+  .bento-wide {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .bento-wide .bento-compact-content {
+    flex: 1 1 55%;
+    padding: 1.75rem 1.75rem 1.75rem 2rem;
+  }
+
+  .bento-wide .flash-mock {
+    flex: 1 1 45%;
+    display: flex;
+    align-items: center;
+    padding: 1.75rem 2rem 1.75rem 0;
+  }
+
+  .bento-wide .flash-mock-inner {
+    min-height: 170px;
   }
 }
