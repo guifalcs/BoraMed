@@ -14,9 +14,13 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render the router outlet', async () => {
+  it('should render the router outlet', () => {
     const fixture = TestBed.createComponent(AppComponent);
-    await fixture.whenStable();
+    // `detectChanges()` em vez de `whenStable()`: o <router-outlet> é estático
+    // no template, então basta uma passada de change detection. Aguardar
+    // estabilidade prendia o teste no carregamento assíncrono do Vercel
+    // Analytics (afterNextRender → rede), estourando o timeout de 5s no CI.
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
