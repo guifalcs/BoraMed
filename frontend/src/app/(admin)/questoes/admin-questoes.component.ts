@@ -99,6 +99,8 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly filtroAutor = signal('');
   protected readonly filtroDataDe = signal('');
   protected readonly filtroDataAte = signal('');
+  // Só questões com imagem anexada.
+  protected readonly filtroComImagem = signal(false);
   protected readonly busca = signal('');
   protected readonly processando = signal<string | null>(null);
   protected readonly porPagina = 50;
@@ -125,6 +127,7 @@ export class AdminQuestoesComponent implements OnInit {
       !!this.filtroAutor() ||
       !!this.filtroDataDe() ||
       !!this.filtroDataAte() ||
+      this.filtroComImagem() ||
       !!this.busca().trim(),
   );
 
@@ -429,6 +432,7 @@ export class AdminQuestoesComponent implements OnInit {
       autorId: this.filtroAutor() || undefined,
       dataDe: this.filtroDataDe() || undefined,
       dataAte: this.filtroDataAte() || undefined,
+      comImagem: this.filtroComImagem() || undefined,
     });
     if (result.ok) {
       this.questoes.set(result.data.questoes);
@@ -460,6 +464,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.filtroAutor.set('');
     this.filtroDataDe.set('');
     this.filtroDataAte.set('');
+    this.filtroComImagem.set(false);
     this.busca.set('');
     await this.aplicarFiltros();
   }

@@ -734,6 +734,8 @@ export class AdminService {
       dataAte?: string;
       // 'pendente' | 'revisada' — filtro da fila de revisão de conversão.
       revisaoConversao?: string;
+      // true — apenas questões que possuem imagem anexada.
+      comImagem?: boolean;
     } = {},
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
@@ -754,6 +756,7 @@ export class AdminService {
     if (filtros.disciplinaId) query = query.eq('disciplina_id', filtros.disciplinaId);
     if (filtros.autorId) query = query.eq('autor_id', filtros.autorId);
     if (filtros.revisaoConversao) query = query.eq('revisao_conversao', filtros.revisaoConversao);
+    if (filtros.comImagem) query = query.not('imagem_url', 'is', null);
     if (filtros.dataDe) query = query.gte('criado_em', filtros.dataDe);
     // criado_em é timestamp; comparar com a data pura excluiria o próprio dia final.
     if (filtros.dataAte) query = query.lte('criado_em', `${filtros.dataAte}T23:59:59.999`);

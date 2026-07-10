@@ -127,6 +127,13 @@
       (ngModelChange)="filtroDataAte.set($event); aplicarFiltros()"
     />
   </label>
+  <app-ui-checkbox
+    class="toolbar-filter"
+    [checked]="filtroComImagem()"
+    (checkedChange)="filtroComImagem.set($event); aplicarFiltros()"
+  >
+    Só com imagem
+  </app-ui-checkbox>
   <button class="btn btn--primary" (click)="aplicarFiltros()">Filtrar</button>
   @if (temFiltrosAtivos()) {
     <button class="btn btn--ghost" (click)="limparFiltros()">Limpar filtros</button>
