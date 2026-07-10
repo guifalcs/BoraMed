@@ -113,6 +113,63 @@
   background: #ffffff;
 }
 
+/* ── Grupos colapsáveis ── */
+.admin-nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-nav-group-header {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.admin-nav-group-header--active {
+  color: #ffffff;
+}
+
+.admin-nav-chevron {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.55);
+  transition: transform 0.2s ease;
+}
+
+.admin-nav-group--open .admin-nav-chevron {
+  transform: rotate(180deg);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.admin-nav-group-header .admin-nav-badge {
+  margin-left: auto;
+}
+
+.admin-nav-group-header .admin-nav-badge + .admin-nav-chevron {
+  margin-left: 0.5rem;
+}
+
+.admin-nav-sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 2px 0.75rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.admin-nav-subitem {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  padding: 0.4rem 0.6rem;
+}
+
+.admin-nav-subitem.admin-nav-item--active::before {
+  left: -0.6rem;
+}
+
 /* ── Footer ── */
 .admin-sidebar-footer {
   flex-shrink: 0;
