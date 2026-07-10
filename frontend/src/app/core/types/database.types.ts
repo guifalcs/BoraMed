@@ -1906,6 +1906,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_criar_prova_com_questoes: {
+        Args: {
+          p_prova: Json
+          p_questoes_existentes?: string[]
+          p_questoes_novas?: Json
+        }
+        Returns: {
+          arquivada: boolean
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          faculdade_id: string | null
+          formato: string | null
+          id: string
+          nome: string
+          origem: string
+          periodo: number
+          publicada: boolean
+          qtd_questoes: number
+          rede: string | null
+          subtipo: string | null
+          subtipo_nacional: string | null
+          tipo: string
+        }
+        SetofOptions: {
+          from: "prova"
+          to: "prova"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_deletar_disciplina: {
         Args: { p_disciplina_id: string }
         Returns: Json
@@ -2644,4 +2675,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

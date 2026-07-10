@@ -1,0 +1,302 @@
+<div class="mx-auto max-w-6xl px-4 py-6">
+  <header class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Métricas por usuário</h1>
+    <p class="text-sm text-gray-500">
+      Pesquise um usuário para ver tentativas, XP, atividade e assinatura em detalhe.
+    </p>
+  </header>
+
+  <!-- Seleção de usuário + período -->
+  <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,420px)_1fr] lg:items-start">
+      <app-admin-user-search
+        [usuarioInicial]="usuarioSelecionado()"
+        (usuarioSelecionado)="onUsuarioSelecionado($event)"
+      />
+      <app-periodo-filter (periodoChange)="onPeriodoChange($event)" />
+    </div>
+  </div>
+
+  @if (!usuarioSelecionado()) {
+    <p class="rounded-xl border border-dashed border-gray-300 bg-white px-5 py-16 text-center text-sm text-gray-500">
+      Nenhum usuário selecionado. Use a busca acima para escolher um usuário.
+    </p>
+  } @else if (isLoading()) {
+    <p class="py-16 text-center text-gray-500">Carregando métricas…</p>
+  } @else if (erro()) {
+    <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-8 text-center">
+      <p class="text-sm font-medium text-red-700">{{ erro() }}</p>
+      <button
+        type="button"
+        class="mt-3 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+        (click)="carregar()"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (metricas(); as m) {
+    <!-- Perfil + Assinatura -->
+    <div class="grid gap-4 lg:grid-cols-2">
+      <section class="rounded-xl border border-gray-200 bg-white p-5">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Perfil</h2>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="text-lg font-bold text-gray-900">{{ m.perfil.nome_completo ?? '—' }}</span>
+          <span
+            class="rounded px-1.5 py-0.5 text-[0.65rem] font-bold uppercase"
+            [class]="m.perfil.papel === 'aluno' ? 'bg-slate-100 text-slate-600' : 'bg-violet-100 text-violet-700'"
+          >
+            {{ papelLabel(m.perfil.papel) }}
+          </span>
+          @if (m.perfil.banido) {
+            <span class="rounded bg-red-100 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-red-700">Suspenso</span>
+          }
+        </div>
+        <p class="text-sm text-gray-500">{{ m.perfil.email }}</p>
+        <dl class="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+          <div>
+            <dt class="text-xs text-gray-500">Tipo</dt>
+            <dd class="font-medium text-gray-900">{{ tipoUsuarioLabel(m.perfil.tipo_usuario) }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Cadastro</dt>
+            <dd class="font-medium text-gray-900">{{ m.perfil.criado_em | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Último login</dt>
+            <dd class="font-medium text-gray-900">
+              {{ m.perfil.ultimo_login ? (m.perfil.ultimo_login | date: 'dd/MM/yyyy HH:mm') : '—' }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="rounded-xl border border-gray-200 bg-white p-5">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Assinatura</h2>
+        @if (m.assinatura_atual; as a) {
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-lg font-bold text-gray-900">
+              {{ a.cortesia ? 'Cortesia' : (a.plano_nome ?? 'Plano') }}
+            </span>
+            <span
+              class="rounded-full px-2 py-0.5 text-xs font-semibold"
+              [class]="a.ativa ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'"
+            >
+              {{ a.ativa ? 'Acesso ativo' : 'Sem acesso' }}
+            </span>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+              {{ assinaturaStatusLabel(a.status) }}
+            </span>
+            @if (a.renovacao_cancelada) {
+              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                Renovação cancelada — acesso até o fim do período
+              </span>
+            }
+          </div>
+          <dl class="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt class="text-xs text-gray-500">Periodicidade</dt>
+              <dd class="font-medium text-gray-900">{{ periodicidadeLabel(a.frequency, a.frequency_type) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Valor</dt>
+              <dd class="font-medium text-gray-900">{{ a.cortesia ? 'Grátis' : formatarCentavos(a.preco_centavos) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">{{ a.renovacao_cancelada || a.status === 'cancelled' ? 'Acesso até' : 'Próxima cobrança' }}</dt>
+              <dd class="font-medium text-gray-900">
+                {{ a.proxima_cobranca ? (a.proxima_cobranca | date: 'dd/MM/yyyy') : '—' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Início</dt>
+              <dd class="font-medium text-gray-900">
+                {{ a.data_inicio ? (a.data_inicio | date: 'dd/MM/yyyy') : '—' }}
+              </dd>
+            </div>
+            @if (a.cancelada_em) {
+              <div>
+                <dt class="text-xs text-gray-500">Cancelada em</dt>
+                <dd class="font-medium text-gray-900">{{ a.cancelada_em | date: 'dd/MM/yyyy' }}</dd>
+              </div>
+            }
+          </dl>
+        } @else {
+          <p class="mt-3 text-sm text-gray-500">Este usuário nunca teve assinatura.</p>
+        }
+      </section>
+    </div>
+
+    <!-- KPIs do período -->
+    <h2 class="mt-8 text-lg font-semibold text-gray-900">Métricas do período</h2>
+    <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <app-kpi-card
+        label="Tentativas"
+        [valor]="'' + m.tentativas.total"
+        [sublabel]="m.tentativas.finalizadas + ' finalizadas · ' + m.tentativas.em_andamento + ' em andamento'"
+        [icone]="iconTentativas"
+      />
+      <app-kpi-card
+        label="Nota média"
+        [valor]="m.tentativas.nota_media !== null ? m.tentativas.nota_media + '%' : '—'"
+        [sublabel]="m.tentativas.acertos + ' acertos no período'"
+        [icone]="iconTaxa"
+        [variante]="m.tentativas.nota_media !== null && m.tentativas.nota_media >= 70 ? 'success' : 'default'"
+      />
+      <app-kpi-card
+        label="Tempo de estudo"
+        [valor]="formatarTempo(m.tentativas.tempo_total_segundos)"
+        sublabel="Somando todas as tentativas do período"
+        [icone]="iconTempo"
+      />
+      <app-kpi-card
+        label="XP no período"
+        [valor]="'' + m.gamificacao.xp_no_periodo"
+        [sublabel]="'XP total: ' + m.gamificacao.xp_total"
+        [icone]="iconXp"
+        variante="warning"
+      />
+      <app-kpi-card
+        label="Nível"
+        [valor]="'' + m.gamificacao.nivel"
+        [sublabel]="'XP na semana: ' + m.gamificacao.xp_semana_atual"
+        [icone]="iconNivel"
+      />
+      <app-kpi-card
+        label="Streak"
+        [valor]="m.gamificacao.streak_atual + ' dias'"
+        [sublabel]="'Recorde: ' + m.gamificacao.streak_recorde + ' · Freezes: ' + m.gamificacao.freezes_disponiveis"
+        [icone]="iconStreak"
+        [variante]="m.gamificacao.streak_atual > 0 ? 'success' : 'default'"
+      />
+    </div>
+
+    <!-- Distribuições -->
+    @if (porModo().length > 0 || porFormato().length > 0) {
+      <div class="mt-4 flex flex-wrap gap-2">
+        @for (item of porModo(); track item.label) {
+          <span class="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
+            {{ item.label }}: {{ item.qtd }}
+          </span>
+        }
+        @for (item of porFormato(); track item.label) {
+          <span class="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+            {{ item.label }}: {{ item.qtd }}
+          </span>
+        }
+      </div>
+    }
+
+    <!-- Gráficos -->
+    <div class="mt-6 grid gap-4 lg:grid-cols-2">
+      <section class="rounded-xl border border-gray-200 bg-white p-5">
+        <h3 class="mb-3 text-sm font-semibold text-gray-900">Tentativas por dia</h3>
+        <app-serie-diaria-chart
+          [pontos]="serieTentativas()"
+          label="Tentativas"
+          mensagemVazia="Nenhuma tentativa no período selecionado."
+        />
+      </section>
+      <section class="rounded-xl border border-gray-200 bg-white p-5">
+        <h3 class="mb-3 text-sm font-semibold text-gray-900">XP por dia</h3>
+        <app-serie-diaria-chart
+          [pontos]="serieXp()"
+          label="XP"
+          cor="#f59e0b"
+          mensagemVazia="Nenhum XP ganho no período selecionado."
+        />
+      </section>
+    </div>
+
+    <!-- Histórico de assinaturas -->
+    <h2 class="mt-8 text-lg font-semibold text-gray-900">Histórico de assinaturas</h2>
+    @if (m.assinaturas_historico.length === 0) {
+      <p class="mt-3 rounded-xl border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-500">
+        Nenhuma assinatura registrada.
+      </p>
+    } @else {
+      <div class="mt-3 overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <table class="w-full min-w-[640px] text-sm">
+          <thead class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
+            <tr>
+              <th class="px-4 py-3 font-medium">Plano</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-4 py-3 font-medium">Início</th>
+              <th class="px-4 py-3 font-medium">Próx. cobrança</th>
+              <th class="px-4 py-3 font-medium">Cancelada em</th>
+              <th class="px-4 py-3 font-medium">Criada em</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (a of m.assinaturas_historico; track a.id) {
+              <tr>
+                <td class="px-4 py-3 font-medium text-gray-900">
+                  {{ a.cortesia ? 'Cortesia' : (a.plano_nome ?? '—') }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                    [class]="a.status === 'authorized'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : a.status === 'cancelled'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700'"
+                  >
+                    {{ assinaturaStatusLabel(a.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ a.data_inicio ? (a.data_inicio | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ a.proxima_cobranca ? (a.proxima_cobranca | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ a.cancelada_em ? (a.cancelada_em | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ a.criado_em | date: 'dd/MM/yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Pagamentos no período -->
+    <h2 class="mt-8 text-lg font-semibold text-gray-900">Pagamentos no período</h2>
+    @if (m.pagamentos.length === 0) {
+      <p class="mt-3 rounded-xl border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-500">
+        Nenhum pagamento no período selecionado.
+      </p>
+    } @else {
+      <div class="mt-3 overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <table class="w-full min-w-[560px] text-sm">
+          <thead class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
+            <tr>
+              <th class="px-4 py-3 font-medium">Data</th>
+              <th class="px-4 py-3 font-medium">Valor</th>
+              <th class="px-4 py-3 font-medium">Método</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (p of m.pagamentos; track p.id) {
+              <tr>
+                <td class="px-4 py-3 text-gray-600">
+                  {{ (p.processado_em ?? p.criado_em) | date: 'dd/MM/yyyy HH:mm' }}
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900">{{ formatarCentavos(p.valor_centavos, p.moeda) }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ p.metodo_pagamento ?? '—' }}</td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                    [class]="p.status === 'approved'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : p.status === 'rejected' || p.status === 'cancelled' || p.status === 'charged_back'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700'"
+                  >
+                    {{ pagamentoStatusLabel(p.status) }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

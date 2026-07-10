@@ -126,7 +126,15 @@ export class SubscriptionService {
     return fallback;
   }
 
-  /** Cria a assinatura no Mercado Pago e devolve o init_point para redirect. */
+  /**
+   * Cria a assinatura no Mercado Pago e devolve o init_point para redirect.
+   *
+   * @deprecated Usado apenas pelo fluxo legado de checkout por redirect
+   * (Checkout Pro / init_point). Compras novas usam o checkout embutido via
+   * `CheckoutService` (core/services/checkout.service.ts). Mantido durante a
+   * janela de observação para não afetar assinantes mensais legados que ainda
+   * dependem dos preapprovals antigos.
+   */
   async iniciarCheckout(planoSlug: string): Promise<CheckoutResult> {
     const { data, error } = await this.supabase.functions.invoke('mp-criar-assinatura', {
       body: { plano_slug: planoSlug },

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnInit,
   computed,
   inject,
@@ -21,7 +22,7 @@ import type { Questao, QuestaoComAlternativas } from '../../core/models/questao'
 import type { Tema } from '../../core/models/tema';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ChevronLeft, ChevronRight, Eye, Pencil, Trash2, X } from 'lucide-angular';
+import { ChevronLeft, ChevronRight, Eye, GalleryHorizontalEnd, Pencil, RotateCcw, Trash2, X } from 'lucide-angular';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
@@ -141,6 +142,16 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly questaoVisualizada = signal<AdminQuestaoCompleta | null>(null);
   protected readonly carregandoVisualizacao = signal(false);
 
+  // ---- Carrossel (preview estilo aluno) ----
+  protected readonly carrosselAberto = signal(false);
+  protected readonly carrosselIndice = signal(0);
+  protected readonly carrosselCarregando = signal(false);
+  /** Cache das questões completas já carregadas, no shape do QuestaoCardComponent. */
+  private readonly carrosselCache = signal<Map<string, QuestaoComAlternativas>>(new Map());
+  /** Resposta escolhida pelo admin em cada questão (id da questão → id da alternativa). Nunca persistido. */
+  private readonly carrosselRespostas = signal<Map<string, string>>(new Map());
+  private carrosselRequestId = 0;
+
   // ---- Campos do formulário ----
   protected readonly fEnunciado = signal('');
   protected readonly fEnunciadoApoio = signal('');
@@ -253,6 +264,8 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly iconPencil = Pencil;
   protected readonly iconTrash = Trash2;
   protected readonly iconX = X;
+  protected readonly iconCarrossel = GalleryHorizontalEnd;
+  protected readonly iconRefazer = RotateCcw;
 
   /** URL original da imagem ao abrir o drawer; usada para limpeza no storage */
   private _urlAntesDeEditar: string | null = null;
@@ -274,7 +287,11 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly questaoPreview = computed<QuestaoComAlternativas | null>(() => {
     const questao = this.questaoVisualizada();
     if (!questao) return null;
+    return this.toQuestaoComAlternativas(questao);
+  });
 
+  /** Converte a questão administrativa completa no shape consumido pelo QuestaoCardComponent. */
+  private toQuestaoComAlternativas(questao: AdminQuestaoCompleta): QuestaoComAlternativas {
     const disciplina = this.disciplinasDisponiveis().find((d) => d.id === questao.disciplina_id);
 
     return {
@@ -324,7 +341,7 @@ export class AdminQuestoesComponent implements OnInit {
       })),
       temas: this.temasDaQuestao(questao.temas),
     };
-  });
+  }
 
   protected readonly temasVisualizacao = computed(() => {
     const questao = this.questaoVisualizada();
@@ -692,6 +709,133 @@ export class AdminQuestoesComponent implements OnInit {
     this.visualizacaoRequestId++;
     this.carregandoVisualizacao.set(false);
     this.questaoVisualizada.set(null);
+  }
+
+  // ---- Carrossel ----
+
+  protected readonly carrosselTotal = computed(() => this.questoes().length);
+
+  /** Item da lista (AdminQuestao) na posição atual do carrossel. */
+  protected readonly carrosselQuestaoLista = computed(() => this.questoes()[this.carrosselIndice()] ?? null);
+
+  /** Questão completa (com alternativas) já carregada para a posição atual, ou null se ainda carregando. */
+  protected readonly carrosselQuestao = computed<QuestaoComAlternativas | null>(() => {
+    const item = this.carrosselQuestaoLista();
+    if (!item) return null;
+    return this.carrosselCache().get(item.id) ?? null;
+  });
+
+  /** Alternativa escolhida pelo admin na questão atual. */
+  protected readonly carrosselRespostaAtual = computed<string | null>(() => {
+    const item = this.carrosselQuestaoLista();
+    if (!item) return null;
+    return this.carrosselRespostas().get(item.id) ?? null;
+  });
+
+  /** Id da alternativa correta — só revelado depois que o admin responde (igual ao modo estudo do aluno). */
+  protected readonly carrosselCorretaAtual = computed<string | null>(() => {
+    const questao = this.carrosselQuestao();
+    if (!questao) return null;
+    if (this.carrosselRespostaAtual() === null) return null;
+    return questao.alternativas.find((a) => a.correta)?.id ?? null;
+  });
+
+  protected readonly carrosselRespondida = computed(() => this.carrosselRespostaAtual() !== null);
+
+  /** Disciplina exibida no cabeçalho do carrossel. */
+  protected readonly carrosselDisciplina = computed(() => {
+    const item = this.carrosselQuestaoLista();
+    if (!item) return '';
+    return this.disciplinaSiglaFor(item.disciplina_id);
+  });
+
+  protected async abrirCarrossel(): Promise<void> {
+    if (this.questoes().length === 0) {
+      this.toast.error('Nenhuma questão para visualizar.');
+      return;
+    }
+    // Estado limpo a cada abertura — nada é persistido entre sessões.
+    this.carrosselCache.set(new Map());
+    this.carrosselRespostas.set(new Map());
+    this.carrosselIndice.set(0);
+    this.carrosselAberto.set(true);
+    await this.carrosselGarantirCarregada(0);
+  }
+
+  protected fecharCarrossel(): void {
+    this.carrosselRequestId++;
+    this.carrosselAberto.set(false);
+    this.carrosselCarregando.set(false);
+  }
+
+  protected async carrosselAnterior(): Promise<void> {
+    if (this.carrosselIndice() === 0) return;
+    const novo = this.carrosselIndice() - 1;
+    this.carrosselIndice.set(novo);
+    await this.carrosselGarantirCarregada(novo);
+  }
+
+  protected async carrosselProximo(): Promise<void> {
+    if (this.carrosselIndice() >= this.carrosselTotal() - 1) return;
+    const novo = this.carrosselIndice() + 1;
+    this.carrosselIndice.set(novo);
+    await this.carrosselGarantirCarregada(novo);
+  }
+
+  /** Registra a resposta do admin (feedback estático, sem métricas). Trava após responder, como no modo estudo. */
+  protected carrosselResponder(alternativaId: string): void {
+    const item = this.carrosselQuestaoLista();
+    if (!item) return;
+    if (this.carrosselRespostas().has(item.id)) return;
+    this.carrosselRespostas.update((m) => new Map(m).set(item.id, alternativaId));
+  }
+
+  /** Limpa a resposta da questão atual para o admin refazer o fluxo. */
+  protected carrosselRefazer(): void {
+    const item = this.carrosselQuestaoLista();
+    if (!item) return;
+    this.carrosselRespostas.update((m) => {
+      const next = new Map(m);
+      next.delete(item.id);
+      return next;
+    });
+  }
+
+  /** Carrega a questão completa da posição indicada, com cache e proteção contra corrida de navegação. */
+  private async carrosselGarantirCarregada(indice: number): Promise<void> {
+    const item = this.questoes()[indice];
+    if (!item || this.carrosselCache().has(item.id)) {
+      this.carrosselCarregando.set(false);
+      return;
+    }
+
+    const requestId = ++this.carrosselRequestId;
+    this.carrosselCarregando.set(true);
+
+    const result = await this.adminService.buscarQuestaoCompleta(item.id);
+    if (requestId !== this.carrosselRequestId) return;
+
+    if (result.ok) {
+      this.carrosselCache.update((m) => new Map(m).set(item.id, this.toQuestaoComAlternativas(result.data)));
+    } else {
+      this.toast.error('Erro ao carregar questão do carrossel.');
+    }
+    this.carrosselCarregando.set(false);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  protected onCarrosselKeydown(event: KeyboardEvent): void {
+    if (!this.carrosselAberto()) return;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      void this.carrosselProximo();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      void this.carrosselAnterior();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.fecharCarrossel();
+    }
   }
 
   protected async abrirEditar(q: AdminQuestao): Promise<void> {

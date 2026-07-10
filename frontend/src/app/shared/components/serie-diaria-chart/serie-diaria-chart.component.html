@@ -1,0 +1,12 @@
+@if (temDados()) {
+  <div class="h-[240px]">
+    <canvas
+      baseChart
+      type="bar"
+      [data]="chartData()"
+      [options]="chartOptions"
+    ></canvas>
+  </div>
+} @else {
+  <p class="py-6 text-center text-sm text-[var(--color-text-muted)]">{{ mensagemVazia() }}</p>
+}

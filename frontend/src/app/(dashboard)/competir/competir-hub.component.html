@@ -162,12 +162,10 @@
                 }
 
                 @if (d.questao?.explicacao) {
-                  <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                    <p class="mb-2 text-sm font-semibold text-emerald-800">Explicação</p>
-                    <div class="text-sm leading-6 text-emerald-900">
-                      <markdown [data]="d.questao!.explicacao!"></markdown>
-                    </div>
-                  </div>
+                  <app-questao-explicacao
+                    [explicacao]="d.questao!.explicacao!"
+                    [letrasCorretas]="letrasCorretas(d.alternativas)"
+                  />
                 }
               </div>
             }

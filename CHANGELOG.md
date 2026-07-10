@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-07-09 | Fix | sem commit
+
+**Criação atômica de provas no admin**
+
+- A nova prova, as questões importadas e os vínculos com questões existentes permanecem em rascunho até a confirmação final em `Salvar prova`.
+- Nova RPC `admin_criar_prova_com_questoes` persiste toda a criação em uma única transação; uma falha não deixa provas, questões, alternativas, temas ou vínculos parciais no banco.
+- O fluxo agora mostra uma etapa de revisão antes da gravação definitiva.
+
+---
+
+## 2026-07-09 | Feature | d0a112b
+
+**Checkout embutido (Mercado Pago Payment Brick + Checkout API) — go-live F7**
+
+- O pagamento agora acontece dentro da plataforma (`/checkout/:plano` e `/checkout/status/:intencaoId`), substituindo o redirect ao Mercado Pago para compras novas: cartão em até 6x (semestral), assinatura mensal via preapproval com card token, Pix (QR + copia-e-cola, 30min) e boleto, com 3DS embutido e mensagens específicas por recusa.
+- Backend: migration aditiva `pagamento_intencao` + colunas em `pagamento` (aplicada no prod como `20260710000113`); edges novas `mp-processar-pagamento`, `mp-processar-assinatura`, `mp-consultar-pagamento`; `mp-webhook` e `mp-gerenciar-assinatura` atualizados (F6/F6-b: acesso provisório do mensal, regras de `paused`, "uma assinatura viva só" — cancela preapproval órfão ao conceder acesso único, ação `trocar_cartao`).
+- Fluxo legado (redirect) permanece deployado durante a janela de observação; rollback = reverter só o frontend. Detalhes e ADR-030 em `docs/architecture.md`; histórico completo em `docs/HANDOFF-CHECKOUT-EMBUTIDO.md`.
+
+---
+
+## 2026-07-09 | Fix | sem commit
+
+**Impersonação: voltar para a conta de admin sem deslogar**
+
+- Fix: ao entrar como um usuário pela tela de admin e clicar em "voltar" no banner de impersonação, o admin era completamente deslogado do app (a sessão só era encerrada e caía no login), porque nenhum token do admin era guardado. Agora os tokens da sessão do admin são mantidos **apenas em memória** durante a impersonação (nunca em storage, que é exfiltrável por XSS) e `voltarParaAdmin` restaura essa sessão via `setSession`, retornando direto para `/admin/usuarios`.
+- Se os tokens não estiverem em memória (ex.: reload da página durante a impersonação) ou a sessão do admin tiver expirado, mantém-se o comportamento seguro anterior: encerra a sessão e envia para o login.
+
+---
+
+## 2026-07-08 | Feature | 9609153
+
+**Admin: métricas individuais por usuário**
+
+- Nova tela `/admin/usuarios/:id/metricas` (também acessível por `/admin/usuarios/metricas` e pelo botão "Ver métricas" na listagem de usuários): busca de usuário por nome/e-mail e visão completa das métricas dele com filtro de período (7/30/90 dias ou intervalo personalizado).
+- Métricas exibidas: tentativas (total, finalizadas, em andamento, acertos, nota média, tempo de estudo, distribuição por modo e formato de prova), gamificação (XP no período, XP total, nível, streak atual/recorde, freezes), atividade diária (gráficos de tentativas/dia e XP/dia) e último login.
+- Assinatura em detalhe: status, plano e periodicidade (mensal/anual), valor, próxima cobrança/acesso até quando, cortesia e flag "renovação cancelada" (cancelou mas segue na carência), além do histórico completo de assinaturas e dos pagamentos do período.
+- Backend: RPC única `admin_get_metricas_usuario(p_user_id, p_desde, p_ate)` `SECURITY DEFINER` com checagem `is_admin()` e `REVOKE` de `PUBLIC`/`anon` — nenhuma policy nova foi aberta nas tabelas sensíveis; período das séries limitado a 366 dias; novo índice `tentativa (user_id, iniciada_em)`. Migration em `supabase/migrations/20260708120000_admin_metricas_usuario.sql`.
+- Novos componentes shared (com Storybook e specs): `AdminUserSearchComponent` (autocomplete de usuário, extraído de admin-notificações, que passou a reutilizá-lo), `PeriodoFilterComponent` e `SerieDiariaChartComponent`.
+
+---
+
 ## 2026-07-07 | Feature | sem commit
 
 **Questões abertas (Fase 7) — transversais: XP, desafio diário, impressão e docs**

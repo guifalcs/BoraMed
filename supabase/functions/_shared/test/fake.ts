@@ -11,10 +11,31 @@ type Row = Record<string, any>;
 type Result = { data: unknown; error: unknown };
 
 interface Filter {
-  type: 'eq' | 'in' | 'gte';
+  type: 'eq' | 'in' | 'gte' | 'neq';
   col: string;
   val: unknown;
 }
+
+interface UniqueSpec {
+  name: string;
+  table: string;
+  cols: string[];
+  /** Índice parcial: só linhas que satisfazem o predicado participam. */
+  where?: (r: Row) => boolean;
+}
+
+// Espelho dos índices únicos de PRODUÇÃO que afetam os handlers. Violação
+// devolve error 23505 e NÃO aplica a escrita (como no Postgres real) — sem
+// isto o fake aceitaria escritas que o banco real rejeita.
+const UNIQUE_SPECS: UniqueSpec[] = [
+  // 20260622130000_unicidade_assinatura_ativa.sql: máx. 1 'authorized' por usuário.
+  {
+    name: 'assinatura_um_authorized_por_user',
+    table: 'assinatura',
+    cols: ['user_id'],
+    where: (r) => r['status'] === 'authorized',
+  },
+];
 
 /** Banco em memória: `tables` é um mapa tabela → linhas. */
 export class FakeDb {
@@ -48,6 +69,8 @@ class FakeBuilder {
   private payload: Row | Row[] | null = null;
   private conflict?: string;
   private wantSelect = false;
+  private orderBy?: { col: string; asc: boolean };
+  private limitN?: number;
 
   constructor(private db: FakeDb, private table: string) {}
 
@@ -68,10 +91,16 @@ class FakeBuilder {
     this.filters.push({ type: 'gte', col, val });
     return this;
   }
-  order(): this {
+  neq(col: string, val: unknown): this {
+    this.filters.push({ type: 'neq', col, val });
     return this;
   }
-  limit(): this {
+  order(col?: string, opts?: { ascending?: boolean }): this {
+    this.orderBy = col ? { col, asc: opts?.ascending !== false } : undefined;
+    return this;
+  }
+  limit(n?: number): this {
+    this.limitN = n;
     return this;
   }
   insert(payload: Row | Row[]): this {
@@ -94,27 +123,65 @@ class FakeBuilder {
   private matches(r: Row): boolean {
     return this.filters.every((f) => {
       if (f.type === 'eq') return r[f.col] === f.val;
-      if (f.type === 'in') return (f.val as unknown[]).includes(r[f.col]);
-      // gte: compara strings ISO ou números (semântica suficiente p/ testes)
-      return r[f.col] != null && (r[f.col] as string | number) >= (f.val as string | number);
+      if (f.type === 'neq') return r[f.col] !== f.val;
+      if (f.type === 'gte') return String(r[f.col]) >= String(f.val);
+      return (f.val as unknown[]).includes(r[f.col]);
     });
+  }
+
+  /** Erro 23505 se `candidate` violar um índice único (ignorando a própria linha). */
+  private uniqueViolation(candidate: Row, ignore: Row | null, store: Row[]): unknown {
+    for (const u of UNIQUE_SPECS) {
+      if (u.table !== this.table) continue;
+      if (u.where && !u.where(candidate)) continue;
+      if (u.cols.some((c) => candidate[c] == null)) continue;
+      const dup = store.find((r) =>
+        r !== ignore && (!u.where || u.where(r)) && u.cols.every((c) => r[c] === candidate[c])
+      );
+      if (dup) {
+        return {
+          code: '23505',
+          message: `duplicate key value violates unique constraint "${u.name}"`,
+        };
+      }
+    }
+    return null;
   }
 
   private run(): { rows: Row[]; error: unknown } {
     const store = this.db.rows(this.table);
-    if (this.op === 'select') return { rows: store.filter((r) => this.matches(r)), error: null };
+    if (this.op === 'select') {
+      let rows = store.filter((r) => this.matches(r));
+      if (this.orderBy) {
+        const { col, asc } = this.orderBy;
+        rows = [...rows].sort((a, b) =>
+          (String(a[col]) < String(b[col]) ? -1 : String(a[col]) > String(b[col]) ? 1 : 0) *
+          (asc ? 1 : -1),
+        );
+      }
+      if (this.limitN != null) rows = rows.slice(0, this.limitN);
+      return { rows, error: null };
+    }
 
     if (this.op === 'insert') {
       const items = (Array.isArray(this.payload) ? this.payload : [this.payload!]).map((r) => ({
         id: this.db.newId(this.table),
         ...r,
       }));
+      for (const item of items) {
+        const err = this.uniqueViolation(item, null, store);
+        if (err) return { rows: [], error: err };
+      }
       store.push(...items);
       return { rows: items, error: null };
     }
 
     if (this.op === 'update') {
       const target = store.filter((r) => this.matches(r));
+      for (const r of target) {
+        const err = this.uniqueViolation({ ...r, ...this.payload }, r, store);
+        if (err) return { rows: [], error: err };
+      }
       for (const r of target) Object.assign(r, this.payload);
       return { rows: target, error: null };
     }
@@ -128,10 +195,14 @@ class FakeBuilder {
         existing = store.find((r) => r[this.conflict!] === item[this.conflict!]);
       }
       if (existing) {
+        const err = this.uniqueViolation({ ...existing, ...item }, existing, store);
+        if (err) return { rows: [], error: err };
         Object.assign(existing, item);
         out.push(existing);
       } else {
         const nr: Row = { id: this.db.newId(this.table), ...item };
+        const err = this.uniqueViolation(nr, null, store);
+        if (err) return { rows: [], error: err };
         store.push(nr);
         out.push(nr);
       }

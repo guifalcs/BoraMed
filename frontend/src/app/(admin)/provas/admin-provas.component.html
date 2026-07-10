@@ -121,10 +121,10 @@
               @case ('metodo') { Adicionar Questões }
               @case ('importar_input') { Importar em Lote }
               @case ('importar_preview') { Pré-visualização }
-              @case ('importando') { Importando… }
+              @case ('importando') { Salvando… }
               @case ('selecionar') { Selecionar Questões }
-              @case ('vinculando') { Vinculando… }
-              @case ('concluido') { Concluído }
+              @case ('vinculando') { Salvando… }
+              @case ('concluido') { Revisar e salvar }
             }
           }
         </span>
@@ -280,7 +280,7 @@
            ETAPA: metodo
       ════════════════════════════════════ -->
       @if (etapa() === 'metodo') {
-        <p class="metodo-subtitle">Prova criada. Agora escolha como adicionar questões:</p>
+        <p class="metodo-subtitle">A prova ainda não foi criada. Escolha as questões para revisar antes de salvar.</p>
 
         <div class="metodo-cards">
           <button class="metodo-card" (click)="escolherImportar()">
@@ -307,7 +307,7 @@
         </div>
 
         <p class="metodo-skip">
-          <button class="btn-link" (click)="concluir()">Pular por agora e adicionar questões depois</button>
+          <span class="hint">Nada será criado até a confirmação no último passo.</span>
         </p>
       }
 
@@ -559,12 +559,12 @@ EXPLICACAO: O infarto agudo se caracteriza por...
           <div class="done-icon">
             <app-ui-icon [icon]="iconCheck" [size]="28" />
           </div>
-          <h2 class="done-title">Prova criada com sucesso!</h2>
+          <h2 class="done-title">Tudo pronto para salvar</h2>
           <div class="done-stats">
             @if (importados() > 0) {
               <div class="done-stat">
                 <span class="done-num done-num--ok">{{ importados() }}</span>
-                <span class="done-desc">quest{{ importados() !== 1 ? 'ões' : 'ão' }} importada{{ importados() !== 1 ? 's' : '' }}</span>
+                <span class="done-desc">quest{{ importados() !== 1 ? 'ões' : 'ão' }} nova{{ importados() !== 1 ? 's' : '' }}</span>
               </div>
               @if (errosImportCount() > 0) {
                 <div class="done-stat">
@@ -575,11 +575,11 @@ EXPLICACAO: O infarto agudo se caracteriza por...
             } @else if (totalSelecionadas() > 0) {
               <div class="done-stat">
                 <span class="done-num done-num--ok">{{ totalSelecionadas() }}</span>
-                <span class="done-desc">quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }} vinculada{{ totalSelecionadas() !== 1 ? 's' : '' }}</span>
+                <span class="done-desc">quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }} existente{{ totalSelecionadas() !== 1 ? 's' : '' }}</span>
               </div>
             }
           </div>
-          <p class="done-hint">A prova já está disponível na listagem. Questões importadas ficam com status <strong>ativa</strong>.</p>
+          <p class="done-hint">A prova e as questões novas só serão criadas ao clicar em <strong>Salvar prova</strong>.</p>
         </div>
       }
 
@@ -596,7 +596,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
             [disabled]="salvando()"
             (click)="salvarDetalhes()"
           >
-            @if (salvando()) { Salvando… } @else if (modoEdicao()) { Salvar Alterações } @else { Criar Prova <app-ui-icon [icon]="iconArrowRight" [size]="14" /> }
+            @if (salvando()) { Salvando… } @else if (modoEdicao()) { Salvar Alterações } @else { Continuar <app-ui-icon [icon]="iconArrowRight" [size]="14" /> }
           </button>
         }
         @case ('importar_input') {
@@ -618,9 +618,9 @@ EXPLICACAO: O infarto agudo se caracteriza por...
           <button
             class="btn btn--primary"
             [disabled]="questoesValidas().length === 0"
-            (click)="importarQuestoes()"
+            (click)="revisarQuestoesImportadas()"
           >
-            Importar {{ questoesValidas().length }} quest{{ questoesValidas().length !== 1 ? 'ões' : 'ão' }}
+            Revisar {{ questoesValidas().length }} quest{{ questoesValidas().length !== 1 ? 'ões' : 'ão' }}
           </button>
         }
         @case ('selecionar') {
@@ -640,15 +640,18 @@ EXPLICACAO: O infarto agudo se caracteriza por...
             <button
               class="btn btn--primary"
               [disabled]="totalSelecionadas() === 0"
-              (click)="vincularSelecionadas()"
+              (click)="revisarSelecionadas()"
             >
-              Vincular {{ totalSelecionadas() }} quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }}
+              Revisar {{ totalSelecionadas() }} quest{{ totalSelecionadas() !== 1 ? 'ões' : 'ão' }}
             </button>
           }
         }
         @case ('concluido') {
-          <button class="btn btn--primary" (click)="concluir()">
-            Concluir
+          <button class="btn btn--outline" [disabled]="salvando()" (click)="fecharDrawer()">
+            Cancelar
+          </button>
+          <button class="btn btn--primary" [disabled]="salvando()" (click)="salvarNovaProva()">
+            @if (salvando()) { Salvando… } @else { Salvar prova }
           </button>
         }
       }

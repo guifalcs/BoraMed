@@ -16,6 +16,20 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'usuarios/metricas',
+    loadComponent: () =>
+      import('./usuarios/metricas/admin-usuario-metricas.component').then(
+        (m) => m.AdminUsuarioMetricasComponent,
+      ),
+  },
+  {
+    path: 'usuarios/:id/metricas',
+    loadComponent: () =>
+      import('./usuarios/metricas/admin-usuario-metricas.component').then(
+        (m) => m.AdminUsuarioMetricasComponent,
+      ),
+  },
+  {
     path: 'financeiro',
     loadComponent: () =>
       import('./financeiro/admin-financeiro.component').then(

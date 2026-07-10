@@ -31,6 +31,7 @@ function fakeAssinatura(overrides: Partial<Assinatura> = {}): Assinatura {
     data_inicio: new Date().toISOString(),
     proxima_cobranca: null,
     cancelada_em: null,
+    cortesia: false,
     criado_em: new Date().toISOString(),
     atualizado_em: new Date().toISOString(),
     plano: {

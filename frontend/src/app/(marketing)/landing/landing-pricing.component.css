@@ -273,9 +273,9 @@
 }
 
 .community-callout-icon {
-  font-size: 1.75rem;
+  display: inline-flex;
   flex-shrink: 0;
-  line-height: 1;
+  color: var(--color-primary);
 }
 
 .community-callout-copy {

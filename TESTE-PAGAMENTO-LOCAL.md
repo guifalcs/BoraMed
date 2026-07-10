@@ -17,8 +17,9 @@ tocar em produção e sem custo. Ambiente: stack local do Supabase (`supabase st
 - **Conta de TESTE do Mercado Pago**:
   1. Painel MP → *Suas integrações* → crie um **vendedor de teste** e um **comprador de teste**.
   2. Logue como vendedor de teste e pegue o **Access Token (TEST-...)** e a **Public Key (TEST-...)**.
-  3. Crie o **plano de assinatura (preapproval_plan)** do **mensal**. O **semestral** é
-     pagamento único (Checkout Pro) e não precisa de plano.
+  3. Com o **checkout embutido** (Payment Brick) não é preciso criar plano no MP:
+     mensal = `POST /preapproval` com card token; semestral = `POST /v1/payments`.
+     Os preços vêm da tabela `plano` do banco.
 
 ---
 
@@ -29,7 +30,8 @@ tocar em produção e sem custo. Ambiente: stack local do Supabase (`supabase st
 supabase start
 supabase db reset
 
-# 2) Apontar os planos para os SEUS ids de teste do MP
+# 2) (Opcional, só p/ testar o fluxo LEGADO de redirect) apontar os planos
+#    para ids de teste do MP — o checkout embutido NÃO usa esses ids
 cp supabase/seed-test-planos.example.sql supabase/seed-test-planos.sql   # edite os ids
 supabase db query -f supabase/seed-test-planos.sql
 
@@ -78,16 +80,26 @@ deno run --allow-net --allow-env scripts/mp-webhook-sim.ts \
 
 ## 4. Cartões de teste do Mercado Pago
 
-No checkout, use os cartões oficiais de teste (o nome do titular controla o resultado):
+Os cartões são digitados **no Payment Brick**, dentro da plataforma
+(`/checkout/mensal` ou `/checkout/semestral`) — não há mais redirect ao site do
+MP para compras novas. O **nome do titular** controla o resultado; CPF de
+teste: `12345678909`.
 
 | Resultado | Cartão | Nome do titular | CVV / validade |
 |---|---|---|---|
 | **Aprovado** | Mastercard `5031 4332 1540 6351` | `APRO` | `123` / qualquer futura |
 | **Recusado (genérico)** | mesmo cartão | `OTHE` | idem |
 | **Recusado (sem saldo)** | mesmo cartão | `FUND` | idem |
-| **Pendente** | mesmo cartão | `CONT` | idem |
+| **Recusado (CVV)** | mesmo cartão | `SECU` | idem |
+| **Recusado (validade)** | mesmo cartão | `EXPI` | idem |
+| **Ligue para autorizar** | mesmo cartão | `CALL` | idem |
+| **Duplicado** | mesmo cartão | `DUPL` | idem |
+| **Pendente (em análise)** | mesmo cartão | `CONT` | idem |
+| **Challenge 3DS** | Mastercard `5483 9281 6457 4623` | qualquer | `123` / futura |
 
-Pix/boleto de teste ficam `pending` e aprovam à parte (testa o cenário 8).
+Cada recusa mostra uma **mensagem específica** no checkout (mapa
+`mp-status-detail.map.ts`). Pix/boleto ficam `pending` e o acesso libera via
+webhook (cenário 8).
 
 ---
 
@@ -96,15 +108,18 @@ Pix/boleto de teste ficam `pending` e aprovam à parte (testa o cenário 8).
 Use o usuário de teste (`teste@boramed.com` / `Teste123!`) ou crie um pelo `/cadastro`.
 
 ### Cenário 1 — Assinar mensal (aprovado)
-1. Logue → você cai no paywall → **/planos** → "Assinar" no **Mensal**.
-2. No checkout do MP, pague com o cartão **APRO**.
-3. Volta para **/assinatura/retorno** → "Confirmando…" → **"Assinatura ativada! 🎉"** → entra no painel.
-- ✅ Esperado: `assinatura.status='authorized'`, paywall liberado, pagamento no histórico.
+1. Logue → você cai no paywall → **/planos** → "Assinar" no **Mensal** → abre **/checkout/mensal**.
+2. Preencha o cartão **APRO** no Payment Brick (sem sair da plataforma) e pague.
+3. Vai para **/checkout/status/...** → **"Pagamento aprovado!"** → "Começar a estudar".
+- ✅ Esperado: `assinatura.status='authorized'` na hora (resposta síncrona do preapproval),
+  paywall liberado; cobrança de verificação do MP **não** aparece no histórico.
 
-### Cenário 2 — Cartão recusado
-1. Repita o checkout com o cartão **OTHE** (ou **FUND**).
-2. Volta para **/assinatura/retorno**.
-- ✅ Esperado: tela **"Pagamento não aprovado"** com botão **"Tentar novamente"**; sem acesso.
+### Cenário 2 — Cartão recusado (mensagens específicas)
+1. Repita o checkout com **FUND** (sem saldo), depois **SECU** (CVV) e **CALL**.
+- ✅ Esperado: você **permanece no checkout**, com banner específico por recusa
+  ("Saldo ou limite insuficiente — use outro cartão ou pague com Pix",
+  "Revise o código de segurança", "Ligue para o banco autorizar"...) e pode
+  tentar de novo no próprio Brick; sem acesso concedido.
 
 ### Cenário 3 — Cancelar → carência
 1. Com a mensal ativa, vá em **menu → Assinatura → "Cancelar assinatura"** e confirme.
@@ -122,16 +137,36 @@ Use o usuário de teste (`teste@boramed.com` / `Teste123!`) ou crie um pelo `/ca
 - ✅ Esperado: aviso de pausa + botão **"Reativar assinatura"**; reativar volta para `authorized`.
 
 ### Cenário 6 — Semestral parcelado (pagamento único)
-1. **/planos** → "Assinar" no **Semestral** → no checkout, parcele em até 6x, cartão **APRO**.
-- ✅ Esperado: `assinatura.status='authorized'`, `proxima_cobranca = hoje + 6 meses`, **não** renova.
+1. **/planos** → "Assinar" no **Semestral** → **/checkout/semestral** → cartão **APRO** em 6x.
+- ✅ Esperado: aprovação na tela de status, `assinatura.status='authorized'`,
+  `proxima_cobranca = hoje + 6 meses`, **não** renova; `pagamento.parcelas = 6`.
 
 ### Cenário 7 — Reembolso/chargeback revoga (semestral)
 1. No painel MP test, **reembolse** o pagamento do semestral.
 - ✅ Esperado: webhook `payment` `refunded` → `assinatura` vira `cancelled`, acesso **revogado**.
 
-### Cenário 8 — Pendente (Pix/boleto)
-1. Pague o semestral com **Pix/boleto** de teste (fica `pending`).
-- ✅ Esperado: retorno explica "em processamento"; o acesso libera quando o webhook aprovar.
+### Cenário 8 — Pix e boleto (pendente → aprovado)
+1. No **/checkout/semestral**, escolha **Pix**: aparece QR Code + copia-e-cola +
+   countdown de 30min na própria plataforma. Pague com o comprador de teste.
+- ✅ Esperado: a tela de status detecta a aprovação sozinha (polling + webhook)
+  e libera o acesso na hora. Deixe expirar para ver "O código expirou" + "Gerar novo pagamento".
+2. Escolha **Boleto**: link "Abrir boleto" + aviso de compensação em até 2 dias
+   úteis + botão **"Já paguei, verificar"** (reconciliação ativa via `mp-consultar-pagamento`).
+
+### Cenário 9 — Challenge 3DS
+1. No **/checkout/semestral**, use o cartão `5483 9281 6457 4623` (força challenge).
+- ✅ Esperado: tela "Confirmação do seu banco" com o challenge embutido
+  (Status Screen Brick); ao concluir, aprovação via polling.
+
+### Cenário 10 — Trocar cartão da mensal
+1. Com a mensal ativa: **menu → Assinatura → "Trocar cartão"** → cartão **APRO** novo.
+- ✅ Esperado: "Cartão atualizado com sucesso!"; assinatura permanece `authorized`.
+   Com um cartão recusado, a assinatura fica **intacta** com o cartão anterior.
+
+### Cenário 11 — Fluxo LEGADO (regressão, opcional)
+1. A rota **/assinatura/retorno** e as edges `mp-criar-assinatura`/`mp-vincular-assinatura`/
+   `mp-retorno` continuam deployadas para checkouts em voo — ver
+   `docs/testes-automatizados-pagamento.md` para a regressão de webhooks legados.
 
 ---
 
