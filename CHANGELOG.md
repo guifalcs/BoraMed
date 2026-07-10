@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-10 | Feature | 767238c
+
+**Módulo de Flashcards**
+
+- Novo módulo em `/dashboard/flashcards`: decks oficiais (admin), decks da comunidade (públicos, com likes e feed ordenável por recentes/mais curtidos) e decks próprios do aluno (editor com cards frente/verso e imagens opcionais).
+- Execução do deck com flip de card, marcação de acerto/erro e percentual final.
+- Backend: migration `20260711120000_flashcards.sql` — tabelas `flashcard_decks`, `flashcard_cards`, `flashcard_deck_likes`; escrita de usuário só via RPCs `SECURITY DEFINER` (`flashcards_criar_deck/atualizar_deck/excluir_deck/toggle_like`, `flashcards_feed`, `flashcards_listar_likes_deck`, `admin_get_flashcards_stats`); limites (200 cards/deck, 50 decks/usuário) e filtro de linguagem; bucket `flashcard-imagens` (2 MB).
+- Admin: `/admin/flashcards` com stats e CRUD de decks oficiais.
+- Testes: smoke test SQL (`supabase/tests/flashcards_smoke_test.sql`), specs unitários dos componentes/serviço e E2E Playwright (`flashcards.spec.ts`).
+
+---
+
 ## 2026-07-09 | Fix | sem commit
 
 **Criação atômica de provas no admin**
