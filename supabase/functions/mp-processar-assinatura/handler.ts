@@ -232,7 +232,11 @@ export async function handleProcessarAssinatura(
     { fetch: deps.fetch, token: mpToken },
     "/preapproval",
     {
-      reason: `BoraMed ${plano.nome}`,
+      // O reason é a "description" das faturas recorrentes: aparece no e-mail
+      // do MP, na fatura do cartão e pesa na análise de risco. Específico e
+      // reconhecível reduz high_risk e contestação por desconhecimento.
+      reason:
+        `Assinatura BoraMed - Plano ${plano.nome} - Plataforma de estudos de medicina`,
       external_reference: user.id,
       payer_email: user.email,
       card_token_id: body.card_token_id,
