@@ -257,16 +257,18 @@ export async function handleProcessarAssinatura(req: Request, deps: Deps): Promi
       .eq('user_id', user.id)
       .eq('status', 'authorized');
   }
-  // Acesso provisório: no sandbox (e na janela até a 1ª fatura processar em prod)
-  // o MP devolve next_payment_date = agora. Sem uma data futura,
+  // Acesso provisório: o preapproval nasce com next_payment_date = agora (a 1ª
+  // fatura processa assíncrono no MP, em minutos/horas). Sem uma data futura,
   // tem_assinatura_ativa() ficaria false e o usuário travaria em "Liberando…".
-  // Concede 1 período provisório; o webhook subscription_authorized_payment
-  // corrige a data real na 1ª cobrança.
+  // Concede 3 DIAS provisórios (não 1 período): se a cobrança real falhar e o
+  // MP cancelar, a carência do provisório expira em 72h em vez de 1 mês —
+  // limita uso sem pagamento. O webhook subscription_authorized_payment grava
+  // a data real (+1 período) quando a 1ª cobrança processa.
   let proximaCobranca = nextPayment;
   if (status === 'authorized') {
     const nextMs = nextPayment ? new Date(nextPayment).getTime() : 0;
     if (!nextMs || nextMs <= deps.now().getTime()) {
-      proximaCobranca = addPeriodo(deps.now(), plano.frequency, plano.frequency_type);
+      proximaCobranca = addPeriodo(deps.now(), 3, 'days');
     }
   }
 

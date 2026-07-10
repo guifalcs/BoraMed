@@ -141,7 +141,7 @@ Deno.test('processar-assinatura: assinatura pausada → 409 direciona p/ reativa
   assertEquals(typeof out.error, 'string');
 });
 
-Deno.test('processar-assinatura authorized com next_payment_date = agora → acesso provisório (+1 período)', async () => {
+Deno.test('processar-assinatura authorized com next_payment_date = agora → acesso provisório (+3 dias)', async () => {
   const db = baseDb();
   const { fn } = captureFetch({
     body: {
@@ -158,8 +158,9 @@ Deno.test('processar-assinatura authorized com next_payment_date = agora → ace
   assertEquals(res.status, 200);
   const assin = find(db, 'assinatura', (r) => r.mp_preapproval_id === 'PRE-2');
   assertExists(assin);
-  // NOW = 2026-06-24 → concede +1 mês provisório (webhook corrige na 1ª cobrança).
-  assertEquals(assin?.proxima_cobranca, '2026-07-24T12:00:00.000Z');
+  // NOW = 2026-06-24 → concede +3 dias provisórios (a 1ª cobrança real grava a
+  // data verdadeira via webhook; se falhar, o acesso expira em 72h).
+  assertEquals(assin?.proxima_cobranca, '2026-06-27T12:00:00.000Z');
 });
 
 Deno.test('processar-assinatura: attempt_id de outro usuário → 409', async () => {
