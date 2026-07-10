@@ -89,6 +89,7 @@ export class CheckoutService {
           attempt_id: crypto.randomUUID(),
           plano_slug: planoSlug,
           card_token_id: cardTokenId,
+          ...(this.deviceId() ? { device_id: this.deviceId() } : {}),
           ...(identification ? { payer: { identification } } : {}),
         },
       });
