@@ -1,5 +1,6 @@
 import type { Deps } from '../_shared/deps.ts';
 import { mapAuthorizedPaymentStatus, verifyMpSignature } from '../_shared/mp-signature.ts';
+import { syncAcessoUnicoPayment } from '../_shared/mp-payment-sync.ts';
 
 // Webhook do Mercado Pago — fonte da verdade do status das assinaturas.
 // Chamado pelo MP (não pelo app), então NÃO valida JWT; em vez disso valida a
@@ -207,92 +208,24 @@ export async function handleWebhook(req: Request, deps: Deps): Promise<Response>
     } else if (type === 'payment') {
       const pay = await mpGet(`/v1/payments/${dataId}`);
       if (pay) {
-        const userId = pay['external_reference'] as string | undefined;
-        const status = String(pay['status'] ?? 'pending');
-        const meta = (pay['metadata'] ?? {}) as Record<string, unknown>;
-
-        // B3: este branch trata SOMENTE pagamentos de ACESSO ÚNICO (semestral).
-        // As cobranças de assinatura recorrente são registradas no branch
-        // subscription_authorized_payment — evita registrar a mesma cobrança 2x.
-        if (userId && String(meta['tipo']) === 'acesso_unico') {
-          const planoSlug = String(meta['plano_slug'] ?? '');
-          const { data: plano } = await admin
-            .from('plano')
-            .select('id')
-            .eq('slug', planoSlug)
-            .maybeSingle();
-
-          let assinaturaId: string | null = null;
-
-          if (status === 'approved') {
-            // B5: supera outras assinaturas 'authorized' do usuário antes de
-            // conceder o acesso único, mantendo no máximo uma ativa.
-            await admin
-              .from('assinatura')
-              .update({ status: 'cancelled', cancelada_em: deps.now().toISOString() })
-              .eq('user_id', userId)
-              .eq('status', 'authorized');
-            // Concede acesso por N meses (sem renovação automática).
-            const meses = Number(meta['acesso_meses']) || 6;
-            const fim = deps.now();
-            fim.setMonth(fim.getMonth() + meses);
-            const { data: assin } = await admin
-              .from('assinatura')
-              .upsert(
-                {
-                  user_id: userId,
-                  plano_id: plano?.id ?? null,
-                  mp_payment_id: dataId,
-                  status: 'authorized',
-                  data_inicio:
-                    (pay['date_approved'] as string | undefined) ?? deps.now().toISOString(),
-                  proxima_cobranca: fim.toISOString(),
-                  cancelada_em: null,
-                },
-                { onConflict: 'mp_payment_id' },
-              )
-              .select('id')
-              .maybeSingle();
-            assinaturaId = assin?.id ?? null;
-            console.log('acesso único concedido', { dataId, userId, planoSlug, meses });
-          } else if (status === 'refunded' || status === 'charged_back') {
-            // C4: estorno/chargeback revoga o acesso concedido por este pagamento.
-            const agora = deps.now().toISOString();
-            const { data: assin } = await admin
-              .from('assinatura')
-              .update({ status: 'cancelled', proxima_cobranca: agora, cancelada_em: agora })
-              .eq('mp_payment_id', dataId)
-              .select('id')
-              .maybeSingle();
-            assinaturaId = assin?.id ?? null;
-            console.log('acesso único revogado (estorno/chargeback)', { dataId, status });
-          } else {
-            // pending/in_process/rejected: vincula a uma assinatura existente, se houver.
-            const { data: assin } = await admin
-              .from('assinatura')
-              .select('id')
-              .eq('mp_payment_id', dataId)
-              .maybeSingle();
-            assinaturaId = assin?.id ?? null;
-          }
-
-          const td = pay['transaction_details'] as { net_received_amount?: number } | undefined;
-          await admin.from('pagamento').upsert(
-            {
-              user_id: userId,
-              assinatura_id: assinaturaId,
-              mp_payment_id: dataId,
-              valor_centavos: pay['transaction_amount']
-                ? Math.round(Number(pay['transaction_amount']) * 100)
-                : null,
-              liquido_centavos:
-                td?.net_received_amount != null ? Math.round(td.net_received_amount * 100) : null,
-              status,
-              metodo_pagamento: (pay['payment_method_id'] as string | undefined) ?? null,
-              processado_em: (pay['date_approved'] as string | undefined) ?? null,
-            },
-            { onConflict: 'mp_payment_id' },
-          );
+        // B3: trata SOMENTE pagamentos de ACESSO ÚNICO (semestral) — a lógica
+        // vive em syncAcessoUnicoPayment, compartilhada com a resposta síncrona
+        // do checkout embutido e com a reconciliação (mp-consultar-pagamento).
+        // Payments legados (sem metadata.intencao_id) seguem o comportamento
+        // original; `cancelled` (Pix/boleto expirado) marca a intenção como
+        // expirada quando ela existe. O id vem do dataId (o recurso do MP traz
+        // o mesmo valor em pay.id).
+        const r = await syncAcessoUnicoPayment(admin, { id: dataId, ...pay }, deps.now(), {
+          fetch: deps.fetch,
+          token: mpToken,
+        });
+        if (r.concessaoPendente) {
+          // Payment approved cuja concessão falhou (ex.: recorrente 'authorized'
+          // sobreviveu a um cancelamento com falha no MP e o índice único barrou
+          // o acesso). Responder não-2xx faz o MP REENVIAR — cada retry reexecuta
+          // o cancelamento e concede quando o MP voltar (mesmo padrão do B1).
+          console.warn('payment approved sem acesso concedido; pedindo retry', { dataId });
+          return new Response('grant pending, retry', { status: 409 });
         }
       }
     }

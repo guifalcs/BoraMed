@@ -21,15 +21,21 @@ No painel do MP, em **modo de teste** (https://www.mercadopago.com.br/developers
 1. **Usuários de teste**: crie um **vendedor de teste** e um **comprador de teste**
    (Suas integrações → Contas de teste). Faça login com o vendedor de teste para o resto.
 2. **Credenciais de teste** do vendedor: `Access Token` (TEST-...) e `Public Key` (TEST-...).
-3. **Planos de assinatura** (preapproval_plan) para o **mensal** (recorrente). O
-   **semestral** é pagamento único (Checkout Pro) e **não** precisa de plano.
+3. **Planos no MP**: com o **checkout embutido** (Payment Brick) não é preciso
+   criar `preapproval_plan` — mensal = `POST /preapproval` com card token;
+   semestral = `POST /v1/payments`. Os preços vêm da tabela `plano` do banco.
+   (Só o fluxo LEGADO de redirect usava plano/`init_point`.)
 4. **Webhook**: configure a URL de notificação apontando para a função `mp-webhook`
    do ambiente (ver B) e **gere o secret** (`MP_WEBHOOK_SECRET`). Tópicos:
    `subscription_preapproval`, `subscription_authorized_payment`, `payment`.
-5. **Cartões de teste** (para o checkout): use os cartões oficiais do MP. Resumo:
+   O webhook continua obrigatório: confirma Pix/boleto e é a fonte da verdade.
+5. **Cartões de teste** (digitados **no Payment Brick**, em `/checkout/mensal` e
+   `/checkout/semestral` — sem redirect; CPF de teste `12345678909`):
    - **Aprovado**: Mastercard `5031 4332 1540 6351`, CVV `123`, validade futura, nome `APRO`.
    - **Recusado por fundos**: nome `FUND`. **Recusado genérico**: nome `OTHE`.
-   - **Pendente**: nome `CONT`.
+   - **CVV inválido**: `SECU`. **Validade**: `EXPI`. **Ligue para autorizar**: `CALL`.
+   - **Duplicado**: `DUPL`. **Pendente (análise)**: `CONT`.
+   - **Challenge 3DS**: Mastercard `5483 9281 6457 4623`.
    - (Pix/boleto de teste ficam `pending` e aprovam à parte.)
 
 ---
@@ -108,15 +114,20 @@ webhooks do MP test chegam direto, sem túnel.
 
 | # | Fluxo | Passos | Resultado esperado |
 |---|---|---|---|
-| 1 | **Assinar mensal (aprovado)** | Cartão `APRO` no checkout do mensal | `assinatura.status='authorized'`; paywall libera; `pagamento` aprovado no histórico |
-| 2 | **Cartão recusado** | Cartão `OTHE`/`FUND` | Tela `/assinatura/retorno` mostra **"Pagamento não aprovado"** + "Tentar novamente"; sem acesso |
+| 1 | **Assinar mensal (aprovado)** | Cartão `APRO` no Payment Brick de `/checkout/mensal` | `assinatura.status='authorized'` na hora (síncrono); paywall libera; verificação de cartão **não** vira `pagamento` |
+| 2 | **Cartão recusado** | Cartão `FUND`/`SECU`/`CALL` no Brick | Permanece no checkout com **mensagem específica por recusa** e retry no próprio Brick; sem acesso |
 | 3 | **Cancelar → carência** | Cancelar em "Minha assinatura" | Banner âmbar "acesso até <data>"; botão **"Assinar novamente" some**; acesso mantido até `proxima_cobranca` |
-| 4 | **Reassinar na carência (anti cobrança dupla)** | Tentar assinar de novo durante a carência | `mp-criar-assinatura` retorna **409** "Você já tem um acesso ativo"; não cria novo preapproval |
+| 4 | **Reassinar na carência (anti cobrança dupla)** | Tentar assinar de novo durante a carência | `/checkout/*` redireciona ao dashboard; a edge retorna **409** "Você já tem um acesso ativo" |
 | 5 | **Pausa → reativar** | Pausar (via MP) e abrir "Minha assinatura" | Aviso de pausa + botão **"Reativar"**; reativar volta para `authorized` |
-| 6 | **Semestral parcelado** | Checkout do semestral, parcelar em até 6x, cartão `APRO` | `assinatura.status='authorized'`, `proxima_cobranca = hoje + 6 meses`; não renova |
+| 6 | **Semestral parcelado** | `/checkout/semestral`, cartão `APRO` em 6x | Tela de status "Pagamento aprovado"; `proxima_cobranca = hoje + 6 meses`; não renova; `pagamento.parcelas=6` |
 | 7 | **Reembolso/chargeback (semestral)** | Reembolsar o pagamento no painel MP test | Webhook `payment` `refunded` → `assinatura` vira `cancelled`, acesso **revogado** |
-| 8 | **Pendente (Pix/boleto)** | Pagar semestral com Pix/boleto de teste | Retorno explica "em processamento"; acesso libera quando o webhook aprovar |
-| 9 | **1ª parcela recorrente** | Após assinar mensal, aguardar `subscription_authorized_payment` | Registra `pagamento` (retry 409 até o vínculo existir; sem perder receita) |
+| 8 | **Pix** | `/checkout/semestral` → Pix → QR + copia-e-cola + countdown 30min | Tela de status aprova sozinha (polling + webhook); expirado → "Gerar novo pagamento" |
+| 9 | **Boleto** | `/checkout/semestral` → boleto | Link "Abrir boleto" + "Já paguei, verificar" (`mp-consultar-pagamento`); acesso libera na compensação |
+| 10 | **Challenge 3DS** | Cartão `5483 9281 6457 4623` | Tela "Confirmação do seu banco" (Status Screen Brick); aprovação via polling |
+| 11 | **Trocar cartão (mensal)** | "Minha assinatura" → "Trocar cartão" | `PUT /preapproval` com card token novo; recusa mantém o cartão anterior |
+| 12 | **1ª parcela recorrente** | Após assinar mensal, aguardar `subscription_authorized_payment` | Registra `pagamento` (retry 409 até o vínculo existir; sem perder receita) |
+| 13 | **Rate limit / anti card testing** | 6 tentativas seguidas no checkout | 6ª tentativa → **429** "Muitas tentativas… aguarde alguns minutos" |
+| 14 | **Regressão legado** | Simular webhooks de preapproval/payment antigos (sem `intencao_id`) | Comportamento idêntico ao anterior (fallbacks preservados) |
 
 ---
 

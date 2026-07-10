@@ -45,6 +45,21 @@ import type { Plano } from '../../core/models/subscription.types';
             <p class="mt-2 text-gray-600">Acesso completo aos simulados do BoraMed.</p>
           </header>
 
+          @if (assinaturaPausada()) {
+            <div class="mx-auto mb-8 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
+              <p class="text-sm text-amber-800">
+                Sua assinatura está <span class="font-semibold">pausada</span>. Reative sem assinar de
+                novo e retome o acesso na hora.
+              </p>
+              <a
+                routerLink="/dashboard/assinatura"
+                class="mt-3 inline-block whitespace-nowrap rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 sm:mt-0"
+              >
+                Reativar assinatura
+              </a>
+            </div>
+          }
+
           @if (loading()) {
             <div class="py-20 text-center text-gray-500">Carregando planos…</div>
           } @else if (planos().length === 0) {
@@ -151,15 +166,14 @@ import type { Plano } from '../../core/models/subscription.types';
                   <button
                     type="button"
                     (click)="assinar(plano)"
-                    [disabled]="processando() === plano.slug"
-                    class="mt-8 w-full rounded-xl px-4 py-3 font-semibold transition disabled:opacity-60"
+                    class="mt-8 w-full rounded-xl px-4 py-3 font-semibold transition"
                     [ngClass]="
                       destaque(plano)
                         ? 'bg-white text-blue-700 hover:bg-gray-100'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     "
                   >
-                    {{ processando() === plano.slug ? 'Redirecionando…' : 'Assinar' }}
+                    Assinar
                   </button>
                 </div>
               }
@@ -175,17 +189,22 @@ import type { Plano } from '../../core/models/subscription.types';
       <!-- Rodapé -->
       <footer class="border-t border-gray-200 bg-white px-6 py-8 lg:px-10">
         <div
-          class="mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-gray-400 md:flex-row md:justify-between md:gap-8"
+          class="mx-auto flex max-w-7xl flex-col items-center gap-5 md:flex-row md:items-start md:justify-between md:gap-10"
         >
-          <p class="flex items-center gap-1.5 text-center md:text-left">
-            <app-ui-icon [icon]="shieldIcon" [size]="14" class="shrink-0 text-gray-400" />
-            Pagamentos processados com segurança pelo
-            <span class="font-medium text-gray-500">Mercado Pago</span>. O BoraMed não armazena os dados do seu cartão.
-          </p>
-          <div class="flex items-center gap-4">
-            <a routerLink="/termos-de-uso" class="hover:text-gray-600">Termos de uso</a>
-            <a routerLink="/politica-de-privacidade" class="hover:text-gray-600">Política de privacidade</a>
-            <span class="text-gray-300">© {{ ano }} BoraMed</span>
+          <div class="flex max-w-xl flex-col items-center gap-2 md:flex-row md:items-start md:gap-2.5">
+            <app-ui-icon [icon]="shieldIcon" [size]="16" class="shrink-0 text-gray-400 md:mt-0.5" />
+            <p class="text-center text-xs leading-relaxed text-gray-400 md:text-left">
+              Pague sem sair da plataforma. Os dados do seu cartão são digitados em campos
+              seguros do <span class="font-medium text-gray-500">Mercado&nbsp;Pago</span> e nunca
+              passam pelos servidores do BoraMed.
+            </p>
+          </div>
+          <div
+            class="flex shrink-0 flex-col items-center gap-2 text-xs text-gray-400 sm:flex-row sm:gap-5"
+          >
+            <a routerLink="/termos-de-uso" class="whitespace-nowrap hover:text-gray-600">Termos de uso</a>
+            <a routerLink="/politica-de-privacidade" class="whitespace-nowrap hover:text-gray-600">Política de privacidade</a>
+            <span class="whitespace-nowrap text-gray-300">© {{ ano }} BoraMed</span>
           </div>
         </div>
       </footer>
@@ -224,13 +243,18 @@ export class PlanosComponent implements OnInit {
 
   readonly planos = signal<Plano[]>([]);
   readonly loading = signal(true);
-  readonly processando = signal<string | null>(null);
   readonly erro = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     if (!this.profile()) void this.profileService.loadProfile();
+    void this.subscription.carregarAssinatura();
     this.planos.set(await this.subscription.listarPlanos());
     this.loading.set(false);
+  }
+
+  /** Usuário chega aqui pausado (paywall) — oferece atalho para reativar. */
+  assinaturaPausada(): boolean {
+    return this.subscription.assinatura()?.status === 'paused';
   }
 
   nomeExibicao(): string {
@@ -292,16 +316,9 @@ export class PlanosComponent implements OnInit {
     return `por ${plano.frequency} dias`;
   }
 
-  async assinar(plano: Plano): Promise<void> {
-    this.erro.set(null);
-    this.processando.set(plano.slug);
-    const res = await this.subscription.iniciarCheckout(plano.slug);
-    if (res.ok) {
-      window.location.href = res.initPoint;
-    } else {
-      this.erro.set(res.error);
-      this.processando.set(null);
-    }
+  assinar(plano: Plano): void {
+    // Checkout embutido: o pagamento acontece dentro da plataforma.
+    this.router.navigate(['/checkout', plano.slug]);
   }
 
   async sair(): Promise<void> {

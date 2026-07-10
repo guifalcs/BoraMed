@@ -402,6 +402,18 @@ verify_jwt = true
 [functions.mp-vincular-assinatura]
 verify_jwt = true
 
+# Checkout embutido (Payment Brick): processa pagamento único (semestral).
+[functions.mp-processar-pagamento]
+verify_jwt = true
+
+# Checkout embutido (Payment Brick): cria assinatura mensal com card_token.
+[functions.mp-processar-assinatura]
+verify_jwt = true
+
+# Reconciliação ativa de um pagamento do checkout embutido ("Já paguei").
+[functions.mp-consultar-pagamento]
+verify_jwt = true
+
 # Webhook é chamado pelo Mercado Pago (sem JWT); valida x-signature HMAC internamente.
 [functions.mp-webhook]
 verify_jwt = false

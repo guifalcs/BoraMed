@@ -214,12 +214,14 @@ Deno.test('webhook payment acesso_unico approved: concede acesso por N meses e r
         payment_method_id: 'pix',
       },
     },
+    // Cancelamento do preapproval recorrente anterior (B5 — uma assinatura viva só).
+    { match: '/preapproval/Z', body: { id: 'Z', status: 'cancelled' } },
   ]);
   const req = await signedWebhookRequest({ secret: SECRET, type: 'payment', dataId: 'PAY-1' });
   const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
   assertEquals(res.status, 200);
 
-  // B5: assinatura anterior superada
+  // B5: assinatura recorrente anterior cancelada NO MP e superada localmente.
   assertEquals(find(db, 'assinatura', (r) => r.id === 'old2')?.status, 'cancelled');
 
   // Acesso único concedido até now + 6 meses (2026-12-24)
@@ -233,6 +235,35 @@ Deno.test('webhook payment acesso_unico approved: concede acesso por N meses e r
   assertEquals(pag?.valor_centavos, 19990);
   assertEquals(pag?.liquido_centavos, 19000);
   assertEquals(pag?.metodo_pagamento, 'pix');
+});
+
+Deno.test('webhook payment approved com concessão pendente (falha ao cancelar a recorrente) → 409 pede retry', async () => {
+  const db = new FakeDb({
+    plano: [{ id: 'pl-sem', slug: 'semestral' }],
+    assinatura: [{ id: 'viva', user_id: 'user-9', status: 'authorized', mp_preapproval_id: 'Z' }],
+    pagamento_intencao: [{ id: 'int-8', user_id: 'user-9', status: 'processando' }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: '/v1/payments/PAY-8',
+      body: {
+        external_reference: 'user-9',
+        status: 'approved',
+        metadata: { tipo: 'acesso_unico', plano_slug: 'semestral', acesso_meses: 6, intencao_id: 'int-8' },
+        transaction_amount: 199.9,
+        date_approved: '2026-06-24T12:00:00.000Z',
+      },
+    },
+    // O cancelamento do preapproval falha (MP 5xx): a recorrente sobrevive
+    // 'authorized' e o índice único barra a concessão do acesso único.
+    { match: '/preapproval/Z', status: 500, body: {} },
+  ]);
+  const req = await signedWebhookRequest({ secret: SECRET, type: 'payment', dataId: 'PAY-8' });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(res.status, 409, 'não-2xx faz o MP reenviar — o retry conclui a concessão (mesmo padrão do B1)');
+  assertEquals(find(db, 'assinatura', (r) => r.id === 'viva')?.status, 'authorized', 'recorrente segue visível');
+  assertEquals(find(db, 'assinatura', (r) => r.mp_payment_id === 'PAY-8'), undefined, 'acesso não concedido ainda');
+  assertEquals(find(db, 'pagamento_intencao', (r) => r.id === 'int-8')?.status, 'pendente', 'intenção não finge aprovação');
 });
 
 Deno.test('webhook payment acesso_unico refunded: revoga o acesso (proxima_cobranca = agora)', async () => {
@@ -281,4 +312,35 @@ Deno.test('webhook payment sem metadata acesso_unico: ignorado (evita contagem d
   assertEquals(res.status, 200);
   assertEquals(db.rows('pagamento').length, 0);
   assertEquals(db.rows('assinatura').length, 0);
+});
+
+Deno.test('webhook payment cancelled (checkout embutido): intenção vira expirada', async () => {
+  const db = new FakeDb({
+    plano: [{ id: 'pl-sem', slug: 'semestral' }],
+    assinatura: [],
+    pagamento: [],
+    pagamento_intencao: [{ id: 'int-9', user_id: 'user-9', status: 'pendente' }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: '/v1/payments/PAY-PIX',
+      body: {
+        external_reference: 'user-9',
+        status: 'cancelled',
+        status_detail: 'expired',
+        payment_method_id: 'pix',
+        metadata: { tipo: 'acesso_unico', plano_slug: 'semestral', intencao_id: 'int-9' },
+        transaction_amount: 199.9,
+      },
+    },
+  ]);
+  const req = await signedWebhookRequest({ secret: SECRET, type: 'payment', dataId: 'PAY-PIX' });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(res.status, 200);
+
+  const int = find(db, 'pagamento_intencao', (r) => r.id === 'int-9');
+  assertEquals(int?.status, 'expirada');
+  assertEquals(int?.mp_payment_id, 'PAY-PIX');
+  assertEquals(db.rows('assinatura').length, 0);
+  assertEquals(find(db, 'pagamento', (r) => r.mp_payment_id === 'PAY-PIX')?.status, 'cancelled');
 });
