@@ -14,3 +14,6 @@ scripts/teste-manual-mp/session.json
 scripts/teste-manual-mp/mp-seller-state.json
 scripts/teste-manual-mp/creds*.json
 scripts/teste-manual-mp/*.png
+
+# node_modules na raiz (cache do Deno)
+/node_modules/
