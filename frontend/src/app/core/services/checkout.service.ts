@@ -122,6 +122,28 @@ export class CheckoutService {
     return data as PagamentoIntencao | null;
   }
 
+  /**
+   * Última intenção RECUSADA do usuário (últimos 7 dias), para o banner do
+   * checkout. Cobre a recusa assíncrona da 1ª cobrança da assinatura (detectada
+   * pela reconciliação horária, quando o usuário já saiu do checkout): sem
+   * isto, ele perde o acesso sem nunca ver o motivo. Só conta se for a
+   * intenção MAIS RECENTE — uma tentativa posterior (aprovada ou pendente)
+   * torna o aviso obsoleto.
+   */
+  async ultimaIntencaoRecusada(): Promise<PagamentoIntencao | null> {
+    const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await this.supabase
+      .from('pagamento_intencao')
+      .select('*')
+      .gte('criado_em', desde)
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    const intencao = data as PagamentoIntencao;
+    return intencao.status === 'recusada' ? intencao : null;
+  }
+
   /** Verifica no servidor se o acesso já foi liberado (pós-aprovação). */
   async temAcessoServidor(): Promise<boolean> {
     const { data, error } = await this.supabase.rpc('tem_assinatura_ativa');

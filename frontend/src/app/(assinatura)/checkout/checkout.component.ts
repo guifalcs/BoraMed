@@ -159,7 +159,24 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
     this.plano.set(plano);
     this.carregando.set(false);
+    // Recusa assíncrona (1ª cobrança da assinatura recusada após o usuário
+    // sair do checkout): sem este aviso, ele perde o acesso sem ver o motivo.
+    // Não bloqueia a montagem do Brick — o banner aparece quando resolver.
+    void this.mostrarRecusaAnterior();
     await this.montarBrick(plano);
+  }
+
+  /** Banner com o motivo da última recusa (se for a intenção mais recente). */
+  private async mostrarRecusaAnterior(): Promise<void> {
+    const recusada = await this.checkout.ultimaIntencaoRecusada();
+    if (!recusada || this.recusa()) return;
+    const info = mapStatusDetail(recusada.status_detail);
+    this.recusa.set({
+      titulo: 'Seu último pagamento foi recusado',
+      mensagem: recusada.tipo === 'assinatura'
+        ? `${info.titulo}. Tente novamente — de preferência com outro cartão.`
+        : info.mensagem,
+    });
   }
 
   ngOnDestroy(): void {
