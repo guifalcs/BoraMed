@@ -23,6 +23,10 @@
  *   --buckets=a,b,c      lista de buckets (padrão: questao-imagens,avisos,materiais)
  *   --max=1600           dimensão máxima em px (padrão 1600)
  *   --quality=80         qualidade WebP 1-100 (padrão 80)
+ *   --limit=N            para após processar N imagens candidatas (bom para testar com 1)
+ *
+ * Testar com UMA imagem só, pra valer:
+ *   node ../scripts/compress-storage-images.mjs --apply --limit=1
  *
  * A service_role key ignora RLS e permite listar/regravar tudo. Use só localmente,
  * não comite a chave.
@@ -49,6 +53,7 @@ const APPLY = args.includes('--apply');
 const BUCKETS = getArg('buckets', 'questao-imagens,avisos,materiais').split(',').map((s) => s.trim()).filter(Boolean);
 const MAX_DIM = parseInt(getArg('max', '1600'), 10);
 const QUALITY = parseInt(getArg('quality', '80'), 10);
+const LIMIT = parseInt(getArg('limit', '0'), 10); // 0 = sem limite
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i;
 
@@ -87,6 +92,9 @@ async function listAll(bucket, prefix = '') {
 
 const fmt = (n) => (n / 1024).toFixed(1) + ' KB';
 
+// Contador global de imagens candidatas processadas (usado por --limit).
+let processedGlobal = 0;
+
 async function processBucket(bucket) {
   console.log(`\n=== Bucket: ${bucket} ===`);
   let paths;
@@ -104,6 +112,8 @@ async function processBucket(bucket) {
   let rewritten = 0;
 
   for (const path of images) {
+    if (LIMIT > 0 && processedGlobal >= LIMIT) break;
+    processedGlobal++;
     const { data, error } = await supabase.storage.from(bucket).download(path);
     if (error) {
       console.warn(`  ! erro ao baixar ${path}: ${error.message}`);
@@ -157,6 +167,7 @@ async function processBucket(bucket) {
     const r = await processBucket(b);
     grandSaved += r.saved;
     grandCount += r.count;
+    if (LIMIT > 0 && processedGlobal >= LIMIT) break;
   }
 
   console.log(`\n=== Total: ${grandCount} imagem(ns), economia estimada ~${fmt(grandSaved)} ===`);
