@@ -63,13 +63,22 @@ export class FlashcardService {
 
       const { data, error } = await this.supabase
         .from('flashcard_decks')
-        .select(DECK_COLUMNS)
+        .select(`${DECK_COLUMNS}, flashcard_deck_likes(user_id)`)
         .eq('oficial', false)
         .eq('user_id', user.id)
+        .eq('flashcard_deck_likes.user_id', user.id)
         .order('criado_em', { ascending: false });
 
       if (error) throw error;
-      return { ok: true, data: (data ?? []) as FlashcardDeck[] };
+
+      const decks = ((data ?? []) as (FlashcardDeck & { flashcard_deck_likes: { user_id: string }[] | null })[]).map(
+        ({ flashcard_deck_likes, ...deck }) => ({
+          ...deck,
+          curtido_por_mim: (flashcard_deck_likes?.length ?? 0) > 0,
+        }),
+      );
+
+      return { ok: true, data: decks };
     } catch {
       return { ok: false, error: 'Não foi possível carregar seus decks.' };
     }
@@ -144,15 +153,19 @@ export class FlashcardService {
     }
   }
 
-  /** Toggle de like com update otimista no signal do feed; rollback em caso de erro. */
+  /**
+   * Toggle de like. Se o deck estiver no feed, aplica update otimista no
+   * signal (rollback em caso de erro); decks fora do feed (ex.: meus decks)
+   * só chamam o RPC e o chamador aplica o resultado na sua lista.
+   */
   async toggleLike(deckId: string): Promise<FlashcardResult<ToggleLikeResultado>> {
-    const estadoAnterior = this._feed().find((d) => d.id === deckId);
-    if (!estadoAnterior) return { ok: false, error: 'Deck não encontrado no feed.' };
+    const estadoAnterior = this._feed().find((d) => d.id === deckId) ?? null;
 
-    const curtidoOtimista = !estadoAnterior.curtido_por_mim;
-    const likesOtimista = estadoAnterior.likes_count + (curtidoOtimista ? 1 : -1);
-
-    this._aplicarLike(deckId, curtidoOtimista, Math.max(0, likesOtimista));
+    if (estadoAnterior) {
+      const curtidoOtimista = !estadoAnterior.curtido_por_mim;
+      const likesOtimista = estadoAnterior.likes_count + (curtidoOtimista ? 1 : -1);
+      this._aplicarLike(deckId, curtidoOtimista, Math.max(0, likesOtimista));
+    }
 
     try {
       const { data, error } = await this.supabase.rpc('flashcards_toggle_like', {
@@ -160,7 +173,9 @@ export class FlashcardService {
       });
 
       if (error) {
-        this._aplicarLike(deckId, estadoAnterior.curtido_por_mim, estadoAnterior.likes_count);
+        if (estadoAnterior) {
+          this._aplicarLike(deckId, estadoAnterior.curtido_por_mim, estadoAnterior.likes_count);
+        }
         return { ok: false, error: this._mapearErro(error) };
       }
 
@@ -168,7 +183,9 @@ export class FlashcardService {
       this._aplicarLike(deckId, resultado.curtido, resultado.likes_count);
       return { ok: true, data: resultado };
     } catch {
-      this._aplicarLike(deckId, estadoAnterior.curtido_por_mim, estadoAnterior.likes_count);
+      if (estadoAnterior) {
+        this._aplicarLike(deckId, estadoAnterior.curtido_por_mim, estadoAnterior.likes_count);
+      }
       return { ok: false, error: 'Não foi possível registrar a curtida.' };
     }
   }

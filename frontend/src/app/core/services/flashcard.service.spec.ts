@@ -50,6 +50,42 @@ describe('FlashcardService', () => {
       expect(mockFrom).toHaveBeenCalledWith('flashcard_decks');
       expect(eq).toHaveBeenCalledWith('oficial', false);
       expect(eq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(eq).toHaveBeenCalledWith('flashcard_deck_likes.user_id', 'user-1');
+    });
+
+    it('mapeia o embed de likes para curtido_por_mim', async () => {
+      const deckBase = {
+        id: 'deck-1',
+        user_id: 'user-1',
+        oficial: false,
+        titulo: 'Meu deck',
+        descricao: null,
+        publico: true,
+        likes_count: 2,
+        cards_count: 1,
+        criado_em: '2026-07-01T00:00:00Z',
+        atualizado_em: '2026-07-01T00:00:00Z',
+      };
+      const eq = vi.fn().mockReturnThis();
+      const order = vi.fn().mockResolvedValue({
+        data: [
+          { ...deckBase, flashcard_deck_likes: [{ user_id: 'user-1' }] },
+          { ...deckBase, id: 'deck-2', flashcard_deck_likes: [] },
+        ],
+        error: null,
+      });
+      const select = vi.fn().mockReturnValue({ eq, order });
+      mockFrom.mockReturnValue({ select });
+      eq.mockReturnValue({ eq, order });
+
+      const result = await service.listarMeusDecks();
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data[0].curtido_por_mim).toBe(true);
+        expect(result.data[1].curtido_por_mim).toBe(false);
+        expect('flashcard_deck_likes' in result.data[0]).toBe(false);
+      }
     });
 
     it('retorna lista vazia sem consultar o banco quando não há usuário autenticado', async () => {
@@ -139,10 +175,14 @@ describe('FlashcardService', () => {
       expect(service.feed()[0].likes_count).toBe(3);
     });
 
-    it('retorna erro quando o deck não está no feed carregado', async () => {
-      const result = await service.toggleLike('deck-inexistente');
-      expect(result).toEqual({ ok: false, error: 'Deck não encontrado no feed.' });
-      expect(mockRpc).not.toHaveBeenCalled();
+    it('curte deck fora do feed (ex.: meus decks) chamando a RPC sem update otimista', async () => {
+      mockRpc.mockResolvedValueOnce({ data: [{ curtido: true, likes_count: 1 }], error: null });
+
+      const result = await service.toggleLike('meu-deck-1');
+
+      expect(mockRpc).toHaveBeenCalledWith('flashcards_toggle_like', { p_deck_id: 'meu-deck-1' });
+      expect(result).toEqual({ ok: true, data: { curtido: true, likes_count: 1 } });
+      expect(service.feed()).toEqual([]);
     });
   });
 

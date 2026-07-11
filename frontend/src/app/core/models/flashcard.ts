@@ -23,6 +23,8 @@ export interface FlashcardDeck {
   cards_count: number;
   criado_em: string;
   atualizado_em: string;
+  /** Preenchido em listagens que resolvem o like do usuário atual (ex.: meus decks). */
+  curtido_por_mim?: boolean;
 }
 
 /** Deck com os cards embutidos, já ordenados por posição. */

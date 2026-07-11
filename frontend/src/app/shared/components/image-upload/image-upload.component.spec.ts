@@ -40,4 +40,30 @@ describe('ImageUploadComponent', () => {
     expect(component.bucket()).toBe('flashcards-imagens');
     expect(component.pathPrefix()).toBe('flashcards');
   });
+
+  function previewImg(): HTMLImageElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector('.img-preview__img');
+  }
+
+  // Regressão: no carrossel do editor de decks o componente é reutilizado entre
+  // cards; o estado local da sessão anterior vazava para o card seguinte.
+  it('descarta o estado local quando o pai troca a currentUrl (troca de card no carrossel)', async () => {
+    fixture.componentRef.setInput('currentUrl', 'https://x/card1.png');
+    fixture.detectChanges();
+    expect(previewImg()?.src).toContain('card1.png');
+
+    // Simula "Remover"; o pai ecoa o urlChange de volta no currentUrl,
+    // como todos os usos reais fazem.
+    await component['remover']();
+    fixture.componentRef.setInput('currentUrl', null);
+    fixture.detectChanges();
+    expect(previewImg()).toBeNull();
+
+    // O pai navega para outro card: currentUrl muda → o estado local do card
+    // anterior é descartado. Sem o effect, o "null" da remoção acima venceria
+    // e o card 2 apareceria sem a sua imagem.
+    fixture.componentRef.setInput('currentUrl', 'https://x/card2.png');
+    fixture.detectChanges();
+    expect(previewImg()?.src).toContain('card2.png');
+  });
 });

@@ -184,15 +184,18 @@ BEGIN
   PERFORM set_config('app.deck_id_teste', v_deck_id::text, false);
 END $$;
 
--- tentar curtir o próprio deck deve falhar
+-- o dono pode curtir o próprio deck (migration 20260712100000)
 DO $$
-DECLARE v_deck_id uuid := current_setting('app.deck_id_teste')::uuid;
+DECLARE
+  v_deck_id uuid := current_setting('app.deck_id_teste')::uuid;
+  v_curtido boolean;
+  v_likes int;
 BEGIN
-  PERFORM public.flashcards_toggle_like(v_deck_id);
-  RAISE EXCEPTION 'FALHOU: deveria ter bloqueado curtir o proprio deck';
-EXCEPTION
-  WHEN sqlstate 'P0013' THEN
-    RAISE NOTICE 'OK P0013 nao pode curtir proprio deck';
+  SELECT curtido, likes_count INTO v_curtido, v_likes FROM public.flashcards_toggle_like(v_deck_id);
+  IF NOT v_curtido OR v_likes <> 1 THEN
+    RAISE EXCEPTION 'FALHOU: dono nao conseguiu curtir o proprio deck (curtido=%, likes=%)', v_curtido, v_likes;
+  END IF;
+  RAISE NOTICE 'OK dono pode curtir o proprio deck (likes_count=%)', v_likes;
 END $$;
 
 -- troca para admin (11111111...) e curte
@@ -205,7 +208,7 @@ DECLARE
   v_likes int;
 BEGIN
   SELECT curtido, likes_count INTO v_curtido, v_likes FROM public.flashcards_toggle_like(v_deck_id);
-  IF NOT v_curtido OR v_likes <> 1 THEN
+  IF NOT v_curtido OR v_likes <> 2 THEN
     RAISE EXCEPTION 'FALHOU: like nao registrado corretamente (curtido=%, likes=%)', v_curtido, v_likes;
   END IF;
   RAISE NOTICE 'OK like registrado (likes_count=%)', v_likes;
@@ -220,8 +223,8 @@ DECLARE
   v_likes jsonb;
 BEGIN
   v_likes := public.flashcards_listar_likes_deck(v_deck_id, 50, 0);
-  IF jsonb_array_length(v_likes) <> 1 THEN
-    RAISE EXCEPTION 'FALHOU: dono nao viu 1 curtida, viu %', jsonb_array_length(v_likes);
+  IF jsonb_array_length(v_likes) <> 2 THEN
+    RAISE EXCEPTION 'FALHOU: dono nao viu 2 curtidas, viu %', jsonb_array_length(v_likes);
   END IF;
   RAISE NOTICE 'OK dono ve quem curtiu (%)', v_likes;
 END $$;

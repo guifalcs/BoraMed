@@ -220,10 +220,10 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Três origens de deck: **oficiais** (criados pelo admin, `user_id IS NULL` + `oficial=true`), **da comunidade** (decks de usuários com `publico=true`) e **meus decks** (privados ou públicos do próprio usuário).
 * Escrita de usuário SOMENTE via RPCs `SECURITY DEFINER` (`flashcards_criar_deck`, `flashcards_atualizar_deck`, `flashcards_excluir_deck`, `flashcards_toggle_like`); admin tem CRUD direto por policy. Leitura exige assinatura ativa (exceto decks próprios).
 * Limites: título 3–120 chars, descrição ≤ 500, frente/verso do card 1–2.000 chars, 1–200 cards por deck, 50 decks por usuário. Título/descrição passam por filtro de linguagem inapropriada.
-* Likes: só em decks públicos/oficiais, contagem denormalizada (`likes_count`) recalculada por trigger; UI atualiza de forma otimista.
+* Likes: só em decks públicos não-oficiais; o dono PODE curtir o próprio deck (comunidade e "Meus decks"); contagem denormalizada (`likes_count`) recalculada por trigger; UI atualiza de forma otimista no feed.
 * Feed da comunidade (`flashcards_feed`): ordenação por recentes ou mais curtidos, paginado (limite ≤ 100).
 * Imagens de cards no bucket `flashcard-imagens` (público, 2 MB, webp/png/jpeg).
-* Execução do deck: flip frente/verso, aluno marca acerto/erro por card, acompanha contadores de acertos × erros durante a sessão e vê percentual ao final (contagem só em memória — sem persistência de resultado por card no MVP).
+* Execução do deck: flip frente/verso, aluno marca acerto/erro por card, acompanha contadores de acertos × erros durante a sessão e vê percentual ao final (contagem só em memória — sem persistência de resultado por card no MVP). A tela de conclusão sugere até 3 outros decks (oficiais + comunidade) para continuar estudando.
 
 ## Público-Alvo
 

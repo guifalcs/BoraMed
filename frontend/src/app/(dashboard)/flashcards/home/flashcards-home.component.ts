@@ -159,4 +159,20 @@ export class FlashcardsHomeComponent {
     const result = await this.flashcardService.toggleLike(deckId);
     if (!result.ok) this.toast.error(result.error);
   }
+
+  /** Like em deck da aba "Meus decks": aplica o resultado do RPC na lista local. */
+  protected async handleToggleLikeMeus(deckId: string): Promise<void> {
+    const result = await this.flashcardService.toggleLike(deckId);
+    if (!result.ok) {
+      this.toast.error(result.error);
+      return;
+    }
+    this.meusDecks.update((prev) =>
+      prev.map((d) =>
+        d.id === deckId
+          ? { ...d, curtido_por_mim: result.data.curtido, likes_count: result.data.likes_count }
+          : d,
+      ),
+    );
+  }
 }

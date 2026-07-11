@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DeckExecucaoComponent } from './deck-execucao.component';
 import { FlashcardService } from '../../../core/services/flashcard.service';
@@ -50,6 +51,8 @@ describe('DeckExecucaoComponent', () => {
   let el: HTMLElement;
   let flashcardServiceMock: {
     obterDeckComCards: ReturnType<typeof vi.fn>;
+    listarDecksOficiais: ReturnType<typeof vi.fn>;
+    carregarFeed: ReturnType<typeof vi.fn>;
     criarDeck: ReturnType<typeof vi.fn>;
     atualizarDeck: ReturnType<typeof vi.fn>;
     excluirDeck: ReturnType<typeof vi.fn>;
@@ -59,12 +62,18 @@ describe('DeckExecucaoComponent', () => {
   beforeEach(async () => {
     flashcardServiceMock = {
       obterDeckComCards: vi.fn().mockResolvedValue({ ok: true, data: deckFactory() }),
+      listarDecksOficiais: vi.fn().mockResolvedValue({
+        ok: true,
+        data: [{ ...deckFactory(), id: 'deck-sugestao', titulo: 'Deck sugerido' }],
+      }),
+      carregarFeed: vi.fn().mockResolvedValue({ ok: true, data: [] }),
       criarDeck: vi.fn(),
       atualizarDeck: vi.fn(),
       excluirDeck: vi.fn(),
       toggleLike: vi.fn(),
     };
 
+    const paramMap = convertToParamMap({ deckId: 'deck-1' });
     await TestBed.configureTestingModule({
       imports: [DeckExecucaoComponent],
       providers: [
@@ -72,7 +81,7 @@ describe('DeckExecucaoComponent', () => {
         { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ deckId: 'deck-1' }) } },
+          useValue: { snapshot: { paramMap }, paramMap: of(paramMap) },
         },
       ],
     }).compileComponents();
@@ -140,6 +149,35 @@ describe('DeckExecucaoComponent', () => {
     expect(contadorAcertos()).toContain('1');
     expect(contadorErros()).toContain('0');
     expect(component['popAcerto']()).toBe(true);
+  });
+
+  it('ao finalizar, sugere outros decks (excluindo o deck atual)', async () => {
+    const component = fixture.componentInstance;
+
+    component['flip'](true);
+    component['responder']('acertou');
+    component['flip'](true);
+    component['responder']('errou');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(flashcardServiceMock.listarDecksOficiais).toHaveBeenCalled();
+    expect(flashcardServiceMock.carregarFeed).toHaveBeenCalledWith('recentes', 0);
+    expect(el.textContent).toContain('Continue estudando');
+    expect(el.textContent).toContain('Deck sugerido');
+    // O deck atual (deck-1) não aparece nas sugestões.
+    expect(component['sugestoes']().some((d) => d.id === 'deck-1')).toBe(false);
+  });
+
+  it('não usa emoji na tela de conclusão (ícones só da biblioteca)', () => {
+    const component = fixture.componentInstance;
+    component['flip'](true);
+    component['responder']('acertou');
+    component['flip'](true);
+    component['responder']('errou');
+    fixture.detectChanges();
+
+    expect(el.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
   });
 
   it('exibe o botão de voltar durante a sessão', () => {

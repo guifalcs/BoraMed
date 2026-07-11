@@ -135,11 +135,34 @@ describe('DeckCardComponent', () => {
       expect(spy).toHaveBeenCalledWith('deck-pub');
     });
 
-    it('desabilita o botão de curtidas quando deck não é público', async () => {
+    it('deck não público mostra a contagem sem botões de curtida', async () => {
       const fixture = await createComponent(deckFactory({ oficial: false, publico: false }));
       const el = fixture.nativeElement as HTMLElement;
-      const btn = Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('3'));
-      expect(btn?.disabled).toBe(true);
+      const btn = Array.from(el.querySelectorAll('button')).find(
+        (b) => b.textContent?.includes('3') || b.textContent?.includes('ver curtidas'),
+      );
+      expect(btn).toBeUndefined();
+      expect(el.textContent).toContain('3');
+    });
+
+    it('deck próprio público mostra botão de curtir que emite toggleLike', async () => {
+      const fixture = await createComponent(
+        deckFactory({ id: 'deck-pub', oficial: false, publico: true, curtido_por_mim: false }),
+      );
+      const spy = vi.spyOn(fixture.componentInstance.toggleLike, 'emit');
+      const el = fixture.nativeElement as HTMLElement;
+      const likeBtn = el.querySelector<HTMLButtonElement>('button[aria-label="Curtir deck"]');
+      expect(likeBtn).not.toBeNull();
+      likeBtn!.click();
+      expect(spy).toHaveBeenCalledWith('deck-pub');
+    });
+
+    it('deck próprio público já curtido mostra o estado de descurtir', async () => {
+      const fixture = await createComponent(
+        deckFactory({ id: 'deck-pub', oficial: false, publico: true, curtido_por_mim: true }),
+      );
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('button[aria-label="Descurtir deck"]')).not.toBeNull();
     });
   });
 });

@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -147,6 +148,21 @@ export class ImageUploadComponent {
   });
 
   private readonly _inputRef = viewChild.required<ElementRef<HTMLInputElement>>('arquivoInput');
+
+  constructor() {
+    // Se o pai trocar a currentUrl para um valor diferente do estado local
+    // (ex.: carrossel do editor navegou para outro card reutilizando este
+    // componente), o estado da sessão anterior deve ser descartado — senão a
+    // imagem do card anterior "vaza" para o novo.
+    effect(() => {
+      const url = this.currentUrl();
+      if (this._localUrl() !== undefined && url !== this._localUrl()) {
+        this._localUrl.set(undefined);
+        this._sessionUrl = null;
+        this.erroUpload.set(null);
+      }
+    });
+  }
 
   protected abrirSeletor(): void {
     this._inputRef().nativeElement.click();

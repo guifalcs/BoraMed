@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArrowLeft, CircleCheck, CircleX, LucideIconData, Shuffle } from 'lucide-angular';
+import { ArrowLeft, CircleCheck, CircleX, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import type { Flashcard } from '../../../core/models/flashcard';
+import { DeckCardComponent, type DeckCardItem } from '../../../shared/components/deck-card/deck-card.component';
 import { FlashcardFlipComponent } from '../../../shared/components/flashcard-flip/flashcard-flip.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
@@ -11,10 +13,12 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
 
 type EstadoResposta = 'acertou' | 'errou';
 
+const MAX_SUGESTOES = 3;
+
 @Component({
   selector: 'app-deck-execucao',
   standalone: true,
-  imports: [FlashcardFlipComponent, PageHeaderComponent, UiButtonComponent, UiIconComponent],
+  imports: [DeckCardComponent, FlashcardFlipComponent, PageHeaderComponent, UiButtonComponent, UiIconComponent],
   templateUrl: './deck-execucao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -28,6 +32,7 @@ export class DeckExecucaoComponent {
   protected readonly xIcon: LucideIconData = CircleX;
   protected readonly shuffleIcon: LucideIconData = Shuffle;
   protected readonly voltarIcon: LucideIconData = ArrowLeft;
+  protected readonly festaIcon: LucideIconData = PartyPopper;
 
   protected readonly deckId = signal<string | null>(null);
   protected readonly deckTitulo = signal('');
@@ -43,6 +48,9 @@ export class DeckExecucaoComponent {
   // Dispara a animação de "pop" nos contadores quando o valor muda.
   protected readonly popAcerto = signal(false);
   protected readonly popErro = signal(false);
+
+  // Sugestões de outros decks exibidas na tela de conclusão.
+  protected readonly sugestoes = signal<DeckCardItem[]>([]);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -73,11 +81,16 @@ export class DeckExecucaoComponent {
   });
 
   constructor() {
-    const deckId = this.route.snapshot.paramMap.get('deckId');
-    if (deckId) {
+    // Observa o paramMap (e não só o snapshot): navegar para outro deck a
+    // partir das sugestões reutiliza este componente na mesma rota.
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const deckId = params.get('deckId');
+      if (!deckId || deckId === this.deckId()) return;
       this.deckId.set(deckId);
+      this.reiniciarSessao();
+      this.sugestoes.set([]);
       void this.carregarDeck(deckId);
-    }
+    });
   }
 
   private async carregarDeck(deckId: string): Promise<void> {
@@ -106,6 +119,7 @@ export class DeckExecucaoComponent {
 
     if (this.indiceAtual() >= this.cards().length - 1) {
       this.finalizado.set(true);
+      void this.carregarSugestoes();
       return;
     }
 
@@ -133,10 +147,58 @@ export class DeckExecucaoComponent {
   }
 
   protected refazer(): void {
+    this.reiniciarSessao();
+  }
+
+  private reiniciarSessao(): void {
     this.indiceAtual.set(0);
     this.virado.set(false);
     this.finalizado.set(false);
     this.respostas.set({});
+  }
+
+  /** Carrega até 3 outros decks (oficiais + comunidade) para sugerir na conclusão. */
+  private async carregarSugestoes(): Promise<void> {
+    if (this.sugestoes().length > 0) return;
+
+    const [oficiais, feed] = await Promise.all([
+      this.flashcardService.listarDecksOficiais(),
+      this.flashcardService.carregarFeed('recentes', 0),
+    ]);
+
+    const candidatos: DeckCardItem[] = [
+      ...(oficiais.ok ? oficiais.data : []),
+      ...(feed.ok ? feed.data : []),
+    ];
+
+    const vistos = new Set<string>([this.deckId() ?? '']);
+    const sugestoes: DeckCardItem[] = [];
+    for (const deck of candidatos) {
+      if (vistos.has(deck.id) || deck.cards_count === 0) continue;
+      vistos.add(deck.id);
+      sugestoes.push(deck);
+      if (sugestoes.length >= MAX_SUGESTOES) break;
+    }
+    this.sugestoes.set(sugestoes);
+  }
+
+  protected irParaDeck(deckId: string): void {
+    void this.router.navigate(['/dashboard/flashcards', deckId, 'estudar']);
+  }
+
+  protected async handleToggleLikeSugestao(deckId: string): Promise<void> {
+    const result = await this.flashcardService.toggleLike(deckId);
+    if (!result.ok) {
+      this.toast.error(result.error);
+      return;
+    }
+    this.sugestoes.update((prev) =>
+      prev.map((d) =>
+        d.id === deckId
+          ? { ...d, curtido_por_mim: result.data.curtido, likes_count: result.data.likes_count }
+          : d,
+      ),
+    );
   }
 
   protected refazerErrados(): void {

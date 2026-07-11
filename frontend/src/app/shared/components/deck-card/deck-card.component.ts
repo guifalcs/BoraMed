@@ -46,10 +46,7 @@ export class DeckCardComponent {
     return !isFeedDeck(d) && d.publico;
   });
 
-  protected readonly curtidoPorMim = computed(() => {
-    const d = this.deck();
-    return isFeedDeck(d) ? d.curtido_por_mim : false;
-  });
+  protected readonly curtidoPorMim = computed(() => this.deck().curtido_por_mim ?? false);
 
   protected readonly autorNome = computed(() => {
     const d = this.deck();

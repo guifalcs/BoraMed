@@ -51,19 +51,30 @@
           <app-ui-icon [icon]="heartIcon" [size]="13" />
           {{ deck().likes_count }}
         </button>
-      } @else {
+      } @else if (isPublico()) {
         <button
           type="button"
-          class="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-surface-2)] disabled:cursor-default disabled:hover:bg-transparent"
-          [disabled]="!isPublico()"
-          (click)="handleVerCurtidas($event)"
+          class="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-surface-2)]"
+          [class.text-red-500]="curtidoPorMim()"
+          [attr.aria-pressed]="curtidoPorMim()"
+          [attr.aria-label]="curtidoPorMim() ? 'Descurtir deck' : 'Curtir deck'"
+          (click)="handleToggleLike($event)"
         >
           <app-ui-icon [icon]="heartIcon" [size]="13" />
           {{ deck().likes_count }}
-          @if (isPublico()) {
-            <span class="ml-0.5 underline">ver curtidas</span>
-          }
         </button>
+        <button
+          type="button"
+          class="rounded px-1 py-0.5 underline transition-colors hover:bg-[var(--color-surface-2)]"
+          (click)="handleVerCurtidas($event)"
+        >
+          ver curtidas
+        </button>
+      } @else {
+        <span class="inline-flex items-center gap-1">
+          <app-ui-icon [icon]="heartIcon" [size]="13" />
+          {{ deck().likes_count }}
+        </span>
       }
     </div>
 

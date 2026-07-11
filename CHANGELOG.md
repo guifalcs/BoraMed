@@ -2,6 +2,16 @@
 
 ## 2026-07-10 | Tweak | sem commit
 
+**Flashcards: conclusão com sugestões, like no próprio deck e fixes**
+
+- Tela de conclusão: emoji substituído por ícone da biblioteca (PartyPopper/lucide) em círculo com gradiente da marca; nova seção "Continue estudando" sugere até 3 outros decks (oficiais + comunidade, excluindo o atual) com navegação direta — a rota de estudo agora observa o `paramMap` e reinicia a sessão ao trocar de deck.
+- Curtir o próprio deck: migration `20260712100000_flashcards_curtir_proprio_deck.sql` recria `flashcards_toggle_like` sem o bloqueio de dono (antigo P0013); botão de curtir também na aba "Meus decks" (decks públicos) ao lado de "ver curtidas"; `listarMeusDecks` resolve `curtido_por_mim` via embed de `flashcard_deck_likes`; smoke test atualizado.
+- Fix: no carrossel do editor, a imagem enviada num card "vazava" para o card recém-criado — o `app-image-upload` agora descarta o estado local quando o pai troca a `currentUrl` (componente reutilizado entre cards), com spec de regressão.
+
+---
+
+## 2026-07-10 | Tweak | sem commit
+
 **Flashcards: refinos de UX na execução e no editor + fix do modal de curtidas**
 
 - Execução: botão "Voltar", contadores ao vivo de acertos × erros (com animação de pop, sem persistência), barra de progresso, card muito maior centralizado no espaço disponível e visual lúdico — frente com gradiente da marca (azul→roxo), verso em teal→azul, selos "Pergunta"/"Resposta", texto escala conforme o tamanho do conteúdo, animações de entrada/flip.
