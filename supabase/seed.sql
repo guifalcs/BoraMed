@@ -109,3 +109,52 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.user_onboarding_state (user_id, flow_key, flow_version, status, completed_at)
 VALUES ('11111111-1111-1111-1111-111111111111','dashboard_intro',1,'completed', now())
 ON CONFLICT (user_id, flow_key, flow_version) DO UPDATE SET status='completed', completed_at=now();
+
+-- ============================================================================
+-- Dados de teste locais para o módulo de Flashcards.
+-- Decks oficiais + decks da comunidade (autor: flashcard-tester), para as
+-- abas Oficiais/Comunidade e as sugestões da tela de conclusão.
+-- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção.
+-- ============================================================================
+
+-- Autor dos decks da comunidade (mesmo usuário do smoke test de flashcards)
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  email_change_token_current, phone_change_token, reauthentication_token,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at, is_sso_user, is_anonymous
+) VALUES (
+  '22222222-2222-2222-2222-222222222222',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated', 'flashcard-tester@boramed.com',
+  crypt('Teste123!', gen_salt('bf')), now(),
+  '', '', '', '', '', '', '',
+  '{"provider":"email","providers":["email"]}',
+  '{"full_name":"Flashcard Tester"}',
+  now(), now(), false, false
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.assinatura (user_id, plano_id, status, proxima_cobranca, data_inicio)
+SELECT '22222222-2222-2222-2222-222222222222', '99999999-0000-0000-0000-000000000001', 'authorized', now() + interval '90 days', now()
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.assinatura WHERE user_id = '22222222-2222-2222-2222-222222222222' AND status = 'authorized'
+);
+
+INSERT INTO public.flashcard_decks (id, user_id, oficial, titulo, descricao, publico) VALUES
+('f1a90000-0000-0000-0000-000000000001', NULL, true,  'Farmacologia — Conceitos Básicos', 'Deck oficial de revisão de farmacocinética.', false),
+('f1a90000-0000-0000-0000-000000000002', NULL, true,  'Anatomia — Membro Superior', 'Deck oficial com estruturas do membro superior.', false),
+('f1a90000-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', false, 'Bioquímica — Ciclo de Krebs', 'Etapas e enzimas do ciclo do ácido cítrico.', true),
+('f1a90000-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', false, 'Histologia — Tecido Epitelial', 'Classificação e características dos epitélios.', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.flashcard_cards (id, deck_id, posicao, frente, verso) VALUES
+('f1ca0000-0000-0000-0000-000000000001','f1a90000-0000-0000-0000-000000000001',0,'O que é meia-vida de eliminação?','Tempo para a concentração plasmática cair pela metade.'),
+('f1ca0000-0000-0000-0000-000000000002','f1a90000-0000-0000-0000-000000000001',1,'O que é biodisponibilidade?','Fração da dose que atinge a circulação sistêmica.'),
+('f1ca0000-0000-0000-0000-000000000003','f1a90000-0000-0000-0000-000000000001',2,'O que é clearance?','Volume de plasma depurado do fármaco por unidade de tempo.'),
+('f1ca0000-0000-0000-0000-000000000004','f1a90000-0000-0000-0000-000000000002',0,'Quais ossos formam o antebraço?','Rádio e ulna.'),
+('f1ca0000-0000-0000-0000-000000000005','f1a90000-0000-0000-0000-000000000002',1,'Qual nervo passa pelo túnel do carpo?','Nervo mediano.'),
+('f1ca0000-0000-0000-0000-000000000006','f1a90000-0000-0000-0000-000000000003',0,'Qual enzima converte citrato em isocitrato?','Aconitase.'),
+('f1ca0000-0000-0000-0000-000000000007','f1a90000-0000-0000-0000-000000000003',1,'Quantos NADH são gerados por volta do ciclo?','3 NADH (+ 1 FADH2 e 1 GTP).'),
+('f1ca0000-0000-0000-0000-000000000008','f1a90000-0000-0000-0000-000000000004',0,'O que caracteriza um epitélio estratificado?','Duas ou mais camadas de células.'),
+('f1ca0000-0000-0000-0000-000000000009','f1a90000-0000-0000-0000-000000000004',1,'Onde é encontrado o epitélio pseudoestratificado ciliado?','Vias respiratórias (traqueia, brônquios).')
+ON CONFLICT (id) DO NOTHING;
