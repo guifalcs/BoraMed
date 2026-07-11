@@ -16,6 +16,8 @@ export function isFeedDeck(deck: DeckCardItem): deck is FeedDeck {
   standalone: true,
   imports: [UiIconComponent, TimeAgoPipe],
   templateUrl: './deck-card.component.html',
+  // Preenche a célula do grid para que todos os cards tenham a mesma altura.
+  host: { class: 'block h-full' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeckCardComponent {

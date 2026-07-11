@@ -2,6 +2,14 @@
 
 ## 2026-07-10 | Tweak | sem commit
 
+**Flashcards: deck-cards com altura padronizada**
+
+- Os cards de deck (sugestões, abas Oficiais/Meus/Comunidade) agora têm a mesma altura independentemente do conteúdo: título em 1 linha e descrição em até 2 linhas, truncados com reticências; espaço da descrição/autor sempre reservado; rodapé alinhado à base. Decks oficiais mostram "deck oficial · há X" quando o autor é exibido.
+
+---
+
+## 2026-07-10 | Tweak | 6a3ab68
+
 **Flashcards: conclusão com sugestões, like no próprio deck e fixes**
 
 - Tela de conclusão: emoji substituído por ícone da biblioteca (PartyPopper/lucide) em círculo com gradiente da marca; nova seção "Continue estudando" sugere até 3 outros decks (oficiais + comunidade, excluindo o atual) com navegação direta — a rota de estudo agora observa o `paramMap` e reinicia a sessão ao trocar de deck.

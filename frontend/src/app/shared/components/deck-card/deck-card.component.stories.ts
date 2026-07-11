@@ -67,3 +67,14 @@ export const ComunidadeCurtido: Story = {
 export const SemDescricao: Story = {
   args: { deck: { ...deckOficial, descricao: null } },
 };
+
+export const ConteudoLongo: Story = {
+  args: {
+    deck: {
+      ...deckOficial,
+      titulo: 'Farmacologia Avançada — Interações Medicamentosas, Farmacogenômica e Reações Adversas em Populações Especiais',
+      descricao:
+        'Deck extenso cobrindo interações fármaco-fármaco, fármaco-alimento, polimorfismos de CYP450, ajustes de dose em insuficiência renal e hepática, e notificação de reações adversas. O texto excedente é truncado com reticências para manter os cards do grid com a mesma altura.',
+    },
+  },
+};
