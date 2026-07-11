@@ -16,6 +16,17 @@
   perspective: 1400px;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
+  transition: translate 0.2s ease;
+}
+
+/* Feedback de hover via translação do botão externo: scale na camada 3D
+   (preserve-3d) estica a textura rasterizada e borra o texto. */
+.flip-card:hover {
+  translate: 0 -3px;
+}
+
+.flip-card:active {
+  translate: 0 1px;
 }
 
 .flip-card__inner {
@@ -27,14 +38,6 @@
   transform-style: preserve-3d;
   transition: transform 0.55s cubic-bezier(0.34, 1.3, 0.4, 1);
   animation: flip-card-entrada 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.flip-card:hover .flip-card__inner {
-  scale: 1.01;
-}
-
-.flip-card:active .flip-card__inner {
-  scale: 0.985;
 }
 
 .flip-card--virado .flip-card__inner {
