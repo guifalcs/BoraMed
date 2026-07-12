@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArrowLeft, CircleCheck, CircleX, Flag, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
+import { ArrowLeft, CircleCheck, CircleX, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import type { Flashcard } from '../../../core/models/flashcard';
@@ -33,7 +33,6 @@ export class DeckExecucaoComponent {
   protected readonly shuffleIcon: LucideIconData = Shuffle;
   protected readonly voltarIcon: LucideIconData = ArrowLeft;
   protected readonly festaIcon: LucideIconData = PartyPopper;
-  protected readonly finalizarIcon: LucideIconData = Flag;
 
   protected readonly deckId = signal<string | null>(null);
   protected readonly deckTitulo = signal('');
@@ -69,17 +68,12 @@ export class DeckExecucaoComponent {
   protected readonly erros = computed(
     () => Object.values(this.respostas()).filter((r) => r === 'errou').length,
   );
-  // Aproveitamento sobre o total de cards (não só os respondidos): brancos
-  // contam como não-acertos, senão finalizar cedo inflaria o percentual.
   protected readonly percentualAcerto = computed(() => {
-    const total = this.cards().length;
+    const total = this.acertos() + this.erros();
     return total === 0 ? 0 : Math.round((this.acertos() / total) * 100);
   });
   protected readonly cardsErrados = computed<Flashcard[]>(() =>
     this.cards().filter((c) => this.respostas()[c.id] === 'errou'),
-  );
-  protected readonly cardsNaoRespondidos = computed<Flashcard[]>(() =>
-    this.cards().filter((c) => !this.respostas()[c.id]),
   );
   protected readonly progressoPct = computed(() => {
     const total = this.cards().length;
@@ -143,13 +137,6 @@ export class DeckExecucaoComponent {
         return;
       }
     }
-  }
-
-  /** Encerra a sessão a qualquer momento; cards sem resposta contam como brancos. */
-  protected finalizar(): void {
-    if (this.finalizado()) return;
-    this.finalizado.set(true);
-    void this.carregarSugestoes();
   }
 
   protected irParaCard(indice: number): void {
@@ -230,16 +217,6 @@ export class DeckExecucaoComponent {
       return;
     }
     this.cards.set(errados);
-    this.reiniciarSessao();
-  }
-
-  protected refazerNaoRespondidos(): void {
-    const pendentes = this.cardsNaoRespondidos();
-    if (pendentes.length === 0) {
-      this.toast.success('Você respondeu todos os cards!');
-      return;
-    }
-    this.cards.set(pendentes);
     this.reiniciarSessao();
   }
 
