@@ -47,18 +47,42 @@
 .flip-card__face {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0.75rem, 2vh, 1.25rem);
-  padding: clamp(1.5rem, 4vw, 3rem);
   border-radius: 22px;
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   text-align: center;
   color: #ffffff;
+}
+
+/* Camada de conteúdo que rola: o scroll é do card inteiro (selo, imagem, texto,
+   dica), não só do texto. Fica dentro da face para que os círculos decorativos
+   (::before/::after em posições negativas) continuem clipados e não gerem scroll. */
+.flip-card__scroll {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* safe center: centraliza quando cabe, mas cai para o topo ao exceder,
+     evitando que o início do conteúdo fique inacessível ao rolar. */
+  justify-content: safe center;
+  gap: clamp(0.75rem, 2vh, 1.25rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.flip-card__scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.flip-card__scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
 }
 
 .flip-card__face--frente {
@@ -105,6 +129,7 @@
 .flip-card__selo {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.16);
@@ -117,12 +142,19 @@
 }
 
 .flip-card__texto {
-  max-width: 52ch;
+  /* min(52ch, 100%): 52ch preserva legibilidade, mas nunca ultrapassa a largura
+     da face — em fonte grande 52ch estouraria o card e seria cortado na lateral. */
+  max-width: min(52ch, 100%);
+  /* Não encolhe: flui no tamanho natural e, ao exceder a altura, faz o
+     .flip-card__scroll (card inteiro) rolar em vez de gerar scroll só no texto. */
+  flex-shrink: 0;
+  padding-inline: 0.25rem;
   line-height: 1.4;
   font-weight: 600;
   color: #ffffff;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  word-break: break-word;
   text-wrap: balance;
 }
 
@@ -143,19 +175,37 @@
 
 .flip-card__texto--sm {
   font-size: 1rem;
-  overflow-y: auto;
 }
 
+/* Com imagem, a mídia é a estrela: aperta o padding/gap para liberar o máximo
+   de área ao wrapper flexível. */
+.flip-card__face--com-imagem .flip-card__scroll {
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  gap: clamp(0.5rem, 1.5vh, 0.9rem);
+}
+
+/* Ocupa toda a altura livre do card; min-height:0 permite encolher dentro do flex. */
+.flip-card__imagem-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* object-fit: contain adapta qualquer proporção (retrato/paisagem/quadrada)
+   sem distorcer nem estourar; max-*: 100% referenciam o wrapper. */
 .flip-card__imagem {
-  max-height: min(38%, 220px);
   max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   border-radius: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.9);
 }
 
 .flip-card__dica {
+  flex-shrink: 0;
   font-size: 0.75rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.75);

@@ -4,7 +4,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, output } f
 function classeDeFonte(texto: string, temImagem: boolean): string {
   const len = texto.length;
   let nivel = len <= 80 ? 0 : len <= 200 ? 1 : len <= 500 ? 2 : 3;
-  if (temImagem && nivel < 3) nivel++;
+  // Com imagem, o texto é acessório: nunca domina o card (mínimo md, teto sm).
+  if (temImagem) nivel = Math.min(Math.max(nivel + 1, 2), 3);
   return ['flip-card__texto--xl', 'flip-card__texto--lg', 'flip-card__texto--md', 'flip-card__texto--sm'][nivel];
 }
 
