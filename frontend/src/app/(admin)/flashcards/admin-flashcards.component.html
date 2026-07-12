@@ -59,6 +59,12 @@
               {{ value }}
             </ng-template>
 
+            <ng-template appDataTableColumn="publico" header="Publicado" [sortable]="true" let-value>
+              <span [class]="value ? 'text-emerald-600' : 'text-[var(--color-text-muted)]'">
+                {{ value ? 'Sim' : 'Rascunho' }}
+              </span>
+            </ng-template>
+
             <ng-template appDataTableColumn="atualizado_em" header="Atualizado" [sortable]="true" let-value>
               {{ formatarData(value) }}
             </ng-template>
@@ -97,6 +103,10 @@
                 <label class="admin-label">Descrição (opcional)</label>
                 <textarea class="admin-input" rows="2" [ngModel]="editDescricao()" (ngModelChange)="editDescricao.set($event)"></textarea>
               </div>
+              <label class="flex items-center gap-2 text-sm text-[var(--color-text)]">
+                <input type="checkbox" [ngModel]="editPublico()" (ngModelChange)="editPublico.set($event)" />
+                Publicado (visível para os alunos)
+              </label>
             </div>
           </div>
 

@@ -1,6 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { compressImage } from '../utils/image-compress.util';
+import {
+  listarImagensDeckFlashcards,
+  removerImagensFlashcards,
+} from '../utils/storage-imagens.util';
 import type { PapelUsuario, Profile } from '../models/auth.types';
 import type { AssinaturaStatus } from '../models/subscription.types';
 
@@ -495,6 +499,7 @@ export interface AdminFlashcardCardPayload {
 export interface AdminFlashcardDeckPayload {
   titulo: string;
   descricao: string | null;
+  publico: boolean;
   cards: AdminFlashcardCardPayload[];
 }
 
@@ -1444,79 +1449,56 @@ export class AdminService {
   async criarFlashcardDeckOficial(
     input: AdminFlashcardDeckPayload,
   ): Promise<ServiceResult<string>> {
-    const { data: deck, error } = await this.supabase
-      .from('flashcard_decks')
-      .insert({
-        user_id: null,
-        oficial: true,
-        titulo: input.titulo,
-        descricao: input.descricao,
-        publico: false,
-      })
-      .select('id')
-      .single();
+    const { data, error } = await this.supabase.rpc('flashcards_admin_salvar_deck_oficial', {
+      p_deck_id: null,
+      p_titulo: input.titulo,
+      p_descricao: input.descricao,
+      p_publico: input.publico,
+      p_cards: input.cards,
+    });
     if (error) return { ok: false, error: error.message };
-    const deckId = (deck as { id: string }).id;
-
-    if (input.cards.length > 0) {
-      const { error: cardsError } = await this.supabase.from('flashcard_cards').insert(
-        input.cards.map((c, i) => ({
-          deck_id: deckId,
-          posicao: i,
-          frente: c.frente,
-          verso: c.verso,
-          frente_imagem_url: c.frente_imagem_url,
-          verso_imagem_url: c.verso_imagem_url,
-        })),
-      );
-      if (cardsError) {
-        // Rollback manual: sem os cards o deck fica inconsistente, então desfazemos.
-        await this.supabase.from('flashcard_decks').delete().eq('id', deckId);
-        return { ok: false, error: cardsError.message };
-      }
-    }
-
-    return { ok: true, data: deckId };
+    return { ok: true, data: data as string };
   }
 
   async atualizarFlashcardDeckOficial(
     id: string,
     input: AdminFlashcardDeckPayload,
   ): Promise<ServiceResult<void>> {
-    const { error } = await this.supabase
-      .from('flashcard_decks')
-      .update({ titulo: input.titulo, descricao: input.descricao })
-      .eq('id', id)
-      .eq('oficial', true);
+    // Snapshot das imagens atuais para limpar as que saírem do deck.
+    const imagensAntes = await listarImagensDeckFlashcards(this.supabase, id);
+
+    const { error } = await this.supabase.rpc('flashcards_admin_salvar_deck_oficial', {
+      p_deck_id: id,
+      p_titulo: input.titulo,
+      p_descricao: input.descricao,
+      p_publico: input.publico,
+      p_cards: input.cards,
+    });
     if (error) return { ok: false, error: error.message };
 
-    const { error: deleteError } = await this.supabase.from('flashcard_cards').delete().eq('deck_id', id);
-    if (deleteError) return { ok: false, error: deleteError.message };
-
-    if (input.cards.length > 0) {
-      const { error: cardsError } = await this.supabase.from('flashcard_cards').insert(
-        input.cards.map((c, i) => ({
-          deck_id: id,
-          posicao: i,
-          frente: c.frente,
-          verso: c.verso,
-          frente_imagem_url: c.frente_imagem_url,
-          verso_imagem_url: c.verso_imagem_url,
-        })),
-      );
-      if (cardsError) return { ok: false, error: cardsError.message };
-    }
+    const mantidas = new Set(
+      input.cards.flatMap((c) => [c.frente_imagem_url, c.verso_imagem_url]),
+    );
+    await removerImagensFlashcards(
+      this.supabase,
+      imagensAntes.filter((u) => !mantidas.has(u)),
+    );
 
     return { ok: true, data: undefined };
   }
 
   async excluirFlashcardDeckOficial(id: string): Promise<ServiceResult<void>> {
+    // Snapshot antes do delete: depois do cascade os cards já não existem.
+    const imagens = await listarImagensDeckFlashcards(this.supabase, id);
+
     const { error } = await this.supabase
       .from('flashcard_decks')
       .delete()
       .eq('id', id)
       .eq('oficial', true);
     if (error) return { ok: false, error: error.message };
+
+    await removerImagensFlashcards(this.supabase, imagens);
     return { ok: true, data: undefined };
   }
 

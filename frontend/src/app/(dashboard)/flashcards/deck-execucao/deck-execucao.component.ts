@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArrowLeft, CircleCheck, CircleX, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
+import { ArrowLeft, CircleCheck, CircleX, Flag, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import type { Flashcard } from '../../../core/models/flashcard';
@@ -33,6 +33,7 @@ export class DeckExecucaoComponent {
   protected readonly shuffleIcon: LucideIconData = Shuffle;
   protected readonly voltarIcon: LucideIconData = ArrowLeft;
   protected readonly festaIcon: LucideIconData = PartyPopper;
+  protected readonly finalizarIcon: LucideIconData = Flag;
 
   protected readonly deckId = signal<string | null>(null);
   protected readonly deckTitulo = signal('');
@@ -68,12 +69,17 @@ export class DeckExecucaoComponent {
   protected readonly erros = computed(
     () => Object.values(this.respostas()).filter((r) => r === 'errou').length,
   );
+  // Aproveitamento sobre o total de cards (não só os respondidos): brancos
+  // contam como não-acertos, senão finalizar cedo inflaria o percentual.
   protected readonly percentualAcerto = computed(() => {
-    const total = this.acertos() + this.erros();
+    const total = this.cards().length;
     return total === 0 ? 0 : Math.round((this.acertos() / total) * 100);
   });
   protected readonly cardsErrados = computed<Flashcard[]>(() =>
     this.cards().filter((c) => this.respostas()[c.id] === 'errou'),
+  );
+  protected readonly cardsNaoRespondidos = computed<Flashcard[]>(() =>
+    this.cards().filter((c) => !this.respostas()[c.id]),
   );
   protected readonly progressoPct = computed(() => {
     const total = this.cards().length;
@@ -95,6 +101,7 @@ export class DeckExecucaoComponent {
 
   private async carregarDeck(deckId: string): Promise<void> {
     this.carregando.set(true);
+    this.erro.set(null);
     const result = await this.flashcardService.obterDeckComCards(deckId);
     if (result.ok) {
       this.deckTitulo.set(result.data.titulo);
@@ -117,14 +124,32 @@ export class DeckExecucaoComponent {
     if (estado === 'acertou') this.popAcerto.set(true);
     else this.popErro.set(true);
 
-    if (this.indiceAtual() >= this.cards().length - 1) {
+    // A sessão só termina quando TODOS os cards foram respondidos — navegar
+    // com "Próximo" pula cards sem respondê-los, então avança para o próximo
+    // card sem resposta (com wrap) em vez de finalizar pelo índice.
+    const cards = this.cards();
+    const respostas = this.respostas();
+    if (Object.keys(respostas).length >= cards.length) {
       this.finalizado.set(true);
       void this.carregarSugestoes();
       return;
     }
 
-    this.indiceAtual.update((i) => i + 1);
-    this.virado.set(false);
+    for (let passo = 1; passo <= cards.length; passo++) {
+      const idx = (this.indiceAtual() + passo) % cards.length;
+      if (!respostas[cards[idx].id]) {
+        this.indiceAtual.set(idx);
+        this.virado.set(false);
+        return;
+      }
+    }
+  }
+
+  /** Encerra a sessão a qualquer momento; cards sem resposta contam como brancos. */
+  protected finalizar(): void {
+    if (this.finalizado()) return;
+    this.finalizado.set(true);
+    void this.carregarSugestoes();
   }
 
   protected irParaCard(indice: number): void {
@@ -140,10 +165,7 @@ export class DeckExecucaoComponent {
       [copia[i], copia[j]] = [copia[j], copia[i]];
     }
     this.cards.set(copia);
-    this.indiceAtual.set(0);
-    this.virado.set(false);
-    this.finalizado.set(false);
-    this.respostas.set({});
+    this.reiniciarSessao();
   }
 
   protected refazer(): void {
@@ -208,10 +230,17 @@ export class DeckExecucaoComponent {
       return;
     }
     this.cards.set(errados);
-    this.indiceAtual.set(0);
-    this.virado.set(false);
-    this.finalizado.set(false);
-    this.respostas.set({});
+    this.reiniciarSessao();
+  }
+
+  protected refazerNaoRespondidos(): void {
+    const pendentes = this.cardsNaoRespondidos();
+    if (pendentes.length === 0) {
+      this.toast.success('Você respondeu todos os cards!');
+      return;
+    }
+    this.cards.set(pendentes);
+    this.reiniciarSessao();
   }
 
   protected voltar(): void {

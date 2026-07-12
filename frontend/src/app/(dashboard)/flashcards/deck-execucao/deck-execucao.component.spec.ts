@@ -131,6 +131,24 @@ describe('DeckExecucaoComponent', () => {
     expect(el.textContent).toContain('Pergunta 2');
   });
 
+  it('finaliza antecipadamente e conta os cards não respondidos como brancos', () => {
+    const component = fixture.componentInstance;
+
+    // Responde só o primeiro card e finaliza com o segundo em branco.
+    component['flip'](true);
+    component['responder']('acertou');
+    component['finalizar']();
+    fixture.detectChanges();
+
+    expect(component['finalizado']()).toBe(true);
+    expect(component['cardsNaoRespondidos']().length).toBe(1);
+    expect(el.textContent).toContain('1 acertos');
+    expect(el.textContent).toContain('1 em branco');
+    // Aproveitamento sobre o total de cards (1 de 2), não só os respondidos.
+    expect(el.textContent).toContain('50%');
+    expect(el.textContent).toContain('Cards em branco:');
+  });
+
   it('exibe os contadores de acertos e erros acumulados durante a sessão', () => {
     const component = fixture.componentInstance;
 

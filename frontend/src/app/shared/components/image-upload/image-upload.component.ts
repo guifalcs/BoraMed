@@ -13,6 +13,7 @@ import {
 import { Image, Loader } from 'lucide-angular';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { compressImage } from '../../../core/utils/image-compress.util';
+import { extrairPathDoBucket } from '../../../core/utils/storage-imagens.util';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -226,10 +227,8 @@ export class ImageUploadComponent {
   }
 
   private async deletarDoStorage(url: string): Promise<void> {
-    const marker = `/object/public/${this.bucket()}/`;
-    const idx = url.indexOf(marker);
-    if (idx === -1) return;
-    const path = url.substring(idx + marker.length);
+    const path = extrairPathDoBucket(url, this.bucket());
+    if (!path) return;
     await this.supabase.storage.from(this.bucket()).remove([path]);
   }
 }

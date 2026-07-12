@@ -103,6 +103,7 @@ export class AdminFlashcardsComponent implements OnInit {
     { key: 'titulo', header: 'Título', sortable: true },
     { key: 'cards_count', header: 'Cards', sortable: true },
     { key: 'likes_count', header: 'Likes', sortable: true },
+    { key: 'publico', header: 'Publicado', sortable: true },
     { key: 'atualizado_em', header: 'Atualizado', sortable: true },
     { key: 'acoes', header: '' },
   ];
@@ -111,6 +112,7 @@ export class AdminFlashcardsComponent implements OnInit {
   protected readonly editandoId = signal<string | null>(null);
   protected readonly editTitulo = signal('');
   protected readonly editDescricao = signal('');
+  protected readonly editPublico = signal(false);
   protected readonly editCards = signal<CardEdit[]>([novoCardEdit()]);
 
   protected readonly podeSalvar = computed(() => {
@@ -204,6 +206,7 @@ export class AdminFlashcardsComponent implements OnInit {
     this.editandoId.set(null);
     this.editTitulo.set('');
     this.editDescricao.set('');
+    this.editPublico.set(false);
     this.editCards.set([novoCardEdit()]);
     this.view.set('editor');
   }
@@ -217,6 +220,7 @@ export class AdminFlashcardsComponent implements OnInit {
     this.editandoId.set(deck.id);
     this.editTitulo.set(result.data.titulo);
     this.editDescricao.set(result.data.descricao ?? '');
+    this.editPublico.set(result.data.publico);
     this.editCards.set(
       result.data.cards.length > 0
         ? result.data.cards.map((c) => ({
@@ -280,6 +284,7 @@ export class AdminFlashcardsComponent implements OnInit {
     const payload: AdminFlashcardDeckPayload = {
       titulo: this.editTitulo().trim(),
       descricao: this.editDescricao().trim() || null,
+      publico: this.editPublico(),
       cards: this.editCards().map((c): AdminFlashcardCardPayload => ({
         frente: c.frente.trim(),
         verso: c.verso.trim(),

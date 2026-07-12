@@ -22,6 +22,8 @@ describe('FlashcardService', () => {
   let service: FlashcardService;
   const mockRpc = vi.fn();
   const mockFrom = vi.fn();
+  const mockStorageRemove = vi.fn().mockResolvedValue({ data: null, error: null });
+  const mockStorageFrom = vi.fn(() => ({ remove: mockStorageRemove }));
   const mockUser = vi.fn<() => { id: string } | null>(() => ({ id: 'user-1' }));
 
   beforeEach(() => {
@@ -30,7 +32,10 @@ describe('FlashcardService', () => {
     TestBed.configureTestingModule({
       providers: [
         FlashcardService,
-        { provide: SupabaseService, useValue: { client: { rpc: mockRpc, from: mockFrom } } },
+        {
+          provide: SupabaseService,
+          useValue: { client: { rpc: mockRpc, from: mockFrom, storage: { from: mockStorageFrom } } },
+        },
         { provide: AuthService, useValue: { user: mockUser } },
       ],
     });
@@ -166,11 +171,11 @@ describe('FlashcardService', () => {
       const deck = feedDeck({ curtido_por_mim: false, likes_count: 3 });
       await carregarFeedComDeck(deck);
 
-      mockRpc.mockResolvedValueOnce({ data: null, error: { code: 'P0013', message: 'Nao e possivel curtir o proprio deck' } });
+      mockRpc.mockResolvedValueOnce({ data: null, error: { code: 'P0007', message: 'Deck nao disponivel para curtidas' } });
 
       const result = await service.toggleLike('deck-1');
 
-      expect(result).toEqual({ ok: false, error: 'Nao e possivel curtir o proprio deck' });
+      expect(result).toEqual({ ok: false, error: 'Deck nao disponivel para curtidas' });
       expect(service.feed()[0].curtido_por_mim).toBe(false);
       expect(service.feed()[0].likes_count).toBe(3);
     });
@@ -229,6 +234,57 @@ describe('FlashcardService', () => {
         p_publico: false,
         p_cards: [{ frente: 'a', verso: 'b' }],
       });
+    });
+  });
+
+  describe('limpeza de imagens órfãs no storage', () => {
+    const URL_BASE = 'http://127.0.0.1:54321/storage/v1/object/public/flashcard-imagens/user/user-1';
+
+    function mockCardsComImagens(cards: [string | null, string | null][]): void {
+      const eq = vi.fn().mockResolvedValue({
+        data: cards.map(([frente, verso]) => ({ frente_imagem_url: frente, verso_imagem_url: verso })),
+        error: null,
+      });
+      const select = vi.fn().mockReturnValue({ eq });
+      mockFrom.mockReturnValue({ select });
+    }
+
+    it('excluirDeck remove do storage as imagens dos cards excluídos', async () => {
+      mockCardsComImagens([
+        [`${URL_BASE}/a.webp`, null],
+        [null, `${URL_BASE}/b.webp`],
+      ]);
+      mockRpc.mockResolvedValue({ data: null, error: null });
+
+      await service.excluirDeck('deck-1');
+
+      expect(mockStorageRemove).toHaveBeenCalledWith(['user/user-1/a.webp', 'user/user-1/b.webp']);
+    });
+
+    it('atualizarDeck remove só as imagens que saíram do deck', async () => {
+      mockCardsComImagens([[`${URL_BASE}/mantida.webp`, `${URL_BASE}/removida.webp`]]);
+      mockRpc.mockResolvedValue({ data: null, error: null });
+
+      await service.atualizarDeck({
+        deckId: 'deck-1',
+        titulo: 'Deck teste',
+        descricao: null,
+        publico: false,
+        cards: [
+          { frente: 'a', verso: 'b', frente_imagem_url: `${URL_BASE}/mantida.webp`, verso_imagem_url: null },
+        ],
+      });
+
+      expect(mockStorageRemove).toHaveBeenCalledWith(['user/user-1/removida.webp']);
+    });
+
+    it('não toca no storage quando o RPC falha', async () => {
+      mockCardsComImagens([[`${URL_BASE}/a.webp`, null]]);
+      mockRpc.mockResolvedValue({ data: null, error: { code: 'P0007', message: 'sem permissao' } });
+
+      await service.excluirDeck('deck-1');
+
+      expect(mockStorageRemove).not.toHaveBeenCalled();
     });
   });
 

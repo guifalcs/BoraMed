@@ -218,11 +218,13 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 ## Flashcards
 
 * Três origens de deck: **oficiais** (criados pelo admin, `user_id IS NULL` + `oficial=true`), **da comunidade** (decks de usuários com `publico=true`) e **meus decks** (privados ou públicos do próprio usuário).
-* Escrita de usuário SOMENTE via RPCs `SECURITY DEFINER` (`flashcards_criar_deck`, `flashcards_atualizar_deck`, `flashcards_excluir_deck`, `flashcards_toggle_like`); admin tem CRUD direto por policy. Leitura exige assinatura ativa (exceto decks próprios).
+* Escrita de usuário SOMENTE via RPCs `SECURITY DEFINER` (`flashcards_criar_deck`, `flashcards_atualizar_deck`, `flashcards_excluir_deck`, `flashcards_toggle_like`); admin cria/atualiza deck oficial via RPC atômico `flashcards_admin_salvar_deck_oficial` (exclusão direta por policy). Leitura exige assinatura ativa (exceto decks próprios).
+* Deck oficial tem estado de **rascunho**: só fica visível para alunos quando `publico=true` (admin publica explicitamente no editor). Vale para decks e cards (policy de SELECT exige `publico`).
 * Limites: título 3–120 chars, descrição ≤ 500, frente/verso do card 1–2.000 chars, 1–200 cards por deck, 50 decks por usuário. Título/descrição passam por filtro de linguagem inapropriada.
-* Likes: só em decks públicos não-oficiais; o dono PODE curtir o próprio deck (comunidade e "Meus decks"); contagem denormalizada (`likes_count`) recalculada por trigger; UI atualiza de forma otimista no feed.
+* Likes: só em decks públicos não-oficiais; o dono PODE curtir o próprio deck (comunidade e "Meus decks"); exige usuário não banido e assinatura ativa (admin dispensa assinatura); contagem denormalizada (`likes_count`) recalculada por trigger; UI atualiza de forma otimista no feed.
 * Feed da comunidade (`flashcards_feed`): ordenação por recentes ou mais curtidos, paginado (limite ≤ 100).
-* Imagens de cards no bucket `flashcard-imagens` (público, 2 MB, webp/png/jpeg).
+* Imagens de cards no bucket `flashcard-imagens` (público, 2 MB, webp/png/jpeg). URLs de imagem são validadas server-side (P0014): precisam apontar para o bucket em host Supabase e, para usuários, para a própria pasta `user/{uid}/` — imagem externa é rejeitada.
+* Limpeza de imagens órfãs: ao salvar/excluir deck, o frontend compara as URLs antes/depois e remove do bucket (Storage API, best-effort) as imagens que deixaram de ser referenciadas — o Supabase bloqueia DELETE direto em `storage.objects`, então a limpeza é client-side via as policies de DELETE do bucket (dono da pasta/admin). Falha na limpeza não bloqueia a operação principal (órfão eventual é aceitável).
 * Execução do deck: flip frente/verso, aluno marca acerto/erro por card, acompanha contadores de acertos × erros durante a sessão e vê percentual ao final (contagem só em memória — sem persistência de resultado por card no MVP). A tela de conclusão sugere até 3 outros decks (oficiais + comunidade) para continuar estudando.
 
 ## Público-Alvo

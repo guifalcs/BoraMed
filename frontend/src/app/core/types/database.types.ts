@@ -2521,6 +2521,16 @@ export type Database = {
         Args: { p_tempo_segundos?: number; p_tentativa_id: string }
         Returns: Json
       }
+      flashcards_admin_salvar_deck_oficial: {
+        Args: {
+          p_cards: Json
+          p_deck_id: string | null
+          p_descricao: string
+          p_publico: boolean
+          p_titulo: string
+        }
+        Returns: string
+      }
       flashcards_atualizar_deck: {
         Args: {
           p_cards: Json

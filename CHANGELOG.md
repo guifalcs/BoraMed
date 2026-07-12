@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-12 | Fix | sem commit
+
+**Flashcards: correções de segurança e UX da revisão de código**
+
+- Migration `20260712150000_flashcards_fixes_revisao.sql`:
+  - `flashcards_toggle_like` agora exige usuário não banido e assinatura ativa (P0009/P0011) — antes furava ban e paywall via chamada direta ao RPC.
+  - URLs de imagem de card validadas server-side (novo helper `flashcards_imagem_url_valida`, erro P0014): host Supabase + pasta própria (`user/{uid}/`) para usuários — bloqueia imagem externa (tracking pixel/conteúdo sem moderação).
+  - Decks oficiais ganham estado de rascunho: policy de SELECT passa a exigir `publico=true` também para oficiais; admin publica via checkbox "Publicado" no editor (coluna na tabela). Seed atualizado (`publico=true` nos oficiais).
+  - Novo RPC atômico `flashcards_admin_salvar_deck_oficial` (create/update numa transação) substitui o fluxo update+delete+insert do frontend que podia deixar o deck oficial vazio em falha parcial.
+- Editor de deck (aluno): card com imagem mas sem frente/verso preenchidos não é mais descartado em silêncio — o save bloqueia apontando o card incompleto.
+- Execução: a sessão só finaliza quando TODOS os cards foram respondidos (pular com "Próximo" não encerra mais com resumo parcial; ao responder, avança para o próximo card sem resposta); tela de erro não fica mais "presa" ao navegar para outro deck após uma falha de carregamento.
+- Feed: falha ao trocar a ordenação não deixa mais o signal `feedOrdenacao` inconsistente com a lista carregada (rollback); removido signal morto `_feedOffset`.
+- Limpeza de imagens órfãs no storage: ao salvar/excluir deck (aluno e admin), os services comparam as URLs de imagem antes/depois e removem do bucket as que deixaram de ser referenciadas (Storage API, best-effort — novo util `storage-imagens.util.ts`, também reutilizado pelo `image-upload`). Trigger SQL foi descartado: o Supabase bloqueia DELETE direto em `storage.objects` (deixaria o blob órfão no S3).
+
+---
+
 ## 2026-07-10 | Tweak | sem commit
 
 **Flashcards: deck-cards com altura padronizada**

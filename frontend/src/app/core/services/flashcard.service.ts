@@ -1,6 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
+import {
+  listarImagensDeckFlashcards,
+  removerImagensFlashcards,
+} from '../utils/storage-imagens.util';
 import type {
   AtualizarDeckPayload,
   CriarDeckPayload,
@@ -33,7 +37,6 @@ export class FlashcardService {
   private readonly _feed = signal<FeedDeck[]>([]);
   private readonly _feedLoading = signal(false);
   private readonly _feedOrdenacao = signal<OrdenacaoFeedFlashcards>('recentes');
-  private readonly _feedOffset = signal(0);
   private readonly _feedTemMais = signal(true);
 
   readonly feed = this._feed.asReadonly();
@@ -124,6 +127,9 @@ export class FlashcardService {
   }
 
   async atualizarDeck(payload: AtualizarDeckPayload): Promise<FlashcardResult<void>> {
+    // Snapshot das imagens atuais para limpar as que saírem do deck.
+    const imagensAntes = await listarImagensDeckFlashcards(this.supabase, payload.deckId);
+
     try {
       const { error } = await this.supabase.rpc('flashcards_atualizar_deck', {
         p_deck_id: payload.deckId,
@@ -134,6 +140,15 @@ export class FlashcardService {
       });
 
       if (error) return { ok: false, error: this._mapearErro(error) };
+
+      const mantidas = new Set(
+        payload.cards.flatMap((c) => [c.frente_imagem_url, c.verso_imagem_url]),
+      );
+      await removerImagensFlashcards(
+        this.supabase,
+        imagensAntes.filter((u) => !mantidas.has(u)),
+      );
+
       return { ok: true, data: undefined };
     } catch {
       return { ok: false, error: 'Não foi possível atualizar o deck.' };
@@ -141,12 +156,17 @@ export class FlashcardService {
   }
 
   async excluirDeck(deckId: string): Promise<FlashcardResult<void>> {
+    // Snapshot antes do delete: depois do RPC os cards já não existem.
+    const imagens = await listarImagensDeckFlashcards(this.supabase, deckId);
+
     try {
       const { error } = await this.supabase.rpc('flashcards_excluir_deck', {
         p_deck_id: deckId,
       });
 
       if (error) return { ok: false, error: this._mapearErro(error) };
+
+      await removerImagensFlashcards(this.supabase, imagens);
       return { ok: true, data: undefined };
     } catch {
       return { ok: false, error: 'Não foi possível excluir o deck.' };
@@ -198,6 +218,9 @@ export class FlashcardService {
     ordenacao: OrdenacaoFeedFlashcards,
     offset = 0,
   ): Promise<FlashcardResult<FeedDeck[]>> {
+    // Só assume a nova ordenação se a página carregar; em falha, o signal
+    // precisa continuar refletindo a lista que está de fato em _feed.
+    const ordenacaoAnterior = this._feedOrdenacao();
     this._feedLoading.set(true);
     this._feedOrdenacao.set(ordenacao);
 
@@ -208,16 +231,19 @@ export class FlashcardService {
         p_offset: offset,
       });
 
-      if (error) return { ok: false, error: this._mapearErro(error) };
+      if (error) {
+        this._feedOrdenacao.set(ordenacaoAnterior);
+        return { ok: false, error: this._mapearErro(error) };
+      }
 
       const pagina = (data ?? []) as FeedDeck[];
 
       this._feed.update((prev) => (offset === 0 ? pagina : [...prev, ...pagina]));
-      this._feedOffset.set(offset + pagina.length);
       this._feedTemMais.set(pagina.length === FEED_PAGE_SIZE);
 
       return { ok: true, data: pagina };
     } catch {
+      this._feedOrdenacao.set(ordenacaoAnterior);
       return { ok: false, error: 'Não foi possível carregar o feed da comunidade.' };
     } finally {
       this._feedLoading.set(false);

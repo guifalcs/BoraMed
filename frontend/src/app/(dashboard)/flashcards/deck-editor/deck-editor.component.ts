@@ -161,7 +161,21 @@ export class DeckEditorComponent {
       return;
     }
 
-    const cardsValidos = this.cards().filter((c) => c.frente.trim() && c.verso.trim());
+    // Card com algum conteúdo (texto ou imagem) mas sem frente+verso não pode
+    // ser descartado em silêncio — o usuário perderia conteúdo sem aviso.
+    const cards = this.cards();
+    const incompleto = cards.findIndex(
+      (c) =>
+        (c.frente.trim() || c.verso.trim() || c.frenteImagemUrl || c.versoImagemUrl) &&
+        !(c.frente.trim() && c.verso.trim()),
+    );
+    if (incompleto !== -1) {
+      this.erro.set(`O card ${incompleto + 1} está incompleto: preencha frente e verso.`);
+      this.irParaCard(incompleto);
+      return;
+    }
+
+    const cardsValidos = cards.filter((c) => c.frente.trim() && c.verso.trim());
     if (cardsValidos.length < MIN_CARDS) {
       this.erro.set('Adicione ao menos 1 card com frente e verso preenchidos.');
       return;
