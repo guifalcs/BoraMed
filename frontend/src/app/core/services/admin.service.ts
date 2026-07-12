@@ -1491,11 +1491,11 @@ export class AdminService {
     // Snapshot antes do delete: depois do cascade os cards já não existem.
     const imagens = await listarImagensDeckFlashcards(this.supabase, id);
 
-    const { error } = await this.supabase
-      .from('flashcard_decks')
-      .delete()
-      .eq('id', id)
-      .eq('oficial', true);
+    // Via RPC: authenticated não tem privilégio de escrita direta nas tabelas
+    // de flashcards (padrão do módulo), e o RPC já autoriza admin.
+    const { error } = await this.supabase.rpc('flashcards_excluir_deck', {
+      p_deck_id: id,
+    });
     if (error) return { ok: false, error: error.message };
 
     await removerImagensFlashcards(this.supabase, imagens);
