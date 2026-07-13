@@ -48,6 +48,13 @@ export class DeckCardComponent {
     return !isFeedDeck(d) && d.publico;
   });
 
+  // Curtidas são um recurso da Comunidade: decks oficiais (do admin) não entram
+  // no sistema de likes (o RPC os rejeita), então não mostram botão de curtir.
+  protected readonly podeCurtir = computed(() => {
+    const d = this.deck();
+    return !isFeedDeck(d) && d.publico && !d.oficial;
+  });
+
   protected readonly curtidoPorMim = computed(() => this.deck().curtido_por_mim ?? false);
 
   protected readonly autorNome = computed(() => {

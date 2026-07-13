@@ -52,6 +52,11 @@ type Story = StoryObj<DeckCardComponent>;
 
 export const Oficial: Story = {};
 
+// Deck oficial publicado (aba Oficiais): NÃO mostra coração — curtidas são só da Comunidade.
+export const OficialPublicado: Story = {
+  args: { deck: { ...deckOficial, publico: true } },
+};
+
 export const MeusDecksComAcoes: Story = {
   args: { deck: deckUsuario, mostrarAcoes: true },
 };

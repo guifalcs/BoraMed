@@ -157,6 +157,17 @@ describe('DeckCardComponent', () => {
       expect(spy).toHaveBeenCalledWith('deck-pub');
     });
 
+    it('deck oficial público não mostra coração nem botão de curtir', async () => {
+      const fixture = await createComponent(deckFactory({ oficial: true, publico: true, likes_count: 5 }));
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('button[aria-label="Curtir deck"]')).toBeNull();
+      expect(
+        Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('ver curtidas')),
+      ).toBeUndefined();
+      // Sem coração: o único número visível é a contagem de cards, não o likes_count.
+      expect(el.textContent).not.toContain('5');
+    });
+
     it('deck próprio público já curtido mostra o estado de descurtir', async () => {
       const fixture = await createComponent(
         deckFactory({ id: 'deck-pub', oficial: false, publico: true, curtido_por_mim: true }),
