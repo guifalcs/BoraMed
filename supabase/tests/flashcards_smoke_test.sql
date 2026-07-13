@@ -368,4 +368,58 @@ EXCEPTION
 END $$;
 ROLLBACK;
 
+-- ─────────────────────────────────────────────────────────────────────────
+-- TESTE 13 — card só com imagem (sem texto) nos dois lados é aceito, e card
+-- misto (texto na frente, imagem no verso) também.
+-- ─────────────────────────────────────────────────────────────────────────
+BEGIN;
+SET LOCAL role authenticated;
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub', '22222222-2222-2222-2222-222222222222', 'role', 'authenticated')::text, true);
+DO $$
+DECLARE
+  v_deck_id uuid;
+  v_base text := 'http://127.0.0.1:54321/storage/v1/object/public/flashcard-imagens/user/22222222-2222-2222-2222-222222222222/';
+  v_cards_count int;
+BEGIN
+  v_deck_id := public.flashcards_criar_deck(
+    'Deck com imagens', NULL, false,
+    format('[{"frente":"","verso":"","frente_imagem_url":"%sf.webp","verso_imagem_url":"%sv.webp"},'
+        || '{"frente":"Pergunta","verso":"","verso_imagem_url":"%sv2.webp"}]',
+      v_base, v_base, v_base)::jsonb
+  );
+  SELECT cards_count INTO v_cards_count FROM public.flashcard_decks WHERE id = v_deck_id;
+  IF v_cards_count <> 2 THEN
+    RAISE EXCEPTION 'FALHOU: esperava 2 cards com imagem, obtido %', v_cards_count;
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.flashcard_cards WHERE deck_id = v_deck_id AND frente = '' AND frente_imagem_url IS NULL) THEN
+    RAISE EXCEPTION 'FALHOU: gravou card com frente vazia e sem imagem';
+  END IF;
+  RAISE NOTICE 'OK card so-imagem e card misto aceitos (cards_count=%)', v_cards_count;
+END $$;
+ROLLBACK;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TESTE 14 — lado sem texto E sem imagem é rejeitado (P0004).
+-- ─────────────────────────────────────────────────────────────────────────
+BEGIN;
+SET LOCAL role authenticated;
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub', '22222222-2222-2222-2222-222222222222', 'role', 'authenticated')::text, true);
+DO $$
+DECLARE
+  v_base text := 'http://127.0.0.1:54321/storage/v1/object/public/flashcard-imagens/user/22222222-2222-2222-2222-222222222222/';
+BEGIN
+  -- frente com imagem, verso totalmente vazio -> deve falhar
+  PERFORM public.flashcards_criar_deck(
+    'Deck lado vazio', NULL, false,
+    format('[{"frente":"","verso":"","frente_imagem_url":"%sf.webp"}]', v_base)::jsonb
+  );
+  RAISE EXCEPTION 'FALHOU: deveria ter bloqueado card com verso vazio (sem texto nem imagem)';
+EXCEPTION
+  WHEN sqlstate 'P0004' THEN
+    RAISE NOTICE 'OK P0004 lado sem texto nem imagem';
+END $$;
+ROLLBACK;
+
 \echo 'flashcards_smoke_test: TODOS OS CASOS PASSARAM'

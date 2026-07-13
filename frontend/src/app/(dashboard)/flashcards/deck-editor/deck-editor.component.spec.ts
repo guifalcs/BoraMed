@@ -160,8 +160,47 @@ describe('DeckEditorComponent', () => {
 
     await component['salvar']();
 
-    expect(component['erro']()).toBe('Adicione ao menos 1 card com frente e verso preenchidos.');
+    expect(component['erro']()).toBe('Adicione ao menos 1 card com frente e verso preenchidos (texto ou imagem).');
     expect(flashcardServiceMock.criarDeck).not.toHaveBeenCalled();
+  });
+
+  it('bloqueia card com apenas um lado preenchido', async () => {
+    const component = fixture.componentInstance;
+    component['titulo'].set('Deck válido');
+    component['atualizarCard'](0, 'frente', 'Só frente');
+
+    await component['salvar']();
+
+    expect(component['erro']()).toBe('O card 1 está incompleto: preencha frente e verso com texto ou imagem.');
+    expect(flashcardServiceMock.criarDeck).not.toHaveBeenCalled();
+  });
+
+  it('aceita card com imagem em vez de texto nos dois lados', async () => {
+    const component = fixture.componentInstance;
+    component['titulo'].set('Deck com imagens');
+    component['atualizarCard'](0, 'frenteImagemUrl', 'https://x.supabase.co/storage/v1/object/public/flashcard-imagens/user/user-1/f.webp');
+    component['atualizarCard'](0, 'versoImagemUrl', 'https://x.supabase.co/storage/v1/object/public/flashcard-imagens/user/user-1/v.webp');
+
+    await component['salvar']();
+
+    expect(component['erro']()).toBeNull();
+    expect(flashcardServiceMock.criarDeck).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cards: [expect.objectContaining({ frente: '', verso: '' })],
+      }),
+    );
+  });
+
+  it('aceita card misto: texto na frente e imagem no verso', async () => {
+    const component = fixture.componentInstance;
+    component['titulo'].set('Deck misto');
+    component['atualizarCard'](0, 'frente', 'Pergunta');
+    component['atualizarCard'](0, 'versoImagemUrl', 'https://x.supabase.co/storage/v1/object/public/flashcard-imagens/user/user-1/v.webp');
+
+    await component['salvar']();
+
+    expect(component['erro']()).toBeNull();
+    expect(flashcardServiceMock.criarDeck).toHaveBeenCalled();
   });
 
   it('exibe o erro de palavra proibida (P0010) retornado pelo service', async () => {

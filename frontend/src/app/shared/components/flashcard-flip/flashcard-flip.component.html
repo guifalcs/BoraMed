@@ -15,7 +15,9 @@
             <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" />
           </div>
         }
-        <p class="flip-card__texto {{ frenteFontClass() }}">{{ frente() }}</p>
+        @if (frente()) {
+          <p class="flip-card__texto {{ frenteFontClass() }}">{{ frente() }}</p>
+        }
         <span class="flip-card__dica">Toque para ver a resposta</span>
       </div>
     </div>
@@ -27,7 +29,9 @@
             <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" />
           </div>
         }
-        <p class="flip-card__texto {{ versoFontClass() }}">{{ verso() }}</p>
+        @if (verso()) {
+          <p class="flip-card__texto {{ versoFontClass() }}">{{ verso() }}</p>
+        }
       </div>
     </div>
   </div>

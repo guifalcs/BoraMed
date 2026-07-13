@@ -120,7 +120,12 @@ export class AdminFlashcardsComponent implements OnInit {
     const cards = this.editCards();
     if (titulo.length < 3 || titulo.length > 120) return false;
     if (cards.length < 1 || cards.length > 200) return false;
-    return cards.every((c) => c.frente.trim().length > 0 && c.verso.trim().length > 0);
+    // Cada lado precisa de texto OU imagem (nunca vazio).
+    return cards.every(
+      (c) =>
+        (c.frente.trim().length > 0 || !!c.frente_imagem_url) &&
+        (c.verso.trim().length > 0 || !!c.verso_imagem_url),
+    );
   });
 
   // ---- Métricas ----

@@ -26,6 +26,23 @@ function cardVazio(): CardForm {
   return { frente: '', verso: '', frenteImagemUrl: null, versoImagemUrl: null };
 }
 
+// Cada lado pode ser preenchido com texto OU imagem OU ambos — nunca vazio.
+function frentePreenchida(c: CardForm): boolean {
+  return !!(c.frente.trim() || c.frenteImagemUrl);
+}
+
+function versoPreenchido(c: CardForm): boolean {
+  return !!(c.verso.trim() || c.versoImagemUrl);
+}
+
+function cardTemConteudo(c: CardForm): boolean {
+  return frentePreenchida(c) || versoPreenchido(c);
+}
+
+function cardValido(c: CardForm): boolean {
+  return frentePreenchida(c) && versoPreenchido(c);
+}
+
 @Component({
   selector: 'app-deck-editor',
   standalone: true,
@@ -161,23 +178,19 @@ export class DeckEditorComponent {
       return;
     }
 
-    // Card com algum conteúdo (texto ou imagem) mas sem frente+verso não pode
-    // ser descartado em silêncio — o usuário perderia conteúdo sem aviso.
+    // Card com algum conteúdo (texto ou imagem) mas sem os dois lados preenchidos
+    // não pode ser descartado em silêncio — o usuário perderia conteúdo sem aviso.
     const cards = this.cards();
-    const incompleto = cards.findIndex(
-      (c) =>
-        (c.frente.trim() || c.verso.trim() || c.frenteImagemUrl || c.versoImagemUrl) &&
-        !(c.frente.trim() && c.verso.trim()),
-    );
+    const incompleto = cards.findIndex((c) => cardTemConteudo(c) && !cardValido(c));
     if (incompleto !== -1) {
-      this.erro.set(`O card ${incompleto + 1} está incompleto: preencha frente e verso.`);
+      this.erro.set(`O card ${incompleto + 1} está incompleto: preencha frente e verso com texto ou imagem.`);
       this.irParaCard(incompleto);
       return;
     }
 
-    const cardsValidos = cards.filter((c) => c.frente.trim() && c.verso.trim());
+    const cardsValidos = cards.filter(cardValido);
     if (cardsValidos.length < MIN_CARDS) {
-      this.erro.set('Adicione ao menos 1 card com frente e verso preenchidos.');
+      this.erro.set('Adicione ao menos 1 card com frente e verso preenchidos (texto ou imagem).');
       return;
     }
     if (cardsValidos.length > MAX_CARDS) {

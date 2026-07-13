@@ -142,7 +142,7 @@
             <p class="mb-2 text-xs font-semibold text-[var(--color-text-muted)]">Cards errados:</p>
             <ul class="flex flex-col gap-1">
               @for (card of cardsErrados(); track card.id) {
-                <li class="text-sm text-[var(--color-text)]">{{ card.frente }}</li>
+                <li class="text-sm text-[var(--color-text)]">{{ card.frente || '(card com imagem)' }}</li>
               }
             </ul>
           </div>
