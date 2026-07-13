@@ -1,8 +1,8 @@
 /* ===== Prova social: micro-depoimento, depoimentos e fundadores ===== */
 
-/* .stats-quote e .testimonials-* estão temporariamente sem uso — as seções
-   correspondentes em landing.component.html/.ts estão comentadas (sem
-   depoimentos reais ainda). Regras mantidas para quando forem reativadas. */
+/* .stats-quote está temporariamente sem uso — o micro-depoimento dos stats
+   segue desativado em landing.component.html/.ts. Regras mantidas para quando
+   for reativado. */
 
 .stats-quote {
   width: min(1180px, calc(100% - 2rem));
@@ -35,6 +35,8 @@
 .testimonials-grid {
   display: grid;
   gap: 1rem;
+  width: min(760px, 100%);
+  margin: 0 auto;
 }
 
 .testimonial-card {
@@ -155,7 +157,7 @@
 
 @media (min-width: 720px) {
   .testimonials-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .founders-card {

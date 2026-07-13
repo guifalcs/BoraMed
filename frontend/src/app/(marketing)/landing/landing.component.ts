@@ -24,7 +24,7 @@ import {
   Menu,
   MessageCircle,
   PenLine,
-  // Quote, // reativar junto com a seção de depoimentos (ver bloco comentado abaixo)
+  Quote,
   Route,
   ShieldCheck,
   Sparkles,
@@ -70,14 +70,11 @@ interface TimelineStep {
   readonly icon: LucideIconData;
 }
 
-// Depoimentos desativados temporariamente — sem prova social real ainda.
-// Reativar (interface, array, quoteIcon, import de Quote e as seções em
-// landing.component.html) quando houver depoimentos reais de alunos.
-// interface Testimonial {
-//   readonly quote: string;
-//   readonly name: string;
-//   readonly context: string;
-// }
+interface Testimonial {
+  readonly quote: string;
+  readonly name: string;
+  readonly context?: string;
+}
 
 interface PricingPlan {
   readonly slug: string;
@@ -130,7 +127,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly penIcon = PenLine;
   protected readonly shieldIcon = ShieldCheck;
   protected readonly communityIcon = MessageCircle;
-  // protected readonly quoteIcon = Quote; // ver nota sobre depoimentos desativados
+  protected readonly quoteIcon = Quote;
 
   protected readonly heroReady = signal(false);
   protected readonly isScrolled = signal(false);
@@ -311,23 +308,16 @@ export class LandingComponent implements OnDestroy {
     },
   ];
 
-  // protected readonly testimonials: readonly Testimonial[] = [
-  //   {
-  //     quote: 'Depoimento real de aluno — 2 a 3 frases sobre o resultado que teve na prova depois de treinar aqui.',
-  //     name: 'Nome do aluno',
-  //     context: 'Período · Medicina',
-  //   },
-  //   {
-  //     quote: 'Depoimento real de aluno — foco em como o diagnóstico por tema mudou a forma de estudar.',
-  //     name: 'Nome do aluno',
-  //     context: 'Período · Medicina',
-  //   },
-  //   {
-  //     quote: 'Depoimento real de aluno — foco na semelhança dos simulados com o formato da prova.',
-  //     name: 'Nome do aluno',
-  //     context: 'Período · Medicina',
-  //   },
-  // ];
+  protected readonly testimonials: readonly Testimonial[] = [
+    {
+      quote: 'Minha experiência com a plataforma foi muito positiva. As questões me ajudaram a treinar pra prova da faculdade.',
+      name: 'Henrique Codeço Rocha Soares',
+    },
+    {
+      quote: 'A plataforma é muito boa e fácil de compreender.',
+      name: 'Gabriel José Rezende Ferreira Sales',
+    },
+  ];
 
   protected readonly pricingPlans: readonly PricingPlan[] = [
     {

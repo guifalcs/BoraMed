@@ -551,9 +551,6 @@
     </div>
   </section>
 
-  <!-- Seção de depoimentos desativada temporariamente — sem prova social real
-       ainda. Reativar junto com a interface Testimonial, o array testimonials
-       e o quoteIcon em landing.component.ts.
   <section class="section-shell testimonials-section" id="depoimentos">
     <div class="section-heading">
       <span class="eyebrow">Depoimentos</span>
@@ -567,13 +564,14 @@
           <blockquote>{{ testimonial.quote }}</blockquote>
           <figcaption>
             <strong>{{ testimonial.name }}</strong>
-            <span>{{ testimonial.context }}</span>
+            @if (testimonial.context) {
+              <span>{{ testimonial.context }}</span>
+            }
           </figcaption>
         </figure>
       }
     </div>
   </section>
-  -->
 
   <section class="section-shell founders-section">
     <div class="founders-card">
