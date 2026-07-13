@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { compressImageIfPossible } from '../utils/image-compress.util';
 import type {
   SuporteAnexo,
   AdminTicketDetalhe,
@@ -372,12 +373,19 @@ export class SuporteService {
     const enviados: AnexoUploadPayload[] = [];
 
     for (const arquivo of arquivos) {
-      const path = `${userId}/${this.gerarNomeStorage(arquivo.name)}`;
+      // Comprime imagens antes de subir; vídeos, GIF e HEIC passam intactos.
+      const preparado = await compressImageIfPossible(arquivo, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.82,
+      });
+
+      const path = `${userId}/${this.gerarNomeStorage(preparado.name)}`;
       const { data, error } = await this.supabase.storage
         .from(SUPORTE_ANEXOS_BUCKET)
-        .upload(path, arquivo, {
+        .upload(path, preparado, {
           cacheControl: '3600',
-          contentType: arquivo.type,
+          contentType: preparado.type,
           upsert: false,
         });
 
@@ -388,9 +396,9 @@ export class SuporteService {
 
       enviados.push({
         storage_path: data.path,
-        nome_arquivo: arquivo.name,
-        mime_type: arquivo.type,
-        tamanho_bytes: arquivo.size,
+        nome_arquivo: preparado.name,
+        mime_type: preparado.type,
+        tamanho_bytes: preparado.size,
       });
     }
 
