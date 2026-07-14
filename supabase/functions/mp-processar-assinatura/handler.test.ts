@@ -520,3 +520,37 @@ Deno.test("processar-assinatura: reason respeita o limite de 60 chars do MP", as
     `reason com ${payload.reason.length} chars: "${payload.reason}"`,
   );
 });
+
+Deno.test("processar-assinatura: vincula ao preapproval_plan do MP quando o plano tem mp_preapproval_plan_id", async () => {
+  // Plano recriado no MP em 14/07/2026 (ticket WCS-42784): assinaturas novas
+  // nascem associadas ao objeto novo. Sem o campo no banco, segue sem plano.
+  const db = baseDb();
+  const mensal = db.rows("plano").find((r) => r.slug === "mensal");
+  mensal!.mp_preapproval_plan_id = "PLAN-NOVO";
+  const ok = captureFetch({ body: authorizedPre });
+  await handleProcessarAssinatura(
+    request(goodBody()),
+    makeDeps({
+      db,
+      fetch: ok.fn,
+      now: NOW,
+      caller: { id: "user-1", email: "aluno@boramed.com" },
+    }),
+  );
+  const sent = JSON.parse(String(ok.calls[0].init?.body));
+  assertEquals(sent.preapproval_plan_id, "PLAN-NOVO");
+
+  // Sem o campo → payload não leva preapproval_plan_id (preapproval sem plano).
+  const sem = captureFetch({ body: { ...authorizedPre, id: "PRE-3" } });
+  await handleProcessarAssinatura(
+    request(goodBody({ attempt_id: "aaaaaaaa-bbbb-cccc-dddd-000000000001" })),
+    makeDeps({
+      db: baseDb(),
+      fetch: sem.fn,
+      now: NOW,
+      caller: { id: "user-1", email: "aluno@boramed.com" },
+    }),
+  );
+  const sentSem = JSON.parse(String(sem.calls[0].init?.body));
+  assertEquals("preapproval_plan_id" in sentSem, false);
+});

@@ -103,7 +103,7 @@ export async function handleProcessarAssinatura(
   const { data: plano } = await admin
     .from("plano")
     .select(
-      "id, nome, slug, ativo, recorrente, preco_centavos, moeda, frequency, frequency_type",
+      "id, nome, slug, ativo, recorrente, preco_centavos, moeda, frequency, frequency_type, mp_preapproval_plan_id",
     )
     .eq("slug", body.plano_slug)
     .maybeSingle();
@@ -238,6 +238,14 @@ export async function handleProcessarAssinatura(
       // acima disso o POST /preapproval falha com
       // "reason has more than 60 characters" (visto em produção em 2026-07-10).
       reason: `Assinatura BoraMed - Plano ${plano.nome}`,
+      // Vincula ao plano NOVO do MP (recriado em 14/07/2026, ticket WCS-42784):
+      // orientação do suporte para replicar a assinatura como um objeto
+      // diferente e testar se a trava do antifraude não acompanha. Preapprovals
+      // com plano associado + card_token + status authorized são o formato
+      // documentado do MP.
+      ...(plano.mp_preapproval_plan_id
+        ? { preapproval_plan_id: plano.mp_preapproval_plan_id }
+        : {}),
       // ÚNICO por tentativa (id da intenção): repetir o mesmo external_reference
       // em vários preapprovals do mesmo usuário parece card testing para o
       // antifraude do MP (recomendação do suporte, ticket WCS-42784). O webhook
