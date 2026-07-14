@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -18,7 +19,7 @@ const MAX_SUGESTOES = 3;
 @Component({
   selector: 'app-deck-execucao',
   standalone: true,
-  imports: [DeckCardComponent, FlashcardFlipComponent, PageHeaderComponent, UiButtonComponent, UiIconComponent],
+  imports: [NgClass, DeckCardComponent, FlashcardFlipComponent, PageHeaderComponent, UiButtonComponent, UiIconComponent],
   templateUrl: './deck-execucao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -48,6 +49,10 @@ export class DeckExecucaoComponent {
   // Dispara a animação de "pop" nos contadores quando o valor muda.
   protected readonly popAcerto = signal(false);
   protected readonly popErro = signal(false);
+
+  // Card com imagem vertical (qualquer face): recebe mais altura para valorizar a
+  // imagem. Emitido pelo flashcard-flip; é por-card, então não muda ao virar.
+  protected readonly cardAlto = signal(false);
 
   // Sugestões de outros decks exibidas na tela de conclusão.
   protected readonly sugestoes = signal<DeckCardItem[]>([]);

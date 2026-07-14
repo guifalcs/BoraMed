@@ -1,0 +1,63 @@
+/* Cobre TODA a viewport (z-index acima da sidebar z-80, nav z-50, suporte z-9990).
+   Montado no shell, fora do .main-content, então nada o oculta. */
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 9995;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vmin;
+  background: rgba(2, 6, 23, 0.86);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: zoom-out;
+  animation: image-viewer-fade 0.15s ease;
+}
+
+.image-viewer__img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+
+.image-viewer__fechar {
+  position: fixed;
+  top: max(12px, 2vh);
+  right: max(12px, 2vw);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.image-viewer__fechar:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+@keyframes image-viewer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Degrada para exibição instantânea sob reduced-motion (ver memória do projeto). */
+@media (prefers-reduced-motion: reduce) {
+  .image-viewer {
+    animation: none;
+  }
+}

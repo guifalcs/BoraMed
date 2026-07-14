@@ -29,10 +29,34 @@ export const ComImagens: Story = {
   },
 };
 
+// Retrato + texto: imagem em cima, texto embaixo. Na tela de estudo o card recebe
+// mais altura (via retratoChange) para valorizar a imagem; aqui o container é fixo.
 export const ImagemRetrato: Story = {
   args: {
     frente: 'Identifique a peça anatômica.',
     verso: 'Fêmur direito.',
+    frenteImagemUrl: 'https://placehold.co/400x700?text=Retrato',
+    versoImagemUrl: 'https://placehold.co/400x700?text=Retrato',
+  },
+};
+
+// Retrato sem texto (clássico "identifique a peça"): imagem ocupa o card inteiro;
+// o botão de ampliar abre o lightbox para ver em tela cheia.
+export const ImagemRetratoSemTexto: Story = {
+  args: {
+    frente: '',
+    verso: '',
+    frenteImagemUrl: 'https://placehold.co/400x760?text=So+imagem',
+    versoImagemUrl: 'https://placehold.co/400x760?text=So+imagem',
+  },
+};
+
+// Retrato + texto longo: valida que a coluna de texto rola/quebra ao lado da imagem.
+export const ImagemRetratoTextoLongo: Story = {
+  args: {
+    frente: 'Descreva a estrutura em destaque e sua função no contexto histológico apresentado.',
+    verso:
+      'Glomérulo renal: enovelado de capilares responsável pela filtração do plasma, primeira etapa da formação da urina no néfron.',
     frenteImagemUrl: 'https://placehold.co/400x700?text=Retrato',
     versoImagemUrl: 'https://placehold.co/400x700?text=Retrato',
   },

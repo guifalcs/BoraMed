@@ -178,14 +178,29 @@
 }
 
 /* Com imagem, a mídia é a estrela: aperta o padding/gap para liberar o máximo
-   de área ao wrapper flexível. */
+   de área ao conteúdo. */
 .flip-card__face--com-imagem .flip-card__scroll {
   padding: clamp(1rem, 2.5vw, 1.75rem);
   gap: clamp(0.5rem, 1.5vh, 0.9rem);
 }
 
-/* Ocupa toda a altura livre do card; min-height:0 permite encolher dentro do flex. */
+/* Miolo do card (imagem + texto). Ocupa toda a altura livre entre o selo e a dica.
+   Por padrão empilha; vira lado a lado quando a imagem é retrato (regra abaixo). */
+.flip-card__conteudo {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(0.5rem, 1.5vh, 0.9rem);
+}
+
+/* Ocupa toda a altura livre do card; min-height:0 permite encolher dentro do flex.
+   position:relative ancora o botão de ampliar. */
 .flip-card__imagem-wrap {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
@@ -202,6 +217,33 @@
   object-fit: contain;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.9);
+}
+
+/* Botão de ampliar, no canto da mídia. stopPropagation no TS evita virar o card. */
+.flip-card__zoom {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.55);
+  color: #ffffff;
+  cursor: zoom-in;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.flip-card__zoom:hover {
+  background: rgba(15, 23, 42, 0.82);
+  transform: scale(1.08);
 }
 
 .flip-card__dica {

@@ -16,6 +16,7 @@ import { AppNotificacaoService } from '../core/services/app-notification.service
 import { AvisoModalComponent } from '../shared/components/aviso-modal/aviso-modal.component';
 import { NotificacoesSinoComponent } from '../shared/components/notificacoes-sino/notificacoes-sino.component';
 import { SuporteWidgetComponent } from '../shared/components/suporte-widget/suporte-widget.component';
+import { ImageViewerComponent } from '../shared/components/image-viewer/image-viewer.component';
 import { FocoModoService } from '../core/services/foco-modo.service';
 
 interface NavItem {
@@ -29,7 +30,7 @@ interface NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,31 +7,61 @@
   (click)="toggle()"
 >
   <div class="flip-card__inner">
-    <div class="flip-card__face flip-card__face--frente" [class.flip-card__face--com-imagem]="!!frenteImagemUrl()">
+    <div
+      class="flip-card__face flip-card__face--frente"
+      [class.flip-card__face--com-imagem]="!!frenteImagemUrl()"
+    >
       <div class="flip-card__scroll">
         <span class="flip-card__selo">Pergunta</span>
-        @if (frenteImagemUrl()) {
-          <div class="flip-card__imagem-wrap">
-            <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" />
-          </div>
-        }
-        @if (frente()) {
-          <p class="flip-card__texto {{ frenteFontClass() }}">{{ frente() }}</p>
-        }
+        <div class="flip-card__conteudo">
+          @if (frenteImagemUrl()) {
+            <div class="flip-card__imagem-wrap">
+              <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" />
+              <button
+                type="button"
+                class="flip-card__zoom"
+                aria-label="Ampliar imagem"
+                (click)="abrirZoom(frenteImagemUrl()!, $event)"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                </svg>
+              </button>
+            </div>
+          }
+          @if (frente()) {
+            <p class="flip-card__texto {{ frenteFontClass() }}">{{ frente() }}</p>
+          }
+        </div>
         <span class="flip-card__dica">Toque para ver a resposta</span>
       </div>
     </div>
-    <div class="flip-card__face flip-card__face--verso" [class.flip-card__face--com-imagem]="!!versoImagemUrl()">
+    <div
+      class="flip-card__face flip-card__face--verso"
+      [class.flip-card__face--com-imagem]="!!versoImagemUrl()"
+    >
       <div class="flip-card__scroll">
         <span class="flip-card__selo">Resposta</span>
-        @if (versoImagemUrl()) {
-          <div class="flip-card__imagem-wrap">
-            <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" />
-          </div>
-        }
-        @if (verso()) {
-          <p class="flip-card__texto {{ versoFontClass() }}">{{ verso() }}</p>
-        }
+        <div class="flip-card__conteudo">
+          @if (versoImagemUrl()) {
+            <div class="flip-card__imagem-wrap">
+              <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" />
+              <button
+                type="button"
+                class="flip-card__zoom"
+                aria-label="Ampliar imagem"
+                (click)="abrirZoom(versoImagemUrl()!, $event)"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                </svg>
+              </button>
+            </div>
+          }
+          @if (verso()) {
+            <p class="flip-card__texto {{ versoFontClass() }}">{{ verso() }}</p>
+          }
+        </div>
       </div>
     </div>
   </div>

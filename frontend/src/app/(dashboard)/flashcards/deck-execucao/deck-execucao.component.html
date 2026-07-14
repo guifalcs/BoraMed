@@ -62,7 +62,10 @@
     </div>
 
     <div class="flex flex-1 flex-col justify-center py-5 md:py-6">
-      <div class="mx-auto h-[46vh] min-h-[300px] w-full max-w-3xl md:h-[52vh]">
+      <div
+        class="mx-auto min-h-[300px] w-full max-w-3xl transition-[height] duration-300 ease-out"
+        [ngClass]="cardAlto() ? 'h-[64vh] md:h-[72vh]' : 'h-[46vh] md:h-[52vh]'"
+      >
         @for (card of cardAtual() ? [cardAtual()!] : []; track card.id) {
           <app-flashcard-flip
             [frente]="card.frente"
@@ -71,6 +74,7 @@
             [versoImagemUrl]="card.verso_imagem_url"
             [virado]="virado()"
             (flipChange)="flip($event)"
+            (retratoChange)="cardAlto.set($event)"
           />
         }
       </div>
