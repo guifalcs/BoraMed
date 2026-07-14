@@ -96,7 +96,11 @@ export async function handleCriarAssinatura(
         // reconhecível nas faturas reduz high_risk e contestação.
         // LIMITE DO MP: 60 chars (visto em produção em 2026-07-10).
         reason: `Assinatura BoraMed - Plano ${plano.nome}`,
-        external_reference: user.id,
+        // ÚNICO por assinatura ("<user_id>:<nonce>"): external_reference
+        // repetido entre preapprovals parece card testing para o antifraude
+        // (recomendação do suporte MP, ticket WCS-42784). O webhook resolve o
+        // usuário pelo prefixo antes do ':'.
+        external_reference: `${user.id}:${crypto.randomUUID()}`,
         payer_email: user.email,
         back_url: retornoUrl,
         status: "pending",

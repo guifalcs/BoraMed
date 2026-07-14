@@ -220,6 +220,68 @@ Deno.test("webhook subscription_preapproval: next_payment_date ≤ agora NÃO re
   );
 });
 
+Deno.test("webhook subscription_preapproval: resolve usuário por intencao_id e por user_id:nonce no external_reference", async () => {
+  // external_reference único por assinatura (2026-07-14, ticket MP WCS-42784):
+  // checkout embutido envia o id da pagamento_intencao; fluxo por redirect
+  // envia "<user_id>:<nonce>". Ambos precisam resolver o usuário.
+  const INT_ID = "aaaaaaaa-1111-2222-3333-444444444444";
+  const db = new FakeDb({
+    profiles: [{ id: "user-8", email: "x@b.com" }],
+    plano: [],
+    assinatura: [],
+    pagamento_intencao: [{ id: INT_ID, user_id: "user-8" }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: "/preapproval/SUB-INT",
+      body: {
+        status: "authorized",
+        external_reference: INT_ID,
+        next_payment_date: "2026-07-24T12:00:00.000Z",
+      },
+    },
+    {
+      match: "/preapproval/SUB-NONCE",
+      body: {
+        status: "authorized",
+        external_reference: "user-8:bbbbbbbb-5555-6666-7777-888888888888",
+        next_payment_date: "2026-08-24T12:00:00.000Z",
+      },
+    },
+  ]);
+
+  const req1 = await signedWebhookRequest({
+    secret: SECRET,
+    type: "subscription_preapproval",
+    dataId: "SUB-INT",
+  });
+  assertEquals(
+    (await handleWebhook(req1, makeDeps({ db, fetch, now: NOW }))).status,
+    200,
+  );
+  assertEquals(
+    find(db, "assinatura", (r) => r.mp_preapproval_id === "SUB-INT")?.user_id,
+    "user-8",
+    "resolve pelo id da pagamento_intencao",
+  );
+
+  // Supera a anterior (B5) e vincula a nova pelo prefixo do external_reference.
+  const req2 = await signedWebhookRequest({
+    secret: SECRET,
+    type: "subscription_preapproval",
+    dataId: "SUB-NONCE",
+  });
+  assertEquals(
+    (await handleWebhook(req2, makeDeps({ db, fetch, now: NOW }))).status,
+    200,
+  );
+  assertEquals(
+    find(db, "assinatura", (r) => r.mp_preapproval_id === "SUB-NONCE")?.user_id,
+    "user-8",
+    "resolve pelo user_id antes do ':'",
+  );
+});
+
 Deno.test("webhook subscription_preapproval cancelled: next_payment_date futura NÃO estende a carência", async () => {
   // Bug de produção (2026-07-10): ao cancelar um preapproval de 1ª cobrança
   // recusada, o next_payment_date vira a data do retry abortado (1 mês à

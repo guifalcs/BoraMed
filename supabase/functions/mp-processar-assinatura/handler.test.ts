@@ -275,7 +275,14 @@ Deno.test("processar-assinatura authorized: payload correto (preço do banco, st
     "aluno@boramed.com",
     "e-mail da conta, não do form",
   );
-  assertEquals(sent.external_reference, "user-1");
+  // Único por tentativa (id da intenção) — repetir o user_id em vários
+  // preapprovals parecia card testing para o antifraude (ticket MP WCS-42784).
+  const intCriada = find(
+    db,
+    "pagamento_intencao",
+    (r) => r.idempotency_key === ATTEMPT,
+  );
+  assertEquals(sent.external_reference, intCriada?.id);
   assertEquals(sent.auto_recurring.transaction_amount, 49.9, "preço do banco");
   assertEquals(sent.auto_recurring.frequency, 1);
   assertEquals(sent.auto_recurring.frequency_type, "months");

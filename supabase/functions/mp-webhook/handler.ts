@@ -78,16 +78,34 @@ export async function handleWebhook(
         const payerEmail = sub["payer_email"] as string | undefined;
         const planId = sub["preapproval_plan_id"] as string | undefined;
 
-        // Resolver o usuário: external_reference (id do profile) com fallback
-        // por payer_email.
+        // Resolver o usuário. Formatos do external_reference (único por
+        // assinatura desde 2026-07-14 — repetido parecia card testing para o
+        // antifraude; ticket MP WCS-42784):
+        //   - "<user_id>:<nonce>" (fluxo por redirect) → profile pelo prefixo;
+        //   - id da pagamento_intencao (checkout embutido) → user_id da intenção;
+        //   - id do profile (preapprovals legados) → lookup direto.
+        // Fallbacks: payer_email e, por fim, a assinatura já vinculada.
         let userId: string | null = null;
         if (externalRef) {
+          const refBase = externalRef.split(":")[0];
           const { data: byRef } = await admin
             .from("profiles")
             .select("id")
-            .eq("id", externalRef)
+            .eq("id", refBase)
             .maybeSingle();
           userId = byRef?.id ?? null;
+          // Só consulta a intenção com UUID válido: a coluna é uuid e um
+          // formato legado ("user:nonce") geraria erro de cast à toa.
+          const UUID_RE =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!userId && UUID_RE.test(externalRef)) {
+            const { data: byIntencao } = await admin
+              .from("pagamento_intencao")
+              .select("user_id")
+              .eq("id", externalRef)
+              .maybeSingle();
+            userId = (byIntencao?.user_id as string | undefined) ?? null;
+          }
         }
         if (!userId && payerEmail) {
           const { data: byEmail } = await admin

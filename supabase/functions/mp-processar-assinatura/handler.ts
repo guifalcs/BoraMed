@@ -238,7 +238,11 @@ export async function handleProcessarAssinatura(
       // acima disso o POST /preapproval falha com
       // "reason has more than 60 characters" (visto em produção em 2026-07-10).
       reason: `Assinatura BoraMed - Plano ${plano.nome}`,
-      external_reference: user.id,
+      // ÚNICO por tentativa (id da intenção): repetir o mesmo external_reference
+      // em vários preapprovals do mesmo usuário parece card testing para o
+      // antifraude do MP (recomendação do suporte, ticket WCS-42784). O webhook
+      // resolve o usuário pela intenção.
+      external_reference: intencaoId,
       payer_email: user.email,
       card_token_id: body.card_token_id,
       back_url: backUrl,
