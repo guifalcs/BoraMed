@@ -28,6 +28,7 @@ import {
 } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
+import { ImageViewerComponent } from '../shared/components/image-viewer/image-viewer.component';
 import { AuthService } from '../core/services/auth.service';
 import { ProfileService } from '../core/services/profile.service';
 import { NotificationService } from '../core/services/notification.service';
@@ -53,7 +54,7 @@ type AdminNavEntry =
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, ImageViewerComponent],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

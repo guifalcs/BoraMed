@@ -98,7 +98,40 @@ describe('AlternativaItemComponent', () => {
 
   it('deve aplicar classes de selecionada', async () => {
     await setup('selecionada');
-    const btn = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
-    expect(btn.className).toContain('color-primary');
+    const wrapper = fixture.nativeElement.firstElementChild as HTMLElement;
+    expect(wrapper.className).toContain('color-primary');
+  });
+
+  it('não deve renderizar imagem quando imagem_url é null', async () => {
+    await setup('idle');
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
+  });
+
+  it('deve renderizar a imagem da alternativa quando imagem_url existe', async () => {
+    await setup('idle');
+    fixture.componentRef.setInput('alternativa', {
+      ...altMock,
+      imagem_url: 'https://exemplo.com/alt-a.webp',
+    });
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('img') as HTMLImageElement;
+    expect(img).not.toBeNull();
+    expect(img.src).toContain('alt-a.webp');
+  });
+
+  it('clicar na imagem não deve selecionar a alternativa', async () => {
+    await setup('idle');
+    fixture.componentRef.setInput('alternativa', {
+      ...altMock,
+      imagem_url: 'https://exemplo.com/alt-a.webp',
+    });
+    fixture.detectChanges();
+    let emitted = false;
+    component.selecionar.subscribe(() => (emitted = true));
+    const botaoImagem = fixture.nativeElement.querySelector(
+      'button[aria-label^="Ampliar"]',
+    ) as HTMLButtonElement;
+    botaoImagem.click();
+    expect(emitted).toBe(false);
   });
 });

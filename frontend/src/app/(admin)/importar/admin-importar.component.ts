@@ -26,6 +26,9 @@ export interface AlternativaParseada {
   letra: string;
   texto: string;
   correta: boolean;
+  // Importação é textual, então normalmente ausente; presente só quando a
+  // origem já traz URL de imagem (mantém o preview compatível).
+  imagem_url?: string | null;
 }
 
 export interface QuestaoParseada {

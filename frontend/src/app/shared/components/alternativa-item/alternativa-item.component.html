@@ -1,18 +1,35 @@
-<button
-  type="button"
-  role="radio"
-  [class]="classes()"
-  (click)="handleClick()"
-  [disabled]="estado() === 'desabilitada'"
-  [attr.aria-checked]="estado() === 'selecionada' || estado() === 'correta'"
-  [attr.aria-label]="'Alternativa ' + alternativa().letra + ': ' + alternativa().texto"
->
-  <span [class]="letraClasses()">{{ alternativa().letra }}</span>
-  <span class="flex-1">{{ alternativa().texto }}</span>
-  @if (estado() === 'correta') {
-    <span class="shrink-0 text-[var(--color-success)]">✓</span>
+<div [class]="classes()" (click)="handleClick()">
+  <button
+    type="button"
+    role="radio"
+    class="flex w-full items-start gap-3 text-left"
+    [disabled]="estado() === 'desabilitada'"
+    [attr.aria-checked]="estado() === 'selecionada' || estado() === 'correta'"
+    [attr.aria-label]="'Alternativa ' + alternativa().letra + ': ' + alternativa().texto"
+  >
+    <span [class]="letraClasses()">{{ alternativa().letra }}</span>
+    <span class="flex-1">{{ alternativa().texto }}</span>
+    @if (estado() === 'correta') {
+      <span class="shrink-0 text-[var(--color-success)]">✓</span>
+    }
+    @if (estado() === 'errada') {
+      <span class="shrink-0 text-[var(--color-danger)]">✗</span>
+    }
+  </button>
+
+  @if (alternativa().imagem_url; as imagemUrl) {
+    <button
+      type="button"
+      class="mt-2 ml-9 block w-fit max-w-full cursor-zoom-in rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+      (click)="abrirImagem($event)"
+      [attr.aria-label]="'Ampliar imagem da alternativa ' + alternativa().letra"
+    >
+      <img
+        [src]="imagemUrl"
+        [alt]="'Imagem da alternativa ' + alternativa().letra"
+        loading="lazy"
+        class="max-h-56 w-auto max-w-full rounded-lg border border-black/10 bg-white object-contain"
+      />
+    </button>
   }
-  @if (estado() === 'errada') {
-    <span class="shrink-0 text-[var(--color-danger)]">✗</span>
-  }
-</button>
+</div>

@@ -112,6 +112,13 @@
             @if (ehCorreta(alt.correta)) {
               <span class="ml-1 font-bold">✓</span>
             }
+            @if (alt.imagem_url) {
+              <img
+                [src]="alt.imagem_url"
+                [alt]="'Imagem da alternativa ' + alt.letra"
+                class="mt-1 block max-h-48 w-auto max-w-full rounded border border-gray-300 object-contain"
+              />
+            }
           </span>
         </li>
       }

@@ -159,6 +159,7 @@ export interface AdminAlternativa {
   texto: string;
   correta: boolean;
   ordem: number;
+  imagem_url?: string | null;
 }
 
 export interface AdminQuestaoCompleta {
@@ -787,7 +788,7 @@ export class AdminService {
       dataAte?: string;
       // 'pendente' | 'revisada' — filtro da fila de revisão de conversão.
       revisaoConversao?: string;
-      // true — apenas questões que possuem imagem anexada.
+      // true — apenas questões com imagem (no enunciado ou em alguma alternativa).
       comImagem?: boolean;
     } = {},
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
@@ -809,7 +810,21 @@ export class AdminService {
     if (filtros.disciplinaId) query = query.eq('disciplina_id', filtros.disciplinaId);
     if (filtros.autorId) query = query.eq('autor_id', filtros.autorId);
     if (filtros.revisaoConversao) query = query.eq('revisao_conversao', filtros.revisaoConversao);
-    if (filtros.comImagem) query = query.not('imagem_url', 'is', null);
+    // Imagem no enunciado OU em alguma alternativa. PostgREST não faz OR entre
+    // pai e tabela relacionada, então os ids vêm de uma consulta prévia (uma
+    // coluna computada exigiria SELECT na linha inteira de questao, e as
+    // colunas de gabarito são revogadas de authenticated).
+    if (filtros.comImagem) {
+      const { data: alts, error: altErr } = await this.supabase
+        .from('alternativa')
+        .select('questao_id')
+        .not('imagem_url', 'is', null);
+      if (altErr) return { ok: false, error: altErr.message };
+      const ids = [...new Set((alts ?? []).map((a) => (a as { questao_id: string }).questao_id))];
+      query = ids.length > 0
+        ? query.or(`imagem_url.not.is.null,id.in.(${ids.join(',')})`)
+        : query.not('imagem_url', 'is', null);
+    }
     if (filtros.dataDe) query = query.gte('criado_em', filtros.dataDe);
     // criado_em é timestamp; comparar com a data pura excluiria o próprio dia final.
     if (filtros.dataAte) query = query.lte('criado_em', `${filtros.dataAte}T23:59:59.999`);

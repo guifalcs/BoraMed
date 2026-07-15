@@ -60,6 +60,7 @@ export interface DesafioAlternativa {
   texto: string;
   ordem: number;
   correta?: boolean;
+  imagem_url?: string | null;
 }
 
 export interface DesafioQuestao {

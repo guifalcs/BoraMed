@@ -138,6 +138,9 @@ function parseAlternativas(value: unknown): DesafioAlternativa[] {
     if (typeof r['correta'] === 'boolean') {
       alt.correta = r['correta'];
     }
+    if (typeof r['imagem_url'] === 'string') {
+      alt.imagem_url = r['imagem_url'];
+    }
     result.push(alt);
   }
   return result;

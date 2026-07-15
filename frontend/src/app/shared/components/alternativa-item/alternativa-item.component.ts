@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import type { Alternativa } from '../../../core/models/alternativa';
+import { ImageViewerService } from '../../../core/services/image-viewer.service';
 
 export type EstadoAlternativa = 'idle' | 'selecionada' | 'correta' | 'errada' | 'desabilitada';
 
@@ -10,14 +11,15 @@ export type EstadoAlternativa = 'idle' | 'selecionada' | 'correta' | 'errada' | 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlternativaItemComponent {
+  private readonly imageViewer = inject(ImageViewerService);
+
   alternativa = input.required<Alternativa>();
   estado = input.required<EstadoAlternativa>();
 
   selecionar = output<string>();
 
   protected readonly classes = computed(() => {
-    const base =
-      'flex items-start gap-3 w-full rounded-lg border p-4 text-left text-sm transition-colors';
+    const base = 'block w-full rounded-lg border p-4 text-left text-sm transition-colors';
     const map: Record<EstadoAlternativa, string> = {
       idle: 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-2)] hover:border-[var(--color-primary-light)] cursor-pointer',
       selecionada:
@@ -48,5 +50,12 @@ export class AlternativaItemComponent {
     if (this.estado() === 'idle' || this.estado() === 'selecionada') {
       this.selecionar.emit(this.alternativa().id);
     }
+  }
+
+  protected abrirImagem(event: Event): void {
+    // Não pode selecionar a alternativa junto: clique na imagem só amplia.
+    event.stopPropagation();
+    const url = this.alternativa().imagem_url;
+    if (url) this.imageViewer.abrir(url);
   }
 }

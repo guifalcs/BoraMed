@@ -36,3 +36,23 @@ export const Correta: Story = { args: { estado: 'correta' } };
 export const Errada: Story = { args: { estado: 'errada' } };
 
 export const Desabilitada: Story = { args: { estado: 'desabilitada' } };
+
+export const ComImagem: Story = {
+  args: {
+    alternativa: {
+      ...alternativa,
+      texto: 'Padrão radiológico compatível com pneumotórax hipertensivo',
+      imagem_url: 'https://picsum.photos/seed/alternativa/640/400',
+    },
+  },
+};
+
+export const ComImagemSemTexto: Story = {
+  args: {
+    alternativa: {
+      ...alternativa,
+      texto: '',
+      imagem_url: 'https://picsum.photos/seed/alternativa-b/640/400',
+    },
+  },
+};

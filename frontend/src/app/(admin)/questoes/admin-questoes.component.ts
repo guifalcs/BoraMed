@@ -38,6 +38,7 @@ interface AlternativaForm {
   letra: string;
   texto: string;
   correta: boolean;
+  imagem_url: string | null;
 }
 
 interface QuestaoMetaItem {
@@ -49,12 +50,12 @@ const LETRAS_MC = ['A', 'B', 'C', 'D', 'E'];
 
 function alternativasIniciais(formato: string): AlternativaForm[] {
   if (formato === 'multipla_escolha') {
-    return LETRAS_MC.map((letra, i) => ({ letra, texto: '', correta: i === 0 }));
+    return LETRAS_MC.map((letra, i) => ({ letra, texto: '', correta: i === 0, imagem_url: null }));
   }
   if (formato === 'verdadeiro_falso') {
     return [
-      { letra: 'V', texto: 'Verdadeiro', correta: true },
-      { letra: 'F', texto: 'Falso', correta: false },
+      { letra: 'V', texto: 'Verdadeiro', correta: true, imagem_url: null },
+      { letra: 'F', texto: 'Falso', correta: false, imagem_url: null },
     ];
   }
   return [];
@@ -272,6 +273,10 @@ export class AdminQuestoesComponent implements OnInit {
 
   /** URL original da imagem ao abrir o drawer; usada para limpeza no storage */
   private _urlAntesDeEditar: string | null = null;
+  /** Imagens das alternativas presentes ao abrir o editor (para limpeza do storage). */
+  private _altUrlsAntesDeEditar: string[] = [];
+  /** Índice da alternativa com o uploader de imagem aberto (sem imagem ainda). */
+  protected readonly altUploadAberto = signal<number | null>(null);
   private visualizacaoRequestId = 0;
 
   // ---- Confirm dialog ----
@@ -340,7 +345,7 @@ export class AdminQuestoesComponent implements OnInit {
         texto: alternativa.texto,
         correta: alternativa.correta,
         ordem: alternativa.ordem,
-        imagem_url: null,
+        imagem_url: alternativa.imagem_url ?? null,
       })),
       temas: this.temasDaQuestao(questao.temas),
     };
@@ -884,11 +889,19 @@ export class AdminQuestoesComponent implements OnInit {
 
     if (d.alternativas.length > 0) {
       this.fAlternativas.set(
-        d.alternativas.map((a) => ({ letra: a.letra, texto: a.texto, correta: a.correta })),
+        d.alternativas.map((a) => ({
+          letra: a.letra,
+          texto: a.texto,
+          correta: a.correta,
+          imagem_url: a.imagem_url ?? null,
+        })),
       );
     } else {
       this.fAlternativas.set(alternativasIniciais(d.formato));
     }
+    this._altUrlsAntesDeEditar = d.alternativas
+      .map((a) => a.imagem_url)
+      .filter((u): u is string => !!u);
 
     this.carregandoForm.set(false);
   }
@@ -900,12 +913,26 @@ export class AdminQuestoesComponent implements OnInit {
     if (sessionUrl && sessionUrl !== this._urlAntesDeEditar) {
       this.adminService.deletarArquivoStorage(sessionUrl);
     }
+    // Idem para imagens de alternativas enviadas nesta sessão
+    for (const alt of this.fAlternativas()) {
+      if (alt.imagem_url && !this._altUrlsAntesDeEditar.includes(alt.imagem_url)) {
+        this.adminService.deletarArquivoStorage(alt.imagem_url);
+      }
+    }
     this.modoDrawer.set('fechado');
   }
 
   // ---- Formulário: mutações ----
 
   protected onFormatoChange(formato: string): void {
+    // Trocar o formato descarta as alternativas do form: apaga do storage os
+    // uploads feitos nesta sessão (os originais só são apagados no salvar).
+    for (const alt of this.fAlternativas()) {
+      if (alt.imagem_url && !this._altUrlsAntesDeEditar.includes(alt.imagem_url)) {
+        this.adminService.deletarArquivoStorage(alt.imagem_url);
+      }
+    }
+    this.altUploadAberto.set(null);
     this.fFormato.set(formato);
     this.fAlternativas.set(alternativasIniciais(formato));
   }
@@ -972,6 +999,7 @@ export class AdminQuestoesComponent implements OnInit {
     this.fImagemLegenda.set('');
     // Zera a referência de limpeza para o save() não apagar a imagem da original.
     this._urlAntesDeEditar = null;
+    this._altUrlsAntesDeEditar = [];
 
     this.toast.success(
       tinhaImagem
@@ -1000,6 +1028,19 @@ export class AdminQuestoesComponent implements OnInit {
     this.fAlternativas.update((alts) =>
       alts.map((a, i) => (i === index ? { ...a, texto } : a)),
     );
+  }
+
+  protected abrirUploadAlternativa(index: number): void {
+    this.altUploadAberto.set(index);
+  }
+
+  protected atualizarImagemAlternativa(index: number, url: string | null): void {
+    this.fAlternativas.update((alts) =>
+      alts.map((a, i) => (i === index ? { ...a, imagem_url: url } : a)),
+    );
+    if (!url && this.altUploadAberto() === index) {
+      this.altUploadAberto.set(null);
+    }
   }
 
   protected adicionarPontoChave(): void {
@@ -1038,8 +1079,14 @@ export class AdminQuestoesComponent implements OnInit {
     }
     const alternativas: AlternativaPayload[] = this.mostrarAlternativas()
       ? this.fAlternativas()
-          .filter((a) => a.texto.trim())
-          .map((a, i) => ({ letra: a.letra, texto: a.texto.trim(), correta: a.correta, ordem: i + 1 }))
+          .filter((a) => a.texto.trim() || a.imagem_url)
+          .map((a, i) => ({
+            letra: a.letra,
+            texto: a.texto.trim(),
+            correta: a.correta,
+            ordem: i + 1,
+            imagem_url: a.imagem_url,
+          }))
       : [];
 
     if (this.mostrarAlternativas()) {
@@ -1130,6 +1177,19 @@ export class AdminQuestoesComponent implements OnInit {
       if (this._urlAntesDeEditar && this._urlAntesDeEditar !== urlSalva) {
         this.adminService.deletarArquivoStorage(this._urlAntesDeEditar);
       }
+      // Idem para imagens de alternativas substituídas/removidas. Em discursiva
+      // as alternativas são preservadas no banco (conversão reversível), então
+      // as imagens delas também não podem ser apagadas.
+      if (!this.ehDiscursiva()) {
+        const urlsSalvas = new Set(
+          alternativas.map((a) => a.imagem_url).filter((u): u is string => !!u),
+        );
+        for (const url of this._altUrlsAntesDeEditar) {
+          if (!urlsSalvas.has(url)) {
+            this.adminService.deletarArquivoStorage(url);
+          }
+        }
+      }
       this.toast.success(modo === 'criar' ? 'Questão criada.' : 'Questão atualizada.');
       this.modoDrawer.set('fechado');
       await this.carregar();
@@ -1165,6 +1225,8 @@ export class AdminQuestoesComponent implements OnInit {
     this.fPontoChaveNovo.set('');
     this.fCriterios.set('');
     this.fAlternativas.set(alternativasIniciais('multipla_escolha'));
+    this._altUrlsAntesDeEditar = [];
+    this.altUploadAberto.set(null);
     this.fImagemUrl.set(null);
     this.fImagemLegenda.set('');
     this.fTemas.set([]);

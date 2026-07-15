@@ -15,6 +15,7 @@ import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ImageViewerService } from '../../core/services/image-viewer.service';
 import type { DesafioAlternativa, RankingItem } from '../../core/models/gamificacao';
 import { currentWeekRange } from '../../shared/utils/current-week-range';
 
@@ -40,6 +41,7 @@ export class CompetirHubComponent {
   private readonly rankingService = inject(RankingService);
   private readonly desafioService = inject(DesafioService);
   private readonly toast = inject(NotificationService);
+  private readonly imageViewer = inject(ImageViewerService);
 
   protected readonly trophyIcon = Trophy;
   protected readonly calendarIcon = CalendarCheck2;
@@ -171,6 +173,12 @@ export class CompetirHubComponent {
       'bg-cyan-100 text-cyan-700',
     ];
     return palette[nome.charCodeAt(0) % palette.length];
+  }
+
+  /** Clique na imagem só amplia (lightbox) — não seleciona a alternativa. */
+  protected ampliarImagemAlternativa(event: Event, url: string | null | undefined): void {
+    event.stopPropagation();
+    if (url) this.imageViewer.abrir(url);
   }
 
   protected async handleResponder(alternativaId: string): Promise<void> {

@@ -121,7 +121,19 @@
                   (click)="handleResponder(alt.id)"
                 >
                   <span class="mt-0.5 shrink-0 text-xs font-extrabold">{{ alt.letra }}.</span>
-                  <span class="leading-5">{{ alt.texto }}</span>
+                  <span class="flex min-w-0 flex-1 flex-col gap-2">
+                    <span class="leading-5">{{ alt.texto }}</span>
+                    @if (alt.imagem_url) {
+                      <img
+                        [src]="alt.imagem_url"
+                        [alt]="'Imagem da alternativa ' + alt.letra"
+                        loading="lazy"
+                        decoding="async"
+                        class="max-h-56 w-auto max-w-full cursor-zoom-in self-start rounded-lg border border-black/10 bg-white object-contain"
+                        (click)="ampliarImagemAlternativa($event, alt.imagem_url)"
+                      />
+                    }
+                  </span>
                   @if (desafioEstado() === 'answered') {
                     @if (alt.correta === true) {
                       <app-ui-icon class="ml-auto mt-0.5 shrink-0 text-emerald-600" [icon]="checkCircleIcon" [size]="16" />
