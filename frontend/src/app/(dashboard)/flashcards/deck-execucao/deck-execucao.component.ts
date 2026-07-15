@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArrowLeft, CircleCheck, CircleX, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
@@ -15,6 +15,10 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
 type EstadoResposta = 'acertou' | 'errou';
 
 const MAX_SUGESTOES = 3;
+
+// Quantos cards à frente têm as imagens pré-carregadas. Janela pequena de
+// propósito: cobre a navegação imediata sem baixar o deck inteiro de uma vez.
+const JANELA_PRELOAD = 3;
 
 @Component({
   selector: 'app-deck-execucao',
@@ -85,6 +89,10 @@ export class DeckExecucaoComponent {
     return total === 0 ? 0 : Math.round((Object.keys(this.respostas()).length / total) * 100);
   });
 
+  // URLs já pré-carregadas nesta sessão — evita refazer o request (mesmo que
+  // saia do cache HTTP, criar Image por card repetidamente é trabalho à toa).
+  private readonly imagensPrecarregadas = new Set<string>();
+
   constructor() {
     // Observa o paramMap (e não só o snapshot): navegar para outro deck a
     // partir das sugestões reutiliza este componente na mesma rota.
@@ -96,6 +104,23 @@ export class DeckExecucaoComponent {
       this.sugestoes.set([]);
       void this.carregarDeck(deckId);
     });
+
+    // Pré-carrega as imagens dos próximos cards: sem isso, o download só começa
+    // quando o card entra na tela e o usuário fica olhando a imagem "pipocar".
+    // O card atual já é coberto pelo flashcard-flip (medição de orientação).
+    effect(() => this.precarregarImagensProximas(this.cards(), this.indiceAtual()));
+  }
+
+  private precarregarImagensProximas(cards: Flashcard[], indice: number): void {
+    const alcance = Math.min(JANELA_PRELOAD, Math.max(cards.length - 1, 0));
+    for (let passo = 1; passo <= alcance; passo++) {
+      const card = cards[(indice + passo) % cards.length];
+      for (const url of [card.frente_imagem_url, card.verso_imagem_url]) {
+        if (!url || this.imagensPrecarregadas.has(url)) continue;
+        this.imagensPrecarregadas.add(url);
+        new Image().src = url;
+      }
+    }
   }
 
   private async carregarDeck(deckId: string): Promise<void> {
