@@ -12,21 +12,36 @@ const planoMocks = [
     id: 'plano-mensal-1',
     slug: 'mensal',
     nome: 'Mensal',
-    descricao: 'Acesso mensal recorrente',
+    descricao: 'Acesso completo por 1 mês, sem renovação automática',
+    preco_centavos: 5990,
+    moeda: 'BRL',
+    frequency: 1,
+    frequency_type: 'months',
+    recorrente: false,
+    ativo: true,
+    ordem: 1,
+  },
+  // Plano recorrente como o mensal era antes de virar pagamento à vista —
+  // cobre o fluxo de assinatura (preapproval) que segue vivo para legados.
+  {
+    id: 'plano-legado-1',
+    slug: 'recorrente-legado',
+    nome: 'Recorrente',
+    descricao: 'Assinatura recorrente legada',
     preco_centavos: 4990,
     moeda: 'BRL',
     frequency: 1,
     frequency_type: 'months',
     recorrente: true,
     ativo: true,
-    ordem: 1,
+    ordem: 3,
   },
   {
     id: 'plano-semestral-1',
     slug: 'semestral',
     nome: 'Semestral',
     descricao: 'Melhor custo-benefício por 6 meses',
-    preco_centavos: 19990,
+    preco_centavos: 24000,
     moeda: 'BRL',
     frequency: 6,
     frequency_type: 'months',
@@ -224,7 +239,7 @@ const intencaoBase = {
   plano_id: 'plano-semestral-1',
   tipo: 'acesso_unico',
   mp_payment_id: '999',
-  valor_centavos: 19990,
+  valor_centavos: 24000,
   metodo: 'master',
   parcelas: 6,
   status: 'pendente',
@@ -240,7 +255,7 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     await setupCheckout(page, '/checkout/semestral');
 
     await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('R$ 199,90')).toBeVisible();
+    await expect(page.getByText('R$ 240,00')).toBeVisible();
     await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -523,13 +538,69 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     await expect(page.getByText(/em análise/i).first()).toBeVisible();
   });
 
-  test('mensal: submit envia card_token e assinatura autorizada → status aprovado', async ({ page }) => {
+  test('mensal (à vista): Brick limita a 1x e submit vai para mp-processar-pagamento', async ({ page }) => {
     let bodyEnviado: Record<string, unknown> | null = null;
     await setupCheckout(page, '/checkout/mensal', {
       intencao: () => ({
         ...intencaoBase,
-        tipo: 'assinatura',
         plano_id: 'plano-mensal-1',
+        valor_centavos: 5990,
+        parcelas: 1,
+        status: 'aprovada',
+        status_detail: 'accredited',
+      }),
+      extraRoutes: async (p) => {
+        await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          bodyEnviado = route.request().postDataJSON() as Record<string, unknown>;
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              intencao_id: 'int-e2e-1',
+              payment_id: '999',
+              status: 'approved',
+              status_detail: 'accredited',
+            }),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('pagamento único')).toBeVisible();
+    await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
+
+    // O Brick do mensal aceita Pix/boleto mas não parcela (maxInstallments 1).
+    const brickPayment = await page.evaluate(
+      () =>
+        (window as unknown as Record<string, Record<string, { customization?: { paymentMethods?: Record<string, unknown> } }>>)
+          ['__brickSettings']['payment']?.customization?.paymentMethods,
+    );
+    expect(brickPayment?.['maxInstallments']).toBe(1);
+    expect(brickPayment?.['bankTransfer']).toBe('all');
+
+    await page.getByTestId('stub-pagar').click();
+
+    await expect(page).toHaveURL(/\/checkout\/status\/int-e2e-1/, { timeout: 10_000 });
+    await expect(page.getByTestId('status-aprovado')).toBeVisible({ timeout: 10_000 });
+
+    expect(bodyEnviado).not.toBeNull();
+    const enviado = bodyEnviado as unknown as Record<string, unknown>;
+    expect(enviado['plano_slug']).toBe('mensal');
+    const formData = enviado['form_data'] as Record<string, unknown>;
+    expect(formData['token']).toBe('tok-stub');
+    // Nenhum valor/preço sai do cliente.
+    expect(enviado['amount']).toBeUndefined();
+    expect(enviado['preco_centavos']).toBeUndefined();
+  });
+
+  test('recorrente legado: submit envia card_token e assinatura autorizada → status aprovado', async ({ page }) => {
+    let bodyEnviado: Record<string, unknown> | null = null;
+    await setupCheckout(page, '/checkout/recorrente-legado', {
+      intencao: () => ({
+        ...intencaoBase,
+        tipo: 'assinatura',
+        plano_id: 'plano-legado-1',
         metodo: 'credit_card',
         parcelas: 1,
         status: 'aprovada',
@@ -549,7 +620,7 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
       },
     });
 
-    await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: 'Plano Recorrente' })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
     await page.getByTestId('stub-pagar').click();
 
@@ -558,7 +629,7 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
 
     expect(bodyEnviado).not.toBeNull();
     const enviado = bodyEnviado as unknown as Record<string, unknown>;
-    expect(enviado['plano_slug']).toBe('mensal');
+    expect(enviado['plano_slug']).toBe('recorrente-legado');
     expect(enviado['card_token_id']).toBe('tok-stub');
     expect(typeof enviado['attempt_id']).toBe('string');
     // Nenhum valor/preço sai do cliente.

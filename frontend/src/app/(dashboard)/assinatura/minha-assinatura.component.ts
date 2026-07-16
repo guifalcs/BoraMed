@@ -132,7 +132,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               }
             </p>
           }
-          @if (recorrente() && assinatura()!.status === 'paused') {
+          @if (gerenciavelNoMp() && assinatura()!.status === 'paused') {
             <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
               Sua assinatura está pausada e o acesso aos simulados está suspenso. Reative para
               voltar a estudar e retomar a cobrança recorrente.
@@ -140,7 +140,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
           }
 
           <div class="mt-6 flex flex-wrap gap-3">
-            @if (gerenciavelNoMp() && recorrente() && assinatura()!.status === 'authorized') {
+            @if (gerenciavelNoMp() && assinatura()!.status === 'authorized') {
               <button
                 type="button"
                 (click)="abrirTrocarCartao()"
@@ -158,7 +158,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               >
                 Cancelar assinatura
               </button>
-            } @else if (gerenciavelNoMp() && recorrente() && assinatura()!.status === 'paused') {
+            } @else if (gerenciavelNoMp() && assinatura()!.status === 'paused') {
               <button
                 type="button"
                 (click)="reativar()"
@@ -177,7 +177,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
               </button>
             }
           </div>
-          @if (gerenciavelNoMp() && recorrente() && assinatura()!.status === 'authorized') {
+          @if (gerenciavelNoMp() && assinatura()!.status === 'authorized') {
             <p class="mt-2 text-xs text-gray-500">
               Ao cancelar, você mantém o acesso até a data da próxima cobrança.
             </p>
@@ -222,13 +222,17 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
           passam pelos servidores do BoraMed.
         </p>
         <p>
-          No plano <span class="font-medium text-gray-500">mensal</span> a cobrança é recorrente e você
-          pode cancelar quando quiser — o acesso continua até o fim do período já pago.
+          Os planos são <span class="font-medium text-gray-500">pagamentos únicos</span>: o mensal
+          libera 1 mês de acesso e o semestral, 6 meses (parcelável em até 6x sem juros). Nenhum
+          renova automaticamente — quando expirar, você renova só se quiser.
         </p>
-        <p>
-          O <span class="font-medium text-gray-500">semestral</span> é um pagamento único (parcelável em
-          até 6x sem juros) que libera 6 meses de acesso e não renova automaticamente.
-        </p>
+        @if (recorrente()) {
+          <p>
+            Sua assinatura é do modelo <span class="font-medium text-gray-500">recorrente</span> antigo:
+            a cobrança se repete todo mês e você pode cancelar quando quiser — o acesso continua até o
+            fim do período já pago.
+          </p>
+        }
         <p>Dúvidas sobre cobrança? Fale com o suporte pelo app.</p>
       </div>
 
@@ -291,7 +295,7 @@ export class MinhaAssinaturaComponent implements OnInit {
     const p = this.assinatura()?.plano;
     if (!p) return null;
     const valor = this.brl(p.preco_centavos, p.moeda);
-    if (!p.recorrente) return valor; // pagamento único: só o valor, sem periodicidade
+    if (!this.recorrente()) return valor; // sem cobrança recorrente: só o valor
     const per = this.periodicidade(p.frequency, p.frequency_type);
     return per ? `${valor} ${per}` : valor;
   }
@@ -336,9 +340,13 @@ export class MinhaAssinaturaComponent implements OnInit {
     return new Date(a.proxima_cobranca).getTime() > Date.now();
   }
 
-  /** Plano recorrente (mensal) vs. pagamento único (semestral). */
+  /**
+   * Assinatura recorrente LEGADA (preapproval vivo no MP). Não usa
+   * `plano.recorrente`: o plano mensal virou pagamento único, mas assinantes
+   * antigos seguem com cobrança recorrente — o vínculo real é o preapproval.
+   */
   recorrente(): boolean {
-    return this.assinatura()?.plano?.recorrente ?? true;
+    return this.gerenciavelNoMp();
   }
 
   /**
@@ -350,12 +358,13 @@ export class MinhaAssinaturaComponent implements OnInit {
     return !!this.assinatura()?.mp_preapproval_id;
   }
 
-  /** Acesso manual/cortesia (sem MP) ainda válido — não renova nem cobra. */
+  /** Acesso manual/cortesia (sem nenhum vínculo com o MP) ainda válido. */
   acessoManualAtivo(): boolean {
+    const a = this.assinatura();
     return (
       !this.gerenciavelNoMp() &&
-      this.recorrente() &&
-      this.assinatura()?.status === 'authorized' &&
+      !a?.mp_payment_id &&
+      a?.status === 'authorized' &&
       this.temAcessoAgora()
     );
   }
@@ -372,9 +381,10 @@ export class MinhaAssinaturaComponent implements OnInit {
     return this.temAcessoAgora();
   }
 
-  /** Acesso de pagamento único ainda válido. */
+  /** Acesso de pagamento único (payment avulso no MP) ainda válido. */
   acessoUnicoAtivo(): boolean {
-    return !this.recorrente() && this.assinatura()?.status === 'authorized' && this.temAcessoAgora();
+    const a = this.assinatura();
+    return !!a?.mp_payment_id && a.status === 'authorized' && this.temAcessoAgora();
   }
 
   private acessoUnicoExpirado(): boolean {
@@ -402,7 +412,6 @@ export class MinhaAssinaturaComponent implements OnInit {
     // acessos manuais/cortesia mostram "Acesso até" sem valor.
     return (
       this.gerenciavelNoMp() &&
-      this.recorrente() &&
       this.assinatura()?.status === 'authorized' &&
       !this.emCarencia()
     );

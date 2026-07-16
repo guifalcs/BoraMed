@@ -42,8 +42,8 @@ function payEmbutido(overrides: Record<string, unknown> = {}): Record<string, un
     status: 'approved',
     status_detail: 'accredited',
     external_reference: 'user-1',
-    transaction_amount: 199.9,
-    transaction_details: { net_received_amount: 189.9 },
+    transaction_amount: 240,
+    transaction_details: { net_received_amount: 228 },
     payment_method_id: 'master',
     installments: 6,
     date_approved: '2026-06-24T12:00:00.000Z',
@@ -111,8 +111,8 @@ Deno.test('sync approved: concede acesso, cancela o preapproval recorrente anter
 
   const pag = find(db, 'pagamento', (x) => x.mp_payment_id === '12345');
   assertExists(pag);
-  assertEquals(pag?.valor_centavos, 19990);
-  assertEquals(pag?.liquido_centavos, 18990);
+  assertEquals(pag?.valor_centavos, 24000);
+  assertEquals(pag?.liquido_centavos, 22800);
   assertEquals(pag?.status, 'approved');
   assertEquals(pag?.status_detail, 'accredited');
   assertEquals(pag?.parcelas, 6);

@@ -450,8 +450,8 @@ Deno.test("webhook payment acesso_unico approved: concede acesso por N meses e r
           plano_slug: "semestral",
           acesso_meses: 6,
         },
-        transaction_amount: 199.9,
-        transaction_details: { net_received_amount: 190 },
+        transaction_amount: 240,
+        transaction_details: { net_received_amount: 228 },
         date_approved: "2026-06-24T12:00:00.000Z",
         payment_method_id: "pix",
       },
@@ -481,8 +481,8 @@ Deno.test("webhook payment acesso_unico approved: concede acesso por N meses e r
 
   const pag = find(db, "pagamento", (r) => r.mp_payment_id === "PAY-1");
   assertEquals(pag?.status, "approved");
-  assertEquals(pag?.valor_centavos, 19990);
-  assertEquals(pag?.liquido_centavos, 19000);
+  assertEquals(pag?.valor_centavos, 24000);
+  assertEquals(pag?.liquido_centavos, 22800);
   assertEquals(pag?.metodo_pagamento, "pix");
 });
 
@@ -513,7 +513,7 @@ Deno.test("webhook payment approved com concessão pendente (falha ao cancelar a
           acesso_meses: 6,
           intencao_id: "int-8",
         },
-        transaction_amount: 199.9,
+        transaction_amount: 240,
         date_approved: "2026-06-24T12:00:00.000Z",
       },
     },
@@ -569,7 +569,7 @@ Deno.test("webhook payment acesso_unico refunded: revoga o acesso (proxima_cobra
         external_reference: "user-9",
         status: "refunded",
         metadata: { tipo: "acesso_unico", plano_slug: "semestral" },
-        transaction_amount: 199.9,
+        transaction_amount: 240,
       },
     },
   ]);
@@ -636,7 +636,7 @@ Deno.test("webhook payment cancelled (checkout embutido): intenção vira expira
           plano_slug: "semestral",
           intencao_id: "int-9",
         },
-        transaction_amount: 199.9,
+        transaction_amount: 240,
       },
     },
   ]);

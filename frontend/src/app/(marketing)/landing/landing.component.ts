@@ -323,10 +323,10 @@ export class LandingComponent implements OnDestroy {
     {
       slug: 'mensal',
       name: 'Mensal',
-      tagline: 'Flexível — sem fidelidade, cancele quando quiser',
-      price: 'R$ 49,90',
+      tagline: 'Flexível — pague uma vez, use por 1 mês',
+      price: 'R$ 59,90',
       period: '/mês',
-      note: 'Renova automaticamente. Cancele a qualquer momento.',
+      note: 'Pagamento único. Não renova automaticamente — renove só se quiser.',
       ctaLabel: 'Começar no mensal',
       features: [
         'Todos os simulados: nacionais, processuais e laboratório',
@@ -344,11 +344,11 @@ export class LandingComponent implements OnDestroy {
       slug: 'semestral',
       name: 'Semestral',
       tagline: 'Melhor custo-benefício — pague em até 6x',
-      price: 'R$ 33,32',
+      price: 'R$ 40,00',
       period: '/mês',
-      note: 'R$ 199,90 no semestre, em até 6x sem juros.',
-      economy: 'R$ 99,50',
-      anchorPrice: 'R$ 299,40',
+      note: 'R$ 240,00 no semestre, em até 6x sem juros.',
+      economy: 'R$ 119,40',
+      anchorPrice: 'R$ 359,40',
       anchorNote: 'preço de 6 meses no plano mensal',
       ctaLabel: 'Garantir 6 meses com desconto',
       features: [
@@ -401,9 +401,9 @@ export class LandingComponent implements OnDestroy {
         'Não. A Aurora é um apoio ao seu estudo: mostra a direção da resposta e os pontos esperados para você treinar, mas não reproduz os critérios exatos dos professores nem substitui a correção oficial. O BoraMed é uma plataforma independente, sem vínculo com a Afya.',
     },
     {
-      question: 'Posso cancelar quando quiser?',
+      question: 'Preciso cancelar para não ser cobrado de novo?',
       answer:
-        'Sim. O plano mensal não tem fidelidade — você cancela a qualquer momento. O semestral sai mais barato por mês e pode ser parcelado em até 6x sem juros.',
+        'Não. Os planos são pagamentos únicos, sem renovação automática: o mensal libera 1 mês de acesso e o semestral, 6 meses. Quando expirar, você renova só se quiser.',
     },
     {
       question: 'Como funciona a garantia de 7 dias?',
@@ -438,7 +438,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Quais formas de pagamento posso usar?',
       answer:
-        'Tudo acontece sem sair da plataforma, em campos seguros do Mercado Pago. No plano mensal, o pagamento é recorrente no cartão de crédito. No semestral, você escolhe cartão em até 6x, Pix ou boleto.',
+        'Tudo acontece sem sair da plataforma, em campos seguros do Mercado Pago. Você paga com cartão, Pix ou boleto — e no semestral pode parcelar no cartão em até 6x sem juros.',
     },
   ];
 

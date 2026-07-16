@@ -30,7 +30,7 @@ function baseDb(extra: Record<string, unknown[]> = {}): FakeDb {
         nome: "Semestral",
         ativo: true,
         recorrente: false,
-        preco_centavos: 19990,
+        preco_centavos: 24000,
         moeda: "BRL",
         frequency: 6,
         frequency_type: "months",

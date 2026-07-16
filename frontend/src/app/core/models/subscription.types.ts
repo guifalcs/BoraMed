@@ -39,6 +39,7 @@ export interface Assinatura {
   user_id: string;
   plano_id: string | null;
   mp_preapproval_id: string | null;
+  mp_payment_id: string | null;
   status: AssinaturaStatus;
   data_inicio: string | null;
   proxima_cobranca: string | null;

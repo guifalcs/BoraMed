@@ -132,11 +132,13 @@ import type { Plano } from '../../core/models/subscription.types';
                         {{ periodo(plano) }}
                       </span>
                     </div>
-                    @if (plano.recorrente) {
-                      <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
+                    <p class="mt-1 text-xs" [ngClass]="destaque(plano) ? 'text-white/80' : 'text-gray-500'">
+                      @if (plano.recorrente) {
                         renova automaticamente
-                      </p>
-                    }
+                      } @else {
+                        pagamento único — não renova automaticamente
+                      }
+                    </p>
                   }
 
                   <!-- Benefícios -->
@@ -266,15 +268,17 @@ export class PlanosComponent implements OnInit {
   }
 
   tagline(plano: Plano): string {
-    return plano.recorrente
-      ? 'Flexível — cancele quando quiser'
-      : 'Melhor custo-benefício — pague em até 6x';
+    if (plano.recorrente) return 'Flexível — cancele quando quiser';
+    return plano.frequency > 1
+      ? 'Melhor custo-benefício — pague em até 6x'
+      : 'Flexível — pague uma vez, sem renovação automática';
   }
 
   beneficioDestaque(plano: Plano): string {
-    return plano.recorrente
-      ? 'Cancele quando quiser, sem multa'
-      : 'Maior economia do plano, com parcelamento em até 6x sem juros';
+    if (plano.recorrente) return 'Cancele quando quiser, sem multa';
+    return plano.frequency > 1
+      ? 'Maior economia do plano, com parcelamento em até 6x sem juros'
+      : 'Sem renovação automática — renove só se quiser';
   }
 
   preco(plano: Plano): string {

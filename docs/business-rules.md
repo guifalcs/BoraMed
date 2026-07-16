@@ -249,21 +249,26 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
   Brick + Checkout API, ver ADR-029). O aluno paga sem sair do BoraMed; os
   dados de cartão são digitados em campos seguros (iframes) do Mercado Pago —
   o BoraMed segue fora do escopo PCI.
-* **Mensal (recorrente)**: Payment Brick só-cartão (1x) gera um `card_token` →
-  edge `mp-processar-assinatura` cria o `preapproval` com `status:'authorized'`
-  (e-mail da conta, preço do banco, `external_reference` = `profiles.id`).
-  Recusa do cartão volta síncrona com `status_detail` mapeado na UI. Troca de
-  cartão via `mp-gerenciar-assinatura` (`trocar_cartao` → `PUT /preapproval`).
-* **Semestral (pagamento único)**: cartão em até 6x, Pix (expira em 30min) ou
-  boleto (3 dias) via edge `mp-processar-pagamento` → `POST /v1/payments`.
-  Preço sempre do banco (nunca do cliente), idempotência por
-  `attempt_id`/`X-Idempotency-Key`, rate limit de 5 tentativas/15min por
-  usuário, bloqueio 409 com acesso ativo. Cada tentativa vira uma linha em
-  `pagamento_intencao` (o frontend acompanha por polling; RLS "select own").
-* **Planos**: definidos na tabela `plano` (mensal R$49,90 e semestral
-  R$199,90). Preço e frequência ficam por linha, ajustáveis sem deploy. As
-  colunas `mp_preapproval_plan_id`/`mp_init_point` são legadas (redirect) e
-  não são usadas em compras novas.
+* **Pagamento único (mensal e semestral)**: ambos os planos são à vista, sem
+  renovação automática — cartão (parcelas conforme o plano: mensal só 1x,
+  semestral em até 6x), Pix (expira em 30min) ou boleto (3 dias) via edge
+  `mp-processar-pagamento` → `POST /v1/payments`. O acesso é concedido por
+  `frequency` meses (`proxima_cobranca = now + N meses`). Preço sempre do
+  banco (nunca do cliente), idempotência por `attempt_id`/`X-Idempotency-Key`,
+  rate limit de 5 tentativas/15min por usuário, bloqueio 409 com acesso ativo.
+  Cada tentativa vira uma linha em `pagamento_intencao` (o frontend acompanha
+  por polling; RLS "select own").
+* **Recorrente (LEGADO)**: o mensal foi assinatura recorrente até 07/2026
+  (preapproval via `mp-processar-assinatura`; a edge segue deployada mas
+  rejeita planos com `recorrente=false`). Assinantes antigos com preapproval
+  vivo continuam cobrados e geridos normalmente (cancelar/pausar/reativar/
+  trocar cartão via `mp-gerenciar-assinatura`), no valor contratado à época. A
+  UI identifica esses casos pelo `assinatura.mp_preapproval_id`, não pelo
+  `plano.recorrente`.
+* **Planos**: definidos na tabela `plano` (mensal R$59,90 por 1 mês e
+  semestral R$240,00 por 6 meses). Preço e frequência ficam por linha,
+  ajustáveis sem deploy. As colunas `mp_preapproval_plan_id`/`mp_init_point`
+  são legadas (redirect) e não são usadas em compras novas.
 * **Estados da assinatura** (espelham o Mercado Pago): `pending` →
   `authorized` (ativa) → `paused`/`cancelled`. **Fonte da verdade: webhook do
   MP** (a resposta síncrona do checkout apenas antecipa o mesmo sync,

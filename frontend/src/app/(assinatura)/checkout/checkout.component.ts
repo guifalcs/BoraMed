@@ -72,11 +72,7 @@ export const CHECKOUT_RESULT_KEY_PREFIX = 'boramed_checkout_result_';
               </div>
               <div class="text-right">
                 <p class="text-2xl font-extrabold text-gray-900">{{ precoFormatado() }}</p>
-                @if (!plano()!.recorrente) {
-                  <p class="text-xs text-gray-500">em até 6x sem juros</p>
-                } @else {
-                  <p class="text-xs text-gray-500">por mês</p>
-                }
+                <p class="text-xs text-gray-500">{{ notaPreco() }}</p>
               </div>
             </div>
           </div>
@@ -191,9 +187,23 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   descricaoPlano(): string {
     const p = this.plano();
     if (!p) return '';
-    return p.recorrente
-      ? 'Assinatura mensal — cancele quando quiser'
-      : `Acesso por ${p.frequency} meses, sem renovação automática`;
+    if (p.recorrente) return 'Assinatura mensal — cancele quando quiser';
+    const periodo = p.frequency === 1 ? '1 mês' : `${p.frequency} meses`;
+    return `Acesso por ${periodo}, sem renovação automática`;
+  }
+
+  notaPreco(): string {
+    const p = this.plano();
+    if (!p) return '';
+    if (p.recorrente) return 'por mês';
+    const max = this.maxParcelas(p);
+    return max > 1 ? `em até ${max}x sem juros` : 'pagamento único';
+  }
+
+  /** Parcelamento espelha o período de acesso (6 meses → 6x; 1 mês → à vista). */
+  private maxParcelas(p: Plano): number {
+    if (p.recorrente || p.frequency_type !== 'months') return 1;
+    return Math.min(6, Math.max(1, p.frequency));
   }
 
   precoFormatado(): string {
@@ -207,11 +217,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   private async montarBrick(plano: Plano): Promise<void> {
     this.montandoBrick.set(true);
-    // Mensal: só cartão em 1x (assinatura recorrente). Semestral: cartão em
-    // até 6x + Pix + boleto (paridade com o Checkout Pro que substituímos).
+    // Recorrente (legado): só cartão em 1x. Pagamento único: cartão + Pix +
+    // boleto, parcelado conforme o período do plano (mensal 1x, semestral 6x).
     const paymentMethods = plano.recorrente
       ? { creditCard: 'all', maxInstallments: 1 }
-      : { creditCard: 'all', bankTransfer: 'all', ticket: 'all', maxInstallments: 6 };
+      : {
+          creditCard: 'all',
+          bankTransfer: 'all',
+          ticket: 'all',
+          maxInstallments: this.maxParcelas(plano),
+        };
     try {
       this.brick = await this.sdk.createPaymentBrick(this.brickContainerId, {
         initialization: {

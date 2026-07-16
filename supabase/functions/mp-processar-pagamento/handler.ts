@@ -4,8 +4,9 @@ import { corsHeaders, json } from '../_shared/cors.ts';
 import { mpGet, mpPost } from '../_shared/mp-api.ts';
 import { syncAcessoUnicoPayment } from '../_shared/mp-payment-sync.ts';
 
-// Processa o pagamento do plano SEMESTRAL (acesso único) vindo do Payment
-// Brick embutido: cartão em até 6x, Pix ou boleto. O frontend manda apenas o
+// Processa o pagamento dos planos de ACESSO ÚNICO (mensal e semestral) vindo
+// do Payment Brick embutido: cartão (parcelas conforme o plano), Pix ou
+// boleto. O frontend manda apenas o
 // form_data do Brick (token do cartão etc.) + attempt_id; o PREÇO vem sempre
 // do banco — nunca do cliente. A concessão de acesso definitiva é do webhook,
 // mas a resposta síncrona já sincroniza o banco (syncAcessoUnicoPayment
@@ -205,15 +206,18 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
     }
   }
 
-  // 7. Método e parcelas (whitelist estrita — nada além disto vai ao MP)
+  // 7. Método e parcelas (whitelist estrita — nada além disto vai ao MP).
+  //    O teto de parcelas espelha o período de acesso do plano: semestral
+  //    (frequency=6) em até 6x; mensal (frequency=1) só à vista.
   const isCard = typeof fd.token === 'string' && fd.token.length > 0;
   const metodo = fd.payment_method_id;
   const isPix = metodo === 'pix';
+  const maxParcelas = Math.min(6, Math.max(1, Number(plano.frequency) || 1));
   let installments = 1;
   if (isCard) {
     installments = Number(fd.installments ?? 1);
-    if (!Number.isInteger(installments) || installments < 1 || installments > 6) {
-      return reply({ error: 'installments deve ser entre 1 e 6' }, 400);
+    if (!Number.isInteger(installments) || installments < 1 || installments > maxParcelas) {
+      return reply({ error: `installments deve ser entre 1 e ${maxParcelas}` }, 400);
     }
   }
 

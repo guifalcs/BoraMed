@@ -19,7 +19,7 @@ function baseDb(extra: Record<string, unknown[]> = {}): FakeDb {
         nome: 'Semestral',
         ativo: true,
         recorrente: false,
-        preco_centavos: 19990,
+        preco_centavos: 24000,
         moeda: 'BRL',
         frequency: 6,
       },
@@ -27,6 +27,17 @@ function baseDb(extra: Record<string, unknown[]> = {}): FakeDb {
         id: 'pl-men',
         slug: 'mensal',
         nome: 'Mensal',
+        ativo: true,
+        recorrente: false,
+        preco_centavos: 5990,
+        moeda: 'BRL',
+        frequency: 1,
+      },
+      // Plano recorrente legado (o mensal era assim antes de virar à vista).
+      {
+        id: 'pl-rec',
+        slug: 'recorrente-legado',
+        nome: 'Recorrente',
         ativo: true,
         recorrente: true,
         preco_centavos: 4990,
@@ -96,8 +107,8 @@ function approvedPayment(overrides: Record<string, unknown> = {}) {
     status: 'approved',
     status_detail: 'accredited',
     external_reference: 'user-1',
-    transaction_amount: 199.9,
-    transaction_details: { net_received_amount: 189.9 },
+    transaction_amount: 240,
+    transaction_details: { net_received_amount: 228 },
     payment_method_id: 'master',
     installments: 6,
     date_approved: '2026-06-24T12:00:01.000Z',
@@ -143,7 +154,7 @@ Deno.test('processar-pagamento: plano inexistente → 404', async () => {
 
 Deno.test('processar-pagamento: plano recorrente → 400', async () => {
   const res = await handleProcessarPagamento(
-    request(cardBody({ plano_slug: 'mensal' })),
+    request(cardBody({ plano_slug: 'recorrente-legado' })),
     makeDeps({ db: baseDb(), caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
   );
   assertEquals(res.status, 400);
@@ -231,6 +242,42 @@ Deno.test('processar-pagamento: installments fora de 1–6 → 400', async () =>
   }
 });
 
+Deno.test('processar-pagamento: mensal (à vista) não aceita parcelamento → 400', async () => {
+  // O teto de parcelas é o período do plano: frequency=1 → só 1x.
+  const body = cardBody({ plano_slug: 'mensal' });
+  (body.form_data as { installments?: number }).installments = 2;
+  const res = await handleProcessarPagamento(
+    request(body),
+    makeDeps({ db: baseDb(), caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 400);
+});
+
+Deno.test('processar-pagamento: mensal à vista aprovado → cobra o preço do banco em 1x com acesso_meses=1', async () => {
+  const db = baseDb();
+  const { fn, calls } = captureFetch({
+    body: approvedPayment({
+      transaction_amount: 59.9,
+      installments: 1,
+      metadata: { tipo: 'acesso_unico', plano_slug: 'mensal', user_id: 'user-1', acesso_meses: 1 },
+    }),
+  });
+  const body = cardBody({ plano_slug: 'mensal' });
+  (body.form_data as { installments?: number }).installments = 1;
+  const res = await handleProcessarPagamento(
+    request(body),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 200);
+  const post = calls.find((c) => c.url.includes('/v1/payments') && c.init?.method === 'POST');
+  assertExists(post);
+  const sent = JSON.parse(String(post!.init!.body));
+  assertEquals(sent.transaction_amount, 59.9);
+  assertEquals(sent.installments, 1);
+  assertEquals(sent.metadata.acesso_meses, 1);
+  assertEquals(sent.metadata.plano_slug, 'mensal');
+});
+
 Deno.test('processar-pagamento: attempt_id de OUTRO usuário → 409 (anti-replay)', async () => {
   const db = baseDb({
     pagamento_intencao: [
@@ -277,7 +324,7 @@ Deno.test('processar-pagamento aprovado (cartão): preço DO BANCO no body, idem
   assertEquals(calls.length, 1);
   assertEquals(calls[0].url, 'https://api.mercadopago.com/v1/payments');
   const sent = JSON.parse(String(calls[0].init?.body));
-  assertEquals(sent.transaction_amount, 199.9, 'preço vem do banco, nunca do cliente');
+  assertEquals(sent.transaction_amount, 240, 'preço vem do banco, nunca do cliente');
   assertEquals(sent.token, 'tok-abc');
   assertEquals(sent.installments, 6);
   assertEquals(sent.statement_descriptor, 'BORAMED');
@@ -290,7 +337,7 @@ Deno.test('processar-pagamento aprovado (cartão): preço DO BANCO no body, idem
   assertEquals(sent.three_d_secure_mode, 'optional');
   assertEquals(sent.binary_mode, false);
   assertEquals(sent.metadata.tipo, 'acesso_unico');
-  assertEquals(sent.additional_info.items[0].unit_price, 199.9);
+  assertEquals(sent.additional_info.items[0].unit_price, 240);
   assertEquals(sent.additional_info.ip_address, '200.10.20.30');
   assertEquals(sent.notification_url, 'https://proj.supabase.co/functions/v1/mp-webhook');
   const headers = calls[0].init?.headers as Record<string, string>;
@@ -306,7 +353,7 @@ Deno.test('processar-pagamento aprovado (cartão): preço DO BANCO no body, idem
   // Banco sincronizado
   const int = find(db, 'pagamento_intencao', (r) => r.idempotency_key === ATTEMPT);
   assertEquals(int?.status, 'aprovada');
-  assertEquals(int?.valor_centavos, 19990, 'snapshot do preço do banco');
+  assertEquals(int?.valor_centavos, 24000, 'snapshot do preço do banco');
   const assin = find(db, 'assinatura', (r) => r.mp_payment_id === '999');
   assertExists(assin, 'acesso concedido na resposta síncrona');
   assertEquals(assin?.status, 'authorized');
