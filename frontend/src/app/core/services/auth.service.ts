@@ -82,14 +82,19 @@ export class AuthService implements OnDestroy {
 
   private async loadInitialSession(): Promise<void> {
     try {
-      const { data } = await this.supabase.auth.getUser();
-      this._user.set(data.user ?? null);
-      if (isPlatformBrowser(this.platformId) && data.user) {
+      // getSession() lê a sessão local (cookie/storage), sem o round-trip a
+      // /auth/v1/user que getUser() faz — este era o principal atraso visível
+      // em toda navegação autenticada. Para fins de navegação basta: um token
+      // inválido falha na primeira query real (RLS é a barreira de segurança).
+      const { data } = await this.supabase.auth.getSession();
+      const user = data.session?.user ?? null;
+      this._user.set(user);
+      if (isPlatformBrowser(this.platformId) && user) {
         try {
           const saved = sessionStorage.getItem(this.ADMIN_SESSION_KEY);
           if (saved) {
             const backup = JSON.parse(saved);
-            const targetName = data.user.user_metadata?.['full_name'] ?? data.user.email ?? 'Usuário';
+            const targetName = user.user_metadata?.['full_name'] ?? user.email ?? 'Usuário';
             this._impersonando.set({ adminName: backup.adminName, targetName });
           }
         } catch { /* ignorar */ }
@@ -102,11 +107,16 @@ export class AuthService implements OnDestroy {
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
-    const { error } = await this.supabase.auth.signInWithPassword({
+    const { data, error } = await this.supabase.auth.signInWithPassword({
       email: input.email,
       password: input.password,
     });
-    return error ? { ok: false, error: this.mapError(error.message, error.status) } : { ok: true };
+    if (error) return { ok: false, error: this.mapError(error.message, error.status) };
+    // A sessão recém-emitida já é autoritativa: marca o serviço como pronto
+    // para os guards da navegação pós-login não repetirem a verificação.
+    this._user.set(data.user);
+    this._isReady.set(true);
+    return { ok: true };
   }
 
   async signup(input: SignupInput): Promise<AuthResult> {

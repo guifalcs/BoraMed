@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 import { ProfileService } from '../services/profile.service';
+import { SubscriptionService } from '../services/subscription.service';
 
 describe('authGuard', () => {
   function setup(isAuthenticated: boolean) {
@@ -16,17 +17,21 @@ describe('authGuard', () => {
       profile: vi.fn().mockReturnValue(null),
       loadProfile: vi.fn().mockResolvedValue(undefined),
     };
+    const subscriptionMock = {
+      temAssinaturaAtivaServidor: vi.fn().mockResolvedValue(false),
+    };
     const routerMock = { createUrlTree: vi.fn().mockReturnValue('/login-tree') };
 
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthService, useValue: authMock },
         { provide: ProfileService, useValue: profileMock },
+        { provide: SubscriptionService, useValue: subscriptionMock },
         { provide: Router, useValue: routerMock },
       ],
     });
 
-    return { authMock, profileMock, routerMock };
+    return { authMock, profileMock, subscriptionMock, routerMock };
   }
 
   it('deve permitir acesso quando autenticado', async () => {

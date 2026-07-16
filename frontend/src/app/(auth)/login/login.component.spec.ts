@@ -5,6 +5,8 @@ import { LoginComponent } from './login.component';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PrefetchService } from '../../core/services/prefetch.service';
+import { ProfileService } from '../../core/services/profile.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 
 const mockAuth = {
   login: vi.fn(),
@@ -14,6 +16,8 @@ const mockAuth = {
 
 const mockToast = { success: vi.fn(), error: vi.fn() };
 const mockPrefetch = { prefetchDashboardRoutes: vi.fn() };
+const mockProfile = { loadProfile: vi.fn() };
+const mockSubscription = { temAssinaturaAtivaServidor: vi.fn() };
 
 const mockRouter = { navigate: vi.fn() };
 
@@ -29,6 +33,8 @@ describe('LoginComponent', () => {
     mockAuth.login.mockResolvedValue({ ok: true });
     mockAuth.signInWithGoogle.mockResolvedValue({ ok: true });
     mockAuth.resendConfirmation.mockResolvedValue({ ok: true });
+    mockProfile.loadProfile.mockResolvedValue(undefined);
+    mockSubscription.temAssinaturaAtivaServidor.mockResolvedValue(true);
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
@@ -37,6 +43,8 @@ describe('LoginComponent', () => {
         { provide: AuthService, useValue: mockAuth },
         { provide: NotificationService, useValue: mockToast },
         { provide: PrefetchService, useValue: mockPrefetch },
+        { provide: ProfileService, useValue: mockProfile },
+        { provide: SubscriptionService, useValue: mockSubscription },
       ],
     }).compileComponents();
 

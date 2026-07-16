@@ -46,6 +46,8 @@ export const subscriptionGuard: CanActivateFn = async (_route, state) => {
   }
 
   // Consulta autoritativa no servidor (evita estado obsoleto entre usuários).
+  // No caminho frio ela costuma já estar em voo (warm-up do authGuard) ou
+  // cacheada (positivo) — ver SubscriptionService.temAssinaturaAtivaServidor.
   const ativa = await subscription.temAssinaturaAtivaServidor();
   if (ativa) return true;
 

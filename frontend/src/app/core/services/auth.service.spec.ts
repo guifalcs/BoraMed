@@ -14,7 +14,8 @@ function makeSupabaseMock() {
       return { data: { subscription } };
     }),
     getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
-    signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
+    getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+    signInWithPassword: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
     signUp: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
     resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
     updateUser: vi.fn().mockResolvedValue({ error: null }),
@@ -69,9 +70,9 @@ describe('AuthService', () => {
   });
 
   describe('initialize()', () => {
-    it('define user após getUser retornar um usuário', async () => {
+    it('define user após getSession retornar uma sessão', async () => {
       const fakeUser = { id: 'u1', email: 'user@example.com' };
-      supabaseMock.client.auth.getUser.mockResolvedValue({ data: { user: fakeUser } });
+      supabaseMock.client.auth.getSession.mockResolvedValue({ data: { session: { user: fakeUser } } });
 
       await service.initialize();
 
@@ -80,8 +81,8 @@ describe('AuthService', () => {
       expect(service.isAuthenticated()).toBe(true);
     });
 
-    it('define user como null se getUser falhar', async () => {
-      supabaseMock.client.auth.getUser.mockRejectedValue(new Error('network'));
+    it('define user como null se getSession falhar', async () => {
+      supabaseMock.client.auth.getSession.mockRejectedValue(new Error('network'));
 
       await service.initialize();
 
@@ -91,10 +92,18 @@ describe('AuthService', () => {
   });
 
   describe('login()', () => {
-    it('retorna ok: true em caso de sucesso', async () => {
-      supabaseMock.client.auth.signInWithPassword.mockResolvedValue({ error: null });
+    it('retorna ok: true em caso de sucesso e marca o serviço como pronto', async () => {
+      const fakeUser = { id: 'u1', email: 'u@e.com' };
+      supabaseMock.client.auth.signInWithPassword.mockResolvedValue({
+        data: { user: fakeUser },
+        error: null,
+      });
       const result = await service.login({ email: 'u@e.com', password: 'abc' });
       expect(result).toEqual({ ok: true });
+      // A sessão recém-emitida já é autoritativa: os guards da navegação
+      // pós-login não devem repetir a verificação de sessão.
+      expect(service.user()).toEqual(fakeUser);
+      expect(service.isReady()).toBe(true);
     });
 
     it('retorna ok: false com código INVALID_CREDENTIALS', async () => {

@@ -6,6 +6,8 @@ import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-p
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PrefetchService } from '../../core/services/prefetch.service';
+import { ProfileService } from '../../core/services/profile.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { loginSchema } from '../../core/models/auth.schemas';
 import type { AuthErrorCode } from '../../core/models/auth.types';
 import { SeoService } from '../../core/seo/seo.service';
@@ -27,6 +29,8 @@ export class LoginComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly toast = inject(NotificationService);
   private readonly prefetch = inject(PrefetchService);
+  private readonly profileService = inject(ProfileService);
+  private readonly subscription = inject(SubscriptionService);
   private readonly seo = inject(SeoService);
 
   private cooldownTimer: ReturnType<typeof setInterval> | null = null;
@@ -86,6 +90,11 @@ export class LoginComponent implements OnDestroy {
     if (result.ok) {
       this.toast.success('Bem-vindo de volta!');
       this.prefetch.prefetchDashboardRoutes();
+      // Aquece em paralelo o que os guards do /dashboard vão exigir; os
+      // serviços dedupam, então os guards reaproveitam estas requisições em
+      // voo em vez de refazê-las em série durante a navegação.
+      void this.profileService.loadProfile();
+      void this.subscription.temAssinaturaAtivaServidor();
       void this.router.navigate(['/dashboard']);
     } else {
       this.errorCode.set(result.error);

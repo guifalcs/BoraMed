@@ -21,6 +21,16 @@ export class SubscriptionService {
   private readonly _isLoading = signal(false);
   private loadPromise: Promise<void> | null = null;
 
+  // Cache do paywall: o subscription.guard roda em canActivate + canActivateChild
+  // e a cada navegação entre rotas-filhas do dashboard; sem cache, cada troca de
+  // rota re-dispara a RPC. Só o resultado POSITIVO é cacheado — acesso ativo é
+  // estável dentro do TTL, enquanto "sem acesso" pode virar a qualquer momento
+  // (pagamento aprovando) e cacheá-lo quebraria o polling pós-checkout e
+  // prenderia no paywall um usuário recém-pago.
+  private static readonly ACESSO_TTL_MS = 5 * 60_000;
+  private acessoAtivo: { userId: string; expiraEm: number } | null = null;
+  private acessoPromise: Promise<boolean> | null = null;
+
   readonly assinatura = this._assinatura.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
 
@@ -29,6 +39,15 @@ export class SubscriptionService {
 
   clear(): void {
     this._assinatura.set(null);
+    this.invalidarAcesso();
+  }
+
+  /** Descarta o cache do paywall (mudança de status: cancelar/pausar/vincular). */
+  invalidarAcesso(): void {
+    this.acessoAtivo = null;
+    // Também descarta a requisição em voo: ela partiu antes da mudança de
+    // status e novos chamadores não devem herdar seu resultado obsoleto.
+    this.acessoPromise = null;
   }
 
   async carregarAssinatura(): Promise<void> {
@@ -80,11 +99,36 @@ export class SubscriptionService {
     return ativa ?? rows[0];
   }
 
-  /** Verifica acesso no servidor (RPC), sem depender do estado local. */
+  /**
+   * Verifica acesso no servidor (RPC), sem depender do estado local.
+   * Resultado positivo fica em cache curto (chaveado por usuário); negativo e
+   * erro nunca entram no cache — a próxima chamada consulta o servidor de novo.
+   */
   async temAssinaturaAtivaServidor(): Promise<boolean> {
+    const userId = this.auth.user()?.id;
+    const cache = this.acessoAtivo;
+    if (userId && cache?.userId === userId && Date.now() < cache.expiraEm) return true;
+
+    // Dedup: guard, warm-up do authGuard e prefetch pós-login podem disparar
+    // quase juntos; compartilham a mesma requisição em voo.
+    if (this.acessoPromise) return this.acessoPromise;
+
+    const promise = this.verificarAcessoServidor(userId).finally(() => {
+      // Só limpa se ainda for a promise corrente (invalidarAcesso pode ter
+      // trocado a referência no meio do caminho).
+      if (this.acessoPromise === promise) this.acessoPromise = null;
+    });
+    this.acessoPromise = promise;
+    return promise;
+  }
+
+  private async verificarAcessoServidor(userId: string | undefined): Promise<boolean> {
     const { data, error } = await this.supabase.rpc('tem_assinatura_ativa');
-    if (error) return false;
-    return data === true;
+    const ativa = !error && data === true;
+    if (ativa && userId) {
+      this.acessoAtivo = { userId, expiraEm: Date.now() + SubscriptionService.ACESSO_TTL_MS };
+    }
+    return ativa;
   }
 
   async listarPlanos(): Promise<Plano[]> {
@@ -153,6 +197,7 @@ export class SubscriptionService {
       body: { preapproval_id: preapprovalId },
     });
     if (error) return { ok: false, error: await this.mensagemErro(error, 'Não foi possível confirmar a assinatura.') };
+    this.invalidarAcesso();
     await this.fetchAssinatura(this.auth.user()?.id ?? '');
     return { ok: true };
   }
@@ -174,6 +219,7 @@ export class SubscriptionService {
       body: { acao },
     });
     if (error) return { ok: false, error: await this.mensagemErro(error, 'Não foi possível atualizar a assinatura.') };
+    this.invalidarAcesso();
     await this.fetchAssinatura(this.auth.user()?.id ?? '');
     return { ok: true };
   }

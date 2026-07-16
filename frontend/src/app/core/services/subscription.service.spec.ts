@@ -270,6 +270,66 @@ describe('SubscriptionService', () => {
 
       expect(result).toBe(false);
     });
+
+    it('cacheia resultado positivo: segunda chamada não vai à rede', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: true, error: null });
+
+      await service.temAssinaturaAtivaServidor();
+      const result = await service.temAssinaturaAtivaServidor();
+
+      expect(result).toBe(true);
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('NÃO cacheia resultado negativo: cada chamada reconsulta o servidor', async () => {
+      // "Sem acesso" é volátil (pagamento pode aprovar a qualquer momento);
+      // cachear false quebraria o polling pós-checkout e prenderia no paywall
+      // um usuário recém-pago.
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValueOnce({ data: false, error: null });
+      mockRpc.mockResolvedValueOnce({ data: true, error: null });
+
+      expect(await service.temAssinaturaAtivaServidor()).toBe(false);
+      expect(await service.temAssinaturaAtivaServidor()).toBe(true);
+      expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
+
+    it('não reaproveita cache positivo de outro usuário', async () => {
+      userSignal.set(fakeUser({ id: 'user-1' }));
+      mockRpc.mockResolvedValue({ data: true, error: null });
+      await service.temAssinaturaAtivaServidor();
+
+      userSignal.set(fakeUser({ id: 'user-2' }));
+      await service.temAssinaturaAtivaServidor();
+
+      expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
+
+    it('deduplica chamadas concorrentes na mesma requisição', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: true, error: null });
+
+      const [a, b] = await Promise.all([
+        service.temAssinaturaAtivaServidor(),
+        service.temAssinaturaAtivaServidor(),
+      ]);
+
+      expect(a).toBe(true);
+      expect(b).toBe(true);
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('invalidarAcesso() descarta o cache positivo', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: true, error: null });
+      await service.temAssinaturaAtivaServidor();
+
+      service.invalidarAcesso();
+      await service.temAssinaturaAtivaServidor();
+
+      expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
   });
 
   // ── listarPlanos ───────────────────────────────────────────────────────────
