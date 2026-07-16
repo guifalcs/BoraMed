@@ -99,6 +99,11 @@ export const routes: Routes = [
       import('./(auth)/auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
+    path: 'auth/confirmar',
+    loadComponent: () =>
+      import('./(auth)/confirmar/confirmar-email.component').then((m) => m.ConfirmarEmailComponent),
+  },
+  {
     path: 'imprimir/simulado/montado',
     canActivate: [lazyAuthGuard, lazySubscriptionGuard],
     data: { modo: 'efemero' },
