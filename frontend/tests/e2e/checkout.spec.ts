@@ -20,6 +20,7 @@ const planoMocks = [
     recorrente: false,
     ativo: true,
     ordem: 1,
+    tier: 'avancado',
   },
   // Plano recorrente como o mensal era antes de virar pagamento à vista —
   // cobre o fluxo de assinatura (preapproval) que segue vivo para legados.
@@ -35,6 +36,7 @@ const planoMocks = [
     recorrente: true,
     ativo: true,
     ordem: 3,
+    tier: 'avancado',
   },
   {
     id: 'plano-semestral-1',
@@ -48,6 +50,7 @@ const planoMocks = [
     recorrente: false,
     ativo: true,
     ordem: 2,
+    tier: 'avancado',
   },
 ];
 

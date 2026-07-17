@@ -2,11 +2,42 @@ import { test, expect } from '@playwright/test';
 
 // ─── Dados de teste ──────────────────────────────────────────────────────────
 
+// Catálogo com os 2 tiers (Essencial/Avançado) — a página de planos foi
+// redesenhada para exibir os 2 cards lado a lado (ver planos.component.ts),
+// então o mock precisa dos 4 planos mesmo quando o teste só olha para 1 deles.
 const planoMocks = [
+  {
+    id: 'plano-essencial-mensal-1',
+    slug: 'essencial-mensal',
+    nome: 'Essencial Mensal',
+    descricao: 'Acesso aos treinos nacionais por 1 mês, sem renovação automática.',
+    preco_centavos: 2490,
+    moeda: 'BRL',
+    frequency: 1,
+    frequency_type: 'months',
+    recorrente: false,
+    ativo: true,
+    ordem: 0,
+    tier: 'essencial',
+  },
+  {
+    id: 'plano-essencial-semestral-1',
+    slug: 'essencial-semestral',
+    nome: 'Essencial Semestral',
+    descricao: 'Acesso aos treinos nacionais por 6 meses. Pague em até 6x sem juros.',
+    preco_centavos: 11940,
+    moeda: 'BRL',
+    frequency: 6,
+    frequency_type: 'months',
+    recorrente: false,
+    ativo: true,
+    ordem: 1,
+    tier: 'essencial',
+  },
   {
     id: 'plano-mensal-1',
     slug: 'mensal',
-    nome: 'Plano Mensal',
+    nome: 'Avançado Mensal',
     descricao: 'Acesso completo por 1 mês, sem renovação automática',
     preco_centavos: 5990,
     moeda: 'BRL',
@@ -14,12 +45,13 @@ const planoMocks = [
     frequency_type: 'months',
     recorrente: false,
     ativo: true,
-    ordem: 1,
+    ordem: 2,
+    tier: 'avancado',
   },
   {
     id: 'plano-semestral-1',
     slug: 'semestral',
-    nome: 'Plano Semestral',
+    nome: 'Avançado Semestral',
     descricao: 'Melhor custo-benefício por 6 meses',
     preco_centavos: 24000,
     moeda: 'BRL',
@@ -27,7 +59,8 @@ const planoMocks = [
     frequency_type: 'months',
     recorrente: false,
     ativo: true,
-    ordem: 2,
+    ordem: 3,
+    tier: 'avancado',
   },
 ];
 
@@ -249,26 +282,26 @@ async function setupMocksAndGoto(
 
 test.describe('Módulo de Pagamento', () => {
   test.describe('Página de Planos (/planos)', () => {
-    test('lista os planos retornados pela API', async ({ page }) => {
+    test('lista os planos retornados pela API (Essencial e Avançado, ciclo semestral padrão)', async ({ page }) => {
       await setupMocksAndGoto(page, '/planos');
 
-      await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({
+      await expect(page.getByRole('heading', { name: 'Essencial Semestral' })).toBeVisible({
         timeout: 10_000,
       });
-      await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({
+      await expect(page.getByRole('heading', { name: 'Avançado Semestral' })).toBeVisible({
         timeout: 10_000,
       });
     });
 
-    test('exibe um botão "Assinar" para cada plano listado', async ({ page }) => {
+    test('exibe um botão "Assinar" para cada tier listado', async ({ page }) => {
       await setupMocksAndGoto(page, '/planos');
 
-      await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({
+      await expect(page.getByRole('heading', { name: 'Essencial Semestral' })).toBeVisible({
         timeout: 10_000,
       });
 
-      const botoesAssinar = page.getByRole('button', { name: 'Assinar' });
-      await expect(botoesAssinar).toHaveCount(planoMocks.length);
+      const botoesAssinar = page.getByRole('button', { name: /^Assinar/ });
+      await expect(botoesAssinar).toHaveCount(2);
     });
 
     test('exibe o título da página "Escolha seu plano"', async ({ page }) => {
@@ -284,15 +317,15 @@ test.describe('Módulo de Pagamento', () => {
     test('navega para /checkout/:slug do plano escolhido, sem redirect ao MP', async ({ page }) => {
       await setupMocksAndGoto(page, '/planos');
 
-      await expect(page.getByRole('heading', { name: 'Plano Mensal' })).toBeVisible({
+      await expect(page.getByRole('heading', { name: 'Essencial Semestral' })).toBeVisible({
         timeout: 10_000,
       });
 
-      // Clica no primeiro "Assinar" (Plano Mensal — ordem=1)
-      await page.getByRole('button', { name: 'Assinar' }).first().click();
+      // Clica em "Assinar Essencial" (ciclo semestral padrão → essencial-semestral)
+      await page.getByRole('button', { name: 'Assinar Essencial' }).click();
 
       // O checkout agora é embutido: a navegação fica dentro da plataforma.
-      await expect(page).toHaveURL(/\/checkout\/mensal/, { timeout: 10_000 });
+      await expect(page).toHaveURL(/\/checkout\/essencial-semestral/, { timeout: 10_000 });
     });
   });
 

@@ -6,6 +6,8 @@ export class SimuladosPage {
   readonly redeAfyaCard: Locator;
   readonly outrasFaculdadesCard: Locator;
   readonly heading: Locator;
+  readonly montarSimuladoCard: Locator;
+  readonly montarSimuladoUpgradeLabel: Locator;
 
   // ── Provas Afya (listagem) ──────────────────────────────────────────────
 
@@ -42,6 +44,9 @@ export class SimuladosPage {
     this.heading = page.getByRole('heading', { name: 'Simulados' });
     this.redeAfyaCard = page.getByRole('link', { name: /Rede Afya/i });
     this.outrasFaculdadesCard = page.getByText('Outras faculdades');
+    // Card "Montar simulado": bloqueado (cadeado + CTA /planos) para o tier essencial.
+    this.montarSimuladoCard = page.getByRole('link', { name: /Montar simulado/i });
+    this.montarSimuladoUpgradeLabel = page.getByText('Disponível no plano Avançado');
 
     // Listagem
     this.provaCards = page.locator('app-prova-card');
