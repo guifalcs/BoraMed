@@ -362,6 +362,9 @@ export class PagamentoStatusComponent implements OnInit, OnDestroy {
       await new Promise((r) => setTimeout(r, 1500));
     }
     // Atualiza o estado local da assinatura para os guards/telas.
+    // Invalida também os caches de acesso/tier (TTL 5min) — sem isso o
+    // tierAvancadoGuard pode negar acesso logo após um upgrade aprovado.
+    this.subscription.invalidarAcesso();
     await this.subscription.carregarAssinatura();
     this.liberandoAcesso.set(false);
   }
