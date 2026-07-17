@@ -337,7 +337,7 @@ export class LandingComponent implements OnDestroy {
     'Correção das questões abertas pela Aurora (IA)',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',
-    'Suporte',
+    'Suporte 24h',
   ];
 
   private static readonly AVANCADO_FEATURES: readonly string[] = [

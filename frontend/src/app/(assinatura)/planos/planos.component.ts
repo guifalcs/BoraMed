@@ -20,7 +20,7 @@ const ESSENCIAL_BENEFICIOS: readonly string[] = [
   'Correção das questões abertas pela Aurora (IA)',
   'Modo competitivo',
   'Histórico e estatísticas de desempenho',
-  'Suporte',
+  'Suporte 24h',
 ];
 
 const ESSENCIAL_NAO_INCLUSO: readonly string[] = [
