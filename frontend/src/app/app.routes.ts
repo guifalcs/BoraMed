@@ -5,6 +5,7 @@ import {
   lazyBannedAccountGuard,
   lazyGuestGuard,
   lazySubscriptionGuard,
+  lazyTierAvancadoGuard,
 } from './core/guards/lazy-route-guards';
 import { oauthRedirectGuard } from './core/guards/oauth-redirect.guard';
 
@@ -104,13 +105,20 @@ export const routes: Routes = [
       import('./(auth)/confirmar/confirmar-email.component').then((m) => m.ConfirmarEmailComponent),
   },
   {
+    // Impressão do simulado MONTADO (personalizado, gerado em /dashboard/simulados/montar)
+    // — sempre exclusiva do plano Avançado (gerar_simulado_impressao bloqueia
+    // essencial incondicionalmente), daí o guard de tier aqui.
     path: 'imprimir/simulado/montado',
-    canActivate: [lazyAuthGuard, lazySubscriptionGuard],
+    canActivate: [lazyAuthGuard, lazySubscriptionGuard, lazyTierAvancadoGuard],
     data: { modo: 'efemero' },
     loadComponent: () =>
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
   },
   {
+    // Impressão de prova PRONTA por id: pode ser um treino nacional (liberado
+    // para o essencial) ou processual/laboratório (só avançado) — a checagem
+    // de tier é condicional ao formato da prova, então acontece dentro da RPC
+    // `get_simulado_impressao` (P0015), não neste guard estático de rota.
     path: 'imprimir/simulado/:provaId',
     canActivate: [lazyAuthGuard, lazySubscriptionGuard],
     loadComponent: () =>

@@ -204,10 +204,10 @@
   @if (!isLoading() && erro()) {
     <div class="mx-auto max-w-3xl px-4 py-12">
       <app-empty-state
-        titulo="Não foi possível abrir a impressão"
+        [titulo]="erroUpgrade() ? 'Recurso exclusivo do plano Avançado' : 'Não foi possível abrir a impressão'"
         [descricao]="erro()"
-        labelBotao="Voltar para simulados"
-        [routerLink]="['/dashboard/simulados']"
+        [labelBotao]="erroUpgrade() ? 'Fazer upgrade' : 'Voltar para simulados'"
+        [routerLink]="erroUpgrade() ? ['/planos'] : ['/dashboard/simulados']"
       />
     </div>
   }

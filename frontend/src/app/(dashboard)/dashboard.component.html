@@ -15,7 +15,7 @@
     </div>
 
     <nav class="sidebar-nav" aria-label="Navegação principal">
-      @for (item of navItems; track item.route) {
+      @for (item of navItemsVisiveis(); track item.route) {
         <a
           class="nav-item"
           [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"

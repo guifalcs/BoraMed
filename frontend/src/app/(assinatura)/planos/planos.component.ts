@@ -11,75 +11,9 @@ import {
   UiSegmentedToggleComponent,
   type SegmentedToggleOption,
 } from '../../shared/components/ui/segmented-toggle/ui-segmented-toggle.component';
-import type { Plano } from '../../core/models/subscription.types';
+import type { Plano, PlanoTier } from '../../core/models/subscription.types';
 
-type PlanoTier = 'essencial' | 'avancado';
 type Ciclo = 'mensal' | 'semestral';
-
-/** Plano mock com a mesma shape de `Plano` + o tier ao qual pertence. */
-interface PlanoMock extends Plano {
-  tier: PlanoTier;
-}
-
-// TODO(integração): trocar por listarPlanos() (backend ainda não tem os planos do Essencial).
-const PLANOS_MOCK: readonly PlanoMock[] = [
-  {
-    id: 'essencial-mensal',
-    slug: 'essencial-mensal',
-    nome: 'Essencial',
-    descricao: 'Para treinar com as provas nacionais',
-    preco_centavos: 2490,
-    moeda: 'BRL',
-    frequency: 1,
-    frequency_type: 'months',
-    recorrente: false,
-    ativo: true,
-    ordem: 1,
-    tier: 'essencial',
-  },
-  {
-    id: 'essencial-semestral',
-    slug: 'essencial-semestral',
-    nome: 'Essencial',
-    descricao: 'Para treinar com as provas nacionais',
-    preco_centavos: 11940,
-    moeda: 'BRL',
-    frequency: 6,
-    frequency_type: 'months',
-    recorrente: false,
-    ativo: true,
-    ordem: 2,
-    tier: 'essencial',
-  },
-  {
-    id: 'mensal',
-    slug: 'mensal',
-    nome: 'Avançado',
-    descricao: 'Acesso completo à plataforma',
-    preco_centavos: 5990,
-    moeda: 'BRL',
-    frequency: 1,
-    frequency_type: 'months',
-    recorrente: false,
-    ativo: true,
-    ordem: 3,
-    tier: 'avancado',
-  },
-  {
-    id: 'semestral',
-    slug: 'semestral',
-    nome: 'Avançado',
-    descricao: 'Acesso completo à plataforma',
-    preco_centavos: 24000,
-    moeda: 'BRL',
-    frequency: 6,
-    frequency_type: 'months',
-    recorrente: false,
-    ativo: true,
-    ordem: 4,
-    tier: 'avancado',
-  },
-];
 
 const ESSENCIAL_BENEFICIOS: readonly string[] = [
   'Treinos com provas nacionais (N1, N2 e Teste de Progresso)',
@@ -104,7 +38,7 @@ const AVANCADO_BENEFICIOS: readonly string[] = [
 
 // Percentual de economia do plano semestral em relação ao mensal, usado no
 // badge do toggle. Calculado a partir do tier Avançado (o mais representativo).
-function calcularPercentualEconomia(mensal: PlanoMock, semestral: PlanoMock): number {
+function calcularPercentualEconomia(mensal: Plano, semestral: Plano): number {
   const totalMensal = mensal.preco_centavos * semestral.frequency;
   const economia = totalMensal - semestral.preco_centavos;
   return Math.round((economia / totalMensal) * 100);
@@ -172,143 +106,147 @@ function calcularPercentualEconomia(mensal: PlanoMock, semestral: PlanoMock): nu
             <!-- Toggle de ciclo de pagamento -->
             <div class="mx-auto mb-10 max-w-xs">
               <app-ui-segmented-toggle
-                [options]="cicloOptions"
+                [options]="cicloOptions()"
                 [value]="ciclo()"
                 ariaLabel="Ciclo de pagamento"
                 (valueChange)="onCicloChange($event)"
               />
             </div>
 
-            <div class="grid items-start gap-6 md:grid-cols-2">
-              <!-- Card Essencial -->
-              <div class="order-2 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm md:order-1">
-                <h2 class="text-xl font-bold text-gray-900">{{ planoEssencial().nome }}</h2>
-                <p class="mt-1 text-sm text-gray-500">{{ planoEssencial().descricao }}</p>
+            @if (planoEssencial(); as pe) {
+              @if (planoAvancado(); as pa) {
+                <div class="grid items-start gap-6 md:grid-cols-2">
+                  <!-- Card Essencial -->
+                  <div class="order-2 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm md:order-1">
+                    <h2 class="text-xl font-bold text-gray-900">{{ pe.nome }}</h2>
+                    <p class="mt-1 text-sm text-gray-500">{{ pe.descricao }}</p>
 
-                @if (anchorTotal(planoEssencial())) {
-                  <p class="mt-4 text-xs text-gray-400">
-                    <s>{{ anchorTotal(planoEssencial()) }}</s>
-                    preço de {{ planoEssencial().frequency }} meses no plano mensal
-                  </p>
-                }
-
-                @if (porMes(planoEssencial())) {
-                  <div class="mt-2 flex flex-wrap items-end justify-between gap-2">
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-4xl font-extrabold text-gray-900">{{ porMes(planoEssencial()) }}</span>
-                      <span class="text-sm text-gray-500">/mês</span>
-                    </div>
-                    @if (economia(planoEssencial())) {
-                      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-                        <app-ui-icon [icon]="sparklesIcon" [size]="13" class="shrink-0" />
-                        Economize {{ economia(planoEssencial()) }}
-                      </span>
+                    @if (anchorTotal(pe)) {
+                      <p class="mt-4 text-xs text-gray-400">
+                        <s>{{ anchorTotal(pe) }}</s>
+                        preço de {{ pe.frequency }} meses no plano mensal
+                      </p>
                     }
-                  </div>
-                  <p class="mt-1 text-sm text-gray-500">
-                    {{ preco(planoEssencial()) }} {{ periodoExtenso(planoEssencial()) }}
-                  </p>
-                  <p class="mt-1 text-xs text-gray-500">em até 6x sem juros de {{ porMes(planoEssencial()) }}</p>
-                } @else {
-                  <div class="mt-6 flex items-baseline gap-1">
-                    <span class="text-4xl font-extrabold text-gray-900">{{ preco(planoEssencial()) }}</span>
-                    <span class="text-sm text-gray-500">{{ periodo(planoEssencial()) }}</span>
-                  </div>
-                  <p class="mt-1 text-xs text-gray-500">pagamento único — não renova automaticamente</p>
-                }
 
-                <ul class="mt-6 space-y-2.5 border-t border-gray-100 pt-6">
-                  @for (b of essencialBeneficios; track b) {
-                    <li class="flex items-start gap-2 text-sm text-gray-700">
-                      <app-ui-icon [icon]="checkIcon" [size]="16" class="mt-0.5 shrink-0 text-emerald-600" />
-                      <span>{{ b }}</span>
-                    </li>
-                  }
-                  @for (n of essencialNaoIncluso; track n) {
-                    <li class="flex items-start gap-2 text-sm text-gray-400">
-                      <app-ui-icon [icon]="xIcon" [size]="16" class="mt-0.5 shrink-0 text-gray-300" />
-                      <span>{{ n }}</span>
-                    </li>
-                  }
-                </ul>
-
-                <button
-                  type="button"
-                  (click)="assinar(planoEssencial())"
-                  class="mt-8 w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
-                >
-                  Assinar Essencial
-                </button>
-              </div>
-
-              <!-- Card Avançado (destaque) -->
-              <div
-                class="relative order-1 overflow-hidden rounded-2xl border border-transparent p-8 text-white shadow-sm md:order-2"
-                [style.background]="gradiente"
-              >
-                <div class="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white opacity-5"></div>
-                <div class="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white opacity-5"></div>
-                <span class="mb-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
-                  Recomendado
-                </span>
-
-                <h2 class="text-xl font-bold">{{ planoAvancado().nome }}</h2>
-                <p class="mt-1 text-sm text-white/70">{{ planoAvancado().descricao }}</p>
-
-                @if (anchorTotal(planoAvancado())) {
-                  <p class="mt-4 text-xs text-white/60">
-                    <s>{{ anchorTotal(planoAvancado()) }}</s>
-                    preço de {{ planoAvancado().frequency }} meses no plano mensal
-                  </p>
-                }
-
-                @if (porMes(planoAvancado())) {
-                  <div class="mt-2 flex flex-wrap items-end justify-between gap-2">
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-4xl font-extrabold">{{ porMes(planoAvancado()) }}</span>
-                      <span class="text-sm text-white/70">/mês</span>
-                    </div>
-                    @if (economia(planoAvancado())) {
-                      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-400 px-2.5 py-1 text-xs font-bold text-emerald-950 shadow-sm ring-1 ring-emerald-300/50">
-                        <app-ui-icon [icon]="sparklesIcon" [size]="13" class="shrink-0" />
-                        Economize {{ economia(planoAvancado()) }}
-                      </span>
+                    @if (porMes(pe)) {
+                      <div class="mt-2 flex flex-wrap items-end justify-between gap-2">
+                        <div class="flex items-baseline gap-1">
+                          <span class="text-4xl font-extrabold text-gray-900">{{ porMes(pe) }}</span>
+                          <span class="text-sm text-gray-500">/mês</span>
+                        </div>
+                        @if (economia(pe)) {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                            <app-ui-icon [icon]="sparklesIcon" [size]="13" class="shrink-0" />
+                            Economize {{ economia(pe) }}
+                          </span>
+                        }
+                      </div>
+                      <p class="mt-1 text-sm text-gray-500">
+                        {{ preco(pe) }} {{ periodoExtenso(pe) }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500">em até 6x sem juros de {{ porMes(pe) }}</p>
+                    } @else {
+                      <div class="mt-6 flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-gray-900">{{ preco(pe) }}</span>
+                        <span class="text-sm text-gray-500">{{ periodo(pe) }}</span>
+                      </div>
+                      <p class="mt-1 text-xs text-gray-500">pagamento único — não renova automaticamente</p>
                     }
+
+                    <ul class="mt-6 space-y-2.5 border-t border-gray-100 pt-6">
+                      @for (b of essencialBeneficios; track b) {
+                        <li class="flex items-start gap-2 text-sm text-gray-700">
+                          <app-ui-icon [icon]="checkIcon" [size]="16" class="mt-0.5 shrink-0 text-emerald-600" />
+                          <span>{{ b }}</span>
+                        </li>
+                      }
+                      @for (n of essencialNaoIncluso; track n) {
+                        <li class="flex items-start gap-2 text-sm text-gray-400">
+                          <app-ui-icon [icon]="xIcon" [size]="16" class="mt-0.5 shrink-0 text-gray-300" />
+                          <span>{{ n }}</span>
+                        </li>
+                      }
+                    </ul>
+
+                    <button
+                      type="button"
+                      (click)="assinar(pe)"
+                      class="mt-8 w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      Assinar Essencial
+                    </button>
                   </div>
-                  <p class="mt-1 text-sm text-white/80">
-                    {{ preco(planoAvancado()) }} {{ periodoExtenso(planoAvancado()) }}
-                  </p>
-                  <p class="mt-1 text-xs text-white/80">em até 6x sem juros de {{ porMes(planoAvancado()) }}</p>
-                } @else {
-                  <div class="mt-6 flex items-baseline gap-1">
-                    <span class="text-4xl font-extrabold">{{ preco(planoAvancado()) }}</span>
-                    <span class="text-sm text-white/70">{{ periodo(planoAvancado()) }}</span>
+
+                  <!-- Card Avançado (destaque) -->
+                  <div
+                    class="relative order-1 overflow-hidden rounded-2xl border border-transparent p-8 text-white shadow-sm md:order-2"
+                    [style.background]="gradiente"
+                  >
+                    <div class="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white opacity-5"></div>
+                    <div class="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white opacity-5"></div>
+                    <span class="mb-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+                      Recomendado
+                    </span>
+
+                    <h2 class="text-xl font-bold">{{ pa.nome }}</h2>
+                    <p class="mt-1 text-sm text-white/70">{{ pa.descricao }}</p>
+
+                    @if (anchorTotal(pa)) {
+                      <p class="mt-4 text-xs text-white/60">
+                        <s>{{ anchorTotal(pa) }}</s>
+                        preço de {{ pa.frequency }} meses no plano mensal
+                      </p>
+                    }
+
+                    @if (porMes(pa)) {
+                      <div class="mt-2 flex flex-wrap items-end justify-between gap-2">
+                        <div class="flex items-baseline gap-1">
+                          <span class="text-4xl font-extrabold">{{ porMes(pa) }}</span>
+                          <span class="text-sm text-white/70">/mês</span>
+                        </div>
+                        @if (economia(pa)) {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-emerald-400 px-2.5 py-1 text-xs font-bold text-emerald-950 shadow-sm ring-1 ring-emerald-300/50">
+                            <app-ui-icon [icon]="sparklesIcon" [size]="13" class="shrink-0" />
+                            Economize {{ economia(pa) }}
+                          </span>
+                        }
+                      </div>
+                      <p class="mt-1 text-sm text-white/80">
+                        {{ preco(pa) }} {{ periodoExtenso(pa) }}
+                      </p>
+                      <p class="mt-1 text-xs text-white/80">em até 6x sem juros de {{ porMes(pa) }}</p>
+                    } @else {
+                      <div class="mt-6 flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold">{{ preco(pa) }}</span>
+                        <span class="text-sm text-white/70">{{ periodo(pa) }}</span>
+                      </div>
+                      <p class="mt-1 text-xs text-white/80">pagamento único — não renova automaticamente</p>
+                    }
+
+                    <ul class="mt-6 space-y-2.5 border-t border-white/20 pt-6">
+                      @for (b of avancadoBeneficios; track b) {
+                        <li class="flex items-start gap-2 text-sm text-white/90">
+                          <app-ui-icon [icon]="checkIcon" [size]="16" class="mt-0.5 shrink-0 text-white" />
+                          <span>{{ b }}</span>
+                        </li>
+                      }
+                    </ul>
+
+                    <button
+                      type="button"
+                      (click)="assinar(pa)"
+                      class="mt-8 w-full rounded-xl bg-white px-4 py-3 font-semibold text-blue-700 transition hover:bg-gray-100"
+                    >
+                      Assinar Avançado
+                    </button>
                   </div>
-                  <p class="mt-1 text-xs text-white/80">pagamento único — não renova automaticamente</p>
-                }
-
-                <ul class="mt-6 space-y-2.5 border-t border-white/20 pt-6">
-                  @for (b of avancadoBeneficios; track b) {
-                    <li class="flex items-start gap-2 text-sm text-white/90">
-                      <app-ui-icon [icon]="checkIcon" [size]="16" class="mt-0.5 shrink-0 text-white" />
-                      <span>{{ b }}</span>
-                    </li>
-                  }
-                </ul>
-
-                <button
-                  type="button"
-                  (click)="assinar(planoAvancado())"
-                  class="mt-8 w-full rounded-xl bg-white px-4 py-3 font-semibold text-blue-700 transition hover:bg-gray-100"
-                >
-                  Assinar Avançado
-                </button>
-              </div>
-            </div>
-          }
-
-          @if (erro()) {
-            <p class="mt-6 text-center text-sm text-red-600">{{ erro() }}</p>
+                </div>
+              }
+            } @else {
+              <p class="mt-6 text-center text-sm text-red-600">
+                {{ erro() ?? 'Não foi possível carregar os planos no momento.' }}
+              </p>
+            }
           }
         </div>
       </div>
@@ -364,8 +302,7 @@ export class PlanosComponent implements OnInit {
   readonly essencialNaoIncluso = ESSENCIAL_NAO_INCLUSO;
   readonly avancadoBeneficios = AVANCADO_BENEFICIOS;
 
-  // TODO(integração): trocar por listarPlanos()
-  readonly planos: readonly PlanoMock[] = PLANOS_MOCK;
+  readonly planos = signal<readonly Plano[]>([]);
 
   readonly loading = signal(true);
   readonly erro = signal<string | null>(null);
@@ -373,17 +310,17 @@ export class PlanosComponent implements OnInit {
   /** Semestral é o ciclo padrão — melhor custo-benefício e maior conversão. */
   readonly ciclo = signal<Ciclo>('semestral');
 
-  readonly cicloOptions: SegmentedToggleOption[] = [
+  readonly cicloOptions = computed<SegmentedToggleOption[]>(() => [
     { value: 'mensal', label: 'Mensal' },
     {
       value: 'semestral',
       label: 'Semestral',
       badge: `Economize até ${this.percentualEconomiaMax()}%`,
     },
-  ];
+  ]);
 
-  readonly planoEssencial = computed<PlanoMock>(() => this.planoPorTier('essencial'));
-  readonly planoAvancado = computed<PlanoMock>(() => this.planoPorTier('avancado'));
+  readonly planoEssencial = computed<Plano | null>(() => this.planoPorTier('essencial'));
+  readonly planoAvancado = computed<Plano | null>(() => this.planoPorTier('avancado'));
 
   async ngOnInit(): Promise<void> {
     if (!this.profile()) void this.profileService.loadProfile();
@@ -391,6 +328,15 @@ export class PlanosComponent implements OnInit {
       await this.subscription.carregarAssinatura();
     } catch {
       // Falha ao carregar a assinatura não deve bloquear a exibição dos planos.
+    }
+    try {
+      const planos = await this.subscription.listarPlanos();
+      this.planos.set(planos);
+      if (planos.length === 0) {
+        this.erro.set('Não foi possível carregar os planos no momento. Tente novamente em instantes.');
+      }
+    } catch {
+      this.erro.set('Não foi possível carregar os planos no momento. Tente novamente em instantes.');
     }
     this.loading.set(false);
   }
@@ -408,34 +354,34 @@ export class PlanosComponent implements OnInit {
     this.ciclo.set(value === 'mensal' ? 'mensal' : 'semestral');
   }
 
-  preco(plano: PlanoMock): string {
+  preco(plano: Plano): string {
     return this.brl(plano.preco_centavos, plano.moeda);
   }
 
-  porMes(plano: PlanoMock): string | null {
+  porMes(plano: Plano): string | null {
     if (plano.frequency_type === 'months' && plano.frequency > 1) {
       return this.brl(Math.round(plano.preco_centavos / plano.frequency), plano.moeda);
     }
     return null;
   }
 
-  economia(plano: PlanoMock): string | null {
+  economia(plano: Plano): string | null {
     if (!(plano.frequency_type === 'months' && plano.frequency > 1)) return null;
-    const mensal = this.planos.find((p) => p.tier === plano.tier && p.frequency === 1);
+    const mensal = this.planos().find((p) => p.tier === plano.tier && p.frequency === 1);
     if (!mensal) return null;
     const eco = mensal.preco_centavos * plano.frequency - plano.preco_centavos;
     return eco > 0 ? this.brl(eco, plano.moeda) : null;
   }
 
   /** Preço cheio do mesmo tier no plano mensal, multiplicado pelos meses — usado como âncora riscada. */
-  anchorTotal(plano: PlanoMock): string | null {
+  anchorTotal(plano: Plano): string | null {
     if (!(plano.frequency_type === 'months' && plano.frequency > 1)) return null;
-    const mensal = this.planos.find((p) => p.tier === plano.tier && p.frequency === 1);
+    const mensal = this.planos().find((p) => p.tier === plano.tier && p.frequency === 1);
     if (!mensal) return null;
     return this.brl(mensal.preco_centavos * plano.frequency, plano.moeda);
   }
 
-  periodo(plano: PlanoMock): string {
+  periodo(plano: Plano): string {
     if (plano.frequency_type === 'months') {
       if (plano.frequency === 1) return '/mês';
       if (plano.frequency === 6) return '/semestre';
@@ -446,7 +392,7 @@ export class PlanosComponent implements OnInit {
   }
 
   // Valor cheio por extenso, usado como linha secundária quando o foco é o preço por mês.
-  periodoExtenso(plano: PlanoMock): string {
+  periodoExtenso(plano: Plano): string {
     if (plano.frequency_type === 'months') {
       if (plano.frequency === 6) return 'à vista no semestre';
       if (plano.frequency === 12) return 'à vista no ano';
@@ -465,14 +411,14 @@ export class PlanosComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  private planoPorTier(tier: PlanoTier): PlanoMock {
+  private planoPorTier(tier: PlanoTier): Plano | null {
     const frequency = this.ciclo() === 'mensal' ? 1 : 6;
-    return this.planos.find((p) => p.tier === tier && p.frequency === frequency) ?? this.planos[0];
+    return this.planos().find((p) => p.tier === tier && p.frequency === frequency) ?? null;
   }
 
   private percentualEconomiaMax(): number {
-    const mensal = PLANOS_MOCK.find((p) => p.tier === 'avancado' && p.frequency === 1);
-    const semestral = PLANOS_MOCK.find((p) => p.tier === 'avancado' && p.frequency === 6);
+    const mensal = this.planos().find((p) => p.tier === 'avancado' && p.frequency === 1);
+    const semestral = this.planos().find((p) => p.tier === 'avancado' && p.frequency === 6);
     if (!mensal || !semestral) return 0;
     return calcularPercentualEconomia(mensal, semestral);
   }

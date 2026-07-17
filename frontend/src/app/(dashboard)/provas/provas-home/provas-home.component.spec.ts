@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Tentativa } from '../../../core/models/tentativa';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { SubscriptionService } from '../../../core/services/subscription.service';
 import { ProvasHomeComponent } from './provas-home.component';
 
 function tentativaFactory(overrides: Partial<Tentativa> = {}): Tentativa {
@@ -42,6 +43,12 @@ describe('ProvasHomeComponent', () => {
           provide: TentativaService,
           useValue: {
             tentativaAtiva,
+          },
+        },
+        {
+          provide: SubscriptionService,
+          useValue: {
+            tierAtivoServidor: () => Promise.resolve<'essencial' | 'avancado' | null>(null),
           },
         },
       ],

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-17 | Feature | sem commit
+
+**Plano Essencial: integração frontend↔backend do tier**
+
+- `Plano`/`AssinaturaPlano` ganham `tier` (`'essencial' | 'avancado'`); `PlanosComponent` passa a carregar os 4 planos reais via `listarPlanos()` (mock local removido).
+- `SubscriptionService.tierAtivoServidor()`: RPC `assinatura_tier()` com o mesmo cache/dedup/TTL (5 min) de `temAssinaturaAtivaServidor()`, invalidado nos mesmos pontos (`invalidarAcesso()`); computed `tier` (uso de UI, ex. sidebar) deriva da assinatura já carregada — decisões de acesso continuam sempre no servidor.
+- Novo guard `tierAvancadoGuard` (+ `lazyTierAvancadoGuard`): bloqueia Materiais, Flashcards, "Montar simulado" e a impressão do simulado montado para tier essencial, redirecionando a `/planos`. A impressão de prova por id fica fora do guard estático (nacional é liberada ao essencial) — a checagem condicional acontece na RPC (`get_simulado_impressao`, P0015).
+- Sidebar (`DashboardComponent`) esconde Materiais/Flashcards para essencial (tier buscado sob demanda no init do dashboard, sem round-trip serial no boot); enquanto desconhecido, mostra o menu completo. Card "Montar simulado" na home de provas ganha variante bloqueada (esmaecida, cadeado, CTA "Fazer upgrade") em vez de sumir.
+- P0015 (`tier_upgrade_required`) tratado nos pontos que podem recebê-lo — `iniciar_tentativa`, `gerar_simulado_personalizado`, `gerar_simulado_impressao`, `get_simulado_impressao` — com toast/upsell + redirect a `/planos` (novo util `tier-error.util.ts`).
+- `MinhaAssinaturaComponent`: texto fixo "mensal libera 1 mês / semestral 6 meses" generalizado para o período real do plano contratado (`periodoAcessoTexto()`).
+
+---
+
 ## 2026-07-12 | Fix | sem commit
 
 **Flashcards: correções de segurança e UX da revisão de código**

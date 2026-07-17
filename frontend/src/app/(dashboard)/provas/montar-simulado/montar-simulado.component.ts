@@ -13,6 +13,7 @@ import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
 import { ImpressaoSimuladoService } from '../../../core/services/impressao-simulado.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
+import { TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
 import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
@@ -336,6 +337,8 @@ export class MontarSimuladoComponent {
 
     if (result.ok) {
       void this.router.navigate(['/imprimir/simulado/montado']);
+    } else if (result.error === TIER_UPGRADE_REQUIRED) {
+      void this.router.navigate(['/planos']);
     } else {
       this.erro.set(result.error);
     }
@@ -364,6 +367,8 @@ export class MontarSimuladoComponent {
         : `Simulado ${this.formatoAtual().label}`;
       this.tentativaService.setProvaNome(nomeProva);
       void this.router.navigate(['/dashboard/simulados', prova_id, 'tentativa', tentativa.id]);
+    } else if (result.error === TIER_UPGRADE_REQUIRED) {
+      void this.router.navigate(['/planos']);
     } else {
       this.erro.set(result.error);
     }

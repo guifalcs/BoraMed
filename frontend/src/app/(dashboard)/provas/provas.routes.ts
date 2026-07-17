@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { lazyTierAvancadoGuard } from '../../core/guards/lazy-route-guards';
 
 export const provasRoutes: Routes = [
   {
@@ -18,6 +19,7 @@ export const provasRoutes: Routes = [
   },
   {
     path: 'montar',
+    canActivate: [lazyTierAvancadoGuard],
     loadComponent: () =>
       import('./montar-simulado/montar-simulado.component').then((m) => m.MontarSimuladoComponent),
   },

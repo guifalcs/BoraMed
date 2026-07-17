@@ -12,6 +12,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { provideMarkdown } from 'ngx-markdown';
 import { ChevronLeft, Printer } from 'lucide-angular';
 import { ImpressaoSimuladoService } from '../core/services/impressao-simulado.service';
+import { TIER_UPGRADE_REQUIRED } from '../core/utils/tier-error.util';
 import type { SimuladoImpressao, OpcoesImpressao, TamanhoFonteImpressao } from '../core/models/impressao';
 import { OPCOES_IMPRESSAO_PADRAO } from '../core/models/impressao';
 import type { QuestaoComAlternativas } from '../core/models/questao';
@@ -61,6 +62,8 @@ export class SimuladoImpressaoComponent {
   protected readonly simulado = signal<SimuladoImpressao | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
+  /** Erro é P0015 (tier_upgrade_required): troca o CTA de "voltar" por "fazer upgrade". */
+  protected readonly erroUpgrade = signal(false);
   protected readonly opcoes = signal<OpcoesImpressao>({
     ...OPCOES_IMPRESSAO_PADRAO,
     ...(this.isBrowser ? carregarPrefs() : {}),
@@ -168,6 +171,9 @@ export class SimuladoImpressaoComponent {
       if (pedirGabarito && result.data.gabaritoLiberado) {
         this.opcoes.update((o) => ({ ...o, gabaritoAoFinal: true }));
       }
+    } else if (result.error === TIER_UPGRADE_REQUIRED) {
+      this.erroUpgrade.set(true);
+      this.erro.set('Este simulado é exclusivo do plano Avançado. Faça upgrade para imprimir.');
     } else {
       this.erro.set(result.error);
     }

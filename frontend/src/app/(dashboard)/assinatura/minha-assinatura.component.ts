@@ -222,8 +222,8 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
           passam pelos servidores do BoraMed.
         </p>
         <p>
-          Os planos são <span class="font-medium text-gray-500">pagamentos únicos</span>: o mensal
-          libera 1 mês de acesso e o semestral, 6 meses (parcelável em até 6x sem juros). Nenhum
+          Os planos são <span class="font-medium text-gray-500">pagamentos únicos</span>: seu plano
+          libera acesso por {{ periodoAcessoTexto() }} (parcelável em até 6x sem juros). Nenhum
           renova automaticamente — quando expirar, você renova só se quiser.
         </p>
         @if (recorrente()) {
@@ -317,6 +317,16 @@ export class MinhaAssinaturaComponent implements OnInit {
     const m = pg?.metodo_pagamento;
     if (!m) return null;
     return METODO_PAGAMENTO_LABEL[m] ?? m;
+  }
+
+  /** Texto genérico do período de acesso liberado pelo plano ("1 mês", "6 meses" etc.). */
+  periodoAcessoTexto(): string {
+    const p = this.assinatura()?.plano;
+    if (!p) return 'o período contratado';
+    if (p.frequency_type === 'months') {
+      return p.frequency === 1 ? '1 mês' : `${p.frequency} meses`;
+    }
+    return p.frequency === 1 ? '1 dia' : `${p.frequency} dias`;
   }
 
   private periodicidade(freq: number, tipo: 'days' | 'months'): string {

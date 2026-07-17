@@ -43,6 +43,7 @@ function fakeAssinatura(overrides: Partial<Assinatura> = {}): Assinatura {
       frequency: 1,
       frequency_type: 'months',
       recorrente: true,
+      tier: 'avancado',
     },
     ...overrides,
   };
@@ -61,6 +62,7 @@ function fakePlano(overrides: Partial<Plano> = {}): Plano {
     recorrente: true,
     ativo: true,
     ordem: 1,
+    tier: 'avancado',
     ...overrides,
   };
 }
@@ -329,6 +331,128 @@ describe('SubscriptionService', () => {
       await service.temAssinaturaAtivaServidor();
 
       expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── tierAtivoServidor ──────────────────────────────────────────────────────
+
+  describe('tierAtivoServidor()', () => {
+    it('chama supabase.rpc("assinatura_tier")', async () => {
+      mockRpc.mockResolvedValue({ data: 'avancado', error: null });
+
+      await service.tierAtivoServidor();
+
+      expect(mockRpc).toHaveBeenCalledWith('assinatura_tier');
+    });
+
+    it('retorna "essencial" quando a RPC devolve "essencial"', async () => {
+      mockRpc.mockResolvedValue({ data: 'essencial', error: null });
+
+      expect(await service.tierAtivoServidor()).toBe('essencial');
+    });
+
+    it('retorna "avancado" quando a RPC devolve "avancado"', async () => {
+      mockRpc.mockResolvedValue({ data: 'avancado', error: null });
+
+      expect(await service.tierAtivoServidor()).toBe('avancado');
+    });
+
+    it('retorna null quando a RPC devolve null (sem acesso)', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: null });
+
+      expect(await service.tierAtivoServidor()).toBeNull();
+    });
+
+    it('retorna null quando Supabase retorna erro', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc error' } });
+
+      expect(await service.tierAtivoServidor()).toBeNull();
+    });
+
+    it('cacheia o resultado: segunda chamada não vai à rede', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: 'essencial', error: null });
+
+      await service.tierAtivoServidor();
+      const result = await service.tierAtivoServidor();
+
+      expect(result).toBe('essencial');
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('deduplica chamadas concorrentes na mesma requisição', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: 'avancado', error: null });
+
+      const [a, b] = await Promise.all([
+        service.tierAtivoServidor(),
+        service.tierAtivoServidor(),
+      ]);
+
+      expect(a).toBe('avancado');
+      expect(b).toBe('avancado');
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('invalidarAcesso() descarta o cache do tier', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: 'essencial', error: null });
+      await service.tierAtivoServidor();
+
+      service.invalidarAcesso();
+      await service.tierAtivoServidor();
+
+      expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── tier (computed) ────────────────────────────────────────────────────────
+
+  describe('tier (computed)', () => {
+    it('retorna null quando não há assinatura carregada', () => {
+      expect(service.tier()).toBeNull();
+    });
+
+    it('retorna o tier do plano quando a assinatura está autorizada', async () => {
+      userSignal.set(fakeUser());
+      const ass = fakeAssinatura({
+        status: 'authorized',
+        plano: {
+          nome: 'Essencial Mensal',
+          slug: 'essencial-mensal',
+          preco_centavos: 2490,
+          moeda: 'BRL',
+          frequency: 1,
+          frequency_type: 'months',
+          recorrente: false,
+          tier: 'essencial',
+        },
+      });
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
+
+      await service.carregarAssinatura();
+
+      expect(service.tier()).toBe('essencial');
+    });
+
+    it('retorna "avancado" quando autorizada mas sem plano vinculado (cortesia/admin)', async () => {
+      userSignal.set(fakeUser());
+      const ass = fakeAssinatura({ status: 'authorized', plano: null, plano_id: null, cortesia: true });
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
+
+      await service.carregarAssinatura();
+
+      expect(service.tier()).toBe('avancado');
+    });
+
+    it('retorna null quando a assinatura não está autorizada', async () => {
+      userSignal.set(fakeUser());
+      const ass = fakeAssinatura({ status: 'cancelled' });
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [ass], error: null }));
+
+      await service.carregarAssinatura();
+
+      expect(service.tier()).toBeNull();
     });
   });
 

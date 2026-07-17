@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import { CacheService, CACHE_KEYS } from './cache.service';
+import { TIER_UPGRADE_REQUIRED, isTierUpgradeError } from '../utils/tier-error.util';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { RespostaCorrecao, StatusCorrecoesTentativa } from '../models/correcao';
 import type { QuestaoComAlternativas } from '../models/questao';
@@ -204,7 +205,8 @@ export class TentativaService {
       this._respostas.set([]);
 
       return { ok: true, data: result };
-    } catch {
+    } catch (e: unknown) {
+      if (isTierUpgradeError(e)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
       return { ok: false, error: 'Não foi possível iniciar a tentativa.' };
     }
   }
@@ -487,6 +489,7 @@ export class TentativaService {
       });
 
       if (error) {
+        if (isTierUpgradeError(error)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
         const msg = error.message || 'Não foi possível gerar o simulado.';
         return { ok: false, error: msg };
       }
@@ -498,6 +501,7 @@ export class TentativaService {
 
       return { ok: true, data: result };
     } catch (e: unknown) {
+      if (isTierUpgradeError(e)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
       const msg = e instanceof Error ? e.message : 'Não foi possível gerar o simulado.';
       return { ok: false, error: msg };
     }

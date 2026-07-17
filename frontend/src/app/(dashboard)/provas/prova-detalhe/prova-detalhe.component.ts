@@ -10,6 +10,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
 import type { ProvaComFaculdade } from '../../../core/models/prova';
 import type { ModoProva, Tentativa } from '../../../core/models/tentativa';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
@@ -95,6 +96,9 @@ export class ProvaDetalheComponent implements OnInit {
     if (result.ok) {
       this.tentativaService.setProvaNome(prova.nome);
       void this.router.navigate(['/dashboard/simulados', prova.id, 'tentativa', result.data.tentativa.id]);
+    } else if (result.error === TIER_UPGRADE_REQUIRED) {
+      this.notifications.warning('Este treino é exclusivo do plano Avançado. Faça upgrade para continuar.');
+      void this.router.navigate(['/planos']);
     } else {
       this.notifications.error('Não foi possível iniciar a prova. Tente novamente.');
     }

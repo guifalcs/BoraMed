@@ -31,11 +31,29 @@ export class SubscriptionService {
   private acessoAtivo: { userId: string; expiraEm: number } | null = null;
   private acessoPromise: Promise<boolean> | null = null;
 
+  // Cache do tier: mesmo padrão do cache de acesso acima — só o resultado é
+  // cacheado quando conhecido (positivo ou negativo aqui, pois tier não tem a
+  // mesma volatilidade do paywall pós-checkout), chaveado por usuário e com o
+  // mesmo TTL. Invalidado junto com o acesso (mesmos eventos disparam ambos).
+  private tierAtivo: { userId: string; tier: 'essencial' | 'avancado' | null; expiraEm: number } | null = null;
+  private tierPromise: Promise<'essencial' | 'avancado' | null> | null = null;
+
   readonly assinatura = this._assinatura.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
 
   /** Acesso liberado quando há assinatura autorizada (admins não passam por aqui). */
   readonly temAcesso = computed(() => this._assinatura()?.status === 'authorized');
+
+  /**
+   * Tier da assinatura carregada — uso de UI (ex.: sidebar), não de gating.
+   * Cortesia/admin com plano nulo é tratado como 'avancado' (mesma regra do
+   * servidor). Decisões de acesso devem sempre usar `tierAtivoServidor()`.
+   */
+  readonly tier = computed<'essencial' | 'avancado' | null>(() => {
+    const a = this._assinatura();
+    if (!a || a.status !== 'authorized') return null;
+    return a.plano?.tier ?? 'avancado';
+  });
 
   clear(): void {
     this._assinatura.set(null);
@@ -48,6 +66,8 @@ export class SubscriptionService {
     // Também descarta a requisição em voo: ela partiu antes da mudança de
     // status e novos chamadores não devem herdar seu resultado obsoleto.
     this.acessoPromise = null;
+    this.tierAtivo = null;
+    this.tierPromise = null;
   }
 
   async carregarAssinatura(): Promise<void> {
@@ -70,7 +90,7 @@ export class SubscriptionService {
       // fazia a tela exibir "Cancelada" mesmo com acesso liberado.
       const { data, error } = await this.supabase
         .from('assinatura')
-        .select('*, plano:plano_id(nome,slug,preco_centavos,moeda,frequency,frequency_type,recorrente)')
+        .select('*, plano:plano_id(nome,slug,preco_centavos,moeda,frequency,frequency_type,recorrente,tier)')
         .eq('user_id', userId)
         .order('criado_em', { ascending: false });
       if (error) throw error;
@@ -129,6 +149,35 @@ export class SubscriptionService {
       this.acessoAtivo = { userId, expiraEm: Date.now() + SubscriptionService.ACESSO_TTL_MS };
     }
     return ativa;
+  }
+
+  /**
+   * Tier autoritativo no servidor (RPC `assinatura_tier`), para decisões de
+   * GATING (guards). Busca sob demanda — nunca no boot do app — para não
+   * introduzir round-trips seriais na inicialização. Mesmo padrão de
+   * cache/dedup/TTL de `temAssinaturaAtivaServidor` (ver `invalidarAcesso`).
+   */
+  async tierAtivoServidor(): Promise<'essencial' | 'avancado' | null> {
+    const userId = this.auth.user()?.id;
+    const cache = this.tierAtivo;
+    if (userId && cache?.userId === userId && Date.now() < cache.expiraEm) return cache.tier;
+
+    if (this.tierPromise) return this.tierPromise;
+
+    const promise = this.consultarTierServidor(userId).finally(() => {
+      if (this.tierPromise === promise) this.tierPromise = null;
+    });
+    this.tierPromise = promise;
+    return promise;
+  }
+
+  private async consultarTierServidor(userId: string | undefined): Promise<'essencial' | 'avancado' | null> {
+    const { data, error } = await this.supabase.rpc('assinatura_tier');
+    const tier = !error && (data === 'essencial' || data === 'avancado') ? data : null;
+    if (!error && userId) {
+      this.tierAtivo = { userId, tier, expiraEm: Date.now() + SubscriptionService.ACESSO_TTL_MS };
+    }
+    return tier;
   }
 
   async listarPlanos(): Promise<Plano[]> {

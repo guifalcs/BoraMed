@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ArrowRight, BookOpen, ClipboardList, PlayCircle, Shuffle, Target } from 'lucide-angular';
+import { ArrowRight, BookOpen, ClipboardList, Lock, PlayCircle, Shuffle, Target } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { SubscriptionService } from '../../../core/services/subscription.service';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
@@ -12,8 +13,9 @@ import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components
   templateUrl: './provas-home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProvasHomeComponent {
+export class ProvasHomeComponent implements OnInit {
   private readonly tentativaService = inject(TentativaService);
+  private readonly subscription = inject(SubscriptionService);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -26,8 +28,32 @@ export class ProvasHomeComponent {
   protected readonly arrowRightIcon = ArrowRight;
   protected readonly clipboardListIcon = ClipboardList;
   protected readonly targetIcon = Target;
+  protected readonly lockIcon = Lock;
 
   protected readonly tentativaAtiva = this.tentativaService.tentativaAtiva;
+
+  // Sob demanda (RPC cacheada) — só define se "Montar simulado" mostra o
+  // upsell de upgrade. null/'avancado' = card normal (evita flash bloqueado).
+  private readonly tier = signal<'essencial' | 'avancado' | null>(null);
+  protected readonly essencial = computed(() => this.tier() === 'essencial');
+
+  async ngOnInit(): Promise<void> {
+    this.tier.set(await this.subscription.tierAtivoServidor());
+  }
+
+  protected readonly montarSimuladoCardClass = computed(() => {
+    const base =
+      'group flex items-center gap-6 rounded-xl border border-l-4 bg-[var(--color-surface)] p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 lg:p-9';
+    if (this.essencial()) {
+      return `${base} opacity-70 border-[var(--color-border)] border-l-gray-300 hover:border-l-gray-400 focus-visible:ring-gray-400`;
+    }
+    return `${base} border-[var(--color-border)] border-l-emerald-500 hover:border-emerald-200 hover:border-l-emerald-500 focus-visible:ring-emerald-500`;
+  });
+
+  protected readonly montarSimuladoIconWrapperClass = computed(() => {
+    const base = 'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl';
+    return this.essencial() ? `${base} bg-gray-100 text-gray-500` : `${base} bg-emerald-50 text-emerald-700`;
+  });
 
   protected readonly rotaTentativaAtiva = computed(() => {
     const tentativa = this.tentativaAtiva();

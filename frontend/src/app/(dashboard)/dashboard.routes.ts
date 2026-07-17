@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { lazyTierAvancadoGuard } from '../core/guards/lazy-route-guards';
 
 export const dashboardRoutes: Routes = [
   {
@@ -32,11 +33,15 @@ export const dashboardRoutes: Routes = [
   },
   {
     path: 'materiais',
+    canActivate: [lazyTierAvancadoGuard],
+    canActivateChild: [lazyTierAvancadoGuard],
     loadChildren: () =>
       import('./materiais/materiais.routes').then((m) => m.materiaisRoutes),
   },
   {
     path: 'flashcards',
+    canActivate: [lazyTierAvancadoGuard],
+    canActivateChild: [lazyTierAvancadoGuard],
     loadChildren: () =>
       import('./flashcards/flashcards.routes').then((m) => m.flashcardsRoutes),
   },

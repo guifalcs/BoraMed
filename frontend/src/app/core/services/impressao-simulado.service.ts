@@ -1,6 +1,7 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { SupabaseService } from './supabase.service';
+import { TIER_UPGRADE_REQUIRED, isTierUpgradeError } from '../utils/tier-error.util';
 import type { ProvaResult } from './prova.service';
 import type { QuestaoComAlternativas } from '../models/questao';
 import type { SimuladoImpressao } from '../models/impressao';
@@ -58,7 +59,8 @@ export class ImpressaoSimuladoService {
       };
 
       return { ok: true, data: simulado };
-    } catch {
+    } catch (e: unknown) {
+      if (isTierUpgradeError(e)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
       return { ok: false, error: 'Não foi possível carregar o simulado para impressão.' };
     }
   }
@@ -77,6 +79,7 @@ export class ImpressaoSimuladoService {
         p_formato: formato,
       });
       if (error) {
+        if (isTierUpgradeError(error)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
         return { ok: false, error: error.message || 'Não foi possível gerar o simulado.' };
       }
 

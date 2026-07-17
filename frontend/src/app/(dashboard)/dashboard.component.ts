@@ -9,6 +9,7 @@ import { ImpersonationBannerComponent } from '../shared/components/impersonation
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { ProfileService } from '../core/services/profile.service';
+import { SubscriptionService } from '../core/services/subscription.service';
 import { TentativaService } from '../core/services/tentativa.service';
 import { OnboardingService } from '../core/services/onboarding.service';
 import { AvisoService } from '../core/services/aviso.service';
@@ -39,6 +40,7 @@ export class DashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificationService);
   private readonly profileService = inject(ProfileService);
+  private readonly subscriptionService = inject(SubscriptionService);
   private readonly tentativaService = inject(TentativaService);
   private readonly router = inject(Router);
   protected readonly onboarding = inject(OnboardingService);
@@ -72,6 +74,17 @@ export class DashboardComponent {
   protected readonly menuAberto = signal(false);
   protected readonly impersonando = this.auth.impersonando;
 
+  // Tier buscado sob demanda (RPC cacheada em SubscriptionService), nunca no
+  // boot bloqueante — enquanto desconhecido (null), o menu completo é exibido
+  // e o acesso real continua protegido pelo tierAvancadoGuard nas rotas.
+  private readonly tier = signal<'essencial' | 'avancado' | null>(null);
+
+  protected readonly navItemsVisiveis = computed<NavItem[]>(() => {
+    if (this.tier() !== 'essencial') return this.navItems;
+    const restritas = new Set(['/dashboard/materiais', '/dashboard/flashcards']);
+    return this.navItems.filter((item) => !restritas.has(item.route));
+  });
+
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
     if (t && t.status !== 'finalizada' && t.modo !== 'visualizar') {
@@ -89,9 +102,11 @@ export class DashboardComponent {
           void this.tentativaService.hidratarTentativaAtiva();
           void this.avisoService.verificarAvisos();
           void this.notifService.carregar();
+          void this.subscriptionService.tierAtivoServidor().then((t) => this.tier.set(t));
         } else if (this.auth.user() && this.auth.impersonando()) {
           void this.profileService.loadProfile();
           void this.tentativaService.hidratarTentativaAtiva();
+          void this.subscriptionService.tierAtivoServidor().then((t) => this.tier.set(t));
         }
       });
     }

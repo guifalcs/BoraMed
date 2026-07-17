@@ -10,6 +10,8 @@ export type PagamentoStatus =
   | 'cancelled'
   | 'charged_back';
 
+export type PlanoTier = 'essencial' | 'avancado';
+
 export interface Plano {
   id: string;
   slug: string;
@@ -22,6 +24,7 @@ export interface Plano {
   recorrente: boolean;
   ativo: boolean;
   ordem: number;
+  tier: PlanoTier;
 }
 
 export interface AssinaturaPlano {
@@ -32,6 +35,7 @@ export interface AssinaturaPlano {
   frequency: number;
   frequency_type: 'days' | 'months';
   recorrente: boolean;
+  tier: PlanoTier;
 }
 
 export interface Assinatura {
