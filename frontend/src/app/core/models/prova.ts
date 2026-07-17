@@ -34,3 +34,16 @@ export interface FiltrosProvas {
   formato?: FormatoProva | null;
   rede?: string | null;
 }
+
+export interface ListarProvasParams {
+  rede?: string | null;
+  subtipos?: SubtipoProva[];
+  periodos?: number[];
+  pagina?: number;
+  porPagina?: number;
+}
+
+export interface ProvasPaginadas {
+  provas: Prova[];
+  total: number;
+}

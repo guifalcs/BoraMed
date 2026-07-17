@@ -31,18 +31,18 @@ const provaComFaculdadeMock: ProvaComFaculdade = {
 /**
  * Builds a chainable Supabase query-builder stub.
  *
- * All intermediate methods (select, eq, order) return `this` so fluent
- * chains work. The stub is also a thenable so `await query` resolves with
- * the given result. `single()` resolves the same result immediately.
+ * All intermediate methods (select, eq, order, range, or, in) return `this` so
+ * fluent chains work. The stub is also a thenable so `await query` resolves with
+ * the given result (including `count`). `single()` resolves the same result.
  */
-function makeQueryBuilder(result: { data: unknown; error: unknown }) {
+function makeQueryBuilder(result: { data: unknown; error: unknown; count?: number | null }) {
   const builder: Record<string, unknown> = {
     then(resolve: (v: unknown) => void) {
       resolve(result);
     },
   };
 
-  for (const method of ['select', 'eq', 'order', 'limit']) {
+  for (const method of ['select', 'eq', 'order', 'range', 'or', 'in']) {
     builder[method] = vi.fn().mockReturnValue(builder);
   }
 
@@ -77,18 +77,18 @@ describe('ProvaService', () => {
   // ── listarProvasNacionais ──────────────────────────────────────────────────
 
   describe('listarProvasNacionais()', () => {
-    it('retorna { ok: true, data: [...] } quando Supabase retorna dados', async () => {
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: [provaMock], error: null }));
+    it('retorna { ok: true, data: { provas, total } } quando Supabase retorna dados', async () => {
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [provaMock], error: null, count: 1 }));
 
-      const result = await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      const result = await service.listarProvasNacionais({});
 
-      expect(result).toEqual({ ok: true, data: [provaMock] });
+      expect(result).toEqual({ ok: true, data: { provas: [provaMock], total: 1 } });
     });
 
     it('popula o signal interno com as provas retornadas', async () => {
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: [provaMock], error: null }));
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: [provaMock], error: null, count: 1 }));
 
-      await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      await service.listarProvasNacionais({});
 
       expect(service.provas()).toEqual([provaMock]);
     });
@@ -96,7 +96,7 @@ describe('ProvaService', () => {
     it('retorna { ok: false, error: "..." } quando Supabase lança erro', async () => {
       mockFrom.mockReturnValue(makeQueryBuilder({ data: null, error: { message: 'db error' } }));
 
-      const result = await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      const result = await service.listarProvasNacionais({});
 
       expect(result).toEqual({ ok: false, error: 'Não foi possível carregar os simulados.' });
     });
@@ -104,26 +104,48 @@ describe('ProvaService', () => {
     it('define isLoading como false após a chamada (mesmo em erro)', async () => {
       mockFrom.mockReturnValue(makeQueryBuilder({ data: null, error: { message: 'fail' } }));
 
-      await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      await service.listarProvasNacionais({});
 
       expect(service.isLoading()).toBe(false);
     });
 
-    it('aplica filtro de subtipo quando fornecido', async () => {
-      const builder = makeQueryBuilder({ data: [provaMock], error: null });
+    it('seleciona com count exato para permitir a paginação', async () => {
+      const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 1 });
       mockFrom.mockReturnValue(builder);
 
-      await service.listarProvasNacionais({ subtipo: 'N1', periodo: null });
+      await service.listarProvasNacionais({});
 
-      const eqMock = builder['eq'] as ReturnType<typeof vi.fn>;
-      expect(eqMock).toHaveBeenCalledWith('subtipo', 'N1');
+      const selectMock = builder['select'] as ReturnType<typeof vi.fn>;
+      expect(selectMock).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
+    });
+
+    it('aplica o range de acordo com pagina e porPagina', async () => {
+      const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 40 });
+      mockFrom.mockReturnValue(builder);
+
+      await service.listarProvasNacionais({ pagina: 2, porPagina: 15 });
+
+      const rangeMock = builder['range'] as ReturnType<typeof vi.fn>;
+      expect(rangeMock).toHaveBeenCalledWith(30, 44);
+    });
+
+    it('aplica filtro de subtipos (array) reproduzindo o coalesce subtipo/subtipo_nacional', async () => {
+      const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 1 });
+      mockFrom.mockReturnValue(builder);
+
+      await service.listarProvasNacionais({ subtipos: ['N1', 'N2'] });
+
+      const orMock = builder['or'] as ReturnType<typeof vi.fn>;
+      expect(orMock).toHaveBeenCalledWith(
+        'subtipo.in.(N1,N2),and(subtipo.is.null,subtipo_nacional.in.(N1,N2))',
+      );
     });
 
     it('ordena por colunas existentes no schema atual', async () => {
-      const builder = makeQueryBuilder({ data: [provaMock], error: null });
+      const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 1 });
       mockFrom.mockReturnValue(builder);
 
-      await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      await service.listarProvasNacionais({});
 
       const orderMock = builder['order'] as ReturnType<typeof vi.fn>;
       expect(orderMock).toHaveBeenCalledWith('criado_em', { ascending: false });
@@ -131,34 +153,38 @@ describe('ProvaService', () => {
       expect(orderMock).not.toHaveBeenCalledWith('edicao', expect.anything());
     });
 
-    it('aplica filtro de periodo quando fornecido', async () => {
-      const builder = makeQueryBuilder({ data: [provaMock], error: null });
+    it('aplica filtro de periodos (array) via .in', async () => {
+      const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 1 });
       mockFrom.mockReturnValue(builder);
 
-      await service.listarProvasNacionais({ subtipo: null, periodo: 1 });
+      await service.listarProvasNacionais({ periodos: [1, 2] });
 
-      const eqMock = builder['eq'] as ReturnType<typeof vi.fn>;
-      expect(eqMock).toHaveBeenCalledWith('periodo', 1);
+      const inMock = builder['in'] as ReturnType<typeof vi.fn>;
+      expect(inMock).toHaveBeenCalledWith('periodo', [1, 2]);
     });
 
-    it('não aplica filtros opcionais quando eles são null', async () => {
-      const builder = makeQueryBuilder({ data: [], error: null });
+    it('não aplica filtros opcionais quando as listas estão vazias', async () => {
+      const builder = makeQueryBuilder({ data: [], error: null, count: 0 });
       mockFrom.mockReturnValue(builder);
 
-      await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      await service.listarProvasNacionais({ subtipos: [], periodos: [] });
+
+      const orMock = builder['or'] as ReturnType<typeof vi.fn>;
+      const inMock = builder['in'] as ReturnType<typeof vi.fn>;
+      expect(orMock).not.toHaveBeenCalled();
+      expect(inMock).not.toHaveBeenCalled();
 
       const eqMock = builder['eq'] as ReturnType<typeof vi.fn>;
-      expect(eqMock).toHaveBeenCalledTimes(2);
       expect(eqMock).toHaveBeenCalledWith('formato', 'nacional');
       expect(eqMock).toHaveBeenCalledWith('arquivada', false);
     });
 
-    it('retorna array vazio quando Supabase retorna data: null', async () => {
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: null, error: null }));
+    it('retorna lista vazia e total 0 quando Supabase retorna data: null', async () => {
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: null, error: null, count: null }));
 
-      const result = await service.listarProvasNacionais({ subtipo: null, periodo: null });
+      const result = await service.listarProvasNacionais({});
 
-      expect(result).toEqual({ ok: true, data: [] });
+      expect(result).toEqual({ ok: true, data: { provas: [], total: 0 } });
     });
   });
 

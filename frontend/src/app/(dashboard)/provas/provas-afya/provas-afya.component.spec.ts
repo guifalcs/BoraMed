@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
 import { ProvasAfyaComponent } from './provas-afya.component';
 import { ProvaService, type ProvaResult } from '../../../core/services/prova.service';
-import type { Prova } from '../../../core/models/prova';
+import type { Prova, ProvasPaginadas } from '../../../core/models/prova';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -27,6 +27,10 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
   };
 }
 
+function pagina(provas: Prova[], total = provas.length): ProvasPaginadas {
+  return { provas, total };
+}
+
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 describe('ProvasAfyaComponent', () => {
@@ -43,7 +47,7 @@ describe('ProvasAfyaComponent', () => {
    * Monta o componente. Sem `provasResult`, o fetch fica pendente (isLoading
    * permanece true) para exercitar o estado de skeleton.
    */
-  async function setup(provasResult?: ProvaResult<Prova[]>) {
+  async function setup(provasResult?: ProvaResult<ProvasPaginadas>) {
     vi.clearAllMocks();
     mockProvaService.listarProvasNacionais.mockReturnValue(
       provasResult ? Promise.resolve(provasResult) : new Promise(() => {}),
@@ -81,7 +85,7 @@ describe('ProvasAfyaComponent', () => {
     beforeEach(async () => {
       await setup({
         ok: true,
-        data: [provaFactory(), provaFactory({ id: 'prova-2', nome: 'Prova N2 2024' })],
+        data: pagina([provaFactory(), provaFactory({ id: 'prova-2', nome: 'Prova N2 2024' })]),
       });
     });
 
@@ -102,11 +106,13 @@ describe('ProvasAfyaComponent', () => {
   });
 
   describe('busca de provas', () => {
-    it('busca apenas treinos nacionais e mantém o título da página', async () => {
-      await setup({ ok: true, data: [provaFactory()] });
+    it('busca apenas treinos nacionais (rede afya) e mantém o título da página', async () => {
+      await setup({ ok: true, data: pagina([provaFactory()]) });
 
       expect(el.textContent).toContain('Treinos nacionais');
-      expect(mockProvaService.listarProvasNacionais).toHaveBeenCalled();
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenCalledWith(
+        expect.objectContaining({ rede: 'afya', pagina: 0, porPagina: 15 }),
+      );
       expect(mockProvaService.listarProvasPorFormato).not.toHaveBeenCalled();
     });
   });
@@ -115,7 +121,7 @@ describe('ProvasAfyaComponent', () => {
 
   describe('empty state', () => {
     beforeEach(async () => {
-      await setup({ ok: true, data: [] });
+      await setup({ ok: true, data: pagina([], 0) });
     });
 
     it('renderiza o empty state quando a lista está vazia', () => {
@@ -129,57 +135,80 @@ describe('ProvasAfyaComponent', () => {
     });
   });
 
-  // ── provasFiltradas computed ──────────────────────────────────────────────
+  // ── Filtros server-side ───────────────────────────────────────────────────
 
-  describe('provasFiltradas()', () => {
+  describe('filtros server-side', () => {
     beforeEach(async () => {
-      const provas: Prova[] = [
-        provaFactory({ id: '1', subtipo_nacional: 'N1', periodo: 1 }),
-        provaFactory({ id: '2', subtipo: 'N2', subtipo_nacional: 'N2', periodo: 2, nome: 'Prova N2 2024' }),
-        provaFactory({ id: '3', subtipo: 'teste_progresso', subtipo_nacional: 'teste_progresso', periodo: 1, nome: 'TP 2024' }),
-      ];
-      await setup({ ok: true, data: provas });
+      await setup({ ok: true, data: pagina([provaFactory()], 1) });
     });
 
-    it('retorna todas as provas quando nenhum filtro está ativo', () => {
-      const filtered = (component as any).provasFiltradas();
-      expect(filtered.length).toBe(3);
-    });
-
-    it('filtra por subtipo N1 ao chamar onSubtipoChange(["N1"])', () => {
+    it('refaz a busca com o subtipo selecionado ao chamar onSubtipoChange(["N1"])', () => {
       (component as any).onSubtipoChange(['N1']);
-      const filtered = (component as any).provasFiltradas();
-      expect(filtered.length).toBe(1);
-      expect(filtered[0].subtipo_nacional).toBe('N1');
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ subtipos: ['N1'], pagina: 0 }),
+      );
     });
 
-    it('filtra por subtipo teste_progresso ao chamar onSubtipoChange(["teste_progresso"])', () => {
-      (component as any).onSubtipoChange(['teste_progresso']);
-      const filtered = (component as any).provasFiltradas();
-      expect(filtered.every((p: Prova) => p.subtipo_nacional === 'teste_progresso')).toBe(true);
-    });
-
-    it('filtra por período ao chamar onPeriodoChange([1])', () => {
+    it('refaz a busca com o período selecionado ao chamar onPeriodoChange([1])', () => {
       (component as any).onPeriodoChange([1]);
-      const filtered = (component as any).provasFiltradas();
-      expect(filtered.length).toBe(2);
-      expect(filtered.every((p: Prova) => p.periodo === 1)).toBe(true);
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ periodos: [1], pagina: 0 }),
+      );
     });
 
-    it('filtra combinando subtipo e período', () => {
+    it('combina subtipo e período nos parâmetros da busca', () => {
       (component as any).onSubtipoChange(['N1']);
       (component as any).onPeriodoChange([1]);
-      const filtered = (component as any).provasFiltradas();
-      expect(filtered.length).toBe(1);
-      expect(filtered[0].id).toBe('1');
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ subtipos: ['N1'], periodos: [1], pagina: 0 }),
+      );
     });
 
-    it('retorna todas as provas ao redefinir subtipo para vazio', () => {
+    it('volta para a primeira página quando um filtro muda', () => {
+      (component as any).pagina.set(3);
       (component as any).onSubtipoChange(['N1']);
-      expect((component as any).provasFiltradas().length).toBe(1);
+      expect((component as any).pagina()).toBe(0);
+    });
+  });
 
-      (component as any).onSubtipoChange([]);
-      expect((component as any).provasFiltradas().length).toBe(3);
+  // ── Paginação ─────────────────────────────────────────────────────────────
+
+  describe('paginação', () => {
+    beforeEach(async () => {
+      // 40 registros no total, 15 por página → 3 páginas.
+      await setup({ ok: true, data: pagina([provaFactory()], 40) });
+    });
+
+    it('calcula o total de páginas a partir do total de registros', () => {
+      expect((component as any).totalPaginas()).toBe(3);
+    });
+
+    it('avança de página e refaz a busca com a nova página', () => {
+      (component as any).proximaPagina();
+      expect((component as any).pagina()).toBe(1);
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ pagina: 1 }),
+      );
+    });
+
+    it('não avança além da última página', () => {
+      (component as any).pagina.set(2);
+      (component as any).proximaPagina();
+      expect((component as any).pagina()).toBe(2);
+    });
+
+    it('não retrocede antes da primeira página', () => {
+      (component as any).paginaAnterior();
+      expect((component as any).pagina()).toBe(0);
+    });
+
+    it('retrocede de página e refaz a busca', () => {
+      (component as any).pagina.set(2);
+      (component as any).paginaAnterior();
+      expect((component as any).pagina()).toBe(1);
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ pagina: 1 }),
+      );
     });
   });
 

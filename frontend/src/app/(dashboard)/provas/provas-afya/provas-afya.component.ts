@@ -17,6 +17,8 @@ import { UiMultiselectComponent } from '../../../shared/components/ui/multiselec
 import type { SelectOption } from '../../../shared/components/ui/select/ui-select.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
+const POR_PAGINA = 15;
+
 @Component({
   selector: 'app-provas-afya',
   standalone: true,
@@ -36,12 +38,20 @@ export class ProvasAfyaComponent {
     { label: 'Treinos nacionais' },
   ];
 
-  protected readonly todasAsProvas = signal<Prova[]>([]);
+  protected readonly provas = signal<Prova[]>([]);
+  protected readonly total = signal(0);
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
+
+  protected readonly porPagina = POR_PAGINA;
+  protected readonly pagina = signal(0);
+
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.total() / this.porPagina)),
+  );
 
   protected readonly subtipoOpcoes: SelectOption[] = [
     { value: 'N1', label: 'N1' },
@@ -54,23 +64,6 @@ export class ProvasAfyaComponent {
     label: `${i + 1}º período`,
   }));
 
-  protected readonly provasFiltradas = computed(() => {
-    let lista = this.todasAsProvas();
-    const subtipos = this.subtiposFiltro();
-    const periodos = this.periodosFiltro();
-
-    if (subtipos.length > 0) {
-      lista = lista.filter((p) => {
-        const subtipo = p.subtipo ?? p.subtipo_nacional;
-        return subtipo !== null && subtipos.includes(subtipo);
-      });
-    }
-    if (periodos.length > 0) {
-      lista = lista.filter((p) => p.periodo != null && periodos.includes(p.periodo));
-    }
-    return lista;
-  });
-
   constructor() {
     // Navega instantaneamente; os dados são buscados aqui, sem bloquear a rota.
     if (this.isBrowser) {
@@ -82,24 +75,46 @@ export class ProvasAfyaComponent {
     this.erro.set(null);
     this.isLoading.set(true);
     const result = await this.provaService.listarProvasNacionais({
-      subtipo: null,
-      periodo: null,
       rede: 'afya',
+      subtipos: this.subtiposFiltro(),
+      periodos: this.periodosFiltro(),
+      pagina: this.pagina(),
+      porPagina: this.porPagina,
     });
     if (result.ok) {
-      this.todasAsProvas.set(result.data);
+      this.provas.set(result.data.provas);
+      this.total.set(result.data.total);
     } else {
       this.erro.set(result.error);
     }
     this.isLoading.set(false);
   }
 
+  private async recarregarPrimeiraPagina(): Promise<void> {
+    this.pagina.set(0);
+    await this.carregarProvas();
+  }
+
   protected onSubtipoChange(values: (string | number)[]): void {
     this.subtiposFiltro.set(values as SubtipoProva[]);
+    void this.recarregarPrimeiraPagina();
   }
 
   protected onPeriodoChange(values: (string | number)[]): void {
     this.periodosFiltro.set(values.map(Number));
+    void this.recarregarPrimeiraPagina();
+  }
+
+  protected paginaAnterior(): void {
+    if (this.pagina() === 0) return;
+    this.pagina.update((p) => p - 1);
+    void this.carregarProvas();
+  }
+
+  protected proximaPagina(): void {
+    if (this.pagina() >= this.totalPaginas() - 1) return;
+    this.pagina.update((p) => p + 1);
+    void this.carregarProvas();
   }
 
   protected abrirProva(id: string): void {

@@ -28,8 +28,8 @@
         </div>
         @if (!isLoading()) {
           <span class="ml-auto hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:inline">
-            {{ provasFiltradas().length }}
-            {{ provasFiltradas().length === 1 ? 'simulado' : 'simulados' }}
+            {{ total() }}
+            {{ total() === 1 ? 'simulado' : 'simulados' }}
           </span>
         }
       </div>
@@ -61,9 +61,9 @@
         </div>
       }
 
-      @if (!isLoading() && !erro() && provasFiltradas().length > 0) {
+      @if (!isLoading() && !erro() && provas().length > 0) {
         <ul class="divide-y divide-[var(--color-border)]">
-          @for (prova of provasFiltradas(); track prova.id) {
+          @for (prova of provas(); track prova.id) {
             <li>
               <app-prova-card
                 [prova]="prova"
@@ -73,9 +73,33 @@
             </li>
           }
         </ul>
+
+        @if (totalPaginas() > 1) {
+          <div class="flex items-center justify-between gap-3 border-t border-[var(--color-border)] px-4 py-3 sm:px-6">
+            <button
+              type="button"
+              class="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="pagina() === 0"
+              (click)="paginaAnterior()"
+            >
+              ← Anterior
+            </button>
+            <span class="whitespace-nowrap text-xs text-[var(--color-text-muted)]">
+              Página {{ pagina() + 1 }} de {{ totalPaginas() }}
+            </span>
+            <button
+              type="button"
+              class="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="pagina() >= totalPaginas() - 1"
+              (click)="proximaPagina()"
+            >
+              Próxima →
+            </button>
+          </div>
+        }
       }
 
-      @if (!isLoading() && !erro() && provasFiltradas().length === 0) {
+      @if (!isLoading() && !erro() && provas().length === 0) {
         <div class="px-6 py-16">
           <app-empty-state
             titulo="Nenhum simulado encontrado"

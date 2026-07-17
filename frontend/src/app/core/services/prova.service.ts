@@ -1,7 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import type { Faculdade } from '../models/faculdade';
-import type { FormatoProva, Prova, ProvaComFaculdade, FiltrosProvas } from '../models/prova';
+import type {
+  FormatoProva,
+  Prova,
+  ProvaComFaculdade,
+  ListarProvasParams,
+  ProvasPaginadas,
+} from '../models/prova';
 import type { QuestaoComAlternativas } from '../models/questao';
 import type { TentativaResposta } from '../models/tentativa';
 
@@ -12,7 +18,7 @@ const PROVA_COLUMNS =
 
 const FACULDADE_COLUMNS = 'id, nome, sigla, rede, ativa, logo_url, criado_em';
 
-const MAX_PROVAS_LISTA = 200;
+const PROVAS_POR_PAGINA_PADRAO = 15;
 
 @Injectable({ providedIn: 'root' })
 export class ProvaService {
@@ -39,42 +45,49 @@ export class ProvaService {
     }
   }
 
-  async listarProvasNacionais(filtros: FiltrosProvas): Promise<ProvaResult<Prova[]>> {
-    return this.listarProvasPorFormato('nacional', filtros);
+  async listarProvasNacionais(params: ListarProvasParams): Promise<ProvaResult<ProvasPaginadas>> {
+    return this.listarProvasPorFormato('nacional', params);
   }
 
   async listarProvasPorFormato(
     formato: FormatoProva,
-    filtros: FiltrosProvas = { subtipo: null, periodo: null },
-  ): Promise<ProvaResult<Prova[]>> {
+    params: ListarProvasParams = {},
+  ): Promise<ProvaResult<ProvasPaginadas>> {
     this._isLoading.set(true);
+    const pagina = Math.max(0, params.pagina ?? 0);
+    const porPagina = params.porPagina ?? PROVAS_POR_PAGINA_PADRAO;
     try {
       let query = this.supabase
         .from('prova')
-        .select(PROVA_COLUMNS)
+        .select(PROVA_COLUMNS, { count: 'exact' })
         .eq('formato', formato)
         .eq('arquivada', false)
         .order('criado_em', { ascending: false })
         .order('subtipo', { ascending: true })
-        .limit(MAX_PROVAS_LISTA);
+        .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
-      if (filtros.rede) {
-        query = query.eq('rede', filtros.rede);
+      if (params.rede) {
+        query = query.eq('rede', params.rede);
       }
 
-      if (filtros.subtipo) {
-        query = query.eq('subtipo', filtros.subtipo);
+      // Reproduz a semântica de `subtipo ?? subtipo_nacional`: casa quando o
+      // subtipo está preenchido, ou (só então) recai no subtipo_nacional.
+      if (params.subtipos && params.subtipos.length > 0) {
+        const vals = params.subtipos.join(',');
+        query = query.or(
+          `subtipo.in.(${vals}),and(subtipo.is.null,subtipo_nacional.in.(${vals}))`,
+        );
       }
-      if (filtros.periodo) {
-        query = query.eq('periodo', filtros.periodo);
+      if (params.periodos && params.periodos.length > 0) {
+        query = query.in('periodo', params.periodos);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
 
       const provas = (data ?? []) as Prova[];
       this._provas.set(provas);
-      return { ok: true, data: provas };
+      return { ok: true, data: { provas, total: count ?? 0 } };
     } catch {
       return { ok: false, error: 'Não foi possível carregar os simulados.' };
     } finally {
