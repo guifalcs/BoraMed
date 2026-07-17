@@ -341,7 +341,7 @@ export class LandingComponent implements OnDestroy {
   ];
 
   private static readonly AVANCADO_FEATURES: readonly string[] = [
-    ...LandingComponent.ESSENCIAL_FEATURES,
+    'Tudo do plano Essencial',
     'Simulados personalizados (processual e laboratório)',
     'Materiais de estudo',
     'Flashcards: decks oficiais, seus e da comunidade',

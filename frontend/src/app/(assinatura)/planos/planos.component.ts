@@ -30,7 +30,7 @@ const ESSENCIAL_NAO_INCLUSO: readonly string[] = [
 ];
 
 const AVANCADO_BENEFICIOS: readonly string[] = [
-  ...ESSENCIAL_BENEFICIOS,
+  'Tudo do plano Essencial',
   'Simulados personalizados (processual e laboratório)',
   'Materiais de estudo',
   'Flashcards',
