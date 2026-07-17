@@ -1,8 +1,15 @@
 # Changelog
 
-## 2026-07-17 | Feature | sem commit
+## 2026-07-17 | Feature | 1b3f633
 
-**Plano Essencial: integração frontend↔backend do tier**
+**Plano Essencial (tier barato: só treinos nacionais) + pricing 2 tiers com toggle mensal/semestral**
+
+- Novos planos `essencial-mensal` (R$24,90) e `essencial-semestral` (R$119,40 à vista, "R$19,90/mês"); planos atuais renomeados para "Avançado Mensal/Semestral". Coluna `plano.tier` + funções `assinatura_tier()`/`tem_acesso_avancado()` (cortesia/admin contam como avançado). Migrations `20260717140000/141000/142000` + reparo `20260717125900` (`notificar_nova_assinatura` só existia em prod).
+- Gates server-side: RLS de flashcards/materiais (e storage) exige tier avançado; RPCs de simulado personalizado/impressão bloqueiam essencial (`tier_upgrade_required`, P0015); `iniciar_tentativa` bloqueia provas não nacionais. Edge functions/Mercado Pago sem mudanças (preço lido do banco).
+- Página `/planos` e landing redesenhadas: 2 cards (Essencial | Avançado "Recomendado") × toggle mensal/semestral (semestral default, novo `UiSegmentedToggleComponent` com story), JSON-LD e FAQ atualizados.
+- Testes: 680 unit verdes, e2e `tier-essencial.spec.ts` (+ fixtures de plano com tier), 160 testes deno inalterados. Review aplicada (fix do cache de tier pós-checkout).
+
+Detalhes da integração frontend↔backend:
 
 - `Plano`/`AssinaturaPlano` ganham `tier` (`'essencial' | 'avancado'`); `PlanosComponent` passa a carregar os 4 planos reais via `listarPlanos()` (mock local removido).
 - `SubscriptionService.tierAtivoServidor()`: RPC `assinatura_tier()` com o mesmo cache/dedup/TTL (5 min) de `temAssinaturaAtivaServidor()`, invalidado nos mesmos pontos (`invalidarAcesso()`); computed `tier` (uso de UI, ex. sidebar) deriva da assinatura já carregada — decisões de acesso continuam sempre no servidor.
