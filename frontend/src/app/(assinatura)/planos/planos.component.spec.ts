@@ -14,7 +14,7 @@ const PLANO_MOCKS: Plano[] = [
     slug: 'essencial-mensal',
     nome: 'Essencial Mensal',
     descricao: 'Acesso aos treinos nacionais por 1 mês.',
-    preco_centavos: 2490,
+    preco_centavos: 2990,
     moeda: 'BRL',
     frequency: 1,
     frequency_type: 'months',

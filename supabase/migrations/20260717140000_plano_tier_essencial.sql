@@ -27,7 +27,7 @@ INSERT INTO public.plano
 VALUES
   ('essencial-mensal', 'Essencial Mensal',
    'Acesso aos treinos nacionais por 1 mês, sem renovação automática.',
-   2490, 1, 'months', 'essencial', true, 0),
+   2990, 1, 'months', 'essencial', true, 0),
   ('essencial-semestral', 'Essencial Semestral',
    'Acesso aos treinos nacionais por 6 meses. Pague em até 6x sem juros.',
    11940, 6, 'months', 'essencial', true, 1)

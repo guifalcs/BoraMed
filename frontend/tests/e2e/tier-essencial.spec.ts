@@ -103,7 +103,7 @@ test.describe('Página de planos (/planos)', () => {
 
     await expect(planos.headingEssencial).toContainText('Essencial Mensal');
     await expect(planos.headingAvancado).toContainText('Avançado Mensal');
-    await expect(page.getByText('R$ 24,90', { exact: true })).toBeVisible();
+    await expect(page.getByText('R$ 29,90', { exact: true })).toBeVisible();
     await expect(page.getByText('R$ 59,90', { exact: true })).toBeVisible();
   });
 

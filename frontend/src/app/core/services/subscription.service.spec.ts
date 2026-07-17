@@ -420,7 +420,7 @@ describe('SubscriptionService', () => {
         plano: {
           nome: 'Essencial Mensal',
           slug: 'essencial-mensal',
-          preco_centavos: 2490,
+          preco_centavos: 2990,
           moeda: 'BRL',
           frequency: 1,
           frequency_type: 'months',
