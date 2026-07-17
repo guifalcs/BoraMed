@@ -13,8 +13,9 @@ const anoOpcoes = Array.from({ length: 6 }, (_, i) => ({
 
 const tipoOpcoes = [
   { value: 'N1', label: 'N1' },
+  { value: 'N2', label: 'N2' },
   { value: 'teste_progresso', label: 'TPI' },
-  { value: 'N2', label: 'Integradora' },
+  { value: 'integradora', label: 'Integradora' },
 ];
 
 const meta: Meta<UiMultiselectComponent> = {

@@ -414,7 +414,7 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly cicloOptions: SegmentedToggleOption[] = [
     { value: 'mensal', label: 'Mensal' },
-    { value: 'semestral', label: 'Semestral', badge: 'Economize até 33%' },
+    { value: 'semestral', label: 'Semestral', badge: '-33%' },
   ];
 
   protected readonly visiblePricingPlans = computed(() =>

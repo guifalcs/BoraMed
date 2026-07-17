@@ -35,7 +35,7 @@ export interface Questao {
   publicada_em: string | null;
   origem_geracao: 'manual' | 'ia_assistida';
   nivel_bloom: number | null;
-  formato_prova: 'N1' | 'N2' | 'teste_progresso' | 'nacional' | 'processual' | 'laboratorio' | null;
+  formato_prova: 'N1' | 'N2' | 'integradora' | 'teste_progresso' | 'nacional' | 'processual' | 'laboratorio' | null;
   /** Grupo de questões equivalentes (fechada + discursiva gêmea). Dedup/rodízio usam coalesce(grupo, id). */
   grupo_equivalencia_id?: string | null;
   /** Flag discreta (admin): 'pendente' = convertida em massa aguardando revisão; 'revisada' = conferida. */

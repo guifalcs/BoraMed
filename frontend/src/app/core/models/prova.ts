@@ -3,7 +3,7 @@ import type { Faculdade } from './faculdade';
 export type TipoProva = 'autoral' | 'faculdade';
 export type OrigemProva = 'autoral' | 'faculdade' | 'personalizado';
 export type FormatoProva = 'nacional' | 'processual' | 'laboratorio' | 'multiestacoes';
-export type SubtipoProva = 'N1' | 'teste_progresso' | 'N2';
+export type SubtipoProva = 'N1' | 'teste_progresso' | 'N2' | 'integradora';
 
 export type OrigemGeracao = 'manual' | 'ia_assistida';
 

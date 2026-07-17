@@ -256,6 +256,7 @@ export class AdminQuestoesComponent implements OnInit {
         { value: '', label: 'Sem subtipo' },
         { value: 'N1', label: 'N1' },
         { value: 'N2', label: 'N2' },
+        { value: 'integradora', label: 'Integradora' },
         { value: 'teste_progresso', label: 'Teste de Progresso' },
       ];
     }
@@ -669,6 +670,7 @@ export class AdminQuestoesComponent implements OnInit {
     if (
       formato === 'N1' ||
       formato === 'N2' ||
+      formato === 'integradora' ||
       formato === 'teste_progresso' ||
       formato === 'nacional' ||
       formato === 'processual' ||
@@ -1009,10 +1011,10 @@ export class AdminQuestoesComponent implements OnInit {
   }
 
   protected onTipoQuestaoChange(tipo: string): void {
-    // O subtipo (formato_prova) só se aplica a questões nacionais (N1/N2/teste_progresso),
+    // O subtipo (formato_prova) só se aplica a questões nacionais (N1/N2/integradora/teste_progresso),
     // que é o único tipo com dropdown de "Subtipo da prova". Para processual e laboratório
     // não há subtipo — manter qualquer valor aqui viola a constraint questao_formato_prova_check
-    // do banco (apenas 'N1', 'N2', 'teste_progresso') e faz o INSERT falhar.
+    // do banco (apenas 'N1', 'N2', 'integradora', 'teste_progresso') e faz o INSERT falhar.
     if (tipo !== 'nacional') {
       this.fFormatoProva.set(null);
     }

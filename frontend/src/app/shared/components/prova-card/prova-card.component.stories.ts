@@ -38,5 +38,9 @@ export const TesteProgresso: Story = {
 };
 
 export const N2: Story = {
-  args: { prova: { ...prova, subtipo_nacional: 'N2', nome: 'Simulado N2 — Integradora' } },
+  args: { prova: { ...prova, subtipo_nacional: 'N2', nome: 'Simulado N2 — 1º Período' } },
+};
+
+export const Integradora: Story = {
+  args: { prova: { ...prova, subtipo_nacional: 'integradora', nome: 'Simulado Integradora — 1º Período' } },
 };

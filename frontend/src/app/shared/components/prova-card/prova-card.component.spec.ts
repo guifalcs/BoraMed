@@ -116,9 +116,19 @@ describe('ProvaCardComponent', () => {
       expect(badge?.className).toContain('text-violet-700');
     });
 
-    it('badge N2 tem classes bg-teal-100 e text-teal-700', async () => {
+    it('badge N2 tem classes bg-amber-100 e text-amber-700', async () => {
       const fixture = await createComponent(
         provaFactory({ subtipo: 'N2', subtipo_nacional: 'N2', nome: 'Prova N2 2024' }),
+        'card',
+      );
+      const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');
+      expect(badge?.className).toContain('bg-amber-100');
+      expect(badge?.className).toContain('text-amber-700');
+    });
+
+    it('badge Integradora tem classes bg-teal-100 e text-teal-700', async () => {
+      const fixture = await createComponent(
+        provaFactory({ subtipo: 'integradora', subtipo_nacional: 'integradora', nome: 'Prova Integradora 2024' }),
         'card',
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');

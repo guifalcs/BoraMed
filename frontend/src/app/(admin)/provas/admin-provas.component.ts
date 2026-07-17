@@ -132,7 +132,8 @@ export class AdminProvasComponent implements OnInit {
       ? [
           { value: '', label: 'Nenhum' },
           { value: 'N1', label: 'N1' },
-          { value: 'N2', label: 'Integradora' },
+          { value: 'N2', label: 'N2' },
+          { value: 'integradora', label: 'Integradora' },
           { value: 'teste_progresso', label: 'TPI' },
         ]
       : [],

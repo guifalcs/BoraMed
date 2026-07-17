@@ -55,8 +55,9 @@ export class ProvasAfyaComponent {
 
   protected readonly subtipoOpcoes: SelectOption[] = [
     { value: 'N1', label: 'N1' },
+    { value: 'N2', label: 'N2' },
     { value: 'teste_progresso', label: 'TPI' },
-    { value: 'N2', label: 'Integradora' },
+    { value: 'integradora', label: 'Integradora' },
   ];
 
   protected readonly periodoOpcoes: SelectOption[] = Array.from({ length: 12 }, (_, i) => ({

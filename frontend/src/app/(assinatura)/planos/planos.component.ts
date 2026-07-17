@@ -316,7 +316,7 @@ export class PlanosComponent implements OnInit {
     {
       value: 'semestral',
       label: 'Semestral',
-      badge: `Economize até ${this.percentualEconomiaMax()}%`,
+      badge: `-${this.percentualEconomiaMax()}%`,
     },
   ]);
 
