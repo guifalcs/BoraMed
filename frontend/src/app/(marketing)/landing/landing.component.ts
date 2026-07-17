@@ -337,15 +337,15 @@ export class LandingComponent implements OnDestroy {
     'Correção das questões abertas pela Aurora (IA)',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',
+    'Impressão dos treinos em PDF',
     'Suporte 24h',
   ];
 
   private static readonly AVANCADO_FEATURES: readonly string[] = [
     'Tudo do plano Essencial',
-    'Simulados personalizados (processual e laboratório)',
+    'Simulados personalizados (processual e laboratório), com impressão em PDF',
     'Materiais de estudo',
     'Flashcards: decks oficiais, seus e da comunidade',
-    'Impressão de simulados em PDF',
   ];
 
   protected readonly pricingPlans: readonly PricingPlan[] = [

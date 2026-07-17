@@ -20,6 +20,7 @@ const ESSENCIAL_BENEFICIOS: readonly string[] = [
   'Correção das questões abertas pela Aurora (IA)',
   'Modo competitivo',
   'Histórico e estatísticas de desempenho',
+  'Impressão dos treinos em PDF',
   'Suporte 24h',
 ];
 
@@ -31,10 +32,9 @@ const ESSENCIAL_NAO_INCLUSO: readonly string[] = [
 
 const AVANCADO_BENEFICIOS: readonly string[] = [
   'Tudo do plano Essencial',
-  'Simulados personalizados (processual e laboratório)',
+  'Simulados personalizados (processual e laboratório), com impressão em PDF',
   'Materiais de estudo',
   'Flashcards',
-  'Impressão de simulados em PDF',
 ];
 
 // Percentual de economia do plano semestral em relação ao mensal, usado no
