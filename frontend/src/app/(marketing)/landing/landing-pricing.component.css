@@ -2,6 +2,11 @@
   background: var(--color-bg);
 }
 
+.pricing-toggle {
+  max-width: 320px;
+  margin: 0 auto 2rem;
+}
+
 .pricing-grid {
   display: grid;
   gap: 1rem;

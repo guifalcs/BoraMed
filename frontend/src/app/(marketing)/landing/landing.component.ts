@@ -4,6 +4,7 @@ import {
   NgZone,
   OnDestroy,
   afterNextRender,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -33,6 +34,10 @@ import {
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import {
+  UiSegmentedToggleComponent,
+  type SegmentedToggleOption,
+} from '../../shared/components/ui/segmented-toggle/ui-segmented-toggle.component';
 import { LandingDemoQuizComponent } from './landing-demo-quiz.component';
 
 interface NavItem {
@@ -76,7 +81,12 @@ interface Testimonial {
   readonly context?: string;
 }
 
+type PlanTier = 'essencial' | 'avancado';
+type PlanCycle = 'mensal' | 'semestral';
+
 interface PricingPlan {
+  readonly tier: PlanTier;
+  readonly cycle: PlanCycle;
   readonly slug: string;
   readonly name: string;
   readonly tagline: string;
@@ -99,7 +109,7 @@ interface FaqItem {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, UiIconComponent, LandingDemoQuizComponent],
+  imports: [RouterLink, UiIconComponent, UiSegmentedToggleComponent, LandingDemoQuizComponent],
   templateUrl: './landing.component.html',
   styleUrls: [
     './landing.component.css',
@@ -319,31 +329,73 @@ export class LandingComponent implements OnDestroy {
     },
   ];
 
+  // Benefícios resumidos — mesma lista usada no card de planos in-app.
+  // TODO(integração): trocar por dados vindos de listarPlanos() quando o
+  // plano Essencial existir no backend.
+  private static readonly ESSENCIAL_FEATURES: readonly string[] = [
+    'Treinos com provas nacionais (N1, N2 e Teste de Progresso)',
+    'Modo competitivo',
+    'Histórico e estatísticas de desempenho',
+    'Suporte via WhatsApp',
+  ];
+
+  private static readonly AVANCADO_FEATURES: readonly string[] = [
+    ...LandingComponent.ESSENCIAL_FEATURES,
+    'Simulados personalizados (processual e laboratório)',
+    'Materiais de estudo',
+    'Flashcards: decks oficiais, seus e da comunidade',
+    'Impressão de simulados em PDF',
+  ];
+
   protected readonly pricingPlans: readonly PricingPlan[] = [
     {
-      slug: 'mensal',
-      name: 'Mensal',
-      tagline: 'Flexível — pague uma vez, use por 1 mês',
-      price: 'R$ 59,90',
+      tier: 'essencial',
+      cycle: 'mensal',
+      slug: 'essencial-mensal',
+      name: 'Essencial',
+      tagline: 'Para treinar com as provas nacionais',
+      price: 'R$ 24,90',
       period: '/mês',
       note: 'Pagamento único. Não renova automaticamente — renove só se quiser.',
-      ctaLabel: 'Começar no mensal',
-      features: [
-        'Todos os simulados: nacionais, processuais e laboratório',
-        'Correção de questões discursivas pela Aurora (IA)',
-        'Banco completo de questões autorais',
-        'Flashcards: decks oficiais, seus e da comunidade',
-        'Histórico e estatísticas de desempenho',
-        'Ranking competitivo, XP e conquistas',
-        'Revisão comentada das questões',
-        'Acesso à comunidade exclusiva no WhatsApp',
-      ],
+      ctaLabel: 'Começar no Essencial',
+      features: LandingComponent.ESSENCIAL_FEATURES,
       featured: false,
     },
     {
+      tier: 'essencial',
+      cycle: 'semestral',
+      slug: 'essencial-semestral',
+      name: 'Essencial',
+      tagline: 'Para treinar com as provas nacionais',
+      price: 'R$ 19,90',
+      period: '/mês',
+      note: 'R$ 119,40 no semestre, em até 6x sem juros.',
+      economy: 'R$ 30,00',
+      anchorPrice: 'R$ 149,40',
+      anchorNote: 'preço de 6 meses no plano mensal',
+      ctaLabel: 'Garantir 6 meses com desconto',
+      features: LandingComponent.ESSENCIAL_FEATURES,
+      featured: false,
+    },
+    {
+      tier: 'avancado',
+      cycle: 'mensal',
+      slug: 'mensal',
+      name: 'Avançado',
+      tagline: 'Acesso completo à plataforma',
+      price: 'R$ 59,90',
+      period: '/mês',
+      note: 'Pagamento único. Não renova automaticamente — renove só se quiser.',
+      ctaLabel: 'Começar no Avançado',
+      features: LandingComponent.AVANCADO_FEATURES,
+      featured: true,
+    },
+    {
+      tier: 'avancado',
+      cycle: 'semestral',
       slug: 'semestral',
-      name: 'Semestral',
-      tagline: 'Melhor custo-benefício — pague em até 6x',
+      name: 'Avançado',
+      tagline: 'Acesso completo à plataforma',
       price: 'R$ 40,00',
       period: '/mês',
       note: 'R$ 240,00 no semestre, em até 6x sem juros.',
@@ -351,19 +403,22 @@ export class LandingComponent implements OnDestroy {
       anchorPrice: 'R$ 359,40',
       anchorNote: 'preço de 6 meses no plano mensal',
       ctaLabel: 'Garantir 6 meses com desconto',
-      features: [
-        'Tudo do plano mensal incluso',
-        'Correção de questões discursivas pela Aurora (IA)',
-        'Banco completo de questões autorais',
-        'Flashcards: decks oficiais, seus e da comunidade',
-        'Histórico e estatísticas de desempenho',
-        'Ranking competitivo, XP e conquistas',
-        'Revisão comentada das questões',
-        'Acesso à comunidade exclusiva no WhatsApp',
-      ],
+      features: LandingComponent.AVANCADO_FEATURES,
       featured: true,
     },
   ];
+
+  /** Semestral é o ciclo padrão — melhor custo-benefício e maior conversão. */
+  protected readonly cicloSelecionado = signal<PlanCycle>('semestral');
+
+  protected readonly cicloOptions: SegmentedToggleOption[] = [
+    { value: 'mensal', label: 'Mensal' },
+    { value: 'semestral', label: 'Semestral', badge: 'Economize até 33%' },
+  ];
+
+  protected readonly visiblePricingPlans = computed(() =>
+    this.pricingPlans.filter((plan) => plan.cycle === this.cicloSelecionado()),
+  );
 
   protected readonly reviewTopics = [
     { name: 'Cardiovascular', pct: 58 },
@@ -403,7 +458,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Preciso cancelar para não ser cobrado de novo?',
       answer:
-        'Não. Os planos são pagamentos únicos, sem renovação automática: o mensal libera 1 mês de acesso e o semestral, 6 meses. Quando expirar, você renova só se quiser.',
+        'Não. Tanto o Essencial quanto o Avançado são pagamentos únicos, sem renovação automática, nos ciclos mensal (1 mês de acesso) ou semestral (6 meses). Quando expirar, você renova só se quiser.',
     },
     {
       question: 'Como funciona a garantia de 7 dias?',
@@ -423,12 +478,12 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Existe simulado de laboratório?',
       answer:
-        'Sim. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra.',
+        'Sim, no plano Avançado. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra.',
     },
     {
       question: 'Como funcionam os flashcards?',
       answer:
-        'Você estuda com decks prontos do BoraMed ou cria os seus, com imagens na pergunta e na resposta. Toque para revelar a resposta e marque o que acertou. Se quiser, publique seus decks no feed da comunidade — outros estudantes usam e curtem os melhores, e você vê quem curtiu os seus.',
+        'Os flashcards fazem parte do plano Avançado. Você estuda com decks prontos do BoraMed ou cria os seus, com imagens na pergunta e na resposta. Toque para revelar a resposta e marque o que acertou. Se quiser, publique seus decks no feed da comunidade — outros estudantes usam e curtem os melhores, e você vê quem curtiu os seus.',
     },
     {
       question: 'A assinatura dá acesso à comunidade?',
@@ -472,6 +527,10 @@ export class LandingComponent implements OnDestroy {
 
   protected setActiveTab(tabId: SolutionTab['id']): void {
     this.activeTab.set(tabId);
+  }
+
+  protected onCicloChange(value: string): void {
+    this.cicloSelecionado.set(value === 'mensal' ? 'mensal' : 'semestral');
   }
 
   // Faixa de cor da barra por aproveitamento: crítico, atenção ou bom.
@@ -523,9 +582,11 @@ export class LandingComponent implements OnDestroy {
         audienceType: 'Estudantes de medicina',
       },
       offers: {
-        '@type': 'Offer',
-        price: '33.32',
+        '@type': 'AggregateOffer',
+        lowPrice: '19.90',
+        highPrice: '59.90',
         priceCurrency: 'BRL',
+        offerCount: 4,
       },
     });
 

@@ -608,15 +608,24 @@
   <section class="section-shell pricing-section" id="planos">
     <div class="section-heading">
       <span class="eyebrow">Planos</span>
-      <h2>Acesso completo.<br class="heading-break" /> <span class="heading-break-tail">Risco zero por 7 dias.</span></h2>
-      <p>Os dois planos liberam tudo. A diferença é só quanto você paga por mês.</p>
+      <h2>Escolha seu plano.<br class="heading-break" /> <span class="heading-break-tail">Risco zero por 7 dias.</span></h2>
+      <p>Essencial para treinar com as provas nacionais, Avançado para acesso completo à plataforma — os dois com pagamento único, sem renovação automática.</p>
+    </div>
+
+    <div class="pricing-toggle">
+      <app-ui-segmented-toggle
+        [options]="cicloOptions"
+        [value]="cicloSelecionado()"
+        ariaLabel="Ciclo de pagamento"
+        (valueChange)="onCicloChange($event)"
+      />
     </div>
 
     <div class="pricing-grid">
-      @for (plan of pricingPlans; track plan.slug) {
+      @for (plan of visiblePricingPlans(); track plan.tier) {
         <article class="pricing-card" [class.is-featured]="plan.featured">
           @if (plan.featured) {
-            <span class="pricing-flag">Melhor valor</span>
+            <span class="pricing-flag">Recomendado</span>
           }
 
           <div class="pricing-card-head">
