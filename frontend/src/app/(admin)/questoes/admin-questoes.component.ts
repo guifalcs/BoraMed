@@ -1092,7 +1092,18 @@ export class AdminQuestoesComponent implements OnInit {
       : [];
 
     if (this.mostrarAlternativas()) {
-      if (alternativas.length < 2) {
+      if (this.fFormato() === 'multipla_escolha') {
+        // Fechadas: A–D são obrigatórias; a E é opcional e só vira alternativa
+        // (e aparece para o aluno) se tiver texto ou imagem.
+        const preenchidas = new Set(alternativas.map((a) => a.letra));
+        const faltando = ['A', 'B', 'C', 'D'].filter((l) => !preenchidas.has(l));
+        if (faltando.length > 0) {
+          this.toast.error(
+            `Preencha as alternativas ${faltando.join(', ')}. Só a alternativa E é opcional.`,
+          );
+          return;
+        }
+      } else if (alternativas.length < 2) {
         this.toast.error('Preencha ao menos duas alternativas.');
         return;
       }

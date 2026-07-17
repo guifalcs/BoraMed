@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-17 | Tweak | sem commit
+
+**Alternativa E opcional nas questões fechadas**
+
+- No cadastro/edição de questões (admin), múltipla escolha passa a exigir apenas A–D; a E é opcional. Validação em `salvar()` troca o antigo "mínimo 2 alternativas" por "A, B, C, D obrigatórias" (V/F segue com mínimo 2). Alternativa em branco (sem texto nem imagem) continua sendo descartada no save.
+- Como as alternativas são linhas da tabela `alternativa` e o `QuestaoCardComponent` itera só as gravadas, uma E vazia nunca é persistida e o aluno vê apenas A–D — sem mudança de schema/RPC. Hint e placeholder do formulário atualizados para sinalizar a E como opcional.
+
+---
+
 ## 2026-07-17 | Feature | 1b3f633
 
 **Plano Essencial (tier barato: só treinos nacionais) + pricing 2 tiers com toggle mensal/semestral**

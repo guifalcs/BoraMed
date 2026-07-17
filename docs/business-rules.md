@@ -35,7 +35,7 @@
 * Tipos: `nacional` | `processual` | `laboratorio`
 * Período: 1 a 12 (semestres do curso médico; foco inicial em alunos da rede Afya)
 * Questões de laboratório SEMPRE têm `imagem_url`
-* Questões têm exatamente 5 alternativas, 1 correta
+* Questões fechadas de múltipla escolha têm as alternativas A a D obrigatórias e a E opcional (1 correta). A alternativa E só é gravada e exibida ao aluno quando tem texto ou imagem — em branco, ela não entra na questão e o aluno vê apenas A a D. Verdadeiro/falso usa V e F.
 * Questões são autorais, criadas pelo time a partir dos temas, objetivos pedagógicos e formato das avaliações observadas. Não copiar enunciados, alternativas, imagens, gabaritos ou materiais oficiais de instituições.
 * Na importação administrativa por IA, `DISCIPLINA` e `TEMA` são opcionais, mas quando informados devem corresponder exatamente a registros cadastrados. O prompt deve incluir as disciplinas e temas existentes para evitar classificação inventada pela IA.
 * Questões importadas com `TEMA` válido devem ser vinculadas em `questao_tema`; sem tema, continuam válidas para provas, mas não entram em filtros de simulado por tema.

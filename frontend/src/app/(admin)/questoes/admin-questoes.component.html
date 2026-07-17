@@ -538,7 +538,7 @@
               @if (fFormato() === 'verdadeiro_falso') {
                 Selecione qual opção é a correta.
               } @else {
-                Marque a alternativa correta. Preencha ao menos 2 alternativas.
+                Marque a alternativa correta. As alternativas A a D são obrigatórias; a E é opcional (deixe em branco para não exibir ao aluno).
               }
             </p>
 
@@ -573,7 +573,7 @@
                       <textarea
                         class="alt-textarea"
                         rows="2"
-                        [placeholder]="'Texto da alternativa ' + alt.letra + '…'"
+                        [placeholder]="'Texto da alternativa ' + alt.letra + (alt.letra === 'E' ? ' (opcional)' : '') + '…'"
                         [value]="alt.texto"
                         (input)="atualizarTextoAlternativa(i, $any($event.target).value)"
                       ></textarea>
