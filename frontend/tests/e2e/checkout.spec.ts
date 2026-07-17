@@ -13,7 +13,7 @@ const planoMocks = [
     slug: 'mensal',
     nome: 'Mensal',
     descricao: 'Acesso completo por 1 mês, sem renovação automática',
-    preco_centavos: 5990,
+    preco_centavos: 6990,
     moeda: 'BRL',
     frequency: 1,
     frequency_type: 'months',
@@ -43,7 +43,7 @@ const planoMocks = [
     slug: 'semestral',
     nome: 'Semestral',
     descricao: 'Melhor custo-benefício por 6 meses',
-    preco_centavos: 24000,
+    preco_centavos: 29940,
     moeda: 'BRL',
     frequency: 6,
     frequency_type: 'months',
@@ -242,7 +242,7 @@ const intencaoBase = {
   plano_id: 'plano-semestral-1',
   tipo: 'acesso_unico',
   mp_payment_id: '999',
-  valor_centavos: 24000,
+  valor_centavos: 29940,
   metodo: 'master',
   parcelas: 6,
   status: 'pendente',
@@ -258,7 +258,7 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     await setupCheckout(page, '/checkout/semestral');
 
     await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('R$ 240,00')).toBeVisible();
+    await expect(page.getByText('R$ 299,40')).toBeVisible();
     await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -547,7 +547,7 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
       intencao: () => ({
         ...intencaoBase,
         plano_id: 'plano-mensal-1',
-        valor_centavos: 5990,
+        valor_centavos: 6990,
         parcelas: 1,
         status: 'aprovada',
         status_detail: 'accredited',
