@@ -17,3 +17,11 @@ scripts/teste-manual-mp/*.png
 
 # node_modules na raiz (cache do Deno)
 /node_modules/
+
+# Dumps do banco (nunca commitar)
+supabase/backups/*.sql
+supabase/backups/*.dump
+
+# Ignora TUDO em backups (dumps sensíveis)
+supabase/backups/**
+!supabase/backups/README.md
