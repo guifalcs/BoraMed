@@ -17,9 +17,10 @@ type Ciclo = 'mensal' | 'semestral';
 
 const ESSENCIAL_BENEFICIOS: readonly string[] = [
   'Treinos com provas nacionais (N1, N2 e Teste de Progresso)',
+  'Correção das questões abertas pela Aurora (IA)',
   'Modo competitivo',
   'Histórico e estatísticas de desempenho',
-  'Suporte via WhatsApp',
+  'Suporte',
 ];
 
 const ESSENCIAL_NAO_INCLUSO: readonly string[] = [

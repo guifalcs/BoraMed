@@ -334,9 +334,10 @@ export class LandingComponent implements OnDestroy {
   // plano Essencial existir no backend.
   private static readonly ESSENCIAL_FEATURES: readonly string[] = [
     'Treinos com provas nacionais (N1, N2 e Teste de Progresso)',
+    'Correção das questões abertas pela Aurora (IA)',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',
-    'Suporte via WhatsApp',
+    'Suporte',
   ];
 
   private static readonly AVANCADO_FEATURES: readonly string[] = [
