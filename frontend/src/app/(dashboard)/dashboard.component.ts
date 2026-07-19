@@ -49,6 +49,7 @@ export class DashboardComponent {
   protected readonly focoMode = inject(FocoModoService);
 
   protected readonly logOutIcon = LogOut;
+  protected readonly historyIcon = History;
   protected readonly userIcon = User;
   protected readonly settingsIcon = Settings;
   protected readonly creditCardIcon = CreditCard;
@@ -158,4 +159,10 @@ export class DashboardComponent {
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico' },
   ];
+
+  // No mobile o Histórico fica no menu do perfil — a barra inferior não
+  // comporta todos os módulos em telas estreitas (ex.: iPhone 15).
+  protected readonly bottomNavItems: NavItem[] = this.navItems.filter(
+    (item) => item.route !== '/dashboard/historico',
+  );
 }
