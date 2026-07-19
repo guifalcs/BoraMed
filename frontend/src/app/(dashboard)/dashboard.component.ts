@@ -162,7 +162,14 @@ export class DashboardComponent {
 
   // No mobile o Histórico fica no menu do perfil — a barra inferior não
   // comporta todos os módulos em telas estreitas (ex.: iPhone 15).
-  protected readonly bottomNavItems: NavItem[] = this.navItems.filter(
-    (item) => item.route !== '/dashboard/historico',
-  );
+  // Início troca de posição com Materiais para ficar no centro da barra.
+  protected readonly bottomNavItems: NavItem[] = (() => {
+    const itens = this.navItems.filter((item) => item.route !== '/dashboard/historico');
+    const inicio = itens.findIndex((item) => item.route === '/dashboard');
+    const materiais = itens.findIndex((item) => item.route === '/dashboard/materiais');
+    if (inicio !== -1 && materiais !== -1) {
+      [itens[inicio], itens[materiais]] = [itens[materiais], itens[inicio]];
+    }
+    return itens;
+  })();
 }
