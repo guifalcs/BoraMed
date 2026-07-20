@@ -39,6 +39,7 @@ export interface ListarProvasParams {
   rede?: string | null;
   subtipos?: SubtipoProva[];
   periodos?: number[];
+  busca?: string;
   pagina?: number;
   porPagina?: number;
 }

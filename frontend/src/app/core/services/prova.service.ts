@@ -81,6 +81,12 @@ export class ProvaService {
       if (params.periodos && params.periodos.length > 0) {
         query = query.in('periodo', params.periodos);
       }
+      const busca = params.busca?.trim();
+      if (busca) {
+        // Escapa curingas do LIKE para tratar o termo como texto literal.
+        const termo = busca.replace(/[\\%_]/g, '\\$&');
+        query = query.ilike('nome', `%${termo}%`);
+      }
 
       const { data, error, count } = await query;
       if (error) throw error;

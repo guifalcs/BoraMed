@@ -45,6 +45,9 @@ export class ProvasAfyaComponent {
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
+  protected readonly buscaFiltro = signal('');
+
+  private buscaDebounce: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly porPagina = POR_PAGINA;
   protected readonly pagina = signal(0);
@@ -79,6 +82,7 @@ export class ProvasAfyaComponent {
       rede: 'afya',
       subtipos: this.subtiposFiltro(),
       periodos: this.periodosFiltro(),
+      busca: this.buscaFiltro(),
       pagina: this.pagina(),
       porPagina: this.porPagina,
     });
@@ -104,6 +108,15 @@ export class ProvasAfyaComponent {
   protected onPeriodoChange(values: (string | number)[]): void {
     this.periodosFiltro.set(values.map(Number));
     void this.recarregarPrimeiraPagina();
+  }
+
+  protected onBuscaInput(event: Event): void {
+    const valor = (event.target as HTMLInputElement).value;
+    this.buscaFiltro.set(valor);
+    if (this.buscaDebounce) clearTimeout(this.buscaDebounce);
+    this.buscaDebounce = setTimeout(() => {
+      void this.recarregarPrimeiraPagina();
+    }, 350);
   }
 
   protected paginaAnterior(): void {

@@ -8,6 +8,20 @@
 
     <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div class="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] px-4 py-3 sm:px-6">
+        <div class="min-w-[12rem] flex-1 sm:max-w-xs">
+          <label for="busca-prova" class="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+            Buscar
+          </label>
+          <input
+            id="busca-prova"
+            type="search"
+            [value]="buscaFiltro()"
+            (input)="onBuscaInput($event)"
+            placeholder="Nome da prova"
+            autocomplete="off"
+            class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+          />
+        </div>
         <div style="width:10rem;min-width:10rem;max-width:10rem;flex:none">
           <app-ui-multiselect
             label="Subtipo"
