@@ -1,5 +1,14 @@
 <div class="px-4 py-6 md:px-8 lg:px-12 xl:px-16">
   <div class="mx-auto max-w-6xl">
+    <button
+      type="button"
+      class="mb-4 inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:border-blue-300 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+      (click)="voltar()"
+    >
+      <app-ui-icon [icon]="backIcon" [size]="16" />
+      Voltar aos materiais
+    </button>
+
     <app-page-header
       [titulo]="categoria()?.titulo ?? 'Materiais'"
       [subtitulo]="categoria()?.descricao ?? null"
@@ -27,10 +36,35 @@
         <!-- Lista de arquivos -->
         <aside class="shrink-0 lg:w-72">
           <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            Arquivos ({{ arquivos().length }})
+            Arquivos ({{ arquivosFiltrados().length }})
           </h2>
-          <ul class="space-y-2" role="listbox" aria-label="Arquivos disponíveis">
-            @for (arquivo of arquivos(); track arquivo.id) {
+
+          <!-- Busca por nome -->
+          <div class="relative mb-3">
+            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+              <app-ui-icon [icon]="searchIcon" [size]="16" />
+            </span>
+            <input
+              type="search"
+              [value]="termoBusca()"
+              (input)="atualizarBusca($any($event.target).value)"
+              placeholder="Buscar por nome…"
+              aria-label="Buscar arquivo por nome"
+              class="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-9 pr-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus-visible:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            />
+          </div>
+
+          @if (arquivosFiltrados().length === 0) {
+            <p class="rounded-xl border border-dashed border-[var(--color-border)] px-4 py-6 text-center text-sm text-[var(--color-text-muted)]">
+              Nenhum arquivo encontrado.
+            </p>
+          } @else {
+          <ul
+            class="max-h-[70vh] space-y-2 overflow-y-auto pr-1 lg:sticky lg:top-4"
+            role="listbox"
+            aria-label="Arquivos disponíveis"
+          >
+            @for (arquivo of arquivosFiltrados(); track arquivo.id) {
               <li>
                 <button
                   type="button"
@@ -59,6 +93,7 @@
               </li>
             }
           </ul>
+          }
         </aside>
 
         <!-- Visualizador -->

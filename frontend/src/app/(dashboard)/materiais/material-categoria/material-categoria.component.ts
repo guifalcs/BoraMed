@@ -6,8 +6,8 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { FileText } from 'lucide-angular';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FileText, ArrowLeft, Search } from 'lucide-angular';
 import { MaterialService } from '../../../core/services/material.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer.component';
@@ -24,15 +24,26 @@ import type { MaterialArquivo, MaterialCategoria } from '../../../core/models/ma
 })
 export class MaterialCategoriaComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly materialService = inject(MaterialService);
   private readonly toast = inject(NotificationService);
 
   protected readonly fileIcon = FileText;
+  protected readonly backIcon = ArrowLeft;
+  protected readonly searchIcon = Search;
 
   protected readonly categoria = signal<MaterialCategoria | null>(null);
   protected readonly arquivos = signal<MaterialArquivo[]>([]);
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
+
+  protected readonly termoBusca = signal('');
+
+  protected readonly arquivosFiltrados = computed<MaterialArquivo[]>(() => {
+    const termo = this.termoBusca().trim().toLowerCase();
+    if (!termo) return this.arquivos();
+    return this.arquivos().filter((a) => a.titulo.toLowerCase().includes(termo));
+  });
 
   protected readonly arquivoSelecionado = signal<MaterialArquivo | null>(null);
   protected readonly signedUrl = signal<string | null>(null);
@@ -84,6 +95,14 @@ export class MaterialCategoriaComponent implements OnInit {
   protected fecharViewer(): void {
     this.arquivoSelecionado.set(null);
     this.signedUrl.set(null);
+  }
+
+  protected voltar(): void {
+    void this.router.navigate(['/dashboard/materiais']);
+  }
+
+  protected atualizarBusca(valor: string): void {
+    this.termoBusca.set(valor);
   }
 
   protected formatarTamanho(bytes: number | null): string {

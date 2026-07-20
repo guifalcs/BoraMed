@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-20 | Feature | sem commit
+
+**Resumos APG (materiais): scroll na lista, botão de voltar e filtro por nome**
+
+- Tela de categoria de materiais (`MaterialCategoriaComponent`, ex. `/dashboard/materiais/resumos-apg`): a lista de arquivos ganha scroll próprio (`max-h-[70vh] overflow-y-auto`, `sticky top-4` no desktop) — antes a lista crescia sem limite e rolava a página inteira, deixando o visualizador do PDF fora de vista com muitos arquivos.
+- Novo botão "Voltar aos materiais" no topo (navega para `/dashboard/materiais`) — antes só havia o breadcrumb como retorno.
+- Novo campo de busca por nome (filtro client-side case-insensitive sobre `titulo` via `computed` `arquivosFiltrados`), com ícone de lupa, contador refletindo o filtro e estado vazio ("Nenhum arquivo encontrado."). Sem `FormsModule` — evento `(input)` + signal `termoBusca`.
+- E2E: `materiais.spec.ts` (projeto `mocked`) cobre lista/contador, overflow da lista, retorno pelo botão e filtro (incluindo estado vazio).
+
+---
+
 ## 2026-07-17 | Tweak | sem commit
 
 **Alternativa E opcional nas questões fechadas**
