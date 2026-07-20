@@ -20,6 +20,28 @@ describe('formatarEnunciado', () => {
     expect(saida).not.toMatch(/\n{3,}/);
   });
 
+  it('quebra assertivas com marcador de hífen (I- II- III- IV-)', () => {
+    const entrada =
+      'Analise as assertivas e selecione as corretas: I- Para esse paciente 88bpm seria normal. II- A frequência cardíaca deve ser aferida em 15 segundos. III- A frequência respiratória contada em 30 segundos. IV- A frequência respiratória varia com a idade.';
+    const saida = formatarEnunciado(entrada);
+
+    expect(saida).toContain('\n\nI- Para esse paciente');
+    expect(saida).toContain('\n\nII- A frequência cardíaca');
+    expect(saida).toContain('\n\nIII- A frequência respiratória');
+    expect(saida).toContain('\n\nIV- A frequência respiratória varia');
+    // Preserva o separador de hífen (não vira ponto).
+    expect(saida).not.toContain('I. Para esse paciente');
+    expect(saida).not.toMatch(/\n{3,}/);
+  });
+
+  it('quebra assertivas com marcador de parêntese (I) II) …)', () => {
+    const entrada = 'Avalie: I) Primeira afirmativa. II) Segunda afirmativa. III) Terceira afirmativa.';
+    const saida = formatarEnunciado(entrada);
+    expect(saida).toContain('\n\nI) Primeira');
+    expect(saida).toContain('\n\nII) Segunda');
+    expect(saida).toContain('\n\nIII) Terceira');
+  });
+
   it('não altera nenhum conteúdo textual, apenas o espaçamento', () => {
     const entrada =
       'avalie: I. Primeira. II. Segunda. III. Terceira. IV. Quarta.';

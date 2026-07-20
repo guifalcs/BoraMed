@@ -26,10 +26,11 @@ function romanoParaInt(romano: string): number {
 
 /**
  * Marcador de item em numeral romano: início de linha ou espaço, seguido do
- * numeral, ponto, espaço e o início do texto do item (letra maiúscula, dígito
- * ou aspas de abertura).
+ * numeral, um separador (ponto, hífen, travessão ou parêntese), espaço e o
+ * início do texto do item (letra maiúscula, dígito ou aspas de abertura).
+ * O separador original é preservado (ex.: "I." continua "I.", "I-" continua "I-").
  */
-const MARCADOR_ROMANO = /(^|\s)([IVX]{1,7})\.\s+(?=["“'«A-ZÀ-Ý0-9])/g;
+const MARCADOR_ROMANO = /(^|\s)([IVX]{1,7})([.)\-–])\s+(?=["“'«A-ZÀ-Ý0-9])/g;
 
 /**
  * Retorna o maior N tal que os marcadores I..N formem uma enumeração real
@@ -56,11 +57,14 @@ function maxSequenciaRomana(texto: string): number {
 /** Coloca cada item da enumeração em seu próprio parágrafo. */
 function separarItensRomanos(texto: string, maxSeq: number): string {
   MARCADOR_ROMANO.lastIndex = 0;
-  return texto.replace(MARCADOR_ROMANO, (completo, _pre, numeral: string) => {
-    const valor = romanoParaInt(numeral);
-    if (valor < 1 || valor > maxSeq) return completo;
-    return `\n\n${numeral}. `;
-  });
+  return texto.replace(
+    MARCADOR_ROMANO,
+    (completo, _pre, numeral: string, separador: string) => {
+      const valor = romanoParaInt(numeral);
+      if (valor < 1 || valor > maxSeq) return completo;
+      return `\n\n${numeral}${separador} `;
+    },
+  );
 }
 
 /**

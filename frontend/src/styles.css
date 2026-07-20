@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Espaçamento dos parágrafos renderizados pelo Markdown (ngx-markdown).
+   O preflight do Tailwind zera as margens de <p>, o que fazia enunciados com
+   assertivas (I., II., …) e comando final renderizarem colados, sem gap. */
+markdown p {
+  margin: 0 0 0.75rem;
+}
+markdown p:last-child {
+  margin-bottom: 0;
+}
+markdown ul,
+markdown ol {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+
 :root {
   --color-primary: #1e40af;
   --color-primary-light: #3b82f6;
