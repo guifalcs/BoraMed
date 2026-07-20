@@ -100,6 +100,30 @@ describe('formatarEnunciado', () => {
     expect(formatarEnunciado(entrada)).toBe(entrada);
   });
 
+  it('isola a pergunta final em enunciado de prosa (caso miocárdio)', () => {
+    const entrada =
+      'Em uma discussão sobre a irrigação arterial do miocárdio, um professor explica que a perfusão coronária possui características únicas. Uma dessas peculiaridades é o momento do ciclo cardíaco em que ocorre a maior parte da perfusão miocárdica. Considerando a fisiologia da circulação coronária normal, em qual fase do ciclo cardíaco ocorre predominantemente a perfusão do miocárdio ventricular esquerdo e por quê?';
+    const saida = formatarEnunciado(entrada);
+
+    expect(saida).toContain('\n\nConsiderando a fisiologia');
+    expect(saida.trimEnd().endsWith('e por quê?')).toBe(true);
+    // O parágrafo do cenário permanece antes da pergunta.
+    expect(saida.startsWith('Em uma discussão')).toBe(true);
+    expect(saida).not.toMatch(/\n{3,}/);
+    // Nenhum conteúdo perdido.
+    const semEspacos = (s: string) => s.replace(/\s+/g, ' ').trim();
+    expect(semEspacos(saida)).toBe(semEspacos(entrada));
+  });
+
+  it('não quebra pergunta única nem enunciado que não termina em "?"', () => {
+    expect(formatarEnunciado('Qual é o diagnóstico mais provável?')).toBe(
+      'Qual é o diagnóstico mais provável?',
+    );
+    expect(
+      formatarEnunciado('Um caso clínico qualquer descrito em uma frase só.'),
+    ).toBe('Um caso clínico qualquer descrito em uma frase só.');
+  });
+
   it('é estável ao ser aplicado duas vezes (idempotente)', () => {
     const entrada =
       'apenas as assertivas: I. Um. II. Dois. III. Três. IV. Quatro.';

@@ -99,16 +99,48 @@ function separarAssercoes(texto: string): string {
   return t;
 }
 
+/**
+ * Isola a frase final interrogativa (a pergunta em si) em seu próprio parágrafo,
+ * em enunciados de prosa que terminam com "?". Ex.: um caso clínico seguido da
+ * pergunta "... em qual fase do ciclo cardíaco ... e por quê?".
+ * Só age quando há ao menos uma frase antes da pergunta, deixando o cenário no
+ * primeiro parágrafo e a pergunta destacada abaixo.
+ */
+function isolarPerguntaFinal(texto: string): string {
+  const t = texto.trimEnd();
+  if (!t.endsWith('?')) return texto;
+
+  // Início da última frase = logo após o último final de frase (. ! ?)
+  // seguido de espaço e letra maiúscula.
+  const limites = /[.!?]["'”»)\]]?\s+(?=[A-ZÀ-Ý])/g;
+  let inicioUltimaFrase = -1;
+  let match: RegExpExecArray | null;
+  while ((match = limites.exec(t)) !== null) {
+    inicioUltimaFrase = match.index + match[0].length;
+  }
+  if (inicioUltimaFrase <= 0) return texto;
+
+  const pergunta = t.slice(inicioUltimaFrase);
+  if (!pergunta.includes('?')) return texto;
+
+  return `${t.slice(0, inicioUltimaFrase).trimEnd()}\n\n${pergunta}`;
+}
+
 export function formatarEnunciado(texto: string | null | undefined): string {
   if (!texto) return '';
   let t = texto.replace(/\r\n/g, '\n');
 
   const temAssercao = /Asser[çc][ãa]o\s*\d+\s*:/.test(t);
   const maxSeq = maxSequenciaRomana(t);
+  const jaTemParagrafos = /\n\s*\n/.test(t);
 
   t = separarAssercoes(t);
   if (maxSeq > 0) t = separarItensRomanos(t, maxSeq);
   if (maxSeq > 0 || temAssercao) t = separarComandoFinal(t);
+  // Prosa pura (sem itens/asserções e sem parágrafos prévios): destaca a pergunta.
+  if (maxSeq === 0 && !temAssercao && !jaTemParagrafos) {
+    t = isolarPerguntaFinal(t);
+  }
 
   t = t.replace(/[ \t]+\n/g, '\n'); // remove espaços no fim das linhas
   t = t.replace(/\n{3,}/g, '\n\n'); // no máximo uma linha em branco
