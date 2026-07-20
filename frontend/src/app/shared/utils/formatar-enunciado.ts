@@ -7,7 +7,9 @@
  * quebra de linha simples é ignorada — o texto aparece todo grudado.
  *
  * Esta função insere linhas em branco (parágrafos Markdown) antes de cada item,
- * SEM alterar nenhum conteúdo textual: apenas reorganiza o espaçamento visual.
+ * antes do bloco de asserções e antes do comando final ("É correto o que se
+ * afirma em:", "Assinale a alternativa correta", …), SEM alterar nenhum conteúdo
+ * textual: apenas reorganiza o espaçamento visual.
  */
 
 /** Converte um numeral romano (I, V, X) em inteiro. Suficiente para 1–39. */
@@ -30,34 +32,47 @@ function romanoParaInt(romano: string): number {
 const MARCADOR_ROMANO = /(^|\s)([IVX]{1,7})\.\s+(?=["“'«A-ZÀ-Ý0-9])/g;
 
 /**
- * Separa uma enumeração de assertivas em numeral romano, uma por parágrafo.
- * Só age quando o texto realmente contém uma enumeração — ou seja, os
- * marcadores "I." e "II." estão presentes formando uma sequência (1, 2, 3, …).
+ * Retorna o maior N tal que os marcadores I..N formem uma enumeração real
+ * (I e II presentes, sequência contígua). Retorna 0 quando não há enumeração.
  * Isso evita quebrar numerais romanos soltos em prosa (ex.: "século XX.").
  */
-function separarItensRomanos(texto: string): string {
+function maxSequenciaRomana(texto: string): number {
   const valores: number[] = [];
   MARCADOR_ROMANO.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = MARCADOR_ROMANO.exec(texto)) !== null) {
     valores.push(romanoParaInt(match[2]));
   }
-  if (valores.length < 2) return texto;
+  if (valores.length < 2) return 0;
 
   const presentes = new Set(valores);
-  if (!presentes.has(1) || !presentes.has(2)) return texto;
+  if (!presentes.has(1) || !presentes.has(2)) return 0;
 
-  // Maior N tal que 1..N estejam todos presentes (a sequência real de itens).
-  let maxSequencia = 0;
-  while (presentes.has(maxSequencia + 1)) maxSequencia++;
-  if (maxSequencia < 2) return texto;
+  let maxSeq = 0;
+  while (presentes.has(maxSeq + 1)) maxSeq++;
+  return maxSeq >= 2 ? maxSeq : 0;
+}
 
+/** Coloca cada item da enumeração em seu próprio parágrafo. */
+function separarItensRomanos(texto: string, maxSeq: number): string {
   MARCADOR_ROMANO.lastIndex = 0;
   return texto.replace(MARCADOR_ROMANO, (completo, _pre, numeral: string) => {
     const valor = romanoParaInt(numeral);
-    if (valor < 1 || valor > maxSequencia) return completo;
+    if (valor < 1 || valor > maxSeq) return completo;
     return `\n\n${numeral}. `;
   });
+}
+
+/**
+ * Comando final da questão (frase de fechamento que orienta a resposta), que
+ * costuma vir grudado no último item. Só é isolado em questões com enumeração
+ * ou asserções, para não afetar questões simples.
+ */
+const COMANDO_FINAL =
+  /\s+(?=(?:É\s+(?:[Cc]orreto|[Ii]ncorreto|CORRETO|INCORRETO|verdadeiro|falso)\b|Est[áa]\s+(?:[Cc]orreto|[Ii]ncorreto)\b|Est[ãa]o\s+(?:corret|incorret)[ao]s\b|S[ãa]o\s+(?:corret|incorret)[ao]s\b|Assinale\b|Marque\b))/g;
+
+function separarComandoFinal(texto: string): string {
+  return texto.replace(COMANDO_FINAL, '\n\n');
 }
 
 /**
@@ -83,8 +98,14 @@ function separarAssercoes(texto: string): string {
 export function formatarEnunciado(texto: string | null | undefined): string {
   if (!texto) return '';
   let t = texto.replace(/\r\n/g, '\n');
+
+  const temAssercao = /Asser[çc][ãa]o\s*\d+\s*:/.test(t);
+  const maxSeq = maxSequenciaRomana(t);
+
   t = separarAssercoes(t);
-  t = separarItensRomanos(t);
+  if (maxSeq > 0) t = separarItensRomanos(t, maxSeq);
+  if (maxSeq > 0 || temAssercao) t = separarComandoFinal(t);
+
   t = t.replace(/[ \t]+\n/g, '\n'); // remove espaços no fim das linhas
   t = t.replace(/\n{3,}/g, '\n\n'); // no máximo uma linha em branco
   return t.trim();

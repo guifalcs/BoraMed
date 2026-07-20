@@ -47,6 +47,37 @@ describe('formatarEnunciado', () => {
     expect(saida).not.toMatch(/\n{3,}/);
   });
 
+  it('isola o comando final da última assertiva (caso ribeirinhas)', () => {
+    const entrada =
+      'São sentenças que apresentam somente objetivos de pesquisa apenas: I. Descrever o perfil. II. Realizar rodas de conversa. III. Mapear as barreiras. IV. Desenvolver material educativo. É correto o que se afirma em:';
+    const saida = formatarEnunciado(entrada);
+
+    expect(saida).toContain('\n\nI. Descrever');
+    expect(saida).toContain('\n\nIV. Desenvolver material educativo.');
+    // O comando final não pode ficar grudado no item IV.
+    expect(saida).toContain('\n\nÉ correto o que se afirma em:');
+    expect(saida).not.toMatch(/educativo\.[ \t]+É correto/);
+    expect(saida).not.toMatch(/\n{3,}/);
+  });
+
+  it('isola comandos comuns em questões com enumeração', () => {
+    const casos = [
+      ['I. Um. II. Dois. III. Três. Assinale a alternativa correta.', 'Assinale a alternativa correta.'],
+      ['I. Um. II. Dois. III. Três. Estão corretas apenas as afirmativas I e II.', 'Estão corretas apenas'],
+    ];
+    for (const [entrada, comando] of casos) {
+      const saida = formatarEnunciado(entrada);
+      expect(saida).toContain(`\n\n${comando}`);
+    }
+  });
+
+  it('não isola comando em questões simples (sem enumeração/asserção)', () => {
+    const entrada =
+      'Um paciente chega ao pronto-socorro com dor torácica. Assinale a alternativa correta.';
+    // Sem enumeração, o texto permanece intacto (não vira parágrafo separado).
+    expect(formatarEnunciado(entrada)).toBe(entrada);
+  });
+
   it('é estável ao ser aplicado duas vezes (idempotente)', () => {
     const entrada =
       'apenas as assertivas: I. Um. II. Dois. III. Três. IV. Quatro.';
