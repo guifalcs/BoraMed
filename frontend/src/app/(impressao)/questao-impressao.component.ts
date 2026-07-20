@@ -7,11 +7,12 @@ import {
 } from '@angular/core';
 import { MarkdownComponent } from 'ngx-markdown';
 import type { QuestaoComAlternativas } from '../core/models/questao';
+import { FormatarEnunciadoPipe } from '../shared/pipes/formatar-enunciado.pipe';
 
 @Component({
   selector: 'app-questao-impressao',
   standalone: true,
-  imports: [MarkdownComponent],
+  imports: [MarkdownComponent, FormatarEnunciadoPipe],
   templateUrl: './questao-impressao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -20,12 +20,14 @@ import {
 } from '../resposta-aberta-input/resposta-aberta-input.component';
 import { CorrecaoFeedbackComponent } from '../correcao-feedback/correcao-feedback.component';
 import { RespostaPadraoComponent } from '../resposta-padrao/resposta-padrao.component';
+import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
 
 @Component({
   selector: 'app-questao-card',
   standalone: true,
   imports: [
     MarkdownComponent,
+    FormatarEnunciadoPipe,
     AlternativaItemComponent,
     QuestaoExplicacaoComponent,
     RespostaAbertaInputComponent,

@@ -11,7 +11,7 @@
 
     @if (questao().enunciado_apoio) {
       <div class="mb-2 rounded bg-gray-50 p-2 text-[0.9em] leading-snug text-gray-700 print:bg-transparent print:p-0">
-        <markdown [data]="questao().enunciado_apoio!"></markdown>
+        <markdown [data]="questao().enunciado_apoio! | formatarEnunciado"></markdown>
       </div>
     }
 
@@ -26,7 +26,7 @@
     }
 
     <div class="mb-2 leading-snug">
-      <markdown [data]="questao().enunciado"></markdown>
+      <markdown [data]="questao().enunciado | formatarEnunciado"></markdown>
     </div>
 
   } @else if (questao().enunciado_apoio) {
@@ -34,7 +34,7 @@
     <div class="mb-2 flex items-baseline gap-1.5">
       <span class="shrink-0 font-bold text-[1.05em]">{{ numero() }}.</span>
       <div class="rounded bg-gray-50 p-2 text-[0.9em] leading-snug text-gray-700 print:bg-transparent print:p-0">
-        <markdown [data]="questao().enunciado_apoio!"></markdown>
+        <markdown [data]="questao().enunciado_apoio! | formatarEnunciado"></markdown>
       </div>
     </div>
 
@@ -49,7 +49,7 @@
     }
 
     <div class="mb-2 leading-snug">
-      <markdown [data]="questao().enunciado"></markdown>
+      <markdown [data]="questao().enunciado | formatarEnunciado"></markdown>
     </div>
 
   } @else if (temImagem()) {
@@ -65,14 +65,14 @@
     </figure>
 
     <div class="mb-2 leading-snug">
-      <markdown [data]="questao().enunciado"></markdown>
+      <markdown [data]="questao().enunciado | formatarEnunciado"></markdown>
     </div>
 
   } @else {
     <!-- Sem tema, sem pré-texto, sem imagem: número + enunciado inline -->
     <div class="mb-2 flex items-baseline gap-1.5 leading-snug">
       <span class="shrink-0 font-bold text-[1.05em]">{{ numero() }}.</span>
-      <div><markdown [data]="questao().enunciado"></markdown></div>
+      <div><markdown [data]="questao().enunciado | formatarEnunciado"></markdown></div>
     </div>
   }
 
