@@ -155,7 +155,7 @@ export class LandingComponent implements OnDestroy {
   ];
 
   protected readonly stats = [
-    { value: '+2.400', label: 'questões autorais' },
+    { value: '+2.400', label: 'questões para treinar' },
     { value: '4', label: 'modos de treinar' },
     { value: '100%', label: 'no modelo da prova' },
   ] as const;
@@ -274,7 +274,7 @@ export class LandingComponent implements OnDestroy {
       title: 'Comece a treinar em segundos',
       description:
         'Escolha a prova, os temas ou o laboratório e comece um simulado na hora — com tempo cronometrado, como no dia da prova.',
-      features: ['Questões 100% autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Flashcards seus e da comunidade', 'Retome de onde parou'],
+      features: ['Questões autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Flashcards seus e da comunidade', 'Retome de onde parou'],
       icon: BookOpenCheck,
     },
     {
@@ -437,9 +437,9 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly faqs: readonly FaqItem[] = [
     {
-      question: 'As questões são iguais às da prova da Afya?',
+      question: 'O que torna as questões do BoraMed diferentes?',
       answer:
-        'Não. As questões são 100% autorais, criadas no mesmo formato e nível de cobrança das avaliações — para você treinar o raciocínio que a prova exige, sem usar nenhum acervo oficial.',
+        'Nosso diferencial são as questões autorais, criadas no mesmo formato e nível de cobrança das avaliações nacionais — para você treinar o raciocínio que a prova exige, tudo organizado no modelo real do dia da avaliação.',
     },
     {
       question: 'O BoraMed tem vínculo oficial com a Afya?',
@@ -557,7 +557,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Simulados de medicina 100% autorais no modelo das avaliações da Afya, com diagnóstico por tema, correção de questões discursivas por IA (Aurora) e flashcards da comunidade. Comece a treinar hoje.',
+        'Simulados de medicina autorais no modelo das avaliações da Afya, com diagnóstico por tema, correção de questões discursivas por IA (Aurora) e flashcards da comunidade. Comece a treinar hoje.',
       path: '/',
       titleHasBrand: true,
     });
