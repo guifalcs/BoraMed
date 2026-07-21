@@ -802,7 +802,17 @@ export class AdminService {
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
     if (filtros.status) query = query.eq('status', filtros.status);
-    if (filtros.busca?.trim()) query = query.ilike('enunciado', `%${filtros.busca}%`);
+    if (filtros.busca?.trim()) {
+      // Busca no enunciado principal E no enunciado de apoio. O termo é
+      // normalizado porque a sintaxe de .or() do PostgREST usa vírgula/parênteses
+      // como separadores — deixá-los crus quebraria o filtro.
+      const termoBusca = this.normalizarBuscaPostgrest(filtros.busca);
+      if (termoBusca) {
+        query = query.or(
+          `enunciado.ilike.%${termoBusca}%,enunciado_apoio.ilike.%${termoBusca}%`,
+        );
+      }
+    }
     if (filtros.tipoQuestao) query = query.eq('tipo_questao', filtros.tipoQuestao);
     if (filtros.formato) query = query.eq('formato', filtros.formato);
     if (filtros.grupoFormato === 'abertas') query = query.eq('formato', 'resposta_aberta_curta');

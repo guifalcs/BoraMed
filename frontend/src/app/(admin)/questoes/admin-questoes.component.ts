@@ -141,6 +141,9 @@ export class AdminQuestoesComponent implements OnInit {
   private readonly conversaoOrigem = signal<{ origemId: string; grupoExistente: string | null } | null>(null);
   protected readonly salvando = signal(false);
   protected readonly carregandoForm = signal(false);
+  /** Quantos uploads de imagem estão em andamento no drawer (enunciado + alternativas). */
+  protected readonly uploadsEmAndamento = signal(0);
+  protected readonly temUploadPendente = computed(() => this.uploadsEmAndamento() > 0);
 
   // ---- Visualização ----
   protected readonly questaoVisualizada = signal<AdminQuestaoCompleta | null>(null);
@@ -1032,6 +1035,11 @@ export class AdminQuestoesComponent implements OnInit {
     );
   }
 
+  /** Contabiliza uploads ativos vindos de cada <app-image-upload> para travar o salvar. */
+  protected onUploadingChange(ativo: boolean): void {
+    this.uploadsEmAndamento.update((n) => Math.max(0, ativo ? n + 1 : n - 1));
+  }
+
   protected abrirUploadAlternativa(index: number): void {
     this.altUploadAberto.set(index);
   }
@@ -1074,6 +1082,11 @@ export class AdminQuestoesComponent implements OnInit {
 
   protected async salvar(): Promise<void> {
     if (this.salvando()) return;
+
+    if (this.temUploadPendente()) {
+      this.toast.error('Aguarde o upload da imagem terminar antes de salvar.');
+      return;
+    }
 
     if (!this.fEnunciado().trim()) {
       this.toast.error('Enunciado é obrigatório.');
@@ -1246,5 +1259,6 @@ export class AdminQuestoesComponent implements OnInit {
     this.fTemaBusca.set('');
     this.grupoOriginalCarregado.set(null);
     this.conversaoOrigem.set(null);
+    this.uploadsEmAndamento.set(0);
   }
 }

@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  OnDestroy,
   computed,
   effect,
   inject,
@@ -124,7 +125,7 @@ const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
     </style>
   `,
 })
-export class ImageUploadComponent {
+export class ImageUploadComponent implements OnDestroy {
   private readonly supabase = inject(SupabaseService).client;
 
   protected readonly iconLoader = Loader;
@@ -134,9 +135,23 @@ export class ImageUploadComponent {
   readonly bucket = input<string>('questao-imagens');
   readonly pathPrefix = input<string>('questoes');
   readonly urlChange = output<string | null>();
+  /** Emite enquanto um upload está em andamento — o pai usa para bloquear o salvar. */
+  readonly uploadingChange = output<boolean>();
 
   protected readonly uploading = signal(false);
   protected readonly erroUpload = signal<string | null>(null);
+
+  /** Atualiza o estado de upload e avisa o pai na mesma transição. */
+  private setUploading(ativo: boolean): void {
+    this.uploading.set(ativo);
+    this.uploadingChange.emit(ativo);
+  }
+
+  ngOnDestroy(): void {
+    // Se o componente for destruído no meio de um upload (ex.: troca de formato
+    // descarta as alternativas), garante que o pai não fique bloqueado para sempre.
+    if (this.uploading()) this.uploadingChange.emit(false);
+  }
 
   /** URL do arquivo enviado nesta sessão de edição (nunca a currentUrl original) */
   private _sessionUrl: string | null = null;
@@ -182,7 +197,7 @@ export class ImageUploadComponent {
       return;
     }
 
-    this.uploading.set(true);
+    this.setUploading(true);
     this.erroUpload.set(null);
 
     // Só deleta upload anterior *desta sessão*, nunca a currentUrl original
@@ -201,7 +216,7 @@ export class ImageUploadComponent {
       contentType: processedFile.type,
     });
 
-    this.uploading.set(false);
+    this.setUploading(false);
 
     if (error) {
       this.erroUpload.set(error.message);

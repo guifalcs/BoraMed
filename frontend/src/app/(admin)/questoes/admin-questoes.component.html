@@ -59,7 +59,7 @@
   <input
     class="search-input"
     type="search"
-    placeholder="Buscar por enunciado…"
+    placeholder="Buscar por enunciado ou enunciado de apoio…"
     [ngModel]="busca()"
     (ngModelChange)="busca.set($event)"
     (keyup.enter)="aplicarFiltros()"
@@ -513,6 +513,7 @@
             <app-image-upload
               [currentUrl]="fImagemUrl()"
               (urlChange)="fImagemUrl.set($event)"
+              (uploadingChange)="onUploadingChange($event)"
             />
           </div>
 
@@ -582,6 +583,7 @@
                           [currentUrl]="alt.imagem_url"
                           pathPrefix="alternativas"
                           (urlChange)="atualizarImagemAlternativa(i, $event)"
+                          (uploadingChange)="onUploadingChange($event)"
                         />
                       } @else {
                         <button
@@ -813,8 +815,13 @@
         <button class="btn btn--outline" [disabled]="salvando()" (click)="fecharDrawer()">
           Cancelar
         </button>
-        <button class="btn btn--primary" [disabled]="salvando()" (click)="salvar()">
-          {{ salvando() ? 'Salvando…' : (modoDrawer() === 'criar' ? 'Criar questão' : 'Salvar alterações') }}
+        <button
+          class="btn btn--primary"
+          [disabled]="salvando() || temUploadPendente()"
+          [title]="temUploadPendente() ? 'Aguarde o upload da imagem terminar' : ''"
+          (click)="salvar()"
+        >
+          {{ salvando() ? 'Salvando…' : temUploadPendente() ? 'Enviando imagem…' : (modoDrawer() === 'criar' ? 'Criar questão' : 'Salvar alterações') }}
         </button>
       </div>
     }

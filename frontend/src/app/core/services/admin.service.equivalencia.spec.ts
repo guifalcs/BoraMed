@@ -16,7 +16,7 @@ function makeQueryBuilder(result: { data?: unknown; error: unknown; count?: numb
   };
   for (const method of [
     'select', 'insert', 'update', 'delete',
-    'eq', 'neq', 'gte', 'lte', 'ilike', 'in', 'is',
+    'eq', 'neq', 'gte', 'lte', 'ilike', 'in', 'is', 'or',
     'order', 'range', 'single',
   ]) {
     builder[method] = vi.fn().mockReturnValue(builder);
@@ -107,6 +107,20 @@ describe('AdminService — equivalência e revisão de conversão', () => {
       await service.listarQuestoes(0, 50, { revisaoConversao: 'pendente' });
 
       expect(builder['eq']).toHaveBeenCalledWith('revisao_conversao', 'pendente');
+    });
+
+    it('busca aplica or(enunciado, enunciado_apoio) com o termo normalizado', async () => {
+      const builder = makeQueryBuilder({ data: [], error: null, count: 0 });
+      mockFrom.mockReturnValue(builder);
+
+      await service.listarQuestoes(0, 50, { busca: 'infarto (agudo), miocárdio' });
+
+      expect(builder['or']).toHaveBeenCalledWith(
+        'enunciado.ilike.%infarto agudo miocárdio%,enunciado_apoio.ilike.%infarto agudo miocárdio%',
+      );
+      // Não deve mais usar o ilike direto só no enunciado para a busca textual.
+      const ilikeCalls = (builder['ilike'] as ReturnType<typeof vi.fn>).mock.calls;
+      expect(ilikeCalls.some((c) => c[0] === 'enunciado')).toBe(false);
     });
 
     it('sem filtros de grupo/revisão não aplica esses eq/neq extras', async () => {
