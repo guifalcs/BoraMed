@@ -2084,6 +2084,12 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_buscar_questao_ids_por_texto: {
+        Args: { p_termo: string }
+        Returns: {
+          questao_id: string
+        }[]
+      }
       admin_criar_faq: {
         Args: { p_categoria?: string; p_pergunta: string; p_resposta: string }
         Returns: {

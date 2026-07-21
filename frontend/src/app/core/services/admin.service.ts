@@ -803,15 +803,20 @@ export class AdminService {
 
     if (filtros.status) query = query.eq('status', filtros.status);
     if (filtros.busca?.trim()) {
-      // Busca no enunciado principal E no enunciado de apoio. O termo é
-      // normalizado porque a sintaxe de .or() do PostgREST usa vírgula/parênteses
-      // como separadores — deixá-los crus quebraria o filtro.
-      const termoBusca = this.normalizarBuscaPostgrest(filtros.busca);
-      if (termoBusca) {
-        query = query.or(
-          `enunciado.ilike.%${termoBusca}%,enunciado_apoio.ilike.%${termoBusca}%`,
-        );
+      // Busca no enunciado, no enunciado de apoio E no texto das alternativas,
+      // com espaços/quebras de linha normalizados (não influenciam o match).
+      // O PostgREST não normaliza nem faz OR entre tabela pai e relacionada,
+      // então a comparação roda no banco via RPC, que devolve os ids batidos.
+      const { data: ids, error: buscaErr } = await this.supabase.rpc(
+        'admin_buscar_questao_ids_por_texto',
+        { p_termo: filtros.busca },
+      );
+      if (buscaErr) return { ok: false, error: buscaErr.message };
+      const idsBusca = (ids ?? []).map((r) => (r as { questao_id: string }).questao_id);
+      if (idsBusca.length === 0) {
+        return { ok: true, data: { questoes: [], total: 0 } };
       }
+      query = query.in('id', idsBusca);
     }
     if (filtros.tipoQuestao) query = query.eq('tipo_questao', filtros.tipoQuestao);
     if (filtros.formato) query = query.eq('formato', filtros.formato);
@@ -1162,7 +1167,20 @@ export class AdminService {
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
     if (filtros.status) query = query.eq('status', filtros.status);
     if (filtros.tipo_questao) query = query.eq('tipo_questao', filtros.tipo_questao);
-    if (filtros.busca?.trim()) query = query.ilike('enunciado', `%${filtros.busca}%`);
+    if (filtros.busca?.trim()) {
+      // Mesma busca normalizada (enunciado + enunciado de apoio + alternativas,
+      // ignorando espaços/quebras de linha) usada em listarQuestoes.
+      const { data: ids, error: buscaErr } = await this.supabase.rpc(
+        'admin_buscar_questao_ids_por_texto',
+        { p_termo: filtros.busca },
+      );
+      if (buscaErr) return { ok: false, error: buscaErr.message };
+      const idsBusca = (ids ?? []).map((r) => (r as { questao_id: string }).questao_id);
+      if (idsBusca.length === 0) {
+        return { ok: true, data: { questoes: [], total: 0 } };
+      }
+      query = query.in('id', idsBusca);
+    }
     const { data, error, count } = await query;
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: { questoes: (data ?? []) as AdminQuestaoSimples[], total: count ?? 0 } };
