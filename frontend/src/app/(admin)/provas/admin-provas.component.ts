@@ -352,6 +352,24 @@ export class AdminProvasComponent implements OnInit {
 
   protected voltarParaInput(): void { this.etapa.set('importar_input'); this.expandido.set(null); }
 
+  /** Volta do passo "método" para editar os detalhes (nome, formato, etc). Os campos ficam preservados. */
+  protected voltarParaDetalhes(): void { this.etapa.set('detalhes'); }
+
+  /**
+   * Navega para uma etapa anterior já visitada no wizard de criação (stepper clicável).
+   * Só recua — nunca pula para frente — e nunca durante gravação ou nos fluxos de
+   * edição/vinculação, onde o stepper nem aparece.
+   */
+  protected irParaEtapa(destino: 'detalhes' | 'metodo'): void {
+    if (this.modoEdicao() || this.modoQuestoes()) return;
+    const atual = this.etapa();
+    if (atual === 'importando' || atual === 'vinculando' || atual === 'concluido') return;
+    if (atual === destino) return;
+    // "Método" só é acessível depois que os detalhes já foram preenchidos.
+    if (destino === 'metodo' && atual === 'detalhes') return;
+    this.etapa.set(destino);
+  }
+
   protected revisarQuestoesImportadas(): void {
     const validas = this.questoesValidas();
     if (validas.length === 0) { this.toast.error('Nenhuma questão válida para importar.'); return; }
