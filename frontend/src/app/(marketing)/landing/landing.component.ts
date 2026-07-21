@@ -209,7 +209,7 @@ export class LandingComponent implements OnDestroy {
     'A Aurora é um apoio ao seu estudo: aponta a direção da resposta e os pontos esperados, não substitui a correção oficial. O BoraMed é uma plataforma independente, sem vínculo com a Afya.';
 
   protected readonly auroraBenefits: readonly string[] = [
-    'Nota de 0 a 100 e feedback na hora — sem esperar ninguém corrigir.',
+    'Nota de 0 a 100 e feedback na hora, sem esperar ninguém corrigir.',
     'Aponta ponto a ponto: o que você acertou e o que faltou dizer.',
     'Funciona no modo estudo e no simulado, em toda questão discursiva.',
   ];
@@ -261,7 +261,7 @@ export class LandingComponent implements OnDestroy {
       title: 'Flashcards',
       badge: 'Novo · Comunidade',
       description:
-        'Estude com decks oficiais, crie os seus com imagens e destrave os decks da comunidade — os melhores sobem com as curtidas dos próprios estudantes.',
+        'Estude com decks oficiais, crie os seus com imagens e destrave os decks da comunidade. Os melhores sobem com as curtidas dos próprios estudantes.',
       icon: Layers,
       variant: 'flashcards',
     },
@@ -273,7 +273,7 @@ export class LandingComponent implements OnDestroy {
       label: 'Treinar',
       title: 'Comece a treinar em segundos',
       description:
-        'Escolha a prova, os temas ou o laboratório e comece um simulado na hora — com tempo cronometrado, como no dia da prova.',
+        'Escolha a prova, os temas ou o laboratório e comece um simulado na hora, com tempo cronometrado, como no dia da prova.',
       features: ['Questões autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Flashcards seus e da comunidade', 'Retome de onde parou'],
       icon: BookOpenCheck,
     },
@@ -282,7 +282,7 @@ export class LandingComponent implements OnDestroy {
       label: 'Revisar',
       title: 'Cada erro vira uma rota de revisão',
       description:
-        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção — inclusive nas questões discursivas, corrigidas pela Aurora.',
+        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção, inclusive nas questões discursivas, corrigidas pela Aurora.',
       features: ['Nota e resumo na hora', 'Correção das discursivas pela Aurora (IA)', 'Temas mais críticos', 'Revisão de cada erro', 'Refaça em modo estudo'],
       icon: Route,
     },
@@ -291,7 +291,7 @@ export class LandingComponent implements OnDestroy {
       label: 'Acompanhar',
       title: 'Sua evolução, prova após prova',
       description:
-        'Acompanhe cada tentativa, veja a nota subir e mantenha a constância que aprova — com ranking entre estudantes para te manter no ritmo.',
+        'Acompanhe cada tentativa, veja a nota subir e mantenha a constância que aprova, com ranking entre estudantes para te manter no ritmo.',
       features: ['Histórico completo', 'Evolução da nota', 'Desempenho por tema', 'Sequência de estudo (streak)', 'Ranking entre estudantes'],
       icon: LineChart,
     },
@@ -357,7 +357,7 @@ export class LandingComponent implements OnDestroy {
       tagline: 'Para treinar com as provas nacionais',
       price: 'R$ 29,90',
       period: '/mês',
-      note: 'Pagamento único. Não renova automaticamente — renove só se quiser.',
+      note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
       ctaLabel: 'Começar no Essencial',
       features: LandingComponent.ESSENCIAL_FEATURES,
       featured: false,
@@ -386,7 +386,7 @@ export class LandingComponent implements OnDestroy {
       tagline: 'Acesso completo à plataforma',
       price: 'R$ 69,90',
       period: '/mês',
-      note: 'Pagamento único. Não renova automaticamente — renove só se quiser.',
+      note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
       ctaLabel: 'Começar no Avançado',
       features: LandingComponent.AVANCADO_FEATURES,
       featured: true,
@@ -439,7 +439,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'O que torna as questões do BoraMed diferentes?',
       answer:
-        'Nosso diferencial são as questões autorais, criadas no mesmo formato e nível de cobrança das avaliações nacionais — para você treinar o raciocínio que a prova exige, tudo organizado no modelo real do dia da avaliação.',
+        'Nosso diferencial são as questões autorais, criadas no mesmo formato e nível de cobrança das avaliações processuais e laboratório, para você treinar o raciocínio que a prova exige. Tudo é organizado no modelo real do dia da avaliação.',
     },
     {
       question: 'O BoraMed tem vínculo oficial com a Afya?',
@@ -464,17 +464,17 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Como funciona a garantia de 7 dias?',
       answer:
-        'Assinou e não gostou? Em até 7 dias após a compra você pede o reembolso e devolvemos 100% do valor, sem perguntas — conforme o Código de Defesa do Consumidor.',
+        'Assinou e não gostou? Em até 7 dias após a compra você pede o reembolso e devolvemos 100% do valor, sem perguntas, conforme o Código de Defesa do Consumidor.',
     },
     {
       question: 'Consigo estudar pelo celular?',
       answer:
-        'Sim. O BoraMed funciona direto no navegador do celular, tablet ou computador — sem precisar instalar nada e com seu progresso salvo em todos os dispositivos.',
+        'Sim. O BoraMed funciona direto no navegador do celular, tablet ou computador, sem precisar instalar nada e com seu progresso salvo em todos os dispositivos.',
     },
     {
       question: 'Como revisar meus erros depois do simulado?',
       answer:
-        'Ao finalizar, você vê sua nota, os temas em que mais errou e a explicação de cada questão — e pode refazer tudo em modo estudo, sem tempo, até dominar o conteúdo.',
+        'Ao finalizar, você vê sua nota, os temas em que mais errou e a explicação de cada questão, e pode refazer tudo em modo estudo, sem tempo, até dominar o conteúdo.',
     },
     {
       question: 'Existe simulado de laboratório?',
@@ -484,7 +484,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Como funcionam os flashcards?',
       answer:
-        'Os flashcards fazem parte do plano Avançado. Você estuda com decks prontos do BoraMed ou cria os seus, com imagens na pergunta e na resposta. Toque para revelar a resposta e marque o que acertou. Se quiser, publique seus decks no feed da comunidade — outros estudantes usam e curtem os melhores, e você vê quem curtiu os seus.',
+        'Os flashcards fazem parte do plano Avançado. Você estuda com decks prontos do BoraMed ou cria os seus, com imagens na pergunta e na resposta. Toque para revelar a resposta e marque o que acertou. Se quiser, publique seus decks no feed da comunidade. Outros estudantes usam e curtem os melhores, e você vê quem curtiu os seus.',
     },
     {
       question: 'A assinatura dá acesso à comunidade?',
@@ -494,7 +494,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Quais formas de pagamento posso usar?',
       answer:
-        'Tudo acontece sem sair da plataforma, em campos seguros do Mercado Pago. Você paga com cartão, Pix ou boleto — e no semestral pode parcelar no cartão em até 6x sem juros.',
+        'Tudo acontece sem sair da plataforma, em campos seguros do Mercado Pago. Você paga com cartão, Pix ou boleto. No semestral, pode parcelar no cartão em até 6x sem juros.',
     },
   ];
 
