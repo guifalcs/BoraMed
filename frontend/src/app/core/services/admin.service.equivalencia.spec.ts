@@ -27,10 +27,12 @@ function makeQueryBuilder(result: { data?: unknown; error: unknown; count?: numb
 describe('AdminService — equivalência e revisão de conversão', () => {
   let service: AdminService;
   const mockFrom = vi.fn();
-  const mockSupabaseClient = { from: mockFrom };
+  const mockRpc = vi.fn();
+  const mockSupabaseClient = { from: mockFrom, rpc: mockRpc };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRpc.mockResolvedValue({ data: [], error: null });
     TestBed.configureTestingModule({
       providers: [
         AdminService,
@@ -109,18 +111,35 @@ describe('AdminService — equivalência e revisão de conversão', () => {
       expect(builder['eq']).toHaveBeenCalledWith('revisao_conversao', 'pendente');
     });
 
-    it('busca aplica or(enunciado, enunciado_apoio) com o termo normalizado', async () => {
+    it('busca delega ao RPC normalizado e filtra pelos ids retornados', async () => {
       const builder = makeQueryBuilder({ data: [], error: null, count: 0 });
       mockFrom.mockReturnValue(builder);
+      mockRpc.mockResolvedValue({
+        data: [{ questao_id: 'q-1' }, { questao_id: 'q-2' }],
+        error: null,
+      });
 
       await service.listarQuestoes(0, 50, { busca: 'infarto (agudo), miocárdio' });
 
-      expect(builder['or']).toHaveBeenCalledWith(
-        'enunciado.ilike.%infarto agudo miocárdio%,enunciado_apoio.ilike.%infarto agudo miocárdio%',
-      );
-      // Não deve mais usar o ilike direto só no enunciado para a busca textual.
+      expect(mockRpc).toHaveBeenCalledWith('admin_buscar_questao_ids_por_texto', {
+        p_termo: 'infarto (agudo), miocárdio',
+      });
+      expect(builder['in']).toHaveBeenCalledWith('id', ['q-1', 'q-2']);
+      // Não deve mais usar o ilike direto/or no enunciado para a busca textual.
+      expect(builder['or']).not.toHaveBeenCalled();
       const ilikeCalls = (builder['ilike'] as ReturnType<typeof vi.fn>).mock.calls;
       expect(ilikeCalls.some((c) => c[0] === 'enunciado')).toBe(false);
+    });
+
+    it('busca sem resultados no RPC retorna lista vazia sem consultar questao', async () => {
+      const builder = makeQueryBuilder({ data: [], error: null, count: 0 });
+      mockFrom.mockReturnValue(builder);
+      mockRpc.mockResolvedValue({ data: [], error: null });
+
+      const res = await service.listarQuestoes(0, 50, { busca: 'nada encontrado' });
+
+      expect(res).toEqual({ ok: true, data: { questoes: [], total: 0 } });
+      expect(builder['in']).not.toHaveBeenCalled();
     });
 
     it('sem filtros de grupo/revisão não aplica esses eq/neq extras', async () => {

@@ -812,7 +812,7 @@ export class AdminService {
         { p_termo: filtros.busca },
       );
       if (buscaErr) return { ok: false, error: buscaErr.message };
-      const idsBusca = (ids ?? []).map((r) => (r as { questao_id: string }).questao_id);
+      const idsBusca = (ids ?? []).map((r: { questao_id: string }) => r.questao_id);
       if (idsBusca.length === 0) {
         return { ok: true, data: { questoes: [], total: 0 } };
       }
@@ -1175,7 +1175,7 @@ export class AdminService {
         { p_termo: filtros.busca },
       );
       if (buscaErr) return { ok: false, error: buscaErr.message };
-      const idsBusca = (ids ?? []).map((r) => (r as { questao_id: string }).questao_id);
+      const idsBusca = (ids ?? []).map((r: { questao_id: string }) => r.questao_id);
       if (idsBusca.length === 0) {
         return { ok: true, data: { questoes: [], total: 0 } };
       }
