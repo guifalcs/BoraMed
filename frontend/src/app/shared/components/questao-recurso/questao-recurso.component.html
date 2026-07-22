@@ -1,0 +1,108 @@
+@if (visivel()) {
+  <div class="mb-4 flex flex-col gap-2" [attr.aria-label]="'Recurso e anulação da questão ' + questaoNumero()">
+    <!-- ── Banner de anulação pela administração ── -->
+    @if (anuladaAdmin()) {
+      <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700">
+            <app-ui-icon [icon]="iconAnulada" [size]="18" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-rose-800">Questão anulada</p>
+            <p class="text-xs text-rose-700">
+              Anulada pela instituição — não conta nas suas métricas.
+            </p>
+          </div>
+        </div>
+
+        @if (temRecurso()) {
+          <button
+            type="button"
+            class="mt-2 flex w-full items-center justify-between gap-2 rounded-lg bg-white/70 px-3 py-2 text-left text-sm font-medium text-rose-800 transition-colors hover:bg-white"
+            (click)="toggleRecurso()"
+            [attr.aria-expanded]="recursoAberto()"
+          >
+            <span class="flex items-center gap-2">
+              <app-ui-icon [icon]="iconTexto" [size]="15" />
+              {{ recursoAberto() ? 'Ocultar recurso' : 'Ver recurso' }}
+            </span>
+            <app-ui-icon [icon]="recursoAberto() ? iconChevronUp : iconChevronDown" [size]="16" />
+          </button>
+          @if (recursoAberto()) {
+            <p class="mt-2 whitespace-pre-wrap rounded-lg bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text)]">{{ recursoTexto() }}</p>
+          }
+        }
+      </div>
+    }
+
+    <!-- ── Banner de recurso (sem anulação) ── -->
+    @else if (temRecurso()) {
+      <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-3 text-left"
+          (click)="toggleRecurso()"
+          [attr.aria-expanded]="recursoAberto()"
+        >
+          <span class="flex min-w-0 items-center gap-3">
+            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+              <app-ui-icon [icon]="iconRecurso" [size]="18" />
+            </span>
+            <span class="min-w-0">
+              <span class="block text-sm font-semibold text-indigo-800">Recurso disponível</span>
+              <span class="block text-xs text-indigo-700">
+                {{ recursoAberto() ? 'Recurso registrado pela equipe.' : 'Toque para ver o recurso desta questão.' }}
+              </span>
+            </span>
+          </span>
+          <app-ui-icon [icon]="recursoAberto() ? iconChevronUp : iconChevronDown" [size]="18" class="shrink-0 text-indigo-700" />
+        </button>
+        @if (recursoAberto()) {
+          <p class="mt-2 whitespace-pre-wrap rounded-lg bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text)]">{{ recursoTexto() }}</p>
+        }
+      </div>
+    }
+
+    <!-- ── Banner de anulação pelo próprio aluno ── -->
+    @if (anuladaUsuario() && !anuladaAdmin()) {
+      <div class="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+            <app-ui-icon [icon]="iconAnulada" [size]="18" />
+          </span>
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-amber-800">Você anulou esta questão</p>
+            <p class="text-xs text-amber-700">Não contará nas suas métricas.</p>
+          </div>
+        </div>
+        @if (podeAnular()) {
+          <button
+            type="button"
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-50"
+            [disabled]="processando()"
+            (click)="desanular()"
+          >
+            <app-ui-icon [icon]="iconUndo" [size]="14" />
+            Desfazer
+          </button>
+        }
+      </div>
+    }
+
+    <!-- ── Botão discreto de anular (bem indicativo) ── -->
+    @if (mostrarBotaoAnular()) {
+      <div class="flex justify-end">
+        <button
+          type="button"
+          class="group inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+          [disabled]="processando()"
+          (click)="anular()"
+          title="Anular esta questão para que ela não conte nas suas métricas"
+        >
+          <app-ui-icon [icon]="iconAnulada" [size]="14" />
+          Anular questão
+        </button>
+      </div>
+    }
+  </div>
+}

@@ -20,6 +20,7 @@ import {
 } from '../resposta-aberta-input/resposta-aberta-input.component';
 import { CorrecaoFeedbackComponent } from '../correcao-feedback/correcao-feedback.component';
 import { RespostaPadraoComponent } from '../resposta-padrao/resposta-padrao.component';
+import { QuestaoRecursoComponent } from '../questao-recurso/questao-recurso.component';
 import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
 
 @Component({
@@ -33,6 +34,7 @@ import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
     RespostaAbertaInputComponent,
     CorrecaoFeedbackComponent,
     RespostaPadraoComponent,
+    QuestaoRecursoComponent,
   ],
   templateUrl: './questao-card.component.html',
   providers: [provideMarkdown()],
@@ -52,10 +54,20 @@ export class QuestaoCardComponent {
   estadoRespostaAberta = input<EstadoRespostaAberta>('rascunho');
   correcao = input<RespostaCorrecao | null>(null);
 
+  // ---- Recurso e anulação ----
+  /** Aluno anulou esta questão na tentativa (fora das métricas). */
+  anuladaUsuario = input<boolean>(false);
+  /** Exibe o botão discreto de anular/desanular (tentativa ativa, sem recurso). */
+  podeAnular = input<boolean>(false);
+  /** Requisição de anulação em andamento (trava o botão). */
+  anulandoQuestao = input<boolean>(false);
+
   responder = output<string>();
   salvarRascunho = output<string>();
   enviarTexto = output<string>();
   tentarCorrecaoNovamente = output<void>();
+  /** Emite o novo estado de anulação: true = anular, false = desanular. */
+  toggleAnular = output<boolean>();
 
   protected readonly imgCarregada = signal(false);
   protected readonly imgErro = signal(false);

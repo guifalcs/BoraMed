@@ -166,6 +166,12 @@
               @if (q.revisao_conversao === 'pendente') {
                 <span class="badge-revisao" title="Convertida em massa — aguardando revisão do sócio">revisar</span>
               }
+              @if (q.anulada) {
+                <span class="badge-anulada" title="Questão anulada — fora das métricas">anulada</span>
+              }
+              @if (temRecurso(q)) {
+                <span class="badge-recurso" title="Recurso cadastrado — visível ao aluno">recurso</span>
+              }
             </td>
             <td><span class="format-badge format-badge--{{ q.formato }}">{{ formatoLabel(q.formato) }}</span></td>
             <td>
@@ -325,6 +331,13 @@
             <div class="preview-text-block">
               <h4>Explicação</h4>
               <div class="preview-markdown"><markdown [data]="questaoVisualizada()!.explicacao!"></markdown></div>
+            </div>
+          }
+
+          @if ((questaoVisualizada()?.recurso_texto ?? '').trim()) {
+            <div class="preview-text-block">
+              <h4>Recurso {{ questaoVisualizada()?.anulada ? '(questão anulada)' : '' }}</h4>
+              <p class="whitespace-pre-wrap">{{ questaoVisualizada()?.recurso_texto }}</p>
             </div>
           }
         </section>
@@ -709,6 +722,37 @@
           </div>
         </section>
 
+        <!-- Seção: Recurso e anulação -->
+        <section class="form-section">
+          <h3 class="section-label">Recurso e anulação</h3>
+          <p class="section-hint">
+            O recurso é um texto que o aluno vê num botão sempre que a questão aparece
+            (anulação/modificação pela faculdade). Enquanto houver recurso cadastrado,
+            o aluno não pode anular por conta própria — só visualizar. A anulação é
+            independente: marque-a para tirar a questão das métricas.
+          </p>
+
+          <div class="field">
+            <label class="field-label">Texto do recurso</label>
+            <textarea
+              class="form-textarea"
+              rows="3"
+              placeholder="Ex: A banca reconheceu ambiguidade entre as alternativas B e D e revisou o gabarito…"
+              [ngModel]="fRecursoTexto()"
+              (ngModelChange)="fRecursoTexto.set($event)"
+            ></textarea>
+          </div>
+
+          <div class="field">
+            <app-ui-checkbox
+              [checked]="fAnulada()"
+              (checkedChange)="fAnulada.set($event)"
+            >
+              Anular questão (não conta nas métricas de nenhum aluno)
+            </app-ui-checkbox>
+          </div>
+        </section>
+
         <!-- Seção: Classificação -->
         <section class="form-section">
           <h3 class="section-label">Classificação</h3>
@@ -858,6 +902,18 @@
   }
   .btn--revisar { color: #92400e; border: 1px solid #fde68a; background: #fffbeb; white-space: nowrap; }
   .btn--revisar:hover:not(:disabled) { background: #fef3c7; border-color: #f59e0b; }
+  .badge-anulada {
+    display: inline-block; margin-left: 0.5rem; vertical-align: middle;
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3;
+    border-radius: 4px; padding: 0.08rem 0.35rem;
+  }
+  .badge-recurso {
+    display: inline-block; margin-left: 0.5rem; vertical-align: middle;
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe;
+    border-radius: 4px; padding: 0.08rem 0.35rem;
+  }
 
   /* ── Toolbar ── */
   .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: flex-end; }

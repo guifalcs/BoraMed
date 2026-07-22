@@ -57,6 +57,17 @@
     }
   </div>
 
+  <!-- Aviso de questões anuladas (fora da nota) -->
+  @if (questoesAnuladas() > 0) {
+    <p class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-center text-xs font-medium text-amber-800">
+      @if (questoesAnuladas() === 1) {
+        1 questão anulada não entrou nesta nota.
+      } @else {
+        {{ questoesAnuladas() }} questões anuladas não entraram nesta nota.
+      }
+    </p>
+  }
+
   <!-- Distribuição por tema -->
   @if (resultado().distribuicao_temas.length > 0) {
     <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">

@@ -281,6 +281,39 @@ export class TentativaService {
     }
   }
 
+  /**
+   * Aluno anula/desanula a questão na tentativa ativa (só questões sem recurso
+   * e não anuladas pelo admin). A questão sai das métricas da tentativa.
+   */
+  async anularQuestao(
+    tentativaId: string,
+    questaoId: string,
+    anular: boolean,
+  ): Promise<ProvaResult<TentativaResposta>> {
+    try {
+      const { data, error } = await this.supabase.rpc('anular_questao_usuario', {
+        p_tentativa_id: tentativaId,
+        p_questao_id: questaoId,
+        p_anular: anular,
+      });
+
+      if (error) throw error;
+
+      const resposta = data as TentativaResposta;
+      this.atualizarRespostaLocal(resposta);
+      return { ok: true, data: resposta };
+    } catch (e: unknown) {
+      const message = getErrorMessage(e);
+      if (message.includes('recurso cadastrado')) {
+        return { ok: false, error: 'Questão com recurso cadastrado não pode ser anulada.' };
+      }
+      if (message.includes('ja anulada')) {
+        return { ok: false, error: 'Esta questão já foi anulada pela administração.' };
+      }
+      return { ok: false, error: 'Não foi possível anular a questão.' };
+    }
+  }
+
   /** Salva rascunho de resposta aberta (editável até o envio definitivo). */
   async salvarRespostaTexto(
     tentativaId: string,

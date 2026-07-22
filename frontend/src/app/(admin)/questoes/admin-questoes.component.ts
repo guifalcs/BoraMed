@@ -174,6 +174,8 @@ export class AdminQuestoesComponent implements OnInit {
   protected readonly fFonte = signal('');
   protected readonly fRevisado = signal(false);
   protected readonly fAptoDesafio = signal(true);
+  protected readonly fRecursoTexto = signal('');
+  protected readonly fAnulada = signal(false);
   protected readonly fRespostaCorreta = signal('');
   protected readonly fRespostaModelo = signal('');
   protected readonly fPontosChave = signal<string[]>([]);
@@ -320,6 +322,8 @@ export class AdminQuestoesComponent implements OnInit {
       resposta_modelo: questao.resposta_modelo ?? null,
       pontos_chave: questao.pontos_chave ?? [],
       criterios_correcao: questao.criterios_correcao ?? null,
+      recurso_texto: questao.recurso_texto ?? null,
+      anulada: questao.anulada ?? false,
       explicacao: questao.explicacao ?? null,
       explicacao_alternativas: questao.explicacao_alternativas ?? null,
       referencia: questao.referencia ?? null,
@@ -389,6 +393,8 @@ export class AdminQuestoesComponent implements OnInit {
       { label: 'Gabarito', valor: this.gabaritoVisualizacao() },
       { label: 'Revisada', valor: questao.revisado ? 'Sim' : 'Não' },
       { label: 'Apta para desafio diário', valor: questao.apto_desafio_diario ? 'Sim' : 'Não' },
+      { label: 'Anulada', valor: questao.anulada ? 'Sim — fora das métricas' : 'Não' },
+      { label: 'Recurso', valor: (questao.recurso_texto ?? '').trim() ? 'Cadastrado' : 'Nenhum' },
       { label: 'Taxa de acerto', valor: questao.taxa_acerto != null ? `${questao.taxa_acerto}%` : 'Sem dados' },
       { label: 'Respostas', valor: String(questao.vezes_respondida ?? 0) },
       { label: 'Fonte', valor: questao.fonte || '—' },
@@ -596,6 +602,10 @@ export class AdminQuestoesComponent implements OnInit {
       publicada: 'Publicada',
     };
     return map[status] ?? status;
+  }
+
+  protected temRecurso(q: AdminQuestao): boolean {
+    return (q.recurso_texto ?? '').trim().length > 0;
   }
 
   protected disciplinaSiglaFor(id: string | null | undefined): string {
@@ -882,6 +892,8 @@ export class AdminQuestoesComponent implements OnInit {
     this.fFonte.set(d.fonte ?? '');
     this.fRevisado.set(d.revisado ?? false);
     this.fAptoDesafio.set(d.apto_desafio_diario ?? true);
+    this.fRecursoTexto.set(d.recurso_texto ?? '');
+    this.fAnulada.set(d.anulada ?? false);
     this.fRespostaCorreta.set(d.resposta_correta_texto ?? '');
     this.fRespostaModelo.set(d.resposta_modelo ?? '');
     this.fPontosChave.set(d.pontos_chave ?? []);
@@ -1157,6 +1169,8 @@ export class AdminQuestoesComponent implements OnInit {
         ? this.fPontosChave().map((p) => p.trim()).filter(Boolean)
         : [],
       criterios_correcao: this.ehDiscursiva() ? (this.fCriterios().trim() || null) : null,
+      recurso_texto: this.fRecursoTexto().trim() || null,
+      anulada: this.fAnulada(),
       revisado: this.fRevisado(),
       apto_desafio_diario: this.fAptoDesafio(),
     };
@@ -1245,6 +1259,8 @@ export class AdminQuestoesComponent implements OnInit {
     this.fFonte.set('');
     this.fRevisado.set(false);
     this.fAptoDesafio.set(true);
+    this.fRecursoTexto.set('');
+    this.fAnulada.set(false);
     this.fRespostaCorreta.set('');
     this.fRespostaModelo.set('');
     this.fPontosChave.set([]);

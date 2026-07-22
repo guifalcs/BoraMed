@@ -157,6 +157,16 @@ export class ResultadoSummaryComponent {
 
   protected readonly temQuestoesErradas = computed(() => this.questoesErradas() > 0);
 
+  /** Questões anuladas (admin ou pelo aluno) que ficaram fora desta nota. */
+  protected readonly questoesAnuladas = computed(() => {
+    const anuladasQuestoes = new Set(
+      this.resultado().questoes.filter((q) => q.anulada).map((q) => q.id),
+    );
+    return this.resultado().respostas.filter(
+      (r) => r.anulada_usuario || anuladasQuestoes.has(r.questao_id),
+    ).length;
+  });
+
   protected readonly rotaRefazerEstudo = computed(() =>
     this.isPersonalizado()
       ? ['/dashboard/simulados/montar']

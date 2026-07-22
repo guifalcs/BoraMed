@@ -42,6 +42,22 @@
 * Questões vinculadas a tentativas, desafios diários ou provas não devem ser deletadas diretamente; usar arquivamento/status quando for preciso remover da experiência do aluno.
 * A visualização administrativa de questão deve reutilizar a mesma renderização do aluno e exibir abaixo um panorama com status, classificação, vínculos, gabarito, revisão e métricas.
 
+### Recurso e Anulação de Questões
+
+Três conceitos independentes, todos configurados no admin no criar/editar questão:
+
+* **Recurso (`questao.recurso_texto`):** texto livre com o recurso da faculdade (anulação/modificação da questão). É apenas informativo: sempre que a questão aparece (execução, revisão, admin), o aluno vê um botão para ler o texto. Cadastrar recurso **não** anula a questão por si só.
+* **Anulação global (`questao.anulada`):** marcação do admin. A questão continua **visível e respondível** (o aluno pode responder e ver o gabarito para estudar), mas **não conta em nenhuma métrica** daqui pra frente — nota, acertos, `taxa_acerto`/`vezes_respondida` da questão e distribuição por tema. Notas de tentativas já finalizadas e consolidadas **não** são recalculadas retroativamente; a exclusão vale para novas consolidações e para as agregações por tema/histórico (que leem o estado atual da questão).
+* **Anulação pelo aluno (`tentativa_resposta.anulada_usuario`):** durante uma tentativa ativa (simulado ou estudo), o aluno pode anular uma questão por conta própria num botão discreto e bem indicativo, para que ela **não conte nas métricas daquela tentativa**. Reversível até a finalização.
+
+Regras de combinação:
+
+* **Só questões sem recurso cadastrado e não anuladas pelo admin podem ser anuladas pelo aluno.** Havendo recurso, o botão de anular não aparece — o aluno apenas visualiza o texto.
+* Quando a questão está anulada pelo admin **e** tem recurso, a faixa exibida indica a anulação e permite ler o recurso (o "porquê").
+* A validação de quem pode anular é server-side na RPC `anular_questao_usuario` (bloqueia questões com recurso ou já anuladas pelo admin).
+* Exclusão das métricas segue o predicado canônico `(questao.anulada OR tentativa_resposta.anulada_usuario)`, aplicado em `finalizar_tentativa`, `consolidar_pontos_tentativa`, `montar_resultado_tentativa` (distribuição por tema), `get_historico_kpis` e `get_desempenho_por_tema`.
+* A tela de resultado sinaliza quantas questões foram anuladas e ficaram fora da nota.
+
 ### Simulado
 
 * Gerado sob demanda pelo aluno

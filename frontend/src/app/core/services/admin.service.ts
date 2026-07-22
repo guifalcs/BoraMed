@@ -149,6 +149,10 @@ export interface AdminQuestao {
   autor_id: string | null;
   grupo_equivalencia_id: string | null;
   revisao_conversao: string | null;
+  /** Anulação global (admin). */
+  anulada?: boolean;
+  /** Texto de recurso cadastrado (presença indica o badge na lista). */
+  recurso_texto?: string | null;
   prova?: { nome: string } | null;
 }
 
@@ -185,6 +189,8 @@ export interface AdminQuestaoCompleta {
   resposta_modelo: string | null;
   pontos_chave: string[];
   criterios_correcao: string | null;
+  recurso_texto: string | null;
+  anulada: boolean;
   revisado: boolean;
   apto_desafio_diario: boolean;
   vezes_respondida: number;
@@ -223,6 +229,8 @@ export interface QuestaoPayload {
   resposta_modelo?: string | null;
   pontos_chave?: string[];
   criterios_correcao?: string | null;
+  recurso_texto?: string | null;
+  anulada?: boolean;
   revisado?: boolean;
   apto_desafio_diario?: boolean;
   formato_prova?: string | null;
@@ -797,7 +805,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ questoes: AdminQuestao[]; total: number }>> {
     let query = this.supabase
       .from('questao')
-      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,autor_id,grupo_equivalencia_id,revisao_conversao,prova!questao_prova_id_fkey(nome)', {
+      .select('id,enunciado,formato,tipo_questao,status,disciplina_id,taxa_acerto,vezes_respondida,criado_em,autor_id,grupo_equivalencia_id,revisao_conversao,anulada,recurso_texto,prova!questao_prova_id_fkey(nome)', {
         count: 'exact',
       })
       .neq('status', 'deletada')

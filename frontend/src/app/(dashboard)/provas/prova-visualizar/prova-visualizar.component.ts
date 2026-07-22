@@ -47,6 +47,8 @@ export class ProvaVisualizarComponent {
   protected readonly respostasTextoMap = signal<Map<string, string>>(new Map());
   protected readonly enviadas = signal<Set<string>>(new Set());
   protected readonly correcoesMap = signal<Map<string, RespostaCorrecao>>(new Map());
+  /** Questões anuladas pelo aluno nesta tentativa (só leitura na revisão). */
+  protected readonly anuladasSet = signal<Set<string>>(new Set());
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
   protected readonly filtro = signal<'todas' | 'erros'>('todas');
@@ -126,6 +128,7 @@ export class ProvaVisualizarComponent {
     const textos = new Map<string, string>();
     const enviadas = new Set<string>();
     const correcoes = new Map<string, RespostaCorrecao>();
+    const anuladas = new Set<string>();
 
     for (const r of respostas) {
       if (r.alternativa_id) map.set(r.questao_id, r.alternativa_id);
@@ -138,6 +141,7 @@ export class ProvaVisualizarComponent {
       if (r.resposta_texto) textos.set(r.questao_id, r.resposta_texto);
       if (r.enviada_em) enviadas.add(r.questao_id);
       if (r.correcao) correcoes.set(r.questao_id, r.correcao);
+      if (r.anulada_usuario) anuladas.add(r.questao_id);
     }
 
     this.respostasMap.set(map);
@@ -145,6 +149,7 @@ export class ProvaVisualizarComponent {
     this.respostasTextoMap.set(textos);
     this.enviadas.set(enviadas);
     this.correcoesMap.set(correcoes);
+    this.anuladasSet.set(anuladas);
   }
 
   /**
@@ -159,6 +164,7 @@ export class ProvaVisualizarComponent {
       this.tentativaId.set(lastResultado.tentativa.id);
       const map = new Map<string, string>();
       const corretas = new Map<string, boolean>();
+      const anuladas = new Set<string>();
       for (const r of lastResultado.respostas) {
         if (r.alternativa_id) {
           map.set(r.questao_id, r.alternativa_id);
@@ -166,9 +172,13 @@ export class ProvaVisualizarComponent {
         if (r.correta !== null) {
           corretas.set(r.questao_id, r.correta);
         }
+        if (r.anulada_usuario) {
+          anuladas.add(r.questao_id);
+        }
       }
       this.respostasMap.set(map);
       this.respostasCorretasMap.set(corretas);
+      this.anuladasSet.set(anuladas);
 
       void this.anotacaoService.carregarPorTentativa(lastResultado.tentativa.id).then((result) => {
         if (!result.ok) {
