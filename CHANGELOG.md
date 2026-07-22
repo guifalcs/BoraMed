@@ -2,6 +2,14 @@
 
 ## 2026-07-22 | Feature | sem commit
 
+**Backfill do vínculo prova → matéria: período 2**
+
+- Migration `20260722140000_prova_disciplina_id_backfill_periodo2.sql`: agora que as matérias do período 2 (HAM II, IESC II, MCM II, SOI II) foram cadastradas, as 32 provas não-integradoras do período foram vinculadas à matéria correspondente por correspondência de nome, mesmo critério do período 1. As 5 integradoras do período seguem sem vínculo.
+
+---
+
+## 2026-07-22 | Feature | sem commit
+
 **Vínculo prova → matéria (disciplina) + backfill do período 1**
 
 - Nova coluna `prova.disciplina_id` (FK para `disciplina`, `ON DELETE SET NULL`, índice) — migration `20260722120000_prova_disciplina_id.sql`. Opcional: provas sem matéria única (ex.: integradoras) ficam com `disciplina_id = NULL`.
