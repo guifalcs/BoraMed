@@ -149,7 +149,7 @@ export class AdminProvasComponent implements OnInit {
     const periodo = Number(this.fPeriodo());
     const disciplinas = this.disciplinas().filter((d) => d.periodo === periodo);
     return [
-      { value: '', label: 'Sem matéria (ex: integradora)' },
+      { value: '', label: 'Sem matéria' },
       ...disciplinas.map((d) => ({ value: d.id, label: d.nome ? `${d.sigla} — ${d.nome}` : d.sigla })),
     ];
   });
