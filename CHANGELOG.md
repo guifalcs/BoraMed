@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-22 | Feature | sem commit
+
+**Vínculo prova → matéria (disciplina) + backfill do período 1**
+
+- Nova coluna `prova.disciplina_id` (FK para `disciplina`, `ON DELETE SET NULL`, índice) — migration `20260722120000_prova_disciplina_id.sql`. Opcional: provas sem matéria única (ex.: integradoras) ficam com `disciplina_id = NULL`.
+- Admin de Provas ganha select "Matéria" no formulário de detalhes (opções filtradas pelo período selecionado) e nova coluna "Matéria" na listagem. `admin_criar_prova_com_questoes` passa a gravar `disciplina_id` da prova.
+- Backfill (produção): 38 provas do período 1 vinculadas à matéria correspondente por correspondência de nome (`N1/N2 <SIGLA> <ano.sem>` → sigla da disciplina), excluindo as 7 integradoras do período (ficam sem vínculo, como esperado). Períodos 2+ ainda não têm matérias cadastradas — backfill fica pendente até lá.
+
+---
+
 ## 2026-07-20 | Feature | sem commit
 
 **Resumos APG (materiais): scroll na lista, botão de voltar e filtro por nome**

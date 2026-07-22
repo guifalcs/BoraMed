@@ -274,7 +274,9 @@ export interface AdminProva {
   periodo: number;
   qtd_questoes: number;
   criado_em: string;
+  disciplina_id: string | null;
   faculdade?: { nome: string; sigla: string } | null;
+  disciplina?: { sigla: string; nome: string | null } | null;
 }
 
 export interface AdminProvaDetalhe extends AdminProva {
@@ -302,6 +304,7 @@ export interface ProvaInput {
   faculdade_id: string;
   periodo: number;
   subtipo_nacional?: string | null;
+  disciplina_id?: string | null;
 }
 
 export interface AdminQuestaoSimples {
@@ -1010,7 +1013,7 @@ export class AdminService {
   ): Promise<ServiceResult<{ provas: AdminProva[]; total: number }>> {
     let query = this.supabase
       .from('prova')
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)', {
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)', {
         count: 'exact',
       })
       .gt('periodo', 0)
@@ -1059,7 +1062,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('prova')
       .insert(payload)
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminProva };
@@ -1086,7 +1089,7 @@ export class AdminService {
   async buscarProvaParaEdicao(id: string): Promise<ServiceResult<AdminProvaDetalhe>> {
     const { data, error } = await this.supabase
       .from('prova')
-      .select('id,nome,tipo,origem,formato,rede,subtipo,subtipo_nacional,publicada,arquivada,periodo,qtd_questoes,faculdade_id,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,subtipo_nacional,publicada,arquivada,periodo,qtd_questoes,faculdade_id,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)')
       .eq('id', id)
       .single();
     if (error) return { ok: false, error: error.message };
@@ -1102,7 +1105,7 @@ export class AdminService {
       .from('prova')
       .update(payload)
       .eq('id', id)
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,faculdade(nome,sigla)')
+      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as unknown as AdminProva };

@@ -74,6 +74,7 @@ export class AdminProvasComponent implements OnInit {
   protected readonly fFaculdadeId = signal('');
   protected readonly fPeriodo = signal('1');
   protected readonly fSubtipoNacional = signal('');
+  protected readonly fDisciplinaId = signal('');
 
   // ── Import flow ──
   protected readonly textoImport = signal('');
@@ -143,6 +144,15 @@ export class AdminProvasComponent implements OnInit {
     { value: '', label: 'Selecione uma faculdade…' },
     ...this.faculdades().map((f) => ({ value: f.id, label: `${f.sigla} — ${f.nome}` })),
   ]);
+
+  protected readonly opcoesDisciplinaForm = computed<SelectOption[]>(() => {
+    const periodo = Number(this.fPeriodo());
+    const disciplinas = this.disciplinas().filter((d) => d.periodo === periodo);
+    return [
+      { value: '', label: 'Sem matéria (ex: integradora)' },
+      ...disciplinas.map((d) => ({ value: d.id, label: d.nome ? `${d.sigla} — ${d.nome}` : d.sigla })),
+    ];
+  });
 
   protected readonly opcoesStatusQuestao: SelectOption[] = [
     { value: '', label: 'Todos os status' },
@@ -227,6 +237,7 @@ export class AdminProvasComponent implements OnInit {
     this.fFaculdadeId.set(this.faculdades()[0]?.id ?? '');
     this.fPeriodo.set('1');
     this.fSubtipoNacional.set('');
+    this.fDisciplinaId.set('');
     this.fPublicada.set(false);
     this.fArquivada.set(false);
     this.textoImport.set('');
@@ -281,6 +292,7 @@ export class AdminProvasComponent implements OnInit {
     this.fFaculdadeId.set(p.faculdade_id ?? '');
     this.fPeriodo.set(String(p.periodo));
     this.fSubtipoNacional.set(p.subtipo_nacional ?? '');
+    this.fDisciplinaId.set(p.disciplina_id ?? '');
     this.fPublicada.set(p.publicada);
     this.fArquivada.set(p.arquivada);
   }
@@ -453,6 +465,7 @@ export class AdminProvasComponent implements OnInit {
       periodo: Number(this.fPeriodo()),
       subtipo: this.fSubtipoNacional() || null,
       subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
+      disciplina_id: this.fDisciplinaId() || null,
       publicada: this.fPublicada(),
       arquivada: this.fArquivada(),
     };

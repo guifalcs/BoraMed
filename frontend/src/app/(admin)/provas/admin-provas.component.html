@@ -39,6 +39,7 @@
           <th>Formato</th>
           <th>Origem</th>
           <th>Faculdade</th>
+          <th>Matéria</th>
           <th>Período</th>
           <th>Questões</th>
           <th>Criada em</th>
@@ -52,6 +53,7 @@
             <td><span class="type-badge">{{ tipoLabel(p.formato) }}</span></td>
             <td><span class="type-badge">{{ p.origem }}</span></td>
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
+            <td>{{ p.disciplina?.sigla ?? '—' }}</td>
             <td>{{ p.periodo }}º</td>
             <td>{{ p.qtd_questoes }}</td>
             <td class="data-cell">{{ formatarData(p.criado_em) }}</td>
@@ -257,6 +259,17 @@
             [value]="fFaculdadeId()"
             (valueChange)="fFaculdadeId.set($any($event) ?? '')"
           />
+        </div>
+
+        <div class="form-section">
+          <app-ui-select
+            label="Matéria"
+            name="disciplina"
+            [options]="opcoesDisciplinaForm()"
+            [value]="fDisciplinaId()"
+            (valueChange)="fDisciplinaId.set($any($event) ?? '')"
+          />
+          <p class="hint">Deixe em branco para provas sem matéria única (ex: integradoras)</p>
         </div>
 
         @if (opcoesSubtipoForm().length > 0) {
