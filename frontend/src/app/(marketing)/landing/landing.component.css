@@ -209,7 +209,7 @@
   color: #fff;
 }
 
-.hero-badge-new app-ui-icon:last-of-type {
+.hero-badge-new > app-ui-icon:last-of-type {
   color: var(--color-primary);
 }
 
