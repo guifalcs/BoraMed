@@ -46,17 +46,6 @@ export const AnuladaPeloAdminSemRecurso: Story = {
   },
 };
 
-/** Tentativa ativa, questão sem recurso: botão discreto de anular. */
-export const PodeAnular: Story = {
-  args: {
-    recursoTexto: null,
-    anuladaAdmin: false,
-    anuladaUsuario: false,
-    podeAnular: true,
-    questaoNumero: 12,
-  },
-};
-
 /** Aluno já anulou por conta própria (com opção de desfazer). */
 export const AnuladaPeloAluno: Story = {
   args: {

@@ -21,6 +21,8 @@ import {
 import { CorrecaoFeedbackComponent } from '../correcao-feedback/correcao-feedback.component';
 import { RespostaPadraoComponent } from '../resposta-padrao/resposta-padrao.component';
 import { QuestaoRecursoComponent } from '../questao-recurso/questao-recurso.component';
+import { UiIconComponent } from '../ui/icon/ui-icon.component';
+import { Ban } from 'lucide-angular';
 import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
 
 @Component({
@@ -35,6 +37,7 @@ import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
     CorrecaoFeedbackComponent,
     RespostaPadraoComponent,
     QuestaoRecursoComponent,
+    UiIconComponent,
   ],
   templateUrl: './questao-card.component.html',
   providers: [provideMarkdown()],
@@ -69,6 +72,7 @@ export class QuestaoCardComponent {
   /** Emite o novo estado de anulação: true = anular, false = desanular. */
   toggleAnular = output<boolean>();
 
+  protected readonly iconAnular = Ban;
   protected readonly imgCarregada = signal(false);
   protected readonly imgErro = signal(false);
 

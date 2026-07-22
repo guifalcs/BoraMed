@@ -88,21 +88,5 @@
         }
       </div>
     }
-
-    <!-- ── Botão discreto de anular (bem indicativo) ── -->
-    @if (mostrarBotaoAnular()) {
-      <div class="flex justify-end">
-        <button
-          type="button"
-          class="group inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
-          [disabled]="processando()"
-          (click)="anular()"
-          title="Anular esta questão para que ela não conte nas suas métricas"
-        >
-          <app-ui-icon [icon]="iconAnulada" [size]="14" />
-          Anular questão
-        </button>
-      </div>
-    }
   </div>
 }

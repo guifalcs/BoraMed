@@ -1,5 +1,5 @@
 <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
-  <!-- Número + badge de não respondida -->
+  <!-- Número + badge de não respondida + anular -->
   <div class="mb-3 flex items-center gap-2">
     <span class="inline-flex items-center rounded bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
       Questão {{ numero() }}
@@ -8,6 +8,26 @@
       <span class="inline-flex items-center rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
         Não respondida
       </span>
+    }
+
+    @if (podeAnular() && !anuladaUsuario()) {
+      <div class="group relative ml-auto shrink-0">
+        <button
+          type="button"
+          class="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+          [disabled]="anulandoQuestao()"
+          (click)="toggleAnular.emit(true)"
+          aria-label="Anular questão"
+        >
+          <app-ui-icon [icon]="iconAnular" [size]="15" />
+        </button>
+        <span
+          role="tooltip"
+          class="pointer-events-none absolute right-0 top-full z-10 mt-1 whitespace-nowrap rounded-md bg-[var(--color-text)] px-2 py-1 text-xs font-medium text-[var(--color-surface)] opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+        >
+          Anular questão
+        </span>
+      </div>
     }
   </div>
 

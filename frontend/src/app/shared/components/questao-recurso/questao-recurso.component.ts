@@ -54,23 +54,15 @@ export class QuestaoRecursoComponent {
   protected readonly temRecurso = computed(() => (this.recursoTexto() ?? '').trim().length > 0);
   protected readonly anulada = computed(() => this.anuladaAdmin() || this.anuladaUsuario());
 
-  /** Botão discreto de anular (só quando ainda não anulada pelo aluno). */
-  protected readonly mostrarBotaoAnular = computed(
-    () => this.podeAnular() && !this.anuladaUsuario() && !this.anuladaAdmin(),
-  );
-
-  /** Nada a exibir quando não há recurso, anulação nem opção de anular. */
-  protected readonly visivel = computed(
-    () => this.temRecurso() || this.anulada() || this.podeAnular(),
-  );
+  /**
+   * Faixa informativa: recurso ou anulação. O botão discreto de anular vive no
+   * cabeçalho do QuestaoCard (alinhado ao "Questão N"); aqui fica só o "Desfazer"
+   * dentro da faixa de anulação pelo próprio aluno.
+   */
+  protected readonly visivel = computed(() => this.temRecurso() || this.anulada());
 
   protected toggleRecurso(): void {
     this.recursoAberto.update((v) => !v);
-  }
-
-  protected anular(): void {
-    if (this.processando()) return;
-    this.toggleAnular.emit(true);
   }
 
   protected desanular(): void {

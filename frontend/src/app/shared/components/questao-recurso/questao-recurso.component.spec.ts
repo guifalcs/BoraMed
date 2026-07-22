@@ -28,14 +28,9 @@ describe('QuestaoRecursoComponent', () => {
     fixture.detectChanges();
   }
 
-  it('nada renderiza sem recurso, anulação nem opção de anular', () => {
-    set({});
-    expect(fixture.nativeElement.textContent.trim()).toBe('');
-  });
-
-  it('mostra o botão de anular quando pode anular e ainda não anulou', () => {
+  it('nada renderiza sem recurso nem anulação (o botão de anular vive no card)', () => {
     set({ podeAnular: true });
-    expect(fixture.nativeElement.textContent).toContain('Anular questão');
+    expect(fixture.nativeElement.textContent.trim()).toBe('');
   });
 
   it('não oferece anular quando há recurso cadastrado', () => {
@@ -59,12 +54,12 @@ describe('QuestaoRecursoComponent', () => {
     expect(html).toContain('Desfazer');
   });
 
-  it('emite toggleAnular(true) ao clicar em anular', () => {
-    set({ podeAnular: true });
+  it('emite toggleAnular(false) ao clicar em desfazer', () => {
+    set({ anuladaUsuario: true, podeAnular: true });
     let emitido: boolean | null = null;
     component.toggleAnular.subscribe((v) => (emitido = v));
     const botao: HTMLButtonElement = fixture.nativeElement.querySelector('button');
     botao.click();
-    expect(emitido).toBe(true);
+    expect(emitido).toBe(false);
   });
 });
