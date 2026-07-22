@@ -2,6 +2,20 @@
 
 ## 2026-07-22 | Feature | sem commit
 
+**Recurso e anulação de questões**
+
+- Migration `20260722150000_questao_recurso_e_anulacao.sql`: novas colunas `questao.recurso_texto` (texto do recurso da faculdade), `questao.anulada` (anulação global do admin) e `tentativa_resposta.anulada_usuario` (anulação individual do aluno). Grant de `SELECT (recurso_texto, anulada)` para `authenticated` e índice parcial em `anulada`.
+- Nova RPC `anular_questao_usuario(tentativa, questao, anular)`: aluno anula/desanula a questão numa tentativa ativa. Bloqueia (server-side) questões com recurso cadastrado ou já anuladas pelo admin — só questões "limpas" podem ser anuladas pelo aluno.
+- Métricas passam a excluir questões anuladas (admin ou aluno) pelo predicado `(questao.anulada OR tentativa_resposta.anulada_usuario)`, redefinindo `finalizar_tentativa`, `consolidar_pontos_tentativa` (nota/`total_pontuaveis`), `montar_resultado_tentativa` (distribuição por tema + expõe `recurso_texto`/`anulada`/`anulada_usuario`), `get_historico_kpis` e `get_desempenho_por_tema`. `iniciar_tentativa`, `retomar_tentativa`, `get_revisao_prova` e `gerar_simulado_personalizado` passam a devolver `recurso_texto`/`anulada` nas questões. Notas já consolidadas não são recalculadas retroativamente.
+- Novo componente compartilhado `QuestaoRecursoComponent` (com story e testes): faixa no topo da questão que mostra o banner de anulação (admin/aluno), o botão "Ver recurso" (texto expansível) e o botão discreto de "Anular questão" / "Desfazer". Integrado ao `QuestaoCardComponent` (novos inputs `anuladaUsuario`/`podeAnular`/`anulandoQuestao` e output `toggleAnular`), portanto aparece em execução, revisão e preview do admin. Ícones da lucide (`Scale`, `Ban`, `Info`, `FileText`, `Undo2`).
+- Execução do simulado (`TentativaExecComponent`): botão de anular por questão (só nas sem recurso e não anuladas pelo admin), estado otimista com rollback, e questões anuladas deixam de ser contadas como "sem resposta" no aviso de finalização. `TentativaService.anularQuestao`.
+- Revisão (`ProvaVisualizarComponent`) e resultado (`ResultadoSummaryComponent`) exibem a anulação em modo leitura; o resumo do resultado sinaliza quantas questões anuladas ficaram fora da nota.
+- Admin de Questões: seção "Recurso e anulação" no criar/editar (textarea + checkbox de anular), badges "anulada"/"recurso" na listagem, e linhas + bloco de texto do recurso na visualização.
+
+---
+
+## 2026-07-22 | Feature | sem commit
+
 **Filtro por matéria (hierárquico por período) em Treinos Nacionais**
 
 - `UiMultiselectComponent`/`SelectOption` ganham suporte a agrupamento: campo opcional `group` nas opções — itens consecutivos com o mesmo `group` ficam sob um cabeçalho comum no dropdown (novo `.ui-select__group-label`). Retrocompatível: sem `group`, o comportamento é o mesmo de antes (lista plana). Nova story `ComGrupos`.

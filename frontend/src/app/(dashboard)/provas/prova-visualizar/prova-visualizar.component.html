@@ -87,6 +87,8 @@
               [respostaTexto]="respostasTextoMap().get(q.id) ?? ''"
               [estadoRespostaAberta]="enviadas().has(q.id) ? 'enviada' : 'rascunho'"
               [correcao]="correcoesMap().get(q.id) ?? null"
+              [anuladaUsuario]="anuladasSet().has(q.id)"
+              [podeAnular]="false"
               (responder)="$event"
             />
 

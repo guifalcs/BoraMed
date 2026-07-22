@@ -67,6 +67,10 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly mostrarGrade = signal(false);
   protected readonly mostrarConfirmacao = signal(false);
   protected readonly marcadas = signal<Set<string>>(new Set());
+  /** Questões anuladas pelo aluno nesta tentativa (fora das métricas). */
+  protected readonly anuladas = signal<Set<string>>(new Set());
+  /** Anulação em andamento (por questão), para travar o botão. */
+  protected readonly anulandoQuestao = signal<Set<string>>(new Set());
 
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly chevronUpIcon = ChevronUp;
@@ -124,6 +128,29 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     return q ? this.marcadas().has(q.id) : false;
   });
 
+  /** Questão atual anulada pelo aluno. */
+  protected readonly anuladaAtual = computed(() => {
+    const q = this.questaoAtual();
+    return q ? this.anuladas().has(q.id) : false;
+  });
+
+  /** Anulação da questão atual em andamento. */
+  protected readonly anulandoAtual = computed(() => {
+    const q = this.questaoAtual();
+    return q ? this.anulandoQuestao().has(q.id) : false;
+  });
+
+  /**
+   * Só questões sem recurso cadastrado e não anuladas pelo admin podem ser
+   * anuladas pelo aluno (o botão discreto aparece durante a tentativa ativa).
+   */
+  protected readonly podeAnularAtual = computed(() => {
+    const q = this.questaoAtual();
+    if (!q) return false;
+    const temRecurso = (q.recurso_texto ?? '').trim().length > 0;
+    return !temRecurso && !q.anulada;
+  });
+
   protected readonly totalMarcadas = computed(() => this.marcadas().size);
 
   protected readonly respostaSelecionadaAtual = computed(() => {
@@ -172,6 +199,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     const respostasMap = new Map<string, string>();
     const textosMap = new Map<string, string>();
     const enviadasSet = new Set<string>();
+    const anuladasSet = new Set<string>();
     for (const r of this.tentativaService.respostas()) {
       if (r.alternativa_id) {
         respostasMap.set(r.questao_id, r.alternativa_id);
@@ -182,10 +210,14 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       if (r.enviada_em) {
         enviadasSet.add(r.questao_id);
       }
+      if (r.anulada_usuario) {
+        anuladasSet.add(r.questao_id);
+      }
     }
     this.respostas.set(respostasMap);
     this.respostasTexto.set(textosMap);
     this.enviadas.set(enviadasSet);
+    this.anuladas.set(anuladasSet);
 
     // Restaura correções das abertas já enviadas (pós-F5)
     if (enviadasSet.size > 0) {
@@ -426,6 +458,41 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Anula/desanula a questão atual pelo aluno (otimista, com rollback). */
+  protected async onToggleAnular(anular: boolean): Promise<void> {
+    const tentativa = this.tentativa();
+    const questao = this.questaoAtual();
+    if (!tentativa || !questao) return;
+    if (this.anulandoQuestao().has(questao.id)) return;
+
+    this.anulandoQuestao.update((s) => new Set(s).add(questao.id));
+    this.anuladas.update((s) => {
+      const next = new Set(s);
+      if (anular) next.add(questao.id);
+      else next.delete(questao.id);
+      return next;
+    });
+
+    const result = await this.tentativaService.anularQuestao(tentativa.id, questao.id, anular);
+
+    this.anulandoQuestao.update((s) => {
+      const next = new Set(s);
+      next.delete(questao.id);
+      return next;
+    });
+
+    if (!result.ok) {
+      // Rollback da atualização otimista
+      this.anuladas.update((s) => {
+        const next = new Set(s);
+        if (anular) next.delete(questao.id);
+        else next.add(questao.id);
+        return next;
+      });
+      this.notifications.error(result.error);
+    }
+  }
+
   protected toggleMarcar(): void {
     const q = this.questaoAtual();
     if (!q) return;
@@ -479,7 +546,12 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   }
 
   protected readonly questoesNaoRespondidas = computed(() =>
-    this.questoes().length - this.totalRespondidas(),
+    this.questoes().filter(
+      (q) =>
+        !this.respostas().has(q.id) &&
+        !this.enviadas().has(q.id) &&
+        !this.anuladas().has(q.id),
+    ).length,
   );
 
   /** Abertas com rascunho digitado mas nunca enviadas — perdem o texto na finalização. */
@@ -488,6 +560,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       (q) =>
         q.formato === 'resposta_aberta_curta' &&
         !this.enviadas().has(q.id) &&
+        !this.anuladas().has(q.id) &&
         (this.respostasTexto().get(q.id) ?? '').trim().length > 0,
     ).length,
   );

@@ -43,10 +43,14 @@
         [respostaTexto]="respostaTextoAtual()"
         [estadoRespostaAberta]="estadoAbertaAtual()"
         [correcao]="correcaoAtual()"
+        [anuladaUsuario]="anuladaAtual()"
+        [podeAnular]="podeAnularAtual()"
+        [anulandoQuestao]="anulandoAtual()"
         (responder)="onResponder($event)"
         (salvarRascunho)="onSalvarRascunho($event)"
         (enviarTexto)="onEnviarTexto($event)"
         (tentarCorrecaoNovamente)="onTentarCorrecaoNovamente()"
+        (toggleAnular)="onToggleAnular($event)"
       />
 
       <!-- Botão marcar para revisão -->

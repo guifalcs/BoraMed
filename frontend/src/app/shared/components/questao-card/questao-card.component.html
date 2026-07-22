@@ -11,6 +11,17 @@
     }
   </div>
 
+  <!-- Recurso / anulação -->
+  <app-questao-recurso
+    [recursoTexto]="questao().recurso_texto ?? null"
+    [anuladaAdmin]="questao().anulada ?? false"
+    [anuladaUsuario]="anuladaUsuario()"
+    [podeAnular]="podeAnular()"
+    [processando]="anulandoQuestao()"
+    [questaoNumero]="numero()"
+    (toggleAnular)="toggleAnular.emit($event)"
+  />
+
   <!-- Imagem -->
   @if (questao().imagem_url) {
     <figure class="mb-4 flex flex-col items-center gap-1">

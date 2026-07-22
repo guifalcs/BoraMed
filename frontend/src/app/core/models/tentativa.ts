@@ -39,6 +39,8 @@ export interface TentativaResposta {
   respondida_em: string | null;
   /** Envio definitivo de resposta aberta (NULL = rascunho editável). */
   enviada_em?: string | null;
+  /** Aluno anulou esta questão na tentativa — exclui a resposta das métricas. */
+  anulada_usuario?: boolean;
   /** Pontuação 0–100 da resposta (abertas via IA). */
   pontos?: number | null;
   /** Correção por IA (presente em resultados/revisão). */

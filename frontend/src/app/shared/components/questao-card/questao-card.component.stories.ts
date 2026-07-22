@@ -130,3 +130,35 @@ export const ComMarkdownRico: Story = {
     },
   },
 };
+
+const RECURSO_TXT =
+  'A banca reconheceu ambiguidade entre as alternativas A e B e revisou o gabarito. Ambas as condutas são aceitáveis segundo as diretrizes vigentes.';
+
+/** Recurso cadastrado (sem anulação): o aluno só visualiza o texto. */
+export const ComRecurso: Story = {
+  args: {
+    questao: { ...questaoBase, recurso_texto: RECURSO_TXT },
+  },
+};
+
+/** Questão anulada pela instituição, com recurso explicando o motivo. */
+export const AnuladaPeloAdmin: Story = {
+  args: {
+    questao: { ...questaoBase, anulada: true, recurso_texto: RECURSO_TXT },
+  },
+};
+
+/** Tentativa ativa, questão sem recurso: botão discreto de anular. */
+export const PodeAnular: Story = {
+  args: {
+    podeAnular: true,
+  },
+};
+
+/** Aluno já anulou por conta própria (com opção de desfazer). */
+export const AnuladaPeloAluno: Story = {
+  args: {
+    podeAnular: true,
+    anuladaUsuario: true,
+  },
+};

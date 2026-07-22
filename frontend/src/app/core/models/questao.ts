@@ -18,6 +18,10 @@ export interface Questao {
   criterios_correcao?: string | null;
   explicacao: string | null;
   explicacao_alternativas: Record<string, string> | null;
+  /** Texto do recurso (anulação/modificação pela faculdade) exibido ao aluno. */
+  recurso_texto?: string | null;
+  /** Anulação global (admin): questão segue visível, mas fora das métricas. */
+  anulada?: boolean;
   referencia: string | null;
   disciplina: string | null;
   periodo: number | null;
