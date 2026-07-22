@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import type { Faculdade } from '../models/faculdade';
+import type { Disciplina } from '../models/disciplina';
 import type {
   FormatoProva,
   Prova,
@@ -17,6 +18,8 @@ const PROVA_COLUMNS =
   'id, faculdade_id, nome, periodo, tipo, origem, formato, rede, subtipo, subtipo_nacional, qtd_questoes, publicada, arquivada, criado_em';
 
 const FACULDADE_COLUMNS = 'id, nome, sigla, rede, ativa, logo_url, criado_em';
+
+const DISCIPLINA_COLUMNS = 'id, sigla, nome, periodo';
 
 const PROVAS_POR_PAGINA_PADRAO = 15;
 
@@ -42,6 +45,22 @@ export class ProvaService {
       return { ok: true, data: (data ?? []) as Faculdade[] };
     } catch {
       return { ok: false, error: 'Não foi possível carregar as faculdades.' };
+    }
+  }
+
+  async listarDisciplinas(): Promise<ProvaResult<Disciplina[]>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('disciplina')
+        .select(DISCIPLINA_COLUMNS)
+        .eq('ativa', true)
+        .order('periodo')
+        .order('sigla');
+
+      if (error) throw error;
+      return { ok: true, data: (data ?? []) as Disciplina[] };
+    } catch {
+      return { ok: false, error: 'Não foi possível carregar as matérias.' };
     }
   }
 
@@ -80,6 +99,9 @@ export class ProvaService {
       }
       if (params.periodos && params.periodos.length > 0) {
         query = query.in('periodo', params.periodos);
+      }
+      if (params.disciplinaIds && params.disciplinaIds.length > 0) {
+        query = query.in('disciplina_id', params.disciplinaIds);
       }
       const busca = params.busca?.trim();
       if (busca) {

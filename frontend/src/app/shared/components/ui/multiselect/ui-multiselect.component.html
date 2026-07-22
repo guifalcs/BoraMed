@@ -30,19 +30,24 @@
 
     @if (isOpen()) {
       <ul class="ui-select__dropdown" role="listbox" [attr.aria-label]="label()" [ngStyle]="dropdownStyles()">
-        @for (option of options(); track option.value) {
-          <li
-            class="ui-select__option"
-            role="option"
-            [class.ui-select__option--selected]="isSelected(option.value)"
-            [attr.aria-selected]="isSelected(option.value)"
-            (click)="toggleOption(option.value)"
-          >
-            <span>{{ option.label }}</span>
-            @if (isSelected(option.value)) {
-              <app-ui-icon [icon]="checkIcon" [size]="14" aria-hidden="true" />
-            }
-          </li>
+        @for (grupo of groupedOptions(); track $index) {
+          @if (grupo.group) {
+            <li class="ui-select__group-label" role="presentation">{{ grupo.group }}</li>
+          }
+          @for (option of grupo.options; track option.value) {
+            <li
+              class="ui-select__option"
+              role="option"
+              [class.ui-select__option--selected]="isSelected(option.value)"
+              [attr.aria-selected]="isSelected(option.value)"
+              (click)="toggleOption(option.value)"
+            >
+              <span>{{ option.label }}</span>
+              @if (isSelected(option.value)) {
+                <app-ui-icon [icon]="checkIcon" [size]="14" aria-hidden="true" />
+              }
+            </li>
+          }
         }
       </ul>
     }

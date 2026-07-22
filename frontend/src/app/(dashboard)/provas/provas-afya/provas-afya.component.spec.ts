@@ -41,6 +41,7 @@ describe('ProvasAfyaComponent', () => {
   const mockProvaService = {
     listarProvasNacionais: vi.fn(),
     listarProvasPorFormato: vi.fn(),
+    listarDisciplinas: vi.fn(),
   };
 
   /**
@@ -52,6 +53,7 @@ describe('ProvasAfyaComponent', () => {
     mockProvaService.listarProvasNacionais.mockReturnValue(
       provasResult ? Promise.resolve(provasResult) : new Promise(() => {}),
     );
+    mockProvaService.listarDisciplinas.mockReturnValue(Promise.resolve({ ok: true, data: [] }));
 
     await TestBed.configureTestingModule({
       imports: [ProvasAfyaComponent],

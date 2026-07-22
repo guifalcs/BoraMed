@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { Prova, SubtipoProva } from '../../../core/models/prova';
+import type { Disciplina } from '../../../core/models/disciplina';
 import { ProvaCardComponent } from '../../../shared/components/prova-card/prova-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UiMultiselectComponent } from '../../../shared/components/ui/multiselect/ui-multiselect.component';
@@ -45,7 +46,10 @@ export class ProvasAfyaComponent {
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
+  protected readonly materiasFiltro = signal<string[]>([]);
   protected readonly buscaFiltro = signal('');
+
+  protected readonly disciplinas = signal<Disciplina[]>([]);
 
   private buscaDebounce: ReturnType<typeof setTimeout> | null = null;
 
@@ -68,11 +72,26 @@ export class ProvasAfyaComponent {
     label: `${i + 1}º período`,
   }));
 
+  /** Matérias agrupadas por período (1º, 2º, ...) para o filtro hierárquico. */
+  protected readonly materiaOpcoes = computed<SelectOption[]>(() =>
+    this.disciplinas().map((d) => ({
+      value: d.id,
+      label: d.nome ? `${d.sigla} — ${d.nome}` : d.sigla,
+      group: `${d.periodo}º período`,
+    })),
+  );
+
   constructor() {
     // Navega instantaneamente; os dados são buscados aqui, sem bloquear a rota.
     if (this.isBrowser) {
       void this.nav.track(this.carregarProvas());
+      void this.carregarDisciplinas();
     }
+  }
+
+  private async carregarDisciplinas(): Promise<void> {
+    const result = await this.provaService.listarDisciplinas();
+    if (result.ok) this.disciplinas.set(result.data);
   }
 
   protected async carregarProvas(): Promise<void> {
@@ -82,6 +101,7 @@ export class ProvasAfyaComponent {
       rede: 'afya',
       subtipos: this.subtiposFiltro(),
       periodos: this.periodosFiltro(),
+      disciplinaIds: this.materiasFiltro(),
       busca: this.buscaFiltro(),
       pagina: this.pagina(),
       porPagina: this.porPagina,
@@ -107,6 +127,11 @@ export class ProvasAfyaComponent {
 
   protected onPeriodoChange(values: (string | number)[]): void {
     this.periodosFiltro.set(values.map(Number));
+    void this.recarregarPrimeiraPagina();
+  }
+
+  protected onMateriaChange(values: (string | number)[]): void {
+    this.materiasFiltro.set(values as string[]);
     void this.recarregarPrimeiraPagina();
   }
 

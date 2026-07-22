@@ -2,6 +2,15 @@
 
 ## 2026-07-22 | Feature | sem commit
 
+**Filtro por matéria (hierárquico por período) em Treinos Nacionais**
+
+- `UiMultiselectComponent`/`SelectOption` ganham suporte a agrupamento: campo opcional `group` nas opções — itens consecutivos com o mesmo `group` ficam sob um cabeçalho comum no dropdown (novo `.ui-select__group-label`). Retrocompatível: sem `group`, o comportamento é o mesmo de antes (lista plana). Nova story `ComGrupos`.
+- Novo filtro "Matéria" em Treinos Nacionais (`ProvasAfyaComponent`), ao lado de Subtipo/Período: lista as disciplinas ativas agrupadas por período ("1º período", "2º período", ...) via `ProvaService.listarDisciplinas()` (novo método + model `Disciplina`). Seleção filtra `prova.disciplina_id` (`ListarProvasParams.disciplinaIds`) direto na query.
+
+---
+
+## 2026-07-22 | Feature | sem commit
+
 **Backfill do vínculo prova → matéria: período 2**
 
 - Migration `20260722140000_prova_disciplina_id_backfill_periodo2.sql`: agora que as matérias do período 2 (HAM II, IESC II, MCM II, SOI II) foram cadastradas, as 32 provas não-integradoras do período foram vinculadas à matéria correspondente por correspondência de nome, mesmo critério do período 1. As 5 integradoras do período seguem sem vínculo.

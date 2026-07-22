@@ -46,6 +46,21 @@ export class UiMultiselectComponent {
     return `${selected.length} selecionados`;
   });
 
+  /** Agrupa opções consecutivas com o mesmo `group` sob um cabeçalho comum no dropdown. */
+  protected readonly groupedOptions = computed(() => {
+    const grupos: { group: string | null; options: SelectOption[] }[] = [];
+    for (const opcao of this.options()) {
+      const group = opcao.group ?? null;
+      const ultimo = grupos[grupos.length - 1];
+      if (ultimo && ultimo.group === group) {
+        ultimo.options.push(opcao);
+      } else {
+        grupos.push({ group, options: [opcao] });
+      }
+    }
+    return grupos;
+  });
+
   constructor(private readonly el: ElementRef) {}
 
   @HostListener('window:scroll')

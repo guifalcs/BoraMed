@@ -40,6 +40,15 @@
             (valuesChange)="onPeriodoChange($event)"
           />
         </div>
+        <div style="width:11rem;min-width:11rem;max-width:11rem;flex:none">
+          <app-ui-multiselect
+            label="Matéria"
+            name="materia"
+            [options]="materiaOpcoes()"
+            [values]="materiasFiltro()"
+            (valuesChange)="onMateriaChange($event)"
+          />
+        </div>
         @if (!isLoading()) {
           <span class="ml-auto hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:inline">
             {{ total() }}

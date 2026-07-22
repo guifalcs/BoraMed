@@ -15,6 +15,8 @@ import { UiIconComponent } from '../icon/ui-icon.component';
 export interface SelectOption<T extends string | number = string | number> {
   value: T;
   label: string;
+  /** Cabeçalho de agrupamento no dropdown (ex: "1º período"). Opções consecutivas com o mesmo grupo ficam sob o mesmo cabeçalho. */
+  group?: string;
 }
 
 @Component({
