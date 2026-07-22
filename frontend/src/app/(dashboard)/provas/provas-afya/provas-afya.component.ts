@@ -76,7 +76,9 @@ export class ProvasAfyaComponent {
   protected readonly materiaOpcoes = computed<SelectOption[]>(() =>
     this.disciplinas().map((d) => ({
       value: d.id,
-      label: d.nome ? `${d.sigla} — ${d.nome}` : d.sigla,
+      // Sigla sem o algarismo romano do período (ex: "SOI I" → "SOI") — o
+      // período já aparece como cabeçalho do grupo.
+      label: d.sigla.replace(/\s+[IVXLCDM]+$/i, ''),
       group: `${d.periodo}º período`,
     })),
   );
