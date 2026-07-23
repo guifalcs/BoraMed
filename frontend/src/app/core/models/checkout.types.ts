@@ -83,12 +83,27 @@ export interface PagamentoIntencao {
   tipo: 'acesso_unico' | 'assinatura';
   mp_payment_id: string | null;
   valor_centavos: number;
+  desconto_centavos: number;
+  cupom_id: string | null;
   metodo: string | null;
   parcelas: number | null;
   status: IntencaoStatus;
   status_detail: string | null;
   expira_em: string | null;
   criado_em: string;
+}
+
+/**
+ * Retorno da RPC `validar_cupom` (usada só para exibir o preço com desconto; a
+ * aplicação de verdade é reconferida na edge no momento do pagamento).
+ */
+export interface ValidarCupomResult {
+  valido: boolean;
+  motivo: string;
+  cupom_id: string | null;
+  valor_original_centavos: number | null;
+  desconto_centavos: number | null;
+  valor_final_centavos: number | null;
 }
 
 export type CheckoutErro =

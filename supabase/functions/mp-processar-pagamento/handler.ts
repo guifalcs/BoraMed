@@ -58,6 +58,22 @@ function sanitizeAddress(
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+/** Mensagem amigável para um cupom recusado na validação server-side. */
+export function cupomErro(motivo?: string): string {
+  switch (motivo) {
+    case 'expirado':
+      return 'Este cupom expirou.';
+    case 'ja_usado':
+      return 'Você já utilizou este cupom.';
+    case 'nao_aplicavel':
+      return 'Este cupom não é válido para este plano.';
+    case 'esgotado':
+      return 'Este cupom atingiu o limite de usos.';
+    default:
+      return 'Cupom inválido.';
+  }
+}
+
 /** Data no formato aceito pelo MP (offset explícito, mesmo instante em -03:00). */
 export function toMpDate(d: Date): string {
   const local = new Date(d.getTime() - 3 * 60 * 60 * 1000);
@@ -116,6 +132,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
     plano_slug?: string;
     form_data?: FormDataIn;
     device_id?: string;
+    cupom_codigo?: string;
   };
   try {
     body = await req.json();
@@ -170,7 +187,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   // 5. Idempotência / anti-replay do attempt_id
   const { data: existente } = await admin
     .from('pagamento_intencao')
-    .select('id, user_id, mp_payment_id')
+    .select('id, user_id, mp_payment_id, valor_centavos')
     .eq('idempotency_key', attemptId)
     .maybeSingle();
   if (existente && existente.user_id !== user.id) {
@@ -221,9 +238,33 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
     }
   }
 
-  // 8. Cria (ou reusa) a intenção com snapshot do preço DO BANCO
+  // 8. Cria (ou reusa) a intenção com snapshot do preço DO BANCO.
+  //    O cupom (opcional) é validado e aplicado SÓ na criação — o preço é
+  //    recalculado no servidor pela RPC validar_cupom (nunca vem do cliente).
+  //    Em replay a intenção já traz o valor com desconto snapshotado.
   let intencaoId = existente?.id ?? null;
+  let chargeCentavos = existente?.valor_centavos ?? plano.preco_centavos;
   if (!intencaoId) {
+    let cupomId: string | null = null;
+    let descontoCentavos = 0;
+    let valorCentavos = plano.preco_centavos;
+    const cupomCodigo = typeof body.cupom_codigo === 'string' ? body.cupom_codigo.trim() : '';
+    if (cupomCodigo) {
+      const { data: cupData, error: cupError } = await admin.rpc('validar_cupom', {
+        p_codigo: cupomCodigo,
+        p_plano_slug: plano.slug,
+        p_user_id: user.id,
+      });
+      const cup = Array.isArray(cupData) ? cupData[0] : cupData;
+      if (cupError || !cup || cup.valido !== true) {
+        return reply({ error: cupomErro(cup?.motivo) }, 400);
+      }
+      cupomId = (cup.cupom_id as string | null) ?? null;
+      descontoCentavos = Number(cup.desconto_centavos) || 0;
+      valorCentavos = Number(cup.valor_final_centavos);
+    }
+    chargeCentavos = valorCentavos;
+
     const { data: criada, error: insertError } = await admin
       .from('pagamento_intencao')
       .insert({
@@ -231,7 +272,9 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
         plano_id: plano.id,
         tipo: 'acesso_unico',
         idempotency_key: attemptId,
-        valor_centavos: plano.preco_centavos,
+        valor_centavos: valorCentavos,
+        desconto_centavos: descontoCentavos,
+        cupom_id: cupomId,
         metodo,
         parcelas: isCard ? installments : null,
         status: 'processando',
@@ -242,13 +285,14 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
       // Corrida: outra requisição inseriu a mesma key. Reprocessa pela existente.
       const { data: again } = await admin
         .from('pagamento_intencao')
-        .select('id, user_id')
+        .select('id, user_id, valor_centavos')
         .eq('idempotency_key', attemptId)
         .maybeSingle();
       if (!again || again.user_id !== user.id) {
         return reply({ error: 'attempt_id em uso' }, 409);
       }
       intencaoId = again.id;
+      chargeCentavos = again.valor_centavos;
     } else {
       intencaoId = criada.id;
     }
@@ -270,7 +314,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   const address = sanitizeAddress(fd.payer?.address);
 
   const payload: Record<string, unknown> = {
-    transaction_amount: plano.preco_centavos / 100,
+    transaction_amount: chargeCentavos / 100,
     description: `BoraMed ${plano.nome}`,
     payment_method_id: metodo,
     installments,
@@ -305,7 +349,7 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
           description: 'Acesso à plataforma de estudos BoraMed',
           category_id: 'learnings',
           quantity: 1,
-          unit_price: plano.preco_centavos / 100,
+          unit_price: chargeCentavos / 100,
         },
       ],
       ...(fd.payer?.first_name || fd.payer?.last_name

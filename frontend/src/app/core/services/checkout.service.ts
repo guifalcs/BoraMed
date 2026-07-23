@@ -6,6 +6,7 @@ import type {
   PagamentoIntencao,
   ProcessarAssinaturaResult,
   ProcessarPagamentoResult,
+  ValidarCupomResult,
 } from '../models/checkout.types';
 
 // Orquestração do checkout embutido: invoca as edges mp-processar-* com um
@@ -54,6 +55,7 @@ export class CheckoutService {
   async processarPagamento(
     planoSlug: string,
     formData: BrickFormData,
+    cupomCodigo?: string,
   ): Promise<ProcessarPagamentoResult> {
     if (this.processando) return { ok: false, error: 'Pagamento em processamento. Aguarde…' };
     this.processando = true;
@@ -63,6 +65,7 @@ export class CheckoutService {
           attempt_id: crypto.randomUUID(),
           plano_slug: planoSlug,
           form_data: formData,
+          ...(cupomCodigo ? { cupom_codigo: cupomCodigo } : {}),
           ...(this.deviceId() ? { device_id: this.deviceId() } : {}),
         },
       });
@@ -73,6 +76,20 @@ export class CheckoutService {
     } finally {
       this.processando = false;
     }
+  }
+
+  /**
+   * Valida um cupom para exibir o preço com desconto (a aplicação definitiva é
+   * reconferida na edge no pagamento). Retorna null em falha de rede.
+   */
+  async validarCupom(codigo: string, planoSlug: string): Promise<ValidarCupomResult | null> {
+    const { data, error } = await this.supabase.rpc('validar_cupom', {
+      p_codigo: codigo,
+      p_plano_slug: planoSlug,
+    });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return (row as ValidarCupomResult) ?? null;
   }
 
   /** Cria a assinatura mensal com o card token gerado pelo Brick. */

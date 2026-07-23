@@ -123,6 +123,9 @@ window.MercadoPago = class {
       create: async (brick, containerId, settings) => {
         window.__brickSettings[brick] = settings;
         const el = document.getElementById(containerId);
+        // Montar substitui o conteúdo do container (como o Brick real faz no
+        // unmount/remount — ex.: ao aplicar um cupom e remontar com novo valor).
+        if (el) el.innerHTML = '';
         if (brick === 'payment' && el) {
           const btn = document.createElement('button');
           btn.textContent = 'Pagar (stub)';
@@ -260,6 +263,95 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('R$ 299,40')).toBeVisible();
     await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('aplica cupom (20% off) e envia o código no pagamento', async ({ page }) => {
+    await setupCheckout(page, '/checkout/semestral', {
+      extraRoutes: async (p) => {
+        await p.route('**/rest/v1/rpc/validar_cupom**', (route) => {
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify([
+              {
+                valido: true,
+                motivo: 'ok',
+                cupom_id: 'cup-calouro',
+                valor_original_centavos: 29940,
+                desconto_centavos: 5988,
+                valor_final_centavos: 23952,
+              },
+            ]),
+          });
+        });
+        await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              intencao_id: 'int-cup-1',
+              payment_id: '123',
+              status: 'approved',
+              status_detail: 'accredited',
+            }),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('R$ 299,40')).toBeVisible();
+
+    // Aplica o cupom → preço com desconto e confirmação visível.
+    await page.getByTestId('cupom-input').fill('calouro20');
+    await page.getByTestId('cupom-aplicar').click();
+    await expect(page.getByText('Cupom CALOURO20 aplicado')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('R$ 239,52')).toBeVisible();
+
+    // Paga e confere que o código (normalizado) foi enviado à edge.
+    await setStubFormData(page, {
+      selectedPaymentMethod: 'credit_card',
+      formData: {
+        token: 'tok-stub',
+        payment_method_id: 'master',
+        installments: 1,
+        payer: { email: 'checkout@boramed.com' },
+      },
+    });
+    const reqPromise = page.waitForRequest('**/functions/v1/mp-processar-pagamento**');
+    await page.getByTestId('stub-pagar').click();
+    const req = await reqPromise;
+    expect((req.postDataJSON() as Record<string, unknown>)?.['cupom_codigo']).toBe('CALOURO20');
+  });
+
+  test('cupom inválido exibe erro e mantém o preço cheio', async ({ page }) => {
+    await setupCheckout(page, '/checkout/semestral', {
+      extraRoutes: async (p) => {
+        await p.route('**/rest/v1/rpc/validar_cupom**', (route) => {
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify([
+              {
+                valido: false,
+                motivo: 'expirado',
+                cupom_id: 'cup-calouro',
+                valor_original_centavos: 29940,
+                desconto_centavos: 0,
+                valor_final_centavos: 29940,
+              },
+            ]),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('cupom-input').fill('CALOURO20');
+    await page.getByTestId('cupom-aplicar').click();
+    await expect(page.getByTestId('cupom-erro')).toContainText('expirou');
+    await expect(page.getByText('R$ 299,40')).toBeVisible();
+    await expect(page.getByText('Cupom CALOURO20 aplicado')).toHaveCount(0);
   });
 
   test('usuário com acesso ativo é redirecionado ao dashboard sem checkout', async ({ page }) => {
