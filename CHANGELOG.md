@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-23 | Fix | sem commit
+
+**Filtro de matéria em Treinos Nacionais respeita o período da matéria**
+
+- O filtro "Matéria" (`ProvasAfyaComponent`) passava só `disciplina_id`. Como uma matéria pertence a um único período, o filtro agora também amarra o período: envia o período da(s) matéria(s) selecionada(s) (interseção com o filtro de período manual, quando houver). Assim, uma prova com `disciplina_id` de período divergente do seu `periodo` (dado inconsistente) deixa de vazar — ex: filtrar "4º período" e aparecer prova do 1º.
+- Causa-raiz no admin (`AdminProvasComponent`): trocar o período da prova não limpava a matéria já selecionada, salvando `disciplina_id` de outro período. Novo `onPeriodoFormChange` zera a matéria quando ela não pertence ao novo período.
+- Migration `20260723120000_limpar_disciplina_id_periodo_divergente.sql`: zera `prova.disciplina_id` nas provas cujo vínculo aponta para disciplina de período diferente do `prova.periodo`, limpando os dados já inconsistentes.
+
+---
+
 ## 2026-07-22 | Feature | sem commit
 
 **Recurso e anulação de questões**

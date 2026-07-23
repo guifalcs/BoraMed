@@ -173,6 +173,41 @@ describe('ProvasAfyaComponent', () => {
     });
   });
 
+  // ── Filtro de matéria amarrado ao período ─────────────────────────────────
+  describe('filtro de matéria respeita o período da matéria', () => {
+    beforeEach(async () => {
+      await setup({ ok: true, data: pagina([provaFactory()], 1) });
+      // SOI I (1º) e SOI IV (4º) — mesmo rótulo, períodos distintos.
+      (component as any).disciplinas.set([
+        { id: 'soi-1', sigla: 'SOI I', nome: 'SOI', periodo: 1 },
+        { id: 'soi-4', sigla: 'SOI IV', nome: 'SOI', periodo: 4 },
+      ]);
+    });
+
+    it('envia o período da matéria selecionada, não deixando vazar outro período', () => {
+      (component as any).onMateriaChange(['soi-4']);
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ disciplinaIds: ['soi-4'], periodos: [4] }),
+      );
+    });
+
+    it('interseciona o período manual com o período da matéria', () => {
+      (component as any).onPeriodoChange([1]);
+      (component as any).onMateriaChange(['soi-4']);
+      // Período 1 (manual) ∩ período 4 (matéria) = vazio.
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ disciplinaIds: ['soi-4'], periodos: [] }),
+      );
+    });
+
+    it('sem matéria selecionada, usa apenas o filtro de período manual', () => {
+      (component as any).onPeriodoChange([2]);
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ disciplinaIds: [], periodos: [2] }),
+      );
+    });
+  });
+
   // ── Paginação ─────────────────────────────────────────────────────────────
 
   describe('paginação', () => {

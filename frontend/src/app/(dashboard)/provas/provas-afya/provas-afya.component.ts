@@ -102,7 +102,7 @@ export class ProvasAfyaComponent {
     const result = await this.provaService.listarProvasNacionais({
       rede: 'afya',
       subtipos: this.subtiposFiltro(),
-      periodos: this.periodosFiltro(),
+      periodos: this.periodosEfetivos(),
       disciplinaIds: this.materiasFiltro(),
       busca: this.buscaFiltro(),
       pagina: this.pagina(),
@@ -115,6 +115,31 @@ export class ProvasAfyaComponent {
       this.erro.set(result.error);
     }
     this.isLoading.set(false);
+  }
+
+  /**
+   * Períodos a enviar na busca. Uma matéria pertence a um único período, então
+   * filtrar por matéria implica filtrar pelo período dela. Amarrar o período à
+   * matéria impede que uma prova com `disciplina_id` de período divergente do
+   * seu `periodo` (dado inconsistente) vaze no filtro — ex: filtrar "4º período"
+   * e aparecer prova do 1º. Quando o período também é escolhido à mão, cai na
+   * interseção; sem matéria selecionada, usa apenas o filtro de período.
+   */
+  private periodosEfetivos(): number[] {
+    const materias = this.materiasFiltro();
+    if (materias.length === 0) return this.periodosFiltro();
+
+    const periodosDasMaterias = [
+      ...new Set(
+        this.disciplinas()
+          .filter((d) => materias.includes(d.id))
+          .map((d) => d.periodo),
+      ),
+    ];
+
+    const periodosManuais = this.periodosFiltro();
+    if (periodosManuais.length === 0) return periodosDasMaterias;
+    return periodosManuais.filter((p) => periodosDasMaterias.includes(p));
   }
 
   private async recarregarPrimeiraPagina(): Promise<void> {

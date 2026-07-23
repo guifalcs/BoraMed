@@ -213,6 +213,21 @@ export class AdminProvasComponent implements OnInit {
     this.fSubtipoNacional.set('');
   }
 
+  /**
+   * Ao trocar o período, limpa a matéria se ela não pertencer ao novo período.
+   * Sem isso, a prova é salva com um `disciplina_id` de outro período e passa a
+   * vazar no filtro de matéria dos alunos (ex: filtrar "4º período" e aparecer
+   * prova do 1º).
+   */
+  protected onPeriodoFormChange(valor: string): void {
+    this.fPeriodo.set(valor);
+    const periodo = Number(valor);
+    const materia = this.disciplinas().find((d) => d.id === this.fDisciplinaId());
+    if (materia && materia.periodo !== periodo) {
+      this.fDisciplinaId.set('');
+    }
+  }
+
   // ── Drawer methods ──
   protected abrirDrawer(): void {
     this.resetDrawer();
