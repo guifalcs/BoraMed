@@ -83,7 +83,7 @@ function calcularPercentualEconomia(mensal: Plano, semestral: Plano): number {
         <div class="mx-auto max-w-5xl">
           <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-gray-900">Escolha seu plano</h1>
-            <p class="mt-2 text-gray-600">Dois planos, um objetivo: te levar aprovado na prova nacional.</p>
+            <p class="mt-2 text-gray-600">Dois planos, um objetivo: te levar aprovado nas provas da sua faculdade.</p>
           </header>
 
           @if (assinaturaPausada()) {
