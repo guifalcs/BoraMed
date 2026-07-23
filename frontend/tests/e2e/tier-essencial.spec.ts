@@ -90,7 +90,7 @@ test.describe('Página de planos (/planos)', () => {
     await expect(planos.toggleSemestral).toHaveAttribute('aria-checked', 'true', { timeout: 10_000 });
     await expect(planos.headingEssencial).toContainText('Essencial Semestral');
     await expect(planos.headingAvancado).toContainText('Avançado Semestral');
-    await expect(page.getByText('R$ 19,90', { exact: true })).toBeVisible();
+    await expect(page.getByText('R$ 13,90', { exact: true })).toBeVisible();
     await expect(page.getByText('R$ 49,90', { exact: true })).toBeVisible();
   });
 
@@ -103,7 +103,7 @@ test.describe('Página de planos (/planos)', () => {
 
     await expect(planos.headingEssencial).toContainText('Essencial Mensal');
     await expect(planos.headingAvancado).toContainText('Avançado Mensal');
-    await expect(page.getByText('R$ 29,90', { exact: true })).toBeVisible();
+    await expect(page.getByText('R$ 23,90', { exact: true })).toBeVisible();
     await expect(page.getByText('R$ 69,90', { exact: true })).toBeVisible();
   });
 

@@ -355,7 +355,7 @@ export class LandingComponent implements OnDestroy {
       slug: 'essencial-mensal',
       name: 'Essencial',
       tagline: 'Para treinar com as provas nacionais',
-      price: 'R$ 29,90',
+      price: 'R$ 23,90',
       period: '/mês',
       note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
       ctaLabel: 'Começar no Essencial',
@@ -368,11 +368,11 @@ export class LandingComponent implements OnDestroy {
       slug: 'essencial-semestral',
       name: 'Essencial',
       tagline: 'Para treinar com as provas nacionais',
-      price: 'R$ 19,90',
+      price: 'R$ 13,90',
       period: '/mês',
-      note: 'R$ 119,40 no semestre, em até 6x sem juros.',
+      note: 'R$ 83,40 no semestre, em até 6x sem juros.',
       economy: 'R$ 60,00',
-      anchorPrice: 'R$ 179,40',
+      anchorPrice: 'R$ 143,40',
       anchorNote: 'preço de 6 meses no plano mensal',
       ctaLabel: 'Garantir 6 meses com desconto',
       features: LandingComponent.ESSENCIAL_FEATURES,
@@ -414,7 +414,7 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly cicloOptions: SegmentedToggleOption[] = [
     { value: 'mensal', label: 'Mensal' },
-    { value: 'semestral', label: 'Semestral', badge: '-33%' },
+    { value: 'semestral', label: 'Semestral', badge: '-42%' },
   ];
 
   protected readonly visiblePricingPlans = computed(() =>
@@ -584,7 +584,7 @@ export class LandingComponent implements OnDestroy {
       },
       offers: {
         '@type': 'AggregateOffer',
-        lowPrice: '19.90',
+        lowPrice: '13.90',
         highPrice: '69.90',
         priceCurrency: 'BRL',
         offerCount: 4,
