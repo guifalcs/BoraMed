@@ -91,7 +91,7 @@ test.describe('Página de planos (/planos)', () => {
     await expect(planos.headingEssencial).toContainText('Essencial Semestral');
     await expect(planos.headingAvancado).toContainText('Avançado Semestral');
     await expect(page.getByText('R$ 13,90', { exact: true })).toBeVisible();
-    await expect(page.getByText('R$ 49,90', { exact: true })).toBeVisible();
+    await expect(page.getByText('R$ 43,90', { exact: true })).toBeVisible();
   });
 
   test('alternar para Mensal troca os preços exibidos', async ({ page }) => {
@@ -104,7 +104,7 @@ test.describe('Página de planos (/planos)', () => {
     await expect(planos.headingEssencial).toContainText('Essencial Mensal');
     await expect(planos.headingAvancado).toContainText('Avançado Mensal');
     await expect(page.getByText('R$ 23,90', { exact: true })).toBeVisible();
-    await expect(page.getByText('R$ 69,90', { exact: true })).toBeVisible();
+    await expect(page.getByText('R$ 63,90', { exact: true })).toBeVisible();
   });
 
   test('card Avançado exibe o badge "Recomendado"', async ({ page }) => {
