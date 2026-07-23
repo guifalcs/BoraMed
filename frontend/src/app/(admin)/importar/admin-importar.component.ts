@@ -166,7 +166,7 @@ REGRAS:
 • Questões de verdadeiro/falso: use A) Verdadeiro e B) Falso como alternativas
 • Questão ABERTA: comece o bloco com "FORMATO: aberta"; RESPOSTA_MODELO é obrigatória; não use ALTERNATIVAS nem GABARITO
 • PONTOS_CHAVE: 2 a 6 itens curtos e verificáveis, um por linha começando com "- "
-• TIPO: use "nacional" para provas nacionais, "processual" para simulados por tema, "laboratorio" para questões com imagem de lâmina/peça
+• TIPO reflete a PROVA de origem da questão, não a presença de imagem: use "nacional" para questões de provas nacionais (mesmo quando têm imagem), "processual" para avaliações processuais/por tema, "laboratorio" apenas para questões de provas práticas de laboratório (identificação de lâmina/peça). Uma questão de prova nacional que contém imagem continua sendo "nacional"
 • DISCIPLINA, TEMA, TIPO, EXPLICACAO, REFERENCIA e FONTE são campos opcionais
 • Se preencher DISCIPLINA ou TEMA, use exatamente uma opção cadastrada nas listas acima
 • Em TEMA, escreva apenas o nome do tema; o prefixo [DISCIPLINA] na lista serve só para contexto

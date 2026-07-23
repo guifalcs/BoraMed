@@ -486,13 +486,29 @@ export class AdminProvasComponent implements OnInit {
     };
   }
 
+  /**
+   * Mapeia o formato da prova para um tipo de questão, quando aplicável.
+   * 'multiestacoes' não é um tipo de questão válido, então retorna null e o
+   * chamador recorre ao TIPO parseado da IA.
+   */
+  private tipoQuestaoDoFormato(): 'nacional' | 'processual' | 'laboratorio' | null {
+    const formato = this.fFormato();
+    return formato === 'nacional' || formato === 'processual' || formato === 'laboratorio'
+      ? formato
+      : null;
+  }
+
   private montarQuestoesNovas(): NovaQuestaoDaProva[] {
     return this.questoesValidas().map((q) => ({
       questao: {
         enunciado: q.enunciado,
         enunciado_apoio: q.enunciado_apoio,
         formato: q.formato,
-        tipo_questao: q.tipo_questao ?? (this.fFormato() as 'nacional' | 'processual' | 'laboratorio'),
+        // A prova de origem define o tipo da questão: uma questão importada em
+        // uma prova nacional é 'nacional', mesmo que a IA a tenha classificado
+        // como 'laboratorio' por conter imagem. O TIPO parseado só é usado
+        // quando o formato da prova não mapeia para um tipo (ex.: multiestações).
+        tipo_questao: this.tipoQuestaoDoFormato() ?? q.tipo_questao ?? 'nacional',
         status: 'ativa',
         disciplina_id: q.disciplina_id,
         explicacao: q.explicacao,
