@@ -41,7 +41,11 @@ export class UiMultiselectComponent {
     const selected = this.values();
     if (selected.length === 0) return null;
     if (selected.length === 1) {
-      return this.options().find((o) => o.value === selected[0])?.label ?? null;
+      const opcao = this.options().find((o) => o.value === selected[0]);
+      if (!opcao) return null;
+      // Com grupo (ex: matéria por período), mantém o grupo visível no gatilho
+      // fechado — senão "SOI" do 1º e do 4º período ficam indistinguíveis.
+      return opcao.group ? `${opcao.label} · ${opcao.group}` : opcao.label;
     }
     return `${selected.length} selecionados`;
   });
