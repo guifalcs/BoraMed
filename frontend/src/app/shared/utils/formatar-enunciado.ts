@@ -25,24 +25,44 @@ function romanoParaInt(romano: string): number {
 }
 
 /**
- * Marcador de item em numeral romano: início de linha ou espaço, seguido do
- * numeral, um separador (ponto, hífen, travessão ou parêntese), espaço e o
- * início do texto do item (letra maiúscula, dígito ou aspas de abertura).
- * O separador original é preservado (ex.: "I." continua "I.", "I-" continua "I-").
+ * Marcadores de item em numeral romano. Ambos capturam, na ordem:
+ * (1) o numeral, (2) o espaço opcional antes do separador, (3) o separador.
+ *
+ * O separador pode vir colado ao numeral ("I.") ou com espaço antes dele
+ * ("I - "), pois as questões usam ambas as convenções — às vezes na mesma
+ * enumeração (ex.: "I - ", "II - ", "III-"). Esse espaço é preservado.
+ *
+ * `MARCADOR_ROMANO_LINHA` exige que o item comece uma linha (início do texto
+ * ou logo após uma quebra de linha, tolerando indentação). É o padrão
+ * preferencial: reconhece as enumeração já dispostas em linhas — inclusive as
+ * "grudadas" com uma única quebra — e, por ancorar no começo da linha, ignora
+ * numerais romanos que aparecem no meio de uma frase (ex.: "angiotensina II.",
+ * "Hb A2"), que não devem ser tratados como marcadores. Como o item já está no
+ * começo da linha, o texto que o segue pode começar com minúscula (algumas
+ * questões escrevem "I - aspecto...", "II - a maioria...").
+ *
+ * `MARCADOR_ROMANO_SOLTO` aceita o numeral após qualquer espaço em branco. É o
+ * recurso para enumerações escritas em um único parágrafo corrido, sem
+ * nenhuma quebra de linha entre os itens. Aqui o texto do item precisa começar
+ * com maiúscula, dígito ou aspas, para não confundir um numeral romano de
+ * prosa (ex.: "fases I e II do processo") com um marcador de lista.
  */
-const MARCADOR_ROMANO = /(^|\s)([IVX]{1,7})([.)\-–])\s+(?=["“'«A-ZÀ-Ý0-9])/g;
+const MARCADOR_ROMANO_LINHA =
+  /(?:^|\n)[ \t]*([IVX]{1,7})([ \t]*)([.)\-–])[ \t]+(?=["“'«A-Za-zÀ-ÿ0-9])/g;
+const MARCADOR_ROMANO_SOLTO =
+  /(?:^|\s)([IVX]{1,7})([ \t]*)([.)\-–])\s+(?=["“'«A-ZÀ-Ý0-9])/g;
 
 /**
  * Retorna o maior N tal que os marcadores I..N formem uma enumeração real
  * (I e II presentes, sequência contígua). Retorna 0 quando não há enumeração.
  * Isso evita quebrar numerais romanos soltos em prosa (ex.: "século XX.").
  */
-function maxSequenciaRomana(texto: string): number {
+function maxSequenciaRomana(texto: string, marcador: RegExp): number {
   const valores: number[] = [];
-  MARCADOR_ROMANO.lastIndex = 0;
+  marcador.lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = MARCADOR_ROMANO.exec(texto)) !== null) {
-    valores.push(romanoParaInt(match[2]));
+  while ((match = marcador.exec(texto)) !== null) {
+    valores.push(romanoParaInt(match[1]));
   }
   if (valores.length < 2) return 0;
 
@@ -55,16 +75,35 @@ function maxSequenciaRomana(texto: string): number {
 }
 
 /** Coloca cada item da enumeração em seu próprio parágrafo. */
-function separarItensRomanos(texto: string, maxSeq: number): string {
-  MARCADOR_ROMANO.lastIndex = 0;
+function separarItensRomanos(
+  texto: string,
+  maxSeq: number,
+  marcador: RegExp,
+): string {
+  marcador.lastIndex = 0;
   return texto.replace(
-    MARCADOR_ROMANO,
-    (completo, _pre, numeral: string, separador: string) => {
+    marcador,
+    (completo, numeral: string, espaco: string, separador: string) => {
       const valor = romanoParaInt(numeral);
       if (valor < 1 || valor > maxSeq) return completo;
-      return `\n\n${numeral}${separador} `;
+      return `\n\n${numeral}${espaco}${separador} `;
     },
   );
+}
+
+/**
+ * Escolhe a estratégia de detecção de enumeração romana: prefere marcadores
+ * ancorados no início da linha (mais seguros); só recorre ao modo solto quando
+ * aqueles não formam uma sequência — caso de enumerações em parágrafo corrido.
+ */
+function detectarEnumeracaoRomana(
+  texto: string,
+): { maxSeq: number; marcador: RegExp } {
+  const seqLinha = maxSequenciaRomana(texto, MARCADOR_ROMANO_LINHA);
+  if (seqLinha > 0) return { maxSeq: seqLinha, marcador: MARCADOR_ROMANO_LINHA };
+
+  const seqSolto = maxSequenciaRomana(texto, MARCADOR_ROMANO_SOLTO);
+  return { maxSeq: seqSolto, marcador: MARCADOR_ROMANO_SOLTO };
 }
 
 /**
@@ -92,6 +131,9 @@ function separarAssercoes(texto: string): string {
   let t = texto;
   // Conector "Porque" isolado, quando liga uma asserção à outra.
   t = t.replace(/\s+Porque\s+(?=Asser[çc][ãa]o\s*\d*\s*:)/g, '\n\nPorque\n\n');
+  // Conector "Porque"/"PORQUE" sozinho em uma linha (asserção/razão escrita com
+  // itens romanos I/II em vez de "Asserção 1:"). Preserva o caso original.
+  t = t.replace(/(?:^|\n)[ \t]*(Porque|PORQUE)[ \t]*(?=\n|$)/g, '\n\n$1\n\n');
   // Cabeçalho de cada asserção em seu próprio parágrafo.
   t = t.replace(/[ \t]*(Asser[çc][ãa]o\s*\d+\s*:)[ \t]*/g, '\n\n$1 ');
   // Comando final após o bloco de asserções (precedido do fechamento de aspas).
@@ -131,11 +173,11 @@ export function formatarEnunciado(texto: string | null | undefined): string {
   let t = texto.replace(/\r\n/g, '\n');
 
   const temAssercao = /Asser[çc][ãa]o\s*\d+\s*:/.test(t);
-  const maxSeq = maxSequenciaRomana(t);
+  const { maxSeq, marcador } = detectarEnumeracaoRomana(t);
   const jaTemParagrafos = /\n\s*\n/.test(t);
 
   t = separarAssercoes(t);
-  if (maxSeq > 0) t = separarItensRomanos(t, maxSeq);
+  if (maxSeq > 0) t = separarItensRomanos(t, maxSeq, marcador);
   if (maxSeq > 0 || temAssercao) t = separarComandoFinal(t);
   // Prosa pura (sem itens/asserções e sem parágrafos prévios): destaca a pergunta.
   if (maxSeq === 0 && !temAssercao && !jaTemParagrafos) {

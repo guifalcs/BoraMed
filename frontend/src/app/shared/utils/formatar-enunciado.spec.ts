@@ -34,6 +34,45 @@ describe('formatarEnunciado', () => {
     expect(saida).not.toMatch(/\n{3,}/);
   });
 
+  it('quebra assertivas com espaço antes do separador (I - II - III-)', () => {
+    // Caso real da questão 15 (N1 SOI III 2024.2): itens separados por uma
+    // única quebra de linha, com espaço antes do hífen em I/II e colado em III.
+    const entrada =
+      'Considerando o caso, avalie as asserções a seguir.\n' +
+      'I - O paciente apresenta sintomas clássicos de infarto.\n' +
+      'II - O tratamento inicial usa um antagonista de receptor AT1 de angiotensina II.\n' +
+      'III- A administração oral de aspirina é possível.';
+    const saida = formatarEnunciado(entrada);
+
+    expect(saida).toContain('\n\nI - O paciente');
+    expect(saida).toContain('\n\nII - O tratamento');
+    expect(saida).toContain('\n\nIII- A administração');
+    // O "II" no fim do texto do item II (angiotensina II) não é um marcador:
+    // não pode ganhar quebra de parágrafo.
+    expect(saida).toContain('angiotensina II.');
+    expect(saida).not.toContain('angiotensina\n\nII');
+    expect(saida).not.toMatch(/\n{3,}/);
+  });
+
+  it('não trata numeral romano no meio da frase como item (angiotensina II)', () => {
+    const entrada =
+      'O diagnóstico foi diabetes tipo II. Depois disso, o quadro evoluiu.';
+    // Não há enumeração — apenas um numeral em prosa. Texto permanece intacto.
+    expect(formatarEnunciado(entrada)).toBe(entrada);
+  });
+
+  it('quebra itens iniciados por minúscula quando começam a linha', () => {
+    const entrada =
+      'Sobre as neoplasias linfoide e mieloide:\n' +
+      'I - aspecto comum é a origem nas células progenitoras.\n' +
+      'II - a maioria apresenta comprometimento medular.';
+    const saida = formatarEnunciado(entrada);
+
+    expect(saida).toContain('\n\nI - aspecto');
+    expect(saida).toContain('\n\nII - a maioria');
+    expect(saida).not.toMatch(/\n{3,}/);
+  });
+
   it('quebra assertivas com marcador de parêntese (I) II) …)', () => {
     const entrada = 'Avalie: I) Primeira afirmativa. II) Segunda afirmativa. III) Terceira afirmativa.';
     const saida = formatarEnunciado(entrada);
@@ -66,6 +105,20 @@ describe('formatarEnunciado', () => {
     expect(saida).toContain('\n\nPorque\n\n');
     expect(saida).toContain('\n\nAsserção 2:');
     expect(saida).toContain('\n\nA respeito dessas asserções');
+    expect(saida).not.toMatch(/\n{3,}/);
+  });
+
+  it('isola o conector "Porque" em asserção/razão com itens romanos I/II', () => {
+    const entrada =
+      'A partir da situação, avalie as asserções a seguir e a relação entre elas:\n' +
+      'I. A concentração de TSH ocorre pelo aumento de TRH.\n' +
+      'Porque\n' +
+      'II. a retroalimentação negativa atua sobre o eixo.';
+    const saida = formatarEnunciado(entrada);
+
+    expect(saida).toContain('\n\nI. A concentração');
+    expect(saida).toContain('\n\nPorque\n\n');
+    expect(saida).toContain('\n\nII. a retroalimentação');
     expect(saida).not.toMatch(/\n{3,}/);
   });
 
