@@ -74,11 +74,11 @@ begin
   end loop;
 
   if v_falhas <> '' then
-    raise exception E'REGRESSÃO DE GABARITO — colunas de resposta legíveis:%s\n\nCausa provável: uma migration autogerada (`db pull`/`db diff`) reemitiu `grant select on <tabela>` no nível da TABELA, o que anula o recorte por coluna. Reaplique o padrão de 20260624125610: `revoke select on <tabela> from authenticated, anon;` seguido de `grant select (<colunas seguras>) ...`.', v_falhas;
+    raise exception E'REGRESSÃO DE GABARITO — colunas de resposta legíveis:%\n\nCausa provável: uma migration autogerada (`db pull`/`db diff`) reemitiu `grant select on <tabela>` no nível da TABELA, o que anula o recorte por coluna. Reaplique o padrão de 20260624125610: `revoke select on <tabela> from authenticated, anon;` seguido de `grant select (<colunas seguras>) ...`.', v_falhas;
   end if;
 
   if v_sumiram <> '' then
-    raise exception E'TESTE DESATUALIZADO — colunas protegidas que não existem mais:%s\n\nO teste não consegue mais verificar o que promete. Atualize a lista em supabase/tests/grants_gabarito_test.sql para refletir o schema atual.', v_sumiram;
+    raise exception E'TESTE DESATUALIZADO — colunas protegidas que não existem mais:%\n\nO teste não consegue mais verificar o que promete. Atualize a lista em supabase/tests/grants_gabarito_test.sql para refletir o schema atual.', v_sumiram;
   end if;
 
   raise notice 'OK 1/5 — colunas de gabarito ocultas para authenticated e anon';
@@ -105,7 +105,7 @@ begin
   end loop;
 
   if v_falhas <> '' then
-    raise exception E'REGRESSÃO DE INTEGRIDADE DE NOTA — escrita direta liberada:%s\n\nCom escrita direta o aluno altera a própria nota/acertos/status (e `tentativa_resposta.correta`) via PostgREST, ignorando as RPCs. Reaplique: `revoke insert, update, delete, truncate on <tabela> from authenticated, anon;` e remova as policies de INSERT/UPDATE recriadas pelo diff.', v_falhas;
+    raise exception E'REGRESSÃO DE INTEGRIDADE DE NOTA — escrita direta liberada:%\n\nCom escrita direta o aluno altera a própria nota/acertos/status (e `tentativa_resposta.correta`) via PostgREST, ignorando as RPCs. Reaplique: `revoke insert, update, delete, truncate on <tabela> from authenticated, anon;` e remova as policies de INSERT/UPDATE recriadas pelo diff.', v_falhas;
   end if;
 
   raise notice 'OK 2/5 — escrita direta em tentativa/tentativa_resposta bloqueada';
@@ -136,7 +136,7 @@ begin
   end loop;
 
   if v_falhas <> '' then
-    raise exception E'REGRESSÃO DE PAYWALL — leitura de conteúdo sem assinatura:%s\n\nSem esse gate, qualquer autenticado dumpa o acervo por GET /rest/v1/questao. Reaplique o padrão de 20260624131517: `alter policy <nome> on public.<tabela> using ((select public.tem_assinatura_ativa()));`', v_falhas;
+    raise exception E'REGRESSÃO DE PAYWALL — leitura de conteúdo sem assinatura:%\n\nSem esse gate, qualquer autenticado dumpa o acervo por GET /rest/v1/questao. Reaplique o padrão de 20260624131517: `alter policy <nome> on public.<tabela> using ((select public.tem_assinatura_ativa()));`', v_falhas;
   end if;
 
   raise notice 'OK 3/5 — policies de questao/alternativa exigem assinatura ativa';
@@ -158,7 +158,7 @@ begin
   end loop;
 
   if v_falhas <> '' then
-    raise exception E'REGRESSÃO — acervo exposto a usuários NÃO autenticados:%s', v_falhas;
+    raise exception E'REGRESSÃO — acervo exposto a usuários NÃO autenticados:%', v_falhas;
   end if;
 
   raise notice 'OK 4/5 — anon sem SELECT em questao/alternativa';
@@ -181,7 +181,7 @@ begin
     and not c.relrowsecurity;
 
   if v_sem_rls is not null then
-    raise exception E'REGRESSÃO — tabelas em `public` SEM row level security:%s\n\nO schema `public` é exposto pela Data API; sem RLS a tabela fica legível/escrevível conforme os grants de anon/authenticated.', v_sem_rls;
+    raise exception E'REGRESSÃO — tabelas em `public` SEM row level security:%\n\nO schema `public` é exposto pela Data API; sem RLS a tabela fica legível/escrevível conforme os grants de anon/authenticated.', v_sem_rls;
   end if;
 
   raise notice 'OK 5/5 — RLS habilitada em todas as tabelas de public';
