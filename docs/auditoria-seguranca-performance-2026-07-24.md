@@ -7,8 +7,13 @@ Functions), frontend Angular/SSR e fluxo financeiro (Mercado Pago).
 frontend + execução ao vivo dos *advisors* de segurança e performance contra o
 projeto de produção (`gakvktwtdunljojghpff`).
 
-> Este documento é **diagnóstico**. Nada foi alterado no banco, no código de
-> produção ou na infraestrutura. As correções serão feitas depois, item a item.
+> **Status:** diagnóstico + correções aplicadas no branch
+> `claude/app-performance-security-audit-tb3sv7`. Nada foi aplicado
+> diretamente em produção: as migrations precisam ser testadas num stack local
+> (`supabase start` + `db reset`) e depois promovidas pelo fluxo normal.
+>
+> Ver **"Situação das correções"** ao final para o que foi feito, o que ficou
+> pendente e por quê.
 
 ---
 
@@ -44,8 +49,11 @@ de maior impacto e o mais fácil de um colaborador/vazamento de repo explorar.
 |---|---|---|
 | 🔴 Crítico | 1 | C1 |
 | 🟠 Alto | 2 | A1, A2 |
-| 🟡 Médio | 4 | M1, M2, M3, M4 |
-| 🔵 Baixo / Perf | 5 | B1–B5 |
+| 🟡 Médio | 3 | M2, M3, M4 |
+| 🔵 Baixo / Perf | 6 | M1, B1–B5 |
+
+> M1 nasceu como Médio e foi rebaixado para Baixo durante a execução — a RLS já
+> continha o vazamento. Detalhe na própria seção.
 
 Advisors de produção: **segurança** → 66 WARN + 1 INFO (detalhado abaixo, a
 maioria é uma classe única esperada por design); **performance** → 24 INFO
@@ -78,18 +86,26 @@ engano) obtém o acervo inteiro **com as respostas**. É exatamente o cenário
 "trágico de vazar" — não depende de furar RLS nem de burlar o paywall; basta
 `git clone`.
 
-**Correção proposta (a combinar):**
-1. `git rm --cached supabase/backups/backup-questoes-2026-06-24.json` e commitar a
-   remoção. Guardar o backup fora do git (Storage privado, bucket de backup, ou
-   segredo de infra).
-2. Se o repositório **já foi exposto** a alguém que não deveria ter o acervo,
-   remoção do *working tree* não basta: é preciso **reescrever o histórico**
-   (`git filter-repo`/BFG) e considerar o conteúdo comprometido.
-3. Definir política para os **seeds**: conteúdo real de prova não deveria viver em
-   migrations versionadas. Opções: mover as questões reais para um seed **local
-   gitignored** aplicado só nos ambientes que precisam, ou manter no git apenas
-   um conjunto sintético de demonstração e carregar o acervo real via import
-   fora do versionamento.
+**Parcialmente corrigido:**
+- ✅ o arquivo saiu do rastreamento (`git rm --cached`) e o `.gitignore` já
+  impede que volte; o arquivo continua no disco local;
+- ✅ `supabase/backups/README.md` agora documenta a regra e o comando de
+  conferência (`git ls-files supabase/backups/` deve listar só o README).
+
+**Pendente — exige decisão sua (não fiz por ser destrutivo):**
+
+1. **Reescrever o histórico.** O backup continua acessível em todos os commits
+   anteriores: `git log --all -- supabase/backups/` ainda o encontra. Enquanto
+   isso não for feito, quem tem (ou teve) acesso ao repo continua com o acervo.
+   Exige `git filter-repo`/BFG + `push --force` e um novo clone por todos os
+   envolvidos — por isso deixei para você decidir a janela.
+2. **Considerar o conteúdo comprometido** se o repositório já foi exposto a
+   alguém que não deveria ter o acervo.
+3. **Seeds.** As migrations `20260512100416_*` … `20260512100638_*` inserem
+   questões reais com `explicacao` e `correta`. Não removi: são migrations **já
+   aplicadas**, e editá-las viola a regra do projeto (e quebraria o histórico de
+   quem já aplicou). O caminho é definir a política daqui para frente — acervo
+   real fora do versionamento, seed versionado apenas com conteúdo sintético.
 
 ---
 
@@ -119,10 +135,21 @@ Mesma observação, com menor sensibilidade, para `flashcard-imagens` (público;
 flashcards são conteúdo do tier Avançado). `avisos` público é aceitável — são
 banners destinados a todos os usuários.
 
-**Correção proposta:** tornar `questao-imagens` privado e servir as imagens por
-**signed URLs de TTL curto** emitidas dentro das RPCs de conteúdo (que já
-validam assinatura/tier). Alternativamente, se a decisão for manter público,
-documentar explicitamente que a imagem da questão não é considerada segredo.
+**Corrigido** em `20260724130000_questao_imagens_bucket_privado.sql` + camada de
+signed URL no frontend. Dois achados durante a execução:
+
+1. **O bucket não tinha NENHUMA policy de SELECT** — só INSERT/UPDATE/DELETE de
+   admin. A leitura funcionava exclusivamente por ser público. Virar
+   `public = false` sem criar a policy antes teria quebrado todas as imagens,
+   inclusive para admins. A migration cria a policy primeiro.
+2. **4 questões do desafio diário têm imagem**, e o desafio é aberto a
+   não-assinantes por decisão de produto. Por isso a policy exige apenas
+   **estar autenticado**, sem gate de assinatura — fechar mais quebraria o
+   desafio para o usuário grátis. O ganho principal (fim do acesso **anônimo** e
+   permanente por URL) está garantido; um logado sem assinatura continua sem
+   conseguir descobrir as URLs, porque quem as entrega são as RPCs gateadas.
+
+Também fechado o bucket legado `questoes-lab` (1 objeto, nenhuma referência).
 
 ### A2 — Regressão recorrente de grants via `supabase db pull` (sem teste de CI)
 
@@ -138,13 +165,20 @@ de nota dependem de *column grants* e revogações que **um único `db pull` des
 silenciosamente**. Hoje isso é evitado só por disciplina manual e comentários
 `⚠️` nas migrations. Não há rede de proteção automática.
 
-**Correção proposta:** adicionar um **teste de CI** (pgTAP ou script SQL) que
-falha o build se, no schema resultante:
-- `authenticated` tiver `SELECT` na coluna `alternativa.correta` ou nas colunas
-  de gabarito de `questao`;
-- `authenticated` tiver `INSERT/UPDATE/DELETE` em `tentativa` ou
-  `tentativa_resposta`;
-- as policies de `questao`/`alternativa` não exigirem `tem_assinatura_ativa()`.
+**Corrigido:** `supabase/tests/grants_gabarito_test.sql` + job `db-security` no
+CI. Valida por introspecção de catálogo (sem seed, sem troca de role):
+
+1. gabarito ilegível para `authenticated`/`anon`;
+2. sem `INSERT/UPDATE/DELETE` em `tentativa`/`tentativa_resposta`;
+3. policies de `questao`/`alternativa` referenciando `tem_assinatura_ativa()`;
+4. `anon` sem `SELECT` no acervo;
+5. RLS habilitada em toda tabela de `public`;
+6. e falha também se uma **coluna protegida sumir** — senão o teste passaria
+   vazio, sem verificar o que promete.
+
+O teste foi exercitado contra as 6 regressões correspondentes (incluindo as duas
+que já aconteceram de verdade) e **falhou em todas**, voltando a passar com o
+estado restaurado. Também roda verde contra o schema atual de produção.
 
 Isso transforma a regressão de "descobri em produção" para "quebrou o PR".
 
@@ -154,30 +188,52 @@ Isso transforma a regressão de "descobri em produção" para "quebrou o PR".
 
 ### M1 — RPCs `admin_*` sem checagem de papel interna
 
-Três funções concedidas a `authenticated` não validam `is_admin()` no corpo:
+> ⚠️ **Severidade corrigida durante a execução: de Médio para BAIXO.** A
+> redação original dizia que avisos inativos vazavam e que a busca servia de
+> oráculo para qualquer autenticado. Isso está **errado**: as três funções são
+> `SECURITY INVOKER`, então a RLS do chamador continua valendo. Verificado:
+> `avisos` tem `avisos_select_authenticated USING (ativo = true)` (o inativo
+> nunca sai para não-admin) e `questao`/`alternativa` exigem
+> `tem_assinatura_ativa()` (não-assinante não casa nenhuma linha). O problema
+> real é **falta de defesa em profundidade**, não vazamento.
 
-- **`admin_buscar_questao_ids_por_texto(text)`** — devolve os `id`s de questão
-  cujo enunciado/alternativa casam com um termo. Retorna só UUIDs (não o
-  conteúdo), mas permite a **qualquer usuário autenticado** (inclusive
-  não-assinante) usar a função como oráculo de "existe questão contendo X".
-- **`admin_listar_avisos()`** — retorna avisos **inativos/rascunho** para
-  qualquer autenticado.
-- **`admin_listar_faq()`** — baixo impacto (FAQ já é legível por autenticados).
+Três funções concedidas a `authenticated` não validavam `is_admin()` no corpo:
+`admin_buscar_questao_ids_por_texto(text)`, `admin_listar_avisos()` e
+`admin_listar_faq()`.
 
-**Correção proposta:** adicionar `IF NOT public.is_admin() THEN RAISE
-permission_denied` no início das três (ou, no caso da busca, mantê-la como está
-mas renomear para deixar claro que não é privilégio de admin).
+O risco é de **fragilidade**: a proteção depende inteiramente de a função
+permanecer INVOKER e de a policy não ser afrouxada. Como o padrão dominante no
+projeto é `SECURITY DEFINER`, basta alguém converter uma delas — coisa natural de
+se fazer numa função chamada `admin_*` — para o nome virar uma porta aberta de
+verdade.
+
+**Corrigido** em `20260724120000_hardening_rpcs_admin_e_indice_cupom.sql`: guard
+explícito de `is_admin()` nas três, mantendo-as INVOKER (o guard é camada extra
+sobre a RLS, não substituto).
 
 ### M2 — CORS com fallback `*`
 
-`_shared/cors.ts` e `admin-impersonate/index.ts` usam
+`_shared/cors.ts` e `admin-impersonate/index.ts` usavam
 `Access-Control-Allow-Origin: *` quando `APP_ALLOWED_ORIGINS` não está
-configurada. As functions exigem JWT, então o risco direto é baixo, mas o ideal
-é **garantir que `APP_ALLOWED_ORIGINS` esteja setada em produção** e travar o
-default (ex.: rejeitar origem desconhecida em vez de cair para `*`).
+configurada, e — pior — devolviam `ALLOWED_ORIGINS[0]` para uma origem **fora**
+da lista, o que faz a resposta parecer liberada para quem não é o requisitante.
 
-**Ação:** confirmar o valor do secret `APP_ALLOWED_ORIGINS` no projeto de
-produção e, se estiver vazio, defini-lo com os domínios do app.
+**Parcialmente corrigido:**
+- a origem não permitida agora **não recebe** o header (o navegador bloqueia);
+- lógica extraída para `resolveCorsHeaders` (função pura, com testes);
+- a cópia divergente em `admin-impersonate` foi removida em favor do helper;
+- quando a env está ausente, emite `console.warn` — o `*` foi **mantido**.
+
+**Por que o `*` continua:** removê-lo derrubaria as functions de pagamento caso
+o secret não esteja definido em produção, e não consigo ler secrets de edge
+function daqui para confirmar. O risco do `*` aqui é baixo porque a autorização
+vem do header `Authorization` (JWT), não de cookie — uma página de terceiro não
+consegue preencher o token da vítima.
+
+**Ação pendente (ops):** definir o secret e o fallback deixa de importar:
+```bash
+npx supabase secrets set APP_ALLOWED_ORIGINS=https://<dominio>,https://www.<dominio>
+```
 
 ### M3 — Proteção contra senhas vazadas desligada (Auth)
 
@@ -258,18 +314,50 @@ apenas **INFO**, nenhum índice crítico faltando.
 
 ---
 
-## Plano de correção sugerido (ordem)
+## Situação das correções
 
-1. **C1** — tirar o backup do git + decidir política de seeds/histórico. *(maior
-   impacto, urgente)*
-2. **A1** — `questao-imagens` privado + signed URLs nas RPCs de conteúdo.
-3. **A2** — teste de CI de grants/policies para travar regressão de gabarito.
-4. **M3** — habilitar proteção de senha vazada (1 clique).
-5. **M1** — `is_admin()` nas 3 RPCs.
-6. **M2** — confirmar/definir `APP_ALLOWED_ORIGINS` em produção.
-7. **B1** — índice em `cupom.plano_id`; **B5** — avaliar CSP.
-8. **B2/B3** — reavaliar índices não usados e estratégia de sorteio conforme o
-   volume crescer.
+Tudo no branch `claude/app-performance-security-audit-tb3sv7`.
+
+| Item | Situação | Onde |
+|---|---|---|
+| C1 — backup no git | ⚠️ Parcial — untracked; **histórico pendente** | `git rm --cached` + README |
+| A1 — bucket público | ✅ Corrigido | `20260724130000_*.sql` + `ImagemProtegidaService` |
+| A2 — regressão de grants | ✅ Corrigido | `supabase/tests/grants_gabarito_test.sql` + CI |
+| M1 — RPCs `admin_*` | ✅ Corrigido (severidade → Baixo) | `20260724120000_*.sql` |
+| M2 — CORS | ⚠️ Parcial — falta o secret em prod | `_shared/cors.ts` |
+| M3 — senha vazada | ❌ Não feito — só no Dashboard | ver abaixo |
+| M4 — DEFINER a `authenticated` | ℹ️ Por design; auditado | — |
+| B1 — FK sem índice | ✅ Corrigido | `20260724120000_*.sql` |
+| B2/B3/B5 | ⏸️ Deixado para depois (volume/decisão) | — |
+
+### Validação executada
+
+- **Migrations:** aplicadas contra um Postgres 16 descartável com stubs do
+  schema. Aplicam limpo; os guards de `is_admin()` foram testados nos dois
+  caminhos (admin passa, não-admin recebe `permission_denied` nas 3).
+- **Teste de segurança:** passa no estado correto, **falha nas 6 regressões**
+  simuladas, e passa contra o schema real de produção (introspecção read-only).
+- **Frontend:** build de produção OK (18 rotas pré-renderizadas);
+  **716/716 testes** passando (8 novos para a camada de signed URL).
+- **Edge functions:** não executei os testes Deno — o sandbox bloqueia `jsr.io`,
+  e os testes **pré-existentes falham igual** por isso. O CI os roda.
+
+### O que falta você fazer
+
+1. **Aplicar as migrations num stack local antes de promover.** Foram escritas à
+   mão (sem Docker aqui), o que o `supabase/CLAUDE.md` marca como anti-pattern:
+   ```bash
+   npx supabase start && npx supabase db reset
+   psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+     -v ON_ERROR_STOP=1 -f supabase/tests/grants_gabarito_test.sql
+   ```
+2. **Validar as imagens no app rodando** — é a mudança de maior superfície:
+   simulado, revisão, desafio diário, `/imprimir` e os previews do admin.
+3. **M3 — proteção de senha vazada:** Dashboard → Authentication → Passwords →
+   *Leaked password protection*. Não há API/config.toml para isso; não dá para
+   fazer por código.
+4. **M2 — definir `APP_ALLOWED_ORIGINS`** nos secrets das edge functions.
+5. **C1 — decidir sobre o histórico do git** (item mais importante que sobrou).
 
 ---
 
