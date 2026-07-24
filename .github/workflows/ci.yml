@@ -33,6 +33,31 @@ jobs:
       - name: Testes (unitários + integração com fakes)
         run: deno test -A --no-check --frozen
 
+  # ── Banco: invariantes de segurança (gabarito, nota, paywall, RLS) ──────────
+  # Sobe o stack local (aplica TODAS as migrations do zero) e valida, por
+  # introspecção de catálogo, os privilégios que escondem o gabarito e impedem
+  # o aluno de adulterar a própria nota. Esse estado já foi desfeito duas vezes
+  # por migrations autogeradas via `db pull` — ver o cabeçalho do arquivo .sql.
+  db-security:
+    name: DB — invariantes de segurança
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # `supabase start` aplica as migrations em ordem; se alguma quebrar, o
+      # job falha aqui — o que também valida migrations escritas à mão.
+      - name: Sobe o stack local
+        run: supabase start
+      - name: Invariantes de gabarito, nota, paywall e RLS
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -f supabase/tests/grants_gabarito_test.sql
+      - name: Diagnóstico do stack em caso de falha
+        if: failure()
+        run: supabase status || true
+
   # ── Frontend: testes unitários (Vitest via @angular/build) ───────────────────
   frontend-unit:
     name: Frontend unit (Vitest)

@@ -4,6 +4,27 @@ Esta pasta guarda snapshots manuais do banco de dados do Supabase (projeto
 `BoraMed`, ref `gakvktwtdunljojghpff`), focados nas **questões e tudo que está
 relacionado a elas**.
 
+## ⚠️ NUNCA COMITAR UM BACKUP
+
+Estes arquivos contêm **o acervo inteiro com o gabarito** — `alternativa.correta`,
+`questao.explicacao`, `resposta_correta_texto`, `respostas_aceitas` e
+`explicacao_alternativas`. Um backup no git entrega o produto inteiro, com as
+respostas, a qualquer pessoa com acesso de leitura ao repositório: não é preciso
+furar RLS nem burlar o paywall, basta `git clone`.
+
+O `.gitignore` ignora `supabase/backups/**` (exceto este README), mas **isso não
+protege um arquivo que já foi adicionado ao índice** — o ignore só vale para
+arquivos ainda não rastreados. Antes de commitar, confira:
+
+```bash
+git ls-files supabase/backups/   # deve listar SOMENTE o README.md
+```
+
+Guarde os snapshots fora do versionamento (bucket privado de backup, storage
+local, cofre de segredos). Um backup foi removido do rastreamento em 2026-07-24
+por este motivo — ele **permanece no histórico do git**; ver
+`docs/auditoria-seguranca-performance-2026-07-24.md` (item C1).
+
 ## Arquivos
 
 | Arquivo | Data | Conteúdo |
