@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 import {
   CalendarCheck2,
   CircleCheck,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { QuestaoExplicacaoComponent } from '../../shared/components/questao-explicacao/questao-explicacao.component';
+import { FormatarEnunciadoPipe } from '../../shared/pipes/formatar-enunciado.pipe';
 import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
@@ -32,8 +34,15 @@ type RankingTab = 'global' | 'semana';
 @Component({
   selector: 'app-competir-hub',
   standalone: true,
-  imports: [RouterLink, UiIconComponent, QuestaoExplicacaoComponent],
+  imports: [
+    RouterLink,
+    UiIconComponent,
+    QuestaoExplicacaoComponent,
+    MarkdownComponent,
+    FormatarEnunciadoPipe,
+  ],
   templateUrl: './competir-hub.component.html',
+  providers: [provideMarkdown()],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompetirHubComponent {

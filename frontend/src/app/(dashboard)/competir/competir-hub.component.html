@@ -107,7 +107,9 @@
                   }
                 </figure>
               }
-              <p class="text-sm leading-6 text-[var(--color-text)]">{{ d.questao?.enunciado }}</p>
+              <div class="text-sm leading-6 text-[var(--color-text)]">
+                <markdown [data]="(d.questao?.enunciado ?? '') | formatarEnunciado"></markdown>
+              </div>
             </div>
 
             <!-- Alternativas -->
