@@ -18,6 +18,9 @@ import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ImageViewerService } from '../../core/services/image-viewer.service';
+import { ImagemProtegidaService } from '../../core/services/imagem-protegida.service';
+import { ImagemProtegidaPipe } from '../../shared/pipes/imagem-protegida.pipe';
+import { AsyncPipe } from '@angular/common';
 import type { DesafioAlternativa, RankingItem } from '../../core/models/gamificacao';
 import { currentWeekRange } from '../../shared/utils/current-week-range';
 
@@ -40,6 +43,8 @@ type RankingTab = 'global' | 'semana';
     QuestaoExplicacaoComponent,
     MarkdownComponent,
     FormatarEnunciadoPipe,
+    ImagemProtegidaPipe,
+    AsyncPipe,
   ],
   templateUrl: './competir-hub.component.html',
   providers: [provideMarkdown()],
@@ -51,6 +56,7 @@ export class CompetirHubComponent {
   private readonly desafioService = inject(DesafioService);
   private readonly toast = inject(NotificationService);
   private readonly imageViewer = inject(ImageViewerService);
+  private readonly imagens = inject(ImagemProtegidaService);
 
   protected readonly trophyIcon = Trophy;
   protected readonly calendarIcon = CalendarCheck2;
@@ -185,9 +191,15 @@ export class CompetirHubComponent {
   }
 
   /** Clique na imagem só amplia (lightbox) — não seleciona a alternativa. */
-  protected ampliarImagemAlternativa(event: Event, url: string | null | undefined): void {
+  protected async ampliarImagemAlternativa(
+    event: Event,
+    url: string | null | undefined,
+  ): Promise<void> {
     event.stopPropagation();
-    if (url) this.imageViewer.abrir(url);
+    if (!url) return;
+    // Bucket privado: o viewer recebe a URL assinada, não a armazenada.
+    const assinada = await this.imagens.resolver(url);
+    if (assinada) this.imageViewer.abrir(assinada);
   }
 
   protected async handleResponder(alternativaId: string): Promise<void> {

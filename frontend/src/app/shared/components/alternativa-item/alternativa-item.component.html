@@ -25,7 +25,7 @@
       [attr.aria-label]="'Ampliar imagem da alternativa ' + alternativa().letra"
     >
       <img
-        [src]="imagemUrl"
+        [src]="imagemUrl | imagemProtegida | async"
         [alt]="'Imagem da alternativa ' + alternativa().letra"
         loading="lazy"
         class="max-h-56 w-auto max-w-full rounded-lg border border-black/10 bg-white object-contain"

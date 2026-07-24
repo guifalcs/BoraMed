@@ -1,8 +1,10 @@
 import {
   ChangeDetectionStrategy, Component, OnInit, computed, inject, signal,
 } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Check, X, ArrowLeft, ArrowRight, AlertTriangle, Bot, Copy, ListChecks, Pencil, Trash2 } from 'lucide-angular';
+import { ImagemProtegidaPipe } from '../../shared/pipes/imagem-protegida.pipe';
 import {
   AdminService, AdminProva, AdminProvaDetalhe, AdminFaculdade, AdminDisciplina,
   AdminTema, AdminQuestaoSimples, ProvaInput, QuestaoPayload, AlternativaPayload, NovaQuestaoDaProva,
@@ -21,7 +23,7 @@ const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month:
 @Component({
   selector: 'app-admin-provas',
   standalone: true,
-  imports: [FormsModule, UiSelectComponent, UiConfirmDialogComponent, UiIconComponent, UiCheckboxComponent],
+  imports: [FormsModule, UiSelectComponent, UiConfirmDialogComponent, UiIconComponent, UiCheckboxComponent, ImagemProtegidaPipe, AsyncPipe],
   templateUrl: './admin-provas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

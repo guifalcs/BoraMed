@@ -17,8 +17,10 @@
 
     @if (temImagem()) {
       <figure class="mb-2 flex flex-col items-center gap-1">
-        <img [src]="questao().imagem_url!" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+        @if (questao().imagem_url! | imagemProtegida | async; as imgUrl) {
+        <img [src]="imgUrl" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
           class="max-h-[60mm] w-auto max-w-full rounded object-contain" (load)="onImgLoad()" (error)="onImgLoad()" />
+        }
         @if (questao().imagem_legenda) {
           <figcaption class="text-center text-[0.75em] text-gray-500">{{ questao().imagem_legenda }}</figcaption>
         }
@@ -40,8 +42,10 @@
 
     @if (temImagem()) {
       <figure class="mb-2 flex flex-col items-center gap-1">
-        <img [src]="questao().imagem_url!" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+        @if (questao().imagem_url! | imagemProtegida | async; as imgUrl) {
+        <img [src]="imgUrl" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
           class="max-h-[60mm] w-auto max-w-full rounded object-contain" (load)="onImgLoad()" (error)="onImgLoad()" />
+        }
         @if (questao().imagem_legenda) {
           <figcaption class="text-center text-[0.75em] text-gray-500">{{ questao().imagem_legenda }}</figcaption>
         }
@@ -57,8 +61,10 @@
     <div class="mb-1 font-bold text-[1.05em]">{{ numero() }}.</div>
 
     <figure class="mb-2 flex flex-col items-center gap-1">
-      <img [src]="questao().imagem_url!" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+      @if (questao().imagem_url! | imagemProtegida | async; as imgUrl) {
+        <img [src]="imgUrl" [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
         class="max-h-[60mm] w-auto max-w-full rounded object-contain" (load)="onImgLoad()" (error)="onImgLoad()" />
+        }
       @if (questao().imagem_legenda) {
         <figcaption class="text-center text-[0.75em] text-gray-500">{{ questao().imagem_legenda }}</figcaption>
       }
@@ -114,7 +120,7 @@
             }
             @if (alt.imagem_url) {
               <img
-                [src]="alt.imagem_url"
+                [src]="alt.imagem_url | imagemProtegida | async"
                 [alt]="'Imagem da alternativa ' + alt.letra"
                 class="mt-1 block max-h-48 w-auto max-w-full rounded border border-gray-300 object-contain"
               />

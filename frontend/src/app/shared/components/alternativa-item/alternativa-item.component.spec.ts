@@ -114,6 +114,10 @@ describe('AlternativaItemComponent', () => {
       imagem_url: 'https://exemplo.com/alt-a.webp',
     });
     fixture.detectChanges();
+    // O src passa por `| imagemProtegida | async` (bucket privado): a URL só
+    // aparece depois que a promessa resolve.
+    await fixture.whenStable();
+    fixture.detectChanges();
     const img = fixture.nativeElement.querySelector('img') as HTMLImageElement;
     expect(img).not.toBeNull();
     expect(img.src).toContain('alt-a.webp');

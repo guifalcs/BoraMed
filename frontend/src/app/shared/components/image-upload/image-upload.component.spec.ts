@@ -45,11 +45,20 @@ describe('ImageUploadComponent', () => {
     return (fixture.nativeElement as HTMLElement).querySelector('.img-preview__img');
   }
 
+  // O src do preview passa por `| imagemProtegida | async` (o bucket
+  // questao-imagens virou privado), então a URL só chega ao DOM depois que a
+  // promessa resolve.
+  async function estabilizar(): Promise<void> {
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
   // Regressão: no carrossel do editor de decks o componente é reutilizado entre
   // cards; o estado local da sessão anterior vazava para o card seguinte.
   it('descarta o estado local quando o pai troca a currentUrl (troca de card no carrossel)', async () => {
     fixture.componentRef.setInput('currentUrl', 'https://x/card1.png');
     fixture.detectChanges();
+    await estabilizar();
     expect(previewImg()?.src).toContain('card1.png');
 
     // Simula "Remover"; o pai ecoa o urlChange de volta no currentUrl,
@@ -64,6 +73,7 @@ describe('ImageUploadComponent', () => {
     // e o card 2 apareceria sem a sua imagem.
     fixture.componentRef.setInput('currentUrl', 'https://x/card2.png');
     fixture.detectChanges();
+    await estabilizar();
     expect(previewImg()?.src).toContain('card2.png');
   });
 });

@@ -48,21 +48,26 @@
       @if (!imgCarregada() && !imgErro()) {
         <div class="w-full max-w-lg h-48 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
       }
-      @if (imgErro()) {
-        <div class="w-full max-w-lg rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 text-center text-sm text-[var(--color-text-muted)]">
-          Não foi possível carregar a imagem.
-          <a [href]="questao().imagem_url!" target="_blank" rel="noopener" class="underline">Abrir em nova aba</a>
-        </div>
+      <!-- O bucket é privado: só renderiza o <img> depois que a URL assinada
+           chega. Sem esse @if, o src ficaria vazio no primeiro ciclo e o
+           (error) marcaria a imagem como quebrada antes de ela ser pedida. -->
+      @if (questao().imagem_url | imagemProtegida | async; as imgUrl) {
+        @if (imgErro()) {
+          <div class="w-full max-w-lg rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 text-center text-sm text-[var(--color-text-muted)]">
+            Não foi possível carregar a imagem.
+            <a [href]="imgUrl" target="_blank" rel="noopener" class="underline">Abrir em nova aba</a>
+          </div>
+        }
+        <img
+          [src]="imgUrl"
+          [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
+          class="max-w-full max-h-[60vh] w-auto h-auto rounded-lg object-contain"
+          [class.hidden]="!imgCarregada()"
+          decoding="async"
+          (load)="onImgLoad()"
+          (error)="onImgError()"
+        />
       }
-      <img
-        [src]="questao().imagem_url!"
-        [alt]="questao().imagem_legenda ?? 'Imagem da questão'"
-        class="max-w-full max-h-[60vh] w-auto h-auto rounded-lg object-contain"
-        [class.hidden]="!imgCarregada()"
-        decoding="async"
-        (load)="onImgLoad()"
-        (error)="onImgError()"
-      />
       @if (questao().imagem_legenda && imgCarregada()) {
         <figcaption class="text-center text-xs text-gray-400">{{ questao().imagem_legenda }}</figcaption>
       }

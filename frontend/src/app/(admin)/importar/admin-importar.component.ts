@@ -6,10 +6,12 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Bot, Check, ChevronDown, Paperclip, X,
 } from 'lucide-angular';
+import { ImagemProtegidaPipe } from '../../shared/pipes/imagem-protegida.pipe';
 import {
   AdminService,
   AdminDisciplina,
@@ -548,7 +550,7 @@ function parseTemaBloco(
 @Component({
   selector: 'app-admin-importar',
   standalone: true,
-  imports: [FormsModule, UiIconComponent],
+  imports: [FormsModule, UiIconComponent, ImagemProtegidaPipe, AsyncPipe],
   templateUrl: './admin-importar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

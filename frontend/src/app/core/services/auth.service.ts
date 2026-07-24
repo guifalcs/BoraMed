@@ -6,12 +6,14 @@ import type { LoginInput, RecoverPasswordInput, ResetPasswordInput, SignupInput 
 import type { AuthErrorCode, AuthResult, ImpersonacaoInfo } from '../models/auth.types';
 import { SupabaseService } from './supabase.service';
 import { CacheService } from './cache.service';
+import { ImagemProtegidaService } from './imagem-protegida.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements OnDestroy {
   private readonly supabase = inject(SupabaseService).client;
   private readonly router = inject(Router);
   private readonly cache = inject(CacheService);
+  private readonly imagensProtegidas = inject(ImagemProtegidaService);
 
   private readonly _user = signal<User | null>(null);
   private readonly _isReady = signal(false);
@@ -269,6 +271,10 @@ export class AuthService implements OnDestroy {
     this.adminRefreshToken = null;
     this._impersonando.set(null);
     this.cache.clear();
+    // URLs assinadas de imagem valem por 1h e são emitidas para a sessão que
+    // as pediu: descartar no logout/troca de identidade evita que continuem
+    // válidas para o próximo usuário do mesmo navegador.
+    this.imagensProtegidas.limpar();
   }
 
   private async navigateToLogin(): Promise<void> {

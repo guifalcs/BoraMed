@@ -8,11 +8,13 @@ import {
 import { MarkdownComponent } from 'ngx-markdown';
 import type { QuestaoComAlternativas } from '../core/models/questao';
 import { FormatarEnunciadoPipe } from '../shared/pipes/formatar-enunciado.pipe';
+import { ImagemProtegidaPipe } from '../shared/pipes/imagem-protegida.pipe';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-questao-impressao',
   standalone: true,
-  imports: [MarkdownComponent, FormatarEnunciadoPipe],
+  imports: [MarkdownComponent, FormatarEnunciadoPipe, ImagemProtegidaPipe, AsyncPipe],
   templateUrl: './questao-impressao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

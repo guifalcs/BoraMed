@@ -93,7 +93,7 @@
               @if (d.questao?.imagem_url) {
                 <figure class="mb-6 flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
                   <img
-                    [src]="d.questao!.imagem_url!"
+                    [src]="d.questao!.imagem_url! | imagemProtegida | async"
                     [alt]="d.questao!.imagem_legenda ?? 'Imagem da questão do desafio diário'"
                     class="max-h-[60vh] w-full max-w-2xl rounded-lg object-contain"
                     width="768"
@@ -127,7 +127,7 @@
                     <span class="leading-5">{{ alt.texto }}</span>
                     @if (alt.imagem_url) {
                       <img
-                        [src]="alt.imagem_url"
+                        [src]="alt.imagem_url | imagemProtegida | async"
                         [alt]="'Imagem da alternativa ' + alt.letra"
                         loading="lazy"
                         decoding="async"

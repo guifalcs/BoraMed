@@ -463,7 +463,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
                             {{ a.texto }}
                             @if (a.imagem_url) {
                               <img
-                                [src]="a.imagem_url"
+                                [src]="a.imagem_url | imagemProtegida | async"
                                 [alt]="'Imagem da alternativa ' + a.letra"
                                 loading="lazy"
                                 class="alt-imagem-thumb"

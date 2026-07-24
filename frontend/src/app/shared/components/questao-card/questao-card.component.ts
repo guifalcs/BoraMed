@@ -24,6 +24,8 @@ import { QuestaoRecursoComponent } from '../questao-recurso/questao-recurso.comp
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 import { Ban } from 'lucide-angular';
 import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
+import { ImagemProtegidaPipe } from '../../pipes/imagem-protegida.pipe';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-questao-card',
@@ -38,6 +40,8 @@ import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
     RespostaPadraoComponent,
     QuestaoRecursoComponent,
     UiIconComponent,
+    ImagemProtegidaPipe,
+    AsyncPipe,
   ],
   templateUrl: './questao-card.component.html',
   providers: [provideMarkdown()],

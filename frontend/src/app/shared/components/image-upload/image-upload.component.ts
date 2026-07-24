@@ -15,6 +15,8 @@ import { Image, Loader } from 'lucide-angular';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { compressImage } from '../../../core/utils/image-compress.util';
 import { extrairPathDoBucket } from '../../../core/utils/storage-imagens.util';
+import { ImagemProtegidaPipe } from '../../pipes/imagem-protegida.pipe';
+import { AsyncPipe } from '@angular/common';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -23,14 +25,14 @@ const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
 @Component({
   selector: 'app-image-upload',
   standalone: true,
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, ImagemProtegidaPipe, AsyncPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="img-upload">
       @if (previewUrl()) {
         <div class="img-preview">
           <img
-            [src]="previewUrl()!"
+            [src]="previewUrl()! | imagemProtegida | async"
             alt="Pré-visualização"
             class="img-preview__img"
           />

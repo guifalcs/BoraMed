@@ -1,17 +1,22 @@
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import type { Alternativa } from '../../../core/models/alternativa';
 import { ImageViewerService } from '../../../core/services/image-viewer.service';
+import { ImagemProtegidaService } from '../../../core/services/imagem-protegida.service';
+import { ImagemProtegidaPipe } from '../../pipes/imagem-protegida.pipe';
 
 export type EstadoAlternativa = 'idle' | 'selecionada' | 'correta' | 'errada' | 'desabilitada';
 
 @Component({
   selector: 'app-alternativa-item',
   standalone: true,
+  imports: [AsyncPipe, ImagemProtegidaPipe],
   templateUrl: './alternativa-item.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlternativaItemComponent {
   private readonly imageViewer = inject(ImageViewerService);
+  private readonly imagens = inject(ImagemProtegidaService);
 
   alternativa = input.required<Alternativa>();
   estado = input.required<EstadoAlternativa>();
@@ -52,10 +57,13 @@ export class AlternativaItemComponent {
     }
   }
 
-  protected abrirImagem(event: Event): void {
+  protected async abrirImagem(event: Event): Promise<void> {
     // Não pode selecionar a alternativa junto: clique na imagem só amplia.
     event.stopPropagation();
     const url = this.alternativa().imagem_url;
-    if (url) this.imageViewer.abrir(url);
+    if (!url) return;
+    // O bucket é privado: o viewer precisa da URL assinada, não da armazenada.
+    const assinada = await this.imagens.resolver(url);
+    if (assinada) this.imageViewer.abrir(assinada);
   }
 }
