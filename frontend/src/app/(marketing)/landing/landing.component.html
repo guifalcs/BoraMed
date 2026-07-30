@@ -608,7 +608,10 @@
   <section class="section-shell pricing-section" id="planos">
     <div class="section-heading">
       <span class="eyebrow">Planos</span>
-      <h2>Escolha seu plano.<br class="heading-break" /> <span class="heading-break-tail">Risco zero por 7 dias.</span></h2>
+      <!-- &ngsp; e não um espaço solto: o Angular remove whitespace entre
+           elementos no build, e abaixo de 720px o <br> é display:none — sem
+           isto o mobile lê "plano.Risco zero". -->
+      <h2>Escolha seu plano.<br class="heading-break" />&ngsp;<span class="heading-break-tail">Risco zero por 7 dias.</span></h2>
       <p>Essencial para treinar com as provas nacionais, Avançado para acesso completo à plataforma. Os dois com pagamento único, sem renovação automática.</p>
     </div>
 
