@@ -333,7 +333,7 @@ export class LandingComponent implements OnDestroy {
   // TODO(integração): trocar por dados vindos de listarPlanos() quando o
   // plano Essencial existir no backend.
   private static readonly ESSENCIAL_FEATURES: readonly string[] = [
-    'Treinos no modelo das avaliações nacionais',
+    'Treinos no modelo das avaliações nacionais, até o 4º período',
     'Correção das questões abertas pela Aurora (IA)',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',
@@ -354,7 +354,7 @@ export class LandingComponent implements OnDestroy {
       cycle: 'mensal',
       slug: 'essencial-mensal',
       name: 'Essencial',
-      tagline: 'Para treinar com as provas nacionais',
+      tagline: 'Provas nacionais até o 4º período',
       price: 'R$ 23,90',
       period: '/mês',
       note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
@@ -367,7 +367,7 @@ export class LandingComponent implements OnDestroy {
       cycle: 'semestral',
       slug: 'essencial-semestral',
       name: 'Essencial',
-      tagline: 'Para treinar com as provas nacionais',
+      tagline: 'Provas nacionais até o 4º período',
       price: 'R$ 13,90',
       period: '/mês',
       note: 'R$ 83,40 no semestre, em até 6x sem juros.',
