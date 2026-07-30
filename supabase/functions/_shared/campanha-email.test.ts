@@ -3,7 +3,6 @@ import {
   dividirEmLotes,
   envelopeCampanha,
   escaparHtml,
-  garantirRodapeDescadastro,
   isSegmento,
   linkDescadastro,
   montarEmail,
@@ -82,17 +81,6 @@ Deno.test('personalizar: escapa no corpo HTML mas não no assunto', () => {
   assertEquals(personalizar('{{nome}}', dados, false), 'Tom & Jerry');
 });
 
-Deno.test('garantirRodapeDescadastro: anexa rodapé quando o autor esqueceu o link', () => {
-  const html = garantirRodapeDescadastro('<p>oi</p>');
-  assertStringIncludes(html, '{{link_descadastro}}');
-  assertStringIncludes(html, 'Não quero mais receber');
-});
-
-Deno.test('garantirRodapeDescadastro: não duplica quando o link já existe', () => {
-  const original = '<p>oi</p><a href="{{link_descadastro}}">sair</a>';
-  assertEquals(garantirRodapeDescadastro(original), original);
-});
-
 Deno.test('envelopeCampanha: embrulha o conteúdo no layout da marca', () => {
   const html = envelopeCampanha('<p>Oi!</p>', 'https://boramed.com.br');
 
@@ -103,9 +91,11 @@ Deno.test('envelopeCampanha: embrulha o conteúdo no layout da marca', () => {
   // Gradiente do header + fallback VML para o Outlook desktop.
   assertStringIncludes(html, 'linear-gradient(135deg,#1e40af 0%,#2451d8 52%,#6427d9 100%)');
   assertStringIncludes(html, '<v:fill type="gradient"');
-  // Rodapé de opt-out embutido: garantirRodapeDescadastro não anexa nada.
-  assertStringIncludes(html, '{{link_descadastro}}');
-  assertEquals(garantirRodapeDescadastro(html), html);
+  // Rodapé SEM link de descadastro (decisão do produto): o opt-out vive no
+  // header List-Unsubscribe e na página pública. Trava para o link não voltar
+  // ao corpo por acidente.
+  assert(!html.includes('{{link_descadastro}}'));
+  assert(!html.includes('Não quero mais receber'));
 });
 
 Deno.test('envelopeCampanha: normaliza a barra final da APP_URL', () => {
@@ -180,8 +170,9 @@ Deno.test('montarEmail: um destinatário por envio, com List-Unsubscribe', () =>
   // Envelope da marca aplicado no envio: o htmlBase é só o conteúdo do card.
   assertStringIncludes(email.html, '<!DOCTYPE html>');
   assertStringIncludes(email.html, '/brand/logo-branca-email.png');
-  // Rodapé de opt-out com a URL já resolvida, e o {{email}} do rodapé também.
-  assertStringIncludes(email.html, 'https://boramed.com.br/descadastrar?token=tok-1');
+  // Sem link de descadastro no corpo: o autor da campanha não pediu.
+  assert(!email.html.includes('/descadastrar?token=tok-1'));
+  // O {{email}} do rodapé continua resolvido.
   assertStringIncludes(email.html, 'maria@exemplo.com');
   assertEquals(
     email.headers['List-Unsubscribe'],

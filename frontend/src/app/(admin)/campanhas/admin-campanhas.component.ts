@@ -44,7 +44,7 @@ type ModoPrevia = keyof typeof LARGURA_PREVIA;
 
 /**
  * Conteúdo inicial do card. NÃO é o e-mail inteiro: o header com a logo, o card
- * e o rodapé de descadastro vêm do envelope da marca, aplicado no envio
+ * e o rodapé vêm do envelope da marca, aplicado no envio
  * (`_shared/campanha-email.ts`). Os estilos inline abaixo são os mesmos dos
  * templates de auth — título centralizado, texto em #64748b, botão em gradiente.
  */
@@ -175,7 +175,7 @@ export class AdminCampanhasComponent implements OnInit {
     { token: '{{email}}', descricao: 'E-mail do destinatário' },
     {
       token: '{{link_descadastro}}',
-      descricao: 'Link de opt-out (já vai no rodapé; use só se quiser um no corpo)',
+      descricao: 'Link de opt-out — só aparece se você colocar no conteúdo',
     },
   ];
 

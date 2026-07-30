@@ -176,8 +176,13 @@ const COR = {
 
 /**
  * Embrulha o conteúdo da campanha no layout da marca e devolve o documento
- * completo. O rodapé já traz `{{link_descadastro}}`, então
- * `garantirRodapeDescadastro` não tem o que anexar depois.
+ * completo.
+ *
+ * O rodapé NÃO traz link de descadastro — decisão do produto (2026-07-30). O
+ * header `List-Unsubscribe` continua sendo enviado, então Gmail e Outlook ainda
+ * oferecem "Cancelar inscrição" no topo da mensagem, e a página `/descadastrar`
+ * segue pública. Quem quiser o link no corpo escreve `{{link_descadastro}}` no
+ * conteúdo da campanha; não há mais rodapé anexado automaticamente.
  *
  * `conteudoHtml` entra literal (é HTML autoral do admin, não dado de usuário —
  * os valores vindos do banco só aparecem via `personalizar`, que escapa).
@@ -244,11 +249,6 @@ ${conteudoHtml}
                 Você recebeu este e-mail porque criou uma conta na BoraMed com o endereço
                 <strong style="color:${COR.textoFraco};">{{email}}</strong>.
               </p>
-              <p style="margin:0 0 10px;">
-                <a href="{{link_descadastro}}" style="color:${COR.textoFraco};font-size:12px;text-decoration:underline;">
-                  Não quero mais receber e-mails da BoraMed
-                </a>
-              </p>
               <p style="margin:0;color:#cbd5e1;font-size:11px;">
                 © 2026 BoraMed
               </p>
@@ -264,23 +264,6 @@ ${conteudoHtml}
 
 </body>
 </html>`;
-}
-
-const RODAPE_MARCADOR = '{{link_descadastro}}';
-
-/**
- * Garante que TODO e-mail tenha saída. Se o autor da campanha não colocou o
- * link no corpo, o rodapé padrão é anexado — descadastro nunca é opcional
- * (LGPD art. 18 e requisito de reputação do Resend).
- */
-export function garantirRodapeDescadastro(html: string): string {
-  if (html.includes(RODAPE_MARCADOR)) return html;
-
-  return `${html}
-<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;font-family:Inter,'Segoe UI',sans-serif;font-size:12px;line-height:1.5;color:#64748b;">
-  <p style="margin:0 0 4px;">Você recebeu este e-mail porque criou uma conta na BoraMed.</p>
-  <p style="margin:0;"><a href="${RODAPE_MARCADOR}" style="color:#64748b;text-decoration:underline;">Não quero mais receber e-mails da BoraMed</a></p>
-</div>`;
 }
 
 export function dividirEmLotes<T>(itens: readonly T[], tamanho = TAMANHO_LOTE): T[][] {
@@ -315,8 +298,7 @@ export type EmailResend = {
  * Monta o payload de UM destinatário já personalizado.
  *
  * `htmlBase` é o CONTEÚDO do card, não o e-mail inteiro: o envelope da marca é
- * aplicado aqui. `garantirRodapeDescadastro` continua na frente do envelope
- * como invariante — se algum dia o envelope for desligado, o opt-out ainda sai.
+ * aplicado aqui.
  */
 export function montarEmail(
   destinatario: Destinatario,
@@ -341,9 +323,7 @@ export function montarEmail(
     to: [destinatario.email],
     subject: personalizar(opcoes.assunto, dados, false),
     html: personalizar(
-      garantirRodapeDescadastro(
-        envelopeCampanha(opcoes.htmlBase, opcoes.appUrl, opcoes.assetsUrl),
-      ),
+      envelopeCampanha(opcoes.htmlBase, opcoes.appUrl, opcoes.assetsUrl),
       dados,
     ),
     headers: {

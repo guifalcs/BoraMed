@@ -100,7 +100,8 @@ escreveu em:
 - header com gradiente e a logo branca
   (`{EMAIL_ASSETS_URL ou APP_URL}/brand/logo-branca-email.png`);
 - card branco de 560px sobre fundo cinza;
-- rodapé com "enviado para {{email}}", o link de descadastro e o copyright.
+- rodapé com "enviado para {{email}}" e o copyright — **sem** link de descadastro
+  (ver "Onde está o descadastro" abaixo).
 
 É o mesmo layout de `supabase/email-templates/confirm-signup.html` e
 `reset-password.html` — a diferença é que ali o template é um arquivo lido pelo
@@ -112,9 +113,6 @@ Consequências práticas:
   entraria aninhado dentro do card. Escreva `<h2>`, `<p>`, tabelas de botão;
 - o layout não quebra por edição do corpo — no máximo o conteúdo do card fica
   torto;
-- o rodapé de descadastro já vem do envelope, então
-  `garantirRodapeDescadastro()` nunca tem o que anexar. Ele fica no caminho como
-  invariante: se o envelope algum dia for desligado, o opt-out ainda sai;
 - para mudar o layout de TODAS as campanhas, mexa em `envelopeCampanha()` — e
   lembre que os dois templates de auth são cópias independentes do mesmo desenho.
 
@@ -174,8 +172,27 @@ Sem `nome_completo` no perfil, `{{nome}}` e `{{primeiro_nome}}` viram
 `Tudo bem` — escreva o assunto de forma que "Tudo bem, sua conta…" ainda faça
 sentido.
 
-`{{link_descadastro}}` e `{{email}}` já aparecem no rodapé do envelope; use-os no
-conteúdo só se quiser uma segunda menção. Não há como enviar campanha sem saída.
+`{{email}}` aparece no rodapé do envelope. `{{link_descadastro}}` **não** — ele
+só entra no e-mail se você escrever o token no conteúdo da campanha.
+
+### Onde está o descadastro
+
+Decisão de produto (2026-07-30): o link de descadastro **não vai no corpo** do
+e-mail. Os caminhos que restam:
+
+- header `List-Unsubscribe` em todo envio — Gmail e Outlook mostram "Cancelar
+  inscrição" no topo da mensagem, e o clique abre a página no browser;
+- página pública `/descadastrar?token=…`, que continua funcionando;
+- `{{link_descadastro}}` no conteúdo, se o autor da campanha quiser.
+
+Não há mais rodapé de opt-out anexado automaticamente — a função que fazia isso
+(`garantirRodapeDescadastro`) foi removida, senão ela reanexaria o link.
+
+O risco assumido: sem link visível no corpo, quem usa um cliente de e-mail que
+não honra o `List-Unsubscribe` não tem saída óbvia e tende a clicar em **spam**.
+Complaint pesa mais na reputação do domínio do que descadastro, e o Resend exige
+mecanismo de opt-out em e-mail de marketing. Se a taxa de spam subir no painel do
+Resend, o primeiro ajuste a fazer é devolver o link ao rodapé.
 
 ## 5. Campanha `parcial` e retomada
 
