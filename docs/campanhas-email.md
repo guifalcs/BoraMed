@@ -163,6 +163,13 @@ inválido; hard bounce derruba a reputação do domínio).
 | `{{email}}` | `maria@exemplo.com` |
 | `{{link_descadastro}}` | URL de opt-out do destinatário |
 
+A caixa é normalizada quando o nome vem inteiro minúsculo ou inteiro maiúsculo
+(`barbara` → `Barbara`, `LAIZ SOUZA` → `Laiz Souza`, partícula do meio fica
+minúscula). Nome com maiúscula no meio fica intacto — é o que preserva
+`McCarthy` e `d'Ávila`; um title-case genérico os "consertaria" errado. Acento
+perdido no cadastro **não** é recuperado (`barbara` nunca vira `Bárbara`): para
+isso, corrija o `nome_completo` do perfil.
+
 Sem `nome_completo` no perfil, `{{nome}}` e `{{primeiro_nome}}` viram
 `Tudo bem` — escreva o assunto de forma que "Tudo bem, sua conta…" ainda faça
 sentido.

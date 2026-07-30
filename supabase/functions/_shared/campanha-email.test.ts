@@ -7,6 +7,7 @@ import {
   isSegmento,
   linkDescadastro,
   montarEmail,
+  normalizarNome,
   personalizar,
   primeiroNome,
   remetenteValido,
@@ -28,6 +29,34 @@ Deno.test('primeiroNome: primeiro token, com fallback para nome vazio', () => {
   assertEquals(primeiroNome('Maria Clara de Souza'), 'Maria');
   assertEquals(primeiroNome('  '), 'Tudo bem');
   assertEquals(primeiroNome(null), 'Tudo bem');
+});
+
+Deno.test('primeiroNome: corrige caixa toda-minuscula e toda-MAIUSCULA', () => {
+  // Casos reais da base: o primeiro nome abre o assunto do e-mail.
+  assertEquals(primeiroNome('barbara'), 'Barbara');
+  assertEquals(primeiroNome('layla souza'), 'Layla');
+  assertEquals(primeiroNome('LAIZ'), 'Laiz');
+  assertEquals(primeiroNome('JOÃO PEDRO'), 'João');
+  // Acento perdido no cadastro NÃO é inventado de volta.
+  assertEquals(primeiroNome('barbara'), 'Barbara');
+});
+
+Deno.test('primeiroNome: caixa mista fica intacta (nome grafado de propósito)', () => {
+  for (const nome of ['McCarthy', "d'Ávila", 'DiCaprio', 'MacGyver Silva']) {
+    assertEquals(primeiroNome(nome), nome.split(' ')[0]);
+  }
+});
+
+Deno.test('normalizarNome: token a token, com partícula minúscula no meio', () => {
+  assertEquals(normalizarNome('MARIA DA SILVA'), 'Maria da Silva');
+  assertEquals(normalizarNome('joão de souza e lima'), 'João de Souza e Lima');
+  assertEquals(normalizarNome('MARIA  DA   SILVA'), 'Maria da Silva'); // espaço repetido
+  // Partícula no COMEÇO do nome é nome, não partícula.
+  assertEquals(normalizarNome('DE LUCCA'), 'De Lucca');
+  // Já bem grafado passa incólume.
+  assertEquals(normalizarNome('Maria Clara de Souza'), 'Maria Clara de Souza');
+  assertEquals(normalizarNome('Ana McCarthy do Vale'), 'Ana McCarthy do Vale');
+  assertEquals(normalizarNome(''), '');
 });
 
 Deno.test('personalizar: substitui os tokens conhecidos', () => {

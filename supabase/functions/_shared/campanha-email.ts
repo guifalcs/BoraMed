@@ -39,11 +39,60 @@ export function escaparHtml(texto: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/** "Maria Clara de Souza" → "Maria". Vazio/nulo → fallback. */
+/**
+ * Partículas que ficam minúsculas no meio do nome: "Maria da Silva", não
+ * "Maria Da Silva". No começo do nome são capitalizadas normalmente.
+ */
+const PARTICULAS = new Set([
+  'da', 'das', 'de', 'del', 'della', 'di', 'do', 'dos', 'du', 'e', 'la', 'van', 'von', 'y',
+]);
+
+/**
+ * Corrige a caixa de UM token, e só quando ele vem inteiro minúsculo ou inteiro
+ * maiúsculo: `barbara` → `Barbara`, `LAIZ` → `Laiz`.
+ *
+ * Caixa mista é devolvida intacta — é o que preserva `McCarthy`, `d'Ávila`,
+ * `DiCaprio`. É por isso que a regra não é um title-case genérico: title-case
+ * "conserta" esses nomes para uma grafia errada, e errar o nome de alguém num
+ * e-mail é pior do que exibir a caixa como a pessoa digitou.
+ *
+ * O que NÃO dá para recuperar é acento perdido: `barbara` vira `Barbara`, nunca
+ * `Bárbara`. Para isso, o conserto é no `nome_completo` do perfil.
+ */
+function normalizarCaixa(token: string, ehPrimeiro: boolean): string {
+  if (!token) return token;
+
+  const minusculo = token === token.toLocaleLowerCase('pt-BR');
+  const maiusculo = token === token.toLocaleUpperCase('pt-BR');
+  if (!minusculo && !maiusculo) return token;
+
+  const baixo = token.toLocaleLowerCase('pt-BR');
+  if (!ehPrimeiro && PARTICULAS.has(baixo)) return baixo;
+  return baixo.charAt(0).toLocaleUpperCase('pt-BR') + baixo.slice(1);
+}
+
+/**
+ * Normaliza a caixa do nome completo, token a token. Também colapsa espaço
+ * repetido — "MARIA  DA SILVA" → "Maria da Silva".
+ */
+export function normalizarNome(nome: string): string {
+  return nome
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token, i) => normalizarCaixa(token, i === 0))
+    .join(' ');
+}
+
+/**
+ * "Maria Clara de Souza" → "Maria". Vazio/nulo → fallback.
+ * A caixa é normalizada: o primeiro nome é a primeira palavra do assunto, e
+ * `barbara,` ou `LAIZ,` na caixa de entrada passa recado de descuido.
+ */
 export function primeiroNome(nomeCompleto: string | null, fallback = 'Tudo bem'): string {
   const limpo = (nomeCompleto ?? '').trim();
   if (!limpo) return fallback;
-  return limpo.split(/\s+/)[0];
+  return normalizarCaixa(limpo.split(/\s+/)[0], true);
 }
 
 export function linkDescadastro(appUrl: string, token: string): string {
@@ -74,7 +123,9 @@ export function personalizar(
   escapar = true,
 ): string {
   const trata = escapar ? escaparHtml : (t: string) => t;
-  const nome = (dados.nomeCompleto ?? '').trim() || 'Tudo bem';
+  // Mesma normalização de caixa do {{primeiro_nome}}: senão "LAIZ SOUZA" sairia
+  // gritando no corpo do e-mail enquanto o assunto já mostraria "Laiz".
+  const nome = normalizarNome(dados.nomeCompleto ?? '') || 'Tudo bem';
   const substituicoes: Record<string, string> = {
     nome: trata(nome),
     primeiro_nome: trata(primeiroNome(dados.nomeCompleto)),
