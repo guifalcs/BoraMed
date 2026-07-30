@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-30 | Feature | sem commit
+
+**Campanhas de e-mail personalizadas via Resend**
+
+- Migration `20260730120000_campanhas_email_resend.sql`: novas colunas em `profiles` (`email_marketing_optout`, `email_marketing_optout_em`, `email_token` uuid único para o link de descadastro), tabelas `email_campanha` (histórico do disparo) e `email_campanha_destinatario` (log por e-mail, com `resend_id`, UNIQUE `(campanha_id, email)` — base da idempotência e da retomada). RLS: leitura só para admin, escrita só via service role.
+- Segmentação definida em SQL na função `email_publico_alvo(segmento)` (grant só para `service_role`), com os segmentos `sem_assinatura_ativa`, `nunca_assinou`, `ex_assinantes` e `todos`. Todos excluem admins, banidos, quem pediu descadastro e contas com e-mail não confirmado. `admin_contar_publico_email` dá a prévia no admin pela mesma função, então a contagem exibida é exatamente o público do disparo.
+- Nova edge function `enviar-campanha-email` (admin-only) com três modos: `teste` (uma cópia para o próprio admin, sem registrar campanha), `enviar` (materializa a lista, cria a campanha e dispara em lotes de 100 pelo `/emails/batch` do Resend, com 600ms entre lotes e retry em 429/5xx) e `retomar` (reenvia só o que ficou `pendente`). A function encerra sozinha aos ~100s marcando a campanha como `parcial`, em vez de ser derrubada no meio de um lote.
+- Personalização por template: `{{primeiro_nome}}`, `{{nome}}`, `{{email}}` e `{{link_descadastro}}`. Valores vindos do banco são escapados no corpo HTML (e não no assunto). Helpers puros em `_shared/campanha-email.ts` com testes em `_shared/campanha-email.test.ts`.
+- Opt-out obrigatório (LGPD + reputação de domínio): header `List-Unsubscribe` em todo envio, rodapé com o link anexado automaticamente quando o corpo não traz `{{link_descadastro}}`, nova RPC pública `descadastrar_email_marketing(token)` e nova rota pública `/descadastrar` (`DescadastrarComponent`). O opt-out é reconferido no envio, então quem se descadastra antes da retomada não recebe.
+- Nova tela `/admin/campanhas` (`AdminCampanhasComponent`, menu Comunicação): editor de assunto/HTML, seletor de público com contagem ao vivo, envio de teste, confirmação explícita antes do disparo e histórico com status e botão "Retomar".
+- Secrets novos das edge functions: `RESEND_API_KEY` e `RESEND_FROM` (reusa `APP_URL` para montar o link de descadastro).
+
+---
+
 ## 2026-07-23 | Fix | sem commit
 
 **Filtro de matéria em Treinos Nacionais respeita o período da matéria**

@@ -15,6 +15,8 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'recuperar-senha', renderMode: RenderMode.Prerender },
   { path: 'auth/callback', renderMode: RenderMode.Client },
   { path: 'redefinir-senha', renderMode: RenderMode.Client },
+  // Depende do ?token= da query string e do Supabase no browser.
+  { path: 'descadastrar', renderMode: RenderMode.Client },
   { path: 'sem-permissao', renderMode: RenderMode.Prerender },
   { path: 'erro', renderMode: RenderMode.Prerender },
   { path: 'admin/**', renderMode: RenderMode.Client },

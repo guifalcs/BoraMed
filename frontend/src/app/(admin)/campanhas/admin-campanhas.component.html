@@ -1,0 +1,217 @@
+<div class="p-6">
+  <div class="mx-auto max-w-5xl">
+    <div class="mb-6">
+      <h1 class="flex items-center gap-2 text-2xl font-bold text-[var(--color-text)]">
+        <app-ui-icon [icon]="iconMail" [size]="22" />
+        Campanhas de e-mail
+      </h1>
+      <p class="mt-1 text-sm text-[var(--color-text-muted)]">
+        Disparo via Resend para segmentos de alunos. Admins, contas banidas e quem pediu
+        descadastro nunca entram na lista.
+      </p>
+    </div>
+
+    <!-- ===== NOVA CAMPANHA ===== -->
+    <section class="card">
+      <h2 class="section-title">Nova campanha</h2>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <label class="field">
+          <span class="field-label">Nome interno</span>
+          <input
+            class="field-input"
+            type="text"
+            placeholder="Ex.: Reativação julho"
+            [ngModel]="nome()"
+            (ngModelChange)="nome.set($event)"
+          />
+          <span class="field-hint">Só aparece aqui no admin, não vai no e-mail.</span>
+        </label>
+
+        <div class="field">
+          <app-ui-select
+            label="Público"
+            name="segmento"
+            [options]="segmentosDisponiveis"
+            [value]="segmento()"
+            (valueChange)="onSegmentoChange($any($event))"
+          />
+          <span class="field-hint">
+            @if (contando()) {
+              Contando destinatários…
+            } @else if (totalPublico() === null) {
+              Não foi possível contar.
+            } @else {
+              <strong>{{ totalPublico() }}</strong> pessoas receberão este e-mail.
+            }
+          </span>
+        </div>
+      </div>
+
+      <label class="field mt-4">
+        <span class="field-label">Assunto</span>
+        <input
+          class="field-input"
+          type="text"
+          placeholder="Ex.: {{ variaveis[0].token }}, sua conta está te esperando"
+          [ngModel]="assunto()"
+          (ngModelChange)="assunto.set($event)"
+        />
+      </label>
+
+      <label class="field mt-4">
+        <span class="field-label">Corpo do e-mail (HTML)</span>
+        <textarea
+          class="field-input font-mono text-[13px] leading-relaxed"
+          rows="16"
+          [ngModel]="html()"
+          (ngModelChange)="html.set($event)"
+        ></textarea>
+      </label>
+
+      <div class="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
+        <p class="mb-2 text-xs font-semibold text-[var(--color-text)]">Variáveis disponíveis</p>
+        <ul class="grid gap-1 text-xs text-[var(--color-text-muted)] md:grid-cols-2">
+          @for (v of variaveis; track v.token) {
+            <li>
+              <code class="rounded bg-[var(--color-surface)] px-1 py-0.5 text-[var(--color-action)]">{{ v.token }}</code>
+              — {{ v.descricao }}
+            </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Teste -->
+      <div class="mt-5 flex flex-col gap-2 border-t border-[var(--color-border)] pt-4 md:flex-row md:items-end">
+        <label class="field flex-1">
+          <span class="field-label">Enviar teste para</span>
+          <input
+            class="field-input"
+            type="email"
+            placeholder="Deixe vazio para enviar ao seu próprio e-mail"
+            [ngModel]="emailTeste()"
+            (ngModelChange)="emailTeste.set($event)"
+          />
+        </label>
+        <button
+          type="button"
+          class="btn btn--outline"
+          [disabled]="ocupado()"
+          (click)="enviarTeste()"
+        >
+          <app-ui-icon [icon]="iconTeste" [size]="15" />
+          {{ enviandoTeste() ? 'Enviando…' : 'Enviar teste' }}
+        </button>
+      </div>
+
+      <!-- Disparo -->
+      <div class="mt-5 border-t border-[var(--color-border)] pt-4">
+        @if (!confirmandoDisparo()) {
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="ocupado() || !formularioValido()"
+            (click)="pedirConfirmacao()"
+          >
+            <app-ui-icon [icon]="iconSend" [size]="15" />
+            {{ disparando() ? 'Disparando…' : 'Disparar campanha' }}
+          </button>
+        } @else {
+          <div class="rounded-lg border border-[var(--color-warning)] bg-amber-50 p-4">
+            <p class="text-sm font-semibold text-[var(--color-text)]">
+              Enviar para {{ totalPublico() }} pessoas — “{{ rotuloSegmento(segmento()) }}”?
+            </p>
+            <p class="mt-1 text-xs text-[var(--color-text-muted)]">
+              Não dá para cancelar depois. Confira se você já enviou um teste para si.
+            </p>
+            <div class="mt-3 flex gap-2">
+              <button type="button" class="btn btn--primary" (click)="dispararAgora()">
+                Confirmar e enviar
+              </button>
+              <button type="button" class="btn btn--outline" (click)="cancelarConfirmacao()">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ===== HISTÓRICO ===== -->
+    <section class="mt-8">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-[var(--color-text)]">Campanhas enviadas</h2>
+        <button
+          type="button"
+          class="btn btn--outline btn--sm"
+          [disabled]="carregandoHistorico()"
+          (click)="carregarHistorico()"
+        >
+          <app-ui-icon [icon]="iconRefresh" [size]="14" />
+          Atualizar
+        </button>
+      </div>
+
+      @if (carregandoHistorico()) {
+        <p class="text-sm text-[var(--color-text-muted)]">Carregando…</p>
+      } @else if (historico().length === 0) {
+        <p class="text-sm text-[var(--color-text-muted)]">Nenhuma campanha enviada ainda.</p>
+      } @else {
+        <div class="overflow-x-auto rounded-lg border border-[var(--color-border)]">
+          <table class="w-full min-w-[720px] border-collapse bg-[var(--color-surface)] text-sm">
+            <thead>
+              <tr class="border-b border-[var(--color-border)] text-left text-xs uppercase text-[var(--color-text-muted)]">
+                <th class="px-3 py-2 font-semibold">Data</th>
+                <th class="px-3 py-2 font-semibold">Campanha</th>
+                <th class="px-3 py-2 font-semibold">Público</th>
+                <th class="px-3 py-2 font-semibold">Resultado</th>
+                <th class="px-3 py-2 font-semibold">Status</th>
+                <th class="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of historico(); track c.id) {
+                <tr class="border-b border-[var(--color-border)] last:border-0 align-top">
+                  <td class="whitespace-nowrap px-3 py-2 text-[var(--color-text-muted)]">
+                    {{ formatarData(c.criado_em) }}
+                  </td>
+                  <td class="px-3 py-2">
+                    <div class="font-medium text-[var(--color-text)]">{{ c.nome }}</div>
+                    <div class="text-xs text-[var(--color-text-muted)]">{{ c.assunto }}</div>
+                  </td>
+                  <td class="px-3 py-2 text-[var(--color-text-muted)]">
+                    {{ rotuloSegmento(c.segmento) }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-2 text-[var(--color-text-muted)]">
+                    {{ c.total_enviados }}/{{ c.total_destinatarios }}
+                    @if (c.total_falhas > 0) {
+                      <span class="text-[var(--color-danger)]"> · {{ c.total_falhas }} falhas</span>
+                    }
+                    @if (c.total_cancelados > 0) {
+                      <span> · {{ c.total_cancelados }} descadastrados</span>
+                    }
+                  </td>
+                  <td class="px-3 py-2">
+                    <span class="status-badge" [attr.data-status]="c.status">{{ c.status }}</span>
+                  </td>
+                  <td class="px-3 py-2 text-right">
+                    @if (c.status === 'parcial' || c.status === 'falhou' || c.status === 'enviando') {
+                      <button
+                        type="button"
+                        class="btn btn--outline btn--sm"
+                        [disabled]="ocupado()"
+                        (click)="retomar(c)"
+                      >
+                        {{ retomandoId() === c.id ? 'Retomando…' : 'Retomar' }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+</div>

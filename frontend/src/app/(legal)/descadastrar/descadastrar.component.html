@@ -1,0 +1,45 @@
+<main class="flex min-h-screen items-center justify-center px-4 py-16">
+  <div
+    class="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center"
+  >
+    @switch (estado()) {
+      @case ('processando') {
+        <h1 class="text-xl font-bold text-[var(--color-text)]">Processando…</h1>
+        <p class="mt-2 text-sm text-[var(--color-text-muted)]">
+          Só um instante enquanto atualizamos suas preferências.
+        </p>
+      }
+
+      @case ('sucesso') {
+        <h1 class="text-xl font-bold text-[var(--color-text)]">Pronto, você saiu da lista</h1>
+        <p class="mt-2 text-sm text-[var(--color-text-muted)]">
+          Não vamos mais te mandar e-mails de novidades e promoções. E-mails da sua conta
+          (recuperação de senha, confirmação de pagamento) continuam chegando normalmente.
+        </p>
+        <a
+          routerLink="/"
+          class="mt-6 inline-block rounded-lg bg-[var(--color-action)] px-5 py-2.5 text-sm font-semibold text-white"
+        >
+          Voltar para a BoraMed
+        </a>
+      }
+
+      @case ('invalido') {
+        <h1 class="text-xl font-bold text-[var(--color-text)]">Link inválido ou expirado</h1>
+        <p class="mt-2 text-sm text-[var(--color-text-muted)]">
+          Confira se você copiou o endereço inteiro. Se o problema continuar, fale com a gente
+          em <a class="underline" href="mailto:contato&#64;boramed.com.br">contato&#64;boramed.com.br</a>
+          que removemos seu e-mail na mão.
+        </p>
+      }
+
+      @case ('erro') {
+        <h1 class="text-xl font-bold text-[var(--color-text)]">Não deu para concluir agora</h1>
+        <p class="mt-2 text-sm text-[var(--color-text-muted)]">
+          Tente recarregar a página em alguns minutos. Se persistir, escreva para
+          <a class="underline" href="mailto:contato&#64;boramed.com.br">contato&#64;boramed.com.br</a>.
+        </p>
+      }
+    }
+  </div>
+</main>

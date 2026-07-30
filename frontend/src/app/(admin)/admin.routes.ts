@@ -91,6 +91,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'campanhas',
+    loadComponent: () =>
+      import('./campanhas/admin-campanhas.component').then(
+        (m) => m.AdminCampanhasComponent,
+      ),
+  },
+  {
     path: 'suporte',
     loadComponent: () =>
       import('./suporte/admin-suporte.component').then(

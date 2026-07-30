@@ -150,6 +150,14 @@ export const routes: Routes = [
       ),
   },
   {
+    // Opt-out das campanhas de e-mail — público, sem sessão (link do rodapé).
+    path: 'descadastrar',
+    loadComponent: () =>
+      import('./(legal)/descadastrar/descadastrar.component').then(
+        (m) => m.DescadastrarComponent,
+      ),
+  },
+  {
     path: 'termos-de-uso',
     loadComponent: () =>
       import('./(legal)/termos-de-uso/termos-de-uso.component').then((m) => m.TermosDeUsoComponent),

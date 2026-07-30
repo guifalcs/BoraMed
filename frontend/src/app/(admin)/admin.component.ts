@@ -15,6 +15,7 @@ import {
   Library,
   LucideIconData,
   LogOut,
+  Mail,
   Menu,
   MessageSquare,
   Send,
@@ -121,6 +122,7 @@ export class AdminComponent {
       children: [
         { label: 'Avisos', icon: Bell, route: '/admin/avisos' },
         { label: 'Notificações', icon: Send, route: '/admin/notificacoes' },
+        { label: 'Campanhas de e-mail', icon: Mail, route: '/admin/campanhas' },
         { label: 'Suporte', icon: Headphones, route: '/admin/suporte' },
       ],
     },

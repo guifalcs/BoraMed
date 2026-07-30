@@ -355,7 +355,61 @@ export interface AdminNotificacao {
   criado_em: string;
 }
 
+/**
+ * Segmentos de campanha de e-mail. Espelha o CHECK de `email_campanha.segmento`
+ * e o CASE de `public.email_publico_alvo` — mudar aqui exige migration.
+ */
+export type SegmentoCampanha =
+  | 'sem_assinatura_ativa'
+  | 'nunca_assinou'
+  | 'ex_assinantes'
+  | 'todos';
+
+export interface AdminCampanhaEmail {
+  id: string;
+  criado_em: string;
+  nome: string;
+  assunto: string;
+  segmento: SegmentoCampanha;
+  status: 'enviando' | 'enviada' | 'parcial' | 'falhou';
+  total_destinatarios: number;
+  total_enviados: number;
+  total_falhas: number;
+  total_cancelados: number;
+  erro: string | null;
+  criado_por_email: string | null;
+}
+
+export interface ResultadoDisparoCampanha {
+  campanha_id?: string;
+  status?: 'enviada' | 'parcial' | 'falhou';
+  enviados: number;
+  falhas?: number;
+  cancelados?: number;
+  pendentes?: number;
+  destino?: string;
+}
+
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/**
+ * Extrai a mensagem de `{ error: "..." }` devolvida por uma edge function.
+ * O `FunctionsHttpError` do supabase-js só expõe "Edge Function returned a
+ * non-2xx status code" em `.message` e guarda a Response original em `.context`
+ * — sem isto, o admin veria sempre o mesmo texto genérico no lugar de
+ * "remetente inválido" ou "nenhum destinatário nesse segmento".
+ */
+async function lerErroFunction(error: unknown): Promise<string | null> {
+  const contexto = (error as { context?: unknown }).context;
+  if (!(contexto instanceof Response)) return null;
+  try {
+    const corpo: unknown = await contexto.clone().json();
+    const mensagem = (corpo as { error?: unknown }).error;
+    return typeof mensagem === 'string' ? mensagem : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface MetricasPerfilUsuario {
   id: string;
@@ -1376,6 +1430,76 @@ export class AdminService {
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as AdminNotificacao[] };
+  }
+
+  // ---- Campanhas de e-mail (Resend) ----
+
+  /**
+   * Prévia do público. Usa a MESMA função SQL que a edge function usa para
+   * montar a lista real, então a contagem da tela é a contagem do disparo.
+   */
+  async contarPublicoCampanha(segmento: SegmentoCampanha): Promise<ServiceResult<number>> {
+    const { data, error } = await this.supabase.rpc('admin_contar_publico_email', {
+      p_segmento: segmento,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? 0) as number };
+  }
+
+  async listarCampanhasEmail(limit = 50): Promise<ServiceResult<AdminCampanhaEmail[]>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_campanhas_email', {
+      p_limit: limit,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminCampanhaEmail[] };
+  }
+
+  /** Envia uma cópia única para conferência, sem registrar campanha. */
+  async enviarCampanhaTeste(
+    assunto: string,
+    html: string,
+    emailTeste: string | null,
+    remetente?: string,
+  ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
+    return this.invocarCampanha({
+      modo: 'teste',
+      assunto,
+      html,
+      email_teste: emailTeste,
+      remetente,
+    });
+  }
+
+  async dispararCampanhaEmail(
+    nome: string,
+    assunto: string,
+    html: string,
+    segmento: SegmentoCampanha,
+    remetente?: string,
+  ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
+    return this.invocarCampanha({ modo: 'enviar', nome, assunto, html, segmento, remetente });
+  }
+
+  /** Reenvia apenas o que ficou pendente numa campanha interrompida. */
+  async retomarCampanhaEmail(
+    campanhaId: string,
+  ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
+    return this.invocarCampanha({ modo: 'retomar', campanha_id: campanhaId });
+  }
+
+  private async invocarCampanha(
+    body: Record<string, unknown>,
+  ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
+    const { data, error } = await this.supabase.functions.invoke('enviar-campanha-email', {
+      body,
+    });
+    if (error) {
+      // A function devolve o motivo em `{ error }` com status 4xx/5xx; o
+      // FunctionsHttpError esconde isso na mensagem genérica, então lemos o corpo.
+      const detalhe = await lerErroFunction(error);
+      return { ok: false, error: detalhe ?? error.message };
+    }
+    return { ok: true, data: data as ResultadoDisparoCampanha };
   }
 
   // ---- Materiais de Estudo ----

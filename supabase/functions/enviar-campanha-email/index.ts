@@ -1,0 +1,500 @@
+// ============================================================
+// enviar-campanha-email — disparo de campanhas via Resend
+//
+// Modos (body.modo):
+//   'teste'   → envia UMA cópia para o e-mail informado (ou o do próprio admin),
+//               sem criar campanha nem tocar na base de destinatários;
+//   'enviar'  → materializa o público do segmento, cria a campanha e dispara;
+//   'retomar' → reprocessa os destinatários que ficaram 'pendente' numa campanha
+//               existente (timeout, queda do Resend). Nunca reenvia para quem já
+//               está 'enviado' — a UNIQUE (campanha_id, email) + o status são a
+//               garantia de idempotência.
+//
+// Secrets necessários:
+//   RESEND_API_KEY   chave da API do Resend
+//   RESEND_FROM      remetente padrão, ex.: "BoraMed <contato@boramed.com.br>"
+//   APP_URL          base pública do app (monta o link de descadastro)
+// ============================================================
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { corsHeaders, json } from '../_shared/cors.ts';
+import {
+  Destinatario,
+  dividirEmLotes,
+  isSegmento,
+  montarEmail,
+  remetenteValido,
+  TAMANHO_LOTE,
+} from '../_shared/campanha-email.ts';
+
+/** Rate limit padrão do Resend: 2 req/s. 600ms deixa folga. */
+const INTERVALO_ENTRE_LOTES_MS = 600;
+
+/**
+ * Orçamento de tempo do disparo. A edge function é derrubada por volta dos
+ * 150s de parede; parando antes por conta própria a campanha fecha como
+ * 'parcial' com o log íntegro, e o admin clica em "Retomar" — em vez de morrer
+ * no meio de um lote sem saber o que saiu.
+ */
+const ORCAMENTO_MS = 100_000;
+
+const RESEND_BATCH_URL = 'https://api.resend.com/emails/batch';
+
+type Modo = 'teste' | 'enviar' | 'retomar';
+
+type Body = {
+  modo?: Modo;
+  nome?: string;
+  assunto?: string;
+  html?: string;
+  segmento?: string;
+  remetente?: string;
+  email_teste?: string;
+  campanha_id?: string;
+};
+
+type LinhaDestinatario = {
+  id: string;
+  email: string;
+  nome_completo: string | null;
+  email_token: string;
+  user_id: string | null;
+};
+
+const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Página do PostgREST. O `max_rows = 1000` do projeto trunca QUALQUER resposta
+ * — inclusive a RPC que monta o público. Sem paginar, uma campanha para 3.000
+ * pessoas sairia para 1.000 e reportaria sucesso.
+ */
+const PAGINA = 1000;
+
+/** Teto de segurança: evita loop infinito se a paginação der errado. */
+const MAX_DESTINATARIOS = 50_000;
+
+type PaginaResposta = { data: unknown[] | null; error: { message: string } | null };
+
+/** Percorre todas as páginas de uma query/RPC até esgotar os resultados. */
+async function buscarTudo<T>(
+  query: (de: number, ate: number) => PromiseLike<PaginaResposta>,
+): Promise<T[]> {
+  const tudo: T[] = [];
+  for (let de = 0; de < MAX_DESTINATARIOS; de += PAGINA) {
+    const { data, error } = await query(de, de + PAGINA - 1);
+    if (error) throw new Error(error.message);
+    const pagina = (data ?? []) as T[];
+    tudo.push(...pagina);
+    if (pagina.length < PAGINA) break;
+  }
+  return tudo;
+}
+
+Deno.serve(async (req) => {
+  const cors = corsHeaders(req);
+  const reply = (data: unknown, status = 200) => json(data, status, cors);
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method !== 'POST') return reply({ error: 'method not allowed' }, 405);
+
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return reply({ error: 'missing token' }, 401);
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const resendKey = Deno.env.get('RESEND_API_KEY');
+  const remetentePadrao = Deno.env.get('RESEND_FROM') ?? '';
+  const appUrl = (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '');
+
+  if (!resendKey) return reply({ error: 'RESEND_API_KEY não configurada' }, 500);
+  if (!appUrl) return reply({ error: 'APP_URL não configurada' }, 500);
+
+  // --- Identidade do chamador ---
+  const callerClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: callerData, error: callerError } = await callerClient.auth.getUser();
+  if (callerError || !callerData.user) return reply({ error: 'unauthorized' }, 401);
+  const caller = callerData.user;
+
+  const admin = createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: callerProfile } = await admin
+    .from('profiles')
+    .select('papel, nome_completo')
+    .eq('id', caller.id)
+    .single();
+  const papel = callerProfile?.papel as string | undefined;
+  if (papel !== 'admin' && papel !== 'super_admin') {
+    return reply({ error: 'forbidden' }, 403);
+  }
+
+  // --- Body ---
+  let body: Body;
+  try {
+    body = await req.json();
+  } catch {
+    return reply({ error: 'invalid body' }, 400);
+  }
+
+  const modo = body.modo ?? 'teste';
+  if (modo !== 'teste' && modo !== 'enviar' && modo !== 'retomar') {
+    return reply({ error: 'modo inválido' }, 400);
+  }
+
+  const remetente = (body.remetente ?? remetentePadrao).trim();
+  if (modo !== 'retomar' && !remetenteValido(remetente)) {
+    return reply(
+      { error: 'remetente inválido — use "Nome <email@dominio>" ou configure RESEND_FROM' },
+      400,
+    );
+  }
+
+  const enviarLote = criarEnviadorDeLote(resendKey);
+
+  // ============================================================
+  // Modo TESTE — não cria campanha, não registra destinatários.
+  // ============================================================
+  if (modo === 'teste') {
+    const assunto = (body.assunto ?? '').trim();
+    const html = body.html ?? '';
+    if (!assunto) return reply({ error: 'assunto obrigatório' }, 400);
+    if (!html.trim()) return reply({ error: 'corpo do e-mail obrigatório' }, 400);
+
+    const destino = (body.email_teste ?? caller.email ?? '').trim();
+    if (!destino) return reply({ error: 'email de teste obrigatório' }, 400);
+
+    const email = montarEmail(
+      {
+        user_id: caller.id,
+        email: destino,
+        // Personaliza com o nome do próprio admin para ele ver o resultado real
+        // dos {{tokens}}; sem nome no perfil, um placeholder óbvio.
+        nome_completo: (callerProfile?.nome_completo as string | null) ?? 'Fulano de Tal',
+        // Token fictício: o link do rodapé do teste não descadastra ninguém.
+        email_token: '00000000-0000-0000-0000-000000000000',
+      },
+      { remetente, assunto, htmlBase: html, appUrl },
+    );
+
+    const resultado = await enviarLote([email]);
+    if (!resultado.ok) return reply({ error: `Resend: ${resultado.erro}` }, 502);
+    return reply({ modo: 'teste', destino, enviados: 1 });
+  }
+
+  // ============================================================
+  // Modo ENVIAR — materializa o público e cria a campanha.
+  // ============================================================
+  let campanhaId: string;
+
+  if (modo === 'enviar') {
+    const nome = (body.nome ?? '').trim();
+    const assunto = (body.assunto ?? '').trim();
+    const html = body.html ?? '';
+    const segmento = body.segmento;
+
+    if (!nome) return reply({ error: 'nome da campanha obrigatório' }, 400);
+    if (!assunto) return reply({ error: 'assunto obrigatório' }, 400);
+    if (!html.trim()) return reply({ error: 'corpo do e-mail obrigatório' }, 400);
+    if (!isSegmento(segmento)) return reply({ error: 'segmento inválido' }, 400);
+
+    let publico: Destinatario[];
+    try {
+      publico = await buscarTudo<Destinatario>((de, ate) =>
+        admin.rpc('email_publico_alvo', { p_segmento: segmento }).range(de, ate)
+      );
+    } catch (e) {
+      console.error('email_publico_alvo:', e instanceof Error ? e.message : e);
+      return reply({ error: 'falha ao montar o público' }, 500);
+    }
+
+    if (publico.length === 0) {
+      return reply({ error: 'nenhum destinatário nesse segmento' }, 400);
+    }
+
+    const { data: campanha, error: campanhaError } = await admin
+      .from('email_campanha')
+      .insert({
+        criado_por: caller.id,
+        nome,
+        assunto,
+        corpo_html: html,
+        remetente,
+        segmento,
+        status: 'enviando',
+        total_destinatarios: publico.length,
+      })
+      .select('id')
+      .single();
+    if (campanhaError || !campanha) {
+      console.error('insert campanha:', campanhaError?.message);
+      return reply({ error: 'falha ao registrar a campanha' }, 500);
+    }
+    campanhaId = campanha.id as string;
+
+    // Registrar TODOS os destinatários antes de enviar qualquer coisa: se a
+    // função morrer no meio, o que falta continua rastreável em 'pendente'.
+    const linhas = publico.map((d) => ({
+      campanha_id: campanhaId,
+      user_id: d.user_id,
+      email: d.email,
+      nome_completo: d.nome_completo,
+      email_token: d.email_token,
+      status: 'pendente',
+    }));
+    for (const lote of dividirEmLotes(linhas, 500)) {
+      const { error } = await admin.from('email_campanha_destinatario').insert(lote);
+      if (error) {
+        console.error('insert destinatarios:', error.message);
+        await admin
+          .from('email_campanha')
+          .update({ status: 'falhou', erro: 'falha ao registrar destinatários' })
+          .eq('id', campanhaId);
+        return reply({ error: 'falha ao registrar destinatários' }, 500);
+      }
+    }
+  } else {
+    // --- Modo RETOMAR ---
+    const id = (body.campanha_id ?? '').trim();
+    if (!id) return reply({ error: 'campanha_id obrigatório' }, 400);
+
+    const { data: campanha, error } = await admin
+      .from('email_campanha')
+      .select('id, status')
+      .eq('id', id)
+      .single();
+    if (error || !campanha) return reply({ error: 'campanha não encontrada' }, 404);
+    if (campanha.status === 'enviada') {
+      return reply({ error: 'campanha já concluída' }, 400);
+    }
+    campanhaId = campanha.id as string;
+
+    await admin.from('email_campanha').update({ status: 'enviando', erro: null }).eq('id', campanhaId);
+  }
+
+  const resumo = await processarCampanha({
+    admin,
+    campanhaId,
+    appUrl,
+    enviarLote,
+  });
+
+  // Sempre 200: mesmo com status 'falhou' o corpo é um RESUMO útil (campanha
+  // criada, quantos saíram, quantos ficaram). Devolver 4xx/5xx aqui faria o
+  // supabase-js descartar isso e entregar só "non-2xx status code" à tela.
+  return reply({ campanha_id: campanhaId, ...resumo });
+});
+
+// ============================================================
+// Envio
+// ============================================================
+
+type ResultadoLote =
+  | { ok: true; ids: (string | null)[] }
+  | { ok: false; erro: string; status?: number };
+
+function criarEnviadorDeLote(apiKey: string) {
+  return async function enviarLote(
+    emails: readonly unknown[],
+    tentativa = 0,
+  ): Promise<ResultadoLote> {
+    let resposta: Response;
+    try {
+      resposta = await fetch(RESEND_BATCH_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emails),
+      });
+    } catch (e) {
+      return { ok: false, erro: e instanceof Error ? e.message : 'erro de rede' };
+    }
+
+    const texto = await resposta.text();
+
+    // 429 (rate limit) e 5xx são transitórios: uma nova tentativa com espera
+    // costuma resolver. Erro 4xx de conteúdo não adianta repetir.
+    if ((resposta.status === 429 || resposta.status >= 500) && tentativa < 2) {
+      await dormir(1000 * (tentativa + 1));
+      return enviarLote(emails, tentativa + 1);
+    }
+
+    if (!resposta.ok) {
+      return { ok: false, erro: `${resposta.status} ${texto.slice(0, 300)}`, status: resposta.status };
+    }
+
+    // Resposta: { data: [{ id }, ...] } na MESMA ordem do payload enviado.
+    try {
+      const corpo = JSON.parse(texto) as { data?: { id?: string }[] };
+      const ids = (corpo.data ?? []).map((d) => d.id ?? null);
+      return { ok: true, ids };
+    } catch {
+      return { ok: true, ids: [] };
+    }
+  };
+}
+
+async function processarCampanha(deps: {
+  admin: SupabaseClient;
+  campanhaId: string;
+  appUrl: string;
+  enviarLote: (emails: readonly unknown[]) => Promise<ResultadoLote>;
+}): Promise<{
+  status: 'enviada' | 'parcial' | 'falhou';
+  enviados: number;
+  falhas: number;
+  cancelados: number;
+  pendentes: number;
+}> {
+  const { admin, campanhaId, appUrl, enviarLote } = deps;
+  const inicio = Date.now();
+
+  const { data: campanha } = await admin
+    .from('email_campanha')
+    .select('assunto, corpo_html, remetente')
+    .eq('id', campanhaId)
+    .single();
+  if (!campanha) {
+    return { status: 'falhou', enviados: 0, falhas: 0, cancelados: 0, pendentes: 0 };
+  }
+
+  let pendentes: LinhaDestinatario[];
+  try {
+    pendentes = await buscarTudo<LinhaDestinatario>((de, ate) =>
+      admin
+        .from('email_campanha_destinatario')
+        .select('id, email, nome_completo, email_token, user_id')
+        .eq('campanha_id', campanhaId)
+        .eq('status', 'pendente')
+        .order('criado_em')
+        .range(de, ate)
+    );
+  } catch (e) {
+    console.error(`campanha ${campanhaId}: falha ao ler pendentes —`, e);
+    return { status: 'falhou', enviados: 0, falhas: 0, cancelados: 0, pendentes: 0 };
+  }
+
+  // Reconferir o opt-out: entre montar a lista e enviar (ou retomar horas
+  // depois) alguém pode ter clicado em "não quero mais receber". Esse clique
+  // vale mais que a lista congelada.
+  let cancelados = 0;
+  const userIds = pendentes.map((p) => p.user_id).filter((id): id is string => !!id);
+  if (userIds.length > 0) {
+    const optouts = new Set<string>();
+    for (const lote of dividirEmLotes(userIds, 500)) {
+      const { data } = await admin
+        .from('profiles')
+        .select('id')
+        .in('id', lote)
+        .eq('email_marketing_optout', true);
+      for (const linha of (data ?? []) as { id: string }[]) optouts.add(linha.id);
+    }
+    if (optouts.size > 0) {
+      const cancelar = pendentes.filter((p) => p.user_id && optouts.has(p.user_id));
+      cancelados = cancelar.length;
+      for (const lote of dividirEmLotes(cancelar.map((c) => c.id), 500)) {
+        await admin
+          .from('email_campanha_destinatario')
+          .update({ status: 'cancelado', erro: 'descadastrado antes do envio' })
+          .in('id', lote);
+      }
+      pendentes = pendentes.filter((p) => !p.user_id || !optouts.has(p.user_id));
+    }
+  }
+
+  let enviados = 0;
+  let falhas = 0;
+  let estourouOrcamento = false;
+
+  const lotes = dividirEmLotes(pendentes, TAMANHO_LOTE);
+
+  for (let i = 0; i < lotes.length; i++) {
+    if (Date.now() - inicio > ORCAMENTO_MS) {
+      estourouOrcamento = true;
+      break;
+    }
+
+    const lote = lotes[i];
+    const emails = lote.map((d) =>
+      montarEmail(
+        {
+          user_id: d.user_id ?? '',
+          email: d.email,
+          nome_completo: d.nome_completo,
+          email_token: d.email_token,
+        },
+        {
+          remetente: campanha.remetente as string,
+          assunto: campanha.assunto as string,
+          htmlBase: campanha.corpo_html as string,
+          appUrl,
+        },
+      )
+    );
+
+    const resultado = await enviarLote(emails);
+    const agora = new Date().toISOString();
+
+    if (resultado.ok) {
+      // O update é por linha porque cada uma leva o seu resend_id (útil para
+      // cruzar bounce/complaint no painel do Resend depois).
+      await Promise.all(
+        lote.map((d, idx) =>
+          admin
+            .from('email_campanha_destinatario')
+            .update({ status: 'enviado', resend_id: resultado.ids[idx] ?? null, enviado_em: agora })
+            .eq('id', d.id)
+        ),
+      );
+      enviados += lote.length;
+    } else {
+      await admin
+        .from('email_campanha_destinatario')
+        .update({ status: 'falhou', erro: resultado.erro.slice(0, 500) })
+        .in('id', lote.map((d) => d.id));
+      falhas += lote.length;
+      console.error(`campanha ${campanhaId} lote ${i}: ${resultado.erro}`);
+    }
+
+    if (i < lotes.length - 1) await dormir(INTERVALO_ENTRE_LOTES_MS);
+  }
+
+  // Totais recontados a partir do LOG, nunca somados em cima do valor anterior:
+  // assim uma retomada não duplica a contagem da rodada anterior, e o número de
+  // pendentes é o do banco — não uma subtração sobre a lista que carregamos.
+  const contar = async (valor: string) => {
+    const { count } = await admin
+      .from('email_campanha_destinatario')
+      .select('id', { count: 'exact', head: true })
+      .eq('campanha_id', campanhaId)
+      .eq('status', valor);
+    return count ?? 0;
+  };
+
+  const restantes = await contar('pendente');
+  const status: 'enviada' | 'parcial' | 'falhou' = restantes > 0 || estourouOrcamento
+    ? 'parcial'
+    : enviados === 0 && falhas > 0
+    ? 'falhou'
+    : 'enviada';
+
+  await admin
+    .from('email_campanha')
+    .update({
+      status,
+      total_enviados: await contar('enviado'),
+      total_falhas: await contar('falhou'),
+      total_cancelados: await contar('cancelado'),
+      erro: status === 'parcial'
+        ? 'disparo interrompido — use "Retomar" para enviar o restante'
+        : null,
+      concluida_em: status === 'enviada' ? new Date().toISOString() : null,
+    })
+    .eq('id', campanhaId);
+
+  return { status, enviados, falhas, cancelados, pendentes: restantes };
+}
