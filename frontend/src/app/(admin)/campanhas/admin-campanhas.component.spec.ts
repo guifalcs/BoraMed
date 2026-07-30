@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminCampanhasComponent } from './admin-campanhas.component';
 import {
   AdminCampanhaEmail,
+  AdminDestinatarioCampanha,
   AdminService,
   PreviaCampanhaEmail,
   SegmentoCampanha,
+  StatusDestinatarioCampanha,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 
@@ -33,6 +35,13 @@ const PREVIA: PreviaCampanhaEmail = {
   html: '<p style="color:#0f172a">Oi, Maria!</p>',
 };
 
+function destinatario(
+  email: string,
+  status: StatusDestinatarioCampanha = 'enviado',
+): AdminDestinatarioCampanha {
+  return { email, nome_completo: 'Maria', status, resend_id: 're_1', erro: null, enviado_em: null };
+}
+
 interface CompApi {
   ngOnInit(): Promise<void>;
   nome: { set(v: string): void };
@@ -57,6 +66,16 @@ interface CompApi {
   modoPrevia: { set(v: 'desktop' | 'mobile'): void };
   larguraPrevia(): number;
   previaSrcdoc(): unknown;
+  abrirDestinatarios(c: AdminCampanhaEmail): Promise<void>;
+  fecharDestinatarios(): void;
+  filtrarDestinatarios(s: StatusDestinatarioCampanha | null): Promise<void>;
+  carregarMaisDestinatarios(): Promise<void>;
+  campanhaAberta(): AdminCampanhaEmail | null;
+  destinatarios(): AdminDestinatarioCampanha[];
+  totalDestinatarios(): number;
+  temMaisDestinatarios(): boolean;
+  filtroDestinatario(): StatusDestinatarioCampanha | null;
+  onEscape(): void;
 }
 
 async function setup(overrides: Record<string, unknown> = {}) {
@@ -69,6 +88,9 @@ async function setup(overrides: Record<string, unknown> = {}) {
       .mockResolvedValue({ ok: true, data: { campanha_id: 'camp-2', enviados: 42, falhas: 0, pendentes: 0 } }),
     retomarCampanhaEmail: vi.fn().mockResolvedValue({ ok: true, data: { enviados: 100 } }),
     previaCampanhaEmail: vi.fn().mockResolvedValue({ ok: true, data: PREVIA }),
+    listarDestinatariosCampanha: vi
+      .fn()
+      .mockResolvedValue({ ok: true, data: { itens: [destinatario('a@x.com')], total: 1 } }),
     ...overrides,
   };
   const toast = { success: vi.fn(), error: vi.fn(), warning: vi.fn() };
@@ -99,6 +121,14 @@ async function setupComTemplate() {
     contarPublicoCampanha: vi.fn().mockResolvedValue({ ok: true, data: 42 }),
     listarCampanhasEmail: vi.fn().mockResolvedValue({ ok: true, data: [] }),
     previaCampanhaEmail: vi.fn().mockResolvedValue({ ok: true, data: PREVIA }),
+    // Duas linhas com status diferentes: exercita o badge e a ordem do modal.
+    listarDestinatariosCampanha: vi.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        itens: [destinatario('bruno@x.com', 'falhou'), destinatario('ana@x.com')],
+        total: 2,
+      },
+    }),
   };
 
   await TestBed.configureTestingModule({
@@ -353,5 +383,112 @@ describe('AdminCampanhasComponent', () => {
 
     expect(admin.retomarCampanhaEmail).toHaveBeenCalledWith('camp-1');
     expect(admin.listarCampanhasEmail).toHaveBeenCalledTimes(2);
+  });
+
+  it('abre o modal de destinatários com a lista da campanha', async () => {
+    const { comp, admin } = await setup();
+
+    await comp.abrirDestinatarios(CAMPANHA);
+
+    expect(admin.listarDestinatariosCampanha).toHaveBeenCalledWith('camp-1', null, 200, 0);
+    expect(comp.campanhaAberta()).toEqual(CAMPANHA);
+    expect(comp.destinatarios()).toHaveLength(1);
+    expect(comp.totalDestinatarios()).toBe(1);
+  });
+
+  it('filtrar recomeça a lista do zero com o status escolhido', async () => {
+    const { comp, admin } = await setup({
+      listarDestinatariosCampanha: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: { itens: [destinatario('f@x.com', 'falhou')], total: 1 } }),
+    });
+    await comp.abrirDestinatarios(CAMPANHA);
+
+    await comp.filtrarDestinatarios('falhou');
+
+    expect(admin.listarDestinatariosCampanha).toHaveBeenLastCalledWith('camp-1', 'falhou', 200, 0);
+    expect(comp.filtroDestinatario()).toBe('falhou');
+    // Uma página só: a lista não pode acumular a do filtro anterior.
+    expect(comp.destinatarios()).toHaveLength(1);
+  });
+
+  it('carregar mais anexa a página seguinte usando o offset certo', async () => {
+    const primeira = { ok: true, data: { itens: [destinatario('a@x.com')], total: 2 } };
+    const segunda = { ok: true, data: { itens: [destinatario('b@x.com')], total: 2 } };
+    const listar = vi.fn().mockResolvedValueOnce(primeira).mockResolvedValueOnce(segunda);
+    const { comp } = await setup({ listarDestinatariosCampanha: listar });
+
+    await comp.abrirDestinatarios(CAMPANHA);
+    expect(comp.temMaisDestinatarios()).toBe(true);
+
+    await comp.carregarMaisDestinatarios();
+
+    expect(listar).toHaveBeenLastCalledWith('camp-1', null, 200, 1);
+    expect(comp.destinatarios().map((d) => d.email)).toEqual(['a@x.com', 'b@x.com']);
+    expect(comp.temMaisDestinatarios()).toBe(false);
+  });
+
+  it('fechar o modal descarta a lista (são e-mails de pessoas reais)', async () => {
+    const { comp } = await setup();
+    await comp.abrirDestinatarios(CAMPANHA);
+
+    comp.fecharDestinatarios();
+
+    expect(comp.campanhaAberta()).toBeNull();
+    expect(comp.destinatarios()).toEqual([]);
+    expect(comp.totalDestinatarios()).toBe(0);
+  });
+
+  it('Esc fecha o modal, e não faz nada quando ele está fechado', async () => {
+    const { comp } = await setup();
+
+    comp.onEscape(); // fechado: no-op
+    expect(comp.campanhaAberta()).toBeNull();
+
+    await comp.abrirDestinatarios(CAMPANHA);
+    comp.onEscape();
+    expect(comp.campanhaAberta()).toBeNull();
+  });
+
+  it('erro ao listar destinatários vira toast', async () => {
+    const { comp, toast } = await setup({
+      listarDestinatariosCampanha: vi
+        .fn()
+        .mockResolvedValue({ ok: false, error: 'permission_denied' }),
+    });
+
+    await comp.abrirDestinatarios(CAMPANHA);
+
+    expect(toast.error).toHaveBeenCalledWith('permission_denied');
+    expect(comp.destinatarios()).toEqual([]);
+  });
+
+  it('renderiza o modal de destinatários com as linhas e os filtros', async () => {
+    const { fixture, comp } = await setupComTemplate();
+
+    await comp.abrirDestinatarios(CAMPANHA);
+    fixture.detectChanges();
+
+    const dialog: HTMLElement = fixture.nativeElement.querySelector('[role="dialog"]');
+    expect(dialog).toBeTruthy();
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+
+    const texto = dialog.textContent ?? '';
+    expect(texto).toContain('bruno@x.com');
+    expect(texto).toContain('ana@x.com');
+    expect(texto).toContain('Falhou');
+    expect(texto).toContain('Mostrando 2 de 2');
+
+    // Um chip por filtro, com o "Todos" marcado.
+    const chips = dialog.querySelectorAll('.dest-chip');
+    expect(chips.length).toBe(5);
+    expect(chips[0].getAttribute('aria-pressed')).toBe('true');
+
+    // Fechado, o dialog sai do DOM.
+    comp.fecharDestinatarios();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+
+    fixture.destroy();
   });
 });

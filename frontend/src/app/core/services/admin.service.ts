@@ -393,6 +393,23 @@ export interface PreviaCampanhaEmail {
   html: string;
 }
 
+export type StatusDestinatarioCampanha = 'pendente' | 'enviado' | 'falhou' | 'cancelado';
+
+export interface AdminDestinatarioCampanha {
+  email: string;
+  nome_completo: string | null;
+  status: StatusDestinatarioCampanha;
+  resend_id: string | null;
+  erro: string | null;
+  enviado_em: string | null;
+}
+
+/** Página de destinatários + o total que casa com o filtro (não da página). */
+export interface PaginaDestinatarios {
+  itens: AdminDestinatarioCampanha[];
+  total: number;
+}
+
 export interface ResultadoDisparoCampanha {
   campanha_id?: string;
   status?: 'enviada' | 'parcial' | 'falhou';
@@ -1465,6 +1482,39 @@ export class AdminService {
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as AdminCampanhaEmail[] };
+  }
+
+  /**
+   * Destinatários de uma campanha, para o modal do histórico. A tabela não tem
+   * grant para `authenticated`, então a leitura passa pela RPC `SECURITY
+   * DEFINER` — mesma via do histórico.
+   *
+   * A RPC repete o `total` (linhas que casam com o filtro) em cada linha; aqui
+   * ele é extraído uma vez e sai do payload dos itens.
+   */
+  async listarDestinatariosCampanha(
+    campanhaId: string,
+    status: StatusDestinatarioCampanha | null = null,
+    limit = 200,
+    offset = 0,
+  ): Promise<ServiceResult<PaginaDestinatarios>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_destinatarios_campanha', {
+      p_campanha_id: campanhaId,
+      p_status: status,
+      p_limit: limit,
+      p_offset: offset,
+    });
+    if (error) return { ok: false, error: error.message };
+
+    const linhas = (data ?? []) as (AdminDestinatarioCampanha & { total: number })[];
+    return {
+      ok: true,
+      data: {
+        // Sem linhas não há `total` para ler: filtro sem resultado = zero.
+        total: linhas.length > 0 ? Number(linhas[0].total) : 0,
+        itens: linhas.map(({ total: _total, ...linha }) => linha),
+      },
+    };
   }
 
   /**

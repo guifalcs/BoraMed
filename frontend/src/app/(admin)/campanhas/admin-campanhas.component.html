@@ -294,6 +294,20 @@
                     <span class="status-badge" [attr.data-status]="c.status">{{ c.status }}</span>
                   </td>
                   <td class="px-3 py-2 text-right">
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm"
+                      [disabled]="c.total_destinatarios === 0"
+                      [title]="
+                        c.total_destinatarios === 0
+                          ? 'Esta campanha não registrou destinatários'
+                          : 'Ver quem recebeu'
+                      "
+                      (click)="abrirDestinatarios(c)"
+                    >
+                      <app-ui-icon [icon]="iconUsers" [size]="14" />
+                      Destinatários
+                    </button>
                     @if (c.status === 'parcial' || c.status === 'falhou' || c.status === 'enviando') {
                       <button
                         type="button"
@@ -314,3 +328,113 @@
     </section>
   </div>
 </div>
+
+<!-- ===== MODAL: DESTINATÁRIOS DA CAMPANHA ===== -->
+@if (campanhaAberta(); as campanha) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+    role="presentation"
+    (click)="fecharDestinatarios()"
+  >
+    <section
+      class="dest-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dest-modal-titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4">
+        <div>
+          <h2 id="dest-modal-titulo" class="text-base font-semibold text-[var(--color-text)]">
+            Destinatários — {{ campanha.nome }}
+          </h2>
+          <p class="mt-0.5 text-xs text-[var(--color-text-muted)]">
+            {{ rotuloSegmento(campanha.segmento) }} · {{ formatarData(campanha.criado_em) }} ·
+            {{ campanha.total_enviados }}/{{ campanha.total_destinatarios }} enviados
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn--outline btn--sm"
+          aria-label="Fechar"
+          (click)="fecharDestinatarios()"
+        >
+          Fechar
+        </button>
+      </header>
+
+      <!-- Filtros -->
+      <div class="flex flex-wrap gap-1.5 border-b border-[var(--color-border)] px-4 py-2.5">
+        @for (f of filtrosDestinatario; track f.rotulo) {
+          <button
+            type="button"
+            class="dest-chip"
+            [attr.aria-pressed]="filtroDestinatario() === f.valor"
+            (click)="filtrarDestinatarios(f.valor)"
+          >
+            {{ f.rotulo }}
+          </button>
+        }
+      </div>
+
+      <!-- Lista -->
+      <div class="dest-corpo">
+        @if (carregandoDestinatarios() && destinatarios().length === 0) {
+          <p class="p-4 text-sm text-[var(--color-text-muted)]">Carregando…</p>
+        } @else if (destinatarios().length === 0) {
+          <p class="p-4 text-sm text-[var(--color-text-muted)]">
+            Nenhum destinatário com esse filtro.
+          </p>
+        } @else {
+          <table class="w-full min-w-[560px] border-collapse text-sm">
+            <thead class="sticky top-0 bg-[var(--color-surface-2)]">
+              <tr class="text-left text-xs uppercase text-[var(--color-text-muted)]">
+                <th class="px-4 py-2 font-semibold">E-mail</th>
+                <th class="px-3 py-2 font-semibold">Nome</th>
+                <th class="px-3 py-2 font-semibold">Status</th>
+                <th class="px-3 py-2 font-semibold">Quando</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of destinatarios(); track d.email) {
+                <tr class="border-t border-[var(--color-border)] align-top">
+                  <td class="px-4 py-2 text-[var(--color-text)]">{{ d.email }}</td>
+                  <td class="px-3 py-2 text-[var(--color-text-muted)]">
+                    {{ d.nome_completo || '—' }}
+                  </td>
+                  <td class="px-3 py-2">
+                    <span class="status-badge" [attr.data-dest]="d.status">
+                      {{ rotuloStatusDestinatario(d.status) }}
+                    </span>
+                    @if (d.erro) {
+                      <span class="dest-erro" [title]="d.erro">{{ d.erro }}</span>
+                    }
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-2 text-[var(--color-text-muted)]">
+                    {{ d.enviado_em ? formatarData(d.enviado_em) : '—' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+      <footer class="flex items-center justify-between gap-3 border-t border-[var(--color-border)] p-3">
+        <span class="text-xs text-[var(--color-text-muted)]">
+          Mostrando {{ destinatarios().length }} de {{ totalDestinatarios() }}
+        </span>
+        @if (temMaisDestinatarios()) {
+          <button
+            type="button"
+            class="btn btn--outline btn--sm"
+            [disabled]="carregandoDestinatarios()"
+            (click)="carregarMaisDestinatarios()"
+          >
+            {{ carregandoDestinatarios() ? 'Carregando…' : 'Carregar mais' }}
+          </button>
+        }
+      </footer>
+    </section>
+  </div>
+}

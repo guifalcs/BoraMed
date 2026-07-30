@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnInit,
   computed,
   effect,
@@ -9,12 +10,23 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Eye, Mail, Monitor, RefreshCw, Send, Smartphone, TestTube2 } from 'lucide-angular';
+import {
+  Eye,
+  Mail,
+  Monitor,
+  RefreshCw,
+  Send,
+  Smartphone,
+  TestTube2,
+  Users,
+} from 'lucide-angular';
 import {
   AdminCampanhaEmail,
+  AdminDestinatarioCampanha,
   AdminService,
   PreviaCampanhaEmail,
   SegmentoCampanha,
+  StatusDestinatarioCampanha,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
@@ -36,6 +48,19 @@ const ROTULO_SEGMENTO: Record<SegmentoCampanha, string> = {
  * chamada à edge function — sem isto seria uma por caractere digitado.
  */
 const DEBOUNCE_PREVIA_MS = 700;
+
+/** Página do modal de destinatários. O teto da RPC é 500. */
+const PAGINA_DESTINATARIOS = 200;
+
+/** Filtros do modal. `null` = todos. */
+const FILTROS_DESTINATARIO: readonly { valor: StatusDestinatarioCampanha | null; rotulo: string }[] =
+  [
+    { valor: null, rotulo: 'Todos' },
+    { valor: 'enviado', rotulo: 'Enviados' },
+    { valor: 'falhou', rotulo: 'Falhas' },
+    { valor: 'cancelado', rotulo: 'Descadastrados' },
+    { valor: 'pendente', rotulo: 'Pendentes' },
+  ];
 
 /** Larguras de simulação: ~600px é o padrão de e-mail; 375px é o iPhone base. */
 const LARGURA_PREVIA = { desktop: 640, mobile: 375 } as const;
@@ -139,6 +164,19 @@ export class AdminCampanhasComponent implements OnInit {
     return html ? this.sanitizer.bypassSecurityTrustHtml(html) : null;
   });
 
+  // ---- Modal de destinatários ----
+  /** Campanha aberta no modal. `null` = modal fechado. */
+  protected readonly campanhaAberta = signal<AdminCampanhaEmail | null>(null);
+  protected readonly destinatarios = signal<AdminDestinatarioCampanha[]>([]);
+  protected readonly totalDestinatarios = signal(0);
+  protected readonly carregandoDestinatarios = signal(false);
+  protected readonly filtroDestinatario = signal<StatusDestinatarioCampanha | null>(null);
+  protected readonly filtrosDestinatario = FILTROS_DESTINATARIO;
+
+  protected readonly temMaisDestinatarios = computed(
+    () => this.destinatarios().length < this.totalDestinatarios(),
+  );
+
   protected readonly iconMail = Mail;
   protected readonly iconSend = Send;
   protected readonly iconTeste = TestTube2;
@@ -146,6 +184,7 @@ export class AdminCampanhasComponent implements OnInit {
   protected readonly iconEye = Eye;
   protected readonly iconDesktop = Monitor;
   protected readonly iconMobile = Smartphone;
+  protected readonly iconUsers = Users;
 
   constructor() {
     // Re-renderiza sozinho enquanto o admin escreve, com debounce. Fica no
@@ -340,6 +379,77 @@ export class AdminCampanhasComponent implements OnInit {
       this.toast.error(resultado.error);
     }
     this.retomandoId.set(null);
+  }
+
+  // ---- Modal de destinatários ----
+
+  async abrirDestinatarios(campanha: AdminCampanhaEmail): Promise<void> {
+    this.campanhaAberta.set(campanha);
+    this.filtroDestinatario.set(null);
+    this.destinatarios.set([]);
+    this.totalDestinatarios.set(0);
+    await this.carregarDestinatarios();
+  }
+
+  protected fecharDestinatarios(): void {
+    this.campanhaAberta.set(null);
+    // Não guarda a lista: são e-mails de pessoas reais, não vale manter em
+    // memória depois de fechar.
+    this.destinatarios.set([]);
+    this.totalDestinatarios.set(0);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.campanhaAberta()) this.fecharDestinatarios();
+  }
+
+  async filtrarDestinatarios(status: StatusDestinatarioCampanha | null): Promise<void> {
+    if (this.filtroDestinatario() === status) return;
+    this.filtroDestinatario.set(status);
+    this.destinatarios.set([]);
+    await this.carregarDestinatarios();
+  }
+
+  /** Próxima página, anexando ao que já está na tela. */
+  async carregarMaisDestinatarios(): Promise<void> {
+    await this.carregarDestinatarios(this.destinatarios().length);
+  }
+
+  private async carregarDestinatarios(offset = 0): Promise<void> {
+    const campanha = this.campanhaAberta();
+    if (!campanha) return;
+
+    this.carregandoDestinatarios.set(true);
+    const resultado = await this.adminService.listarDestinatariosCampanha(
+      campanha.id,
+      this.filtroDestinatario(),
+      PAGINA_DESTINATARIOS,
+      offset,
+    );
+
+    if (resultado.ok) {
+      this.destinatarios.update((atual) =>
+        offset === 0 ? resultado.data.itens : [...atual, ...resultado.data.itens],
+      );
+      // Página vazia não zera o total já conhecido — só a primeira página manda.
+      if (offset === 0 || resultado.data.total > 0) {
+        this.totalDestinatarios.set(resultado.data.total);
+      }
+    } else {
+      this.toast.error(resultado.error);
+    }
+    this.carregandoDestinatarios.set(false);
+  }
+
+  protected rotuloStatusDestinatario(status: StatusDestinatarioCampanha): string {
+    const rotulos: Record<StatusDestinatarioCampanha, string> = {
+      enviado: 'Enviado',
+      falhou: 'Falhou',
+      cancelado: 'Descadastrado',
+      pendente: 'Pendente',
+    };
+    return rotulos[status] ?? status;
   }
 
   protected formatarData(iso: string): string {

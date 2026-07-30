@@ -218,6 +218,22 @@ Como o status sai dos totais do log:
 `enviada` é terminal: `concluida_em` é preenchido e a retomada passa a recusar
 com "campanha já concluída".
 
+### Quem recebeu — botão "Destinatários"
+
+Cada linha do histórico abre um modal com a lista por destinatário: e-mail, nome,
+status, quando saiu e o erro do Resend quando houve. Filtros por status
+(enviados, falhas, descadastrados, pendentes) e paginação de 200 em 200.
+
+A ordem é **problema primeiro** (falhou → pendente → cancelado → enviado): quem
+abre essa lista quase sempre está investigando o que não chegou.
+
+Sai da RPC `admin_listar_destinatarios_campanha` (`SECURITY DEFINER`, grant para
+`authenticated`, `is_admin()` checado dentro) — as tabelas não têm grant para o
+cliente. O teto por chamada é 500 linhas; o `total` vem junto de cada linha via
+`count(*) OVER ()`, para a tela mostrar "mostrando 200 de 1.234" sem uma segunda
+consulta. São e-mails de pessoas reais: a lista é descartada da memória ao fechar
+o modal.
+
 `falhou` sem nenhum envio geralmente é chave inválida, domínio não verificado ou
 remetente fora do domínio. A resposta literal do Resend fica em
 `email_campanha.erro` e, por destinatário, em
