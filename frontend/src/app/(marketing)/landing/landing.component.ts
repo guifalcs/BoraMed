@@ -233,7 +233,7 @@ export class LandingComponent implements OnDestroy {
       title: 'Simulados Processuais',
       badge: 'Por tema',
       description:
-        'Escolha temas e quantidade de questões. A montagem aleatória acontece no servidor.',
+        'Escolha temas e quantidade de questões. Hoje com conteúdo do primeiro período.',
       icon: ClipboardList,
       variant: 'process',
       image: {
@@ -247,7 +247,7 @@ export class LandingComponent implements OnDestroy {
       title: 'Laboratório',
       badge: 'Com imagem',
       description:
-        'Questões autorais com imagem de lâminas ou peças para treinar reconhecimento e raciocínio visual.',
+        'Questões autorais com imagem de lâminas ou peças do primeiro período, para treinar o raciocínio visual.',
       icon: FlaskConical,
       variant: 'lab',
       image: {
@@ -333,7 +333,7 @@ export class LandingComponent implements OnDestroy {
   // TODO(integração): trocar por dados vindos de listarPlanos() quando o
   // plano Essencial existir no backend.
   private static readonly ESSENCIAL_FEATURES: readonly string[] = [
-    'Treinos com provas nacionais (N1, N2 e Teste de Progresso)',
+    'Treinos no modelo das avaliações nacionais',
     'Correção das questões abertas pela Aurora (IA)',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',
@@ -343,7 +343,7 @@ export class LandingComponent implements OnDestroy {
 
   private static readonly AVANCADO_FEATURES: readonly string[] = [
     'Tudo do plano Essencial',
-    'Simulados personalizados (processual e laboratório), com impressão em PDF',
+    'Simulados personalizados (processual e laboratório) do primeiro período, com impressão em PDF',
     'Materiais de estudo',
     'Flashcards: decks oficiais, seus e da comunidade',
   ];
@@ -439,7 +439,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'O que torna as questões do BoraMed diferentes?',
       answer:
-        'Nosso diferencial são as questões autorais, criadas no mesmo formato e nível de cobrança das avaliações processuais e laboratório, para você treinar o raciocínio que a prova exige. Tudo é organizado no modelo real do dia da avaliação.',
+        'Nosso diferencial são as questões autorais, criadas no mesmo formato e nível de cobrança das avaliações que você faz, para treinar o raciocínio que a prova exige. Tudo é organizado no modelo real do dia da avaliação. Os treinos processuais e de laboratório cobrem, hoje, o conteúdo do primeiro período; os demais períodos estão em produção.',
     },
     {
       question: 'O BoraMed tem vínculo oficial com a Afya?',
@@ -479,7 +479,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Existe simulado de laboratório?',
       answer:
-        'Sim, no plano Avançado. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra.',
+        'Sim, no plano Avançado. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra. Hoje o acervo de laboratório cobre o conteúdo do primeiro período e segue crescendo.',
     },
     {
       question: 'Como funcionam os flashcards?',

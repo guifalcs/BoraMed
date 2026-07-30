@@ -19,7 +19,7 @@ export const Login: Story = {
   args: {
     kicker: 'Foco inicial em alunos da rede Afya',
     titulo: 'Treine com questões autorais no <em>modelo da sua prova.</em>',
-    descricao: 'Simulados independentes no estilo das avaliações nacionais, processuais (N1/N2) e laboratório (P1/P2). Estude com foco no formato que você encontra na rotina.',
+    descricao: 'Simulados independentes no estilo das avaliações nacionais, processuais e de laboratório. Os treinos processuais e de laboratório cobrem, por enquanto, o conteúdo do primeiro período.',
     showMetrics: true,
   },
 };
