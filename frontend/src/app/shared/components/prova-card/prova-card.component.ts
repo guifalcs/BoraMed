@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import type { Prova, SubtipoProva } from '../../../core/models/prova';
+import { periodoLabel, type Prova, type SubtipoProva } from '../../../core/models/prova';
 
 export type ProvaCardVariant = 'card' | 'row';
 
@@ -38,6 +38,9 @@ export class ProvaCardComponent {
     const s = this.prova().subtipo ?? this.prova().subtipo_nacional;
     return s ? SUBTIPO_LABEL_FULL[s] : null;
   });
+
+  protected readonly periodoTexto = computed(() => periodoLabel(this.prova().periodo));
+  protected readonly periodoTextoCurto = computed(() => periodoLabel(this.prova().periodo, true));
 
   protected readonly badgeClass = computed(() => {
     const s = this.prova().subtipo ?? this.prova().subtipo_nacional;

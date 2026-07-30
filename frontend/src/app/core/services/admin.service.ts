@@ -279,7 +279,8 @@ export interface AdminProva {
   subtipo: string | null;
   publicada: boolean;
   arquivada: boolean;
-  periodo: number;
+  /** Nulo em provas sem período específico — hoje, apenas as TPI. */
+  periodo: number | null;
   qtd_questoes: number;
   criado_em: string;
   disciplina_id: string | null;
@@ -310,7 +311,8 @@ export interface ProvaInput {
   publicada?: boolean;
   arquivada?: boolean;
   faculdade_id: string;
-  periodo: number;
+  /** `null` para TPI, que não tem período específico. */
+  periodo: number | null;
   subtipo_nacional?: string | null;
   disciplina_id?: string | null;
 }
@@ -1108,7 +1110,9 @@ export class AdminService {
       .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)', {
         count: 'exact',
       })
-      .gt('periodo', 0)
+      // Exclui os simulados gerados pelos alunos (origem 'personalizado', periodo 0).
+      // Filtrar por `periodo > 0` também descartaria as TPI, que ficam sem período.
+      .neq('origem', 'personalizado')
       .order('criado_em', { ascending: false })
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
@@ -1124,7 +1128,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('prova')
       .select('id,nome')
-      .gt('periodo', 0)
+      .neq('origem', 'personalizado')
       .order('nome', { ascending: true });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as { id: string; nome: string }[] };

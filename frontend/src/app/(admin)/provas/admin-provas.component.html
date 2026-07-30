@@ -54,7 +54,7 @@
             <td><span class="type-badge">{{ p.origem }}</span></td>
             <td>{{ p.faculdade?.sigla ?? '—' }}</td>
             <td>{{ p.disciplina?.sigla ?? '—' }}</td>
-            <td>{{ p.periodo }}º</td>
+            <td>{{ periodoLabel(p.periodo) }}</td>
             <td>{{ p.qtd_questoes }}</td>
             <td class="data-cell">{{ formatarData(p.criado_em) }}</td>
             <td class="actions-cell">
@@ -215,16 +215,22 @@
           </div>
 
           <div class="form-section">
-            <label class="form-label">Período <span class="required">*</span></label>
-            <input
-              class="form-input"
-              type="number"
-              min="1"
-              max="12"
-              placeholder="1"
-              [ngModel]="fPeriodo()"
-              (ngModelChange)="onPeriodoFormChange($event)"
-            />
+            @if (ehTesteProgresso()) {
+              <label class="form-label">Período</label>
+              <input class="form-input" type="text" value="Todos os períodos" disabled />
+              <p class="hint">A TPI avalia todos os períodos, então é cadastrada sem período.</p>
+            } @else {
+              <label class="form-label">Período <span class="required">*</span></label>
+              <input
+                class="form-input"
+                type="number"
+                min="1"
+                max="12"
+                placeholder="1"
+                [ngModel]="fPeriodo()"
+                (ngModelChange)="onPeriodoFormChange($event)"
+              />
+            }
           </div>
         </div>
 
@@ -261,17 +267,6 @@
           />
         </div>
 
-        <div class="form-section">
-          <app-ui-select
-            label="Matéria"
-            name="disciplina"
-            [options]="opcoesDisciplinaForm()"
-            [value]="fDisciplinaId()"
-            (valueChange)="fDisciplinaId.set($any($event) ?? '')"
-          />
-          <p class="hint">Deixe em branco para provas sem matéria única (ex: integradoras)</p>
-        </div>
-
         @if (opcoesSubtipoForm().length > 0) {
           <div class="form-section">
             <app-ui-select
@@ -279,8 +274,21 @@
               name="subtipo"
               [options]="opcoesSubtipoForm()"
               [value]="fSubtipoNacional()"
-              (valueChange)="fSubtipoNacional.set($any($event) ?? '')"
+              (valueChange)="onSubtipoFormChange($any($event) ?? '')"
             />
+          </div>
+        }
+
+        @if (!ehTesteProgresso()) {
+          <div class="form-section">
+            <app-ui-select
+              label="Matéria"
+              name="disciplina"
+              [options]="opcoesDisciplinaForm()"
+              [value]="fDisciplinaId()"
+              (valueChange)="fDisciplinaId.set($any($event) ?? '')"
+            />
+            <p class="hint">Deixe em branco para provas sem matéria única (ex: integradoras)</p>
           </div>
         }
 

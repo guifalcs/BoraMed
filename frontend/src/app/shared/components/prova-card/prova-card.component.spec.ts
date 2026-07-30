@@ -188,4 +188,29 @@ describe('ProvaCardComponent', () => {
       expect(badge).toBeNull();
     });
   });
+
+  // ── Prova sem período (TPI) ───────────────────────────────────────────────
+
+  describe('prova sem período', () => {
+    const tpi = () =>
+      provaFactory({
+        // Nome sem "º P" para a asserção abaixo não casar com o próprio título.
+        nome: 'TPI 2025.1',
+        periodo: null,
+        subtipo: 'teste_progresso',
+        subtipo_nacional: 'teste_progresso',
+      });
+
+    it('mostra "Todos os períodos" na variante "card"', async () => {
+      const fixture = await createComponent(tpi(), 'card');
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todos os períodos');
+    });
+
+    it('mostra "Todos" na variante "row"', async () => {
+      const fixture = await createComponent(tpi(), 'row');
+      const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(texto).toContain('Todos');
+      expect(texto).not.toContain('º P');
+    });
+  });
 });

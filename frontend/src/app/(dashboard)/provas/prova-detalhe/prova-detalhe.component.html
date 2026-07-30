@@ -19,7 +19,7 @@
         @if (isPersonalizado()) {
           {{ prova()!.qtd_questoes }} questões · Simulado personalizado
         } @else {
-          {{ prova()!.periodo }}º período · {{ prova()!.qtd_questoes }} questões
+          {{ periodoTexto() }} · {{ prova()!.qtd_questoes }} questões
         }
       </p>
 

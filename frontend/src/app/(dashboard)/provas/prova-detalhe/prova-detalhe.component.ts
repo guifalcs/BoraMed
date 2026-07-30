@@ -11,7 +11,7 @@ import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
-import type { ProvaComFaculdade } from '../../../core/models/prova';
+import { periodoLabel, type ProvaComFaculdade } from '../../../core/models/prova';
 import type { ModoProva, Tentativa } from '../../../core/models/tentativa';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
@@ -50,6 +50,8 @@ export class ProvaDetalheComponent implements OnInit {
     const p = this.prova();
     return p !== null && p.origem === 'personalizado';
   });
+
+  protected readonly periodoTexto = computed(() => periodoLabel(this.prova()?.periodo));
 
   protected readonly backRoute = computed(() =>
     this.isPersonalizado() ? '/dashboard/simulados' : '/dashboard/simulados/rede-afya',

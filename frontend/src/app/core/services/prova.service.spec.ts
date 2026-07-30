@@ -153,14 +153,24 @@ describe('ProvaService', () => {
       expect(orderMock).not.toHaveBeenCalledWith('edicao', expect.anything());
     });
 
-    it('aplica filtro de periodos (array) via .in', async () => {
+    it('aplica filtro de periodos preservando as provas sem periodo (TPI)', async () => {
       const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 1 });
       mockFrom.mockReturnValue(builder);
 
       await service.listarProvasNacionais({ periodos: [1, 2] });
 
-      const inMock = builder['in'] as ReturnType<typeof vi.fn>;
-      expect(inMock).toHaveBeenCalledWith('periodo', [1, 2]);
+      const orMock = builder['or'] as ReturnType<typeof vi.fn>;
+      expect(orMock).toHaveBeenCalledWith('periodo.in.(1,2),periodo.is.null');
+    });
+
+    it('aplica filtro de materias preservando as provas sem periodo (TPI)', async () => {
+      const builder = makeQueryBuilder({ data: [provaMock], error: null, count: 1 });
+      mockFrom.mockReturnValue(builder);
+
+      await service.listarProvasNacionais({ disciplinaIds: ['soi-1', 'soi-4'] });
+
+      const orMock = builder['or'] as ReturnType<typeof vi.fn>;
+      expect(orMock).toHaveBeenCalledWith('disciplina_id.in.(soi-1,soi-4),periodo.is.null');
     });
 
     it('não aplica filtros opcionais quando as listas estão vazias', async () => {

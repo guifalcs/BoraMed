@@ -11,7 +11,8 @@ export interface Prova {
   id: string;
   faculdade_id: string | null;
   nome: string;
-  periodo: number;
+  /** Nulo em provas sem período específico — hoje, apenas as TPI. */
+  periodo: number | null;
   tipo: TipoProva;
   origem: OrigemProva;
   formato: FormatoProva | null;
@@ -48,4 +49,21 @@ export interface ListarProvasParams {
 export interface ProvasPaginadas {
   provas: Prova[];
   total: number;
+}
+
+/**
+ * O teste de progresso é aplicado a todos os períodos ao mesmo tempo, então é a
+ * única prova que fica sem `periodo`. `subtipo` é a coluna atual; `subtipo_nacional`
+ * é a legada, mantida no fallback.
+ */
+export function ehTesteProgresso(
+  prova: Pick<Prova, 'subtipo' | 'subtipo_nacional'>,
+): boolean {
+  return (prova.subtipo ?? prova.subtipo_nacional) === 'teste_progresso';
+}
+
+/** Rótulo do período, com o texto de "sem período" para as TPI. */
+export function periodoLabel(periodo: number | null | undefined, curto = false): string {
+  if (periodo === null || periodo === undefined) return curto ? 'Todos' : 'Todos os períodos';
+  return curto ? `${periodo}º P` : `${periodo}º período`;
 }

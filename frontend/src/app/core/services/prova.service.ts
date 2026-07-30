@@ -97,11 +97,16 @@ export class ProvaService {
           `subtipo.in.(${vals}),and(subtipo.is.null,subtipo_nacional.in.(${vals}))`,
         );
       }
+      // Provas sem período (TPI) valem para todos os períodos, então nunca são
+      // recortadas pelos filtros de período/matéria — senão sumiriam da lista de
+      // quem filtra por qualquer período.
       if (params.periodos && params.periodos.length > 0) {
-        query = query.in('periodo', params.periodos);
+        query = query.or(`periodo.in.(${params.periodos.join(',')}),periodo.is.null`);
       }
       if (params.disciplinaIds && params.disciplinaIds.length > 0) {
-        query = query.in('disciplina_id', params.disciplinaIds);
+        query = query.or(
+          `disciplina_id.in.(${params.disciplinaIds.join(',')}),periodo.is.null`,
+        );
       }
       const busca = params.busca?.trim();
       if (busca) {

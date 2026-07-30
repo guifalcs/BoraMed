@@ -130,6 +130,15 @@ export class AdminProvasComponent implements OnInit {
     { value: 'afya', label: 'Afya' },
   ];
 
+  /**
+   * O teste de progresso avalia todos os períodos de uma vez, então não tem
+   * período nem matéria única — os dois campos somem do formulário e vão nulos
+   * para o banco (regra reforçada pelo CHECK `prova_periodo_tpi_check`).
+   */
+  protected readonly ehTesteProgresso = computed(
+    () => this.fFormato() === 'nacional' && this.fSubtipoNacional() === 'teste_progresso',
+  );
+
   protected readonly opcoesSubtipoForm = computed<SelectOption[]>(() =>
     this.fFormato() === 'nacional'
       ? [
@@ -212,7 +221,23 @@ export class AdminProvasComponent implements OnInit {
 
   protected onFormatoChange(valor: string): void {
     this.fFormato.set(valor || 'nacional');
-    this.fSubtipoNacional.set('');
+    // Limpar o subtipo pode tirar a prova de TPI: o período volta a ser exigido.
+    this.onSubtipoFormChange('');
+  }
+
+  /**
+   * Ao marcar TPI, zera período e matéria (a prova vale para todos); ao sair de
+   * TPI, devolve o padrão do período para o campo não voltar vazio e barrar o save.
+   */
+  protected onSubtipoFormChange(valor: string): void {
+    const eraTpi = this.ehTesteProgresso();
+    this.fSubtipoNacional.set(valor);
+    if (this.ehTesteProgresso()) {
+      this.fPeriodo.set('');
+      this.fDisciplinaId.set('');
+    } else if (eraTpi && !this.fPeriodo()) {
+      this.fPeriodo.set('1');
+    }
   }
 
   /**
@@ -274,7 +299,10 @@ export class AdminProvasComponent implements OnInit {
 
   async salvarDetalhes(): Promise<void> {
     if (!this.fNome().trim()) { this.toast.error('Nome é obrigatório.'); return; }
-    if (!this.fPeriodo() || Number(this.fPeriodo()) < 1) { this.toast.error('Período inválido.'); return; }
+    if (!this.ehTesteProgresso() && (!this.fPeriodo() || Number(this.fPeriodo()) < 1)) {
+      this.toast.error('Período inválido.');
+      return;
+    }
     const input = this.montarInputProva();
     if (this.modoEdicao()) {
       const id = this.provaId();
@@ -307,7 +335,7 @@ export class AdminProvasComponent implements OnInit {
     this.fFormato.set(p.formato ?? 'nacional');
     this.fRede.set(p.rede ?? '');
     this.fFaculdadeId.set(p.faculdade_id ?? '');
-    this.fPeriodo.set(String(p.periodo));
+    this.fPeriodo.set(p.periodo === null ? '' : String(p.periodo));
     this.fSubtipoNacional.set(p.subtipo_nacional ?? '');
     this.fDisciplinaId.set(p.disciplina_id ?? '');
     this.fPublicada.set(p.publicada);
@@ -472,6 +500,7 @@ export class AdminProvasComponent implements OnInit {
   }
 
   private montarInputProva(): ProvaInput {
+    const tpi = this.ehTesteProgresso();
     return {
       nome: this.fNome().trim(),
       tipo: this.fTipo() === 'faculdade' ? 'faculdade' : 'autoral',
@@ -479,10 +508,10 @@ export class AdminProvasComponent implements OnInit {
       formato: this.fFormato(),
       rede: this.fRede() || null,
       faculdade_id: this.fFaculdadeId(),
-      periodo: Number(this.fPeriodo()),
+      periodo: tpi ? null : Number(this.fPeriodo()),
       subtipo: this.fSubtipoNacional() || null,
       subtipo_nacional: this.fFormato() === 'nacional' ? (this.fSubtipoNacional() || null) : null,
-      disciplina_id: this.fDisciplinaId() || null,
+      disciplina_id: tpi ? null : (this.fDisciplinaId() || null),
       publicada: this.fPublicada(),
       arquivada: this.fArquivada(),
     };
@@ -517,6 +546,9 @@ export class AdminProvasComponent implements OnInit {
 
   // ── Helpers ──
   private traduzirErroProva(erro: string): string {
+    if (erro.includes('prova_periodo_tpi_check')) {
+      return 'TPI não tem período: deixe o período em branco. As demais provas exigem um período.';
+    }
     if (erro.includes('prova_tipo_periodo_edicao_unique') || erro.includes('duplicate') || erro.includes('unique')) {
       return 'Já existe uma prova com esse tipo, período e edição. Altere a edição ou escolha outro período.';
     }
@@ -530,6 +562,7 @@ export class AdminProvasComponent implements OnInit {
   }
 
   protected tipoLabel(tipo: string | null): string { return this.opcoesTipo.find((o) => o.value === tipo)?.label ?? tipo ?? '—'; }
+  protected periodoLabel(periodo: number | null): string { return periodo === null ? 'Todos' : `${periodo}º`; }
   protected formatarData(data: string | null | undefined): string { return data ? DATA_CURTA_FMT.format(new Date(data)) : '—'; }
   protected enunciadoCurto(texto: string): string { return texto.length > 100 ? texto.slice(0, 100) + '…' : texto; }
   protected gabaritoLabel(q: QuestaoParseada): string {
