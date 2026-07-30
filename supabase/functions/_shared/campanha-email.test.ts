@@ -187,4 +187,8 @@ Deno.test('montarEmail: um destinatário por envio, com List-Unsubscribe', () =>
     email.headers['List-Unsubscribe'],
     '<https://boramed.com.br/descadastrar?token=tok-1>',
   );
+  // NÃO declaramos um-clique: a URL é uma página do SPA e um POST nela não
+  // grava o opt-out. Prometer e não cumprir gera "descadastrei e continuo
+  // recebendo" — e a próxima ação da pessoa é marcar spam.
+  assertEquals(email.headers['List-Unsubscribe-Post'], undefined);
 });

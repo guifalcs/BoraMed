@@ -236,3 +236,10 @@ select defaclacl from pg_default_acl
   `resend_id` gravado em `email_campanha_destinatario` permite cruzar um evento
   do painel com o destinatário.
 - Respeitar o descadastro: nunca reimportar manualmente quem saiu.
+- O e-mail leva o header `List-Unsubscribe` (o Gmail mostra "Cancelar inscrição"
+  no topo da mensagem, e o clique abre a página de opt-out no browser). **Não**
+  levamos `List-Unsubscribe-Post`: aquele header declara que a URL processa um
+  POST de um-clique, e a nossa é uma página do SPA — um POST devolve 200 sem
+  gravar nada. O provedor diria à pessoa que ela saiu da lista enquanto o
+  opt-out não seria registrado, e ela marcaria a campanha seguinte como spam.
+  Para ter o um-clique de verdade é preciso um endpoint que aceite POST.

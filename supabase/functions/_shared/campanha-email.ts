@@ -347,9 +347,17 @@ export function montarEmail(
       dados,
     ),
     headers: {
-      // Descadastro em um clique no Gmail/Outlook — pesa na reputação do domínio.
+      // Gmail/Outlook usam este header para mostrar "Cancelar inscrição" no topo
+      // da mensagem; o clique abre a URL no browser, onde a página de opt-out
+      // faz o trabalho. Pesa na reputação do domínio.
+      //
+      // SEM `List-Unsubscribe-Post`: aquele header declara que a URL processa um
+      // POST (RFC 8058, um-clique). A nossa é uma página do SPA — um POST nela
+      // devolve 200 e não grava nada, então o provedor avisaria a pessoa que ela
+      // saiu da lista enquanto o opt-out não seria registrado. Ela receberia a
+      // campanha seguinte e marcaria como spam. Prometer o um-clique sem
+      // endpoint é pior do que não prometer.
       'List-Unsubscribe': `<${urlDescadastro}>`,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   };
 }
