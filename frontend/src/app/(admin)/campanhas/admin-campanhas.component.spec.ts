@@ -4,6 +4,7 @@ import { AdminCampanhasComponent } from './admin-campanhas.component';
 import {
   AdminCampanhaEmail,
   AdminService,
+  PreviaCampanhaEmail,
   SegmentoCampanha,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -25,6 +26,13 @@ const CAMPANHA: AdminCampanhaEmail = {
   criado_por_email: 'admin@boramed.com.br',
 };
 
+const PREVIA: PreviaCampanhaEmail = {
+  remetente: 'BoraMed <contato@boramedoficial.com.br>',
+  destino: 'admin@boramed.com.br',
+  assunto: 'Maria, sua conta está te esperando',
+  html: '<p style="color:#0f172a">Oi, Maria!</p>',
+};
+
 interface CompApi {
   ngOnInit(): Promise<void>;
   nome: { set(v: string): void };
@@ -40,6 +48,15 @@ interface CompApi {
   dispararAgora(): Promise<void>;
   enviarTeste(): Promise<void>;
   retomar(c: AdminCampanhaEmail): Promise<void>;
+  previa(): PreviaCampanhaEmail | null;
+  erroPrevia(): string | null;
+  carregandoPrevia(): boolean;
+  mostrarPrevia(): boolean;
+  alternarPrevia(): void;
+  recarregarPrevia(): Promise<void>;
+  modoPrevia: { set(v: 'desktop' | 'mobile'): void };
+  larguraPrevia(): number;
+  previaSrcdoc(): unknown;
 }
 
 async function setup(overrides: Record<string, unknown> = {}) {
@@ -51,6 +68,7 @@ async function setup(overrides: Record<string, unknown> = {}) {
       .fn()
       .mockResolvedValue({ ok: true, data: { campanha_id: 'camp-2', enviados: 42, falhas: 0, pendentes: 0 } }),
     retomarCampanhaEmail: vi.fn().mockResolvedValue({ ok: true, data: { enviados: 100 } }),
+    previaCampanhaEmail: vi.fn().mockResolvedValue({ ok: true, data: PREVIA }),
     ...overrides,
   };
   const toast = { success: vi.fn(), error: vi.fn(), warning: vi.fn() };
@@ -68,6 +86,35 @@ async function setup(overrides: Record<string, unknown> = {}) {
   const fixture = TestBed.createComponent(AdminCampanhasComponent);
   const comp = fixture.componentInstance as unknown as CompApi;
   return { comp, admin, toast };
+}
+
+/**
+ * Igual ao `setup`, mas com o template REAL. Serve para exercitar o binding do
+ * `<iframe [srcdoc]>`: o Angular só valida atributo de iframe em tempo de
+ * execução, então template blanqueado não pegaria um NG0910 nem o HTML sumindo
+ * no sanitizer.
+ */
+async function setupComTemplate() {
+  const admin = {
+    contarPublicoCampanha: vi.fn().mockResolvedValue({ ok: true, data: 42 }),
+    listarCampanhasEmail: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+    previaCampanhaEmail: vi.fn().mockResolvedValue({ ok: true, data: PREVIA }),
+  };
+
+  await TestBed.configureTestingModule({
+    imports: [AdminCampanhasComponent],
+    providers: [
+      { provide: AdminService, useValue: admin },
+      {
+        provide: NotificationService,
+        useValue: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+      },
+    ],
+  }).compileComponents();
+
+  const fixture = TestBed.createComponent(AdminCampanhasComponent);
+  const comp = fixture.componentInstance as unknown as CompApi;
+  return { fixture, comp, admin };
 }
 
 function preencher(comp: CompApi): void {
@@ -208,6 +255,94 @@ describe('AdminCampanhasComponent', () => {
 
     expect(admin.enviarCampanhaTeste).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith('Preencha assunto e corpo antes de testar.');
+  });
+
+  it('prévia usa a renderização da edge function, sem montar HTML no cliente', async () => {
+    const { comp, admin } = await setup();
+    comp.assunto.set('{{primeiro_nome}}, sua conta está te esperando');
+    comp.html.set('<p>Oi, {{primeiro_nome}}!</p>');
+
+    await comp.recarregarPrevia();
+
+    expect(admin.previaCampanhaEmail).toHaveBeenCalledWith(
+      '{{primeiro_nome}}, sua conta está te esperando',
+      '<p>Oi, {{primeiro_nome}}!</p>',
+    );
+    expect(comp.previa()).toEqual(PREVIA);
+    expect(comp.carregandoPrevia()).toBe(false);
+  });
+
+  it('não pede prévia com o corpo vazio', async () => {
+    const { comp, admin } = await setup();
+    comp.html.set('   ');
+
+    await comp.recarregarPrevia();
+
+    expect(admin.previaCampanhaEmail).not.toHaveBeenCalled();
+  });
+
+  it('descarta resposta de prévia que chega fora de ordem', async () => {
+    const pendentes: ((v: unknown) => void)[] = [];
+    const { comp } = await setup({
+      previaCampanhaEmail: vi.fn(() => new Promise((resolve) => pendentes.push(resolve))),
+    });
+
+    comp.html.set('<p>antiga</p>');
+    const antiga = comp.recarregarPrevia();
+    comp.html.set('<p>nova</p>');
+    const nova = comp.recarregarPrevia();
+
+    // A nova resolve primeiro; a antiga chega depois e não pode sobrescrever.
+    pendentes[1]({ ok: true, data: { ...PREVIA, html: '<p>nova</p>' } });
+    pendentes[0]({ ok: true, data: { ...PREVIA, html: '<p>antiga</p>' } });
+    await Promise.all([antiga, nova]);
+
+    expect(comp.previa()?.html).toBe('<p>nova</p>');
+  });
+
+  it('erro de prévia fica na própria seção, sem virar toast', async () => {
+    const { comp, toast } = await setup({
+      previaCampanhaEmail: vi.fn().mockResolvedValue({ ok: false, error: 'corpo inválido' }),
+    });
+    comp.html.set('<p>x</p>');
+
+    await comp.recarregarPrevia();
+
+    expect(comp.erroPrevia()).toBe('corpo inválido');
+    expect(comp.previa()).toBeNull();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('alterna a visibilidade e a largura simulada da prévia', async () => {
+    const { comp } = await setup();
+
+    expect(comp.mostrarPrevia()).toBe(true);
+    expect(comp.larguraPrevia()).toBe(640);
+
+    comp.modoPrevia.set('mobile');
+    expect(comp.larguraPrevia()).toBe(375);
+
+    comp.alternarPrevia();
+    expect(comp.mostrarPrevia()).toBe(false);
+  });
+
+  it('renderiza a prévia num iframe sandbox, preservando os style inline', async () => {
+    const { fixture, comp } = await setupComTemplate();
+    comp.html.set('<p style="color:#111">Oi, {{primeiro_nome}}!</p>');
+
+    await comp.recarregarPrevia();
+    fixture.detectChanges();
+
+    const iframe: HTMLIFrameElement = fixture.nativeElement.querySelector('iframe.preview-frame');
+    expect(iframe).toBeTruthy();
+    // sandbox vazio = sem scripts e sem same-origin.
+    expect(iframe.getAttribute('sandbox')).toBe('');
+    expect(iframe.getAttribute('srcdoc')).toContain('Oi, Maria!');
+    // O sanitizer do Angular comeria o style= e o e-mail perderia o layout.
+    expect(iframe.getAttribute('srcdoc')).toContain('style="color:#0f172a"');
+    expect(fixture.nativeElement.textContent).toContain(PREVIA.assunto);
+
+    fixture.destroy(); // encerra o debounce pendente do effect
   });
 
   it('retomar chama a function com o id da campanha e recarrega', async () => {

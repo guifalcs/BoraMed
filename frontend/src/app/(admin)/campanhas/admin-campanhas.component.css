@@ -89,6 +89,44 @@
   background: var(--color-surface-2);
 }
 
+/* ---- Prévia ---- */
+
+.preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.preview-toggle[aria-pressed='true'] {
+  background: var(--color-action);
+  color: var(--color-text-inverse);
+}
+
+/*
+ * Altura fixa em vez de auto: o conteúdo do iframe é isolado (sandbox sem
+ * allow-scripts), então não há como medir a altura do documento de fora. 660px
+ * cabe o envelope inteiro (header + card + rodapé) de uma campanha curta; o que
+ * passar rola por dentro do iframe.
+ */
+.preview-frame {
+  display: block;
+  /*
+   * `margin: auto` em vez de flex no wrapper: com `overflow-x-auto`, um item
+   * flex centralizado mais largo que o container fica com a borda esquerda
+   * inalcançável na rolagem. Com margin auto, sobrando espaço ele centraliza e
+   * faltando espaço a rolagem continua chegando no começo.
+   */
+  margin: 0 auto;
+  height: 660px;
+  max-width: 100%;
+  border: 0;
+  /* O envelope traz o próprio fundo (#f1f5f9); isto só cobre o vão do loading. */
+  background: #f1f5f9;
+}
+
 .status-badge {
   display: inline-block;
   padding: 2px 8px;

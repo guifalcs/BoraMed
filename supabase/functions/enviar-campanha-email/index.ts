@@ -5,15 +5,20 @@
 //   'teste'   → envia UMA cópia para o e-mail informado (ou o do próprio admin),
 //               sem criar campanha nem tocar na base de destinatários;
 //   'enviar'  → materializa o público do segmento, cria a campanha e dispara;
-//   'retomar' → reprocessa os destinatários que ficaram 'pendente' numa campanha
-//               existente (timeout, queda do Resend). Nunca reenvia para quem já
-//               está 'enviado' — a UNIQUE (campanha_id, email) + o status são a
-//               garantia de idempotência.
+//   'previa'  → renderiza o e-mail (mesmo montarEmail() do envio) e devolve o
+//               HTML sem tocar no Resend nem na base — é o preview do admin;
+//   'retomar' → reprocessa os destinatários 'pendente' (nunca tentados) e
+//               'falhou' (o Resend recusou) de uma campanha existente. Nunca
+//               reenvia para quem já está 'enviado' — a UNIQUE (campanha_id,
+//               email) + o status são a garantia de idempotência.
 //
 // Secrets necessários:
 //   RESEND_API_KEY   chave da API do Resend
-//   RESEND_FROM      remetente padrão, ex.: "BoraMed <contato@boramed.com.br>"
+//   RESEND_FROM      remetente padrão, ex.: "BoraMed <contato@boramedoficial.com.br>"
 //   APP_URL          base pública do app (monta o link de descadastro)
+//   EMAIL_ASSETS_URL opcional — host da logo do envelope. Só é necessário em
+//                    desenvolvimento, onde a APP_URL é localhost e o proxy de
+//                    imagem do Gmail não alcança.
 // ============================================================
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { corsHeaders, json } from '../_shared/cors.ts';
@@ -39,7 +44,7 @@ const ORCAMENTO_MS = 100_000;
 
 const RESEND_BATCH_URL = 'https://api.resend.com/emails/batch';
 
-type Modo = 'teste' | 'enviar' | 'retomar';
+type Modo = 'previa' | 'teste' | 'enviar' | 'retomar';
 
 type Body = {
   modo?: Modo;
@@ -89,6 +94,25 @@ async function buscarTudo<T>(
   return tudo;
 }
 
+/**
+ * Destinatário fictício da prévia e do e-mail de teste: personaliza com o nome
+ * do próprio admin, para ele ver o resultado real dos {{tokens}}. O token de
+ * descadastro é zerado de propósito — o link do rodapé de uma prévia ou de um
+ * teste nunca descadastra ninguém.
+ */
+function destinatarioDeAmostra(
+  caller: { id: string; email?: string },
+  perfil: { nome_completo?: unknown } | null,
+  email = caller.email ?? '',
+): Destinatario {
+  return {
+    user_id: caller.id,
+    email,
+    nome_completo: (perfil?.nome_completo as string | null) ?? 'Fulano de Tal',
+    email_token: '00000000-0000-0000-0000-000000000000',
+  };
+}
+
 Deno.serve(async (req) => {
   const cors = corsHeaders(req);
   const reply = (data: unknown, status = 200) => json(data, status, cors);
@@ -105,8 +129,14 @@ Deno.serve(async (req) => {
   const resendKey = Deno.env.get('RESEND_API_KEY');
   const remetentePadrao = Deno.env.get('RESEND_FROM') ?? '';
   const appUrl = (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '');
+  /**
+   * Host da logo do envelope. Separado da APP_URL porque o Gmail/Outlook busca
+   * imagem por proxy na nuvem: com APP_URL de desenvolvimento
+   * (`http://localhost:4200`) a logo chega quebrada na caixa de entrada. Em
+   * produção pode ficar vazio — a APP_URL já é pública.
+   */
+  const assetsUrl = (Deno.env.get('EMAIL_ASSETS_URL') ?? '').replace(/\/$/, '');
 
-  if (!resendKey) return reply({ error: 'RESEND_API_KEY não configurada' }, 500);
   if (!appUrl) return reply({ error: 'APP_URL não configurada' }, 500);
 
   // --- Identidade do chamador ---
@@ -140,18 +170,46 @@ Deno.serve(async (req) => {
   }
 
   const modo = body.modo ?? 'teste';
-  if (modo !== 'teste' && modo !== 'enviar' && modo !== 'retomar') {
+  if (modo !== 'previa' && modo !== 'teste' && modo !== 'enviar' && modo !== 'retomar') {
     return reply({ error: 'modo inválido' }, 400);
   }
 
   const remetente = (body.remetente ?? remetentePadrao).trim();
-  if (modo !== 'retomar' && !remetenteValido(remetente)) {
+  // A prévia não envia nada: nem exige remetente válido nem chave do Resend —
+  // dá para conferir o layout antes de o domínio estar verificado.
+  if ((modo === 'teste' || modo === 'enviar') && !remetenteValido(remetente)) {
     return reply(
       { error: 'remetente inválido — use "Nome <email@dominio>" ou configure RESEND_FROM' },
       400,
     );
   }
 
+  // ============================================================
+  // Modo PRÉVIA — renderiza e devolve. Nenhuma chamada externa.
+  // ============================================================
+  if (modo === 'previa') {
+    const assunto = (body.assunto ?? '').trim();
+    const html = body.html ?? '';
+    if (!html.trim()) return reply({ error: 'corpo do e-mail obrigatório' }, 400);
+
+    const email = montarEmail(destinatarioDeAmostra(caller, callerProfile), {
+      remetente,
+      assunto,
+      htmlBase: html,
+      appUrl,
+      assetsUrl,
+    });
+
+    return reply({
+      modo: 'previa',
+      remetente: email.from,
+      destino: email.to[0],
+      assunto: email.subject,
+      html: email.html,
+    });
+  }
+
+  if (!resendKey) return reply({ error: 'RESEND_API_KEY não configurada' }, 500);
   const enviarLote = criarEnviadorDeLote(resendKey);
 
   // ============================================================
@@ -166,18 +224,13 @@ Deno.serve(async (req) => {
     const destino = (body.email_teste ?? caller.email ?? '').trim();
     if (!destino) return reply({ error: 'email de teste obrigatório' }, 400);
 
-    const email = montarEmail(
-      {
-        user_id: caller.id,
-        email: destino,
-        // Personaliza com o nome do próprio admin para ele ver o resultado real
-        // dos {{tokens}}; sem nome no perfil, um placeholder óbvio.
-        nome_completo: (callerProfile?.nome_completo as string | null) ?? 'Fulano de Tal',
-        // Token fictício: o link do rodapé do teste não descadastra ninguém.
-        email_token: '00000000-0000-0000-0000-000000000000',
-      },
-      { remetente, assunto, htmlBase: html, appUrl },
-    );
+    const email = montarEmail(destinatarioDeAmostra(caller, callerProfile, destino), {
+      remetente,
+      assunto,
+      htmlBase: html,
+      appUrl,
+      assetsUrl,
+    });
 
     const resultado = await enviarLote([email]);
     if (!resultado.ok) return reply({ error: `Resend: ${resultado.erro}` }, 502);
@@ -278,6 +331,7 @@ Deno.serve(async (req) => {
     admin,
     campanhaId,
     appUrl,
+    assetsUrl,
     enviarLote,
   });
 
@@ -342,6 +396,7 @@ async function processarCampanha(deps: {
   admin: SupabaseClient;
   campanhaId: string;
   appUrl: string;
+  assetsUrl: string;
   enviarLote: (emails: readonly unknown[]) => Promise<ResultadoLote>;
 }): Promise<{
   status: 'enviada' | 'parcial' | 'falhou';
@@ -350,7 +405,7 @@ async function processarCampanha(deps: {
   cancelados: number;
   pendentes: number;
 }> {
-  const { admin, campanhaId, appUrl, enviarLote } = deps;
+  const { admin, campanhaId, appUrl, assetsUrl, enviarLote } = deps;
   const inicio = Date.now();
 
   const { data: campanha } = await admin
@@ -362,14 +417,25 @@ async function processarCampanha(deps: {
     return { status: 'falhou', enviados: 0, falhas: 0, cancelados: 0, pendentes: 0 };
   }
 
-  let pendentes: LinhaDestinatario[];
+  /**
+   * Fila desta rodada: 'pendente' (nunca tentado) E 'falhou' (tentado e o Resend
+   * recusou). Incluir 'falhou' é o que faz "Retomar" servir para o caso mais
+   * comum de verdade — estourar a cota diária do Resend marca centenas de linhas
+   * como 'falhou', e sem isto elas nunca mais seriam tentadas.
+   *
+   * Nunca inclui 'enviado': é o status que garante não duplicar entrega. Uma
+   * linha só vira 'falhou' depois de resposta não-2xx do Resend, então não houve
+   * entrega. A exceção teórica — 5xx depois de o Resend já ter enfileirado —
+   * pode gerar um e-mail repetido; o retry vale mais que esse risco.
+   */
+  let aEnviar: LinhaDestinatario[];
   try {
-    pendentes = await buscarTudo<LinhaDestinatario>((de, ate) =>
+    aEnviar = await buscarTudo<LinhaDestinatario>((de, ate) =>
       admin
         .from('email_campanha_destinatario')
         .select('id, email, nome_completo, email_token, user_id')
         .eq('campanha_id', campanhaId)
-        .eq('status', 'pendente')
+        .in('status', ['pendente', 'falhou'])
         .order('criado_em')
         .range(de, ate)
     );
@@ -382,7 +448,7 @@ async function processarCampanha(deps: {
   // depois) alguém pode ter clicado em "não quero mais receber". Esse clique
   // vale mais que a lista congelada.
   let cancelados = 0;
-  const userIds = pendentes.map((p) => p.user_id).filter((id): id is string => !!id);
+  const userIds = aEnviar.map((p) => p.user_id).filter((id): id is string => !!id);
   if (userIds.length > 0) {
     const optouts = new Set<string>();
     for (const lote of dividirEmLotes(userIds, 500)) {
@@ -394,7 +460,7 @@ async function processarCampanha(deps: {
       for (const linha of (data ?? []) as { id: string }[]) optouts.add(linha.id);
     }
     if (optouts.size > 0) {
-      const cancelar = pendentes.filter((p) => p.user_id && optouts.has(p.user_id));
+      const cancelar = aEnviar.filter((p) => p.user_id && optouts.has(p.user_id));
       cancelados = cancelar.length;
       for (const lote of dividirEmLotes(cancelar.map((c) => c.id), 500)) {
         await admin
@@ -402,15 +468,21 @@ async function processarCampanha(deps: {
           .update({ status: 'cancelado', erro: 'descadastrado antes do envio' })
           .in('id', lote);
       }
-      pendentes = pendentes.filter((p) => !p.user_id || !optouts.has(p.user_id));
+      aEnviar = aEnviar.filter((p) => !p.user_id || !optouts.has(p.user_id));
     }
   }
 
   let enviados = 0;
   let falhas = 0;
   let estourouOrcamento = false;
+  /**
+   * Último erro do Resend, para virar `email_campanha.erro` quando NADA sai.
+   * Sem isto o admin vê a campanha "falhou" sem motivo no histórico e precisa
+   * do log da function para descobrir que era a chave ou o domínio.
+   */
+  let ultimoErro: string | null = null;
 
-  const lotes = dividirEmLotes(pendentes, TAMANHO_LOTE);
+  const lotes = dividirEmLotes(aEnviar, TAMANHO_LOTE);
 
   for (let i = 0; i < lotes.length; i++) {
     if (Date.now() - inicio > ORCAMENTO_MS) {
@@ -432,6 +504,7 @@ async function processarCampanha(deps: {
           assunto: campanha.assunto as string,
           htmlBase: campanha.corpo_html as string,
           appUrl,
+          assetsUrl,
         },
       )
     );
@@ -446,7 +519,15 @@ async function processarCampanha(deps: {
         lote.map((d, idx) =>
           admin
             .from('email_campanha_destinatario')
-            .update({ status: 'enviado', resend_id: resultado.ids[idx] ?? null, enviado_em: agora })
+            // `erro: null` limpa a mensagem da tentativa anterior: numa retomada
+            // bem-sucedida a linha não pode ficar 'enviado' carregando o erro
+            // velho, que confundiria a auditoria depois.
+            .update({
+              status: 'enviado',
+              resend_id: resultado.ids[idx] ?? null,
+              enviado_em: agora,
+              erro: null,
+            })
             .eq('id', d.id)
         ),
       );
@@ -457,6 +538,7 @@ async function processarCampanha(deps: {
         .update({ status: 'falhou', erro: resultado.erro.slice(0, 500) })
         .in('id', lote.map((d) => d.id));
       falhas += lote.length;
+      ultimoErro = resultado.erro.slice(0, 500);
       console.error(`campanha ${campanhaId} lote ${i}: ${resultado.erro}`);
     }
 
@@ -476,22 +558,39 @@ async function processarCampanha(deps: {
   };
 
   const restantes = await contar('pendente');
+  const totalEnviados = await contar('enviado');
+  const totalFalhas = await contar('falhou');
+  const totalCancelados = await contar('cancelado');
+
+  /**
+   * Status derivado dos totais do LOG, não dos contadores desta rodada. Com os
+   * contadores da rodada, retomar uma campanha em que NADA saiu (todas as linhas
+   * 'falhou', nenhuma 'pendente') fechava a campanha como 'enviada' com zero
+   * enviados — apagando o erro e bloqueando retomadas futuras.
+   *
+   *   sobrou pendente / estourou o orçamento → 'parcial' (tem o que retomar)
+   *   só falhas, nada entregue              → 'falhou'
+   *   entregou parte e falhou parte         → 'parcial' (as falhas são retomáveis)
+   */
   const status: 'enviada' | 'parcial' | 'falhou' = restantes > 0 || estourouOrcamento
     ? 'parcial'
-    : enviados === 0 && falhas > 0
-    ? 'falhou'
+    : totalFalhas > 0
+    ? (totalEnviados === 0 ? 'falhou' : 'parcial')
     : 'enviada';
 
   await admin
     .from('email_campanha')
     .update({
       status,
-      total_enviados: await contar('enviado'),
-      total_falhas: await contar('falhou'),
-      total_cancelados: await contar('cancelado'),
-      erro: status === 'parcial'
-        ? 'disparo interrompido — use "Retomar" para enviar o restante'
-        : null,
+      total_enviados: totalEnviados,
+      total_falhas: totalFalhas,
+      total_cancelados: totalCancelados,
+      // Motivo concreto do Resend (chave inválida, domínio não verificado, cota
+      // estourada) quando houver: é o que o admin lê no histórico, sem precisar
+      // abrir o log da function.
+      erro: status === 'enviada'
+        ? null
+        : ultimoErro ?? 'disparo interrompido — use "Retomar" para enviar o restante',
       concluida_em: status === 'enviada' ? new Date().toISOString() : null,
     })
     .eq('id', campanhaId);

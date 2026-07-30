@@ -88,6 +88,133 @@ export function personalizar(
   });
 }
 
+// ============================================================
+// Envelope da marca
+// ============================================================
+// O layout (fundo cinza, card branco de 560px, header em gradiente com a logo,
+// rodapé) é o MESMO dos e-mails transacionais em
+// `supabase/email-templates/{confirm-signup,reset-password}.html`. Aqui ele vive
+// em código porque quem escreve a campanha edita só o conteúdo do card — o
+// envelope é aplicado no envio e não dá para quebrar editando o corpo.
+//
+// Regras de e-mail (não são preciosismo, é o que sobrevive nos clientes):
+//   * layout em <table>, largura fixa e style inline — Gmail/Outlook descartam
+//     <style> em <head> e não implementam flex/grid de forma confiável;
+//   * o gradiente do header tem fallback VML (<v:rect>) porque o Outlook
+//     desktop ignora linear-gradient e renderizaria uma faixa branca;
+//   * a logo é carregada de `{assetsUrl}/brand/logo-branca-email.png` — o mesmo
+//     asset dos templates de auth. `assetsUrl` é a APP_URL por padrão, mas
+//     existe separado porque o Gmail/Outlook busca imagem por um PROXY na
+//     nuvem: em desenvolvimento, `http://localhost:4200/...` é inalcançável e a
+//     logo chega quebrada na caixa de entrada. Aponte EMAIL_ASSETS_URL para um
+//     host público (o site de produção) ao testar localmente.
+
+const LARGURA_CARD = 560;
+
+/** Cores do envelope, espelhando os templates de auth. */
+const COR = {
+  fundo: '#f1f5f9',
+  card: '#ffffff',
+  borda: '#e2e8f0',
+  rodape: '#f8fafc',
+  texto: '#0f172a',
+  textoFraco: '#64748b',
+  textoFraquissimo: '#94a3b8',
+  marca: '#2451d8',
+} as const;
+
+/**
+ * Embrulha o conteúdo da campanha no layout da marca e devolve o documento
+ * completo. O rodapé já traz `{{link_descadastro}}`, então
+ * `garantirRodapeDescadastro` não tem o que anexar depois.
+ *
+ * `conteudoHtml` entra literal (é HTML autoral do admin, não dado de usuário —
+ * os valores vindos do banco só aparecem via `personalizar`, que escapa).
+ * `assetsUrl` é o host da logo; sem ele, cai na própria `appUrl`.
+ */
+export function envelopeCampanha(
+  conteudoHtml: string,
+  appUrl: string,
+  assetsUrl?: string,
+): string {
+  const base = (assetsUrl?.trim() || appUrl).replace(/\/$/, '');
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>BoraMed</title>
+</head>
+<body style="margin:0;padding:0;background-color:${COR.fundo};font-family:Inter,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" bgcolor="${COR.fundo}">
+    <tr>
+      <td align="center" style="padding:40px 16px 56px;">
+
+        <!-- Card -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:${LARGURA_CARD}px;">
+
+          <!-- ===== HEADER GRADIENT ===== -->
+          <tr>
+            <td style="border-radius:16px 16px 0 0;padding:0;overflow:hidden;">
+              <!--[if gte mso 9]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                style="width:${LARGURA_CARD}px;height:116px;border-radius:16px 16px 0 0;">
+                <v:fill type="gradient" color="#1e40af" color2="#6427d9" angle="135" />
+                <v:textbox inset="0,0,0,0">
+              <![endif]-->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+                style="background:linear-gradient(135deg,#1e40af 0%,#2451d8 52%,#6427d9 100%);border-radius:16px 16px 0 0;">
+                <tr>
+                  <td style="padding:36px 48px 40px;text-align:center;">
+                    <img src="${base}/brand/logo-branca-email.png" alt="BoraMed" height="40" style="height:40px;width:auto;display:block;margin:0 auto;" />
+                  </td>
+                </tr>
+              </table>
+              <!--[if gte mso 9]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
+
+          <!-- ===== CONTEÚDO DA CAMPANHA ===== -->
+          <tr>
+            <td style="background-color:${COR.card};padding:40px 48px 36px;border-left:1px solid ${COR.borda};border-right:1px solid ${COR.borda};color:${COR.texto};font-size:15px;line-height:1.65;">
+${conteudoHtml}
+            </td>
+          </tr>
+
+          <!-- ===== FOOTER + OPT-OUT ===== -->
+          <tr>
+            <td style="background-color:${COR.rodape};border-radius:0 0 16px 16px;border:1px solid ${COR.borda};border-top:none;padding:22px 48px;text-align:center;">
+              <p style="margin:0 0 8px;color:${COR.textoFraquissimo};font-size:12px;line-height:1.5;">
+                Você recebeu este e-mail porque criou uma conta na BoraMed com o endereço
+                <strong style="color:${COR.textoFraco};">{{email}}</strong>.
+              </p>
+              <p style="margin:0 0 10px;">
+                <a href="{{link_descadastro}}" style="color:${COR.textoFraco};font-size:12px;text-decoration:underline;">
+                  Não quero mais receber e-mails da BoraMed
+                </a>
+              </p>
+              <p style="margin:0;color:#cbd5e1;font-size:11px;">
+                © 2026 BoraMed
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>`;
+}
+
 const RODAPE_MARCADOR = '{{link_descadastro}}';
 
 /**
@@ -133,7 +260,13 @@ export type EmailResend = {
   readonly headers: Record<string, string>;
 };
 
-/** Monta o payload de UM destinatário já personalizado. */
+/**
+ * Monta o payload de UM destinatário já personalizado.
+ *
+ * `htmlBase` é o CONTEÚDO do card, não o e-mail inteiro: o envelope da marca é
+ * aplicado aqui. `garantirRodapeDescadastro` continua na frente do envelope
+ * como invariante — se algum dia o envelope for desligado, o opt-out ainda sai.
+ */
 export function montarEmail(
   destinatario: Destinatario,
   opcoes: {
@@ -141,6 +274,8 @@ export function montarEmail(
     assunto: string;
     htmlBase: string;
     appUrl: string;
+    /** Host público dos assets do e-mail (logo). Default: `appUrl`. */
+    assetsUrl?: string;
   },
 ): EmailResend {
   const urlDescadastro = linkDescadastro(opcoes.appUrl, destinatario.email_token);
@@ -154,7 +289,12 @@ export function montarEmail(
     from: opcoes.remetente,
     to: [destinatario.email],
     subject: personalizar(opcoes.assunto, dados, false),
-    html: personalizar(garantirRodapeDescadastro(opcoes.htmlBase), dados),
+    html: personalizar(
+      garantirRodapeDescadastro(
+        envelopeCampanha(opcoes.htmlBase, opcoes.appUrl, opcoes.assetsUrl),
+      ),
+      dados,
+    ),
     headers: {
       // Descadastro em um clique no Gmail/Outlook — pesa na reputação do domínio.
       'List-Unsubscribe': `<${urlDescadastro}>`,

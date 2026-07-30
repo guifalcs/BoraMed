@@ -380,6 +380,19 @@ export interface AdminCampanhaEmail {
   criado_por_email: string | null;
 }
 
+/**
+ * E-mail renderizado pela edge function no modo `previa` — os tokens já
+ * substituídos, o rodapé de descadastro já anexado. É a MESMA saída de
+ * `montarEmail()` que iria para o Resend, por isso o preview não divirge do
+ * envio real.
+ */
+export interface PreviaCampanhaEmail {
+  remetente: string;
+  destino: string;
+  assunto: string;
+  html: string;
+}
+
 export interface ResultadoDisparoCampanha {
   campanha_id?: string;
   status?: 'enviada' | 'parcial' | 'falhou';
@@ -1454,6 +1467,24 @@ export class AdminService {
     return { ok: true, data: (data ?? []) as AdminCampanhaEmail[] };
   }
 
+  /**
+   * Renderiza o e-mail sem enviar nada. Roda na edge function (e não no
+   * frontend) de propósito: o preview sai do mesmo `montarEmail()` do disparo,
+   * então o que o admin vê na tela é byte a byte o que o Resend receberia.
+   */
+  async previaCampanhaEmail(
+    assunto: string,
+    html: string,
+    remetente?: string,
+  ): Promise<ServiceResult<PreviaCampanhaEmail>> {
+    return this.invocarCampanha<PreviaCampanhaEmail>({
+      modo: 'previa',
+      assunto,
+      html,
+      remetente,
+    });
+  }
+
   /** Envia uma cópia única para conferência, sem registrar campanha. */
   async enviarCampanhaTeste(
     assunto: string,
@@ -1487,9 +1518,9 @@ export class AdminService {
     return this.invocarCampanha({ modo: 'retomar', campanha_id: campanhaId });
   }
 
-  private async invocarCampanha(
+  private async invocarCampanha<T = ResultadoDisparoCampanha>(
     body: Record<string, unknown>,
-  ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
+  ): Promise<ServiceResult<T>> {
     const { data, error } = await this.supabase.functions.invoke('enviar-campanha-email', {
       body,
     });
@@ -1499,7 +1530,7 @@ export class AdminService {
       const detalhe = await lerErroFunction(error);
       return { ok: false, error: detalhe ?? error.message };
     }
-    return { ok: true, data: data as ResultadoDisparoCampanha };
+    return { ok: true, data: data as T };
   }
 
   // ---- Materiais de Estudo ----

@@ -60,14 +60,114 @@
       </label>
 
       <label class="field mt-4">
-        <span class="field-label">Corpo do e-mail (HTML)</span>
+        <span class="field-label">Conteúdo do e-mail (HTML)</span>
         <textarea
           class="field-input font-mono text-[13px] leading-relaxed"
           rows="16"
           [ngModel]="html()"
           (ngModelChange)="html.set($event)"
         ></textarea>
+        <span class="field-hint">
+          Só o que vai <strong>dentro</strong> do card. O cabeçalho com a logo, a moldura e o
+          rodapé de descadastro são aplicados no envio — o mesmo layout dos e-mails de
+          confirmação de cadastro e recuperação de senha.
+        </span>
       </label>
+
+      <!-- ===== PRÉVIA ===== -->
+      <div class="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)]">
+        <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+          <button
+            type="button"
+            class="flex items-center gap-2 text-xs font-semibold text-[var(--color-text)]"
+            (click)="alternarPrevia()"
+          >
+            <app-ui-icon [icon]="iconEye" [size]="14" />
+            Prévia do e-mail
+            <span class="text-[var(--color-text-muted)]">{{ mostrarPrevia() ? '▾' : '▸' }}</span>
+          </button>
+
+          @if (mostrarPrevia()) {
+            <div class="flex items-center gap-2">
+              @if (carregandoPrevia()) {
+                <span class="text-xs text-[var(--color-text-muted)]">Renderizando…</span>
+              }
+              <div class="flex overflow-hidden rounded-md border border-[var(--color-border)]">
+                <button
+                  type="button"
+                  class="preview-toggle"
+                  [attr.aria-pressed]="modoPrevia() === 'desktop'"
+                  title="Largura de desktop (640px)"
+                  (click)="modoPrevia.set('desktop')"
+                >
+                  <app-ui-icon [icon]="iconDesktop" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="preview-toggle"
+                  [attr.aria-pressed]="modoPrevia() === 'mobile'"
+                  title="Largura de celular (375px)"
+                  (click)="modoPrevia.set('mobile')"
+                >
+                  <app-ui-icon [icon]="iconMobile" [size]="14" />
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (mostrarPrevia()) {
+          <div class="border-t border-[var(--color-border)] p-3">
+            @if (erroPrevia()) {
+              <p class="text-xs text-[var(--color-danger)]">
+                Não foi possível renderizar: {{ erroPrevia() }}
+                <button type="button" class="ml-1 underline" (click)="recarregarPrevia()">
+                  tentar de novo
+                </button>
+              </p>
+            } @else if (!previa()) {
+              <p class="text-xs text-[var(--color-text-muted)]">
+                Escreva o corpo do e-mail para ver a prévia.
+              </p>
+            } @else {
+              <!-- Cabeçalho como o destinatário vê na caixa de entrada. -->
+              <dl class="mb-3 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs">
+                <dt class="font-semibold text-[var(--color-text-muted)]">De</dt>
+                <dd class="text-[var(--color-text)]">{{ previa()!.remetente || '—' }}</dd>
+                <dt class="font-semibold text-[var(--color-text-muted)]">Para</dt>
+                <dd class="text-[var(--color-text)]">{{ previa()!.destino }}</dd>
+                <dt class="font-semibold text-[var(--color-text-muted)]">Assunto</dt>
+                <dd class="font-medium text-[var(--color-text)]">
+                  {{ previa()!.assunto || '(sem assunto)' }}
+                </dd>
+              </dl>
+
+              <!--
+                sandbox="" (sem allow-scripts nem allow-same-origin): o HTML da
+                campanha renderiza isolado, sem executar nada nem enxergar a
+                sessão do admin. Mantenha estático — binding em atributo de
+                iframe é bloqueado pelo Angular.
+              -->
+              <div class="overflow-x-auto rounded-md border border-[var(--color-border)]">
+                <iframe
+                  class="preview-frame"
+                  title="Prévia do e-mail"
+                  sandbox=""
+                  referrerpolicy="no-referrer"
+                  [srcdoc]="previaSrcdoc()"
+                  [style.width.px]="larguraPrevia()"
+                ></iframe>
+              </div>
+              <p class="mt-2 text-xs text-[var(--color-text-muted)]">
+                Renderizada pela mesma função que monta o envio — envelope da marca, tokens
+                substituídos e rodapé de descadastro incluídos. O link do rodapé aqui é fictício e
+                não descadastra ninguém. Cada cliente de e-mail aplica suas próprias regras, então
+                o teste real continua sendo o botão abaixo.
+              </p>
+            }
+          </div>
+        }
+      </div>
 
       <div class="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
         <p class="mb-2 text-xs font-semibold text-[var(--color-text)]">Variáveis disponíveis</p>

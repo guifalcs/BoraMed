@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from '@std/assert';
 import {
   dividirEmLotes,
+  envelopeCampanha,
   escaparHtml,
   garantirRodapeDescadastro,
   isSegmento,
@@ -63,6 +64,40 @@ Deno.test('garantirRodapeDescadastro: não duplica quando o link já existe', ()
   assertEquals(garantirRodapeDescadastro(original), original);
 });
 
+Deno.test('envelopeCampanha: embrulha o conteúdo no layout da marca', () => {
+  const html = envelopeCampanha('<p>Oi!</p>', 'https://boramed.com.br');
+
+  assertStringIncludes(html, '<!DOCTYPE html>');
+  assertStringIncludes(html, '<p>Oi!</p>');
+  // Logo do mesmo asset dos templates de auth, resolvida pela APP_URL.
+  assertStringIncludes(html, 'src="https://boramed.com.br/brand/logo-branca-email.png"');
+  // Gradiente do header + fallback VML para o Outlook desktop.
+  assertStringIncludes(html, 'linear-gradient(135deg,#1e40af 0%,#2451d8 52%,#6427d9 100%)');
+  assertStringIncludes(html, '<v:fill type="gradient"');
+  // Rodapé de opt-out embutido: garantirRodapeDescadastro não anexa nada.
+  assertStringIncludes(html, '{{link_descadastro}}');
+  assertEquals(garantirRodapeDescadastro(html), html);
+});
+
+Deno.test('envelopeCampanha: normaliza a barra final da APP_URL', () => {
+  const html = envelopeCampanha('<p>x</p>', 'https://boramed.com.br/');
+  assertStringIncludes(html, 'src="https://boramed.com.br/brand/logo-branca-email.png"');
+});
+
+Deno.test('envelopeCampanha: assetsUrl tira a logo do localhost sem mexer nos links', () => {
+  // Cenário de desenvolvimento: link de descadastro local (para poder clicar),
+  // logo num host público (o proxy de imagem do Gmail não alcança localhost).
+  const html = envelopeCampanha('<p>x</p>', 'http://localhost:4200', 'https://www.exemplo.com/');
+  assertStringIncludes(html, 'src="https://www.exemplo.com/brand/logo-branca-email.png"');
+  assert(!html.includes('localhost:4200/brand'));
+
+  // Vazio ou só espaço não deve virar "/brand/..." sem host.
+  for (const vazio of [undefined, '', '   ']) {
+    const comFallback = envelopeCampanha('<p>x</p>', 'https://boramed.com.br', vazio);
+    assertStringIncludes(comFallback, 'src="https://boramed.com.br/brand/logo-branca-email.png"');
+  }
+});
+
 Deno.test('linkDescadastro: normaliza barra final e codifica o token', () => {
   assertEquals(
     linkDescadastro('https://boramed.com.br/', 'a b'),
@@ -113,8 +148,12 @@ Deno.test('montarEmail: um destinatário por envio, com List-Unsubscribe', () =>
   assertEquals(email.to, ['maria@exemplo.com']);
   assertEquals(email.subject, 'Maria, sua conta está parada');
   assertStringIncludes(email.html, 'Oi Maria');
-  // Rodapé anexado automaticamente e já com a URL resolvida.
+  // Envelope da marca aplicado no envio: o htmlBase é só o conteúdo do card.
+  assertStringIncludes(email.html, '<!DOCTYPE html>');
+  assertStringIncludes(email.html, '/brand/logo-branca-email.png');
+  // Rodapé de opt-out com a URL já resolvida, e o {{email}} do rodapé também.
   assertStringIncludes(email.html, 'https://boramed.com.br/descadastrar?token=tok-1');
+  assertStringIncludes(email.html, 'maria@exemplo.com');
   assertEquals(
     email.headers['List-Unsubscribe'],
     '<https://boramed.com.br/descadastrar?token=tok-1>',

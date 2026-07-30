@@ -3,14 +3,17 @@ import {
   Component,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Mail, RefreshCw, Send, TestTube2 } from 'lucide-angular';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Eye, Mail, Monitor, RefreshCw, Send, Smartphone, TestTube2 } from 'lucide-angular';
 import {
   AdminCampanhaEmail,
   AdminService,
+  PreviaCampanhaEmail,
   SegmentoCampanha,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -28,20 +31,58 @@ const ROTULO_SEGMENTO: Record<SegmentoCampanha, string> = {
   todos: 'Todos os alunos',
 };
 
-const MODELO_INICIAL = `<div style="font-family:Inter,'Segoe UI',sans-serif;font-size:16px;line-height:1.6;color:#0f172a;max-width:560px;">
-  <p>Oi, {{primeiro_nome}}!</p>
+/**
+ * Espera depois da última tecla antes de pedir a prévia. A renderização é uma
+ * chamada à edge function — sem isto seria uma por caractere digitado.
+ */
+const DEBOUNCE_PREVIA_MS = 700;
 
-  <p>Vi que você criou sua conta na BoraMed mas ainda não começou.</p>
+/** Larguras de simulação: ~600px é o padrão de e-mail; 375px é o iPhone base. */
+const LARGURA_PREVIA = { desktop: 640, mobile: 375 } as const;
 
-  <p>
-    <a href="https://boramed.com.br/planos"
-       style="display:inline-block;background:#2554dc;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;">
-      Ver os planos
-    </a>
-  </p>
+type ModoPrevia = keyof typeof LARGURA_PREVIA;
 
-  <p>Bons estudos,<br />Equipe BoraMed</p>
-</div>`;
+/**
+ * Conteúdo inicial do card. NÃO é o e-mail inteiro: o header com a logo, o card
+ * e o rodapé de descadastro vêm do envelope da marca, aplicado no envio
+ * (`_shared/campanha-email.ts`). Os estilos inline abaixo são os mesmos dos
+ * templates de auth — título centralizado, texto em #64748b, botão em gradiente.
+ */
+const MODELO_INICIAL = `<h2 style="margin:0 0 16px;color:#0f172a;font-size:22px;font-weight:800;line-height:1.25;text-align:center;letter-spacing:-0.4px;">
+  Sua conta está te esperando
+</h2>
+
+<p style="margin:0 0 14px;color:#64748b;font-size:15px;line-height:1.65;">
+  Oi, {{primeiro_nome}}! Vi que você criou sua conta na BoraMed mas ainda não
+  começou a estudar.
+</p>
+
+<p style="margin:0 0 14px;color:#64748b;font-size:15px;line-height:1.65;">
+  São mais de <strong style="color:#0f172a;">2.800 questões</strong> comentadas,
+  simulados personalizados e flashcards — tudo organizado por período.
+</p>
+
+<!-- Botão: tabela + gradiente com fallback, igual aos e-mails de auth. -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+  <tr>
+    <td align="center" style="padding:26px 0 8px;">
+      <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+        <tr>
+          <td style="border-radius:10px;background:linear-gradient(135deg,#2451d8 0%,#1e40af 100%);mso-padding-alt:0;box-shadow:0 4px 14px rgba(36,81,216,0.35);">
+            <a href="https://www.boramedoficial.com.br/planos"
+               style="display:block;padding:15px 40px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;text-align:center;letter-spacing:-0.1px;white-space:nowrap;">
+              Ver os planos
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:18px 0 0;color:#64748b;font-size:15px;line-height:1.65;">
+  Bons estudos,<br />Equipe BoraMed
+</p>`;
 
 @Component({
   selector: 'app-admin-campanhas',
@@ -54,6 +95,7 @@ const MODELO_INICIAL = `<div style="font-family:Inter,'Segoe UI',sans-serif;font
 export class AdminCampanhasComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly toast = inject(NotificationService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly nome = signal('');
   protected readonly assunto = signal('');
@@ -76,10 +118,48 @@ export class AdminCampanhasComponent implements OnInit {
   protected readonly historico = signal<AdminCampanhaEmail[]>([]);
   protected readonly carregandoHistorico = signal(true);
 
+  // ---- Prévia ----
+  protected readonly previa = signal<PreviaCampanhaEmail | null>(null);
+  protected readonly carregandoPrevia = signal(false);
+  protected readonly erroPrevia = signal<string | null>(null);
+  protected readonly mostrarPrevia = signal(true);
+  protected readonly modoPrevia = signal<ModoPrevia>('desktop');
+
+  protected readonly larguraPrevia = computed(() => LARGURA_PREVIA[this.modoPrevia()]);
+
+  /**
+   * O HTML vem da própria edge function, mas passa pelo `bypassSecurityTrust`
+   * porque o sanitizer do Angular removeria os `style=` inline — justamente o
+   * que dá o layout do e-mail. Seguro porque o destino é um `<iframe sandbox>`
+   * sem `allow-scripts` nem `allow-same-origin`: nada ali executa nem alcança a
+   * sessão do admin.
+   */
+  protected readonly previaSrcdoc = computed<SafeHtml | null>(() => {
+    const html = this.previa()?.html;
+    return html ? this.sanitizer.bypassSecurityTrustHtml(html) : null;
+  });
+
   protected readonly iconMail = Mail;
   protected readonly iconSend = Send;
   protected readonly iconTeste = TestTube2;
   protected readonly iconRefresh = RefreshCw;
+  protected readonly iconEye = Eye;
+  protected readonly iconDesktop = Monitor;
+  protected readonly iconMobile = Smartphone;
+
+  constructor() {
+    // Re-renderiza sozinho enquanto o admin escreve, com debounce. Fica no
+    // effect (e não no ngModelChange) para cobrir também assunto e remetente
+    // sem espalhar chamadas por vários handlers.
+    effect((onCleanup) => {
+      const assunto = this.assunto();
+      const html = this.html();
+      if (!this.mostrarPrevia() || !html.trim()) return;
+
+      const timer = setTimeout(() => void this.atualizarPrevia(assunto, html), DEBOUNCE_PREVIA_MS);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
 
   protected readonly segmentosDisponiveis: SelectOption[] = (
     Object.keys(ROTULO_SEGMENTO) as SegmentoCampanha[]
@@ -93,7 +173,10 @@ export class AdminCampanhasComponent implements OnInit {
     { token: '{{primeiro_nome}}', descricao: 'Primeiro nome ("Maria")' },
     { token: '{{nome}}', descricao: 'Nome completo' },
     { token: '{{email}}', descricao: 'E-mail do destinatário' },
-    { token: '{{link_descadastro}}', descricao: 'Link de opt-out (rodapé automático se ausente)' },
+    {
+      token: '{{link_descadastro}}',
+      descricao: 'Link de opt-out (já vai no rodapé; use só se quiser um no corpo)',
+    },
   ];
 
   protected readonly formularioValido = computed(
@@ -142,6 +225,39 @@ export class AdminCampanhasComponent implements OnInit {
       this.toast.error('Erro ao carregar o histórico de campanhas.');
     }
     this.carregandoHistorico.set(false);
+  }
+
+  /**
+   * Sequência das requisições de prévia. Digitação rápida gera chamadas
+   * concorrentes; sem isto, uma resposta atrasada sobrescreveria o HTML mais
+   * novo e o preview mostraria um estado que o textarea já não tem.
+   */
+  private previaSeq = 0;
+
+  private async atualizarPrevia(assunto: string, html: string): Promise<void> {
+    const seq = ++this.previaSeq;
+    this.carregandoPrevia.set(true);
+
+    const resultado = await this.adminService.previaCampanhaEmail(assunto, html);
+    if (seq !== this.previaSeq) return; // resposta velha: a nova manda
+
+    if (resultado.ok) {
+      this.previa.set(resultado.data);
+      this.erroPrevia.set(null);
+    } else {
+      this.erroPrevia.set(resultado.error);
+    }
+    this.carregandoPrevia.set(false);
+  }
+
+  protected alternarPrevia(): void {
+    this.mostrarPrevia.update((valor) => !valor);
+  }
+
+  /** Retentativa manual — usada no estado de erro da prévia. */
+  protected async recarregarPrevia(): Promise<void> {
+    if (!this.html().trim()) return;
+    await this.atualizarPrevia(this.assunto(), this.html());
   }
 
   async enviarTeste(): Promise<void> {
