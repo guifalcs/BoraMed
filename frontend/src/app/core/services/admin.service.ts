@@ -1103,11 +1103,11 @@ export class AdminService {
   async listarProvas(
     pagina = 0,
     porPagina = 50,
-    filtros: { formato?: string; busca?: string } = {},
+    filtros: { formato?: string; periodo?: number; subtipo_nacional?: string; busca?: string } = {},
   ): Promise<ServiceResult<{ provas: AdminProva[]; total: number }>> {
     let query = this.supabase
       .from('prova')
-      .select('id,nome,tipo,origem,formato,rede,subtipo,publicada,arquivada,periodo,qtd_questoes,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)', {
+      .select('id,nome,tipo,origem,formato,rede,subtipo,subtipo_nacional,publicada,arquivada,periodo,qtd_questoes,criado_em,disciplina_id,faculdade(nome,sigla),disciplina(sigla,nome)', {
         count: 'exact',
       })
       // Exclui os simulados gerados pelos alunos (origem 'personalizado', periodo 0).
@@ -1117,6 +1117,8 @@ export class AdminService {
       .range(pagina * porPagina, (pagina + 1) * porPagina - 1);
 
     if (filtros.formato) query = query.eq('formato', filtros.formato);
+    if (filtros.periodo) query = query.eq('periodo', filtros.periodo);
+    if (filtros.subtipo_nacional) query = query.eq('subtipo_nacional', filtros.subtipo_nacional);
     if (filtros.busca?.trim()) query = query.ilike('nome', `%${filtros.busca}%`);
 
     const { data, error, count } = await query;

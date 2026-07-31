@@ -48,6 +48,8 @@ export class AdminProvasComponent implements OnInit {
   protected readonly isLoading = signal(true);
   protected readonly pagina = signal(0);
   protected readonly filtroTipo = signal('');
+  protected readonly filtroPeriodo = signal('');
+  protected readonly filtroSubtipo = signal('');
   protected readonly busca = signal('');
   protected readonly provaParaDeletar = signal<AdminProva | null>(null);
   protected readonly porPagina = 50;
@@ -112,6 +114,28 @@ export class AdminProvasComponent implements OnInit {
     { value: 'processual', label: 'Processual' },
     { value: 'laboratorio', label: 'Laboratório' },
   ];
+
+  protected readonly opcoesPeriodo: SelectOption[] = [
+    { value: '', label: 'Todos os períodos' },
+    { value: '1', label: '1º período' },
+    { value: '2', label: '2º período' },
+    { value: '3', label: '3º período' },
+    { value: '4', label: '4º período' },
+    { value: '5', label: '5º período' },
+    { value: '6', label: '6º período' },
+  ];
+
+  protected readonly opcoesSubtipoFiltro = computed<SelectOption[]>(() =>
+    this.filtroTipo() === 'nacional'
+      ? [
+          { value: '', label: 'Todos os subtipos' },
+          { value: 'N1', label: 'N1' },
+          { value: 'N2', label: 'N2' },
+          { value: 'integradora', label: 'Integradora' },
+          { value: 'teste_progresso', label: 'TPI' },
+        ]
+      : [],
+  );
 
   // ── Select options — drawer (form) ──
   protected readonly opcoesTipoForm: SelectOption[] = [
@@ -189,6 +213,8 @@ export class AdminProvasComponent implements OnInit {
     this.isLoading.set(true);
     const result = await this.adminService.listarProvas(this.pagina(), this.porPagina, {
       formato: this.filtroTipo() || undefined,
+      periodo: this.filtroPeriodo() ? Number(this.filtroPeriodo()) : undefined,
+      subtipo_nacional: this.filtroSubtipo() || undefined,
       busca: this.busca() || undefined,
     });
     if (result.ok) { this.provas.set(result.data.provas); this.total.set(result.data.total); }
