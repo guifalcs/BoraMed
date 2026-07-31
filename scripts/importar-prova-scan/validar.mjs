@@ -21,7 +21,16 @@
  * oficial, e entre as duas fontes oficiais vale a mais forte — a devolutiva
  * comentada acima da folha de gabarito seca (ver lib/gabarito.mjs).
  *
- * Uso: node scripts/importar-prova-scan/validar.mjs <dir-trabalho>
+ * Uso: node scripts/importar-prova-scan/validar.mjs <dir-trabalho> [--extras-ok]
+ *
+ * `--extras-ok` rebaixa para aviso (em vez de erro global bloqueante) o caso
+ * de haver páginas transcritas cuja questão não existe no gabarito. Nesse
+ * pipeline normalmente é sinal de bug (número incorreto, questão perdida na
+ * costura). Mas quando o gabarito veio de `derivar-gabarito.mjs` — cobertura
+ * parcial por design, porque nem toda questão do scan tem correspondente na
+ * devolutiva disponível — esse caso é esperado, e usar a flag evita que a
+ * ausência intencional de gabarito nas demais questões bloqueie a validação
+ * das poucas que têm.
  */
 
 import { writeFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -55,9 +64,10 @@ const OCR_ECO = 0.45;
 
 const SEV = { alta: 3, media: 2, baixa: 1 };
 
-const dirArg = process.argv[2];
+const dirArg = process.argv.slice(2).find((a) => !a.startsWith('--'));
+const extrasOk = process.argv.includes('--extras-ok');
 if (!dirArg) {
-  console.error('uso: node validar.mjs <dir-trabalho>');
+  console.error('uso: node validar.mjs <dir-trabalho> [--extras-ok]');
   process.exit(2);
 }
 const dir = resolve(dirArg);
@@ -619,8 +629,10 @@ for (const numero of numerosGabarito) {
 
 const transcritas = new Set([...passes.passe1.keys(), ...passes.passe2.keys()]);
 const extras = [...transcritas].filter((n) => !gabarito[String(n)]).sort((a, b) => a - b);
+const avisosGlobais = [];
 if (extras.length > 0) {
-  errosGlobais.push(`questões transcritas que não existem no gabarito oficial: ${extras.join(', ')}`);
+  const msg = `questões transcritas que não existem no gabarito oficial: ${extras.join(', ')}`;
+  (extrasOk ? avisosGlobais : errosGlobais).push(msg);
 }
 
 // ──── Relatório ────
@@ -652,6 +664,7 @@ const resultado = {
   por_severidade: { alta: conta('alta'), media: conta('media'), baixa: conta('baixa') },
   cobertura_cruzamento: cobertura,
   erros_globais: errosGlobais,
+  avisos_globais: avisosGlobais,
   limiares: { CONFIRMA, DUVIDA, MIN_TOKENS, OCR_ECO },
   questoes: registros,
 };
@@ -708,6 +721,11 @@ md.push('');
 if (errosGlobais.length > 0) {
   md.push('## Erros globais\n');
   errosGlobais.forEach((e) => md.push(`- ${e}`));
+  md.push('');
+}
+if (avisosGlobais.length > 0) {
+  md.push('## Avisos globais (rebaixados por --extras-ok)\n');
+  avisosGlobais.forEach((a) => md.push(`- ${a}`));
   md.push('');
 }
 
