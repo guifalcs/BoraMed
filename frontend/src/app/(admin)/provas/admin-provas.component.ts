@@ -123,6 +123,8 @@ export class AdminProvasComponent implements OnInit {
     { value: '4', label: '4º período' },
     { value: '5', label: '5º período' },
     { value: '6', label: '6º período' },
+    { value: '7', label: '7º período' },
+    { value: '8', label: '8º período' },
   ];
 
   protected readonly opcoesSubtipoFiltro = computed<SelectOption[]>(() =>
