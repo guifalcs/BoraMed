@@ -14,10 +14,21 @@ import { desdobrar } from './texto.mjs';
 
 /** Divide o texto do PDF em páginas (form feed é o separador do pdftotext). */
 export function paginasDeTexto(pdf) {
-  const bruto = execFileSync('pdftotext', [pdf, '-'], {
+  let bruto = execFileSync('pdftotext', [pdf, '-'], {
     encoding: 'utf-8',
     maxBuffer: 256 * 1024 * 1024,
   });
+
+  // Quirk observado em relatórios gerados pelo wkhtmltopdf: o campo vazio
+  // "Feedback:\n--" às vezes cai bem na quebra de página, e o pdftotext
+  // gruda o segundo traço na linha seguinte — hash de autenticação
+  // ("-000173...") ou marcador de questão ("-2ª QUESTÃO"). Remove esse
+  // traço órfão para não quebrar o parsing estrutural.
+  bruto = bruto.replace(
+    /^-(?=\s*(?:\d{1,3}\s*[ªº°]\s*QUEST(?:Ã|A)O\s*$|[0-9a-f]{6}\.[0-9a-f]{6}\.))/gm,
+    '',
+  );
+
   const paginas = bruto.split('\f');
   // pdftotext emite um \f final; descarta o resto vazio.
   if (paginas.length > 0 && paginas.at(-1).trim() === '') paginas.pop();
@@ -136,9 +147,10 @@ function limparPaginaDevolutiva(texto) {
     .join('\n');
 }
 
-const ROTULOS_COMENTARIO = /^\s*(?:Resposta\s+comentada|Gabarito\s+Comentado|Coment[áa]rios?|Feedback)\s*:/i;
+const ROTULOS_COMENTARIO = /^\s*(?:Resposta\s+comentada|Gabarito\s+Comentado|Coment[áa]rios?)\s*:/i;
 const ROTULOS_DISTRATOR = /^\s*(?:Distratores|Justificativa\s+das\s+alternativas|Justificativas?)\s*:/i;
 const ROTULOS_REFERENCIA = /^\s*(?:Refer[êe]ncias?|Bibliografia)\s*:/i;
+const ROTULOS_FEEDBACK = /^\s*Feedback\s*:/i;
 
 /**
  * Fatia a devolutiva em um registro por questão.
@@ -178,7 +190,7 @@ export function extrairDevolutiva(paginas, numerosDePagina) {
       continue;
     }
 
-    const secoes = { comentario: [], distratores: [], referencias: [] };
+    const secoes = { comentario: [], distratores: [], referencias: [], feedback: [] };
     let alvo = 'comentario';
 
     for (const linha of bloco.linhas) {
@@ -200,8 +212,22 @@ export function extrairDevolutiva(paginas, numerosDePagina) {
         if (resto) secoes.comentario.push(resto);
         continue;
       }
+      // "Feedback:" costuma vir vazio (placeholder "--"); quando tem
+      // conteúdo real, é comentário adicional e entra em `comentario`, sem
+      // contaminar a seção anterior (geralmente `referencias`).
+      if (ROTULOS_FEEDBACK.test(linha)) {
+        alvo = 'feedback';
+        const resto = linha.replace(ROTULOS_FEEDBACK, '').trim();
+        if (resto) secoes.feedback.push(resto);
+        continue;
+      }
       secoes[alvo].push(linha);
     }
+
+    const feedbackTexto = desdobrar(secoes.feedback.join('\n')).trim();
+    const feedbackReal = feedbackTexto && feedbackTexto.replace(/-/g, '').trim() !== '' ? feedbackTexto : null;
+    const comentarioBase = desdobrar(secoes.comentario.join('\n'));
+    const comentario = feedbackReal ? [comentarioBase, feedbackReal].filter(Boolean).join('\n\n') : comentarioBase;
 
     const bruto = desdobrar(bloco.linhas.join('\n'));
 
@@ -215,7 +241,7 @@ export function extrairDevolutiva(paginas, numerosDePagina) {
 
     devolutiva[chave] = {
       bruto,
-      comentario: desdobrar(secoes.comentario.join('\n')),
+      comentario,
       distratores: desdobrar(secoes.distratores.join('\n')),
       referencias: desdobrar(secoes.referencias.join('\n')),
       declarado: declararCorreta(bruto),
