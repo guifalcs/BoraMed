@@ -185,10 +185,18 @@ if (comImagem.length > 0) {
     'O markdown do `/admin/importar` não carrega imagem. Estas questões entram sem a figura — ' +
     'abra cada uma em `/admin/questoes` e anexe o recorte de `saida/imagens/`.\n',
   );
-  pendencias.push('| questão | página do scan | recorte |');
-  pendencias.push('| --- | --- | --- |');
+  pendencias.push('| questão | gabarito | busque no admin por | página | recorte |');
+  pendencias.push('| --- | --- | --- | --- | --- |');
   for (const i of comImagem) {
-    pendencias.push(`| ${i.numero} | ${i.paginas.join(', ')} | \`imagens/q${String(i.numero).padStart(3, '0')}.jpg\` |`);
+    pendencias.push(
+      `| ${i.numero} | ${i.letra.toUpperCase()} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} ` +
+      `| \`imagens/q${String(i.numero).padStart(3, '0')}.jpg\` |`,
+    );
+  }
+  pendencias.push('');
+  pendencias.push('Pergunta completa de cada uma, se precisar:\n');
+  for (const i of comImagem) {
+    pendencias.push(`- **Q${String(i.numero).padStart(3, '0')}** — ${colapsar(i.enunciado)}`);
   }
   pendencias.push('');
 }
@@ -199,10 +207,10 @@ if (comTabela.length > 0) {
     'A tabela foi transcrita achatada em texto corrido — o conteúdo está lá, a grade não. ' +
     'Remonte a formatação em `/admin/questoes`; o recorte da página ajuda a conferir os valores.\n',
   );
-  pendencias.push('| questão | página do scan |');
-  pendencias.push('| --- | --- |');
+  pendencias.push('| questão | gabarito | busque no admin por | página |');
+  pendencias.push('| --- | --- | --- | --- |');
   for (const i of comTabela) {
-    pendencias.push(`| ${i.numero} | ${i.paginas.join(', ')} |`);
+    pendencias.push(`| ${i.numero} | ${i.letra.toUpperCase()} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} |`);
   }
   pendencias.push('');
 }
@@ -276,14 +284,16 @@ if (manual === 0) {
     console.log('');
     console.log(` IMAGENS (${comImagem.length}) — anexe em /admin/questoes:`);
     for (const i of comImagem) {
-      console.log(`   Q${String(i.numero).padStart(3, '0')}  p.${i.paginas.join(',')}  →  saida/imagens/q${String(i.numero).padStart(3, '0')}.jpg`);
+      console.log(`   Q${String(i.numero).padStart(3, '0')} (gab ${i.letra.toUpperCase()}, p.${i.paginas.join(',')})  →  saida/imagens/q${String(i.numero).padStart(3, '0')}.jpg`);
+      console.log(`         busque por: "${trechoParaBusca(i)}"`);
     }
   }
   if (comTabela.length > 0) {
     console.log('');
     console.log(` TABELAS/QUADROS (${comTabela.length}) — remonte a formatação em /admin/questoes:`);
     for (const i of comTabela) {
-      console.log(`   Q${String(i.numero).padStart(3, '0')}  p.${i.paginas.join(',')}  (conteúdo está no texto, a grade não)`);
+      console.log(`   Q${String(i.numero).padStart(3, '0')} (gab ${i.letra.toUpperCase()}, p.${i.paginas.join(',')})  conteúdo está no texto, a grade não`);
+      console.log(`         busque por: "${trechoParaBusca(i)}"`);
     }
   }
   console.log('');
@@ -360,4 +370,20 @@ function colapsarParagrafos(texto) {
     .map((p) => colapsar(p))
     .filter(Boolean)
     .join('\n');
+}
+
+/**
+ * Trecho para localizar a questão no `/admin/questoes`.
+ *
+ * Usa o começo do texto de apoio, não a pergunta: perguntas de prova são
+ * genéricas e se repetem ("É correto o que se afirma em"), enquanto o começo do
+ * caso clínico é praticamente único na prova.
+ */
+function trechoParaBusca(item, max = 60) {
+  const base = colapsar(item.enunciado_apoio) || colapsar(item.enunciado);
+  if (base.length <= max) return base;
+  // Corta na fronteira de palavra para o trecho poder ser colado na busca.
+  const bruto = base.slice(0, max);
+  const corte = bruto.lastIndexOf(' ');
+  return corte > max * 0.6 ? bruto.slice(0, corte) : bruto;
 }
