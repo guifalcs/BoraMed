@@ -29,6 +29,7 @@ import { join, resolve } from 'node:path';
 import { lerJson } from './lib/pdf.mjs';
 import { carregarPasse, costurar, LETRAS } from './lib/transcricao.mjs';
 import { resolverGabarito } from './lib/gabarito.mjs';
+import { preencherLacunas, validarResolucao, contarLacunas } from './lib/lacunas.mjs';
 import {
   similaridade,
   similaridadeVocabulario,
@@ -44,6 +45,13 @@ import {
 const CONFIRMA = 0.6;   // acima disso, considerado confirmado pela devolutiva
 const DUVIDA = 0.34;    // abaixo disso, não confirmado
 const MIN_TOKENS = 2;   // com menos tokens que isso o cruzamento não discrimina
+
+// Limiar do eco no OCR, calibrado nas páginas 1, 3, 12, 25 e 40 desta prova
+// (65 campos): texto genuíno ficou entre 0.64 e 1.00, mediana 1.00; texto
+// corrompido, alucinação plausível e frase inventada ficaram entre 0.00 e 0.29.
+// 0.45 fica no meio do vão — mais sensível que o DUVIDA genérico e ainda sem
+// falso alarme na amostra.
+const OCR_ECO = 0.45;
 
 const SEV = { alta: 3, media: 2, baixa: 1 };
 
@@ -103,6 +111,26 @@ if (existsSync(dirOcr)) {
   }
 }
 const TEM_OCR = ocrPorPagina.size > 0;
+
+// Lacunas resolvidas por zoom (zoom-lacunas.mjs). Os agentes escrevem um lote
+// cada; aqui os lotes são unidos.
+const zoom = new Map();
+const dirLacunas = join(dir, 'lacunas');
+if (existsSync(dirLacunas)) {
+  for (const f of readdirSync(dirLacunas).filter((x) => /^resolvidas.*\.json$/.test(x))) {
+    let dados;
+    try {
+      dados = JSON.parse(readFileSync(join(dirLacunas, f), 'utf-8'));
+    } catch (e) {
+      errosGlobais.push(`lacunas/${f}: JSON inválido — ${e.message}`);
+      continue;
+    }
+    for (const [numero, campos] of Object.entries(dados)) {
+      zoom.set(Number(numero), { ...(zoom.get(Number(numero)) ?? {}), ...campos });
+    }
+  }
+}
+if (zoom.size > 0) console.log(`lacunas resolvidas por zoom: ${zoom.size} questões`);
 
 if (UM_PASSE) {
   console.log('\n⚠ MODO DE UM PASSE — o crivo de consenso entre passes de IA não roda.');
@@ -356,6 +384,72 @@ for (const numero of numerosGabarito) {
     }
   }
 
+  // ── Preenchimento automático dos trechos ilegíveis ──
+  // Roda antes dos crivos de conteúdo para que eles avaliem o texto já
+  // completo. A devolutiva é a única fonte usada: medido nesta prova, ela
+  // acertou 7 de 7, enquanto o OCR acertou 2 de 8 — o ponto está ilegível na
+  // foto, então o OCR erra exatamente ali também.
+  const lacunas = { preenchidas: [], pendentes: 0 };
+
+  // Resolução por zoom (zoom-lacunas.mjs + agente lendo as faixas em resolução
+  // nativa) tem prioridade: veio de olhar o pixel, não de casar contexto.
+  // `modo: "deduzido"` significa que os caracteres estão fora da foto — cortados
+  // pela borda — e a palavra foi completada pelo fragmento visível. Isso é
+  // dedução, não leitura, então recebe severidade maior para você poder auditar.
+  const doZoom = zoom.get(numero);
+  if (doZoom) {
+    for (const [campo, info] of Object.entries(doZoom)) {
+      const alvo = campo.startsWith('alternativa ')
+        ? { obj: base.alternativas, chave: campo.slice(12).trim() }
+        : { obj: base, chave: campo };
+      if (alvo.obj[alvo.chave] === undefined) continue;
+
+      // Trava contra resolução que mexeu além da lacuna. Caso real: um agente
+      // devolveu a Q13 sem "Considerando o quadro clínico do" no começo do
+      // enunciado. Prompt não garante isso; conferência mecânica garante.
+      const veredito = validarResolucao(alvo.obj[alvo.chave], info.texto);
+      if (!veredito.ok) {
+        flag('alta', 'resolucao_zoom_rejeitada',
+          `${campo}: resolução automática descartada — ${veredito.motivo}`);
+        continue;
+      }
+
+      alvo.obj[alvo.chave] = info.texto;
+      lacunas.preenchidas.push({
+        campo,
+        fonte: info.modo === 'deduzido' ? 'zoom (deduzido)' : 'zoom (lido)',
+        trecho: (info.trechos ?? []).join(' · '),
+        candidato: '—',
+        contexto: '',
+        deduzido: info.modo === 'deduzido',
+      });
+    }
+  }
+
+  if (dev?.bruto) {
+    const fontes = [{ nome: 'devolutiva', texto: dev.bruto }];
+    for (const campo of ['enunciado_apoio', 'enunciado']) {
+      const r = preencherLacunas(base[campo], fontes);
+      base[campo] = r.texto;
+      lacunas.preenchidas.push(...r.preenchimentos.map((p) => ({ campo, ...p })));
+      lacunas.pendentes += r.pendentes;
+    }
+    for (const letra of presentes) {
+      const r = preencherLacunas(base.alternativas[letra], fontes);
+      base.alternativas[letra] = r.texto;
+      lacunas.preenchidas.push(...r.preenchimentos.map((p) => ({ campo: `alternativa ${letra}`, ...p })));
+      lacunas.pendentes += r.pendentes;
+    }
+  }
+  for (const p of lacunas.preenchidas) {
+    // Texto deduzido não é texto verificado: fica em média para aparecer no
+    // relatório e poder ser auditado, mas não bloqueia a importação.
+    flag(p.deduzido ? 'media' : 'baixa',
+      p.deduzido ? 'lacuna_deduzida' : 'lacuna_preenchida',
+      `${p.campo}: trecho ilegível resolvido via ${p.fonte} como "${p.trecho}"` +
+      `${p.candidato !== '—' ? ` (palavra "${p.candidato}")` : ''}${p.contexto}`);
+  }
+
   // ── Crivo 2b: OCR como segunda testemunha ──
   // Cobertura, não diff: o OCR desta prova não acerta layout, mas se um trecho
   // que a IA transcreveu não tem eco nenhum no OCR da mesma página, é forte
@@ -369,7 +463,12 @@ for (const numero of numerosGabarito) {
 
   if (textoOcr) {
     ocr.disponivel = true;
+    // O apoio entra aqui porque é o maior bloco de texto da questão — deixá-lo
+    // de fora tirava a única testemunha possível das questões de assertiva
+    // ("É correto o que se afirma em:" + "II e IV, apenas"), onde nem o
+    // enunciado nem as alternativas têm tokens suficientes para conferir.
     const aConferir = [
+      ['enunciado_apoio', base.enunciado_apoio],
       ['enunciado', base.enunciado],
       ...presentes.map((l) => [`alternativa ${l}`, base.alternativas[l]]),
     ];
@@ -377,7 +476,7 @@ for (const numero of numerosGabarito) {
       if (!texto || tokens(texto).length < 3) continue;
       const eco = similaridadeVocabulario(texto, textoOcr);
       ocr.campos[nome] = eco;
-      if (eco < DUVIDA) {
+      if (eco < OCR_ECO) {
         flag('media', 'sem_eco_no_ocr',
           `${nome}: o OCR da página não tem eco deste texto (${eco}) — confira contra o scan`);
       }
@@ -389,7 +488,7 @@ for (const numero of numerosGabarito) {
     const cruzada = cruzamento.nivel === 'forte' || cruzamento.nivel === 'media';
     // Confirmação pelo OCR: todos os campos conferíveis tiveram eco.
     const valoresOcr = Object.values(ocr.campos);
-    const ocrConfirma = valoresOcr.length > 0 && valoresOcr.every((v) => v >= DUVIDA);
+    const ocrConfirma = valoresOcr.length > 0 && valoresOcr.every((v) => v >= OCR_ECO);
 
     if (cruzada && ocrConfirma) {
       flag('baixa', 'sem_segundo_passe_ia',
@@ -450,10 +549,29 @@ for (const numero of numerosGabarito) {
     }
   }
 
+  // Severidade média, não alta: o texto da questão está verificado como
+  // qualquer outra, só a figura não viaja pelo markdown do admin. Bloquear a
+  // importação por isso deixaria a questão de fora em vez de entrar sem a
+  // imagem — e `PENDENCIAS.md` já garante que ela não seja esquecida.
+  // Tabela achatada em texto corrido: o transcritor não tem como preservar a
+  // grade, então a questão entra com a tabela ilegível e precisa ser remontada
+  // à mão no admin. Detectado por marcadores de tabela no texto de apoio.
+  const apoio = base.enunciado_apoio ?? '';
+  const barras = (apoio.match(/\|/g) ?? []).length;
+  const separadores = (apoio.match(/ \/ /g) ?? []).length;
+  const temRotulo = /\b(tabela|quadro|gr[áa]fico)\b\s*:/i.test(apoio);
+  if (temRotulo || barras >= 3 || separadores >= 5) {
+    base.tem_tabela = true;
+    flag('media', 'tabela_complexa',
+      'o texto de apoio traz tabela/quadro achatado em texto corrido ' +
+      `(${temRotulo ? 'rótulo de tabela' : `${barras} barras, ${separadores} separadores`}) — ` +
+      'remonte a formatação em /admin/questoes depois de importar');
+  }
+
   if (base.tem_imagem) {
-    flag('alta', 'precisa_imagem',
+    flag('media', 'precisa_imagem',
       'questão tem imagem embutida (gráfico/exame) — o markdown do admin não carrega imagem, ' +
-      'anexe manualmente na edição da questão depois de importar');
+      'anexe manualmente em /admin/questoes depois de importar (ver PENDENCIAS.md)');
   }
   for (const obs of base.observacoes) {
     flag('media', 'observacao_do_transcritor', obs);
@@ -473,6 +591,7 @@ for (const numero of numerosGabarito) {
     enunciado: base.enunciado,
     alternativas: base.alternativas,
     tem_imagem: base.tem_imagem,
+    tem_tabela: base.tem_tabela ?? false,
     imagem_topo_pct: base.imagem_topo_pct,
     imagem_base_pct: base.imagem_base_pct,
     posicao_topo_pct: base.posicao_topo_pct,
@@ -489,6 +608,7 @@ for (const numero of numerosGabarito) {
     comparacao,
     cruzamento,
     ocr,
+    lacunas,
     flags: flags.sort((a, b) => SEV[b.severidade] - SEV[a.severidade]),
     severidade_max: flags.length === 0 ? null
       : flags.reduce((m, f) => (SEV[f.severidade] > SEV[m] ? f.severidade : m), 'baixa'),
@@ -532,7 +652,7 @@ const resultado = {
   por_severidade: { alta: conta('alta'), media: conta('media'), baixa: conta('baixa') },
   cobertura_cruzamento: cobertura,
   erros_globais: errosGlobais,
-  limiares: { CONFIRMA, DUVIDA, MIN_TOKENS },
+  limiares: { CONFIRMA, DUVIDA, MIN_TOKENS, OCR_ECO },
   questoes: registros,
 };
 
@@ -610,16 +730,16 @@ md.push('');
 if (UM_PASSE) {
   const precisam = registros.filter((r) => r.flags.some((f) => f.codigo === 'sem_consenso'));
   const paginasAlvo = [...new Set(precisam.flatMap((r) => r.paginas ?? []))].sort((a, b) => a - b);
-  const supridas = registros.filter((r) =>
-    r.flags.some((f) => f.codigo === 'sem_consenso_mas_cruzada'));
+  const SUPRIDAS = new Set(['sem_segundo_passe_ia', 'sem_consenso_mas_ocr', 'sem_consenso_mas_cruzada']);
+  const supridas = registros.filter((r) => r.flags.some((f) => SUPRIDAS.has(f.codigo)));
 
   md.push('## Onde ainda falta testemunha\n');
   md.push(
     'Rodou só um passe de transcrição. Onde a devolutiva confirma qual alternativa é a ' +
     'correta, o segundo passe é quase redundante. Onde não confirma, ele é a única rede.\n',
   );
-  md.push(`- questões supridas pelo cruzamento: **${supridas.length}**`);
-  md.push(`- questões que precisam do passe 2: **${precisam.length}**`);
+  md.push(`- questões com testemunha alternativa (OCR e/ou devolutiva): **${supridas.length}**`);
+  md.push(`- questões sem testemunha nenhuma: **${precisam.length}**`);
   md.push(`- páginas a retranscrever: **${paginasAlvo.length}** de ${indicePaginas.length}`);
   md.push('');
   if (paginasAlvo.length > 0) {
@@ -631,9 +751,9 @@ if (UM_PASSE) {
   }
 
   console.log('');
-  console.log(`supridas pelo cruzamento : ${supridas.length}`);
-  console.log(`precisam do passe 2      : ${precisam.length}`);
-  console.log(`páginas a retranscrever  : ${paginasAlvo.length} de ${indicePaginas.length}`);
+  console.log(`com testemunha alternativa : ${supridas.length}`);
+  console.log(`sem testemunha nenhuma     : ${precisam.length}`);
+  console.log(`páginas a retranscrever    : ${paginasAlvo.length} de ${indicePaginas.length}`);
   if (paginasAlvo.length > 0) console.log(`  ${paginasAlvo.join(' ')}`);
 }
 

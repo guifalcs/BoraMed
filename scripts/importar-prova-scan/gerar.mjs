@@ -175,6 +175,7 @@ for (let i = 0; i < blocos.length; i += o.lote) {
 // ──── Pendências ────
 
 const comImagem = incluidas.filter((i) => i.tem_imagem);
+const comTabela = incluidas.filter((i) => i.tem_tabela);
 const pendencias = [];
 pendencias.push('# Pendências pós-importação\n');
 
@@ -188,6 +189,20 @@ if (comImagem.length > 0) {
   pendencias.push('| --- | --- | --- |');
   for (const i of comImagem) {
     pendencias.push(`| ${i.numero} | ${i.paginas.join(', ')} | \`imagens/q${String(i.numero).padStart(3, '0')}.jpg\` |`);
+  }
+  pendencias.push('');
+}
+
+if (comTabela.length > 0) {
+  pendencias.push('## Questões com tabela ou quadro\n');
+  pendencias.push(
+    'A tabela foi transcrita achatada em texto corrido — o conteúdo está lá, a grade não. ' +
+    'Remonte a formatação em `/admin/questoes`; o recorte da página ajuda a conferir os valores.\n',
+  );
+  pendencias.push('| questão | página do scan |');
+  pendencias.push('| --- | --- |');
+  for (const i of comTabela) {
+    pendencias.push(`| ${i.numero} | ${i.paginas.join(', ')} |`);
   }
   pendencias.push('');
 }
@@ -246,6 +261,36 @@ console.log('');
 console.log('Cole o conteúdo em /admin/importar → aba Questões. Lotes menores dão feedback');
 console.log('de erro mais cedo; prova.md serve se quiser tudo numa tacada.');
 
+// ──── O que ainda exige trabalho manual ────
+// Impresso por último e sempre, porque é a única parte que o pipeline não
+// resolve: o markdown do admin não transporta imagem nem grade de tabela.
+const manual = comImagem.length + comTabela.length;
+console.log('');
+console.log('══════════════════════════════════════════════════════════════');
+if (manual === 0) {
+  console.log(' NADA A INSERIR MANUALMENTE — nenhuma questão tem imagem ou tabela.');
+} else {
+  console.log(` INSERIR MANUALMENTE DEPOIS DE IMPORTAR — ${manual} questão(ões)`);
+  console.log('══════════════════════════════════════════════════════════════');
+  if (comImagem.length > 0) {
+    console.log('');
+    console.log(` IMAGENS (${comImagem.length}) — anexe em /admin/questoes:`);
+    for (const i of comImagem) {
+      console.log(`   Q${String(i.numero).padStart(3, '0')}  p.${i.paginas.join(',')}  →  saida/imagens/q${String(i.numero).padStart(3, '0')}.jpg`);
+    }
+  }
+  if (comTabela.length > 0) {
+    console.log('');
+    console.log(` TABELAS/QUADROS (${comTabela.length}) — remonte a formatação em /admin/questoes:`);
+    for (const i of comTabela) {
+      console.log(`   Q${String(i.numero).padStart(3, '0')}  p.${i.paginas.join(',')}  (conteúdo está no texto, a grade não)`);
+    }
+  }
+  console.log('');
+  console.log(' Detalhe completo em saida/PENDENCIAS.md');
+}
+console.log('══════════════════════════════════════════════════════════════');
+
 // ──── Helpers ────
 
 /**
@@ -271,6 +316,7 @@ function montar(q, revisao) {
     explicacao: r.explicacao ?? q.explicacao ?? null,
     referencia: r.referencia ?? q.referencia ?? null,
     tem_imagem: r.tem_imagem ?? q.tem_imagem ?? false,
+    tem_tabela: q.tem_tabela ?? false,
     imagem_topo_pct: q.imagem_topo_pct ?? null,
     imagem_base_pct: q.imagem_base_pct ?? null,
     fonte: q.fonte_original

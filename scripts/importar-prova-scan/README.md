@@ -197,9 +197,13 @@ O diretório é gitignorado: contém material de prova e fotos com dados de alun
 - Questões com assertivas `I/II/III` têm alternativas do tipo "II e IV, apenas",
   sem tokens úteis: o crivo 3 não se aplica e o validador marca
   `cruzamento_inaplicavel`. Essas dependem só do consenso entre os passes.
-- Figuras embutidas não entram pelo markdown do admin. `recortar.mjs` gera um
-  recorte aproximado a partir da banda vertical estimada na transcrição; confira
-  antes de subir.
+- **Figuras e tabelas não entram pelo markdown do admin** — é a única parte que
+  sempre exige trabalho manual depois de importar. `gerar.mjs` termina imprimindo
+  o bloco `INSERIR MANUALMENTE DEPOIS DE IMPORTAR`, listando questão por questão
+  as que têm imagem e as que têm tabela/quadro achatado em texto corrido (a
+  detecção olha rótulo "Tabela:/Quadro:/Gráfico:" e densidade de `|` e ` / ` no
+  texto de apoio). `recortar.mjs` gera o recorte da figura a partir da banda
+  vertical estimada na transcrição; confira antes de subir.
 - `/admin/importar` não vincula questão a prova. Depois de importar, vincule em
   `/admin/provas`.
 - `DISCIPLINA`/`TEMA` saem vazios de propósito: a nomenclatura da devolutiva não

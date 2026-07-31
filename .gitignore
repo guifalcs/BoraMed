@@ -32,3 +32,5 @@ supabase/backups/**
 scripts/importar-prova-scan/.trabalho/
 # PDFs de prova soltos na raiz (entrada do pipeline)
 /*.pdf
+# revisao humana baixada pelo navegador, se salva fora do diretorio de trabalho
+/questoes-revisadas*.json

@@ -140,9 +140,8 @@ const html = `<!doctype html>
   <h1>Revisão — ${escapar(manifesto.pdf)}</h1>
   <span class="pill" id="contador"></span>
   <select id="filtro">
-    <option value="pendentes">Pendentes de revisão</option>
-    <option value="alta">Só flag alta</option>
-    <option value="media">Alta + média</option>
+    <option value="bloqueiam">Bloqueiam a importação — exigem ação</option>
+    <option value="media">Vale conferir (média)</option>
     <option value="todas">Todas as questões</option>
     <option value="revisadas">Já revisadas</option>
   </select>
@@ -197,9 +196,11 @@ function filtrar() {
   return QUESTOES.filter((q) => {
     const rev = revisado(q);
     if (modo === 'revisadas') return rev;
-    if (modo === 'pendentes') return !rev && q.flags.length > 0;
-    if (modo === 'alta') return q.severidade_max === 'alta';
-    if (modo === 'media') return q.severidade_max === 'alta' || q.severidade_max === 'media';
+    // Só flag alta bloqueia a geração do markdown. Média e baixa são
+    // informativas — "questão remontada de 2 páginas", "só um passe de IA" —
+    // e listá-las como pendência transformaria 22 questões em 120.
+    if (modo === 'bloqueiam') return !rev && q.severidade_max === 'alta';
+    if (modo === 'media') return !rev && q.severidade_max === 'media';
     return true;
   });
 }
@@ -217,9 +218,10 @@ function simDe(q, letra) {
 function render() {
   const lista = document.getElementById('lista');
   const alvo = filtrar();
+  const bloqueiam = QUESTOES.filter((q) => q.severidade_max === 'alta' && !revisado(q)).length;
   document.getElementById('contador').textContent =
-    alvo.length + ' de ' + QUESTOES.length + ' • ' +
-    QUESTOES.filter(revisado).length + ' revisadas';
+    'mostrando ' + alvo.length + ' de ' + QUESTOES.length + ' • ' +
+    bloqueiam + ' bloqueiam • ' + QUESTOES.filter(revisado).length + ' revisadas';
 
   if (alvo.length === 0) {
     lista.innerHTML = '<div class="vazio">Nada aqui com esse filtro.</div>';

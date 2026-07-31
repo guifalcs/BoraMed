@@ -2,6 +2,24 @@
 
 ## 2026-07-31 | Fix + Tooling | sem commit
 
+**Importação de prova digitalizada: lacunas automáticas, relatório de pendências e limpeza**
+
+Fechamento do pipeline depois de importar a TPI 2025.1 inteira (120 questões) com sucesso.
+
+- **Preenchimento automático de trecho ilegível** (`lib/lacunas.mjs`): o transcritor marca `[?]` onde a foto está ilegível, e revisar isso à mão era o gargalo — 22 questões na TPI. Agora o pipeline resolve casando o padrão da palavra danificada (`avaliaç[?]` → `^avaliac.{0,14}$`) contra a devolutiva, ancorado nas palavras vizinhas *inteiras*. Duas versões foram medidas antes de escolher: âncora de 26 caracteres exatos deu **14% e com resultados errados** (`avaliaç«ão e» especializada`), porque a borda da âncora cai no meio de uma palavra e é ali que o OCR tem ruído; casamento por palavra deu **19% com 7 de 7 corretos**. O OCR foi **descartado como fonte de preenchimento** — acertou 2 de 8, porque o ponto está ilegível na foto e o OCR erra exatamente ali (deu "nbilical" para *umbilical*, "Dk" para *DNA*). Marca isolada entre espaços é rejeitada: sem prefixo nem sufixo não há padrão, e o casamento capturava a própria palavra-âncora ("atividade física física").
+- **Resolução por zoom** (`zoom-lacunas.mjs`): a causa raiz do `[?]` é resolução. A página tem ~7,7 MP e a leitura de imagem reduz para ~1,15 MP — 2,6× menos resolução linear, justo onde a letra já era ruim. Recortar faixas de 470px na largura nativa mantém 1,02 MP, então **nenhum pixel é descartado** e o trecho fica legível. 83 faixas para 29 lacunas. Bug corrigido no caminho: questão que atravessa páginas usava o percentual da primeira página nas seguintes, recortando a região de outra questão.
+- **Dedução explícita e separada**: em vários casos os caracteres estão **fisicamente fora da foto** (cortados pela borda ou encadernação) e nenhum zoom recupera. O pipeline agora completa a palavra pelo fragmento visível mais contexto, mas marca `lacuna_deduzida` (média) em vez de `lacuna_preenchida` (baixa) — texto deduzido não é texto verificado. Medido contra a revisão manual do usuário: **10 idênticos, 6 diferentes**, e entre as diferenças o automático acertou 2 que passaram na revisão humana (o "I-" de uma enumeração e uma conjunção "e"). Os agentes deixaram 3 lacunas pendentes em vez de chutar (dígito de espaço intercostal coberto pela dobra, onde 2º a 5º são todos plausíveis).
+- **Trava contra resolução que mexe fora da lacuna** (`validarResolucao`): confere mecanicamente que cada pedaço do texto original entre marcas reaparece na ordem, e que o crescimento é proporcional ao número de lacunas. Regra de prompt não garante isso.
+- **Detecção de tabela/quadro** em `validar.mjs`: tabela transcrita achatada em texto corrido (rótulo "Tabela:/Quadro:/Gráfico:", ou densidade de `|` e ` / ` no apoio) recebe flag `tabela_complexa` e entra no relatório de pendências. O conteúdo está lá, a grade não.
+- **Relatório final de trabalho manual** em `gerar.mjs`: termina imprimindo o bloco `INSERIR MANUALMENTE DEPOIS DE IMPORTAR`, questão por questão, com imagem e tabela separadas, página do scan e caminho do recorte. É a única parte que o pipeline não resolve, então precisa ser dita explicitamente em vez de ficar só no `PENDENCIAS.md`. A skill agora obriga repassar essa lista no fechamento.
+- **Limpeza** (`limpar.mjs`): remove o intermediário — páginas do scan, OCR, recortes de zoom e `revisao.html` (que fica com todas as imagens quebradas sem `paginas/`) — liberando 48,6 MB numa prova de 46 páginas, e preserva o que é registro: markdown, validação, gabarito, devolutiva, transcrição e revisão manual. `--raiz` recolhe para o diretório de trabalho os arquivos que escapam para a raiz do projeto (o PDF de entrada e o `questoes-revisadas.json` baixado pelo navegador). `--seco` mostra sem apagar, `--tudo` remove o diretório inteiro.
+- `.gitignore`: `/questoes-revisadas*.json` na raiz, que era a única contaminação real da árvore — `.trabalho/` e os PDFs já estavam cobertos.
+- `precisa_imagem` passou de alta para média: o texto da questão está verificado como qualquer outro, só a figura não viaja pelo markdown. Bloquear a importação por isso deixava a questão de fora em vez de entrar sem a imagem, e o `PENDENCIAS.md` já garante que não seja esquecida.
+
+---
+
+## 2026-07-31 | Fix + Tooling | sem commit
+
 **Importação de prova digitalizada: correção da resolução de gabarito e redesenho de custo**
 
 Rodar o pipeline de verdade na TPI 2025.1 (46 páginas, 120 questões) expôs um bug de correção e um problema de custo. Os dois estão corrigidos.

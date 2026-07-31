@@ -135,14 +135,46 @@ Transpila `admin-importar.component.ts` e roda o `parseBlocos()` **de verdade**
 contra o markdown, conferindo campo por campo que nada se perdeu nem mudou. Exit 1
 significa não colar.
 
-### 8. Pendências
+### 8. Reportar o que exige trabalho manual — obrigatório
 
-- **Figuras**: o markdown do admin não carrega imagem. `node recortar.mjs $T` gera
-  recortes aproximados em `$T/saida/imagens/`; anexe manualmente em `/admin/questoes`.
+`gerar.mjs` termina imprimindo um bloco `INSERIR MANUALMENTE DEPOIS DE IMPORTAR`
+com as questões que têm **imagem** e as que têm **tabela/quadro**. Isso é a única
+parte que o pipeline não resolve: o markdown do admin não transporta figura nem
+grade de tabela.
+
+**Repasse essa lista ao usuário no fechamento, questão por questão.** Não basta
+dizer "veja PENDENCIAS.md" — ele precisa saber o número de cada questão, a página
+do scan e o caminho do recorte, senão a prova entra com figuras faltando e ninguém
+percebe.
+
+Além disso:
+
+- **Recortes das figuras**: `node recortar.mjs $T` gera em `$T/saida/imagens/`.
 - **Vínculo com a prova**: `/admin/importar` não liga questão a prova. Depois de
   importar, crie/edite a prova em `/admin/provas` e vincule as questões.
 - **Disciplina/tema**: sai vazio de propósito. `$T/classificacao-sugerida.csv` traz
   Área/Subárea/Tema das questões em que a devolutiva declara.
+
+### 9. Limpar — obrigatório ao terminar
+
+```bash
+node scripts/importar-prova-scan/limpar.mjs $T --raiz
+```
+
+Remove o intermediário (páginas do scan, OCR, recortes de zoom, `revisao.html`) —
+cerca de 48 MB numa prova de 46 páginas — e preserva o que serve de registro:
+markdown gerado, validação, gabarito, devolutiva e a revisão manual.
+
+`--raiz` recolhe para o diretório de trabalho os arquivos do pipeline que ficaram
+soltos na raiz do projeto: o PDF de entrada e o `questoes-revisadas.json` que o
+navegador baixou (ele cai em `~/Downloads` ou onde o usuário salvar, e é comum
+acabar na raiz). Sem isso, o `questoes-revisadas.json` fica como arquivo não
+rastreado sujando o `git status`.
+
+Use `--seco` para ver o que seria removido, e `--tudo` para apagar o diretório de
+trabalho inteiro quando a prova já estiver importada e conferida.
+
+Feche confirmando `git status --short` limpo.
 
 ## Invariantes — não negocie
 
