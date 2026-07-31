@@ -22,6 +22,8 @@
       [value]="filtroTipo()"
       (valueChange)="filtroTipo.set($any($event) ?? ''); filtroSubtipo.set(''); aplicarFiltros()"
     />
+  </div>
+  <div class="toolbar-filter">
     <app-ui-select
       label="Período"
       name="filtro-periodo"
@@ -29,7 +31,9 @@
       [value]="filtroPeriodo()"
       (valueChange)="filtroPeriodo.set($any($event) ?? ''); aplicarFiltros()"
     />
-    @if (opcoesSubtipoFiltro().length > 0) {
+  </div>
+  @if (opcoesSubtipoFiltro().length > 0) {
+    <div class="toolbar-filter">
       <app-ui-select
         label="Subtipo"
         name="filtro-subtipo"
@@ -37,8 +41,8 @@
         [value]="filtroSubtipo()"
         (valueChange)="filtroSubtipo.set($any($event) ?? ''); aplicarFiltros()"
       />
-    }
-  </div>
+    </div>
+  }
   <button class="btn btn--outline" (click)="aplicarFiltros()">Filtrar</button>
   <button class="btn btn--primary" style="margin-left: auto" (click)="abrirDrawer()">+ Nova Prova</button>
 </div>
