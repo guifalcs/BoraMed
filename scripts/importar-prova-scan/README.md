@@ -39,24 +39,33 @@ todo imagem.
 ## Comandos
 
 ```bash
-# 0. extração determinística (gabarito, devolutiva, imagens das páginas)
+# 1. extração determinística (gabarito, devolutiva, imagens das páginas)
 node scripts/importar-prova-scan/extrair.mjs "TPI 2025.1.pdf"
 #    → imprime o diretório de trabalho ($T abaixo)
 
-# 1. transcrever o scan em dois passes independentes  → via skill
-#    $T/transcricao/passe1/pNNN.json  e  $T/transcricao/passe2/pNNN.json
+# 2. transcrever o scan  → via skill, agentes `transcritor` em lotes de 5-6 páginas
+#    escreve $T/transcricao/passe1/pNNN.json
 
-# 2. validação mecânica
+# 3. segunda testemunha: OCR (zero tokens; substitui o 2º passe de IA)
+node scripts/importar-prova-scan/ocr.mjs $T
+
+# 4. validação mecânica
 node scripts/importar-prova-scan/validar.mjs $T
 
-# 3. revisão humana do que foi sinalizado
+# 5. lacunas [?] que sobraram: recorta em resolução nativa  → agentes resolvem
+node scripts/importar-prova-scan/zoom-lacunas.mjs $T
+
+# 6. revisão humana do que ainda travou
 node scripts/importar-prova-scan/revisao.mjs $T   # abre $T/revisao.html
 
-# 4. markdown para /admin/importar
+# 7. markdown para /admin/importar (imprime o que exige trabalho manual depois)
 node scripts/importar-prova-scan/gerar.mjs $T --fonte "TPI 2025.1" --tipo nacional
 
-# 5. round-trip contra o parser real do admin (obrigatório antes de colar)
+# 8. round-trip contra o parser real do admin (obrigatório antes de colar)
 node scripts/importar-prova-scan/verificar-roundtrip.mjs $T
+
+# 9. limpeza: remove o intermediário (~48 MB) e recolhe arquivos soltos na raiz
+node scripts/importar-prova-scan/limpar.mjs $T --raiz
 
 # extras
 node scripts/importar-prova-scan/recortar.mjs $T  # recorta as figuras embutidas
@@ -72,8 +81,9 @@ humana. Exit 1 é bloqueio, não aviso.
 
 1. **Estrutura** — 5 alternativas a–e, enunciado presente, nenhuma duplicada,
    gabarito oficial aponta para uma alternativa que existe.
-2. **Consenso** — os dois passes de transcrição coincidem, com diff palavra a
-   palavra. Pega erro que um passe cometeu e o outro não.
+2. **Consenso** — as testemunhas independentes coincidem: o OCR da página sempre
+   (`ocr.mjs`, zero tokens) e um segundo passe de IA quando existir, com diff
+   palavra a palavra. Pega erro que uma testemunha cometeu e a outra não.
 3. **Cruzamento** — confere a transcrição contra a devolutiva oficial. Pega erro
    que os **dois** passes cometeram igual (falha correlacionada do mesmo modelo).
 4. **Integridade** — truncamento, `[?]`, `�`, parênteses desbalanceados, palavra

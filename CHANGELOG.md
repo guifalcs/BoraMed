@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-31 | Docs | sem commit
+
+**Escopo da skill de importação delimitado a TPI**
+
+- A skill `importar-prova-scan` e o README passam a declarar que servem **só para TPI** (Teste de Progresso Institucional), o único tipo de prova do acervo que chega como PDF digitalizado. Treinos Nacionais, Simulados Processuais e Laboratório são autorais e entram direto pelo `/admin/questoes`; prova com camada de texto nas questões não precisa do pipeline (`pdftotext` resolve). A `description` da skill ganhou o "NÃO use para…" explícito, para não ser acionada em conteúdo autoral.
+- Limites declarados: o pipeline foi calibrado e testado em **uma** prova (TPI 2025.1, 46 páginas de scan, 120 questões), e os limiares saíram dela — eco no OCR 0.45, cruzamento 0.6/0.34, faixa de zoom 470px. Como os scripts imprimem os números e não só o veredito, muitas flags `sem_eco_no_ocr` de uma vez indicam recalibrar o limiar, não transcrição ruim.
+- Documentado o que é genérico e o que é específico do formato do relatório AFYA: a arquitetura de verificação (4 crivos, OCR como testemunha, zoom, round-trip) vale para qualquer prova fotografada, mas a classificação das seções está em três regex de `lib/pdf.mjs` — gabarito espera a tabela `001 (E)`, devolutiva espera `Nª QUESTÃO`/"Resposta comentada:", scan é página com menos de 60 caracteres alfanuméricos. Estrutura diferente faz `extrair.mjs` sair com erro em vez de adivinhar.
+- Registrado o custo de rodar **sem devolutiva**: o crivo 3 desaparece (é o que confere se o gabarito aponta para a alternativa certa), o preenchimento automático de `[?]` perde a única fonte confiável, a regra "devolutiva acima da folha" fica sem efeito, e as questões entram sem `EXPLICACAO` nem `REFERENCIA`.
+- Bloco de comandos do README atualizado: estava descrevendo o fluxo antigo de dois passes de IA e sem `ocr.mjs`, `zoom-lacunas.mjs` e `limpar.mjs`.
+
+---
+
 ## 2026-07-31 | Fix + Tooling | sem commit
 
 **Importação de prova digitalizada: lacunas automáticas, relatório de pendências e limpeza**
