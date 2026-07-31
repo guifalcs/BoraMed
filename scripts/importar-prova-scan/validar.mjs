@@ -99,10 +99,24 @@ const UM_PASSE =
 
 const passes = { passe1: new Map(), passe2: new Map() };
 for (const nome of UM_PASSE ? ['passe1'] : ['passe1', 'passe2']) {
-  const { paginas, erros } = carregarPasse(join(dir, 'transcricao', nome), paginasEsperadas);
+  // O passe 2 é opcional e costuma ser parcial por design (só as páginas em
+  // que vale pagar uma segunda transcrição, ver comentário acima) — cobrar
+  // 100% de cobertura dele, como se fizesse do passe 1, reportaria "página
+  // não transcrita" para todo o resto da prova sem necessidade.
+  const esperadasDoPasse = nome === 'passe2'
+    ? readdirSync(join(dir, 'transcricao', 'passe2'))
+        .filter((f) => /^p\d{3}\.json$/.test(f))
+        .map((f) => parseInt(f.slice(1, 4), 10))
+        .sort((a, b) => a - b)
+    : paginasEsperadas;
+  const { paginas, erros } = carregarPasse(join(dir, 'transcricao', nome), esperadasDoPasse);
   erros.forEach((e) => errosGlobais.push(`${nome}: ${e}`));
   const { questoes, erros: errosCostura, avisos } = costurar(paginas);
-  errosCostura.forEach((e) => errosGlobais.push(`${nome}: ${e}`));
+  // No passe 2 parcial, "lacuna na numeração" é o esperado — são só as
+  // páginas escolhidas para segunda transcrição, não a prova inteira.
+  errosCostura
+    .filter((e) => nome !== 'passe2' || !e.startsWith('lacuna na numeração'))
+    .forEach((e) => errosGlobais.push(`${nome}: ${e}`));
   avisos.forEach((a) => errosGlobais.push(`${nome} (aviso): ${a}`));
   passes[nome] = questoes;
   console.log(`${nome}: ${paginas.length} páginas → ${questoes.size} questões`);
