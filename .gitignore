@@ -30,6 +30,9 @@ supabase/backups/**
 # da prova, transcrições e o markdown gerado. Material de prova + dados de
 # aluno nas fotos — nunca versionar.
 scripts/importar-prova-scan/.trabalho/
+# Idem para a Integradora: o relatório de devolutiva traz nome do aluno no
+# cabeçalho, além do conteúdo da prova.
+scripts/importar-prova-integradora/.trabalho/
 # PDFs de prova soltos na raiz (entrada do pipeline)
 /*.pdf
 # revisao humana baixada pelo navegador, se salva fora do diretorio de trabalho
