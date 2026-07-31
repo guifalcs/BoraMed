@@ -42,28 +42,48 @@ ou página com texto que não se encaixa em nenhuma seção. **Não siga com exi
 é sinal de que o PDF tem estrutura diferente da esperada e algo seria perdido em
 silêncio. Investigue a página apontada.
 
-### 2. Transcrever o scan — dois passes independentes
+### 2. Transcrever o scan (a única etapa que gasta tokens)
 
-Leia `scripts/importar-prova-scan/PROMPT-TRANSCRICAO.md`. Ele é o prompt a usar,
-com as regras que evitam os erros clássicos (marcação à mão, gabarito inventado,
-questão partida entre páginas).
+Leia `scripts/importar-prova-scan/PROMPT-TRANSCRICAO.md` — é o contrato, com as
+regras que evitam os erros clássicos (marcação à mão, gabarito inventado, questão
+partida entre páginas).
 
-Para cada página em `$T/paginas/` despache **um subagente por página**,
-substituindo `{ARQUIVO}`, `{PAGINA}` e `{DIR}` no prompt. Escreva em
-`$T/transcricao/passe1/pNNN.json`.
+Despache subagentes **do tipo `transcritor`** (`.claude/agents/transcritor.md`),
+que tem só Read+Write e roda em sonnet. Regras de custo, medidas nesta prova:
 
-Depois repita **tudo de novo** em `$T/transcricao/passe2/`.
+- **Lotes de 5–6 páginas por agente**, nunca uma página por agente. O overhead de
+  subagente (~21k tokens de system prompt e schema) é pago por agente, não por
+  página: 46 agentes de 1 página custaram ~1,2M, enquanto 8 agentes de 6 páginas
+  custam ~300k pelo mesmo trabalho.
+- **Cole o conteúdo do PROMPT-TRANSCRICAO.md direto no prompt do agente**, em vez
+  de mandar ele ler o arquivo — economiza um turno de contexto cheio por agente.
+- **Não use `general-purpose`** para isso: ele carrega o schema de todas as
+  ferramentas.
 
-Regras do passe 2 — é o que dá valor ao consenso:
+Cada agente escreve um JSON por página em `$T/transcricao/passe1/pNNN.json`.
 
-- Subagentes novos. **Nunca** mostre o resultado do passe 1 para o passe 2, nem
-  mencione que existe um passe anterior.
-- Prompt idêntico, sem dicas adicionais.
-- Se um passe 1 falhou numa página, refaça essa página nos dois passes.
+### 3. Segunda testemunha: OCR, não um segundo passe de IA
 
-Despache em ondas de ~8 agentes paralelos. São 2× o número de páginas de scan.
+```bash
+node scripts/importar-prova-scan/ocr.mjs $T
+```
 
-### 3. Validar (determinístico)
+Requer `sudo apt install -y tesseract-ocr tesseract-ocr-por` uma vez.
+
+Custa **zero tokens** e é melhor ciência que um segundo passe: dois passes do
+mesmo modelo erram de forma correlacionada, enquanto um motor OCR clássico erra de
+forma completamente diferente de um LLM (confunde glifo, não alucina frase
+plausível). `validar.mjs` detecta o diretório `ocr/` e usa automaticamente.
+
+O OCR não serve para diff estrito (foto torta destrói o layout) — serve para
+**cobertura**: cada trecho transcrito tem que ter eco no OCR da mesma página.
+
+**Só pague um segundo passe de IA** (`$T/transcricao/passe2/`) se o relatório de
+validação mostrar muitas questões ainda sem testemunha nenhuma. Se pagar: agentes
+novos, prompt idêntico, e **nunca** mostre o passe 1 para o passe 2 nem mencione
+que ele existe — passe 2 contaminado transforma o consenso em teatro.
+
+### 4. Validar (determinístico)
 
 ```bash
 node scripts/importar-prova-scan/validar.mjs $T
@@ -72,7 +92,8 @@ node scripts/importar-prova-scan/validar.mjs $T
 Quatro crivos independentes por questão:
 
 1. **Estrutura** — 5 alternativas a–e, enunciado presente, nenhuma duplicada.
-2. **Consenso** — os dois passes coincidem (diff palavra a palavra).
+2. **Consenso** — as testemunhas independentes coincidem: OCR da página sempre, e um
+   segundo passe de IA quando existir (diff palavra a palavra).
 3. **Cruzamento** — a alternativa do gabarito oficial tem que aparecer no
    comentário da devolutiva; os distratores, na seção de distratores. Texto
    corrompido por OCR não casa com nada e cai aqui.
@@ -80,7 +101,7 @@ Quatro crivos independentes por questão:
 
 Exit 1 com qualquer flag alta. Lê `relatorio-validacao.md` para o resumo.
 
-### 4. Revisar o que foi sinalizado
+### 5. Revisar o que foi sinalizado
 
 ```bash
 node scripts/importar-prova-scan/revisao.mjs $T
@@ -92,7 +113,7 @@ transcrição editável à direita, flags e o passe 2 para comparar. Corrija, ma
 
 Rode `validar.mjs` de novo se quiser reavaliar as flags.
 
-### 5. Gerar o markdown
+### 6. Gerar o markdown
 
 ```bash
 node scripts/importar-prova-scan/gerar.mjs $T --fonte "TPI 2025.1" --tipo nacional
@@ -104,7 +125,7 @@ Sai em `$T/saida/`: `prova.md` (tudo) + `parte-NN.md` (lotes de 30) +
 Questões com flag alta não resolvida ficam **fora** do markdown por padrão, listadas
 em `PENDENCIAS.md`. Não use `--incluir-alta` sem ter olhado cada uma.
 
-### 6. Round-trip — obrigatório antes de colar
+### 7. Round-trip — obrigatório antes de colar
 
 ```bash
 node scripts/importar-prova-scan/verificar-roundtrip.mjs $T
@@ -114,7 +135,7 @@ Transpila `admin-importar.component.ts` e roda o `parseBlocos()` **de verdade**
 contra o markdown, conferindo campo por campo que nada se perdeu nem mudou. Exit 1
 significa não colar.
 
-### 7. Pendências
+### 8. Pendências
 
 - **Figuras**: o markdown do admin não carrega imagem. `node recortar.mjs $T` gera
   recortes aproximados em `$T/saida/imagens/`; anexe manualmente em `/admin/questoes`.

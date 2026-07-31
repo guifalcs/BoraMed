@@ -75,11 +75,60 @@ const soFolha = resolverGabarito('D', { declarado: { letra: null, afirmacao: nul
 ok('sem devolutiva vale a folha', soFolha.letra === 'D' && soFolha.origem === 'folha');
 ok('folha sozinha não conta como divergência', soFolha.divergiu === false);
 
-// 2. Devolutiva nomeia a letra e discorda: devolutiva ganha. Caso real da Q93.
+// 2. Devolutiva nomeia a letra, sem texto aproveitável: a letra decide.
 const porLetra = resolverGabarito('B', { declarado: { letra: 'A', afirmacao: null } }, alts, LIM);
 ok('letra da devolutiva vence a folha', porLetra.letra === 'A', `obtido ${porLetra.letra}`);
 ok('origem é devolutiva_letra', porLetra.origem === 'devolutiva_letra');
 ok('divergência é registrada', porLetra.divergiu === true);
+
+// ── Casos reais da TPI 2025.1 que expuseram bugs na resolução ──
+
+// Q93: a devolutiva diz "letra A" mas o texto que ela dá ("de esforço") é a
+// alternativa B — a mesma da folha. O texto tem que ganhar da letra, senão o
+// gabarito é trocado para a alternativa errada.
+const q93 = resolverGabarito(
+  'B',
+  {
+    declarado: {
+      letra: 'A',
+      afirmacao: 'letra A, por Incontinência urinária de esforço, devido achados como perda involuntária de urina ao realizar esforços',
+    },
+  },
+  {
+    a: 'Incontinência urinária de urgência',
+    b: 'Incontinência urinária de esforço',
+    c: 'Incontinência urinária funcional',
+    d: 'Incontinência urinária mista',
+    e: 'Infecção do trato urinário de repetição',
+  },
+  LIM,
+);
+ok('Q93: texto vence a letra declarada', q93.letra === 'B', `obtido ${q93.letra}`);
+ok('Q93: não troca o gabarito da folha', q93.divergiu === false);
+ok('Q93: conflito texto×letra é registrado', q93.conflito?.letra_declarada === 'A');
+
+// Q11: a janela declarada atravessa para a lista de distratores
+// ("ALTERNATIVA: … Incorreta: …"). Sem recortar, o gabarito era trocado para
+// uma alternativa explicitamente marcada como incorreta.
+const q11 = resolverGabarito(
+  'D',
+  {
+    declarado: {
+      letra: null,
+      afirmacao: 'A ressecção do mioma por essa técnica apresenta taxa de sucesso de até 90% e aumenta as taxas de fertilidade. ALTERNATIVA: Embolização das artérias uterinas. Incorreta: O procedimento está associado à complicações',
+    },
+  },
+  {
+    a: 'Ablação endometrial.',
+    b: 'Agonistas do GnRH',
+    c: 'Embolização das artérias uterinas',
+    d: 'Miomectomia histeroscópica',
+    e: 'Anticoncepcional oral combinado.',
+  },
+  LIM,
+);
+ok('Q11: não troca para distrator citado depois do recorte', q11.letra === 'D', `obtido ${q11.letra}`);
+ok('Q11: mantém a folha', q11.origem === 'folha' && q11.divergiu === false);
 
 // 3. Devolutiva nomeia a letra sem transcrição alguma: decide igual.
 const semAlts = resolverGabarito('B', { declarado: { letra: 'A', afirmacao: null } }, {}, LIM);

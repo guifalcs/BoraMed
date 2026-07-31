@@ -6,7 +6,10 @@
  * cada questão passa por quatro crivos independentes:
  *
  *   1. ESTRUTURA   — 5 alternativas a–e, enunciado presente, sem duplicatas.
- *   2. CONSENSO    — os dois passes de transcrição têm que coincidir.
+ *   2. CONSENSO    — as testemunhas independentes do scan têm que coincidir:
+ *                    um segundo passe de transcrição, quando existe, e o OCR da
+ *                    página (ocr.mjs), que custa zero e erra de forma
+ *                    descorrelacionada de um LLM.
  *   3. CRUZAMENTO  — a alternativa apontada pelo gabarito tem que aparecer no
  *                    comentário da devolutiva, e os distratores na seção de
  *                    distratores. Texto corrompido por OCR não casa com nada
@@ -21,7 +24,7 @@
  * Uso: node scripts/importar-prova-scan/validar.mjs <dir-trabalho>
  */
 
-import { writeFileSync, existsSync } from 'node:fs';
+import { writeFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { lerJson } from './lib/pdf.mjs';
 import { carregarPasse, costurar, LETRAS } from './lib/transcricao.mjs';
@@ -66,8 +69,18 @@ const errosGlobais = [];
 
 // ──── Carga dos dois passes ────
 
-const passes = {};
-for (const nome of ['passe1', 'passe2']) {
+// Modo de um passe só: usado para triagem antes de decidir onde vale pagar o
+// segundo passe. Sem consenso nenhuma questão fica totalmente verificada, e o
+// relatório diz quais páginas precisam do passe 2 — as questões em que o
+// cruzamento com a devolutiva também não conclui.
+const contarJson = (d) =>
+  existsSync(d) ? readdirSync(d).filter((f) => /^p\d{3}\.json$/.test(f)).length : 0;
+const UM_PASSE =
+  process.argv.includes('--um-passe') ||
+  contarJson(join(dir, 'transcricao', 'passe2')) === 0;
+
+const passes = { passe1: new Map(), passe2: new Map() };
+for (const nome of UM_PASSE ? ['passe1'] : ['passe1', 'passe2']) {
   const { paginas, erros } = carregarPasse(join(dir, 'transcricao', nome), paginasEsperadas);
   erros.forEach((e) => errosGlobais.push(`${nome}: ${e}`));
   const { questoes, erros: errosCostura, avisos } = costurar(paginas);
@@ -75,6 +88,31 @@ for (const nome of ['passe1', 'passe2']) {
   avisos.forEach((a) => errosGlobais.push(`${nome} (aviso): ${a}`));
   passes[nome] = questoes;
   console.log(`${nome}: ${paginas.length} páginas → ${questoes.size} questões`);
+}
+// Segunda testemunha barata: o texto do OCR de cada página (ocr.mjs). Serve de
+// substituto do segundo passe de IA no crivo de consenso — não para diff
+// estrito, mas para cobertura: o que a IA transcreveu tem que ter eco no OCR.
+const ocrPorPagina = new Map();
+const dirOcr = join(dir, 'ocr');
+if (existsSync(dirOcr)) {
+  for (const f of readdirSync(dirOcr).filter((x) => /^p\d{3}\.txt$/.test(x))) {
+    const num = parseInt(f.slice(1, 4), 10);
+    const texto = readFileSync(join(dirOcr, f), 'utf-8');
+    // Página com pouco texto reconhecido não é testemunha de nada.
+    if (texto.replace(/\s/g, '').length >= 200) ocrPorPagina.set(num, texto);
+  }
+}
+const TEM_OCR = ocrPorPagina.size > 0;
+
+if (UM_PASSE) {
+  console.log('\n⚠ MODO DE UM PASSE — o crivo de consenso entre passes de IA não roda.');
+  if (TEM_OCR) {
+    console.log(`  Usando o OCR de ${ocrPorPagina.size} páginas como segunda testemunha.`);
+  } else {
+    console.log('  Sem OCR disponível: rode `node ocr.mjs <dir>` para ter uma segunda');
+    console.log('  testemunha de graça, em vez de pagar um segundo passe de IA.');
+  }
+  console.log('');
 }
 
 const numerosGabarito = Object.keys(gabarito).map(Number).sort((a, b) => a - b);
@@ -112,6 +150,13 @@ for (const numero of numerosGabarito) {
         ? 'ela nomeia a letra'
         : `o texto da resposta declarada casa com a alternativa ${letraEfetiva.toLowerCase()}`})`);
   }
+  if (resolucao.conflito) {
+    flag('alta', 'devolutiva_inconsistente',
+      `a devolutiva nomeia a letra ${resolucao.conflito.letra_declarada} mas o texto que ela ` +
+      `declara como correto é a alternativa ${resolucao.conflito.letra_por_texto} — a fonte se ` +
+      `contradiz; em uso está ${resolucao.conflito.letra_por_texto} (o texto é mais confiável ` +
+      'que a letra), confirme no scan');
+  }
 
   if (!q1 && !q2) {
     flag('alta', 'nao_transcrita', 'questão ausente nos dois passes');
@@ -129,9 +174,10 @@ for (const numero of numerosGabarito) {
     });
     continue;
   }
-  if (!q1 || !q2) {
-    flag('alta', 'passe_faltando', `presente apenas no ${q1 ? 'passe1' : 'passe2'}`);
-  }
+  // A severidade da falta de consenso só pode ser decidida depois do crivo 3:
+  // onde a devolutiva confirma a resposta, o segundo passe é quase redundante;
+  // onde não confirma, é a única rede que sobra.
+  const semConsenso = !q1 || !q2;
 
   // ── Crivo 2: consenso entre passes ──
   const comparacao = { campos: {}, alternativas: {} };
@@ -310,6 +356,60 @@ for (const numero of numerosGabarito) {
     }
   }
 
+  // ── Crivo 2b: OCR como segunda testemunha ──
+  // Cobertura, não diff: o OCR desta prova não acerta layout, mas se um trecho
+  // que a IA transcreveu não tem eco nenhum no OCR da mesma página, é forte
+  // indício de leitura inventada. `similaridadeVocabulario` é usada porque é
+  // robusta a ruído de OCR (glifo trocado quebra bigrama, não o vocabulário).
+  const ocr = { disponivel: false, campos: {} };
+  const textoOcr = (base.paginas ?? [])
+    .map((p) => ocrPorPagina.get(p))
+    .filter(Boolean)
+    .join('\n');
+
+  if (textoOcr) {
+    ocr.disponivel = true;
+    const aConferir = [
+      ['enunciado', base.enunciado],
+      ...presentes.map((l) => [`alternativa ${l}`, base.alternativas[l]]),
+    ];
+    for (const [nome, texto] of aConferir) {
+      if (!texto || tokens(texto).length < 3) continue;
+      const eco = similaridadeVocabulario(texto, textoOcr);
+      ocr.campos[nome] = eco;
+      if (eco < DUVIDA) {
+        flag('media', 'sem_eco_no_ocr',
+          `${nome}: o OCR da página não tem eco deste texto (${eco}) — confira contra o scan`);
+      }
+    }
+  }
+
+  // ── Falta de consenso, graduada pelo que as outras testemunhas confirmam ──
+  if (semConsenso) {
+    const cruzada = cruzamento.nivel === 'forte' || cruzamento.nivel === 'media';
+    // Confirmação pelo OCR: todos os campos conferíveis tiveram eco.
+    const valoresOcr = Object.values(ocr.campos);
+    const ocrConfirma = valoresOcr.length > 0 && valoresOcr.every((v) => v >= DUVIDA);
+
+    if (cruzada && ocrConfirma) {
+      flag('baixa', 'sem_segundo_passe_ia',
+        'só um passe de IA, mas a devolutiva confirma a alternativa correta e o OCR confirma ' +
+        'o texto — duas testemunhas independentes, o segundo passe seria redundante');
+    } else if (ocrConfirma) {
+      flag('media', 'sem_consenso_mas_ocr',
+        'só um passe de IA; o OCR da página confirma o texto transcrito, mas a devolutiva não ' +
+        'confirma qual é a alternativa correta');
+    } else if (cruzada) {
+      flag('media', 'sem_consenso_mas_cruzada',
+        'só um passe de IA; a devolutiva confirma a alternativa correta, mas o texto não tem ' +
+        'segunda testemunha (sem OCR utilizável nesta página)');
+    } else {
+      flag('alta', 'sem_consenso',
+        `só um passe de IA e nenhuma outra testemunha confirma (cruzamento ${cruzamento.nivel}` +
+        `${ocr.disponivel ? ', OCR não confirmou' : ', sem OCR'}) — precisa de revisão manual`);
+    }
+  }
+
   // ── Crivo 4: integridade de caracteres e truncamento ──
   const campos = [
     ['enunciado_apoio', base.enunciado_apoio],
@@ -388,6 +488,7 @@ for (const numero of numerosGabarito) {
       : null,
     comparacao,
     cruzamento,
+    ocr,
     flags: flags.sort((a, b) => SEV[b.severidade] - SEV[a.severidade]),
     severidade_max: flags.length === 0 ? null
       : flags.reduce((m, f) => (SEV[f.severidade] > SEV[m] ? f.severidade : m), 'baixa'),
@@ -502,6 +603,39 @@ for (const [codigo, info] of [...porCodigo.entries()].sort(
   md.push(`| \`${codigo}\` | ${info.severidade} | ${info.questoes.length} | ${lista} |`);
 }
 md.push('');
+
+// Alvo do passe 2: as páginas das questões em que nem o consenso nem o
+// cruzamento verificam nada. Rodar o passe 2 só nelas é o gasto mínimo para
+// fechar a verificação.
+if (UM_PASSE) {
+  const precisam = registros.filter((r) => r.flags.some((f) => f.codigo === 'sem_consenso'));
+  const paginasAlvo = [...new Set(precisam.flatMap((r) => r.paginas ?? []))].sort((a, b) => a - b);
+  const supridas = registros.filter((r) =>
+    r.flags.some((f) => f.codigo === 'sem_consenso_mas_cruzada'));
+
+  md.push('## Onde ainda falta testemunha\n');
+  md.push(
+    'Rodou só um passe de transcrição. Onde a devolutiva confirma qual alternativa é a ' +
+    'correta, o segundo passe é quase redundante. Onde não confirma, ele é a única rede.\n',
+  );
+  md.push(`- questões supridas pelo cruzamento: **${supridas.length}**`);
+  md.push(`- questões que precisam do passe 2: **${precisam.length}**`);
+  md.push(`- páginas a retranscrever: **${paginasAlvo.length}** de ${indicePaginas.length}`);
+  md.push('');
+  if (paginasAlvo.length > 0) {
+    md.push('```');
+    md.push(paginasAlvo.join(' '));
+    md.push('```');
+    md.push('');
+    md.push(`Questões: ${precisam.map((r) => r.numero).join(', ')}\n`);
+  }
+
+  console.log('');
+  console.log(`supridas pelo cruzamento : ${supridas.length}`);
+  console.log(`precisam do passe 2      : ${precisam.length}`);
+  console.log(`páginas a retranscrever  : ${paginasAlvo.length} de ${indicePaginas.length}`);
+  if (paginasAlvo.length > 0) console.log(`  ${paginasAlvo.join(' ')}`);
+}
 
 const criticas = registros.filter((r) => r.severidade_max === 'alta');
 if (criticas.length > 0) {

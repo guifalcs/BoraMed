@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-31 | Fix + Tooling | sem commit
+
+**Importação de prova digitalizada: correção da resolução de gabarito e redesenho de custo**
+
+Rodar o pipeline de verdade na TPI 2025.1 (46 páginas, 120 questões) expôs um bug de correção e um problema de custo. Os dois estão corrigidos.
+
+- **Bug: a regra "devolutiva acima da folha" trocava gabarito errado** (`lib/gabarito.mjs`). Duas causas, ambas encontradas por dados reais:
+  - *Letra tinha prioridade sobre texto.* Na Q93 a devolutiva diz "letra A, por Incontinência urinária de esforço" — mas "de esforço" é a alternativa **B**, a mesma da folha. A letra citada pelo comentarista está errada e o texto está certo. Agora o **texto ganha da letra**: é imune a alternativa transcrita fora de ordem, enquanto a letra depende de uma ordem que quem comentou pode ter errado. Quando os dois discordam, vale o texto e a questão recebe flag alta `devolutiva_inconsistente`.
+  - *A janela da afirmação atravessava para os distratores.* Na Q11 a janela de 260 chars capturou "…fertilidade. ALTERNATIVA: Embolização das artérias uterinas. **Incorreta**: …" e trocou o gabarito para uma alternativa explicitamente marcada como incorreta. Agora a janela é recortada no primeiro marcador de distrator (`ALTERNATIVA:`, `Incorreta`, `Errada`, `Distratores`, `Justificativa`, `Comentários:`).
+  - Resultado: de 2 trocas espúrias para **zero**. Os dois casos entraram como teste de regressão (43 verificações em `testar.mjs`).
+- **Custo: ~80% dos tokens era overhead de subagente, não trabalho.** Medido: ~26k tokens por página, dos quais só ~5k são conteúdo (prompt 2k + imagem 1,5k + JSON 1,2k); o resto é system prompt e schema de ferramentas do agente `general-purpose`, reenviados a cada turno. Dois passes das 46 páginas custaram ~2,4M. Quatro mudanças, sem tocar nos crivos:
+  - Novo agent type `transcritor` (`.claude/agents/transcritor.md`) com apenas Read+Write e modelo sonnet — a tese do pipeline é que a garantia vem dos crivos mecânicos, não da esperteza do transcritor.
+  - Lotes de 5–6 páginas por agente em vez de uma página por agente: o overhead é pago por agente, então 8 agentes fazem o trabalho de 46.
+  - Prompt de transcrição colado inline no despacho, em vez de cada agente ler o arquivo (economiza um turno de contexto cheio por agente).
+  - **Segundo passe de IA substituído por OCR** (`ocr.mjs`, tesseract): custa zero e é melhor ciência — dois passes do mesmo modelo erram de forma correlacionada, enquanto um motor OCR clássico erra de forma completamente diferente de um LLM (confunde glifo, não alucina frase plausível). Pré-processa com escala de cinza, autocontraste e upscale das páginas de baixa resolução. Estimativa do redesenho: ~300k contra ~2,4M.
+- **Novo crivo 2b em `validar.mjs`**: cobertura contra o OCR da página. Não é diff estrito (foto torta destrói o layout), é eco — cada trecho transcrito tem que aparecer no OCR da mesma página, medido por `similaridadeVocabulario`, que é robusta a ruído de glifo. Pega alucinação e troca de palavra; não pega alternativa fora de ordem. Página com menos de 200 caracteres reconhecidos é descartada como testemunha em vez de contar como verificada.
+- **Modo de um passe** (`--um-passe`, ou automático quando `passe2/` está vazio): permite validar e gerar markdown sem pagar o segundo passe, com a falta de consenso graduada pelas outras testemunhas — `sem_segundo_passe_ia` (baixa, devolutiva + OCR confirmam), `sem_consenso_mas_ocr` / `sem_consenso_mas_cruzada` (média, uma testemunha só) e `sem_consenso` (alta, nenhuma). O relatório lista quais páginas ainda precisam de testemunha, para gastar só onde falta.
+- Estado da TPI 2025.1: passe 1 completo, 120 questões, numeração sem lacuna; 36 sem nenhum problema além da falta do segundo passe; 20 com trecho ilegível marcado `[?]` (nessas o segundo passe não ajuda — o scan é ilegível ali, só olho humano resolve), 4 precisam de figura, 2 com devolutiva contraditória (Q11, Q93).
+
+---
+
 ## 2026-07-30 | Tooling | sem commit
 
 **Pipeline de importação de provas digitalizadas com verificação cruzada**
