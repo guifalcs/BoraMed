@@ -255,8 +255,35 @@ function parseQuestaoBloco(
   let disciplinaSigla: string | null = null;
   let temaLinha: string | null = null;
   const explicacaoLinhas: string[] = [];
+  let explicacaoVista = false;
   let referencia: string | null = null;
   let fonte: string | null = null;
+
+  // Seções de texto livre carregam conteúdo copiado da prova, e esse conteúdo
+  // tem linhas que se parecem com rótulo: "Fonte: Federação Internacional..."
+  // (legenda de figura) ou "Gabarito: A alternativa correta..." (devolutiva).
+  // Sem proteção, a legenda é consumida como o campo FONTE e desaparece do
+  // enunciado, e a frase da devolutiva casa com /^GABARITO:\s*([A-Ea-e])/i e
+  // troca o gabarito pela letra "A" da palavra "A alternativa".
+  const emTextoLivre = () =>
+    secao === 'enunciado' ||
+    secao === 'enunciado_apoio' ||
+    secao === 'explicacao' ||
+    secao === 'resposta_modelo';
+
+  /**
+   * Decide se uma linha que casa com um rótulo deve ser tratada como rótulo, e
+   * não como conteúdo. Duas regras:
+   *
+   * 1. Primeira ocorrência ganha. O template emite todos os campos de valor
+   *    único antes de EXPLICACAO, então qualquer repetição depois é conteúdo.
+   * 2. Dentro de seção de texto livre, exige a forma canônica em maiúsculas.
+   *    O template sempre usa maiúscula; prosa de prova, não.
+   */
+  const ehRotulo = (t: string, canonico: string, jaDefinido: boolean): boolean => {
+    if (jaDefinido) return false;
+    return emTextoLivre() ? t.startsWith(canonico) : true;
+  };
 
   for (const linha of linhas) {
     const t = linha.trim();
@@ -268,31 +295,48 @@ function parseQuestaoBloco(
     if (t.toUpperCase() === 'PONTOS_CHAVE') { secao = 'pontos_chave'; continue; }
 
     const mFormato = t.match(/^FORMATO:\s*(.+)/i);
-    if (mFormato) { formatoDeclarado = mFormato[1].trim().toLowerCase(); secao = 'nenhuma'; continue; }
+    if (mFormato && ehRotulo(t, 'FORMATO:', formatoDeclarado !== null)) {
+      formatoDeclarado = mFormato[1].trim().toLowerCase(); secao = 'nenhuma'; continue;
+    }
 
     const mCriterios = t.match(/^CRITERIOS:\s*(.+)/i);
-    if (mCriterios) { criterios = mCriterios[1].trim(); secao = 'nenhuma'; continue; }
+    if (mCriterios && ehRotulo(t, 'CRITERIOS:', criterios !== null)) {
+      criterios = mCriterios[1].trim(); secao = 'nenhuma'; continue;
+    }
 
     const mGabarito = t.match(/^GABARITO:\s*([A-Ea-e])/i);
-    if (mGabarito) { gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue; }
+    if (mGabarito && ehRotulo(t, 'GABARITO:', gabaritoLetra !== null)) {
+      gabaritoLetra = mGabarito[1].toUpperCase(); secao = 'nenhuma'; continue;
+    }
 
     const mTipo = t.match(/^TIPO:\s*(.+)/i);
-    if (mTipo) { tipoQuestao = mTipo[1].trim().toLowerCase(); secao = 'nenhuma'; continue; }
+    if (mTipo && ehRotulo(t, 'TIPO:', tipoQuestao !== null)) {
+      tipoQuestao = mTipo[1].trim().toLowerCase(); secao = 'nenhuma'; continue;
+    }
 
     const mDisciplina = t.match(/^DISCIPLINA:\s*(.+)/i);
-    if (mDisciplina) { disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue; }
+    if (mDisciplina && ehRotulo(t, 'DISCIPLINA:', disciplinaSigla !== null)) {
+      disciplinaSigla = mDisciplina[1].trim(); secao = 'nenhuma'; continue;
+    }
 
     const mTema = t.match(/^TEMAS?:\s*(.+)/i);
-    if (mTema) { temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue; }
+    if (mTema && ehRotulo(t, mTema[0].startsWith('TEMAS') ? 'TEMAS:' : 'TEMA:', temaLinha !== null)) {
+      temaLinha = mTema[1].trim(); secao = 'nenhuma'; continue;
+    }
 
     const mReferencia = t.match(/^REFERENCIA:\s*(.+)/i);
-    if (mReferencia) { referencia = mReferencia[1].trim(); secao = 'nenhuma'; continue; }
+    if (mReferencia && ehRotulo(t, 'REFERENCIA:', referencia !== null)) {
+      referencia = mReferencia[1].trim(); secao = 'nenhuma'; continue;
+    }
 
     const mFonte = t.match(/^FONTE:\s*(.+)/i);
-    if (mFonte) { fonte = mFonte[1].trim(); secao = 'nenhuma'; continue; }
+    if (mFonte && ehRotulo(t, 'FONTE:', fonte !== null)) {
+      fonte = mFonte[1].trim(); secao = 'nenhuma'; continue;
+    }
 
     const mExplicacao = t.match(/^EXPLICACAO:\s*(.*)/i);
-    if (mExplicacao) {
+    if (mExplicacao && ehRotulo(t, 'EXPLICACAO:', explicacaoVista)) {
+      explicacaoVista = true;
       secao = 'explicacao';
       if (mExplicacao[1].trim()) explicacaoLinhas.push(mExplicacao[1]);
       continue;

@@ -25,3 +25,10 @@ supabase/backups/*.dump
 # Ignora TUDO em backups (dumps sensíveis)
 supabase/backups/**
 !supabase/backups/README.md
+
+# Diretório de trabalho da importação de provas digitalizadas: contém os scans
+# da prova, transcrições e o markdown gerado. Material de prova + dados de
+# aluno nas fotos — nunca versionar.
+scripts/importar-prova-scan/.trabalho/
+# PDFs de prova soltos na raiz (entrada do pipeline)
+/*.pdf

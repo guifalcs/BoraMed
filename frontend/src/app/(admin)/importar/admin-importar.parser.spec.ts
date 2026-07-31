@@ -129,3 +129,93 @@ Modelo.
     expect(q.erros.join(' ')).toContain('inválido');
   });
 });
+
+describe('parseBlocos — conteúdo que parece rótulo', () => {
+  // Conteúdo copiado de prova tem linhas assim de verdade: legenda de figura
+  // começa com "Fonte:", e devolutiva comentada com "Gabarito:". Sem proteção,
+  // o parser consumia como campo e corrompia a questão em silêncio.
+  it('legenda "Fonte:" no texto de apoio não é consumida como campo FONTE', () => {
+    const bloco = `---
+ENUNCIADO
+Qual a interpretação do traçado?
+
+ENUNCIADO_APOIO
+A cardiotocografia basal mostra uma imagem como a apresentada.
+Fonte: Federação Internacional de Ginecologia e Obstetrícia (2015).
+
+ALTERNATIVAS
+A) Normal
+B) Anormal
+
+GABARITO: B
+FONTE: TPI 2025.1
+---`;
+    const [q] = parseBlocos(bloco, [], []);
+    expect(q.valida).toBe(true);
+    expect(q.enunciado_apoio).toContain('Fonte: Federação Internacional');
+    expect(q.fonte).toBe('TPI 2025.1');
+  });
+
+  it('"Gabarito: A ..." na explicação não sobrescreve o gabarito', () => {
+    const bloco = `---
+ENUNCIADO
+Pergunta?
+
+ALTERNATIVAS
+A) Primeira
+B) Segunda
+
+GABARITO: B
+EXPLICACAO: Padrão sinusoidal.
+Gabarito: A alternativa correta descreve ondas regulares.
+---`;
+    const [q] = parseBlocos(bloco, [], []);
+    expect(q.alternativas.find((a) => a.correta)?.letra).toBe('B');
+    expect(q.explicacao).toContain('Gabarito: A alternativa correta');
+  });
+
+  it('rótulo em maiúsculas repetido depois não sobrescreve o primeiro', () => {
+    const bloco = `---
+ENUNCIADO
+Pergunta?
+
+ALTERNATIVAS
+A) Primeira
+B) Segunda
+
+GABARITO: B
+TIPO: nacional
+EXPLICACAO: Comentário.
+GABARITO: A
+TIPO: processual
+---`;
+    const [q] = parseBlocos(bloco, [], []);
+    expect(q.alternativas.find((a) => a.correta)?.letra).toBe('B');
+    expect(q.tipo_questao).toBe('nacional');
+    expect(q.explicacao).toContain('GABARITO: A');
+  });
+
+  it('rótulos normais continuam funcionando fora de texto livre', () => {
+    const bloco = `---
+ENUNCIADO
+Pergunta?
+
+ALTERNATIVAS
+A) Primeira
+B) Segunda
+
+GABARITO: A
+TIPO: laboratorio
+REFERENCIA: Harrison, 21ª ed.
+FONTE: Afya P1 2024.1
+EXPLICACAO: Porque sim.
+---`;
+    const [q] = parseBlocos(bloco, [], []);
+    expect(q.valida).toBe(true);
+    expect(q.tipo_questao).toBe('laboratorio');
+    expect(q.referencia).toBe('Harrison, 21ª ed.');
+    expect(q.fonte).toBe('Afya P1 2024.1');
+    expect(q.explicacao).toBe('Porque sim.');
+    expect(q.alternativas.find((a) => a.correta)?.letra).toBe('A');
+  });
+});
