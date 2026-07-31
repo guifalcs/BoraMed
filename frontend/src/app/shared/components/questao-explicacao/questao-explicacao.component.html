@@ -7,7 +7,7 @@
     @if (estruturada(); as e) {
       @if (e.intro) {
         <div class="border-b border-[var(--color-border)] px-4 py-3 text-sm leading-relaxed text-[var(--color-text)]">
-          <markdown [data]="e.intro"></markdown>
+          <markdown [data]="e.intro | formatarExplicacao"></markdown>
         </div>
       }
 
@@ -29,7 +29,7 @@
       <!-- Explicação em prosa (sem alternativas): o bloco inteiro fica verde,
            como a alternativa correta no formato estruturado. -->
       <div class="px-4 py-3 text-sm leading-relaxed" [class]="linhaClasses('correta')">
-        <markdown [data]="explicacao()!"></markdown>
+        <markdown [data]="explicacao()! | formatarExplicacao"></markdown>
       </div>
     }
 

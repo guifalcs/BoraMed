@@ -351,7 +351,7 @@ function parseQuestaoBloco(
       if (mPonto) pontosChave.push(mPonto[1].trim());
       continue;
     }
-    if (secao === 'explicacao' && t) { explicacaoLinhas.push(linha); }
+    if (secao === 'explicacao') { explicacaoLinhas.push(linha); }
   }
 
   const enunciado = enunciadoLinhas.join('\n').trim();

@@ -75,7 +75,7 @@ function maxSequenciaRomana(texto: string, marcador: RegExp): number {
 }
 
 /** Coloca cada item da enumeração em seu próprio parágrafo. */
-function separarItensRomanos(
+export function separarItensRomanos(
   texto: string,
   maxSeq: number,
   marcador: RegExp,
@@ -96,7 +96,7 @@ function separarItensRomanos(
  * ancorados no início da linha (mais seguros); só recorre ao modo solto quando
  * aqueles não formam uma sequência — caso de enumerações em parágrafo corrido.
  */
-function detectarEnumeracaoRomana(
+export function detectarEnumeracaoRomana(
   texto: string,
 ): { maxSeq: number; marcador: RegExp } {
   const seqLinha = maxSequenciaRomana(texto, MARCADOR_ROMANO_LINHA);

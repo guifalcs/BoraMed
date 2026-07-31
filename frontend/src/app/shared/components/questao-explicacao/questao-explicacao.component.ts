@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
+import { FormatarExplicacaoPipe } from '../../pipes/formatar-explicacao.pipe';
 import {
   parseExplicacaoEstruturada,
   type AlternativaExplicacao,
@@ -9,7 +10,7 @@ import {
 @Component({
   selector: 'app-questao-explicacao',
   standalone: true,
-  imports: [MarkdownComponent],
+  imports: [MarkdownComponent, FormatarExplicacaoPipe],
   templateUrl: './questao-explicacao.component.html',
   providers: [provideMarkdown()],
   changeDetection: ChangeDetectionStrategy.OnPush,
