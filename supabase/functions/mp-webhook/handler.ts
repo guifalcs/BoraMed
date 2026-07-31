@@ -4,6 +4,7 @@ import {
   verifyMpSignature,
 } from "../_shared/mp-signature.ts";
 import { syncAcessoUnicoPayment } from "../_shared/mp-payment-sync.ts";
+import { mpPut } from "../_shared/mp-api.ts";
 
 // Webhook do Mercado Pago — fonte da verdade do status das assinaturas.
 // Chamado pelo MP (não pelo app), então NÃO valida JWT; em vez disso valida a
@@ -205,7 +206,7 @@ export async function handleWebhook(
         const { data: assin } = preapprovalId
           ? await admin
             .from("assinatura")
-            .select("id, user_id")
+            .select("id, user_id, status")
             .eq("mp_preapproval_id", preapprovalId)
             .maybeSingle()
           : { data: null };
@@ -277,6 +278,43 @@ export async function handleWebhook(
           },
           { onConflict: "mp_authorized_payment_id" },
         );
+
+        // Corte imediato: qualquer parcela recusada (1ª cobrança ou renovação)
+        // cancela o preapproval no MP e revoga o acesso na hora, em vez de
+        // esperar o retry nativo do MP (~30 dias) ou o cancelamento automático
+        // dele após 3 parcelas — decisão de produto (2026-07-31): sem retry
+        // cobrando quem já perdeu o acesso, mesmo racional do corte na recusa
+        // da 1ª cobrança em mp-reconciliar-assinaturas.
+        if (status === "rejected" && assin.status !== "cancelled") {
+          const cancel = await mpPut(
+            { fetch: deps.fetch, token: mpToken },
+            `/preapproval/${preapprovalId}`,
+            { status: "cancelled" },
+          );
+          if (!cancel.ok) {
+            // Não-2xx faz o MP reenviar o webhook depois — o retry reexecuta o
+            // cancelamento (mesmo padrão do B1 e do grant pendente em `payment`).
+            console.error(
+              "webhook: falha ao cancelar preapproval após recusa da cobrança",
+              { preapprovalId, status: cancel.status },
+            );
+            return new Response("cancel preapproval failed, retry", {
+              status: 409,
+            });
+          }
+          await admin
+            .from("assinatura")
+            .update({
+              status: "cancelled",
+              cancelada_em: deps.now().toISOString(),
+              proxima_cobranca: deps.now().toISOString(),
+            })
+            .eq("id", assin.id);
+          console.warn("webhook: cobrança recusada, acesso revogado", {
+            preapprovalId,
+            ap: dataId,
+          });
+        }
       }
     } else if (type === "payment") {
       const pay = await mpGet(`/v1/payments/${dataId}`);

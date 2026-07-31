@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-31 | Fix | sem commit
+
+**Renovação de assinatura recorrente recusada corta o acesso na hora**
+
+Investigando um pagamento recusado (renovação mensal, `insufficient_amount`) descobrimos que só a recusa da **1ª cobrança** de uma assinatura recorrente tinha corte imediato de acesso (`mp-reconciliar-assinaturas`) — a partir da 2ª mensalidade em diante, o `mp-webhook` só gravava o `pagamento` como `rejected` e deixava a `assinatura` `authorized`, dependendo do próprio Mercado Pago cancelar o preapproval depois de até 3 parcelas recusadas (semanas de acesso não pago).
+
+- `mp-webhook/handler.ts` (`subscription_authorized_payment`): quando a parcela vem `rejected` (inclusive `recycling`, que já é tratado como recusa nesta base), cancela o preapproval no MP (`PUT /preapproval/{id}`) e revoga o acesso na hora (`status: 'cancelled'`, `proxima_cobranca: agora`) — mesmo racional já usado na recusa da 1ª cobrança. Falha ao cancelar no MP devolve 409 (o MP reenvia o webhook depois e reexecuta), padrão já usado no B1 e no grant pendente do tipo `payment`.
+- Idempotente: se a assinatura já está `cancelled`, não tenta cancelar de novo no MP.
+- `mp-reconciliar-assinaturas` continua existindo como rede de segurança para webhook perdido (seu caso de uso original).
+
+---
+
 ## 2026-07-31 | Docs | sem commit
 
 **Escopo da skill de importação delimitado a TPI**

@@ -429,6 +429,91 @@ Deno.test("webhook authorized_payment: busca líquido e método no pagamento rea
   assertEquals(pag?.metodo_pagamento, "master");
 });
 
+Deno.test("webhook authorized_payment rejected (renovação): cancela preapproval e revoga acesso na hora", async () => {
+  // Decisão de produto (2026-07-31): renovação recusada não espera o retry
+  // nativo do MP (~30 dias) nem o cancelamento automático dele após 3
+  // parcelas — corta na hora, mesmo racional da recusa da 1ª cobrança.
+  const db = new FakeDb({
+    assinatura: [{
+      id: "as-4",
+      user_id: "user-4",
+      status: "authorized",
+      mp_preapproval_id: "PP-Z",
+      proxima_cobranca: "2026-08-27T13:07:00.000Z",
+    }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: "/authorized_payments/AP-4",
+      body: {
+        preapproval_id: "PP-Z",
+        status: "recycling",
+        transaction_amount: 49.9,
+        payment: { status: "rejected", status_detail: "insufficient_amount" },
+        date_created: "2026-06-24T12:00:00.000Z",
+      },
+    },
+    { match: "/preapproval/PP-Z", body: { id: "PP-Z", status: "cancelled" } },
+  ]);
+  const req = await signedWebhookRequest({
+    secret: SECRET,
+    type: "subscription_authorized_payment",
+    dataId: "AP-4",
+  });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(res.status, 200);
+
+  const pag = find(db, "pagamento", (r) => r.mp_authorized_payment_id === "AP-4");
+  assertEquals(pag?.status, "rejected");
+
+  const assin = find(db, "assinatura", (r) => r.id === "as-4");
+  assertEquals(assin?.status, "cancelled");
+  assertEquals(assin?.cancelada_em, NOW.toISOString());
+  assertEquals(
+    assin?.proxima_cobranca,
+    NOW.toISOString(),
+    "acesso revogado na hora, sem esperar a proxima_cobranca antiga",
+  );
+});
+
+Deno.test("webhook authorized_payment rejected: falha ao cancelar preapproval → 409 pede retry", async () => {
+  const db = new FakeDb({
+    assinatura: [{
+      id: "as-5",
+      user_id: "user-5",
+      status: "authorized",
+      mp_preapproval_id: "PP-W",
+      proxima_cobranca: "2026-08-27T13:07:00.000Z",
+    }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: "/authorized_payments/AP-5",
+      body: {
+        preapproval_id: "PP-W",
+        status: "recycling",
+        payment: { status: "rejected" },
+      },
+    },
+    { match: "/preapproval/PP-W", status: 500, body: {} },
+  ]);
+  const req = await signedWebhookRequest({
+    secret: SECRET,
+    type: "subscription_authorized_payment",
+    dataId: "AP-5",
+  });
+  const res = await handleWebhook(req, makeDeps({ db, fetch, now: NOW }));
+  assertEquals(
+    res.status,
+    409,
+    "não-2xx faz o MP reenviar o webhook e reexecutar o cancelamento",
+  );
+
+  const assin = find(db, "assinatura", (r) => r.id === "as-5");
+  assertEquals(assin?.status, "authorized", "não revoga sem confirmar o cancelamento no MP");
+  assertEquals(assin?.proxima_cobranca, "2026-08-27T13:07:00.000Z");
+});
+
 Deno.test("webhook payment acesso_unico approved: concede acesso por N meses e registra pagamento", async () => {
   const db = new FakeDb({
     plano: [{ id: "pl-sem", slug: "semestral" }],
