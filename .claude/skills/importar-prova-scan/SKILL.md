@@ -1,20 +1,35 @@
 ---
 name: importar-prova-scan
-description: Use ao importar uma prova em PDF digitalizado (TPI, prova de faculdade, prova fotografada) para o acervo. Ativa ao mencionar importar prova, PDF de prova, prova escaneada/digitalizada, TPI, gabarito + devolutiva, ou quando a importação normal do /admin/importar traz questões quebradas.
+description: Use ao importar uma prova de TPI (Teste de Progresso Institucional) para o acervo — é o único tipo de prova do BoraMed que vem em PDF digitalizado, com scan da prova + folha de gabarito + devolutiva comentada. Ativa ao mencionar importar TPI, PDF de TPI, prova digitalizada/escaneada/fotografada, gabarito + devolutiva. NÃO use para questões autorais, simulados processuais ou de laboratório: essas são criadas direto no /admin/questoes.
 ---
 
-# Importar prova digitalizada com verificação cruzada
+# Importar prova de TPI (PDF digitalizado)
 
-Pipeline para importar provas cujo PDF é **foto da prova de um aluno** — o caso em
-que pedir a transcrição direto para uma IA falha: texto quebrado, alternativas
-inventadas e gabarito copiado das marcações à mão do aluno (que erram).
+Pipeline para importar **TPI — Teste de Progresso Institucional**, que é o único
+tipo de prova do acervo que chega como PDF digitalizado: **foto da prova de um
+aluno**. É o caso em que pedir a transcrição direto para uma IA falha — texto
+quebrado, alternativas inventadas e gabarito copiado das marcações à mão do aluno
+(que erram).
 
 A confiabilidade não vem da IA acertar. Vem de **cada campo ser conferido contra
 uma segunda fonte independente do mesmo PDF**, mecanicamente.
 
-## Por que provas assim têm três seções
+## Escopo — quando NÃO usar
 
-Esse formato de PDF costuma trazer, em sequência:
+| tipo de conteúdo | como entra |
+| --- | --- |
+| **TPI** | este pipeline |
+| Treinos Nacionais, Simulados Processuais, Laboratório | autorais, criadas direto em `/admin/questoes` |
+| prova com camada de texto nas questões | não precisa de IA — `pdftotext` extrai tudo |
+
+O parsing de duas das três seções é **específico do formato do relatório AFYA**
+(ver "Limites" no final). Se aparecer outra prova digitalizada com estrutura
+diferente, `extrair.mjs` sai com erro em vez de adivinhar — e aí é adaptar o
+parser, não empurrar.
+
+## As três seções do PDF de TPI
+
+O PDF traz, em sequência:
 
 | seção | conteúdo | como extrair |
 | --- | --- | --- |
@@ -203,3 +218,27 @@ dentro de seção de texto livre o rótulo exige forma canônica em maiúsculas.
 montar markdown à mão, use **rótulos sempre em MAIÚSCULAS** — é o que separa
 rótulo de conteúdo. `gerar.mjs` blinda também do lado da geração, e
 `verificar-roundtrip.mjs` prova que nada se perdeu.
+
+## Limites de escopo
+
+Calibrado e testado em **uma** prova: TPI 2025.1 (46 páginas de scan, 120
+questões). Os limiares — eco no OCR em 0.45, cruzamento em 0.6/0.34, faixa de
+zoom em 470px — saíram dela. Em TPI de outra origem, com scan de qualidade
+diferente, podem precisar de ajuste; os scripts imprimem os números e não só o
+veredito, então muitas flags `sem_eco_no_ocr` de uma vez significa recalibrar o
+limiar, não transcrição ruim.
+
+Três regex em `lib/pdf.mjs` decidem a classificação das seções e assumem o
+formato do relatório AFYA:
+
+| o que | espera encontrar |
+| --- | --- |
+| folha de gabarito | tabela `001 (E)` na camada de texto, ou o título "GABARITO DE PROVA" |
+| devolutiva | linha `Nª QUESTÃO` isolada, "Resposta comentada:" ou "RELATÓRIO DE DEVOLUTIVA" |
+| página de scan | menos de 60 caracteres alfanuméricos (sem camada de texto) |
+
+**Sem a devolutiva o pipeline enfraquece muito** e vale dizer ao usuário: o crivo
+3 desaparece (é o que confere se o gabarito aponta para a alternativa certa), o
+preenchimento automático de `[?]` perde a única fonte confiável, a regra
+"devolutiva acima da folha" fica sem efeito, e as questões entram sem `EXPLICACAO`
+nem `REFERENCIA`. Sobram estrutura, OCR e integridade.

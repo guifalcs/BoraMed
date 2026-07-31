@@ -1,6 +1,7 @@
-# Importação de prova digitalizada
+# Importação de prova de TPI (PDF digitalizado)
 
-Pipeline para importar provas cujo PDF é foto da prova de um aluno — o caso em que
+Pipeline para **TPI — Teste de Progresso Institucional**, o único tipo de prova do
+acervo que chega como PDF digitalizado (foto da prova de um aluno). É o caso em que
 pedir a transcrição direto para uma IA falha: texto quebrado, alternativas
 inventadas e gabarito copiado das marcações à mão do aluno.
 
@@ -10,6 +11,16 @@ alternativas passam por IA; gabarito, explicação, distratores e referências s
 por regex do próprio PDF.
 
 Uso guiado: skill `importar-prova-scan` (`.claude/skills/importar-prova-scan/`).
+
+## Escopo
+
+**Não** serve para o resto do acervo: Treinos Nacionais, Simulados Processuais e
+Laboratório são autorais e entram direto pelo `/admin/questoes`. Prova com camada
+de texto nas questões também não precisa disso — `pdftotext` extrai tudo.
+
+O parsing da folha de gabarito e da devolutiva assume o formato do relatório AFYA
+(ver "Limites conhecidos"). Outra prova digitalizada com estrutura diferente faz o
+`extrair.mjs` sair com erro em vez de adivinhar.
 
 ## Anatomia do PDF
 
@@ -208,3 +219,15 @@ O diretório é gitignorado: contém material de prova e fotos com dados de alun
   `/admin/provas`.
 - `DISCIPLINA`/`TEMA` saem vazios de propósito: a nomenclatura da devolutiva não
   corresponde ao cadastro.
+- **Calibrado e testado em uma prova só** — TPI 2025.1, 46 páginas de scan, 120
+  questões. Os limiares (eco no OCR 0.45, cruzamento 0.6/0.34, faixa de zoom
+  470px) saíram dela. Em TPI de outra origem podem precisar de ajuste: os scripts
+  imprimem os números, então muitas flags `sem_eco_no_ocr` de uma vez significa
+  recalibrar o limiar, não transcrição ruim.
+- **Sem a devolutiva o pipeline enfraquece muito**: o crivo 3 desaparece (é o que
+  confere se o gabarito aponta para a alternativa certa), o preenchimento
+  automático de `[?]` perde a única fonte confiável, a regra "devolutiva acima da
+  folha" fica sem efeito, e as questões entram sem `EXPLICACAO` nem `REFERENCIA`.
+  A classificação das seções está em três regex em `lib/pdf.mjs`: gabarito espera
+  a tabela `001 (E)`, devolutiva espera `Nª QUESTÃO`/"Resposta comentada:", e scan
+  é página com menos de 60 caracteres alfanuméricos.
