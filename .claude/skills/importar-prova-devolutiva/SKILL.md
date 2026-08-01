@@ -1,4 +1,4 @@
----
+﻿---
 name: importar-prova-devolutiva
 description: Use ao importar para o acervo qualquer prova que chegue como relatório de devolutiva da AFYA em PDF de texto — Integradora, SOI, HAM, N1/N2 específica. Uma seção por questão, com enunciado, alternativas marcadas (CORRETA) ou "Alternativas: --" nas discursivas, resposta comentada e referências. Ativa ao mencionar importar Integradora/SOI/HAM, relatório de devolutiva, PDF de prova com camada de texto, "Nª QUESTÃO" / "Resposta comentada". NÃO use para TPI (essa é digitalizada — skill importar-prova-scan) nem para questões autorais.
 ---
@@ -9,16 +9,17 @@ Pipeline para qualquer prova da AFYA que chegue como **relatório de devolutiva
 gerado**: PDF com camada de texto em 100% das páginas, uma seção por questão,
 resposta certa marcada em linha.
 
-O que o pipeline entende é o **relatório**, não a disciplina. Integradora, SOI e
-HAM usam o mesmo gerador; o que muda entre elas está tratado:
+O que o pipeline entende é o **relatório**, não a disciplina. Integradora, SOI,
+HAM e IESC usam o mesmo gerador; o que muda entre elas está tratado:
 
 | varia entre provas | como o pipeline lida |
 | --- | --- |
 | título da prova | posicional — o que está solto acima de "RELATÓRIO DE DEVOLUTIVA DE PROVA" |
-| bloco "Filtros da questão" | só a Integradora traz; sem ele, não sai `classificacao-sugerida.csv` |
-| questões discursivas | SOI e HAM trazem duas por prova; viram `FORMATO: aberta` |
+| bloco "Filtros da questão" | Integradora sempre, IESC às vezes; sem ele, não sai `classificacao-sugerida.csv` |
+| questões discursivas | SOI, HAM e IESC trazem duas por prova; viram `FORMATO: aberta` |
 | marcador `Nª QUESTÃO` | pode dividir a linha com `Enunciado:` ou `Feedback:` |
 | origem `(AFYA Bragança)` | caixa mista, sem `[IES]` para confirmar |
+| vereditos empacotados num parágrafo | subdivididos só quando o comentário abre com veredito |
 
 **Nenhuma etapa envolve IA e o custo em tokens é zero.** Enunciado, alternativas,
 gabarito, resposta modelo, explicação e referências saem por regex do próprio
@@ -30,7 +31,7 @@ introduz erro.
 
 | tipo de prova | como entra |
 | --- | --- |
-| Integradora, SOI, HAM (relatório de devolutiva, texto) | este pipeline |
+| Integradora, SOI, HAM, IESC (relatório de devolutiva, texto) | este pipeline |
 | **TPI** (scan + folha de gabarito + devolutiva) | skill `importar-prova-scan` |
 | Treinos Nacionais, Simulados Processuais, Laboratório | autorais, direto em `/admin/questoes` |
 
@@ -39,7 +40,7 @@ dizer prova digitalizada, e aí é o outro pipeline.
 
 ## Fechada e discursiva na mesma prova
 
-As provas de SOI e HAM misturam os dois formatos, e a diferença atravessa o
+As provas de SOI, HAM e IESC misturam os dois formatos, e a diferença atravessa o
 pipeline inteiro:
 
 |  | fechada | discursiva |
@@ -131,7 +132,7 @@ node scripts/importar-prova-devolutiva/gerar.mjs $T \
 ```
 
 `--fonte` sai do nome do PDF quando omitido. `--subtipo` é o subtipo que a prova
-vai ter em `/admin/provas` (SOI, HAM, Integradora) e só aparece no texto de
+vai ter em `/admin/provas` (SOI, HAM, IESC, Integradora) e só aparece no texto de
 pendências. `--tipo` é sempre `nacional`: o parser do admin só aceita
 `nacional | processual | laboratorio`, e a disciplina se resolve depois.
 
@@ -237,11 +238,11 @@ perdido.
 
 ## Limites de escopo
 
-Calibrado em **13 provas**: Integradora 4/8 (2024.2, 2025.1, 2025.2), SOI IV
-(2022.2, 2023.1, 2023.2, 2024.2, 2025.1, 2025.2) e HAM IV (2022.2, 2023.2,
-2024.2, 2025.2). Das treze, **onze rodam ponta a ponta**.
+Calibrado em **19 provas**: Integradora 4/8 (2024.2, 2025.1, 2025.2), SOI IV
+(2022.2 a 2025.2), HAM IV (2022.2, 2023.2, 2024.2, 2025.2) e IESC IV (2022.2 a
+2025.2). Das dezenove, **dezesseis rodam ponta a ponta**.
 
-**As duas de 2022.2 não passam, por decisão**: aquele relatório vem em **duas
+**As três de 2022.2 não passam, por decisão**: aquele relatório vem em **duas
 colunas** — rótulos empilhados à esquerda, texto todo à direita —, e ali
 `Alternativas:` aparece na altura da segunda linha do enunciado. O parser detecta
 esse layout e bloqueia com essa mensagem, em vez de importar meio enunciado como

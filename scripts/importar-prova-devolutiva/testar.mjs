@@ -402,6 +402,74 @@ const porSecao = crivoCruzamento({
 igual('seção do comentário confirma o gabarito', porSecao.cobertura, 'forte');
 igual('sem flag quando a seção concorda', porSecao.flags.filter((f) => f.severidade === 'alta').length, 0);
 
+// 5. Julgamentos empacotados num parágrafo só, sem linha em branco entre eles.
+// A IESC 2025.2 escreve os quatro seguidos; o comentário inteiro virava UM
+// parágrafo, o veredito lido era o do começo do bloco (que julga outra
+// alternativa) e a questão 1 saía acusada de gabarito errado.
+const ALTS_PNAISC = {
+  a: 'Realizar a anamnese detalhada, preencher a caderneta de saúde, atualizar a vacinação e articular com a rede de proteção social.',
+  b: 'Orientar a mãe a levar a criança imediatamente a um serviço de urgência especializado para avaliação completa.',
+  c: 'Solicitar exames complementares, agendar retorno para reavaliação clínica em 30 dias e orientar sobre sinais de alerta.',
+  d: 'Prescrever fórmula infantil para complementar a nutrição e solicitar consulta com pediatra em caráter eletivo.',
+};
+
+const empacotado = crivoCruzamento({
+  numero: 1,
+  formato: 'fechada',
+  letra_correta: 'a',
+  corretas_marcadas: ['a'],
+  enunciado: 'Marque a conduta inicial mais adequada.',
+  alternativas: ALTS_PNAISC,
+  explicacao:
+    'Incorreto: Ao prescrever fórmula infantil para complementar a nutrição e solicitar consulta com ' +
+    'pediatra em caráter eletivo, a equipe ignora a promoção do aleitamento materno. ' +
+    'Correto: Realizar a anamnese detalhada, preencher a caderneta de saúde, atualizar a vacinação e ' +
+    'articular com a rede de proteção social. A equipe demonstra a capacidade resolutiva da APS. ' +
+    'Incorreta: Ao solicitar exames complementares e agendar retorno para reavaliação clínica em 30 ' +
+    'dias, a equipe posterga a assistência. ' +
+    'Incorreta: Ao orientar a mãe a levar a criança imediatamente a um serviço de urgência ' +
+    'especializado, a equipe reduz um problema complexo a uma queixa biomédica isolada.',
+  trechos_suspeitos: [],
+});
+igual(
+  'julgamentos empacotados não acusam contradição',
+  empacotado.flags.filter((f) => f.severidade === 'alta').length,
+  0,
+);
+igual('e o gabarito fica confirmado', empacotado.cobertura, 'forte');
+
+// O formato espelhado — citação primeiro, veredito depois — parece o mesmo e se
+// comporta ao contrário: cortar antes de cada veredito junta a justificativa de
+// uma alternativa com a citação da seguinte, deslocando tudo em um. Foi assim
+// que a questão 4 da IESC 2025.1 passou a ser acusada. Aqui o crivo tem que
+// ficar sem confirmação — que é diferente de acusar.
+const vereditoNoFim = crivoCruzamento({
+  numero: 4,
+  formato: 'fechada',
+  letra_correta: 'b',
+  corretas_marcadas: ['b'],
+  enunciado: 'Marque a opção verdadeira.',
+  alternativas: {
+    a: 'Na avaliação da pele, o médico deve atentar estritamente à presença de edema, palidez e cianose.',
+    b: 'O teste do olhinho deve ser orientado, pois pode indicar catarata congênita ou retinopatia da prematuridade.',
+    c: 'No exame do crânio, é esperado que a fontanela posterior já esteja fechada.',
+    d: 'Em caso de prematuridade, o teste da orelhinha é contraindicado, pois o sistema auditivo não amadureceu.',
+  },
+  explicacao:
+    'No exame do crânio, é esperado que a fontanela posterior já esteja fechada. Incorreta: A fontanela ' +
+    'posterior é triangular e fecha-se até o segundo mês. ' +
+    'Na avaliação da pele, o médico deve atentar estritamente à presença de edema, palidez e cianose. ' +
+    'Incorreta: O profissional deverá estar atento caso a icterícia tenha se iniciado nas primeiras 24 horas. ' +
+    'Em caso de prematuridade, o teste da orelhinha é contraindicado, pois o sistema auditivo não amadureceu. ' +
+    'Incorreta: Oriente a família para a realização da triagem auditiva neonatal universal.',
+  trechos_suspeitos: [],
+});
+igual(
+  'veredito depois da citação não vira acusação',
+  vereditoNoFim.flags.filter((f) => f.codigo === 'marcada_como_incorreta').length,
+  0,
+);
+
 // Alternativa de assertiva com boilerplate ainda é questão de assertivas.
 ok(
   'assertiva verbosa é reconhecida',

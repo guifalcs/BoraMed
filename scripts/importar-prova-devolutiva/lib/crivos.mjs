@@ -385,6 +385,45 @@ function vereditoNoInicio(trecho) {
   return /^in|^errad|^erro|^fals/i.test(m[1]) ? 'incorreta' : 'correta';
 }
 
+/**
+ * Veredito abrindo uma frase no meio do parágrafo: `… APS. Incorreta: Ao
+ * solicitar exames …`.
+ *
+ * A unidade de análise do crivo é o parágrafo, e isso pressupõe que o relatório
+ * separe com linha em branco o julgamento de cada alternativa. A IESC 2025.2
+ * não separa: os quatro vereditos vêm num bloco corrido, e o comentário inteiro
+ * virava **um** parágrafo. O ranking então só tinha um candidato, o veredito
+ * lido era o do começo do bloco (`Incorreto:`, que julga a alternativa D), e a
+ * questão 1 saía acusada de ter o gabarito errado — quando o `Correto:` do
+ * segundo julgamento nomeia exatamente a alternativa marcada.
+ *
+ * O corte é conservador: só quebra onde há **fronteira de frase** seguida de
+ * veredito com dois-pontos, que é forma de julgamento e não de prosa.
+ */
+const RE_CORTE_DE_VEREDITO =
+  /(?<=[.!?])\s+(?=(?:in)?corret[oa]s?\s*:|alternativa\s+(?:in)?corret[oa]s?\s*:)/gi;
+
+/**
+ * Parágrafos do comentário, subdividindo os que empacotam vários julgamentos.
+ *
+ * O corte só vale para o formato em que **o veredito abre o julgamento**
+ * (`Incorreto: <justificativa>. Correto: <justificativa>.`), e a condição para
+ * reconhecê-lo é o comentário começar com um veredito.
+ *
+ * O outro formato — `<citação da alternativa>. Incorreta: <justificativa>.`,
+ * da IESC 2025.1 — parece o mesmo e se comporta ao contrário: cortar antes de
+ * cada veredito ali junta a justificativa de uma alternativa com a citação da
+ * **seguinte**, e cada alternativa passa a casar com o parágrafo que carrega o
+ * veredito da anterior. Um deslocamento de um, que acusou o gabarito correto da
+ * questão 4 de estar errado. Sem o corte, esse formato continua caindo em
+ * `sem_eco`/`presenca` — sem confirmação, que é diferente de acusação.
+ */
+function segmentarComentario(comentario) {
+  const paragrafos = comentario.split(/\n{2,}/).filter((p) => p.trim());
+  if (!vereditoNoInicio(comentario)) return paragrafos;
+  return paragrafos.flatMap((p) => p.split(RE_CORTE_DE_VEREDITO)).filter((p) => p.trim());
+}
+
 /** Margem mínima sobre o segundo parágrafo mais parecido para o par decidir. */
 const MARGEM_MINIMA = 0.15;
 /** Similaridade mínima para considerar que o comentário descreve a alternativa. */
@@ -520,7 +559,7 @@ export function crivoCruzamento(q) {
     return { flags: [], cobertura: 'forte', vereditos: {}, assertivas: a };
   }
 
-  const paragrafos = comentario.split(/\n{2,}/).filter((p) => p.trim());
+  const paragrafos = segmentarComentario(comentario);
   const secoes = secoesDoComentario(paragrafos);
   const vereditos = {};
 

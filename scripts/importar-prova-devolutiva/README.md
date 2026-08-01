@@ -532,6 +532,11 @@ Gitignorado: o relatório traz nome de aluno no cabeçalho, além do conteúdo d
   propósito.
 - **`DISCIPLINA`/`TEMA` saem vazios** de propósito: a nomenclatura dos filtros do
   relatório não corresponde ao cadastro. Veja `classificacao-sugerida.csv`.
+- **O bloco "Filtros da questão" pode vir em duas colunas** (IESC 2023.1: a chave
+  `[Semanas]` na margem da linha `Feedback:` e o valor na linha seguinte, ao lado
+  do `--`). Nesse caso a chave é descartada como margem — **com aviso nomeando o
+  que saiu** — e a coluna correspondente fica vazia no CSV. Atinge só a sugestão
+  de classificação; enunciado, alternativas e gabarito não dependem desse bloco.
 - **`/admin/importar` não vincula questão a prova.** Depois de importar, crie a
   prova em `/admin/provas` com o subtipo certo (Integradora, SOI, HAM) e vincule
   as questões.
