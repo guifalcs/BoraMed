@@ -386,7 +386,16 @@ export const CAMPOS_OBRIGATORIOS = ['enunciado', 'alternativas'];
  */
 const RE_VAO_DE_MARGEM = /:[ \t]{5,}\S/;
 
-const RE_ALTERNATIVA = /^\s*\(\s*alternativa\s+([A-Ea-e])\s*\)\s*(\(\s*CORRETA\s*\))?\s*(.*)$/i;
+/**
+ * Linha de alternativa, com a marca de gabarito opcional.
+ *
+ * O `)` que fecha `(CORRETA` é opcional porque o relatório às vezes o perde: na
+ * questão 6 da SOI 2023.2 a linha é literalmente `(alternativa B) (CORRETA`, e
+ * exigir o fechamento deixava a questão inteira sem gabarito — o crivo acusava
+ * `sem_correta_unica` e ela ficava fora do markdown, por um caractere de erro
+ * de digitação do gerador.
+ */
+const RE_ALTERNATIVA = /^\s*\(\s*alternativa\s+([A-Ea-e])\s*\)\s*(\(\s*CORRETA\s*\)?)?\s*(.*)$/i;
 
 /**
  * Aplica o autômato de campos a um bloco de questão.

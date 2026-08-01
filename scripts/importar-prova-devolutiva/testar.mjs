@@ -26,6 +26,7 @@ import {
   crivoCruzamento,
   crivoEstrutura,
   crivoDiscursiva,
+  crivoIntegridade,
   RESERVADO,
 } from './lib/crivos.mjs';
 import { mencoesDeFigura, mencoesDeTabela, linhasTabulares, substituirTabelas } from './lib/midia.mjs';
@@ -578,6 +579,32 @@ igual(
   1,
 );
 
+// ─────────────────── camada de texto vinda de OCR ───────────────────
+// A SOI 2023.1 é scan com OCR embutido: `{ALT}` por `(ALT)`, `virai` por
+// `viral`, `12!!` por `12ª`. O caractere trocado é só a assinatura — o defeito
+// é o texto ao redor, que passa por prosa válida em todos os outros crivos.
+
+igual(
+  'chave no lugar de parêntese é flag alta',
+  crivoIntegridade({
+    enunciado: 'Estão aumentados os níveis de alanina aminotransferase {ALT}, enzima hepática.',
+    enunciado_apoio: '',
+    alternativas: {},
+    trechos_suspeitos: [],
+  }).filter((f) => f.codigo === 'ocr_suspeito' && f.severidade === 'alta').length,
+  1,
+);
+igual(
+  'texto de camada gerada não dispara',
+  crivoIntegridade({
+    enunciado: 'Estão aumentados os níveis de alanina aminotransferase (ALT), enzima hepática.',
+    enunciado_apoio: '',
+    alternativas: {},
+    trechos_suspeitos: [],
+  }).filter((f) => f.codigo === 'ocr_suspeito').length,
+  0,
+);
+
 // ─────────────────── prova genérica: cabeçalho ───────────────────
 // Procurar `INTEGRADORA` não achava nada em SOI nem em HAM, e filtrar por caixa
 // alta reprovava `Nl ESPECIFICA SOi 4 04MAIO2023`. O título é posicional: o que
@@ -704,6 +731,24 @@ igual(
   ].join('\n')]).blocos[0]).fonte_original,
   null,
 );
+
+// Marca de gabarito sem o parêntese de fechamento: `(alternativa B) (CORRETA`.
+// Um caractere perdido pelo gerador do relatório deixava a questão 6 da SOI
+// 2023.2 sem gabarito nenhum, e portanto fora do markdown.
+const corretaSemFechar = parsearQuestao(fatiarQuestoes([[
+  '  6ª QUESTÃO',
+  ' Enunciado:',
+  ' Assinale a forma evolutiva responsável pela adesão à mucosa e o tratamento indicado.',
+  ' Alternativas:',
+  ' (alternativa A)',
+  ' Trofozoíto, ivermectina.',
+  ' (alternativa B) (CORRETA',
+  ' Trofozoíto, metronidazol.',
+  ' (alternativa C)',
+  ' Cisto, praziquantel.',
+].join('\n')]).blocos[0]);
+igual('marca (CORRETA sem fechar ainda é gabarito', corretaSemFechar.letra_correta, 'b');
+igual('e o texto da alternativa fica íntegro', corretaSemFechar.alternativas.b, 'Trofozoíto, metronidazol.');
 
 // ─────────────────── questão discursiva ───────────────────
 // As provas de SOI e HAM trazem duas por prova. O relatório não declara o

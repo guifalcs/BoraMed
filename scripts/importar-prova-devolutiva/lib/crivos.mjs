@@ -694,6 +694,19 @@ export function crivoIntegridade(q) {
     if (/[?]{2}|\[\?\]|�/.test(t)) {
       flags.push({ codigo: 'lacuna_no_texto', severidade: 'alta', detalhe: `${nome} tem marca de caractere perdido` });
     }
+    // Chave no lugar de parêntese é assinatura de camada de texto vinda de OCR,
+    // e onde ela aparece o resto do parágrafo costuma estar corrompido junto
+    // (`{ALT}`, `hepatite virai`, `12!! QUESTÃO` — tudo na mesma prova). Nenhuma
+    // das 12 provas de camada gerada tem uma sequer; a SOI 2023.1, que é scan
+    // com OCR embutido, tem 24. É alta porque o defeito não é o caractere: é o
+    // texto ao redor dele, que passa por prosa válida em todos os outros crivos.
+    if (/[{}]/.test(t)) {
+      flags.push({
+        codigo: 'ocr_suspeito',
+        severidade: 'alta',
+        detalhe: `${nome} tem chave no lugar de parêntese ("${t.match(/.{0,20}[{}].{0,20}/)?.[0] ?? ''}") — camada de texto de OCR`,
+      });
+    }
     // Parênteses desbalanceados denunciam corte no meio de um trecho.
     const abre = (t.match(/\(/g) ?? []).length;
     const fecha = (t.match(/\)/g) ?? []).length;
