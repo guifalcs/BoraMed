@@ -155,7 +155,7 @@ export class LandingComponent implements OnDestroy {
   ];
 
   protected readonly stats = [
-    { value: '+3k', label: 'questões para treinar' },
+    { value: '+4k', label: 'questões para treinar' },
     { value: '4', label: 'modos de treinar' },
     { value: '100%', label: 'no modelo da prova' },
   ] as const;

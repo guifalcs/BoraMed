@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-31 | Copy | sem commit
+
+- Atualizada a comunicação da landing page e do painel visual do login para destacar **+4k questões para treinar**.
+
 ## 2026-07-31 | Feature | sem commit
 
 **Pipeline de devolutiva generalizado: SOI, HAM e questões discursivas**
