@@ -4,7 +4,7 @@ import {
   lazyAuthGuard,
   lazyBannedAccountGuard,
   lazyGuestGuard,
-  lazySubscriptionGuard,
+  lazyNivelPagoGuard,
   lazyTierAvancadoGuard,
 } from './core/guards/lazy-route-guards';
 import { oauthRedirectGuard } from './core/guards/oauth-redirect.guard';
@@ -53,13 +53,13 @@ export const routes: Routes = [
       ),
   },
   {
+    // Sem paywall na raiz do dashboard: desde o plano gratuito, qualquer
+    // autenticado entra no app. O gating desceu para as RPCs
+    // (`iniciar_tentativa` com P0015/P0016, RLS de questao/materiais/flashcards)
+    // e para o `tierAvancadoGuard` nas rotas de materiais, flashcards e montar
+    // simulado — ver dashboard.routes.ts.
     path: 'dashboard',
-    canActivate: [lazyAuthGuard, lazySubscriptionGuard],
-    // canActivateChild re-aplica o paywall a CADA navegação entre rotas-filhas.
-    // Sem ele, um usuário sem acesso que entrasse pela rota isenta
-    // (/dashboard/assinatura) circularia livre pelo dashboard, pois o canActivate
-    // do pai só roda na 1ª ativação. O guard isenta apenas /dashboard/assinatura.
-    canActivateChild: [lazySubscriptionGuard],
+    canActivate: [lazyAuthGuard],
     loadComponent: () =>
       import('./(dashboard)/dashboard.component').then((m) => m.DashboardComponent),
     loadChildren: () =>
@@ -109,7 +109,7 @@ export const routes: Routes = [
     // — sempre exclusiva do plano Avançado (gerar_simulado_impressao bloqueia
     // essencial incondicionalmente), daí o guard de tier aqui.
     path: 'imprimir/simulado/montado',
-    canActivate: [lazyAuthGuard, lazySubscriptionGuard, lazyTierAvancadoGuard],
+    canActivate: [lazyAuthGuard, lazyTierAvancadoGuard],
     data: { modo: 'efemero' },
     loadComponent: () =>
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
@@ -120,7 +120,7 @@ export const routes: Routes = [
     // de tier é condicional ao formato da prova, então acontece dentro da RPC
     // `get_simulado_impressao` (P0015), não neste guard estático de rota.
     path: 'imprimir/simulado/:provaId',
-    canActivate: [lazyAuthGuard, lazySubscriptionGuard],
+    canActivate: [lazyAuthGuard, lazyNivelPagoGuard],
     loadComponent: () =>
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
   },

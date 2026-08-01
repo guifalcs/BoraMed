@@ -6,6 +6,7 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { TrocarCartaoModalComponent } from './trocar-cartao-modal.component';
+import { LimiteTentativasBannerComponent } from '../../shared/components/limite-tentativas-banner/limite-tentativas-banner.component';
 import type { Assinatura, Pagamento } from '../../core/models/subscription.types';
 
 const STATUS_LABEL: Record<Assinatura['status'], string> = {
@@ -42,7 +43,7 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
 @Component({
   selector: 'app-minha-assinatura',
   standalone: true,
-  imports: [CommonModule, UiConfirmDialogComponent, UiIconComponent, TrocarCartaoModalComponent],
+  imports: [CommonModule, UiConfirmDialogComponent, UiIconComponent, TrocarCartaoModalComponent, LimiteTentativasBannerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mx-auto max-w-2xl px-4 py-8">
@@ -52,7 +53,25 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
         <p class="mt-6 text-gray-500">Carregando…</p>
       } @else if (!assinatura()) {
         <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-          <p class="text-gray-600">Você ainda não tem uma assinatura.</p>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">Plano</span>
+            <span class="text-sm font-medium text-gray-900">Gratuito</span>
+          </div>
+
+          @if (tentativasRestantes() !== null) {
+            <div class="mt-4">
+              <app-limite-tentativas-banner
+                [restantes]="tentativasRestantes()!"
+                [comCta]="false"
+              />
+            </div>
+          }
+
+          <p class="mt-4 text-sm text-gray-600">
+            No plano gratuito você faz treinos nacionais com limite. Materiais, flashcards e
+            simulados por tema ficam nos planos pagos.
+          </p>
+
           <button
             type="button"
             (click)="verPlanos()"
@@ -263,6 +282,7 @@ export class MinhaAssinaturaComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly assinatura = this.subscription.assinatura;
+  readonly tentativasRestantes = this.subscription.tentativasRestantes;
   readonly pagamentos = signal<Pagamento[]>([]);
   readonly loading = signal(true);
   readonly processando = signal(false);
@@ -273,6 +293,7 @@ export class MinhaAssinaturaComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.subscription.carregarAssinatura();
+    void this.subscription.statusAcessoServidor();
     this.pagamentos.set(await this.subscription.historicoPagamentos());
     this.loading.set(false);
   }

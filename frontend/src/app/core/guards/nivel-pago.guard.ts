@@ -5,12 +5,16 @@ import { ProfileService } from '../services/profile.service';
 import { SubscriptionService } from '../services/subscription.service';
 
 /**
- * Gate de tier: recursos exclusivos do plano Avançado (materiais, flashcards,
- * montar simulado). Vale tanto para quem está no plano gratuito quanto no
- * essencial — desde o free tier, `tierAtivoServidor()` devolve null nos dois
- * casos e o redirect é o mesmo, só muda a copy em /planos via `origem`.
+ * Exige acesso PAGO (essencial ou avançado). Substitui o antigo
+ * `subscriptionGuard` nas rotas que continuam sendo benefício de assinante,
+ * hoje só a impressão de simulados.
+ *
+ * O /dashboard deixou de usar este guard: com o plano gratuito, o app é
+ * acessível a qualquer autenticado e o gating desceu para as RPCs
+ * (`iniciar_tentativa` com P0015/P0016) e para o `tierAvancadoGuard` nas rotas
+ * de materiais, flashcards e montar simulado.
  */
-export const tierAvancadoGuard: CanActivateFn = async (_route, state) => {
+export const nivelPagoGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
   const profileService = inject(ProfileService);
   const subscription = inject(SubscriptionService);
@@ -27,8 +31,8 @@ export const tierAvancadoGuard: CanActivateFn = async (_route, state) => {
   if (papel === 'admin' || papel === 'super_admin') return true;
 
   // Consulta autoritativa no servidor (evita estado obsoleto entre usuários).
-  const tier = await subscription.tierAtivoServidor();
-  if (tier === 'avancado') return true;
+  const nivel = await subscription.nivelAcessoServidor();
+  if (nivel !== 'gratuito') return true;
 
   return router.createUrlTree(['/planos'], {
     queryParams: { origem: contextoDaRota(state?.url) },
@@ -37,10 +41,5 @@ export const tierAvancadoGuard: CanActivateFn = async (_route, state) => {
 
 /** Rótulo do contexto que levou ao paywall, para /planos abrir com a copy certa. */
 function contextoDaRota(url: string | undefined): string {
-  const path = url?.split(/[?#]/)[0] ?? '';
-  if (path.startsWith('/dashboard/materiais')) return 'materiais';
-  if (path.startsWith('/dashboard/flashcards')) return 'flashcards';
-  if (path.startsWith('/imprimir')) return 'impressao';
-  if (path.includes('/simulados/montar')) return 'simulado-personalizado';
-  return 'recurso-pago';
+  return url?.startsWith('/imprimir') ? 'impressao' : 'recurso-pago';
 }

@@ -36,6 +36,8 @@ import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
 import { CacheService, CACHE_KEYS } from '../../core/services/cache.service';
 import { NavigationProgressService } from '../../core/services/navigation-progress.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { LimiteTentativasBannerComponent } from '../../shared/components/limite-tentativas-banner/limite-tentativas-banner.component';
 
 type Variante = 'success' | 'warning' | 'danger' | 'neutral';
 
@@ -67,6 +69,7 @@ interface BarraEvolucao {
     TentativaRecenteItemComponent,
     EmptyStateComponent,
     UiIconComponent,
+    LimiteTentativasBannerComponent,
   ],
   templateUrl: './inicio.component.html',
   styleUrl: './inicio.component.css',
@@ -82,8 +85,14 @@ export class InicioComponent {
   private readonly desafioService = inject(DesafioService);
   private readonly cache = inject(CacheService);
   private readonly nav = inject(NavigationProgressService);
+  private readonly subscription = inject(SubscriptionService);
 
   protected readonly profile = inject(ProfileService).profile;
+
+  // Contador do plano gratuito. Lê o signal do serviço (o shell do dashboard já
+  // dispara a consulta no boot), então não há round-trip extra nesta tela.
+  protected readonly gratuito = this.subscription.isGratuito;
+  protected readonly tentativasRestantes = this.subscription.tentativasRestantes;
 
   // ── Dados crus do resolver ────────────────────────────
   protected readonly kpisData = signal<HistoricoKpis | null>(null);

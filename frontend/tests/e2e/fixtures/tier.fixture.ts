@@ -8,6 +8,11 @@ import { expect, type Page } from '@playwright/test';
 
 export type Tier = 'essencial' | 'avancado' | null;
 
+/** Nível de acesso do servidor (`nivel_acesso`): função total, sem NULL. */
+export type Nivel = 'gratuito' | 'essencial' | 'avancado';
+
+export const LIMITE_TENTATIVAS_GRATUITAS = 3;
+
 /**
  * Catálogo de planos espelhando a migration `20260717140000_plano_tier_essencial`:
  * essencial-mensal/essencial-semestral (tier barato, só treinos nacionais) e
@@ -19,7 +24,7 @@ export const PLANO_MOCKS = [
     slug: 'essencial-mensal',
     nome: 'Essencial Mensal',
     descricao: 'Acesso aos treinos nacionais por 1 mês, sem renovação automática.',
-    preco_centavos: 2390,
+    preco_centavos: 2990,
     moeda: 'BRL',
     frequency: 1,
     frequency_type: 'months',
@@ -33,7 +38,7 @@ export const PLANO_MOCKS = [
     slug: 'essencial-semestral',
     nome: 'Essencial Semestral',
     descricao: 'Acesso aos treinos nacionais por 6 meses. Pague em até 6x sem juros.',
-    preco_centavos: 8340,
+    preco_centavos: 11940,
     moeda: 'BRL',
     frequency: 6,
     frequency_type: 'months',
@@ -123,14 +128,29 @@ function buildFakeProfile(userId: string, email: string) {
 }
 
 export interface TierMockOptions {
-  /** Resultado do RPC `assinatura_tier` (o que a UI usa para gating). */
+  /**
+   * Nível devolvido por `get_status_acesso` / `nivel_acesso`. Desde o free tier
+   * é o que a UI usa para gating. Quando ausente, deriva de `tier`: null vira
+   * 'gratuito'.
+   */
+  nivel?: Nivel;
+  /** @deprecated Use `nivel`. Mantido para os testes que já usavam tier. */
   tier?: Tier;
-  /** Resultado do RPC `tem_assinatura_ativa` (paywall geral do /dashboard). Default true. */
+  /** Tentativas gratuitas restantes. Só se aplica ao nível gratuito. */
+  tentativasRestantes?: number;
+  /** Resultado do RPC `tem_assinatura_ativa` (usado por telas de assinatura). */
   temAcesso?: boolean;
   /** Rotas adicionais registradas por último (maior prioridade). */
   extraRoutes?: (page: Page) => Promise<void>;
   /** Identificador do usuário fake, útil para distinguir entre testes. */
   userId?: string;
+}
+
+/** Resolve o nível efetivo a partir das opções (compatível com `tier`). */
+export function nivelDe(opts: TierMockOptions): Nivel {
+  if (opts.nivel) return opts.nivel;
+  if (opts.tier) return opts.tier;
+  return 'gratuito';
 }
 
 /**
@@ -176,11 +196,28 @@ export async function setupTierMocks(page: Page, targetUrl: string, opts: TierMo
       body: JSON.stringify(opts.temAcesso ?? true),
     });
   });
+  const nivel = nivelDe(opts);
+  const restantes = nivel === 'gratuito' ? (opts.tentativasRestantes ?? LIMITE_TENTATIVAS_GRATUITAS) : null;
+
+  // RPC principal do gating desde o free tier: nível + contador num payload só.
+  await page.route('**/rest/v1/rpc/get_status_acesso**', (route) => {
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        nivel,
+        tentativas_limite: LIMITE_TENTATIVAS_GRATUITAS,
+        tentativas_restantes: restantes,
+        tentativas_usadas: restantes === null ? null : LIMITE_TENTATIVAS_GRATUITAS - restantes,
+      }),
+    });
+  });
+  // Mantida para eventuais chamadas diretas remanescentes.
   await page.route('**/rest/v1/rpc/assinatura_tier**', (route) => {
     void route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(opts.tier ?? null),
+      body: JSON.stringify(nivel === 'gratuito' ? null : nivel),
     });
   });
   await page.route('**/rest/v1/plano**', (route) => {
@@ -244,20 +281,14 @@ export async function clientNavigate(page: Page, path: string): Promise<void> {
  * qualquer rota autenticada além de `/dashboard` em si.
  */
 export async function setupAndNavigate(page: Page, targetUrl: string, opts: TierMockOptions = {}): Promise<void> {
-  const temAcesso = opts.temAcesso ?? true;
+  const temAcesso = opts.temAcesso ?? nivelDe(opts) !== 'gratuito';
   await setupTierMocks(page, '/dashboard', { ...opts, temAcesso });
 
-  // Com acesso ativo, o bounce assentado em /dashboard mostra a sidebar; sem
-  // acesso, o subscriptionGuard client-side já redireciona para /planos.
-  if (temAcesso) {
-    await expect(page.locator('.sidebar-nav')).toBeVisible({ timeout: 10_000 });
-  } else {
-    await expect(page.getByRole('heading', { name: 'Escolha seu plano' })).toBeVisible({ timeout: 10_000 });
-  }
+  // Desde o free tier, /dashboard não tem paywall: QUALQUER nível assenta na
+  // sidebar. O gating passou a ser por rota (tierAvancadoGuard) e por RPC.
+  await expect(page.locator('.sidebar-nav')).toBeVisible({ timeout: 10_000 });
 
-  if (targetUrl !== '/dashboard' && targetUrl !== '/planos') {
-    await clientNavigate(page, targetUrl);
-  } else if (targetUrl === '/planos' && temAcesso) {
+  if (targetUrl !== '/dashboard') {
     await clientNavigate(page, targetUrl);
   }
 }

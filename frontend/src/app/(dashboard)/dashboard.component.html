@@ -15,21 +15,45 @@
     </div>
 
     <nav class="sidebar-nav" aria-label="Navegação principal">
-      @for (item of navItemsVisiveis(); track item.route) {
-        <a
-          class="nav-item"
-          [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
-          routerLinkActive="nav-item--active"
-          [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
-          [attr.data-onboarding-target]="item.onboardingTarget ?? null"
-        >
-          <app-ui-icon [icon]="item.icon" [size]="20" />
-          <span>{{ item.label }}</span>
-        </a>
+      @for (item of navItens(); track item.route) {
+        @if (item.bloqueado) {
+          <!-- Recurso pago: fica visível e desabilitado, abrindo o upsell.
+               Sumir com o item esconderia o motivo para assinar. -->
+          <button
+            type="button"
+            class="nav-item nav-item--bloqueado"
+            [attr.aria-label]="item.label + ' (recurso do plano Avançado)'"
+            (click)="abrirPaywall(item)"
+          >
+            <app-ui-icon [icon]="item.icon" [size]="20" />
+            <span>{{ item.label }}</span>
+            <app-upgrade-badge />
+          </button>
+        } @else {
+          <a
+            class="nav-item"
+            [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
+            routerLinkActive="nav-item--active"
+            [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+            [attr.data-onboarding-target]="item.onboardingTarget ?? null"
+          >
+            <app-ui-icon [icon]="item.icon" [size]="20" />
+            <span>{{ item.label }}</span>
+          </a>
+        }
       }
     </nav>
 
     <div class="sidebar-bottom">
+      @if (mostrarUpgradeCard()) {
+        <app-upgrade-card
+          variante="compacto"
+          [titulo]="upgradeCardTexto().titulo"
+          [descricao]="upgradeCardTexto().descricao"
+          cta="Ver planos"
+          origem="sidebar"
+        />
+      }
       <div class="sidebar-notif-row">
         <app-notificacoes-sino [sidebar]="true" />
         <span class="sidebar-notif-label">Notificações</span>
@@ -154,17 +178,32 @@
   </main>
 
   <nav class="bottom-nav" aria-label="Navegação principal">
-    @for (item of bottomNavItems; track item.route) {
-      <a
-        class="bottom-nav-item"
-        [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
-        routerLinkActive="bottom-nav-item--active"
-        [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
-        [attr.data-onboarding-target]="item.onboardingTarget ?? null"
-      >
-        <app-ui-icon [icon]="item.icon" [size]="22" />
-        <span>{{ item.label }}</span>
-      </a>
+    @for (item of bottomNavItens(); track item.route) {
+      @if (item.bloqueado) {
+        <button
+          type="button"
+          class="bottom-nav-item bottom-nav-item--bloqueado"
+          [attr.aria-label]="item.label + ' (recurso do plano Avançado)'"
+          (click)="abrirPaywall(item)"
+        >
+          <span class="bottom-nav-icon-wrapper">
+            <app-ui-icon [icon]="item.icon" [size]="22" />
+            <span class="bottom-nav-lock" aria-hidden="true"></span>
+          </span>
+          <span>{{ item.label }}</span>
+        </button>
+      } @else {
+        <a
+          class="bottom-nav-item"
+          [routerLink]="item.route === '/dashboard/simulados' ? provasRoute() : item.route"
+          routerLinkActive="bottom-nav-item--active"
+          [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+          [attr.data-onboarding-target]="item.onboardingTarget ?? null"
+        >
+          <app-ui-icon [icon]="item.icon" [size]="22" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
     }
   </nav>
 
@@ -181,6 +220,8 @@
   />
 
   <app-aviso-modal />
+
+  <app-paywall-modal />
 
   <app-suporte-widget />
 

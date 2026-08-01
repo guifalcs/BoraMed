@@ -6,6 +6,12 @@
       [breadcrumbs]="breadcrumbs"
     />
 
+    @if (gratuito() && tentativasRestantes() !== null) {
+      <div class="mb-5">
+        <app-limite-tentativas-banner [restantes]="tentativasRestantes()!" />
+      </div>
+    }
+
     @if (resumoTentativaAtiva()) {
       <a
         [routerLink]="rotaTentativaAtiva()"
@@ -63,23 +69,23 @@
 
       <!-- Montar Simulado -->
       <a
-        [routerLink]="essencial() ? '/planos' : '/dashboard/simulados/montar'"
+        [routerLink]="bloqueado() ? '/planos' : '/dashboard/simulados/montar'"
         [class]="montarSimuladoCardClass()"
       >
         <div [class]="montarSimuladoIconWrapperClass()">
-          <app-ui-icon [icon]="essencial() ? lockIcon : shuffleIcon" [size]="28" />
+          <app-ui-icon [icon]="bloqueado() ? lockIcon : shuffleIcon" [size]="28" />
         </div>
 
         <div class="min-w-0 flex-1">
           <h2 class="text-xl font-bold text-[var(--color-text)]">Montar simulado</h2>
           <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
-            @if (essencial()) {
+            @if (bloqueado()) {
               Disponível no plano Avançado.
             } @else {
               Escolha temas, quantidade e modo para gerar um simulado personalizado com foco na sua revisão.
             }
           </p>
-          @if (!essencial()) {
+          @if (!bloqueado()) {
             <div class="mt-4 flex flex-wrap gap-2">
               <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Por tema</span>
               <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Processual</span>
@@ -88,7 +94,7 @@
           }
         </div>
 
-        @if (essencial()) {
+        @if (bloqueado()) {
           <span class="shrink-0 whitespace-nowrap rounded-lg bg-gray-800 px-3 py-2 text-xs font-semibold text-white transition-transform group-hover:translate-x-1">
             Fazer upgrade
           </span>

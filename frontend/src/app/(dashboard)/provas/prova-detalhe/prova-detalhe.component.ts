@@ -10,7 +10,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
+import { SubscriptionService } from '../../../core/services/subscription.service';
+import { PaywallService } from '../../../core/services/paywall.service';
+import { FREE_LIMIT_REACHED, TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
 import { periodoLabel, type ProvaComFaculdade } from '../../../core/models/prova';
 import type { ModoProva, Tentativa } from '../../../core/models/tentativa';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
@@ -18,11 +20,12 @@ import { UiButtonComponent } from '../../../shared/components/ui/button/ui-butto
 import { UiSpinnerComponent } from '../../../shared/components/ui/spinner/ui-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
+import { LimiteTentativasBannerComponent } from '../../../shared/components/limite-tentativas-banner/limite-tentativas-banner.component';
 
 @Component({
   selector: 'app-prova-detalhe',
   standalone: true,
-  imports: [ModoSelectorComponent, UiButtonComponent, UiSpinnerComponent, EmptyStateComponent, PageHeaderComponent],
+  imports: [ModoSelectorComponent, UiButtonComponent, UiSpinnerComponent, EmptyStateComponent, PageHeaderComponent, LimiteTentativasBannerComponent],
   templateUrl: './prova-detalhe.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -32,6 +35,8 @@ export class ProvaDetalheComponent implements OnInit {
   private readonly provaService = inject(ProvaService);
   private readonly tentativaService = inject(TentativaService);
   private readonly notifications = inject(NotificationService);
+  private readonly subscription = inject(SubscriptionService);
+  private readonly paywall = inject(PaywallService);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -57,6 +62,25 @@ export class ProvaDetalheComponent implements OnInit {
     this.isPersonalizado() ? '/dashboard/simulados' : '/dashboard/simulados/rede-afya',
   );
 
+  // Contador do plano gratuito. null = nível pago ou ainda desconhecido, e nos
+  // dois casos nada de free tier aparece na tela.
+  protected readonly tentativasRestantes = signal<number | null>(null);
+  protected readonly gratuito = signal(false);
+
+  /** Sem saldo, o botão vira o próprio CTA de assinatura. */
+  protected readonly semSaldo = computed(
+    () => this.gratuito() && (this.tentativasRestantes() ?? 0) <= 0,
+  );
+
+  protected readonly labelIniciar = computed(() => {
+    if (this.semSaldo()) return 'Assinar para continuar';
+    const restantes = this.tentativasRestantes();
+    if (this.gratuito() && restantes !== null) {
+      return restantes === 1 ? 'Iniciar (último grátis)' : `Iniciar (${restantes} grátis)`;
+    }
+    return 'Iniciar prova';
+  });
+
   async ngOnInit(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('provaId') ?? '';
     const modoParam = this.route.snapshot.queryParamMap?.get('modo');
@@ -80,6 +104,10 @@ export class ProvaDetalheComponent implements OnInit {
       this.tentativaAtiva.set(tentativaResult.data);
     }
 
+    const status = await this.subscription.statusAcessoServidor();
+    this.gratuito.set(status.nivel === 'gratuito');
+    this.tentativasRestantes.set(status.tentativasRestantes);
+
     this.isLoading.set(false);
   }
 
@@ -91,6 +119,13 @@ export class ProvaDetalheComponent implements OnInit {
     const prova = this.prova();
     if (!prova || prova.qtd_questoes === 0) return;
 
+    // Sem saldo o botão nem chega a chamar a RPC: abre direto o upsell, que
+    // converte melhor do que deixar o servidor recusar e mostrar um erro.
+    if (this.semSaldo()) {
+      this.paywall.abrir('limite-tentativas');
+      return;
+    }
+
     this.iniciando.set(true);
     const result = await this.tentativaService.iniciar(prova.id, this.modoSelecionado());
     this.iniciando.set(false);
@@ -98,12 +133,23 @@ export class ProvaDetalheComponent implements OnInit {
     if (result.ok) {
       this.tentativaService.setProvaNome(prova.nome);
       void this.router.navigate(['/dashboard/simulados', prova.id, 'tentativa', result.data.tentativa.id]);
-    } else if (result.error === TIER_UPGRADE_REQUIRED) {
-      this.notifications.warning('Este treino é exclusivo do plano Avançado. Faça upgrade para continuar.');
-      void this.router.navigate(['/planos']);
-    } else {
-      this.notifications.error('Não foi possível iniciar a prova. Tente novamente.');
+      return;
     }
+
+    // O contador em cache pode ter ficado para trás (outra aba, outro
+    // dispositivo): se o servidor recusar, o paywall é a resposta certa.
+    if (result.error === FREE_LIMIT_REACHED) {
+      this.tentativasRestantes.set(0);
+      this.paywall.abrir('limite-tentativas');
+      return;
+    }
+
+    if (result.error === TIER_UPGRADE_REQUIRED) {
+      this.paywall.abrir('prova-bloqueada');
+      return;
+    }
+
+    this.notifications.error('Não foi possível iniciar a prova. Tente novamente.');
   }
 
   protected imprimir(): void {

@@ -19,6 +19,12 @@ import { NotificacoesSinoComponent } from '../shared/components/notificacoes-sin
 import { SuporteWidgetComponent } from '../shared/components/suporte-widget/suporte-widget.component';
 import { ImageViewerComponent } from '../shared/components/image-viewer/image-viewer.component';
 import { FocoModoService } from '../core/services/foco-modo.service';
+import { PaywallService } from '../core/services/paywall.service';
+import { PaywallModalComponent } from '../shared/components/paywall-modal/paywall-modal.component';
+import { UpgradeBadgeComponent } from '../shared/components/upgrade-badge/upgrade-badge.component';
+import { UpgradeCardComponent } from '../shared/components/upgrade-card/upgrade-card.component';
+import type { PaywallContexto } from '../core/models/paywall.types';
+import type { NivelAcesso } from '../core/models/subscription.types';
 
 interface NavItem {
   label: string;
@@ -26,12 +32,21 @@ interface NavItem {
   route: string;
   exact?: boolean;
   onboardingTarget?: string;
+  /** Exclusivo do plano Avançado: nos demais níveis aparece bloqueado. */
+  requerAvancado?: boolean;
+  /** Contexto usado pelo paywall quando o item está bloqueado. */
+  paywall?: PaywallContexto;
+}
+
+/** NavItem já resolvido contra o nível de acesso do usuário. */
+interface NavItemEstado extends NavItem {
+  bloqueado: boolean;
 }
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +62,7 @@ export class DashboardComponent {
   private readonly avisoService = inject(AvisoService);
   private readonly notifService = inject(AppNotificacaoService);
   protected readonly focoMode = inject(FocoModoService);
+  private readonly paywall = inject(PaywallService);
 
   protected readonly logOutIcon = LogOut;
   protected readonly historyIcon = History;
@@ -75,16 +91,39 @@ export class DashboardComponent {
   protected readonly menuAberto = signal(false);
   protected readonly impersonando = this.auth.impersonando;
 
-  // Tier buscado sob demanda (RPC cacheada em SubscriptionService), nunca no
-  // boot bloqueante — enquanto desconhecido (null), o menu completo é exibido
-  // e o acesso real continua protegido pelo tierAvancadoGuard nas rotas.
-  private readonly tier = signal<'essencial' | 'avancado' | null>(null);
+  // Nível buscado sob demanda (RPC cacheada em SubscriptionService), nunca no
+  // boot bloqueante — enquanto desconhecido (null), nada aparece bloqueado,
+  // para o assinante não ver um flash de cadeado. O acesso real continua
+  // protegido pelo tierAvancadoGuard nas rotas e pelos gates das RPCs.
+  private readonly nivel = signal<NivelAcesso | null>(null);
 
-  protected readonly navItemsVisiveis = computed<NavItem[]>(() => {
-    if (this.tier() !== 'essencial') return this.navItems;
-    const restritas = new Set(['/dashboard/materiais', '/dashboard/flashcards']);
-    return this.navItems.filter((item) => !restritas.has(item.route));
+  protected readonly statusAcesso = this.subscriptionService.statusAcesso;
+
+  /**
+   * Itens de menu já resolvidos contra o nível. Recursos do plano Avançado
+   * passam a aparecer BLOQUEADOS em vez de sumirem: esconder o recurso esconde
+   * junto o motivo para assinar.
+   */
+  protected readonly navItens = computed<NavItemEstado[]>(() => {
+    const nivel = this.nivel();
+    const bloqueiaAvancado = nivel !== null && nivel !== 'avancado';
+    return this.navItems.map((item) => ({
+      ...item,
+      bloqueado: item.requerAvancado === true && bloqueiaAvancado,
+    }));
   });
+
+  /** Só o plano gratuito tem contador de tentativas para exibir. */
+  protected readonly mostrarUpgradeCard = computed(() => {
+    const nivel = this.nivel();
+    return nivel === 'gratuito' || nivel === 'essencial';
+  });
+
+  protected readonly upgradeCardTexto = computed(() =>
+    this.nivel() === 'gratuito'
+      ? { titulo: 'Desbloqueie tudo', descricao: 'Simulados sem limite, materiais e flashcards.' }
+      : { titulo: 'Vá para o Avançado', descricao: 'Materiais, flashcards e simulados por tema.' },
+  );
 
   protected readonly provasRoute = computed<string[]>(() => {
     const t = this.tentativaService.tentativaAtiva();
@@ -103,11 +142,11 @@ export class DashboardComponent {
           void this.tentativaService.hidratarTentativaAtiva();
           void this.avisoService.verificarAvisos();
           void this.notifService.carregar();
-          void this.subscriptionService.tierAtivoServidor().then((t) => this.tier.set(t));
+          void this.subscriptionService.statusAcessoServidor().then((s) => this.nivel.set(s.nivel));
         } else if (this.auth.user() && this.auth.impersonando()) {
           void this.profileService.loadProfile();
           void this.tentativaService.hidratarTentativaAtiva();
-          void this.subscriptionService.tierAtivoServidor().then((t) => this.tier.set(t));
+          void this.subscriptionService.statusAcessoServidor().then((s) => this.nivel.set(s.nivel));
         }
       });
     }
@@ -154,8 +193,8 @@ export class DashboardComponent {
   protected readonly navItems: NavItem[] = [
     { label: 'Início', icon: Home, route: '/dashboard', exact: true },
     { label: 'Simulados', icon: BookOpen, route: '/dashboard/simulados', onboardingTarget: 'nav-simulados' },
-    { label: 'Materiais', icon: Library, route: '/dashboard/materiais' },
-    { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards' },
+    { label: 'Materiais', icon: Library, route: '/dashboard/materiais', requerAvancado: true, paywall: 'materiais' },
+    { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards', requerAvancado: true, paywall: 'flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico' },
   ];
@@ -163,13 +202,23 @@ export class DashboardComponent {
   // No mobile o Histórico fica no menu do perfil — a barra inferior não
   // comporta todos os módulos em telas estreitas (ex.: iPhone 15).
   // Início troca de posição com Materiais para ficar no centro da barra.
-  protected readonly bottomNavItems: NavItem[] = (() => {
-    const itens = this.navItems.filter((item) => item.route !== '/dashboard/historico');
+  //
+  // Derivado de `navItens` (e não do array cru) porque antes era uma lista
+  // estática: o filtro de tier valia só para a sidebar e a barra inferior
+  // seguia mostrando os itens pagos como se estivessem liberados.
+  protected readonly bottomNavItens = computed<NavItemEstado[]>(() => {
+    const itens = this.navItens().filter((item) => item.route !== '/dashboard/historico');
     const inicio = itens.findIndex((item) => item.route === '/dashboard');
     const materiais = itens.findIndex((item) => item.route === '/dashboard/materiais');
     if (inicio !== -1 && materiais !== -1) {
       [itens[inicio], itens[materiais]] = [itens[materiais], itens[inicio]];
     }
     return itens;
-  })();
+  });
+
+  /** Abre o upsell no contexto do item bloqueado que o usuário tocou. */
+  protected abrirPaywall(item: NavItemEstado): void {
+    this.fecharMenu();
+    this.paywall.abrir(item.paywall ?? 'recurso-pago');
+  }
 }

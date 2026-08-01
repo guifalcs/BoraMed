@@ -176,6 +176,20 @@ async function setupMocksAndGoto(
     void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(true) });
   });
 
+  // RPC de gating desde o free tier — é quem o tierAvancadoGuard consulta.
+  await page.route('**/rest/v1/rpc/get_status_acesso**', (route) => {
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        nivel: 'avancado',
+        tentativas_limite: 3,
+        tentativas_restantes: null,
+        tentativas_usadas: null,
+      }),
+    });
+  });
+
   // REST: flashcard_decks — comportamento varia conforme a query
   await page.route('**/rest/v1/flashcard_decks**', (route) => {
     const url = route.request().url();

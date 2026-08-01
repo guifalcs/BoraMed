@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Tentativa } from '../../../core/models/tentativa';
+import type { StatusAcesso } from '../../../core/models/subscription.types';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { SubscriptionService } from '../../../core/services/subscription.service';
 import { ProvasHomeComponent } from './provas-home.component';
@@ -48,7 +49,13 @@ describe('ProvasHomeComponent', () => {
         {
           provide: SubscriptionService,
           useValue: {
-            tierAtivoServidor: () => Promise.resolve<'essencial' | 'avancado' | null>(null),
+            statusAcessoServidor: () =>
+              Promise.resolve<StatusAcesso>({
+                nivel: 'avancado',
+                tentativasLimite: 3,
+                tentativasRestantes: null,
+                tentativasUsadas: null,
+              }),
           },
         },
       ],

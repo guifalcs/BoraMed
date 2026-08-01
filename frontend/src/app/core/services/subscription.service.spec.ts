@@ -334,31 +334,128 @@ describe('SubscriptionService', () => {
     });
   });
 
-  // ── tierAtivoServidor ──────────────────────────────────────────────────────
+  // ── statusAcessoServidor / tierAtivoServidor ───────────────────────────────
 
-  describe('tierAtivoServidor()', () => {
-    it('chama supabase.rpc("assinatura_tier")', async () => {
-      mockRpc.mockResolvedValue({ data: 'avancado', error: null });
+  /** Payload da RPC `get_status_acesso` (snake_case, como vem do Postgres). */
+  function statusRpc(
+    nivel: 'gratuito' | 'essencial' | 'avancado',
+    restantes: number | null = null,
+  ) {
+    return {
+      data: {
+        nivel,
+        tentativas_limite: 3,
+        tentativas_restantes: restantes,
+        tentativas_usadas: restantes === null ? null : 3 - restantes,
+      },
+      error: null,
+    };
+  }
 
-      await service.tierAtivoServidor();
+  describe('statusAcessoServidor()', () => {
+    it('chama supabase.rpc("get_status_acesso")', async () => {
+      mockRpc.mockResolvedValue(statusRpc('avancado'));
 
-      expect(mockRpc).toHaveBeenCalledWith('assinatura_tier');
+      await service.statusAcessoServidor();
+
+      expect(mockRpc).toHaveBeenCalledWith('get_status_acesso');
     });
 
-    it('retorna "essencial" quando a RPC devolve "essencial"', async () => {
-      mockRpc.mockResolvedValue({ data: 'essencial', error: null });
+    it('mapeia o payload snake_case para o modelo camelCase', async () => {
+      mockRpc.mockResolvedValue(statusRpc('gratuito', 2));
+
+      expect(await service.statusAcessoServidor()).toEqual({
+        nivel: 'gratuito',
+        tentativasLimite: 3,
+        tentativasRestantes: 2,
+        tentativasUsadas: 1,
+      });
+    });
+
+    it('publica o status no signal para a UI consumir', async () => {
+      mockRpc.mockResolvedValue(statusRpc('gratuito', 1));
+
+      expect(service.statusAcesso()).toBeNull();
+      await service.statusAcessoServidor();
+
+      expect(service.nivelAcesso()).toBe('gratuito');
+      expect(service.tentativasRestantes()).toBe(1);
+      expect(service.isGratuito()).toBe(true);
+    });
+
+    it('fecha o acesso quando a RPC retorna erro', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc error' } });
+
+      expect(await service.statusAcessoServidor()).toEqual({
+        nivel: 'gratuito',
+        tentativasLimite: 0,
+        tentativasRestantes: 0,
+        tentativasUsadas: 0,
+      });
+    });
+
+    it('não cacheia o erro: a próxima chamada volta à rede', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc error' } });
+
+      await service.statusAcessoServidor();
+      await service.statusAcessoServidor();
+
+      expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
+
+    it('cacheia o resultado: segunda chamada não vai à rede', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue(statusRpc('essencial'));
+
+      await service.statusAcessoServidor();
+      const result = await service.statusAcessoServidor();
+
+      expect(result.nivel).toBe('essencial');
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('deduplica chamadas concorrentes na mesma requisição', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue(statusRpc('avancado'));
+
+      const [a, b] = await Promise.all([
+        service.statusAcessoServidor(),
+        service.statusAcessoServidor(),
+      ]);
+
+      expect(a.nivel).toBe('avancado');
+      expect(b.nivel).toBe('avancado');
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('invalidarAcesso() descarta o cache do status', async () => {
+      userSignal.set(fakeUser());
+      mockRpc.mockResolvedValue(statusRpc('essencial'));
+      await service.statusAcessoServidor();
+
+      service.invalidarAcesso();
+      await service.statusAcessoServidor();
+
+      expect(mockRpc).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('tierAtivoServidor()', () => {
+    it('retorna "essencial" quando o nível é essencial', async () => {
+      mockRpc.mockResolvedValue(statusRpc('essencial'));
 
       expect(await service.tierAtivoServidor()).toBe('essencial');
     });
 
-    it('retorna "avancado" quando a RPC devolve "avancado"', async () => {
-      mockRpc.mockResolvedValue({ data: 'avancado', error: null });
+    it('retorna "avancado" quando o nível é avancado', async () => {
+      mockRpc.mockResolvedValue(statusRpc('avancado'));
 
       expect(await service.tierAtivoServidor()).toBe('avancado');
     });
 
-    it('retorna null quando a RPC devolve null (sem acesso)', async () => {
-      mockRpc.mockResolvedValue({ data: null, error: null });
+    it('retorna null quando o nível é gratuito (contrato antigo: sem acesso pago)', async () => {
+      mockRpc.mockResolvedValue(statusRpc('gratuito', 3));
 
       expect(await service.tierAtivoServidor()).toBeNull();
     });
@@ -368,41 +465,13 @@ describe('SubscriptionService', () => {
 
       expect(await service.tierAtivoServidor()).toBeNull();
     });
+  });
 
-    it('cacheia o resultado: segunda chamada não vai à rede', async () => {
-      userSignal.set(fakeUser());
-      mockRpc.mockResolvedValue({ data: 'essencial', error: null });
+  describe('nivelAcessoServidor()', () => {
+    it('devolve o nível cru, distinguindo gratuito de sem-resposta', async () => {
+      mockRpc.mockResolvedValue(statusRpc('gratuito', 3));
 
-      await service.tierAtivoServidor();
-      const result = await service.tierAtivoServidor();
-
-      expect(result).toBe('essencial');
-      expect(mockRpc).toHaveBeenCalledTimes(1);
-    });
-
-    it('deduplica chamadas concorrentes na mesma requisição', async () => {
-      userSignal.set(fakeUser());
-      mockRpc.mockResolvedValue({ data: 'avancado', error: null });
-
-      const [a, b] = await Promise.all([
-        service.tierAtivoServidor(),
-        service.tierAtivoServidor(),
-      ]);
-
-      expect(a).toBe('avancado');
-      expect(b).toBe('avancado');
-      expect(mockRpc).toHaveBeenCalledTimes(1);
-    });
-
-    it('invalidarAcesso() descarta o cache do tier', async () => {
-      userSignal.set(fakeUser());
-      mockRpc.mockResolvedValue({ data: 'essencial', error: null });
-      await service.tierAtivoServidor();
-
-      service.invalidarAcesso();
-      await service.tierAtivoServidor();
-
-      expect(mockRpc).toHaveBeenCalledTimes(2);
+      expect(await service.nivelAcessoServidor()).toBe('gratuito');
     });
   });
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-01 | Feature | sem commit
+
+**Free tier: plano gratuito com 3 simulados, upsell em vez de paywall**
+
+- **O paywall total acabou.** `/dashboard/*` exigia assinatura `authorized`, e quem se cadastrava caía direto em `/planos` sem ver nada do produto. Agora qualquer autenticado entra; o que muda é o que cada nível pode fazer lá dentro. O `subscriptionGuard` saiu do dashboard (e do repo) e virou `nivelPagoGuard`, aplicado só na impressão de simulados.
+- **`nivel_acesso()` é a nova fonte única, e é TOTAL**: devolve `gratuito | essencial | avancado`, nunca NULL. `assinatura_tier()` passa a ser `nullif(nivel_acesso(uid), 'gratuito')`, preservando o contrato antigo do `tierAvancadoGuard` e dos gates P0015. `tem_assinatura_ativa()` não mudou de semântica: continua significando "acesso pago" e por isso materiais e flashcards ficaram bloqueados para o gratuito **sem uma linha de alteração** nas policies.
+- **O teto é vitalício, não por período.** 3 tentativas via `limite_tentativas_gratuitas()`, aplicadas em `iniciar_tentativa` com o novo `ERRCODE P0016` (`free_limit_reached`). O contador deriva de `count(*)` sobre `tentativa` (exceto `modo = 'visualizar'`), não de uma coluna materializada: dispensa backfill, não dessincroniza, e faz ex-assinante chegar naturalmente em 0. Debita ao iniciar, sem estorno; `retomar_tentativa` é outra RPC e nunca debita de novo.
+- **`get_status_acesso()` devolve nível e contador num payload só**, porque quase toda tela precisa dos dois juntos. Entra no `SubscriptionService` com o mesmo cache/dedup/TTL de 5 min já usado pelo paywall, e o `TentativaService.iniciar` invalida esse cache — sem isso o aluno via "3 restantes" depois de gastar uma.
+- **Recurso pago agora aparece bloqueado, não some.** Materiais e Flashcards viram botão com selo PRO que abre o `paywall-modal` no contexto daquele recurso. Vale também para o `essencial`, que antes simplesmente não via os itens: esconder o recurso escondia junto o motivo para assinar.
+- Quatro componentes novos em `shared/components/`: `upgrade-badge`, `upgrade-card`, `limite-tentativas-banner` (tom escalando neutro → âmbar → vermelho conforme o saldo cai) e `paywall-modal`, com `PaywallService` para disparo sem prop drilling. Pontos de contato: Início, hub de Simulados, detalhe da prova (botão vira "Iniciar (2 grátis)" e depois "Assinar para continuar"), tela de resultado (enquadramento de perda logo abaixo da nota) e Minha assinatura.
+- **Avisos e notificações ganharam segmentação por nível** (`todos | pagantes | gratuitos | essencial | avancado`), para conteúdo de assinante não chegar em quem não paga. De carona, corrige um problema que já existia: o broadcast varria `auth.users` **sem filtro nenhum**, incluindo admins, contas banidas e cadastros não confirmados. Agora varre `profiles` filtrado.
+- **Bug corrigido de carona**: `assinatura_tier()` ignorava a carência de assinatura `cancelled` que `tem_assinatura_ativa()` respeitava, então quem cancelava dentro do período pago passava no paywall e era barrado pelo gate de tier. E `bottomNavItems` era array estático que não passava pelo filtro de tier: o usuário `essencial` via Materiais e Flashcards na barra inferior mobile como se estivessem liberados.
+- **Preço da landing estava mentindo.** Essencial anunciado a R$ 23,90/mês e R$ 83,40/semestre, cobrado a R$ 29,90 e R$ 119,40. Alinhado ao banco, junto com o badge do toggle (-42% → -33%, o desconto real) e a inconsistência de "até o 4º período" na tagline contra "até o 8º" na lista de features. O `TODO(integração)` para ler `listarPlanos()` continua aberto.
+- Landing ganhou a coluna "Grátis" como âncora baixa da grade e CTAs de "Criar minha conta" para "Começar grátis, sem cartão".
+
 ## 2026-07-31 | Copy | sem commit
 
 - Atualizada a comunicação da landing page e do painel visual do login para destacar **+4k questões para treinar**.

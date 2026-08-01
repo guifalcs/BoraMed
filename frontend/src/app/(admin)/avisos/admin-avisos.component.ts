@@ -14,6 +14,7 @@ import { AdminService, AdminAviso } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { SEGMENTOS_ACESSO, type SegmentoAcesso } from '../../core/models/subscription.types';
 
 @Component({
   selector: 'app-admin-avisos',
@@ -34,6 +35,8 @@ export class AdminAvisosComponent implements OnInit {
   protected readonly novoImagemUrl = signal('');
   protected readonly uploadingImagem = signal(false);
   protected readonly criando = signal(false);
+  protected readonly novoSegmento = signal<SegmentoAcesso>('todos');
+  protected readonly segmentos = SEGMENTOS_ACESSO;
 
   protected readonly processando = signal<string | null>(null);
   protected readonly avisoParaDeletar = signal<AdminAviso | null>(null);
@@ -97,12 +100,14 @@ export class AdminAvisosComponent implements OnInit {
       titulo: this.novoTitulo().trim() || null,
       mensagem: this.novoMensagem().trim() || null,
       imagem_url: this.novoImagemUrl().trim(),
+      segmento: this.novoSegmento(),
     });
     if (result.ok) {
       this.avisos.update(lista => [result.data, ...lista]);
       this.novoTitulo.set('');
       this.novoMensagem.set('');
       this.novoImagemUrl.set('');
+      this.novoSegmento.set('todos');
       this.toast.success('Aviso criado e ativo.');
     } else {
       this.toast.error('Erro ao criar aviso.');

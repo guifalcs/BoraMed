@@ -127,6 +127,19 @@ async function setupMocksAndGoto(page: PlaywrightPage, targetUrl: string): Promi
   await page.route('**/rest/v1/rpc/assinatura_tier**', (route) => {
     void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify('avancado') });
   });
+  // RPC de gating desde o free tier — é quem o tierAvancadoGuard consulta.
+  await page.route('**/rest/v1/rpc/get_status_acesso**', (route) => {
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        nivel: 'avancado',
+        tentativas_limite: 3,
+        tentativas_restantes: null,
+        tentativas_usadas: null,
+      }),
+    });
+  });
 
   // Categoria por slug (.single) e lista de categorias (home)
   await page.route('**/rest/v1/material_categoria**', (route) => {

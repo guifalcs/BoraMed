@@ -6,7 +6,7 @@ import {
   removerImagensFlashcards,
 } from '../utils/storage-imagens.util';
 import type { PapelUsuario, Profile } from '../models/auth.types';
-import type { AssinaturaStatus } from '../models/subscription.types';
+import type { AssinaturaStatus, SegmentoAcesso } from '../models/subscription.types';
 
 export interface AdminDisciplina {
   id: string;
@@ -344,6 +344,8 @@ export interface AdminAviso {
   imagem_url: string;
   ativo: boolean;
   criado_em: string;
+  /** Público-alvo por nível de acesso. Default no banco: 'todos'. */
+  segmento: SegmentoAcesso;
 }
 
 export interface AdminNotificacao {
@@ -1396,7 +1398,7 @@ export class AdminService {
   }
 
   async criarAviso(
-    input: Pick<AdminAviso, 'titulo' | 'mensagem' | 'imagem_url'>,
+    input: Pick<AdminAviso, 'titulo' | 'mensagem' | 'imagem_url'> & { segmento?: SegmentoAcesso },
   ): Promise<ServiceResult<AdminAviso>> {
     const { data, error } = await this.supabase
       .from('avisos')
@@ -1444,17 +1446,23 @@ export class AdminService {
 
   // ---- Notificações in-app ----
 
+  /**
+   * `segmento` só vale no broadcast (userId nulo); no envio individual o
+   * servidor o ignora. Ver migration 20260801115817.
+   */
   async enviarNotificacao(
     tipo: string,
     titulo: string,
     mensagem: string | null,
     userId: string | null,
+    segmento: SegmentoAcesso = 'todos',
   ): Promise<ServiceResult<number>> {
     const { data, error } = await this.supabase.rpc('admin_enviar_notificacao', {
       p_tipo: tipo,
       p_titulo: titulo,
       p_mensagem: mensagem,
       p_user_id: userId,
+      p_segmento: segmento,
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as number };

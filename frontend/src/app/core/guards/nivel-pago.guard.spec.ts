@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { tierAvancadoGuard } from './tier.guard';
+import { nivelPagoGuard } from './nivel-pago.guard';
 import { AuthService } from '../services/auth.service';
 import { ProfileService } from '../services/profile.service';
 import { SubscriptionService } from '../services/subscription.service';
 import type { Profile } from '../models/auth.types';
+import type { NivelAcesso } from '../models/subscription.types';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
-describe('tierAvancadoGuard', () => {
+describe('nivelPagoGuard', () => {
   let authMock: {
     initialize: ReturnType<typeof vi.fn>;
     isAuthenticated: ReturnType<typeof vi.fn>;
@@ -43,18 +44,20 @@ describe('tierAvancadoGuard', () => {
     loadProfile: ReturnType<typeof vi.fn>;
   };
   let subscriptionMock: {
-    tierAtivoServidor: ReturnType<typeof vi.fn>;
+    nivelAcessoServidor: ReturnType<typeof vi.fn>;
   };
   let routerMock: {
     createUrlTree: ReturnType<typeof vi.fn>;
   };
 
-  function setup(options: {
-    isAuthenticated?: boolean;
-    profile?: Profile | null;
-    tier?: 'essencial' | 'avancado' | null;
-  } = {}) {
-    const { isAuthenticated = true, profile = fakeProfile(), tier = 'avancado' } = options;
+  function setup(
+    options: {
+      isAuthenticated?: boolean;
+      profile?: Profile | null;
+      nivel?: NivelAcesso;
+    } = {},
+  ) {
+    const { isAuthenticated = true, profile = fakeProfile(), nivel = 'avancado' } = options;
 
     authMock = {
       initialize: vi.fn().mockResolvedValue(undefined),
@@ -65,7 +68,7 @@ describe('tierAvancadoGuard', () => {
       loadProfile: vi.fn().mockResolvedValue(undefined),
     };
     subscriptionMock = {
-      tierAtivoServidor: vi.fn().mockResolvedValue(tier),
+      nivelAcessoServidor: vi.fn().mockResolvedValue(nivel),
     };
     routerMock = {
       createUrlTree: vi.fn().mockImplementation((cmds: string[]) => cmds.join('/')),
@@ -89,7 +92,7 @@ describe('tierAvancadoGuard', () => {
     setup({ isAuthenticated: false });
 
     const result = await TestBed.runInInjectionContext(() =>
-      tierAvancadoGuard({} as never, {} as never),
+      nivelPagoGuard({} as never, {} as never),
     );
 
     expect(authMock.initialize).toHaveBeenCalled();
@@ -97,87 +100,56 @@ describe('tierAvancadoGuard', () => {
     expect(result).toBe('/login');
   });
 
-  it('retorna true para papel "admin" sem chamar tierAtivoServidor', async () => {
-    setup({ profile: fakeProfile({ papel: 'admin' }) });
+  it('retorna true para papel "admin" sem consultar o nível', async () => {
+    setup({ profile: fakeProfile({ papel: 'admin' }), nivel: 'gratuito' });
 
     const result = await TestBed.runInInjectionContext(() =>
-      tierAvancadoGuard({} as never, {} as never),
+      nivelPagoGuard({} as never, {} as never),
     );
 
     expect(result).toBe(true);
-    expect(subscriptionMock.tierAtivoServidor).not.toHaveBeenCalled();
+    expect(subscriptionMock.nivelAcessoServidor).not.toHaveBeenCalled();
   });
 
-  it('retorna true para papel "super_admin" sem chamar tierAtivoServidor', async () => {
-    setup({ profile: fakeProfile({ papel: 'super_admin' }) });
+  it('retorna true para papel "super_admin" sem consultar o nível', async () => {
+    setup({ profile: fakeProfile({ papel: 'super_admin' }), nivel: 'gratuito' });
 
     const result = await TestBed.runInInjectionContext(() =>
-      tierAvancadoGuard({} as never, {} as never),
+      nivelPagoGuard({} as never, {} as never),
     );
 
     expect(result).toBe(true);
-    expect(subscriptionMock.tierAtivoServidor).not.toHaveBeenCalled();
+    expect(subscriptionMock.nivelAcessoServidor).not.toHaveBeenCalled();
   });
 
   it('chama loadProfile quando profile ainda não está carregado', async () => {
     setup({ profile: null });
 
-    await TestBed.runInInjectionContext(() => tierAvancadoGuard({} as never, {} as never));
+    await TestBed.runInInjectionContext(() => nivelPagoGuard({} as never, {} as never));
 
     expect(profileMock.loadProfile).toHaveBeenCalled();
   });
 
-  it('retorna true quando tier é "avancado"', async () => {
-    setup({ tier: 'avancado' });
+  it.each<NivelAcesso>(['essencial', 'avancado'])('libera o nível pago "%s"', async (nivel) => {
+    setup({ nivel });
 
     const result = await TestBed.runInInjectionContext(() =>
-      tierAvancadoGuard({} as never, {} as never),
+      nivelPagoGuard({} as never, {} as never),
     );
 
     expect(result).toBe(true);
   });
 
-  it('redireciona para /planos quando tier é "essencial"', async () => {
-    setup({ tier: 'essencial' });
+  it('redireciona para /planos quando o nível é gratuito', async () => {
+    setup({ nivel: 'gratuito' });
 
     const result = await TestBed.runInInjectionContext(() =>
-      tierAvancadoGuard({} as never, {} as never),
+      nivelPagoGuard({} as never, { url: '/imprimir/simulado/abc' } as never),
     );
 
     expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos'], {
-      queryParams: { origem: 'recurso-pago' },
+      queryParams: { origem: 'impressao' },
     });
     expect(result).toBe('/planos');
-  });
-
-  it('redireciona para /planos quando tier é null (sem acesso)', async () => {
-    setup({ tier: null });
-
-    const result = await TestBed.runInInjectionContext(() =>
-      tierAvancadoGuard({} as never, {} as never),
-    );
-
-    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos'], {
-      queryParams: { origem: 'recurso-pago' },
-    });
-    expect(result).toBe('/planos');
-  });
-
-  // ── Contexto do paywall (copy de /planos) ──────────────────────────────────
-
-  it.each([
-    ['/dashboard/materiais', 'materiais'],
-    ['/dashboard/flashcards/novo', 'flashcards'],
-    ['/dashboard/simulados/montar', 'simulado-personalizado'],
-    ['/imprimir/simulado/montado', 'impressao'],
-    ['/dashboard/simulados/montar?tema=x', 'simulado-personalizado'],
-  ])('mapeia %s para origem "%s"', async (url, origem) => {
-    setup({ tier: null });
-
-    await TestBed.runInInjectionContext(() => tierAvancadoGuard({} as never, { url } as never));
-
-    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos'], {
-      queryParams: { origem },
-    });
   });
 });

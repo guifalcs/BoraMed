@@ -55,6 +55,28 @@
   color: var(--color-text);
 }
 
+/* Recurso pago na sidebar: presente e apagado, com o selo PRO à direita.
+   É <button> em vez de <a>, daí o reset. Segue clicável de propósito: o
+   clique é o que abre o paywall com a copy daquele recurso. */
+.nav-item--bloqueado {
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.nav-item--bloqueado span:first-of-type {
+  flex: 1;
+}
+
+.nav-item--bloqueado:hover {
+  background: var(--color-surface-2);
+  opacity: 1;
+}
+
 .nav-item--active {
   background: rgba(37, 84, 220, 0.08);
   color: #1d4ed8;
@@ -434,6 +456,34 @@
     font-weight: 600;
     text-decoration: none;
     transition: color 0.13s;
+    /* Reset para o item bloqueado, que é <button> e não <a>. */
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+
+  /* Recurso pago: apagado e com cadeado sobre o ícone. Continua clicável,
+     porque o toque é o que abre o upsell. */
+  .bottom-nav-item--bloqueado {
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    cursor: pointer;
+  }
+
+  .bottom-nav-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .bottom-nav-lock {
+    position: absolute;
+    right: -3px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-warning);
+    box-shadow: 0 0 0 2px var(--color-surface);
   }
 
   .bottom-nav-item--active {

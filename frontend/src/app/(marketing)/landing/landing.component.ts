@@ -131,6 +131,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly closeIcon = X;
   protected readonly chevronIcon = ChevronDown;
   protected readonly checkIcon = Check;
+  protected readonly xIcon = X;
   protected readonly arrowRightIcon = ArrowRight;
   protected readonly activityIcon = Activity;
   protected readonly sparklesIcon = Sparkles;
@@ -354,8 +355,8 @@ export class LandingComponent implements OnDestroy {
       cycle: 'mensal',
       slug: 'essencial-mensal',
       name: 'Essencial',
-      tagline: 'Provas nacionais até o 4º período',
-      price: 'R$ 23,90',
+      tagline: 'Provas nacionais até o 8º período',
+      price: 'R$ 29,90',
       period: '/mês',
       note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
       ctaLabel: 'Começar no Essencial',
@@ -367,12 +368,12 @@ export class LandingComponent implements OnDestroy {
       cycle: 'semestral',
       slug: 'essencial-semestral',
       name: 'Essencial',
-      tagline: 'Provas nacionais até o 4º período',
-      price: 'R$ 13,90',
+      tagline: 'Provas nacionais até o 8º período',
+      price: 'R$ 19,90',
       period: '/mês',
-      note: 'R$ 83,40 no semestre, em até 6x sem juros.',
+      note: 'R$ 119,40 no semestre, em até 6x sem juros.',
       economy: 'R$ 60,00',
-      anchorPrice: 'R$ 143,40',
+      anchorPrice: 'R$ 179,40',
       anchorNote: 'preço de 6 meses no plano mensal',
       ctaLabel: 'Garantir 6 meses com desconto',
       features: LandingComponent.ESSENCIAL_FEATURES,
@@ -383,7 +384,7 @@ export class LandingComponent implements OnDestroy {
       cycle: 'mensal',
       slug: 'mensal',
       name: 'Avançado',
-      tagline: 'Acesso completo à plataforma',
+      tagline: 'Acesso completo, do 1º ao 8º período',
       price: 'R$ 69,90',
       period: '/mês',
       note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
@@ -396,7 +397,7 @@ export class LandingComponent implements OnDestroy {
       cycle: 'semestral',
       slug: 'semestral',
       name: 'Avançado',
-      tagline: 'Acesso completo à plataforma',
+      tagline: 'Acesso completo, do 1º ao 8º período',
       price: 'R$ 49,90',
       period: '/mês',
       note: 'R$ 299,40 no semestre, em até 6x sem juros.',
@@ -412,10 +413,37 @@ export class LandingComponent implements OnDestroy {
   /** Semestral é o ciclo padrão — melhor custo-benefício e maior conversão. */
   protected readonly cicloSelecionado = signal<PlanCycle>('semestral');
 
+  // -33% é o maior desconto do semestral (Essencial: R$ 119,40 contra
+  // R$ 179,40 de 6 meses avulsos). O Avançado economiza 29%.
   protected readonly cicloOptions: SegmentedToggleOption[] = [
     { value: 'mensal', label: 'Mensal' },
-    { value: 'semestral', label: 'Semestral', badge: '-42%' },
+    { value: 'semestral', label: 'Semestral', badge: '-33%' },
   ];
+
+  /**
+   * Plano gratuito: âncora baixa da grade de preços e principal alavanca de
+   * topo de funil. Não entra em `pricingPlans` porque não tem ciclo e por isso
+   * não participa do toggle mensal/semestral.
+   */
+  protected readonly freePlan = {
+    name: 'Grátis',
+    tagline: 'Para conhecer a plataforma',
+    price: 'R$ 0',
+    period: '',
+    note: 'Sem cartão de crédito. Sem prazo para usar.',
+    ctaLabel: 'Começar grátis',
+    features: [
+      '3 simulados no modelo das avaliações nacionais',
+      'Correção e gabarito comentado ao final',
+      'Histórico e modo competitivo',
+      'Desafio diário',
+    ] as readonly string[],
+    naoInclui: [
+      'Simulados sem limite',
+      'Materiais de estudo e flashcards',
+      'Simulados personalizados por tema',
+    ] as readonly string[],
+  };
 
   protected readonly visiblePricingPlans = computed(() =>
     this.pricingPlans.filter((plan) => plan.cycle === this.cicloSelecionado()),
