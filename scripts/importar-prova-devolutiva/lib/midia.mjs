@@ -35,10 +35,21 @@ import { colapsar, normalizar } from './texto.mjs';
  * evita 96 falsos positivos.
  */
 export function imagensPorPagina(pdf) {
-  const saida = execFileSync('pdfimages', ['-list', pdf], {
-    encoding: 'utf-8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
+  let saida;
+  try {
+    saida = execFileSync('pdfimages', ['-list', pdf], {
+      encoding: 'utf-8',
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch (e) {
+    // `pdfimages` é opcional na prática: o pdftotext avulso do Git for Windows
+    // vem sem ele. Sem o binário perde-se **um** dos três sinais de mídia (o
+    // raster embutido); a menção com dêixis no enunciado continua valendo, e é
+    // ela que pega a maioria das figuras. Derrubar o pipeline inteiro por causa
+    // disso seria desproporcional — mas silenciar também, então vira aviso.
+    if (e.code !== 'ENOENT') throw e;
+    return { porPagina: {}, descartadas: [], indisponivel: 'pdfimages não encontrado no PATH' };
+  }
 
   const itens = saida
     .split('\n')
@@ -77,7 +88,7 @@ export function imagensPorPagina(pdf) {
     porPagina[i.pagina] = (porPagina[i.pagina] ?? 0) + 1;
   }
 
-  return { porPagina, descartadas };
+  return { porPagina, descartadas, indisponivel: null };
 }
 
 // ──────────────────────────── menção no texto ────────────────────────────

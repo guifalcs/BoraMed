@@ -1,22 +1,25 @@
-# Importação de prova Integradora (relatório de devolutiva AFYA)
+﻿# Importação de prova pelo relatório de devolutiva (AFYA)
 
-Pipeline para a **Integradora**, a prova de N1+N2 por período que chega como
-**relatório de devolutiva gerado** — PDF com camada de texto em 100% das páginas,
-uma questão por vez, com enunciado, alternativas, resposta comentada, referências
-e filtros de classificação.
+Pipeline para qualquer prova que chegue como **relatório de devolutiva gerado** —
+PDF com camada de texto em 100% das páginas, uma questão por vez, com enunciado,
+alternativas, resposta comentada e referências.
 
-**Nenhuma etapa envolve IA.** Enunciado, alternativas, gabarito, explicação,
-referências e classificação saem por regex do próprio PDF. Se algum campo sair
-errado, é bug — não alucinação. Custo em tokens: zero.
+O que o pipeline entende é o **formato do relatório**, não a disciplina:
+Integradora, SOI e HAM saem do mesmo gerador. O que varia entre elas está tratado
+em um lugar só e listado em [Variação entre provas](#variação-entre-provas).
 
-Uso guiado: skill `importar-prova-integradora`
-(`.claude/skills/importar-prova-integradora/`).
+**Nenhuma etapa envolve IA.** Enunciado, alternativas, gabarito, resposta modelo,
+explicação, referências e classificação saem por regex do próprio PDF. Se algum
+campo sair errado, é bug — não alucinação. Custo em tokens: zero.
+
+Uso guiado: skill `importar-prova-devolutiva`
+(`.claude/skills/importar-prova-devolutiva/`).
 
 ## Escopo — o que este pipeline não é
 
 | tipo de prova | como entra |
 | --- | --- |
-| **Integradora** (relatório de devolutiva, texto) | este pipeline |
+| **Integradora, SOI, HAM** (relatório de devolutiva, texto) | este pipeline |
 | **TPI** (PDF digitalizado: scan + gabarito + devolutiva) | `importar-prova-scan` — precisa de IA para ler a foto |
 | Treinos Nacionais, Simulados Processuais, Laboratório | autorais, direto em `/admin/questoes` |
 
@@ -43,43 +46,104 @@ Uma seção por questão, sempre nesta ordem:
 | `Tipo da questão:` | conferência (esperado: Múltipla Escolha) |
 | `Unidade de avaliação:` | registro |
 | `Enunciado:` | `ENUNCIADO_APOIO` + `ENUNCIADO` |
-| `Alternativas:` | `ALTERNATIVAS` + `GABARITO` (pela marca `(CORRETA)`) |
+| `Alternativas:` | `ALTERNATIVAS` + `GABARITO` (pela marca `(CORRETA)`), ou `--` na discursiva |
 | `Grau de dificuldade:` | registro |
-| `Resposta comentada:` | `EXPLICACAO` |
+| `Resposta comentada:` | `EXPLICACAO` na fechada, `RESPOSTA_MODELO` na discursiva |
 | `Referências:` | `REFERENCIA` |
 | `Feedback:` | descartado (é sempre `--`) |
 | `Filtros da questão:` | `classificacao-sugerida.csv` (Área, Subárea, Semana, Módulo, IES) |
 
-Na Integradora 4 (2025.2): 96 páginas, 50 questões, 4 alternativas cada.
+Nem todo rótulo existe em toda prova: `Código da questão`, `Tipo da questão`,
+`Grau de dificuldade` e `Filtros da questão` só aparecem nas de Integradora.
+
+Tamanhos típicos: Integradora 4 (2025.2) tem 96 páginas e 50 questões; SOI IV
+(2025.2), 25 páginas e 15 questões (13 fechadas + 2 discursivas); HAM IV
+(2025.2), 17 páginas e 10 questões (8 + 2).
+
+## Variação entre provas
+
+| varia | onde está tratado |
+| --- | --- |
+| título da prova (`INTEGRADORA…`, `N1 ESPECÍFICA_SOI 4…`, `Nl ESPECIFICA SOi 4…`) | `cabecalhoDaProva` — posicional: o que está solto acima de "RELATÓRIO DE DEVOLUTIVA DE PROVA" |
+| marcador dividindo a linha com `Enunciado:` ou `Feedback:` | `RE_MARCADOR_QUESTAO` + `fatiarQuestoes` |
+| ordinal corrompido (`12!! QUESTÃO`) | `RE_MARCADOR_QUESTAO` aceita 0–3 caracteres não alfanuméricos |
+| hash de autenticação espaçado (`000072. 59001d.`) | `RE_HASH` |
+| origem em caixa mista (`(AFYA Bragança)`, `(FASA Vic)`) | `separarOrigem` |
+| ausência do bloco de filtros | `extrair.mjs` só emite o CSV quando há classificação |
+| questões discursivas | ver [Questão discursiva](#questão-discursiva) |
+| layout de duas colunas (2022.2) | `ehLayoutDeDuasColunas` — bloqueia com diagnóstico |
 
 ## Comandos
 
 ```bash
 # 1. extração determinística (~2s, zero tokens)
-node scripts/importar-prova-integradora/extrair.mjs "Integradora 4 - (2025.2).pdf"
+node scripts/importar-prova-devolutiva/extrair.mjs "SOI 4 - (2025.2).pdf"
 #    → imprime o diretório de trabalho ($T abaixo)
 
 # 2. validação
-node scripts/importar-prova-integradora/validar.mjs $T
+node scripts/importar-prova-devolutiva/validar.mjs $T
 
 # 3. só se houver flag: esqueleto de revisão manual
-node scripts/importar-prova-integradora/revisar.mjs $T
+node scripts/importar-prova-devolutiva/revisar.mjs $T
 
 # 4. markdown para /admin/importar (imprime o que exige trabalho manual)
-node scripts/importar-prova-integradora/gerar.mjs $T --fonte "Integradora 4 (2025.2)" --tipo nacional
+node scripts/importar-prova-devolutiva/gerar.mjs $T --fonte "SOI 4 (2025.2)" --subtipo SOI --tipo nacional
 
 # 5. round-trip contra o parser real do admin (obrigatório antes de colar)
-node scripts/importar-prova-integradora/verificar-roundtrip.mjs $T
+node scripts/importar-prova-devolutiva/verificar-roundtrip.mjs $T
 
 # 6. limpeza
-node scripts/importar-prova-integradora/limpar.mjs $T --raiz
+node scripts/importar-prova-devolutiva/limpar.mjs $T --raiz
 
 # testes do pipeline
-node scripts/importar-prova-integradora/testar.mjs
+node scripts/importar-prova-devolutiva/testar.mjs
 ```
 
 Todos saem com **exit 1** quando encontram algo que exige decisão humana. Exit 1 é
 bloqueio, não aviso.
+
+## Questão discursiva
+
+As provas de SOI e HAM trazem duas por prova; as de Integradora, nenhuma. O
+relatório **não declara o formato**: a discursiva é a que emite `Alternativas:`
+seguido de `--`, e a resposta esperada vem na resposta comentada.
+
+|  | fechada | discursiva |
+| --- | --- | --- |
+| marca no relatório | `(alternativa D) (CORRETA)` | `Alternativas:` + `--` |
+| gabarito | a letra marcada | a resposta comentada |
+| markdown do admin | `ALTERNATIVAS` + `GABARITO` | `FORMATO: aberta` + `RESPOSTA_MODELO` |
+| conferência | crivo 2 (`(CORRETA)` × comentário) | crivo 1b (chave presente, cobrindo os itens) |
+
+`classificarFormato()` tem um terceiro valor, e ele é a razão de a função existir:
+**`indefinido`**, quando o campo `Alternativas:` tem texto e nenhuma
+`(alternativa X)` foi reconhecida. "Sem alternativa nenhuma" é exatamente o que se
+vê quando o autômato de rótulos erra e come o campo — sem esse terceiro valor, uma
+questão de múltipla escolha mutilada entraria no acervo como discursiva, que é
+perda silenciosa disfarçada de formato. Só é discursiva quando o campo veio de
+fato vazio.
+
+`PONTOS_CHAVE` e `CRITERIOS` saem vazios: o relatório não os traz, e destilá-los
+do texto seria inventar rubrica que ninguém escreveu. `PENDENCIAS.md` lista as
+discursivas com trecho de busca, para o passe manual no `/admin/questoes`.
+
+### Corte do enunciado com subitens
+
+O enunciado da discursiva costuma terminar numa lista de comandos:
+
+```
+Um paciente, de 32 anos, sem comorbidades, apresenta febre, disúria…
+Considerando o quadro clínico e laboratorial, responda às perguntas a seguir.
+a) Caracterize o quadro clínico do paciente e cite o provável agente etiológico.
+b) Explique os mecanismos fisiopatológicos subjacentes à infecção urinária.
+c) Baseado na etiologia, descreva o tratamento farmacológico adequado.
+```
+
+Sem tratamento, o corte por parágrafo levaria **só o item `c)`** para `ENUNCIADO` e
+empurraria `a)` e `b)` para o apoio: nada se perderia, mas a questão entraria no
+acervo perguntando um terço do que pergunta. `cortarNosItens()` exige dois itens em
+sequência alfabética fechando o enunciado — item isolado é lista dentro do caso
+clínico, não comando.
 
 ## Imagem e tabela: sinalizar, nunca converter
 
@@ -154,15 +218,32 @@ Exige **bloco** de 2+ linhas alinhadas: uma linha isolada com espaço largo é
 justificação de texto de referência bibliográfica (`2024.   E-book.   ISBN   978…`),
 não tabela.
 
-## Os quatro crivos
+## Os crivos
 
-`validar.mjs` roda quatro verificações independentes por questão.
+`validar.mjs` roda verificações independentes por questão. Quais rodam depende do
+formato: a discursiva passa pelo crivo 1b no lugar dos crivos 1 e 2.
 
-### 1. Estrutura
+### 1. Estrutura (fechada)
 
 4–5 alternativas contíguas a partir de `a`, enunciado presente, exatamente uma
 `(CORRETA)`, nenhuma alternativa duplicada, gabarito apontando para alternativa que
 existe.
+
+### 1b. Discursiva
+
+Sem `(CORRETA)` para cruzar, o peso cai todo aqui:
+
+| flag | severidade | o que pega |
+| --- | --- | --- |
+| `sem_resposta_modelo` | alta | discursiva sem resposta comentada — não há gabarito para importar |
+| `aberta_com_alternativas` | alta | classificada como discursiva mas com alternativa parseada (contradição interna) |
+| `resposta_modelo_curta` | média | chave com menos de 120 caracteres — candidata a corte na extração |
+| `item_sem_resposta` | média | o enunciado pede `a)`, `b)`, `c)` e a chave só responde parte |
+
+`item_sem_resposta` é o cruzamento possível aqui: quando a chave responde item a
+item, um item sem eco quase sempre significa resposta comentada cortada. É média
+e não alta porque a chave às vezes responde em prosa corrida, sem repetir as
+letras.
 
 ### 2. `(CORRETA)` × resposta comentada — o crivo de verdade
 
@@ -400,20 +481,38 @@ Gitignorado: o relatório traz nome de aluno no cabeçalho, além do conteúdo d
 
 ## Limites conhecidos
 
-- **Calibrado em três provas** — Integradora 4 de 2025.2 (96 páginas), 2025.1 (128) e
-  2024.2 (76); 50 questões e 4 alternativas cada. Os limiares (eco no
-  comentário em 0.45, vocabulário em 0.34, margem em 0.15, pergunta em 400
-  caracteres, 3+ espaços para coluna de tabela) saíram delas. Os scripts imprimem os
-  números e não só o veredito: muitas flags `sem_eco` de uma vez significa
-  recalibrar o limiar, não extração ruim.
+- **Calibrado em 13 provas** — Integradora 4/8 (2024.2, 2025.1, 2025.2), SOI IV
+  (2022.2, 2023.1, 2023.2, 2024.2, 2025.1, 2025.2) e HAM IV (2022.2, 2023.2,
+  2024.2, 2025.2). Onze rodam ponta a ponta; as duas de 2022.2 bloqueiam pelo
+  layout de duas colunas (abaixo). Os limiares (eco no comentário em 0.45,
+  vocabulário em 0.34, margem em 0.15, pergunta em 400 caracteres, 3+ espaços
+  para coluna de tabela) saíram das Integradoras. Os scripts imprimem os números
+  e não só o veredito: muitas flags `sem_eco` de uma vez significa recalibrar o
+  limiar, não extração ruim.
+- **O relatório de 2022.2 vem em duas colunas** — rótulos empilhados à esquerda,
+  texto todo numa coluna indentada à direita. Ali `Alternativas:` aparece na
+  altura da **segunda linha do enunciado**, porque a coluna esquerda não
+  acompanha o fluxo da direita: o autômato transiciona cedo e metade do enunciado
+  vira alternativa. `ehLayoutDeDuasColunas()` detecta pela indentação (1%–3% das
+  linhas de conteúdo passam da coluna 15 nas provas lineares, 84%–86% nessas) e
+  bloqueia com essa mensagem. Suportar o formato exigiria um segundo modo de
+  extração; por ora, prova de 2022.2 entra à mão pelo `/admin/questoes`.
 - **Cada edição nova mudou o parser**, e essa é a medida honesta de quanto o formato
-  varia. A 2025.1 trouxe prefixo de origem em caixa mista (`(AFYA Paraíba)` contra
-  `(FESAR)`), outro vocabulário de rótulo no comentário (`Comentário: Correta.`),
-  comentário em seções, filtro `[IES]` duplicado e figura embutida de verdade. A
-  2024.2 trouxe marca d'água na margem da linha do rótulo, alternativa degenerada
-  (`x`), tabela entregue como imagem e imagem em página dividida por duas questões.
+  varia. A Integradora 2025.1 trouxe prefixo de origem em caixa mista
+  (`(AFYA Paraíba)` contra `(FESAR)`), outro vocabulário de rótulo no comentário
+  (`Comentário: Correta.`), comentário em seções, filtro `[IES]` duplicado e figura
+  embutida de verdade. A 2024.2 trouxe marca d'água na margem da linha do rótulo,
+  alternativa degenerada (`x`), tabela entregue como imagem e imagem em página
+  dividida por duas questões. As de SOI e HAM trouxeram questão discursiva,
+  marcador de questão dividindo a linha com outro rótulo, ordinal corrompido
+  (`12!! QUESTÃO`), hash espaçado e origem sem `[IES]` para confirmar.
   **Conte com ajustar o parser na próxima edição** em vez de assumir que ela passa
   limpa — e rode `testar.mjs` depois de qualquer mexida.
+- **`pdfimages` é opcional, `pdftotext` não.** Sem `pdfimages` no PATH (poppler
+  avulso do Git for Windows) o pipeline segue com aviso e perde só o sinal de
+  raster embutido. `pdftotext` é chamado com `-enc UTF-8` explícito porque o build
+  do Git emite na codepage local, e aí nenhum rótulo casa e a prova sai vazia sem
+  erro nenhum.
 - **Tabela como texto nunca apareceu em prova real.** As três edições têm zero: a
   única tabela encontrada (2024.2, questão 24) é raster. O caminho de substituição
   por placeholder tem cobertura só por teste unitário, com dados sintéticos —
@@ -434,7 +533,11 @@ Gitignorado: o relatório traz nome de aluno no cabeçalho, além do conteúdo d
 - **`DISCIPLINA`/`TEMA` saem vazios** de propósito: a nomenclatura dos filtros do
   relatório não corresponde ao cadastro. Veja `classificacao-sugerida.csv`.
 - **`/admin/importar` não vincula questão a prova.** Depois de importar, crie a
-  prova em `/admin/provas` com subtipo **Integradora** e vincule as questões.
+  prova em `/admin/provas` com o subtipo certo (Integradora, SOI, HAM) e vincule
+  as questões.
+- **`PONTOS_CHAVE` e `CRITERIOS` das discursivas saem vazios** porque o relatório
+  não os traz. Preencher exigiria destilar rubrica do texto da chave, que é
+  invenção — fica como passe manual listado em `PENDENCIAS.md`.
 - **O parser assume o formato do relatório AFYA.** Outro layout faz `extrair.mjs`
   sair com erro em vez de adivinhar — aí é adaptar `CAMPOS` em `lib/relatorio.mjs`,
   não empurrar.
@@ -445,15 +548,20 @@ Esta seção é um instantâneo, não contrato: o estado real está nos diretór
 trabalho, que são gitignorados (material de prova + nome de aluno). Quem retomar
 o trabalho começa por aqui.
 
-Três provas **extraídas, validadas e com markdown pronto**, e **nenhuma importada
-ainda**. Todas com 50/50 questões no markdown, round-trip íntegro e zero flags
-altas pendentes:
+**Nenhuma prova importada ainda.** Markdown pronto, round-trip íntegro e zero
+flags altas pendentes:
 
-| prova | páginas | dir de trabalho | imagem a anexar | correção manual aplicada |
-| --- | --- | --- | --- | --- |
-| Integradora 4 (2024.2) | 76 | `.trabalho/integradora-4-2024-2/` | **Q24** → `saida/imagens/q024-1.jpg` (tabela de falha dos contraceptivos) | Q21: alternativa C era `x` no PDF → `Hipospádia.` |
-| Integradora 4 (2025.1) | 128 | `.trabalho/integradora-4-2025-1/` | **Q28** → `saida/imagens/q028-1.jpg` e `q028-2.jpg` (gráficos de crescimento da OMS) | — |
-| Integradora 4 (2025.2) | 96 | `.trabalho/integradora-4-2025-2/` | nenhuma (a Q44 é candidata falsa: achado de endoscopia descrito por escrito) | Q46: camada de texto embaralhada na explicação |
+| prova | questões | dir de trabalho | pendência |
+| --- | --- | --- | --- |
+| Integradora 4 (2024.2) | 50 | `.trabalho/integradora-4-2024-2/` | **Q24** → `saida/imagens/q024-1.jpg` (tabela de falha dos contraceptivos); Q21: alternativa C era `x` no PDF → `Hipospádia.` |
+| Integradora 4 (2025.1) | 50 | `.trabalho/integradora-4-2025-1/` | **Q28** → `saida/imagens/q028-1.jpg` e `q028-2.jpg` (gráficos de crescimento da OMS) |
+| Integradora 4 (2025.2) | 50 | `.trabalho/integradora-4-2025-2/` | Q46: camada de texto embaralhada na explicação, corrigida na revisão |
+| SOI IV (2025.1) | 15 (13+2) | `.trabalho/soi-4-2025-1/` | 2 discursivas sem `PONTOS_CHAVE` |
+| SOI IV (2025.2) | 15 (13+2) | `.trabalho/soi-4-2025-2/` | **Q10** menciona figura do ciclo de vida do agente — anexar à mão; 2 discursivas |
+
+As demais SOI/HAM (2023.1, 2023.2, 2024.2 e HAM 2023.2/2024.2/2025.2) foram usadas
+para calibrar e passam ponta a ponta, mas não têm markdown revisado — reextraia
+quando forem entrar. **SOI e HAM 2022.2 não passam**: layout de duas colunas.
 
 As correções manuais estão em `questoes-revisadas.json` de cada diretório, com o
 motivo registrado no campo `_motivo`. `validar.mjs` roda os crivos **sobre o texto
@@ -464,26 +572,33 @@ foi perdoada.
 
 Para cada prova:
 
-1. **Colar** `saida/prova.md` (ou `parte-01.md`/`parte-02.md`, 25 questões cada) em
+1. **Colar** `saida/prova.md` (ou os `parte-NN.md`, 25 questões cada) em
    `/admin/importar` → aba Questões.
-2. **Criar a prova** em `/admin/provas` com subtipo **Integradora** e vincular as 50
-   questões — `/admin/importar` não faz esse vínculo.
+2. **Criar a prova** em `/admin/provas` com o subtipo certo e vincular as questões
+   — `/admin/importar` não faz esse vínculo.
 3. **Anexar a imagem** das questões da tabela acima, em `/admin/questoes`. O trecho
    de busca de cada uma está em `saida/PENDENCIAS.md`.
-4. **Classificar** disciplina/tema, que saem vazios de propósito. Sugestões por
-   questão em `classificacao-sugerida.csv` (Área, Subárea, Semana, Módulo, IES).
-5. Depois de conferir no admin: `node limpar.mjs $T --tudo` apaga o diretório.
+4. **Preencher `PONTOS_CHAVE`** nas discursivas que forem entrar em simulado com
+   correção pela Aurora.
+5. **Classificar** disciplina/tema, que saem vazios de propósito. Nas Integradoras
+   há sugestões em `classificacao-sugerida.csv`.
+6. Depois de conferir no admin: `node limpar.mjs $T --tudo` apaga o diretório.
 
 ### Cobertura do gabarito, por prova
 
-Quantas das 50 tiveram o gabarito **conferido contra a devolutiva** (o resto vem só
-da marcação `(CORRETA)`, que é confiável mas é fonte única):
+Quantos gabaritos foram **conferidos contra a devolutiva** (o resto vem só da
+marcação `(CORRETA)`, que é confiável mas é fonte única):
 
-| prova | conferidas | por quê |
+| prova | conferidos | por quê |
 | --- | --- | --- |
-| 2025.2 | 27 | devolutiva cita o texto das alternativas |
-| 2025.1 | 19 | idem, com mais questões de assertivas |
-| 2024.2 | 12 | devolutiva parafraseia em vez de citar; a Q33 não tem devolutiva nenhuma |
+| Integradora 4 (2025.2) | 27 / 50 | devolutiva cita o texto das alternativas |
+| Integradora 4 (2025.1) | 19 / 50 | idem, com mais questões de assertivas |
+| Integradora 4 (2024.2) | 12 / 50 | devolutiva parafraseia em vez de citar; a Q33 não tem devolutiva nenhuma |
+| SOI IV (2025.1) | 6 / 13 | 2 questões de assertivas sem veredito numeral a numeral |
+| SOI IV (2025.2) | 3 / 13 | devolutiva cita a alternativa entre aspas e comenta em bloco |
+
+As discursivas ficam fora dessa conta: não têm alternativa marcada para cruzar, e
+quem responde por elas é o crivo 1b.
 
 Não some isso como "verificado": leia a tabela de cobertura em
 `relatorio-validacao.md` de cada prova.

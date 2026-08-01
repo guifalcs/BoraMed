@@ -20,7 +20,7 @@ import { readFileSync, writeFileSync, existsSync, mkdtempSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = resolve(AQUI, '..', '..');
@@ -67,7 +67,7 @@ const js = ts.transpileModule(puro, {
 
 const tmp = join(mkdtempSync(join(tmpdir(), 'parser-admin-')), 'parser.mjs');
 writeFileSync(tmp, js, 'utf-8');
-const { parseBlocos } = await import(tmp);
+const { parseBlocos } = await import(pathToFileURL(tmp).href);
 if (typeof parseBlocos !== 'function') {
   console.error('parseBlocos não exportado pelo componente — ajuste este script');
   process.exit(2);
@@ -112,9 +112,29 @@ parsed.forEach((q, i) => {
     return;
   }
 
-  const gabLido = q.alternativas.find((a) => a.correta)?.letra;
-  if (gabLido !== orig.letra_oficial) {
-    falhas.push(`Q${numero}: GABARITO virou ${gabLido ?? '—'}, oficial é ${orig.letra_oficial}`);
+  // Questão discursiva: o gabarito é a RESPOSTA_MODELO, não uma letra. O TPI não
+  // tem nenhuma, então `formato` ausente na validação continua significando
+  // fechada e este ramo nunca dispara lá.
+  const aberta = orig.formato === 'aberta';
+
+  if (aberta) {
+    if (q.formato !== 'resposta_aberta_curta') {
+      falhas.push(`Q${numero}: parser leu formato "${q.formato}", esperado resposta_aberta_curta`);
+    }
+    if (norm(q.resposta_modelo) !== norm(esperado(numero, 'resposta_modelo'))) {
+      falhas.push(
+        `Q${numero}: RESPOSTA_MODELO alterada — esperado ${norm(esperado(numero, 'resposta_modelo')).length} chars, ` +
+        `lido ${norm(q.resposta_modelo).length}`,
+      );
+    }
+    if (q.alternativas.length > 0) {
+      falhas.push(`Q${numero}: questão discursiva com ${q.alternativas.length} alternativa(s) no markdown`);
+    }
+  } else {
+    const gabLido = q.alternativas.find((a) => a.correta)?.letra;
+    if (gabLido !== orig.letra_oficial) {
+      falhas.push(`Q${numero}: GABARITO virou ${gabLido ?? '—'}, oficial é ${orig.letra_oficial}`);
+    }
   }
 
   if (norm(q.enunciado) !== norm(esperado(numero, 'enunciado'))) {
@@ -127,18 +147,20 @@ parsed.forEach((q, i) => {
     );
   }
 
-  const alts = esperado(numero, 'alternativas');
-  if (q.alternativas.length !== Object.keys(alts).length) {
-    falhas.push(`Q${numero}: ${q.alternativas.length} alternativas lidas, ${Object.keys(alts).length} esperadas`);
-  }
-  for (const [letra, texto] of Object.entries(alts)) {
-    const lida = q.alternativas.find((a) => a.letra === letra.toUpperCase())?.texto;
-    if (norm(lida) !== norm(texto)) {
-      falhas.push(`Q${numero} alternativa ${letra}: texto alterado pelo parser`);
+  if (!aberta) {
+    const alts = esperado(numero, 'alternativas');
+    if (q.alternativas.length !== Object.keys(alts).length) {
+      falhas.push(`Q${numero}: ${q.alternativas.length} alternativas lidas, ${Object.keys(alts).length} esperadas`);
+    }
+    for (const [letra, texto] of Object.entries(alts)) {
+      const lida = q.alternativas.find((a) => a.letra === letra.toUpperCase())?.texto;
+      if (norm(lida) !== norm(texto)) {
+        falhas.push(`Q${numero} alternativa ${letra}: texto alterado pelo parser`);
+      }
     }
   }
 
-  if (orig.explicacao && !norm(q.explicacao)) falhas.push(`Q${numero}: EXPLICACAO sumiu`);
+  if (norm(orig.explicacao) && !norm(q.explicacao)) falhas.push(`Q${numero}: EXPLICACAO sumiu`);
   if (orig.referencia && !norm(q.referencia)) falhas.push(`Q${numero}: REFERENCIA sumiu`);
   if (q.tipo_questao === null) avisos.push(`Q${numero}: TIPO não reconhecido`);
 });

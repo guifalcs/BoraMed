@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /**
- * FASE 1 — Extração determinística do relatório de devolutiva da Integradora.
+ * FASE 1 — Extração determinística do relatório de devolutiva da AFYA.
  *
- * O PDF é gerado, não digitalizado: camada de texto em todas as páginas e a
- * resposta certa marcada em linha (`(alternativa C) (CORRETA)`). Não há nada
- * aqui que precise de IA — enunciado, alternativas, gabarito, explicação,
- * referências e classificação saem por regex do próprio PDF.
+ * Serve qualquer prova nesse formato: Integradora, SOI, HAM. O PDF é gerado,
+ * não digitalizado — camada de texto em todas as páginas e a resposta certa
+ * marcada em linha (`(alternativa C) (CORRETA)`). Não há nada aqui que precise
+ * de IA: enunciado, alternativas, gabarito, explicação, referências e
+ * classificação saem por regex do próprio PDF.
  *
  * Uso:
- *   node extrair.mjs "Integradora 4 - (2025.2).pdf"
+ *   node extrair.mjs "SOI 4 - (2025.2).pdf"
  *
  * Sai com exit 1 quando o PDF não tem a estrutura esperada, em vez de adivinhar.
  */
@@ -21,6 +22,7 @@ import {
   fatiarQuestoes,
   parsearQuestao,
   conferirOrigem,
+  ehLayoutDeDuasColunas,
 } from './lib/relatorio.mjs';
 import { imagensPorPagina, classificarMidia } from './lib/midia.mjs';
 import { colapsar } from './lib/texto.mjs';
@@ -58,6 +60,14 @@ const semTexto = paginas.filter((p) => (p.match(/[A-Za-zÀ-ÿ0-9]/g) ?? []).leng
 console.log(`páginas: ${paginas.length} (${semTexto} sem camada de texto)`);
 
 const bloqueios = [];
+if (ehLayoutDeDuasColunas(paginas)) {
+  bloqueios.push(
+    'este relatório vem em DUAS COLUNAS (rótulos à esquerda, texto à direita) — formato das ' +
+    'provas de 2022.2. O parser assume o layout linear das edições de 2023 em diante e leria ' +
+    'metade do enunciado como alternativa. Não há caminho automático: importe essa prova pelo ' +
+    '/admin/questoes ou converta o PDF antes.',
+  );
+}
 if (semTexto > 0) {
   bloqueios.push(
     `${semTexto} página(s) sem camada de texto — este pipeline só serve para relatório ` +
@@ -73,6 +83,12 @@ bloqueios.push(...erros);
 const imagens = imagensPorPagina(pdf);
 const questoes = [];
 const avisos = [];
+if (imagens.indisponivel) {
+  avisos.push(
+    `${imagens.indisponivel} — sem detecção de raster embutido nesta rodada; ` +
+    'a menção com dêixis no enunciado continua valendo',
+  );
+}
 
 // Parseia tudo antes de classificar mídia: a atribuição de imagem precisa saber
 // quais questões dividem cada página (ver `classificarMidia`).
@@ -92,18 +108,30 @@ for (const q of parseadas) {
 }
 
 // Campo obrigatório vazio significa que o autômato de rótulos pulou uma seção —
-// perda silenciosa, o pior modo de falha possível. Foi assim que a questão 7
-// desta prova ficou sem nenhuma alternativa antes de os rótulos passarem a casar
-// com sensibilidade à caixa. Bloqueia em vez de gerar markdown mutilado.
-const mutiladas = questoes.filter(
-  (q) => !q.enunciado.trim() || Object.keys(q.alternativas).length < 2,
-);
-for (const q of mutiladas) {
-  const faltando = [
-    !q.enunciado.trim() && 'enunciado',
-    Object.keys(q.alternativas).length < 2 && `alternativas (${Object.keys(q.alternativas).length})`,
-  ].filter(Boolean);
-  bloqueios.push(`Q${q.numero} (p.${q.paginas.join(',')}): sem ${faltando.join(' e ')}`);
+// perda silenciosa, o pior modo de falha possível. Foi assim que a questão 7 da
+// Integradora de calibração ficou sem nenhuma alternativa antes de os rótulos
+// passarem a casar com sensibilidade à caixa. Bloqueia em vez de gerar markdown
+// mutilado.
+//
+// O que é obrigatório depende do formato: a discursiva não tem alternativa por
+// definição, e cobrá-las dela reprovaria as duas questões abertas de toda prova
+// de SOI e HAM. O que substitui a exigência lá é a resposta comentada, que é o
+// gabarito da questão.
+for (const q of questoes) {
+  const faltando = [];
+  if (!q.enunciado.trim()) faltando.push('enunciado');
+  if (q.formato === 'fechada' && Object.keys(q.alternativas).length < 2) {
+    faltando.push(`alternativas (${Object.keys(q.alternativas).length})`);
+  }
+  if (q.formato === 'aberta' && !(q.resposta_modelo ?? '').trim()) {
+    faltando.push('resposta comentada (é o gabarito da discursiva)');
+  }
+  if (q.formato === 'indefinido') {
+    faltando.push('alternativas reconhecíveis — o campo "Alternativas:" tem texto que não virou alternativa');
+  }
+  if (faltando.length > 0) {
+    bloqueios.push(`Q${q.numero} (p.${q.paginas.join(',')}): sem ${faltando.join(' e ')}`);
+  }
 }
 
 if (bloqueios.length > 0) {
@@ -129,28 +157,39 @@ const manifesto = {
 writeFileSync(join(dir, 'manifesto.json'), JSON.stringify(manifesto, null, 2), 'utf-8');
 writeFileSync(join(dir, 'questoes.json'), JSON.stringify({ questoes }, null, 2), 'utf-8');
 
-const csv = ['numero,codigo,area,subarea,semana,modulo,ies,dificuldade,competencia'];
-for (const q of questoes) {
-  const c = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  csv.push([
-    q.numero, c(q.codigo), c(q.classificacao.area), c(q.classificacao.subarea),
-    c(q.classificacao.semana), c(q.classificacao.modulo), c(q.classificacao.ies),
-    c(q.dificuldade), c(q.classificacao.competencia),
-  ].join(','));
+// O bloco "Filtros da questão" só existe nas provas de Integradora; em SOI e HAM
+// o relatório não traz classificação nenhuma. Gerar um CSV com 15 linhas vazias
+// sugeriria que a classificação existe e saiu em branco por bug.
+const temClassificacao = questoes.some((q) =>
+  Object.values(q.classificacao).some((v) => v) || q.codigo || q.dificuldade,
+);
+if (temClassificacao) {
+  const csv = ['numero,codigo,area,subarea,semana,modulo,ies,dificuldade,competencia'];
+  for (const q of questoes) {
+    const c = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    csv.push([
+      q.numero, c(q.codigo), c(q.classificacao.area), c(q.classificacao.subarea),
+      c(q.classificacao.semana), c(q.classificacao.modulo), c(q.classificacao.ies),
+      c(q.dificuldade), c(q.classificacao.competencia),
+    ].join(','));
+  }
+  writeFileSync(join(dir, 'classificacao-sugerida.csv'), csv.join('\n') + '\n', 'utf-8');
 }
-writeFileSync(join(dir, 'classificacao-sugerida.csv'), csv.join('\n') + '\n', 'utf-8');
 
 // ──── Resumo ────
 
-const semGabarito = questoes.filter((q) => !q.letra_correta);
+const fechadas = questoes.filter((q) => q.formato === 'fechada');
+const abertas = questoes.filter((q) => q.formato === 'aberta');
+const semGabarito = fechadas.filter((q) => !q.letra_correta);
 const comImagem = questoes.filter((q) => q.tem_imagem);
 const comTabela = questoes.filter((q) => q.tem_tabela);
 const porDivisao = (c) => questoes.filter((q) => q.divisao === c).length;
 
-console.log(`\nquestões        : ${questoes.length}`);
+console.log(`\nquestões        : ${questoes.length} (${fechadas.length} fechadas, ${abertas.length} discursivas)`);
+if (abertas.length > 0) console.log(`  discursivas   : Q${abertas.map((q) => q.numero).join(', Q')}`);
 console.log(`cabeçalho       : ${cabecalho.titulo ?? '(não identificado)'}`);
 console.log(`  componente    : ${cabecalho.componente ?? '—'}   data: ${cabecalho.data ?? '—'}`);
-console.log(`gabarito inline : ${questoes.length - semGabarito.length}/${questoes.length} com (CORRETA) única`);
+console.log(`gabarito inline : ${fechadas.length - semGabarito.length}/${fechadas.length} fechadas com (CORRETA) única`);
 console.log(`com imagem      : ${comImagem.length}${comImagem.length ? ` → Q${comImagem.map((q) => q.numero).join(', Q')}` : ''}`);
 console.log(`com tabela      : ${comTabela.length}${comTabela.length ? ` → Q${comTabela.map((q) => q.numero).join(', Q')}` : ''}`);
 console.log(
@@ -167,17 +206,22 @@ if (avisos.length > 0) {
 console.log('\nescrito:');
 console.log('  manifesto.json               seções, cabeçalho e avisos da extração');
 console.log(`  questoes.json                ${questoes.length} questões com todos os campos`);
-console.log('  classificacao-sugerida.csv   Área/Subárea/Semana/Módulo por questão');
+if (temClassificacao) console.log('  classificacao-sugerida.csv   Área/Subárea/Semana/Módulo por questão');
+else console.log('  (sem classificacao-sugerida.csv — este relatório não traz "Filtros da questão")');
 console.log(`\npróximo: node ${join(import.meta.dirname, 'validar.mjs')} ${dir}`);
 
-// Ecoa uma questão para conferência visual imediata — barato e pega parser
-// desalinhado antes de gastar tempo nas outras etapas.
-const amostra = questoes[0];
-if (amostra) {
-  console.log('\n── amostra: Q1 ──');
+// Ecoa uma questão de cada formato para conferência visual imediata — barato e
+// pega parser desalinhado antes de gastar tempo nas outras etapas.
+const amostras = [...new Set([questoes[0], fechadas[0], abertas[0]].filter(Boolean))];
+for (const amostra of amostras) {
+  console.log(`\n── amostra: Q${amostra.numero} (${amostra.formato}) ──`);
   console.log(`fonte_original : ${amostra.fonte_original ?? '—'}`);
   console.log(`apoio          : ${colapsar(amostra.enunciado_apoio).slice(0, 90) || '—'}…`);
-  console.log(`pergunta       : ${colapsar(amostra.enunciado).slice(0, 90)}…`);
-  console.log(`alternativas   : ${Object.keys(amostra.alternativas).join(', ')}`);
-  console.log(`gabarito       : ${(amostra.letra_correta ?? '—').toUpperCase()}`);
+  console.log(`pergunta       : ${colapsar(amostra.enunciado).slice(0, 120)}…`);
+  if (amostra.formato === 'aberta') {
+    console.log(`resposta modelo: ${colapsar(amostra.resposta_modelo).slice(0, 90)}…`);
+  } else {
+    console.log(`alternativas   : ${Object.keys(amostra.alternativas).join(', ')}`);
+    console.log(`gabarito       : ${(amostra.letra_correta ?? '—').toUpperCase()}`);
+  }
 }

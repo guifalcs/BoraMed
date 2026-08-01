@@ -2,7 +2,7 @@
 /**
  * Extrai para arquivo as imagens que **estão** embutidas no PDF.
  *
- * A Integradora 2025.2 não tinha nenhuma: quando a questão original trazia
+ * A Integradora 4 (2025.2) não tinha nenhuma: quando a questão original trazia
  * figura, o gerador do relatório a descartava, e a única saída era buscar na
  * fonte. A 2025.1 mostrou que isso não é regra — a questão 28 traz os dois
  * gráficos de crescimento embutidos na página 67, e o enunciado depende deles
@@ -151,7 +151,7 @@ for (const [pagina, candidatas] of [...porPagina.entries()].sort((a, b) => a[0] 
   const imagens = listar(pagina).filter((i) => !TEMPLATE.has(`${i.largura}x${i.altura}`));
   if (imagens.length === 0) continue;
 
-  const tmp = mkdtempSync(join(tmpdir(), 'integradora-img-'));
+  const tmp = mkdtempSync(join(tmpdir(), 'devolutiva-img-'));
   try {
     execFileSync('pdfimages', ['-j', '-f', String(pagina), '-l', String(pagina), pdf, join(tmp, 'p')]);
     const arquivos = readdirSync(tmp).sort();

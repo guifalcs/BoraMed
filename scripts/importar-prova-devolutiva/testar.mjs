@@ -1,12 +1,13 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * Testes do pipeline de importação da prova Integradora.
+ * Testes do pipeline de importação do relatório de devolutiva.
  *
- * Cobre o que não pode regredir: os defeitos reais que a Integradora 4 (2025.2)
- * revelou. Cada bloco abaixo corresponde a um bug que já aconteceu e passou em
- * silêncio — é essa a razão de o teste existir, não cobertura por cobertura.
+ * Cobre o que não pode regredir: os defeitos reais que as provas de calibração
+ * revelaram — três Integradoras, cinco SOI e quatro HAM. Cada bloco abaixo
+ * corresponde a um bug que já aconteceu e passou em silêncio; é essa a razão de
+ * o teste existir, não cobertura por cobertura.
  *
- * Uso: node scripts/importar-prova-integradora/testar.mjs
+ * Uso: node scripts/importar-prova-devolutiva/testar.mjs
  */
 
 import {
@@ -15,12 +16,16 @@ import {
   dividirEnunciado,
   fatiarQuestoes,
   parsearQuestao,
+  cabecalhoDaProva,
+  classificarFormato,
+  ehLayoutDeDuasColunas,
 } from './lib/relatorio.mjs';
 import {
   ehQuestaoDeAssertivas,
   cruzamentoDeAssertivas,
   crivoCruzamento,
   crivoEstrutura,
+  crivoDiscursiva,
   RESERVADO,
 } from './lib/crivos.mjs';
 import { mencoesDeFigura, mencoesDeTabela, linhasTabulares, substituirTabelas } from './lib/midia.mjs';
@@ -503,6 +508,245 @@ igual(
     enunciado: 'Assinale.',
   }).filter((f) => f.codigo === 'alternativas_duplicadas').length,
   1,
+);
+
+// ─────────────────── prova genérica: cabeçalho ───────────────────
+// Procurar `INTEGRADORA` não achava nada em SOI nem em HAM, e filtrar por caixa
+// alta reprovava `Nl ESPECIFICA SOi 4 04MAIO2023`. O título é posicional: o que
+// está solto logo acima de "RELATÓRIO DE DEVOLUTIVA DE PROVA".
+
+const CAPA_SOI = [
+  '                                  AFYA          NOTA FINAL',
+  '                          CURSO DE MEDICINA - AFYA',
+  '   Aluno:',
+  '   Componente Curricular: Sistemas Orgânicos Integrados IV',
+  '   Professor (es):',
+  '   Período: 202502                Turma:      Data: 29/09/2025',
+  'N1 ESPECÍFICA - MEDICINA - SOI IV - 2025.2 - 1ª CHAMADA -',
+  '                         29/SETEMBRO',
+  '   RELATÓRIO DE DEVOLUTIVA DE PROVA',
+  '           PROVA 17282 - CADERNO 001',
+].join('\n');
+
+const capa = cabecalhoDaProva([CAPA_SOI]);
+igual(
+  'título de prova não-Integradora é reconhecido',
+  capa.titulo,
+  'N1 ESPECÍFICA - MEDICINA - SOI IV - 2025.2 - 1ª CHAMADA - 29/SETEMBRO',
+);
+igual('componente continua saindo do rótulo', capa.componente, 'Sistemas Orgânicos Integrados IV');
+igual('prova e caderno preservados', `${capa.prova}/${capa.caderno}`, '17282/001');
+
+// ─────────────────── marcador de questão fora da linha própria ───────────────────
+// Em SOI e HAM o `-layout` põe o marcador na mesma linha de outro elemento. Com
+// a regex ancorada em `^…$`, 11 das 13 questões da SOI 2022.2 sumiam em silêncio.
+
+const marcadorCompartilhado = fatiarQuestoes([[
+  ' Enunciado:                                    1ª QUESTÃO',
+  ' (FASA Vic) Paciente de 32 anos com icterícia e colúria há uma semana.',
+  ' Alternativas:',
+  ' (alternativa A) (CORRETA)',
+  ' Hepatite viral aguda, confirmada pelo perfil sorológico apresentado no caso.',
+  ' (alternativa B)',
+  ' Colangite esclerosante primária, sem relação com o quadro sorológico descrito.',
+  ' Feedback:                                     2ª QUESTÃO',
+  ' --',
+  ' Enunciado:',
+  ' (IESVAP) Homem de 45 anos, etilista, com dor abdominal em faixa.',
+  ' Alternativas:',
+  ' (alternativa A) (CORRETA)',
+  ' Pancreatite aguda, sugerida pela elevação de amilase e lipase séricas.',
+  ' (alternativa B)',
+  ' Úlcera péptica perfurada, que cursaria com pneumoperitônio na radiografia.',
+].join('\n')]);
+igual('marcador colado a rótulo é detectado', marcadorCompartilhado.blocos.length, 2);
+igual('sem lacuna na numeração', marcadorCompartilhado.erros.length, 0);
+
+const [q1Colada, q2Colada] = marcadorCompartilhado.blocos.map((b) => parsearQuestao(b));
+// `Enunciado:` antes do marcador abre a questão nova; `Feedback:` fecha a anterior.
+ok('rótulo de abertura vai para a questão que começa', q1Colada.enunciado.includes('icterícia'));
+ok('rótulo de fechamento fica com a anterior', q1Colada.feedback === null || !q2Colada.enunciado.includes('Feedback'));
+ok('a segunda questão fica íntegra', q2Colada.enunciado.includes('dor abdominal em faixa'));
+igual('e com o gabarito certo', q2Colada.letra_correta, 'a');
+
+// Ordinal corrompido pelo digitalizador (`12!! QUESTÃO` na SOI 2023.1) reprovava
+// a prova inteira por lacuna na numeração.
+igual(
+  'ordinal corrompido não vira lacuna',
+  fatiarQuestoes(['   1ª QUESTÃO\n Enunciado:\n Caso um.\n   2!! QUESTÃO\n Enunciado:\n Caso dois.'])
+    .erros.length,
+  0,
+);
+
+// ─────────────────── layout de duas colunas ───────────────────
+
+ok(
+  'relatório de 2022.2 é reconhecido como duas colunas',
+  ehLayoutDeDuasColunas([
+    Array.from({ length: 50 }, (_, i) =>
+      `                     Linha ${i} de conteúdo indentado na coluna da direita.`).join('\n'),
+  ]),
+);
+ok(
+  'relatório linear não é confundido',
+  !ehLayoutDeDuasColunas([
+    Array.from({ length: 50 }, (_, i) => `Linha ${i} de conteúdo na margem esquerda da página.`).join('\n'),
+  ]),
+);
+
+// ─────────────────── origem em caixa mista ───────────────────
+// SOI e HAM não trazem o filtro `[IES]` que confirmava a origem na Integradora,
+// e escrevem `(AFYA Bragança)` em vez de `(FACIMPA)`. Sem esta regra a sigla
+// ficava no meio do enunciado.
+
+for (const [origem, texto] of [
+  ['AFYA Bragança', 'Uma paciente de 45 anos apresenta dor epigástrica recorrente.'],
+  ['FASA Vic', 'Um paciente de 32 anos procura a unidade de saúde com icterícia.'],
+  ['AFYA Cruzeiro do Sul', 'Homem, 54 anos, com histórico de etilismo crônico.'],
+  ['IESVAP', 'Um homem de 45 anos é admitido no pronto-socorro com dor abdominal.'],
+]) {
+  const q = parsearQuestao(fatiarQuestoes([[
+    '  1ª QUESTÃO',
+    ' Enunciado:',
+    ` (${origem}) ${texto}`,
+    '',
+    ' Assinale a alternativa correta.',
+    ' Alternativas:',
+    ' (alternativa A) (CORRETA)',
+    ' Primeira alternativa com texto suficientemente longo para o crivo.',
+    ' (alternativa B)',
+    ' Segunda alternativa com texto suficientemente longo para o crivo.',
+  ].join('\n')]).blocos[0]);
+  igual(`origem "${origem}" sai do enunciado`, q.fonte_original, origem);
+  ok(`e o enunciado começa no caso (${origem})`, q.enunciado_apoio.startsWith(texto.slice(0, 20)));
+}
+
+// Parêntese de conteúdo em caixa mista continua não sendo origem.
+igual(
+  'parêntese de conteúdo não vira origem',
+  parsearQuestao(fatiarQuestoes([[
+    '  1ª QUESTÃO',
+    ' Enunciado:',
+    ' (Considere a hipótese descrita a seguir) O paciente evolui com febre alta.',
+    ' Alternativas:',
+    ' (alternativa A) (CORRETA)',
+    ' Primeira alternativa com texto suficientemente longo para o crivo.',
+    ' (alternativa B)',
+    ' Segunda alternativa com texto suficientemente longo para o crivo.',
+  ].join('\n')]).blocos[0]).fonte_original,
+  null,
+);
+
+// ─────────────────── questão discursiva ───────────────────
+// As provas de SOI e HAM trazem duas por prova. O relatório não declara o
+// formato: a discursiva é a que emite `Alternativas:` seguido de `--`.
+
+const DISCURSIVA = [
+  '  1ª QUESTÃO',
+  ' Enunciado:',
+  ' (AFYA SANTA INÊS) Um paciente, de 32 anos, sem comorbidades, apresenta febre, disúria,',
+  ' polaciúria e dor lombar unilateral há 48 horas. O exame de urina tipo 1 revela piúria.',
+  '',
+  ' Considerando o quadro clínico e laboratorial, responda às perguntas a seguir.',
+  '',
+  ' a) Caracterize o quadro clínico do paciente e cite o provável agente etiológico.',
+  '',
+  ' b) Explique os mecanismos fisiopatológicos subjacentes à infecção do trato urinário.',
+  '',
+  ' Alternativas:',
+  ' --',
+  ' Resposta comentada:',
+  ' a) O paciente apresenta pielonefrite aguda, infecção do trato urinário superior, e o agente',
+  ' etiológico mais provável é a Escherichia coli, responsável pela maioria dos casos descritos.',
+  ' b) A invasão bacteriana ascendente causa inflamação local, edema e obstrução parcial do fluxo.',
+  ' Referências:',
+  ' LOSCALZO, José. Medicina Interna de Harrison. Grupo A, 2024.',
+].join('\n');
+
+const discursiva = parsearQuestao(fatiarQuestoes([DISCURSIVA]).blocos[0]);
+igual('questão sem alternativas é discursiva', discursiva.formato, 'aberta');
+igual('sem gabarito de letra', discursiva.letra_correta, null);
+ok('resposta comentada vira resposta modelo', discursiva.resposta_modelo.includes('pielonefrite'));
+igual('e não é duplicada em explicação', discursiva.explicacao, '');
+ok('origem também é extraída na discursiva', discursiva.fonte_original === 'AFYA SANTA INÊS');
+
+// O corte por itens: sem ele só o item `b)` iria para ENUNCIADO e o `a)` cairia
+// no texto de apoio — a questão entraria perguntando metade.
+igual('enunciado com subitens corta nos itens', discursiva.divisao, 'itens');
+ok('pergunta contém os dois itens', /a\)/.test(discursiva.enunciado) && /b\)/.test(discursiva.enunciado));
+ok('apoio guarda só o caso clínico', discursiva.enunciado_apoio.includes('disúria') && !discursiva.enunciado_apoio.includes('a) Caracterize'));
+
+igual(
+  'corte por itens preserva o texto inteiro',
+  `${discursiva.enunciado_apoio} ${discursiva.enunciado}`.replace(/\s+/g, ' ').trim(),
+  discursiva.enunciado_bruto.replace(/^\s*\(AFYA SANTA INÊS\)\s*/, '').replace(/\s+/g, ' ').trim(),
+);
+
+// Item isolado dentro do caso clínico não é comando.
+igual(
+  'um item só não dispara o corte por itens',
+  dividirEnunciado('Exames do paciente.\n\na) Hemograma completo sem alterações.\n\nAssinale a alternativa correta.').criterio,
+  'paragrafo',
+);
+
+// Distinguir discursiva de questão mutilada é o ponto do `indefinido`: campo
+// vazio é formato; campo com texto que não virou alternativa é bug do parser.
+igual('campo Alternativas vazio é discursiva', classificarFormato({}, '--'), 'aberta');
+igual('campo Alternativas em branco é discursiva', classificarFormato({}, '   '), 'aberta');
+igual(
+  'campo Alternativas com texto e sem marcador é indefinido',
+  classificarFormato({}, 'Hepatite viral aguda. Colangite esclerosante.'),
+  'indefinido',
+);
+igual('com alternativa parseada é fechada', classificarFormato({ a: 'texto' }, ''), 'fechada');
+
+// Formato indefinido bloqueia antes de qualquer outra conclusão.
+igual(
+  'formato indefinido é flag alta',
+  crivoEstrutura({
+    formato: 'indefinido',
+    alternativas: {},
+    enunciado: 'Assinale a alternativa correta.',
+    letra_correta: null,
+    corretas_marcadas: [],
+  }).filter((f) => f.codigo === 'formato_indefinido' && f.severidade === 'alta').length,
+  1,
+);
+
+// Discursiva não é cobrada por alternativa nem por gabarito.
+const flagsDiscursiva = crivoEstrutura({
+  formato: 'aberta',
+  alternativas: {},
+  enunciado: discursiva.enunciado,
+  resposta_modelo: discursiva.resposta_modelo,
+  letra_correta: null,
+  corretas_marcadas: [],
+});
+igual('discursiva íntegra não levanta flag alta', flagsDiscursiva.filter((f) => f.severidade === 'alta').length, 0);
+
+igual(
+  'discursiva sem resposta modelo é bloqueio',
+  crivoDiscursiva({ formato: 'aberta', alternativas: {}, enunciado: 'Explique.', resposta_modelo: '' })
+    .filter((f) => f.codigo === 'sem_resposta_modelo' && f.severidade === 'alta').length,
+  1,
+);
+
+igual(
+  'item do enunciado sem eco na chave é sinalizado',
+  crivoDiscursiva({
+    formato: 'aberta',
+    alternativas: {},
+    enunciado: 'Responda:\n\na) Cite o agente etiológico.\n\nb) Descreva o tratamento indicado.',
+    resposta_modelo: 'a) O agente é a Escherichia coli, responsável pela maioria dos casos de pielonefrite aguda descritos.',
+  }).filter((f) => f.codigo === 'item_sem_resposta').length,
+  1,
+);
+
+// O crivo do cruzamento não se aplica: não há alternativa marcada para conferir.
+igual(
+  'cruzamento não se aplica à discursiva',
+  crivoCruzamento({ formato: 'aberta', alternativas: {}, explicacao: '', letra_correta: null }).cobertura,
+  'nao_se_aplica',
 );
 
 // ─────────────────── resultado ───────────────────

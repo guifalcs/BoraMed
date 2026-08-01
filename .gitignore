@@ -1,4 +1,4 @@
-tests/e2e/fixtures/.auth.json
+﻿tests/e2e/fixtures/.auth.json
 .env
 
 # Secrets de teste das edge functions (manter apenas os *.example versionados)
@@ -30,10 +30,11 @@ supabase/backups/**
 # da prova, transcrições e o markdown gerado. Material de prova + dados de
 # aluno nas fotos — nunca versionar.
 scripts/importar-prova-scan/.trabalho/
-# Idem para a Integradora: o relatório de devolutiva traz nome do aluno no
-# cabeçalho, além do conteúdo da prova.
-scripts/importar-prova-integradora/.trabalho/
-# PDFs de prova soltos na raiz (entrada do pipeline)
+# Idem para o pipeline do relatório de devolutiva (Integradora, SOI, HAM): o
+# relatório traz nome do aluno no cabeçalho, além do conteúdo da prova.
+scripts/importar-prova-devolutiva/.trabalho/
+# PDFs de prova soltos na raiz ou em pasta de lote (entrada do pipeline)
 /*.pdf
+/provas*/
 # revisao humana baixada pelo navegador, se salva fora do diretorio de trabalho
 /questoes-revisadas*.json

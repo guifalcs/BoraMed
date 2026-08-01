@@ -40,6 +40,7 @@ function aplicarRevisao(q, r) {
     enunciado_apoio: campo('enunciado_apoio'),
     alternativas,
     explicacao: campo('explicacao'),
+    resposta_modelo: campo('resposta_modelo'),
     referencia: campo('referencia'),
   };
 
@@ -50,6 +51,7 @@ function aplicarRevisao(q, r) {
       paragrafosSuspeitos(t).map((s) => ({ campo: `alternativa ${l.toUpperCase()}`, ...s })),
     ),
     ...paragrafosSuspeitos(revisto.explicacao ?? '').map((s) => ({ campo: 'explicacao', ...s })),
+    ...paragrafosSuspeitos(revisto.resposta_modelo ?? '').map((s) => ({ campo: 'resposta_modelo', ...s })),
     ...paragrafosSuspeitos(revisto.referencia ?? '').map((s) => ({ campo: 'referencia', ...s })),
   ];
 
@@ -109,6 +111,7 @@ const NIVEIS_COBERTURA = [
   'inaplicavel',
   'sem_eco',
   'ausente',
+  'nao_se_aplica',
 ];
 const cobertura = NIVEIS_COBERTURA.map((n) => ({
   nivel: n,
@@ -118,9 +121,19 @@ const cobertura = NIVEIS_COBERTURA.map((n) => ({
 const comImagem = questoes.filter((q) => q.tem_imagem);
 const comTabela = questoes.filter((q) => q.tem_tabela);
 
+const fechadas = questoes.filter((q) => q.formato !== 'aberta');
+const abertas = questoes.filter((q) => q.formato === 'aberta');
+
 const md = [];
-md.push('# Relatório de validação — prova Integradora\n');
-md.push(`${questoes.length} questões. Gabarito de cada uma vem da marcação \`(CORRETA)\` do próprio relatório.\n`);
+md.push('# Relatório de validação — relatório de devolutiva\n');
+md.push(
+  `${questoes.length} questões: ${fechadas.length} fechadas e ${abertas.length} discursivas. ` +
+  'O gabarito das fechadas vem da marcação `(CORRETA)` do próprio relatório; o das discursivas ' +
+  'é a resposta comentada, importada como `RESPOSTA_MODELO`.\n',
+);
+if (abertas.length > 0) {
+  md.push(`Discursivas: Q${abertas.map((q) => q.numero).join(', Q')}.\n`);
+}
 
 md.push('## Resumo\n');
 md.push('| severidade | questões |');
@@ -148,6 +161,7 @@ const descricaoCobertura = {
   inaplicavel: 'questão de assertivas cujo comentário não julga os numerais um a um',
   sem_eco: 'o comentário não descreve as alternativas de forma reconhecível',
   ausente: 'a questão não tem resposta comentada',
+  nao_se_aplica: 'questão discursiva — não há alternativa marcada para cruzar (ver crivo da discursiva)',
 };
 for (const c of cobertura) {
   md.push(`| ${c.nivel} | ${descricaoCobertura[c.nivel]} | ${c.quantas} |`);
@@ -234,7 +248,9 @@ if (altasPendentes.length > 0) {
   process.exit(1);
 }
 
-const naoLetras = questoes.filter((q) => !LETRAS.includes((q.letra_oficial ?? '').toLowerCase()));
+// Só para as fechadas: a discursiva não tem letra, e o gabarito dela é a
+// resposta modelo, cobrada pelo `crivoDiscursiva`.
+const naoLetras = fechadas.filter((q) => !LETRAS.includes((q.letra_oficial ?? '').toLowerCase()));
 if (naoLetras.length > 0) {
   console.error(`gabarito inválido em Q${naoLetras.map((q) => q.numero).join(', Q')}`);
   process.exit(1);

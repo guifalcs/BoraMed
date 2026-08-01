@@ -6,10 +6,11 @@
  * frontend/src/app/(admin)/importar/admin-importar.component.ts.
  *
  * Uso:
- *   node gerar.mjs <dir-trabalho> --fonte "Integradora 4 (2025.2)" [opções]
+ *   node gerar.mjs <dir-trabalho> --fonte "SOI 4 (2025.2)" [opções]
  *
  * Opções:
- *   --fonte <txt>     valor do campo FONTE (obrigatório)
+ *   --fonte <txt>     valor do campo FONTE (padrão: nome do PDF de entrada)
+ *   --subtipo <txt>   subtipo da prova para o /admin/provas (ex: SOI, Integradora)
  *   --tipo <t>        nacional | processual | laboratorio   (padrão: nacional)
  *   --lote <n>        divide a saída em arquivos de n questões (padrão: 25)
  *   --incluir-alta    inclui questões com flag alta não resolvida (padrão: exclui)
@@ -36,6 +37,7 @@ function opcoes() {
   return {
     dir: a.find((x) => !x.startsWith('--')),
     fonte: val('--fonte', null),
+    subtipo: val('--subtipo', null),
     tipo: val('--tipo', 'nacional'),
     lote: parseInt(val('--lote', '25'), 10),
     incluirAlta: a.includes('--incluir-alta'),
@@ -45,11 +47,7 @@ function opcoes() {
 
 const o = opcoes();
 if (!o.dir) {
-  console.error('uso: node gerar.mjs <dir-trabalho> --fonte "Integradora 4 (2025.2)"');
-  process.exit(2);
-}
-if (!o.fonte) {
-  console.error('--fonte é obrigatório (ex: --fonte "Integradora 4 (2025.2)")');
+  console.error('uso: node gerar.mjs <dir-trabalho> --fonte "SOI 4 (2025.2)"');
   process.exit(2);
 }
 if (!['nacional', 'processual', 'laboratorio'].includes(o.tipo)) {
@@ -58,6 +56,22 @@ if (!['nacional', 'processual', 'laboratorio'].includes(o.tipo)) {
 }
 
 const dir = resolve(o.dir);
+
+// `--fonte` sai do nome do PDF quando não é passado: "SOI 4 - (2025.2).pdf" já
+// diz disciplina, período e semestre, e digitar isso de novo só cria a chance de
+// divergir do arquivo importado.
+const manifesto = lerJson(join(dir, 'manifesto.json'));
+if (!o.fonte) {
+  o.fonte = (manifesto?.pdf ?? '')
+    .replace(/\.pdf$/i, '')
+    .replace(/\s+-\s+\(/, ' (')
+    .trim();
+  if (!o.fonte) {
+    console.error('--fonte é obrigatório quando não há manifesto.json (ex: --fonte "SOI 4 (2025.2)")');
+    process.exit(2);
+  }
+  console.log(`--fonte não informado; usando "${o.fonte}" (do nome do PDF)`);
+}
 const validacao = lerJson(join(dir, 'validacao.json'));
 if (!validacao) {
   console.error(`validacao.json não encontrado em ${dir} — rode validar.mjs primeiro`);
@@ -92,10 +106,18 @@ for (const q of validacao.questoes) {
     motivos.push(...q.flags.filter((f) => f.severidade === 'alta').map((f) => f.codigo));
   }
   // Bloqueios estruturais: nem --incluir-alta passa por cima, porque o parser do
-  // admin rejeitaria — ou pior, importaria questão mutilada em silêncio.
+  // admin rejeitaria — ou pior, importaria questão mutilada em silêncio. A
+  // matriz é a mesma do `parseQuestaoBloco`: discursiva exige RESPOSTA_MODELO e
+  // proíbe alternativa/gabarito; fechada exige o contrário.
   if (!item.enunciado) motivos.push('enunciado_vazio');
-  if (LETRAS.filter((l) => item.alternativas[l]).length < 2) motivos.push('menos_de_2_alternativas');
-  if (!item.letra || !item.alternativas[item.letra]) motivos.push('gabarito_sem_alternativa');
+  if (item.aberta) {
+    if (!item.resposta_modelo) motivos.push('sem_resposta_modelo');
+    if (LETRAS.some((l) => item.alternativas[l])) motivos.push('aberta_com_alternativas');
+    if (rotuloNoInicio(item.resposta_modelo)) motivos.push('rotulo_no_inicio_resposta_modelo');
+  } else {
+    if (LETRAS.filter((l) => item.alternativas[l]).length < 2) motivos.push('menos_de_2_alternativas');
+    if (!item.letra || !item.alternativas[item.letra]) motivos.push('gabarito_sem_alternativa');
+  }
   if (rotuloNoInicio(item.enunciado)) motivos.push('rotulo_no_inicio_enunciado');
   if (rotuloNoInicio(item.enunciado_apoio)) motivos.push('rotulo_no_inicio_apoio');
 
@@ -111,6 +133,9 @@ for (const q of validacao.questoes) {
 function bloco(item) {
   const l = [];
   l.push('---');
+  // `FORMATO: aberta` tem que abrir o bloco: é ele que muda a matriz de
+  // validação inteira do parser do admin.
+  if (item.aberta) l.push('FORMATO: aberta');
   l.push('ENUNCIADO');
   l.push(proteger(item.enunciado));
   if (item.enunciado_apoio) {
@@ -119,13 +144,25 @@ function bloco(item) {
     l.push(proteger(item.enunciado_apoio));
   }
   l.push('');
-  l.push('ALTERNATIVAS');
-  for (const letra of LETRAS) {
-    if (!item.alternativas[letra]) continue;
-    l.push(`${letra.toUpperCase()}) ${item.alternativas[letra]}`);
+
+  if (item.aberta) {
+    // A resposta comentada vira RESPOSTA_MODELO e não EXPLICACAO: é o gabarito
+    // que o aluno vê e a referência que a Aurora usa para corrigir. PONTOS_CHAVE
+    // fica de fora de propósito — o relatório não os traz, e destilá-los do
+    // texto seria inventar rubrica que ninguém escreveu.
+    l.push('RESPOSTA_MODELO');
+    l.push(proteger(item.resposta_modelo));
+    l.push('');
+  } else {
+    l.push('ALTERNATIVAS');
+    for (const letra of LETRAS) {
+      if (!item.alternativas[letra]) continue;
+      l.push(`${letra.toUpperCase()}) ${item.alternativas[letra]}`);
+    }
+    l.push('');
+    l.push(`GABARITO: ${item.letra.toUpperCase()}`);
   }
-  l.push('');
-  l.push(`GABARITO: ${item.letra.toUpperCase()}`);
+
   l.push(`TIPO: ${o.tipo}`);
   l.push(`FONTE: ${item.fonte}`);
   if (!o.semExplicacao) {
@@ -190,14 +227,14 @@ if (comImagem.length > 0) {
   p.push('| --- | --- | --- | --- | --- |');
   for (const i of comImagem) {
     p.push(
-      `| ${i.numero} | ${i.letra.toUpperCase()} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} ` +
+      `| ${i.numero} | ${gabaritoLabel(i)} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} ` +
       `| ${i.imagem_embutida ? '**sim** → `saida/imagens/q' + String(i.numero).padStart(3, '0') + '-*.jpg`' : 'não — buscar na fonte'} |`,
     );
   }
   p.push('');
   p.push('### Por que cada uma foi sinalizada\n');
   for (const i of comImagem) {
-    p.push(`**Q${String(i.numero).padStart(3, '0')}** (gabarito ${i.letra.toUpperCase()})`);
+    p.push(`**Q${String(i.numero).padStart(3, '0')}** (gabarito ${gabaritoLabel(i)})`);
     for (const s of i.sinais_imagem) p.push(`- ${s}`);
     p.push(`- enunciado: ${colapsar([i.enunciado_apoio, i.enunciado].filter(Boolean).join(' ')).slice(0, 400)}`);
     p.push('');
@@ -215,7 +252,7 @@ if (comTabela.length > 0) {
   p.push('| --- | --- | --- | --- | --- |');
   for (const i of comTabela) {
     p.push(
-      `| ${i.numero} | ${i.letra.toUpperCase()} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} ` +
+      `| ${i.numero} | ${gabaritoLabel(i)} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} ` +
       `| ${i.tabelas_substituidas > 0 ? `sim (${i.tabelas_substituidas})` : 'não — só menção no texto'} |`,
     );
   }
@@ -248,13 +285,32 @@ if (excluidas.length > 0) {
   );
 }
 
+const abertas = incluidas.filter((i) => i.aberta);
+if (abertas.length > 0) {
+  p.push('## Questões discursivas\n');
+  p.push(
+    `${abertas.length} questão(ões) entram como \`FORMATO: aberta\`, com a resposta comentada do ` +
+    'relatório em `RESPOSTA_MODELO` — é o gabarito exibido ao aluno e a referência da correção ' +
+    'por IA. `PONTOS_CHAVE` e `CRITERIOS` saem vazios: o relatório não os traz, e destilá-los do ' +
+    'texto seria inventar rubrica. Vale preenchê-los à mão em `/admin/questoes` nas que forem ' +
+    'entrar em simulado corrigido.\n',
+  );
+  p.push('| questão | busque no admin por | página do PDF |');
+  p.push('| --- | --- | --- |');
+  for (const i of abertas) {
+    p.push(`| ${i.numero} | ${trechoParaBusca(i)} | ${i.paginas.join(', ')} |`);
+  }
+  p.push('');
+}
+
 p.push('## Vínculo com a prova e classificação\n');
 p.push(
   '- `/admin/importar` **não** liga questão a prova. Depois de importar, crie a prova em ' +
-  '`/admin/provas` com subtipo **Integradora** e vincule as questões.\n' +
+  `\`/admin/provas\` com subtipo **${o.subtipo ?? '<subtipo desta prova>'}** e vincule as questões.\n` +
   '- `DISCIPLINA`/`TEMA` saem vazios de propósito: a nomenclatura dos filtros do relatório ' +
-  'não corresponde ao cadastro. `classificacao-sugerida.csv` traz Área, Subárea, Semana e ' +
-  'Módulo de cada questão, direto do bloco "Filtros da questão".\n',
+  'não corresponde ao cadastro. Quando o relatório traz o bloco "Filtros da questão" (só as ' +
+  'provas de Integradora), `classificacao-sugerida.csv` reúne Área, Subárea, Semana e Módulo ' +
+  'de cada questão.\n',
 );
 
 writeFileSync(join(dirSaida, 'PENDENCIAS.md'), p.join('\n'), 'utf-8');
@@ -262,7 +318,10 @@ writeFileSync(join(dirSaida, 'PENDENCIAS.md'), p.join('\n'), 'utf-8');
 // ──── Resumo ────
 
 console.log('');
-console.log(`incluídas : ${incluidas.length} / ${validacao.questoes.length}`);
+console.log(
+  `incluídas : ${incluidas.length} / ${validacao.questoes.length}` +
+  (abertas.length > 0 ? `  (${incluidas.length - abertas.length} fechadas, ${abertas.length} discursivas)` : ''),
+);
 console.log(`excluídas : ${excluidas.length}${excluidas.length ? ` (Q${excluidas.map((e) => e.numero).join(', Q')})` : ''}`);
 console.log('');
 console.log(`saída: ${dirSaida}`);
@@ -299,7 +358,7 @@ if (manual === 0) {
     );
     for (const i of comImagem) {
       console.log('');
-      console.log(`   Q${String(i.numero).padStart(3, '0')}  gabarito ${i.letra.toUpperCase()}  p.${i.paginas.join(',')}${i.imagem_embutida ? '  ← ESTÁ NO PDF, dá para extrair' : ''}`);
+      console.log(`   Q${String(i.numero).padStart(3, '0')}  gabarito ${gabaritoLabel(i)}  p.${i.paginas.join(',')}${i.imagem_embutida ? '  ← ESTÁ NO PDF, dá para extrair' : ''}`);
       console.log(`     busque por: "${trechoParaBusca(i, 70)}"`);
       for (const s of i.sinais_imagem) console.log(`     sinal: ${s}`);
     }
@@ -314,7 +373,7 @@ if (manual === 0) {
     console.log(` TABELAS (${comTabela.length}) — não convertidas em texto; remonte em /admin/questoes:`);
     for (const i of comTabela) {
       console.log('');
-      console.log(`   Q${String(i.numero).padStart(3, '0')}  gabarito ${i.letra.toUpperCase()}  p.${i.paginas.join(',')}`);
+      console.log(`   Q${String(i.numero).padStart(3, '0')}  gabarito ${gabaritoLabel(i)}  p.${i.paginas.join(',')}`);
       console.log(`     busque por: "${trechoParaBusca(i, 70)}"`);
       console.log(`     ${i.tabelas_substituidas > 0 ? `${i.tabelas_substituidas} bloco(s) substituído(s) por placeholder` : 'só menção no texto — confira se há grade a remontar'}`);
     }
@@ -352,10 +411,12 @@ function montar(q, revisao) {
   return {
     numero: q.numero,
     paginas: q.paginas ?? [],
+    aberta: q.formato === 'aberta',
     letra: (r.letra_oficial ?? q.letra_oficial ?? '').toLowerCase(),
     enunciado: colapsarParagrafos(enunciado.texto),
     enunciado_apoio: colapsarParagrafos(apoio.texto),
     alternativas,
+    resposta_modelo: colapsarParagrafos(r.resposta_modelo ?? q.resposta_modelo ?? ''),
     explicacao: r.explicacao ?? q.explicacao ?? null,
     referencia: r.referencia ?? q.referencia ?? null,
     tem_imagem: r.tem_imagem ?? q.tem_imagem ?? false,
@@ -387,6 +448,11 @@ function proteger(texto) {
     saida.push(linha);
   }
   return saida.join('\n');
+}
+
+/** Rótulo de gabarito nas listas de pendência — a discursiva não tem letra. */
+function gabaritoLabel(item) {
+  return item.aberta ? 'discursiva' : item.letra.toUpperCase();
 }
 
 /** Detecta o único caso que `proteger()` não consegue neutralizar. */

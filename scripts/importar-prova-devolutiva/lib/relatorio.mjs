@@ -1,5 +1,12 @@
 /**
- * Parsing do "RELATÓRIO DE DEVOLUTIVA DE PROVA" da AFYA para prova Integradora.
+ * Parsing do "RELATÓRIO DE DEVOLUTIVA DE PROVA" da AFYA.
+ *
+ * Serve qualquer prova que chegue nesse formato — Integradora, SOI, HAM, N1/N2
+ * específica —, porque o que o pipeline entende é o **relatório**, não a
+ * disciplina. O que muda entre elas é secundário e está tratado aqui: o título
+ * da prova, a presença ou não do bloco "Filtros da questão" e a existência de
+ * questões discursivas (as SOI e HAM trazem duas por prova; a Integradora,
+ * nenhuma).
  *
  * Ao contrário do TPI, aqui o PDF é **gerado**, não digitalizado: tem camada de
  * texto em 100% das páginas e traz a resposta certa marcada em linha
@@ -124,17 +131,69 @@ export function paragrafosSuspeitos(texto) {
  * alinhamento de colunas, que é o sinal usado para detectar tabela.
  */
 export function paginasDeTexto(pdf) {
-  const bruto = execFileSync('pdftotext', ['-layout', pdf, '-'], {
+  // `-enc UTF-8` explícito: o pdftotext embarcado no Git for Windows emite na
+  // codepage local, e aí "QUESTÃO" chega como bytes Latin-1 lidos como UTF-8 —
+  // nenhum rótulo casa e o relatório inteiro sai vazio, sem erro nenhum.
+  const bruto = execFileSync('pdftotext', ['-layout', '-enc', 'UTF-8', pdf, '-'], {
     encoding: 'utf-8',
     maxBuffer: 256 * 1024 * 1024,
   });
-  const paginas = normalizarTipografia(bruto).split('\f');
+  // Builds de poppler para Windows emitem CRLF; o `\r` sobrando no fim de cada
+  // linha quebra o `$` das regex de rótulo (RE_MARCADOR_QUESTAO, CAMPOS), porque
+  // `.` não casa `\r` e a posição antes dele não é fim de string. Normaliza antes
+  // de fatiar em páginas/linhas.
+  const semCRLF = bruto.replace(/\r\n/g, '\n');
+  const paginas = normalizarTipografia(semCRLF).split('\f');
   if (paginas.length > 0 && paginas.at(-1).trim() === '') paginas.pop();
   return paginas;
 }
 
-const RE_MARCADOR_QUESTAO = /^\s*(\d{1,3})\s*[ªº°]\s*QUEST(?:Ã|A)O\s*$/;
-const RE_HASH = /^\s*[0-9a-f]{6}\.[0-9a-f]{6}\./;
+/**
+ * Marcador de questão, que **não** ocupa a linha inteira em toda prova.
+ *
+ * Na Integradora ele sempre vem sozinho, e por isso a primeira versão desta
+ * regex era ancorada em `^…$`. Nas provas de SOI e HAM o `-layout` costuma
+ * colocá-lo na mesma linha de outro elemento, separado por um vão largo:
+ *
+ *     Enunciado:                              1ª QUESTÃO
+ *     Unidade de avaliação:      1ª QUESTÃO      www.acervo.top/soi-iv
+ *
+ * Ancorado, o marcador não casava e a questão inteira era engolida pela
+ * anterior — 11 das 13 questões da SOI 2022.2 desapareciam em silêncio. Agora
+ * casa no meio da linha, exigindo vão largo (ou borda) dos dois lados, e
+ * `fatiarQuestoes` redistribui o que sobra da linha.
+ */
+/**
+ * Relatório em duas colunas: rótulos empilhados à esquerda e o texto todo numa
+ * coluna indentada à direita.
+ *
+ * É o formato das provas de 2022.2, e ele quebra a premissa central do parser —
+ * a de que o rótulo abre a seção que vem depois dele. Ali `Alternativas:`
+ * aparece na altura da **segunda linha do enunciado**, porque a coluna da
+ * esquerda empilha os rótulos sem acompanhar o fluxo da direita; o autômato
+ * transiciona cedo e o enunciado vira alternativa.
+ *
+ * A detecção é por indentação, e separa os dois formatos sem ambiguidade: nas
+ * provas em coluna única 1% a 3% das linhas de conteúdo começam depois da
+ * coluna 15; nas de 2022.2, 84% a 86%. Serve para o pipeline dizer *por que*
+ * parou, em vez de acusar "Q2 sem enunciado" cinco vezes.
+ */
+export function ehLayoutDeDuasColunas(paginas) {
+  const linhas = paginas.join('\n').split('\n').filter((l) => l.trim().length > 20);
+  if (linhas.length < 40) return false;
+  const indentadas = linhas.filter((l) => l.match(/^ */)[0].length >= 15).length;
+  return indentadas / linhas.length > 0.5;
+}
+
+const RE_MARCADOR_QUESTAO = /(?:^|\s{2,})(\d{1,3})\s*[^\w\s]{0,3}\s*QUEST(?:Ã|A)O(?=\s{2,}|\s*$)/;
+// O ordinal é aceito como "qualquer 0–3 caracteres não alfanuméricos" porque em
+// PDF digitalizado ele nem sempre sai como `ª`: a SOI 2023.1 traz `12!! QUESTÃO`,
+// e o resultado era uma lacuna na numeração que reprovava a prova inteira.
+
+// `\s*` entre os grupos: no mesmo PDF o hash de autenticação sai espaçado
+// (`000072. 59001d. 5076bb.`), e aí a linha passava a limpeza e entrava como
+// conteúdo de campo.
+const RE_HASH = /^\s*[0-9a-f]{6}\.\s*[0-9a-f]{6}\./;
 const RE_PAGINACAO = /^\s*P\W?gina\s+\d+\s+de\s+\d+\s*$/i;
 
 /** Remove cabeçalho institucional (só na página 1), hash de autenticação e paginação. */
@@ -153,24 +212,46 @@ export function limparPagina(texto) {
     .join('\n');
 }
 
-/** Extrai o cabeçalho da prova (só existe na página 1) para o manifesto. */
+/**
+ * Linhas de template da página 1 — nunca fazem parte do título da prova.
+ */
+const RE_TEMPLATE_CAPA =
+  /^(?:AFYA\b|NOTA\s*FINAL|CURSO\s+DE\s+MEDICINA|Aluno\s*:|Professor|Componente\s+Curricular|Per[íi]odo\s*:|Turma\s*:|Data\s*:)/i;
+
+/**
+ * Extrai o cabeçalho da prova (só existe na página 1) para o manifesto.
+ *
+ * O título é posicional, não lexical: são as linhas soltas imediatamente
+ * **acima** de "RELATÓRIO DE DEVOLUTIVA DE PROVA", depois de descartar o
+ * template da capa. Procurar por uma palavra-chave não serve — a primeira
+ * versão procurava `INTEGRADORA` e não achava nada em SOI nem em HAM — e
+ * filtrar por caixa alta também não: a SOI 2023.1 escreve
+ * `Nl ESPECIFICA SOi 4 04MAIO2023`, com caixa mista e erro de digitação.
+ *
+ * O título pode vir quebrado em duas linhas quando é longo
+ * ("N1 ESPECÍFICA - MEDICINA - SOI IV - 2025.2 - 1ª CHAMADA -" / "29/SETEMBRO"),
+ * então as linhas são juntadas.
+ */
 export function cabecalhoDaProva(paginas) {
   const p1 = paginas[0] ?? '';
   const linha = (re) => p1.match(re)?.[1]?.trim() ?? null;
-  // O título da prova é a linha em caixa alta ("INTEGRADORA - MEDICINA - 4º
-  // PERÍODO - 2025.2 - 1ª CHAMADA"). Filtrar por caixa alta é o que a separa de
-  // "Componente Curricular: Integradora 4º Período", que aparece antes na página.
-  const emCaixaAlta = (l) => {
-    const letras = l.replace(/[^A-Za-zÀ-ÿ]/g, '');
-    if (letras.length < 12) return false;
-    return letras === letras.toUpperCase();
-  };
+
+  const linhas = p1.split('\n').map((l) => l.trim());
+  const iRelatorio = linhas.findIndex((l) => /RELAT[ÓO]RIO\s+DE\s+DEVOLUTIVA/i.test(l));
+
+  const tituloLinhas = [];
+  for (let i = iRelatorio - 1; i >= 0; i -= 1) {
+    const l = linhas[i];
+    if (!l) {
+      if (tituloLinhas.length > 0) break; // linha em branco fecha o bloco do título
+      continue;
+    }
+    if (RE_TEMPLATE_CAPA.test(l)) break;
+    tituloLinhas.unshift(l);
+  }
 
   return {
-    titulo: p1
-      .split('\n')
-      .map((l) => l.trim())
-      .find((l) => /INTEGRADORA/i.test(l) && emCaixaAlta(l)) ?? null,
+    titulo: tituloLinhas.length > 0 ? colapsar(tituloLinhas.join(' ')) : null,
     componente: linha(/Componente\s+Curricular\s*:\s*([^\n]+)/i),
     periodo: linha(/Per[íi]odo\s*:\s*(\d{6})/i),
     data: linha(/Data\s*:\s*(\d{2}\/\d{2}\/\d{4})/i),
@@ -184,6 +265,18 @@ export function cabecalhoDaProva(paginas) {
  * páginas cada questão aparece (a página serve para localizar a figura e para
  * o relatório de pendências).
  */
+/**
+ * Rótulo que **abre** uma questão, e só ele.
+ *
+ * Serve para decidir de quem é o texto que divide a linha com o marcador:
+ * `Enunciado:` e `Unidade de avaliação:` antes de `1ª QUESTÃO` pertencem à
+ * questão que está começando; `Feedback:` antes de `8ª QUESTÃO` (HAM 2024.2)
+ * é o último campo da que terminou. Incluir os rótulos de fechamento nesta
+ * lista fazia a questão anterior perder o campo e a nova começar com lixo.
+ */
+const RE_ROTULO_DE_ABERTURA =
+  /^\s*(?:C[óo]digo\s+da\s+quest|Tipo\s+da\s+quest|Unidade\s+de\s+avalia|Enunciado)\b/i;
+
 export function fatiarQuestoes(paginas) {
   const blocos = [];
   let atual = null;
@@ -194,8 +287,18 @@ export function fatiarQuestoes(paginas) {
     for (const linha of limparPagina(bruta).split('\n')) {
       const m = linha.match(RE_MARCADOR_QUESTAO);
       if (m) {
+        // O marcador pode dividir a linha com conteúdo dos dois lados. Nada é
+        // descartado: o que vem antes é da questão que fecha (a menos que seja
+        // rótulo, e aí é da que abre) e o que vem depois é sempre da que abre.
+        const antes = linha.slice(0, m.index);
+        const depois = linha.slice(m.index + m[0].length);
+        const antesEhRotulo = RE_ROTULO_DE_ABERTURA.test(antes);
+
+        if (antes.trim() && atual && !antesEhRotulo) atual.linhas.push(antes);
         if (atual) blocos.push(atual);
         atual = { numero: parseInt(m[1], 10), linhas: [], paginas: [num] };
+        if (antes.trim() && antesEhRotulo) atual.linhas.push(antes);
+        if (depois.trim()) atual.linhas.push(depois);
         continue;
       }
       if (!atual) continue;
@@ -430,6 +533,16 @@ function separarOrigem(texto, ies) {
   // parêntese de conteúdo no começo do enunciado.
   if (/^[A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9.\-/\s]*$/.test(conteudo)) return semPrefixo;
 
+  // Sigla em caixa alta seguida de nome próprio em caixa mista: `(AFYA Bragança)`,
+  // `(FASA Vic)`, `(AFYA Cruzeiro do Sul)`. Só as provas de Integradora trazem o
+  // filtro `[IES]` para confirmar; nas de SOI e HAM esta é a única forma de
+  // reconhecer a origem, e sem ela a sigla ficava no meio do enunciado.
+  //
+  // A exigência de a **primeira palavra** ser sigla em caixa alta é o que separa
+  // isso de um parêntese de conteúdo: nenhum caso clínico abre com
+  // `(Doença de Chagas)`, e `(alternativa A)` nem chega aqui.
+  if (/^[A-ZÀ-Ÿ]{2,}(?:\s+[A-Za-zÀ-ÿ0-9.\-/]+){0,5}$/.test(conteudo)) return semPrefixo;
+
   return { origem: null, texto };
 }
 
@@ -531,6 +644,59 @@ function separarUltimaFrase(paragrafo) {
   };
 }
 
+/** Parágrafo que abre um subitem de comando: `a) Caracterize…`, `b) Explique…`. */
+const RE_ITEM_DE_COMANDO = /^\s*([a-e])\s*\)\s*\S/i;
+
+/**
+ * Corte de enunciado que termina numa lista de subitens.
+ *
+ * É o formato das questões discursivas destas provas: caso clínico, uma frase
+ * que abre o comando e os itens a serem respondidos.
+ *
+ *     Um paciente, de 32 anos, sem comorbidades, apresenta febre, disúria…
+ *     Considerando o quadro clínico e laboratorial, responda às perguntas a seguir.
+ *     a) Caracterize o quadro clínico do paciente e cite o provável agente etiológico.
+ *     b) Explique os mecanismos fisiopatológicos subjacentes à infecção urinária.
+ *     c) Baseado na etiologia, descreva o tratamento farmacológico adequado.
+ *
+ * Sem esta regra o corte por parágrafo levaria **só o item `c)`** para
+ * `ENUNCIADO` e empurraria `a)` e `b)` para o texto de apoio: nada se perderia,
+ * mas a questão entraria no acervo perguntando um terço do que pergunta.
+ *
+ * Exige dois itens em sequência alfabética a partir de `a)` — um item isolado é
+ * item de lista dentro do caso clínico, não comando.
+ */
+function cortarNosItens(paragrafos) {
+  const primeiro = paragrafos.findIndex((p) => /^\s*a\s*\)\s*\S/i.test(p));
+  if (primeiro < 1) return null; // sem itens, ou a questão inteira é a lista
+
+  const letras = paragrafos
+    .slice(primeiro)
+    .map((p) => p.match(RE_ITEM_DE_COMANDO)?.[1]?.toLowerCase() ?? null);
+  const esperadas = ['a', 'b', 'c', 'd', 'e'];
+  let n = 0;
+  while (n < letras.length && letras[n] === esperadas[n]) n += 1;
+  if (n < 2) return null;
+
+  // Os itens têm que fechar o enunciado: item seguido de mais prosa é lista
+  // dentro do caso clínico ("a) … b) … Com base no exposto, assinale…"), e aí
+  // quem decide é o corte por parágrafo.
+  const depoisDosItens = paragrafos.slice(primeiro + n).filter((p) => p.trim());
+  if (depoisDosItens.length > 0) return null;
+
+  // A frase que introduz os itens ("…responda às perguntas a seguir.") faz parte
+  // do comando, não do caso; entra na pergunta quando é reconhecível como tal.
+  const introduz = ehPergunta(paragrafos[primeiro - 1] ?? '');
+  const inicio = introduz ? primeiro - 1 : primeiro;
+  if (inicio === 0) return null; // sobraria apoio vazio
+
+  return {
+    apoio: paragrafos.slice(0, inicio).join('\n\n'),
+    pergunta: paragrafos.slice(inicio).join('\n\n'),
+    criterio: 'itens',
+  };
+}
+
 /**
  * Divide o enunciado em `enunciado_apoio` (caso clínico, exames, afirmativas) e
  * `enunciado` (a pergunta final).
@@ -553,6 +719,10 @@ export function dividirEnunciado(bruto) {
   if (paragrafos.length === 0) return { apoio: '', pergunta: '', criterio: 'vazio' };
 
   const ultimo = paragrafos.at(-1);
+
+  // 0. Enunciado com subitens — o formato das discursivas.
+  const porItens = cortarNosItens(paragrafos);
+  if (porItens) return porItens;
 
   // 1. Corte por parágrafo.
   if (
@@ -597,6 +767,26 @@ export function dividirEnunciado(bruto) {
   return { apoio: '', pergunta: inteiro, criterio: 'campo_unico' };
 }
 
+/**
+ * Classifica a questão em fechada (múltipla escolha) ou aberta (discursiva).
+ *
+ * O relatório não declara o formato: a questão discursiva é a que emite
+ * `Alternativas:` seguido de `--`, e a resposta esperada vem na resposta
+ * comentada. Duas por prova nas de SOI e HAM; nenhuma nas de Integradora.
+ *
+ * O terceiro valor, `indefinido`, existe porque "sem alternativa nenhuma" é
+ * exatamente o que se vê quando o autômato de rótulos erra e come o campo. Sem
+ * ele, uma questão de múltipla escolha mutilada entraria no acervo como
+ * discursiva — perda silenciosa disfarçada de formato. Só é aberta quando o
+ * campo veio de fato vazio (`--`); campo com texto que não virou alternativa é
+ * bloqueio.
+ */
+export function classificarFormato(alternativas, brutoAlternativas) {
+  if (Object.keys(alternativas).length > 0) return 'fechada';
+  const resto = colapsar(brutoAlternativas).replace(/[-–—\s]/g, '');
+  return resto === '' ? 'aberta' : 'indefinido';
+}
+
 /** Parseia um bloco de questão inteiro. */
 export function parsearQuestao(bloco) {
   const { campos, avisos } = separarCampos(bloco);
@@ -609,12 +799,15 @@ export function parsearQuestao(bloco) {
   const { origem, texto: semOrigem } = separarOrigem(desdobrar(enunciadoBruto), filtros['IES']);
   const { apoio, pergunta, criterio } = dividirEnunciado(semOrigem);
   const { alternativas, corretas, avisos: avisosAlt } = parsearAlternativas(campos.alternativas);
+  const formato = classificarFormato(alternativas, juntar('alternativas'));
 
   const feedback = colapsar(juntar('feedback')).replace(/^-+$/, '');
+  const comentario = desdobrar(juntar('comentario'));
 
   return {
     numero: bloco.numero,
     paginas: bloco.paginas,
+    formato,
     codigo: colapsar(juntar('codigo')) || null,
     tipo_declarado: colapsar(juntar('tipo')) || null,
     unidade: colapsar(juntar('unidade')) || null,
@@ -627,7 +820,11 @@ export function parsearQuestao(bloco) {
     alternativas,
     letra_correta: corretas.length === 1 ? corretas[0] : null,
     corretas_marcadas: corretas,
-    explicacao: desdobrar(juntar('comentario')),
+    // Na discursiva a resposta comentada **é** o gabarito: o admin a importa como
+    // RESPOSTA_MODELO, que é o que o aluno vê e o que a Aurora usa para corrigir.
+    // Repeti-la em EXPLICACAO só duplicaria o mesmo texto no acervo.
+    explicacao: formato === 'aberta' ? '' : comentario,
+    resposta_modelo: formato === 'aberta' ? comentario : null,
     referencia: desdobrar(juntar('referencias')),
     feedback: feedback || null,
     filtros,
@@ -646,7 +843,10 @@ export function parsearQuestao(bloco) {
       ...Object.entries(alternativas).flatMap(([l, t]) =>
         paragrafosSuspeitos(t).map((s) => ({ campo: `alternativa ${l.toUpperCase()}`, ...s })),
       ),
-      ...paragrafosSuspeitos(juntar('comentario')).map((s) => ({ campo: 'explicacao', ...s })),
+      ...paragrafosSuspeitos(juntar('comentario')).map((s) => ({
+        campo: formato === 'aberta' ? 'resposta_modelo' : 'explicacao',
+        ...s,
+      })),
     ],
     avisos: [...avisos, ...avisosAlt],
   };

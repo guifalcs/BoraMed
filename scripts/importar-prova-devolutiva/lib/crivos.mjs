@@ -1,5 +1,5 @@
 /**
- * Os crivos de validação da Integradora.
+ * Os crivos de validação do relatório de devolutiva.
  *
  * O risco aqui é diferente do TPI. Lá a dúvida era "a IA leu o scan certo?"; a
  * extração já é fiel por construção, então o que sobra é:
@@ -40,11 +40,26 @@ export function crivoEstrutura(q) {
   if (!q.enunciado.trim()) {
     flags.push({ codigo: 'enunciado_vazio', severidade: 'alta', detalhe: 'enunciado sem texto' });
   }
+
+  // Formato indefinido: o campo `Alternativas:` tinha texto e nenhuma linha
+  // virou alternativa. Nunca é questão discursiva — é o autômato de rótulos
+  // tendo comido o campo. Bloqueia antes de qualquer outra conclusão.
+  if (q.formato === 'indefinido') {
+    flags.push({
+      codigo: 'formato_indefinido',
+      severidade: 'alta',
+      detalhe: 'o campo "Alternativas:" tem conteúdo, mas nenhuma "(alternativa X)" foi reconhecida',
+    });
+    return flags;
+  }
+
+  if (q.formato === 'aberta') return [...flags, ...crivoDiscursiva(q)];
+
   if (presentes.length < 4) {
     flags.push({
       codigo: 'poucas_alternativas',
       severidade: 'alta',
-      detalhe: `${presentes.length} alternativas (${presentes.join('') || '—'}); Integradora usa 4 (a–d)`,
+      detalhe: `${presentes.length} alternativas (${presentes.join('') || '—'}); o relatório usa 4 (a–d)`,
     });
   }
   // Buraco na sequência: alternativas b,c,d sem a significa marcador perdido.
@@ -107,6 +122,74 @@ export function crivoEstrutura(q) {
         });
       }
     }
+  }
+
+  return flags;
+}
+
+// ────────────── crivo 1b: questão discursiva ──────────────
+
+/** Subitens de comando do enunciado: `a) Caracterize…`, `b) Explique…`. */
+function itensDoEnunciado(texto) {
+  return [
+    ...String(texto ?? '').matchAll(/(?:^|\n)\s*([a-e])\s*\)\s*\S/gi),
+  ].map((m) => m[1].toLowerCase());
+}
+
+/**
+ * O que uma discursiva precisa para entrar no acervo.
+ *
+ * Não há `(CORRETA)` para cruzar aqui, então o crivo 2 é inaplicável e o peso
+ * cai todo neste: a `RESPOSTA_MODELO` é obrigatória no `/admin/importar`, é o
+ * que o aluno vê como gabarito e é o que a Aurora usa para corrigir. Questão
+ * discursiva sem ela não é questão pela metade — é questão sem gabarito.
+ *
+ * A cobertura dos subitens é o cruzamento possível: quando o enunciado pergunta
+ * `a)`, `b)` e `c)`, a chave de resposta costuma responder item a item, e um
+ * item sem eco quase sempre significa que a resposta comentada foi cortada na
+ * extração. É `media` e não `alta` porque a chave às vezes responde em prosa
+ * corrida, sem repetir as letras.
+ */
+export function crivoDiscursiva(q) {
+  const flags = [];
+  const modelo = q.resposta_modelo ?? '';
+
+  if (!modelo.trim()) {
+    flags.push({
+      codigo: 'sem_resposta_modelo',
+      severidade: 'alta',
+      detalhe: 'questão discursiva sem resposta comentada — não há gabarito para importar',
+    });
+    return flags;
+  }
+
+  if (colapsar(modelo).length < 120) {
+    flags.push({
+      codigo: 'resposta_modelo_curta',
+      severidade: 'media',
+      detalhe: `resposta comentada com ${colapsar(modelo).length} caracteres — confira se não foi cortada`,
+    });
+  }
+
+  const itens = itensDoEnunciado(q.enunciado);
+  if (itens.length >= 2) {
+    const respondidos = new Set(itensDoEnunciado(modelo));
+    const semEco = itens.filter((i) => !respondidos.has(i));
+    if (semEco.length > 0 && respondidos.size > 0) {
+      flags.push({
+        codigo: 'item_sem_resposta',
+        severidade: 'media',
+        detalhe: `o enunciado pede ${itens.join(', ')} e a chave responde ${[...respondidos].join(', ')}`,
+      });
+    }
+  }
+
+  if (Object.keys(q.alternativas ?? {}).length > 0) {
+    flags.push({
+      codigo: 'aberta_com_alternativas',
+      severidade: 'alta',
+      detalhe: 'questão classificada como discursiva mas com alternativas parseadas',
+    });
   }
 
   return flags;
@@ -382,6 +465,13 @@ export function crivoCruzamento(q) {
   const presentes = LETRAS.filter((l) => (q.alternativas[l] ?? '').trim());
   const marcada = q.letra_correta;
 
+  // Discursiva não tem gabarito de letra para cruzar: a conferência dela é o
+  // `crivoDiscursiva`. Dizer `sem_eco` aqui misturaria "não deu para conferir"
+  // com "não há o que conferir".
+  if (q.formato === 'aberta' || q.formato === 'indefinido') {
+    return { flags: [], cobertura: 'nao_se_aplica', vereditos: {}, assertivas: null };
+  }
+
   if (!comentario.trim()) {
     return {
       flags: [{ codigo: 'sem_resposta_comentada', severidade: 'media', detalhe: 'questão entra sem EXPLICACAO' }],
@@ -549,6 +639,10 @@ export function crivoIntegridade(q) {
   const campos = {
     enunciado: q.enunciado,
     enunciado_apoio: q.enunciado_apoio,
+    // A resposta modelo entra no markdown como bloco de texto livre, então uma
+    // linha dela que o parser do admin leia como rótulo corrompe a importação
+    // do mesmo jeito que no enunciado.
+    ...(q.resposta_modelo ? { resposta_modelo: q.resposta_modelo } : {}),
     ...Object.fromEntries(
       LETRAS.filter((l) => q.alternativas[l]).map((l) => [`alternativa ${l.toUpperCase()}`, q.alternativas[l]]),
     ),
@@ -637,14 +731,16 @@ export function validarQuestao(q) {
     numero: q.numero,
     paginas: q.paginas,
     codigo: q.codigo,
+    formato: q.formato,
     // Maiúscula: é o contrato que `verificar-roundtrip.mjs` compara contra o que
     // o parser do admin devolve, e o parser devolve maiúscula.
     letra_oficial: q.letra_correta ? q.letra_correta.toUpperCase() : null,
-    gabarito_origem: 'marcacao_correta',
+    gabarito_origem: q.formato === 'aberta' ? 'resposta_comentada' : 'marcacao_correta',
     enunciado: q.enunciado,
     enunciado_apoio: q.enunciado_apoio,
     alternativas: q.alternativas,
     explicacao: q.explicacao,
+    resposta_modelo: q.resposta_modelo ?? null,
     referencia: q.referencia,
     fonte_original: q.fonte_original,
     dificuldade: q.dificuldade,

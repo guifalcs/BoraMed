@@ -62,11 +62,15 @@ for (const q of selecionadas) {
       .filter((f) => f.severidade !== 'manual')
       .map((f) => `[${f.severidade}] ${f.codigo}: ${f.detalhe}`),
     _paginas_do_pdf: q.paginas,
-    _gabarito: q.letra_oficial,
+    _formato: q.formato ?? 'fechada',
+    _gabarito: q.formato === 'aberta' ? '(discursiva — o gabarito é a resposta modelo)' : q.letra_oficial,
     enunciado: q.enunciado,
     enunciado_apoio: q.enunciado_apoio,
-    alternativas: q.alternativas,
-    explicacao: q.explicacao,
+    // Cada formato traz só o que tem: pôr `alternativas: {}` numa discursiva
+    // convidaria a preencher, e alternativa em questão aberta é bloqueio.
+    ...(q.formato === 'aberta'
+      ? { resposta_modelo: q.resposta_modelo }
+      : { alternativas: q.alternativas, explicacao: q.explicacao }),
     referencia: q.referencia,
   };
 }
