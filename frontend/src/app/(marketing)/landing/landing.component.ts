@@ -333,7 +333,7 @@ export class LandingComponent implements OnDestroy {
   // TODO(integração): trocar por dados vindos de listarPlanos() quando o
   // plano Essencial existir no backend.
   private static readonly ESSENCIAL_FEATURES: readonly string[] = [
-    'Treinos no modelo das avaliações nacionais, até o 4º período',
+    'Treinos no modelo das avaliações nacionais, até o 8º período',
     'Correção das questões abertas pela Aurora (IA)',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',

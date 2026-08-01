@@ -16,7 +16,7 @@ import type { Plano, PlanoTier } from '../../core/models/subscription.types';
 type Ciclo = 'mensal' | 'semestral';
 
 const ESSENCIAL_BENEFICIOS: readonly string[] = [
-  'Treinos no modelo das avaliações nacionais, até o 4º período',
+  'Treinos no modelo das avaliações nacionais, até o 8º período',
   'Correção das questões abertas pela Aurora (IA)',
   'Modo competitivo',
   'Histórico e estatísticas de desempenho',
