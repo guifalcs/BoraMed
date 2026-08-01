@@ -553,41 +553,51 @@ Esta seção é um instantâneo, não contrato: o estado real está nos diretór
 trabalho, que são gitignorados (material de prova + nome de aluno). Quem retomar
 o trabalho começa por aqui.
 
-**Nenhuma prova importada ainda.** Markdown pronto, round-trip íntegro e zero
-flags altas pendentes:
+**12 provas do 4º período importadas em 31/07/2026** — 140 questões (116 fechadas
++ 24 discursivas), todas com round-trip íntegro e zero flags altas:
 
-| prova | questões | dir de trabalho | pendência |
-| --- | --- | --- | --- |
-| Integradora 4 (2024.2) | 50 | `.trabalho/integradora-4-2024-2/` | **Q24** → `saida/imagens/q024-1.jpg` (tabela de falha dos contraceptivos); Q21: alternativa C era `x` no PDF → `Hipospádia.` |
-| Integradora 4 (2025.1) | 50 | `.trabalho/integradora-4-2025-1/` | **Q28** → `saida/imagens/q028-1.jpg` e `q028-2.jpg` (gráficos de crescimento da OMS) |
-| Integradora 4 (2025.2) | 50 | `.trabalho/integradora-4-2025-2/` | Q46: camada de texto embaralhada na explicação, corrigida na revisão |
-| SOI IV (2025.1) | 15 (13+2) | `.trabalho/soi-4-2025-1/` | 2 discursivas sem `PONTOS_CHAVE` |
-| SOI IV (2025.2) | 15 (13+2) | `.trabalho/soi-4-2025-2/` | **Q10** menciona figura do ciclo de vida do agente — anexar à mão; 2 discursivas |
+| prova | questões | subtipo em `/admin/provas` |
+| --- | --- | --- |
+| SOI IV — 2023.2, 2024.2, 2025.1, 2025.2 | 15 cada (13+2) | SOI |
+| HAM IV — 2023.2, 2024.2, 2025.2 | 10 cada (8+2) | HAM |
+| IESC IV — 2023.1, 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | IESC |
 
-As demais SOI/HAM (2023.1, 2023.2, 2024.2 e HAM 2023.2/2024.2/2025.2) foram usadas
-para calibrar e passam ponta a ponta, mas não têm markdown revisado — reextraia
-quando forem entrar. **SOI e HAM 2022.2 não passam**: layout de duas colunas.
+**Não importadas, e por quê:**
 
-As correções manuais estão em `questoes-revisadas.json` de cada diretório, com o
-motivo registrado no campo `_motivo`. `validar.mjs` roda os crivos **sobre o texto
-corrigido**, então `alta: 0` significa que a correção passou pelo detector, não que
-foi perdoada.
+| prova | motivo |
+| --- | --- |
+| SOI IV (2023.1) | scan com OCR ruim — 5 questões com `ocr_suspeito` (Q1, Q3, Q9, Q10, Q14). Sairia com 10 de 15, e o texto das outras precisa de conferência |
+| SOI, HAM e IESC IV (2022.2) | relatório em duas colunas; `extrair.mjs` bloqueia |
+| Integradora 4 (2024.2, 2025.1, 2025.2) | tinham markdown pronto e revisão manual aplicada, mas os diretórios de trabalho e os PDFs sumiram do projeto antes da importação. Reprocessar exige os PDFs de novo |
 
-### O que falta, em ordem
+### Imagens pendentes — 7 questões
 
-Para cada prova:
+Nenhuma tem o raster no PDF: o gerador do relatório descartou todas, então a
+figura vem da fonte original. Busque o trecho no `/admin/questoes` e anexe.
 
-1. **Colar** `saida/prova.md` (ou os `parte-NN.md`, 25 questões cada) em
-   `/admin/importar` → aba Questões.
-2. **Criar a prova** em `/admin/provas` com o subtipo certo e vincular as questões
-   — `/admin/importar` não faz esse vínculo.
-3. **Anexar a imagem** das questões da tabela acima, em `/admin/questoes`. O trecho
-   de busca de cada uma está em `saida/PENDENCIAS.md`.
-4. **Preencher `PONTOS_CHAVE`** nas discursivas que forem entrar em simulado com
-   correção pela Aurora.
-5. **Classificar** disciplina/tema, que saem vazios de propósito. Nas Integradoras
-   há sugestões em `classificacao-sugerida.csv`.
-6. Depois de conferir no admin: `node limpar.mjs $T --tudo` apaga o diretório.
+| prova | questão | gabarito | buscar por | figura |
+| --- | --- | --- | --- | --- |
+| SOI IV (2025.2) | Q10 | B | `Uma criança de 5 anos apresenta diarreia aquosa persistente, dor` | ciclo de vida do agente etiológico |
+| HAM IV (2023.2) | Q06 | D | `Um pré-escolar de 3 anos é levado ao pronto-socorro pela mãe após` | radiografia |
+| HAM IV (2025.2) | Q04 | C | `Um paciente pediátrico é trazido à Unidade de Pronto Atendimento pela` | radiografia a interpretar |
+| HAM IV (2025.2) | Q10 | discursiva | `Um menino de 12 meses é levado à consulta pediátrica pela mãe, que` | gráfico de crescimento (item b) |
+| IESC IV (2023.1) | Q10 | discursiva | `Marina traz sua filha de 6 meses à unidade de saúde da família para` | gráfico de peso × idade |
+| IESC IV (2024.2) | Q09 | B | `Durante uma consulta de rotina em uma Unidade Básica de Saúde, um` | gráfico de crescimento |
+| IESC IV (2025.1) | Q07 | C | `Ao realizar uma consulta de rotina em uma Unidade de Saúde da Família` | gráfico de crescimento |
+
+Cinco das sete são gráfico de crescimento — provavelmente as mesmas curvas da OMS
+reaproveitadas entre provas. Quatro ficam sem sentido sem a figura ("analise o
+gráfico apresentado abaixo") e entraram como `ativa`.
+
+A questão 4 da IESC 2023.1 foi sinalizada e **é falso positivo**: cita "raio-X do
+tórax" como conduta recomendada no texto, não como figura anexa. Fica registrada
+aqui para não ser reinvestigada a cada rodada.
+
+### O que ainda falta nas 12 importadas
+
+1. **Preencher `PONTOS_CHAVE`** nas 24 discursivas que forem entrar em simulado
+   com correção pela Aurora — saem vazias porque o relatório não as traz.
+2. **Classificar** disciplina/tema, que saem vazios de propósito.
 
 ### Cobertura do gabarito, por prova
 
@@ -600,7 +610,13 @@ marcação `(CORRETA)`, que é confiável mas é fonte única):
 | Integradora 4 (2025.1) | 19 / 50 | idem, com mais questões de assertivas |
 | Integradora 4 (2024.2) | 12 / 50 | devolutiva parafraseia em vez de citar; a Q33 não tem devolutiva nenhuma |
 | SOI IV (2025.1) | 6 / 13 | 2 questões de assertivas sem veredito numeral a numeral |
-| SOI IV (2025.2) | 3 / 13 | devolutiva cita a alternativa entre aspas e comenta em bloco |
+| SOI IV (2025.2) | 4 / 13 | devolutiva cita a alternativa entre aspas e comenta em bloco |
+| IESC IV (todas) | 6 / 40 no total | devolutiva comenta sem dizer "correta"/"incorreta" de forma legível, e muitas são de assertivas |
+
+**As provas de IESC são o caso mais fraco do acervo nesse eixo**: 34 das 40
+fechadas entraram com o gabarito vindo só da marcação `(CORRETA)`. É fonte única
+e confiável, mas não conferida — se aparecer reclamação de gabarito, comece por
+elas.
 
 As discursivas ficam fora dessa conta: não têm alternativa marcada para cruzar, e
 quem responde por elas é o crivo 1b.
