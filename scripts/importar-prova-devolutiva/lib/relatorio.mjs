@@ -185,7 +185,11 @@ export function ehLayoutDeDuasColunas(paginas) {
   return indentadas / linhas.length > 0.5;
 }
 
-const RE_MARCADOR_QUESTAO = /(?:^|\s{2,})(\d{1,3})\s*[^\w\s]{0,3}\s*QUEST(?:Ã|A)O(?=\s{2,}|\s*$)/;
+const RE_MARCADOR_QUESTAO = /(?:^|\s{2,})(\d{1,3})\s*[^\w\s]{0,3}\s*QUEST(?:Ã|A)O(?=\s{2,}|\s*$|\s+(?:www\.|https?:\/\/))/;
+// A borda direita aceita vão largo, fim de linha, ou um único espaço seguido
+// de URL: a CI 1 (2023.2) cola a marca d'água ("1ª QUESTÃO www.acervo.top/…")
+// com um espaço só em vez do vão largo de outras provas, e exigir 2+ ali
+// perdia a questão 1 inteira (o corte começava só na "2ª QUESTÃO").
 // O ordinal é aceito como "qualquer 0–3 caracteres não alfanuméricos" porque em
 // PDF digitalizado ele nem sempre sai como `ª`: a SOI 2023.1 traz `12!! QUESTÃO`,
 // e o resultado era uma lacuna na numeração que reprovava a prova inteira.
@@ -195,6 +199,13 @@ const RE_MARCADOR_QUESTAO = /(?:^|\s{2,})(\d{1,3})\s*[^\w\s]{0,3}\s*QUEST(?:Ã|A
 // conteúdo de campo.
 const RE_HASH = /^\s*[0-9a-f]{6}\.\s*[0-9a-f]{6}\./;
 const RE_PAGINACAO = /^\s*P\W?gina\s+\d+\s+de\s+\d+\s*$/i;
+// Marca d'água de redistribuição que o `-layout` às vezes quebra em duas
+// linhas — a primeira cola em "Enunciado:" (pega por RE_VAO_DE_MARGEM), a
+// segunda ("ou www.acervotop.com/ham-vi") sobra sozinha numa linha e, sem
+// este filtro, vira a primeira frase do enunciado (HAM 6 2023.2, Q1). Só
+// remove linha que é **inteiramente** URL — não pega "Disponível em: https://…"
+// nem "Referência: https://…", que carregam rótulo de bibliografia genuína.
+const RE_MARCA_DAGUA_LINHA = /^\s*(?:ou\s+)?(?:https?:\/\/\S+|www\.\S+)(?:\s+ou\s+(?:https?:\/\/\S+|www\.\S+))*\s*$/i;
 
 /** Remove cabeçalho institucional (só na página 1), hash de autenticação e paginação. */
 export function limparPagina(texto) {
@@ -209,6 +220,7 @@ export function limparPagina(texto) {
     .split('\n')
     .filter((l) => !RE_HASH.test(l))
     .filter((l) => !RE_PAGINACAO.test(l))
+    .filter((l) => !RE_MARCA_DAGUA_LINHA.test(l))
     .join('\n');
 }
 
@@ -367,6 +379,13 @@ const CAMPOS = [
 export const CAMPOS_OBRIGATORIOS = ['enunciado', 'alternativas'];
 
 /**
+ * `Alternativas:` é obrigatório em toda questão do relatório — inclusive na
+ * discursiva, como `Alternativas:\n--`. Por isso nenhum campo posterior pode
+ * ser alcançado sem passar por ele primeiro: ver a guarda em `separarCampos`.
+ */
+const INDICE_ALTERNATIVAS = CAMPOS.findIndex((c) => c.chave === 'alternativas');
+
+/**
  * Conteúdo na margem direita da linha do rótulo.
  *
  * Campo de bloco (`enunciado`, `alternativas`, `comentario`, `referencias`) sempre
@@ -413,6 +432,15 @@ function separarCampos(bloco) {
     for (let i = 0; i < CAMPOS.length; i += 1) {
       const campo = CAMPOS[i];
       if (i <= indice) continue; // só avança: repetição é conteúdo
+      // Nenhum campo depois de "Alternativas:" pode ser alcançado sem
+      // primeiro passar por ele — o rótulo é obrigatório em toda questão do
+      // relatório. Sem essa guarda, uma legenda de imagem dentro do
+      // enunciado como "Referência: https://..." casa com o rótulo de
+      // bibliografia e o autômato pula "Alternativas:" inteiro, perdendo o
+      // gabarito em silêncio (Q5 da CC 2 2025.1: citação de imagem de lipoma
+      // no meio do enunciado, capturada como início da seção de
+      // referências).
+      if (i > INDICE_ALTERNATIVAS && indice < INDICE_ALTERNATIVAS) continue;
       const m = linha.match(campo.re);
       if (!m) continue;
 
@@ -499,7 +527,17 @@ function parsearAlternativas(linhas) {
       }
       alternativas[letra] = alternativas[letra] ?? [];
       if (m[2]) corretas.push(letra);
-      if (m[3].trim()) alternativas[letra].push(m[3]);
+      // Quebra de página cai bem na altura da linha do marcador em algumas
+      // provas, e o `-layout` cola o rodapé "Pgina N de M" depois dela com
+      // vão largo (CI 1 2025.1, alternativa D da Q13). Sem isso o rodapé
+      // virava a primeira "frase" da alternativa.
+      if (m[3].trim() === '' ) {
+        // nada a fazer
+      } else if (RE_PAGINACAO.test(m[3].trim())) {
+        avisos.push(`paginação descartada na alternativa ${letra.toUpperCase()}: "${m[3].trim()}"`);
+      } else {
+        alternativas[letra].push(m[3]);
+      }
       continue;
     }
     if (letra) alternativas[letra].push(linha);
@@ -553,6 +591,36 @@ function separarOrigem(texto, ies) {
   if (/^[A-ZÀ-Ÿ]{2,}(?:\s+[A-Za-zÀ-ÿ0-9.\-/]+){0,5}$/.test(conteudo)) return semPrefixo;
 
   return { origem: null, texto };
+}
+
+/**
+ * Legenda de imagem embutida no meio do enunciado — "Fonte: De Aehlert B: ECG
+ * study cards, St. Louis, 2004, Mosby." logo abaixo de um ECG ou raio-X citado
+ * no caso clínico.
+ *
+ * `FONTE:` é rótulo reservado do parser do admin (mesma lista de `REFERENCIA`,
+ * `GABARITO` etc.). Como a legenda emenda sem linha em branco na frase de
+ * comando seguinte ("Fonte: ...\nAssinale a alternativa..."), o corte
+ * apoio/pergunta às vezes deixa a legenda como primeira linha da pergunta —
+ * e aí o admin leria a questão inteira como se começasse pelo campo FONTE
+ * (HAM 6 2023.2, Q6/Q8/Q9/Q10). A legenda é conteúdo genuíno, só não pode
+ * ficar em ENUNCIADO: sai como linha isolada e vai para `referencia`, igual a
+ * qualquer outra citação de fonte da questão.
+ */
+const RE_FONTE_LINHA = /^\s*Fonte\s*:\s*(.+)$/i;
+
+function separarFontesDeImagem(texto) {
+  const fontes = [];
+  const resto = [];
+  for (const linha of texto.split('\n')) {
+    const m = linha.match(RE_FONTE_LINHA);
+    if (m && m[1].trim()) {
+      fontes.push(colapsar(m[1]));
+    } else {
+      resto.push(linha);
+    }
+  }
+  return { fontes, texto: resto.join('\n') };
 }
 
 /**
@@ -806,12 +874,14 @@ export function parsearQuestao(bloco) {
 
   const enunciadoBruto = juntar('enunciado');
   const { origem, texto: semOrigem } = separarOrigem(desdobrar(enunciadoBruto), filtros['IES']);
-  const { apoio, pergunta, criterio } = dividirEnunciado(semOrigem);
+  const { fontes: fontesDeImagem, texto: semFontes } = separarFontesDeImagem(semOrigem);
+  const { apoio, pergunta, criterio } = dividirEnunciado(semFontes);
   const { alternativas, corretas, avisos: avisosAlt } = parsearAlternativas(campos.alternativas);
   const formato = classificarFormato(alternativas, juntar('alternativas'));
 
   const feedback = colapsar(juntar('feedback')).replace(/^-+$/, '');
   const comentario = desdobrar(juntar('comentario'));
+  const referenciasCompletas = [juntar('referencias'), ...fontesDeImagem].filter((t) => t.trim()).join('\n');
 
   return {
     numero: bloco.numero,
@@ -834,7 +904,7 @@ export function parsearQuestao(bloco) {
     // Repeti-la em EXPLICACAO só duplicaria o mesmo texto no acervo.
     explicacao: formato === 'aberta' ? '' : comentario,
     resposta_modelo: formato === 'aberta' ? comentario : null,
-    referencia: desdobrar(juntar('referencias')),
+    referencia: desdobrar(referenciasCompletas),
     feedback: feedback || null,
     filtros,
     classificacao: {
@@ -857,7 +927,11 @@ export function parsearQuestao(bloco) {
         ...s,
       })),
     ],
-    avisos: [...avisos, ...avisosAlt],
+    avisos: [
+      ...avisos,
+      ...avisosAlt,
+      ...fontesDeImagem.map((f) => `legenda "Fonte: ${f}" movida do enunciado para a referência`),
+    ],
   };
 }
 

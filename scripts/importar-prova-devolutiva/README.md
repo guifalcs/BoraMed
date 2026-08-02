@@ -623,3 +623,423 @@ quem responde por elas é o crivo 1b.
 
 Não some isso como "verificado": leia a tabela de cobertura em
 `relatorio-validacao.md` de cada prova.
+
+## Estado das importações — snapshot de 01/08/2026 (6º período)
+
+Instantâneo do 6º período, gerado no mesmo dia do snapshot do 5º período acima.
+Mesma ressalva: o estado real está nos diretórios de trabalho, gitignorados.
+
+**18 provas do 6º período gravadas direto no banco de produção em 01/08/2026**
+— 210 questões (174 fechadas + 36 discursivas), todas com round-trip íntegro,
+zero flags altas pendentes e já **vinculadas às provas em `prova_questao`**
+(prova + questões + alternativas + vínculo criados atomicamente via a RPC
+`admin_criar_prova_com_questoes`, não pelo fluxo manual de colar em
+`/admin/importar`). Conferido por query: `qtd_questoes` bate com o vinculado em
+todas as 18, cada uma com exatamente 2 discursivas e nenhuma fechada sem
+gabarito único.
+
+O caminho usado — gerar o payload a partir do `parseBlocos()` real do admin
+(mesmo transpile do `verificar-roundtrip.mjs`) e rodar via
+`supabase db query --linked --file <arquivo>.sql`, autenticando a RPC com
+`set_config('request.jwt.claims', ...)` para o UUID do admin — está registrado
+à parte, fora deste README (o pipeline continua gerando `saida/prova.md` para
+quem preferir colar manualmente).
+
+| prova | questões | subtipo em `/admin/provas` |
+| --- | --- | --- |
+| CC 2 — 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | CC |
+| CI 1 — 2023.2, 2024.2, 2024.2 (Irregulares), 2025.1, 2025.1 (Irregulares), 2025.2 | 15 cada (13+2) | CI |
+| HAM 6 — 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | HAM |
+| IESC 6 — 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | IESC |
+
+CI 1 (2024.2) e CI 1 (2025.1) trazem **duas provas distintas por edição**
+("Irregulares" e a versão regular), com conteúdo diferente entre si — as duas
+foram importadas separadamente, ao contrário do padrão de outras disciplinas
+onde "Irregular" só indica irregularidade na aplicação, não conteúdo diferente.
+
+**Não importada:**
+
+| arquivo | motivo |
+| --- | --- |
+| CC 2 (2023.2)(2).pdf | duplicata byte-a-byte de `CC 2 - (2023.2)(1).pdf` (mesmo `questoes.json`, hash idêntico) — importada uma vez só |
+
+### Ajustes no parser feitos durante este período
+
+Quatro defeitos novos de extração apareceram nesta leva, todos corrigidos em
+`lib/relatorio.mjs` com cobertura em `testar.mjs` (118 verificações passando):
+
+1. **Legenda de imagem citada como "Referência:" dentro do enunciado** —
+   `INDICE_ALTERNATIVAS` agora impede o autômato de campos pular direto de
+   `enunciado` para `referencias` sem passar por `alternativas`, que é campo
+   obrigatório em toda questão do relatório. Sem a guarda, a Q5 da CC 2
+   (2025.1) perdia alternativas e gabarito inteiros porque uma legenda
+   "Referência: https://..." no meio do enunciado casava com o rótulo de
+   bibliografia.
+2. **Marca d'água colada à "Nª QUESTÃO" com um espaço só** (CI 1 2023.2)
+   — a maioria das provas separa o marcador da URL por vão largo;
+   `RE_MARCADOR_QUESTAO` agora aceita também um espaço seguido de `www.`/`http`.
+3. **Marca d'água partida em duas linhas pelo `-layout`** (HAM 6 2023.2, Q1) —
+   `RE_MARCA_DAGUA_LINHA` remove a linha "ou www.acervotop.com/..." que sobrava
+   sozinha e virava a primeira frase do enunciado.
+4. **Rodapé "Pgina N de M" colado à linha da alternativa** (CI 1 2025.1, Q13D)
+   — quebra de página na altura do marcador `(alternativa D)` fazia o rodapé
+   virar conteúdo da alternativa.
+5. **Legenda "Fonte: ..." de imagem embutida no meio do enunciado** (HAM 6
+   2023.2/2024.2, 4+2 questões) — `separarFontesDeImagem()` move a legenda para
+   `referencia`. Sem isso o admin leria `FONTE:` como rótulo reservado e a
+   questão caía em `PENDENCIAS.md` por "rótulo na primeira linha".
+
+Ponto cego conhecido, não corrigido por ser cosmético e raro (2 ocorrências em
+210 questões): citação **"Disponível em: ... Acesso em: ..."** sem o prefixo
+"Fonte:" grudada à frase de comando (HAM 6 2025.2, Q1 e Q7) — não bloqueia
+nem corrompe campo, só deixa a citação solta no meio do enunciado.
+
+### Alternativa duplicada por erro do PDF original — CI 1 (2025.1), Q13, e CI 1 (2025.1) Irregulares, Q12
+
+Mesma questão (diabetes tipo 2, conduta SBD 2024/2025) nas duas edições. O PDF
+original da AFYA colou o texto da alternativa correta (SGLT2) em **duas**
+letras — A e C na versão regular, A e C também na irregular, mas com o
+`(CORRETA)` em letras diferentes (A na regular, C na irregular). A resposta
+comentada julga **quatro** textos distintos, incluindo um que não corresponde a
+nenhuma alternativa impressa: "Aumentar a dose da metformina para otimizar o
+controle glicêmico, manter a glibenclamida e intensificar o monitoramento da
+glicemia capilar." — Errada.
+
+Corrigido em `questoes-revisadas.json` citando essa evidência: a alternativa
+**não marcada** como `(CORRETA)` (C na regular, A na irregular) teve o texto
+substituído pelo trecho da metformina, mantendo o gabarito original das duas
+edições (A na regular, C na irregular) intacto.
+
+Na versão irregular, corrigir o texto **não** apagou uma segunda flag alta
+(`marcada_como_incorreta`): verificado manualmente contra o PDF, é falso
+positivo — a resposta comentada desta questão específica não separa os quatro
+julgamentos por linha em branco, então o crivo lê o veredito do início do bloco
+mesclado em vez do veredito correto associado ao texto de C. Liberado sem
+alteração, registrado aqui para não ser reinvestigado (mesmo padrão dos falsos
+positivos do 5º período, seção acima).
+
+### Imagens pendentes — 13 questões
+
+Nenhuma tem o raster no PDF (`pdfimages` não estava no PATH nesta rodada, mas
+mesmo com ele a maioria dos ECGs/radiografias é descartada pelo gerador do
+relatório) — busque o trecho no `/admin/questoes` e anexe.
+
+| prova | questão | gabarito | buscar por |
+| --- | --- | --- | --- |
+| CC 2 (2025.1) | Q05 | A | `Você está no estágio de cirurgia geral e atende um` |
+| CI 1 (2025.1) | Q03 | discursiva | `Um homem de 61 anos, com histórico de hipertensão arterial` |
+| CI 1 (2025.1) Irregulares | Q01 | discursiva | `Um homem de 61 anos, com histórico de hipertensão arterial` |
+| HAM 6 (2023.2) | Q01 | B | `Mulher de 57 anos é atendida na unidade de pronto` |
+| HAM 6 (2023.2) | Q03 | discursiva | `Adulto, masculino, 53 anos, obeso, tabagista e hipertenso` |
+| HAM 6 (2023.2) | Q04 | C | `Homem, 35 anos, é trazido às pressas para a unidade de` |
+| HAM 6 (2023.2) | Q10 | A | `Mulher, 59 anos, diabética, hipertensia, dislipidêmica e` |
+| HAM 6 (2024.2) | Q06 | C | `Homem, 65 anos de idade, sem histórico prévio de` |
+| HAM 6 (2024.2) | Q10 | A | `Homem, 56 anos, hipertenso, diabético e portador de doença` |
+| HAM 6 (2025.1) | Q03 | C | `Um homem de 65 anos, com histórico de infarto prévio, é` |
+| HAM 6 (2025.1) | Q09 | discursiva | `Mulher, 63 anos de idade, hipertensa com antecedente de` |
+| HAM 6 (2025.2) | Q10 | discursiva | `Paciente masculino, 62 anos, é trazido à unidade de pronto` |
+| IESC 6 (2024.2) | Q07 | D | `Um paciente de 60 anos, com histórico de dispepsia crônica,` |
+
+12 das 13 são traçado de ECG (a HAM 6 é a disciplina de emergência/reanimação
+do 6º período) — provavelmente há repetição de imagem entre provas de edições
+próximas, mas cada uma foi extraída e revisada de forma independente.
+
+### Tabela pendente — 1 questão
+
+| prova | questão | gabarito | buscar por |
+| --- | --- | --- | --- |
+| CI 1 (2023.2) | Q14 | B | `O termo Síndrome Metabólica descreve um conjunto de fatores` |
+
+Placeholder `[TABELA DA PROVA — não convertida em texto; inserir manualmente]`
+já está no markdown; o conteúdo removido (avaliação antropométrica de três
+pacientes) está em `PENDENCIAS.md` antes da limpeza.
+
+### O que ainda falta nas 18 importadas
+
+1. **Preencher `PONTOS_CHAVE`** nas 36 discursivas que forem entrar em simulado
+   com correção pela Aurora — saem vazias porque o relatório não as traz.
+2. **Classificar** disciplina/tema das questões, que saem vazios de propósito
+   (a prova em si já tem `disciplina_id`; é a `questao.disciplina_id` +
+   `questao_tema` que ficam de fora).
+3. ~~Vincular a `/admin/provas`~~ — já feito: prova, questões e vínculo em
+   `prova_questao` foram criados juntos pela RPC, não pelo fluxo manual.
+4. **13 questões com imagem + 1 com tabela** seguem pendentes de anexo manual
+   em `/admin/questoes` — ver as duas seções acima.
+
+## Estado das importações — snapshot de 01/08/2026
+
+Instantâneo do 5º período. Mesma ressalva do snapshot acima: o estado real está
+nos diretórios de trabalho, gitignorados.
+
+**16 provas do 5º período importadas em 01/08/2026** — 180 questões (148
+fechadas + 32 discursivas), todas com round-trip íntegro e zero flags altas
+pendentes:
+
+| prova | questões | subtipo em `/admin/provas` |
+| --- | --- | --- |
+| HAM 5 — 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | HAM |
+| IESC 5 — 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | IESC |
+| SOI 5 — 2023.2, 2024.2, 2025.1, 2025.2 | 15 cada (13+2) | SOI |
+| CC 1 — 2023.2, 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | CC |
+
+**Não importadas, e por quê:**
+
+| prova | motivo |
+| --- | --- |
+| HAM 5 (2023.2) — arquivo `Anulada.pdf` | prova anulada pela IES; existe a versão válida do mesmo período (importada) |
+| IESC 5 (2023.1) | PDF 100% escaneado (9 páginas, nenhuma com camada de texto), **sem** seção de gabarito nem de devolutiva no documento — nenhuma fonte de resposta correta para conferir. Não é caso de TPI (não tem a estrutura scan+gabarito+devolutiva) nem de devolutiva (não tem texto) |
+| SOI 5 (2023.1) | idem: 17 páginas 100% escaneadas, sem gabarito nem devolutiva no PDF |
+| CC 1 (2023.1) | **conteúdo idêntico** ao CC 1 (2023.2) — mesmas 10 questões, byte a byte iguais em `questoes.json`, apesar de serem dois arquivos PDF diferentes (hashes diferentes) e o cabeçalho interno do PDF de "2023.1" dizer "26SET2023.2". Duas cópias do mesmo exame sob nomes de arquivo diferentes; importado uma vez só |
+
+CC 1 (2024.2) e CC 1 (2025.1) trazem `Irregular` no nome do arquivo (irregularidade
+na aplicação da prova, não no conteúdo) — importadas normalmente, sinalizado aqui
+para referência.
+
+### Imagem pendente — 2 questões
+
+| prova | questão | gabarito | buscar por | figura |
+| --- | --- | --- | --- | --- |
+| SOI 5 (2025.2) | Q08 | D | `Um paciente de 12 anos apresenta dor intensa no fêmur` | radiografia (nenhum raster no PDF — buscar na fonte) |
+| CC 1 (2024.2) | Q08 | C | `O posicionamento cirúrgico para uma colecistectomia,` | figura de posicionamento da equipe (nenhum raster no PDF) |
+
+### Tabela pendente — 1 questão
+
+| prova | questão | gabarito | buscar por |
+| --- | --- | --- | --- |
+| SOI 5 (2025.1) | Q02 | D | `Uma paciente de 67 anos, pós-menopáusica, com histórico de` |
+
+Placeholder `[TABELA DA PROVA — não convertida em texto; inserir manualmente]` já
+está no markdown; o conteúdo removido ("Tabela de Classificação segundo o
+T-score") está em `PENDENCIAS.md` antes da limpeza.
+
+### Anomalia de conteúdo sinalizada — CC 1 (2024.2), Q07
+
+O crivo 2 acusou contradição: `(CORRETA)` marca a alternativa C no PDF, mas a
+"Resposta comentada" abre com "RESPOSTA CORRETA:" seguido do texto da
+alternativa D. Conferido manualmente: o corpo da explicação descreve a Meta 4
+das metas internacionais de segurança do paciente ("garantir a cirurgia
+correta, no local correto, no paciente correto") — que é exatamente o conteúdo
+da alternativa C, não da D. Mantido o gabarito **C** (bate com a marcação e com
+a definição correta da Meta 4); o erro é editorial, na linha de abertura do
+comentário do PDF original da AFYA. Vale o Arthur revisar o texto da explicação
+em `/admin/questoes` antes de a questão cair em simulado.
+
+### Falsos positivos do crivo 2 — verificados e liberados sem alteração
+
+6 questões pararam com flag alta `marcada_como_incorreta` /
+`gabarito_contradiz_comentario` / `gabarito_contradiz_assertivas`, mas a
+conferência manual contra o PDF (`pdftotext -layout`) confirmou que o gabarito
+extraído bate com a marcação `(CORRETA)` e com o veredito do comentário — o
+crivo não reconheceu o padrão de texto (parágrafo com espaço antes de
+"Incorreta"/"Correta", ou assertivas em numeral romano com "nenhuma"
+detectado por engano): HAM 5 2025.1 (Q3, Q8), IESC 5 2025.1 (Q5), SOI 5 2024.2
+(Q4, Q8), SOI 5 2025.1 (Q7). Registrado aqui para não ser reinvestigado.
+
+### O que ainda falta nas 16 importadas
+
+1. **Preencher `PONTOS_CHAVE`** nas 32 discursivas que forem entrar em simulado
+   com correção pela Aurora — saem vazias porque o relatório não as traz.
+2. **Classificar** disciplina/tema, que saem vazios de propósito.
+3. **Vincular a `/admin/provas`**: `/admin/importar` não liga questão a prova.
+   Criar as 16 provas com o subtipo da tabela acima e vincular as questões.
+
+### Cobertura do gabarito, por disciplina (agregado das 4 edições)
+
+| disciplina | fechadas conferidas contra devolutiva | total fechadas |
+| --- | --- | --- |
+| HAM 5 | 28 | 32 |
+| IESC 5 | 21 | 32 |
+| SOI 5 | 37 | 52 |
+| CC 1 | 21 | 32 |
+
+O resto vem só da marcação `(CORRETA)` — fonte única, mas confiável (é a mesma
+marcação que a AFYA usa para corrigir a prova do aluno). IESC segue sendo a
+disciplina mais fraca nesse eixo, como no 4º período.
+
+### Gravadas no banco em 01/08/2026 e auditadas — íntegras
+
+As 16 provas foram inseridas em produção via `admin_criar_prova_com_questoes` (a mesma RPC do
+botão "Salvar" do admin), direto por SQL — sem passar pela UI. `publicada: false` em todas
+(rascunho, como nas importações anteriores). Depois da inserção, auditoria campo a campo (banco
+vs. `saida/prova.md` reparseado pelo `parseBlocos` real) confirmou as 190 questões íntegras —
+enunciado, apoio, explicação, referência, resposta modelo e cada `(letra, correta)` de alternativa
+batendo exatamente com a fonte.
+
+**Descoberta de processo, vale para qualquer importação futura por SQL**: rodar o insert colando o
+conteúdo do `.sql` dentro de uma chamada de tool (em vez de apontar pro arquivo) arrisca corrupção
+silenciosa — o modelo "retranscreve" o blob ao gerar a chamada, e textos de 15-20KB não sobrevivem
+sempre intactos (um caso real: `\\d` virou `\d` e quebrou o parse JSON; outro: uma questão inteira
+saiu com alternativas e gabarito trocados, sem erro nenhum). `npx supabase db query --linked -f
+<arquivo>.sql` lê do disco e evita isso — é o caminho documentado em
+`IMPORTAR-PROVAS-DIRETO-NO-BANCO.md`, na raiz do projeto.
+
+## Estado das importações — snapshot de 01/08/2026 (7º período)
+
+Instantâneo do 7º período. Mesma ressalva dos snapshots acima: o estado real está nos diretórios
+de trabalho, gitignorados.
+
+**14 provas do 7º período gravadas direto no banco de produção em 01/08/2026** — 165 questões (137
+fechadas + 28 discursivas), todas com round-trip íntegro e zero flags altas pendentes:
+
+| prova | questões | subtipo em `/admin/provas` |
+| --- | --- | --- |
+| CC III — 2024.2 (Irregulares), 2025.1 (Irregulares), 2025.2 | 10 cada (8+2) | N1 |
+| CI II — 2024.2, 2024.2 (Irregulares), 2025.1, 2025.1 (Irregulares), 2025.2 | 15 cada (13+2) | N1 |
+| HAM VII — 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | N1 |
+| IESC VII — 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | N1 |
+
+CI II (2024.2) e (2025.1) trazem **duas provas distintas por edição** ("Irregular" e a versão
+regular), com número de `PROVA` diferente no cabeçalho do relatório (conteúdo diferente, não é a
+mesma prova reaplicada) — as duas foram importadas separadamente, seguindo o precedente do CI 1 no
+6º período.
+
+Diferente dos períodos anteriores, estas 14 provas já entraram com `disciplina_id` preenchido em
+cada questão (o pipeline por RPC direto no banco recebe o UUID da disciplina como parâmetro,
+diferente do caminho por `/admin/importar` que sempre deixa `DISCIPLINA` vazio). `TEMA` segue vazio
+de propósito.
+
+**Não importadas, e por quê:**
+
+| prova | motivo |
+| --- | --- |
+| CC III (2024.1) | só existe a versão "Irregulares", 100% escaneada (sem camada de texto) |
+| CI II (2024.1) | 100% escaneada (sem camada de texto) |
+| HAM VII (2024.1) | arquivo não está mais na pasta de origem (nenhuma variante presente) |
+| IESC VII (2024.1) | relatório de devolutiva de gerador diferente: imprime só a alternativa marcada `(CORRETA)`, nunca as três distratoras — não há como recuperar as alternativas que faltam, `extrair.mjs` bloqueia corretamente com "sem alternativas" |
+
+### Falsos positivos do crivo 2 — verificados e liberados sem alteração
+
+5 questões pararam com flag alta, mas a conferência manual contra o PDF (`pdftotext -layout`)
+confirmou que o gabarito extraído bate com a marcação `(CORRETA)`:
+
+- **CI II 2025.1 (Q14) e CI II 2025.1 Irregulares (Q7)** — `alternativas_duplicadas`: a mesma
+  questão (anemia falciforme) aparece nas duas edições com duas alternativas de texto quase idêntico
+  (`"I , III e V, apenas."` vs `"I, III e V, apenas."`, diferindo só por um espaço espúrio antes da
+  vírgula). Erro de digitação do PDF original da AFYA, não da extração — confirmado citando as
+  páginas do PDF, mantido sem alteração.
+- **CI II 2025.2 (Q12), HAM VII 2025.1 (Q5, Q10), IESC VII 2025.2 (Q8)** — `marcada_como_incorreta`
+  / `gabarito_contradiz_comentario`: o comentário destas questões não segue a ordem A-D, reordena as
+  alternativas por outro critério, e o crivo pareou o veredito pela posição no texto em vez do
+  conteúdo. Lido o comentário na íntegra, o veredito "Correta"/"Correto" bate exatamente com a
+  alternativa marcada `(CORRETA)` em todos os cinco casos.
+
+### Imagem pendente — 1 questão (candidata, não confirmada)
+
+| prova | questão | gabarito | buscar por |
+| --- | --- | --- | --- |
+| IESC VII (2025.2) | Q09 | discursiva | `Homem de 30 anos, previamente hígido, procura atendimento na Clínica` |
+
+Sinalizada por menção com dêixis (`"esquema al[ternativo]"` no enunciado de uma discursiva sobre
+sífilis secundária) — sem raster no PDF. Vale conferir se é figura de verdade ou falso positivo do
+detector antes de tentar buscar a imagem na fonte.
+
+### Gravadas no banco em 01/08/2026 e auditadas — íntegras
+
+As 14 provas foram inseridas em produção via `admin_criar_prova_com_questoes`, direto por SQL, sem
+passar pela UI. `publicada: false` em todas. Uma prova (HAM VII 2025.2) foi inserida e auditada
+manualmente antes do lote, como teste; as outras 13 foram executadas por um subagente. Seis delas
+(CC III 2024.2 Irregulares, CC III 2025.1 Irregulares, CC III 2025.2, CI II 2024.2, CI II 2024.2
+Irregulares, CI II 2025.1) foram inseridas colando o `.sql` na tool call antes da correção de
+processo ter sido aplicada — auditadas campo a campo depois (100% das questões de cada uma, não
+amostra) e confirmadas íntegras. As sete restantes já usaram `npx supabase db query --linked -f`,
+o método seguro documentado acima.
+
+### O que ainda falta nas 14 importadas
+
+1. **Preencher `PONTOS_CHAVE`** nas 28 discursivas que forem entrar em simulado com correção pela
+   Aurora — saem vazias porque o relatório não as traz.
+2. **Classificar tema** (disciplina já veio preenchida, ver acima).
+3. **Vincular a `/admin/provas`**: como a inserção foi pela RPC direta (não por
+   `/admin/importar`), prova e questões **já nascem vinculadas** — não é necessário o passo manual
+   de vincular que os períodos anteriores (importados via markdown) ainda têm pendente.
+4. **CC III (2024.1) e CI II (2024.1)**: se sobrar algum PDF de texto dessas edições (a versão que
+   temos é só o scan sem camada de texto), reprocessar por este pipeline. Caso contrário, IESC VII
+   (2024.1) e essas duas exigem digitação manual em `/admin/questoes`.
+
+## Estado das importações — snapshot de 01/08/2026 (8º período)
+
+Instantâneo do 8º período. Mesma ressalva dos snapshots acima: o estado real está nos diretórios
+de trabalho, gitignorados.
+
+**13 provas do 8º período gravadas direto no banco de produção em 01/08/2026** — 140 questões (114
+fechadas + 26 discursivas), todas com round-trip íntegro. Auditadas por query após a inserção:
+`qtd_questoes` bate com `prova_questao` vinculada em todas as 13, cada uma com exatamente 2
+discursivas, e a contagem de alternativas `correta = true` por prova bate exatamente com o número
+de fechadas (nenhuma duplicada, nenhuma perdida).
+
+| prova | questões | subtipo em `/admin/provas` |
+| --- | --- | --- |
+| CC IV — 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | N1 |
+| CI III — 2024.2, 2025.1, 2025.1 (Irregular), 2025.2 | 15 cada (13+2) | N1 |
+| HAM VIII — 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | N1 |
+| IESC VIII — 2024.2, 2025.1, 2025.2 | 10 cada (8+2) | N1 |
+
+CI III (2025.1) traz **duas provas distintas na mesma edição** ("Irregular" e a versão regular),
+com conteúdo diferente entre si — as duas foram importadas separadamente, mesmo precedente do CI 1
+(6º período) e CI II (7º período).
+
+Como no 7º período, estas 13 provas já entraram com `disciplina_id` preenchido em cada questão
+(pipeline por RPC direto no banco). `TEMA` segue vazio de propósito.
+
+**Anomalia de cabeçalho — CC IV (2025.1)**: o cabeçalho interno do PDF fonte diz "N1 ESPECÍFICA_7
+PERIODO_14ABRIL_2025.1_CC IV IRREGULAR" — período 7, não 8 — mas o componente cobrado é
+"Clínica Cirúrgica IV" (disciplina de período 8 no nosso cadastro) e o arquivo estava na pasta do
+8º período, sem nenhuma outra prova de CC IV concorrendo para 2025.1. Gravado como período 8,
+mesma disciplina das outras duas edições de CC IV. Provável rótulo herdado de um template interno
+da AFYA (a mesma prova em ciclo anterior seria de período 7); não bloqueia nem muda o conteúdo da
+prova, só fica registrado aqui caso o Arthur reconheça a origem exata.
+
+### Correções feitas — defeito real de extração (não falso positivo)
+
+- **HAM VIII (2025.1), Q4 (discursiva)** — `resposta_modelo` era uma tabela (`Elemento esperado |
+  Pontuação`) que o extrator achatou fora de ordem, produzindo `"Pontuaçã A"` no meio do texto.
+  Reconstruída a partir do mesmo texto bruto; os três subtotais por item batem exatamente com os
+  valores declarados no enunciado (1,0 / 0,8 / 0,7 pontos).
+- **HAM VIII (2025.1), Q6** — alternativas vieram só com o número do grau (`"5"`, `"4"`, `"2"`,
+  `"3"`), a palavra "Grau" da classificação de Szpilman foi perdida na extração da tabela.
+  Reconstruída como `"Grau 5"` / `"Grau 4"` / `"Grau 2"` / `"Grau 3"` com base na explicação, que
+  nomeia cada grau explicitamente e confirma "Grau 5 – Correta" batendo com o gabarito `(CORRETA)`
+  A.
+- **CI III (2025.2), Q15 (discursiva)** — `resposta_modelo` começava com o rótulo `"Gabarito: "`
+  antes do texto, que o parser do admin leria como campo reservado (`rotulo_no_inicio`). Removido
+  o prefixo redundante — o campo inteiro já é o gabarito da discursiva —, nenhuma palavra do
+  conteúdo foi alterada.
+
+### Falsos positivos do crivo 2 — verificados e liberados sem alteração
+
+3 questões pararam com flag alta `gabarito_contradiz_comentario` / `marcada_como_incorreta`, mas a
+conferência manual contra o texto extraído confirmou que o gabarito bate com a marcação
+`(CORRETA)` — em todos os três casos a explicação do PDF original não segue a ordem A-B-C-D ao
+listar os vereditos, e o crivo pareou pela posição no texto em vez do conteúdo:
+
+- **CI III (2025.1) Irregulares, Q11** — o parágrafo final de conclusão ("o diagnóstico mais
+  provável é: Transtorno Bipolar (Tipo I)") bate com a alternativa A, marcada `(CORRETA)`.
+- **CI III (2025.2), Q10** — a explicação começa julgando a alternativa C ("Errado: artrite
+  reumatoide") antes de julgar a B ("Certo: osteoartrite"), e o parágrafo final confirma
+  osteoartrite — bate com o gabarito B.
+- **CC IV (2025.1), Q4** — a explicação abre com "A alternativa correta é: ... radiografia é
+  necessária" (bate com C, gabarito marcado) e só depois lista os distratores em prosa livre, sem
+  rótulo de letra, o que confundiu o crivo.
+
+### Imagens pendentes — 2 questões
+
+Nenhuma tem o raster no PDF (`pdfimages` não estava no PATH nesta rodada) — busque o trecho no
+`/admin/questoes` e anexe.
+
+| prova | questão | gabarito | buscar por |
+| --- | --- | --- | --- |
+| CI III (2024.2) | Q01 | D | `O Sr. Paulo de 80 anos foi levado a consulta psiquiátrica pelo seu` |
+| CC IV (2025.2) | Q10 | discursiva | `Um jogador de futebol de 32 anos chega ao pronto-socorro após torção` |
+
+### O que ainda falta nas 13 importadas
+
+1. **Preencher `PONTOS_CHAVE`** nas 26 discursivas que forem entrar em simulado com correção pela
+   Aurora — saem vazias porque o relatório não as traz.
+2. **Classificar tema** (disciplina já veio preenchida, ver acima).
+3. **Vincular a `/admin/provas`**: já feito — inserção pela RPC direta cria prova, questões e
+   vínculo em `prova_questao` juntos.
+4. **2 questões com imagem** seguem pendentes de anexo manual em `/admin/questoes` — ver seção
+   acima.
+5. **Anomalia de cabeçalho da CC IV (2025.1)**: confirmar com o Arthur se o "7 PERIODO" no
+   cabeçalho do PDF original é só rótulo herdado de template ou indica que a prova pertence de
+   fato a outra disciplina/período (ver seção acima).

@@ -36,5 +36,13 @@ scripts/importar-prova-devolutiva/.trabalho/
 # PDFs de prova soltos na raiz ou em pasta de lote (entrada do pipeline)
 /*.pdf
 /provas*/
+/HAM */
+/IESC */
+/SOI */
+/CC */
+/CI */
+# Pastas de lote por período (ex: "6 periodo/CC 2/...") — mesmos PDFs com nome
+# de aluno no cabeçalho, só organizados um nível mais fundo.
+/*periodo/
 # revisao humana baixada pelo navegador, se salva fora do diretorio de trabalho
 /questoes-revisadas*.json
