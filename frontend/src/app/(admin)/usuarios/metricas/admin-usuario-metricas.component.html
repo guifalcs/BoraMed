@@ -227,7 +227,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            @for (a of m.assinaturas_historico; track a.id) {
+            @for (a of assinaturasPagina(); track a.id) {
               <tr>
                 <td class="px-4 py-3 font-medium text-gray-900">
                   {{ a.cortesia ? 'Cortesia' : (a.plano_nome ?? '—') }}
@@ -253,6 +253,12 @@
           </tbody>
         </table>
       </div>
+      <app-admin-pagination
+        [page]="paginaAssinaturas()"
+        [totalItems]="m.assinaturas_historico.length"
+        [pageSize]="20"
+        (pageChange)="mudarPaginaAssinaturas($event)"
+      />
     }
 
     <!-- Pagamentos no período -->
@@ -273,7 +279,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            @for (p of m.pagamentos; track p.id) {
+            @for (p of pagamentosPagina(); track p.id) {
               <tr>
                 <td class="px-4 py-3 text-gray-600">
                   {{ (p.processado_em ?? p.criado_em) | date: 'dd/MM/yyyy HH:mm' }}
@@ -297,6 +303,12 @@
           </tbody>
         </table>
       </div>
+      <app-admin-pagination
+        [page]="paginaPagamentos()"
+        [totalItems]="m.pagamentos.length"
+        [pageSize]="20"
+        (pageChange)="mudarPaginaPagamentos($event)"
+      />
     }
   }
 </div>

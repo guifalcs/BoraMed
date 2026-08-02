@@ -30,6 +30,7 @@ import {
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
 import {
   SelectOption,
   UiSelectComponent,
@@ -51,6 +52,7 @@ const DEBOUNCE_PREVIA_MS = 700;
 
 /** Página do modal de destinatários. O teto da RPC é 500. */
 const PAGINA_DESTINATARIOS = 200;
+const PAGINA_HISTORICO = 20;
 
 /** Filtros do modal. `null` = todos. */
 const FILTROS_DESTINATARIO: readonly { valor: StatusDestinatarioCampanha | null; rotulo: string }[] =
@@ -112,7 +114,7 @@ const MODELO_INICIAL = `<h2 style="margin:0 0 16px;color:#0f172a;font-size:22px;
 @Component({
   selector: 'app-admin-campanhas',
   standalone: true,
-  imports: [FormsModule, UiIconComponent, UiSelectComponent],
+  imports: [FormsModule, UiIconComponent, UiSelectComponent, AdminPaginationComponent],
   templateUrl: './admin-campanhas.component.html',
   styleUrl: './admin-campanhas.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -142,6 +144,11 @@ export class AdminCampanhasComponent implements OnInit {
 
   protected readonly historico = signal<AdminCampanhaEmail[]>([]);
   protected readonly carregandoHistorico = signal(true);
+  protected readonly paginaHistorico = signal(0);
+  protected readonly historicoPagina = computed(() => {
+    const inicio = this.paginaHistorico() * PAGINA_HISTORICO;
+    return this.historico().slice(inicio, inicio + PAGINA_HISTORICO);
+  });
 
   // ---- Prévia ----
   protected readonly previa = signal<PreviaCampanhaEmail | null>(null);
@@ -172,9 +179,9 @@ export class AdminCampanhasComponent implements OnInit {
   protected readonly carregandoDestinatarios = signal(false);
   protected readonly filtroDestinatario = signal<StatusDestinatarioCampanha | null>(null);
   protected readonly filtrosDestinatario = FILTROS_DESTINATARIO;
-
+  protected readonly paginaDestinatarios = signal(0);
   protected readonly temMaisDestinatarios = computed(
-    () => this.destinatarios().length < this.totalDestinatarios(),
+    () => this.paginaDestinatarios() + 1 < Math.max(1, Math.ceil(this.totalDestinatarios() / PAGINA_DESTINATARIOS)),
   );
 
   protected readonly iconMail = Mail;
@@ -260,10 +267,16 @@ export class AdminCampanhasComponent implements OnInit {
     const resultado = await this.adminService.listarCampanhasEmail(50);
     if (resultado.ok) {
       this.historico.set(resultado.data);
+      this.mudarPaginaHistorico(this.paginaHistorico());
     } else {
       this.toast.error('Erro ao carregar o histórico de campanhas.');
     }
     this.carregandoHistorico.set(false);
+  }
+
+  protected mudarPaginaHistorico(pagina: number): void {
+    const totalPaginas = Math.max(1, Math.ceil(this.historico().length / PAGINA_HISTORICO));
+    this.paginaHistorico.set(Math.max(0, Math.min(pagina, totalPaginas - 1)));
   }
 
   /**
@@ -388,6 +401,7 @@ export class AdminCampanhasComponent implements OnInit {
     this.filtroDestinatario.set(null);
     this.destinatarios.set([]);
     this.totalDestinatarios.set(0);
+    this.paginaDestinatarios.set(0);
     await this.carregarDestinatarios();
   }
 
@@ -397,6 +411,7 @@ export class AdminCampanhasComponent implements OnInit {
     // memória depois de fechar.
     this.destinatarios.set([]);
     this.totalDestinatarios.set(0);
+    this.paginaDestinatarios.set(0);
   }
 
   @HostListener('document:keydown.escape')
@@ -408,15 +423,28 @@ export class AdminCampanhasComponent implements OnInit {
     if (this.filtroDestinatario() === status) return;
     this.filtroDestinatario.set(status);
     this.destinatarios.set([]);
+    this.paginaDestinatarios.set(0);
     await this.carregarDestinatarios();
   }
 
-  /** Próxima página, anexando ao que já está na tela. */
+  /** Compatibilidade com chamadas existentes: avança uma página. */
   async carregarMaisDestinatarios(): Promise<void> {
-    await this.carregarDestinatarios(this.destinatarios().length);
+    const proxima = this.paginaDestinatarios() + 1;
+    const totalPaginas = Math.max(1, Math.ceil(this.totalDestinatarios() / PAGINA_DESTINATARIOS));
+    if (proxima >= totalPaginas) return;
+    this.paginaDestinatarios.set(proxima);
+    await this.carregarDestinatarios(proxima);
   }
 
-  private async carregarDestinatarios(offset = 0): Promise<void> {
+  protected async mudarPaginaDestinatarios(pagina: number): Promise<void> {
+    const totalPaginas = Math.max(1, Math.ceil(this.totalDestinatarios() / PAGINA_DESTINATARIOS));
+    const paginaLimitada = Math.max(0, Math.min(pagina, totalPaginas - 1));
+    if (paginaLimitada === this.paginaDestinatarios()) return;
+    this.paginaDestinatarios.set(paginaLimitada);
+    await this.carregarDestinatarios(paginaLimitada);
+  }
+
+  private async carregarDestinatarios(pagina = 0): Promise<void> {
     const campanha = this.campanhaAberta();
     if (!campanha) return;
 
@@ -425,17 +453,16 @@ export class AdminCampanhasComponent implements OnInit {
       campanha.id,
       this.filtroDestinatario(),
       PAGINA_DESTINATARIOS,
-      offset,
+      pagina * PAGINA_DESTINATARIOS,
     );
 
     if (resultado.ok) {
-      this.destinatarios.update((atual) =>
-        offset === 0 ? resultado.data.itens : [...atual, ...resultado.data.itens],
+      this.destinatarios.set(resultado.data.itens);
+      // A RPC devolve o total filtrado junto com a página atual.
+      this.totalDestinatarios.set(resultado.data.total);
+      this.paginaDestinatarios.set(
+        Math.min(pagina, Math.max(0, Math.ceil(resultado.data.total / PAGINA_DESTINATARIOS) - 1)),
       );
-      // Página vazia não zera o total já conhecido — só a primeira página manda.
-      if (offset === 0 || resultado.data.total > 0) {
-        this.totalDestinatarios.set(resultado.data.total);
-      }
     } else {
       this.toast.error(resultado.error);
     }

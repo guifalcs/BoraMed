@@ -269,7 +269,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (c of historico(); track c.id) {
+              @for (c of historicoPagina(); track c.id) {
                 <tr class="border-b border-[var(--color-border)] last:border-0 align-top">
                   <td class="whitespace-nowrap px-3 py-2 text-[var(--color-text-muted)]">
                     {{ formatarData(c.criado_em) }}
@@ -324,6 +324,12 @@
             </tbody>
           </table>
         </div>
+        <app-admin-pagination
+          [page]="paginaHistorico()"
+          [totalItems]="historico().length"
+          [pageSize]="20"
+          (pageChange)="mudarPaginaHistorico($event)"
+        />
       }
     </section>
   </div>
@@ -420,20 +426,16 @@
         }
       </div>
 
-      <footer class="flex items-center justify-between gap-3 border-t border-[var(--color-border)] p-3">
+      <footer class="flex flex-col items-stretch justify-between gap-3 border-t border-[var(--color-border)] p-3 sm:flex-row sm:items-center">
         <span class="text-xs text-[var(--color-text-muted)]">
-          Mostrando {{ destinatarios().length }} de {{ totalDestinatarios() }}
+          {{ carregandoDestinatarios() ? 'Carregando...' : 'Mostrando ' + destinatarios().length + ' de ' + totalDestinatarios() }}
         </span>
-        @if (temMaisDestinatarios()) {
-          <button
-            type="button"
-            class="btn btn--outline btn--sm"
-            [disabled]="carregandoDestinatarios()"
-            (click)="carregarMaisDestinatarios()"
-          >
-            {{ carregandoDestinatarios() ? 'Carregando…' : 'Carregar mais' }}
-          </button>
-        }
+        <app-admin-pagination
+          [page]="paginaDestinatarios()"
+          [totalItems]="totalDestinatarios()"
+          [pageSize]="200"
+          (pageChange)="mudarPaginaDestinatarios($event)"
+        />
       </footer>
     </section>
   </div>

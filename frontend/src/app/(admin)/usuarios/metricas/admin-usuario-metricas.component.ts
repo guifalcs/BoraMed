@@ -33,6 +33,7 @@ import {
   PontoSerieDiaria,
 } from '../../../shared/components/serie-diaria-chart/serie-diaria-chart.component';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
+import { AdminPaginationComponent } from '../../../shared/components/admin-pagination/admin-pagination.component';
 import {
   assinaturaStatusLabel,
   formatarCentavos,
@@ -46,6 +47,7 @@ const MODO_LABELS: Record<string, string> = {
   estudo: 'Estudo',
   visualizar: 'Visualização',
 };
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-admin-usuario-metricas',
@@ -56,6 +58,7 @@ const MODO_LABELS: Record<string, string> = {
     PeriodoFilterComponent,
     SerieDiariaChartComponent,
     KpiCardComponent,
+    AdminPaginationComponent,
   ],
   templateUrl: './admin-usuario-metricas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +73,16 @@ export class AdminUsuarioMetricasComponent implements OnInit {
   protected readonly metricas = signal<AdminMetricasUsuario | null>(null);
   protected readonly usuarioSelecionado = signal<UsuarioBusca | null>(null);
   protected readonly periodo = signal<PeriodoSelecionado | null>(null);
+  protected readonly paginaAssinaturas = signal(0);
+  protected readonly paginaPagamentos = signal(0);
+  protected readonly assinaturasPagina = computed(() => {
+    const inicio = this.paginaAssinaturas() * PAGE_SIZE;
+    return (this.metricas()?.assinaturas_historico ?? []).slice(inicio, inicio + PAGE_SIZE);
+  });
+  protected readonly pagamentosPagina = computed(() => {
+    const inicio = this.paginaPagamentos() * PAGE_SIZE;
+    return (this.metricas()?.pagamentos ?? []).slice(inicio, inicio + PAGE_SIZE);
+  });
 
   protected readonly iconTentativas = ClipboardList;
   protected readonly iconTaxa = Target;
@@ -154,6 +167,8 @@ export class AdminUsuarioMetricasComponent implements OnInit {
 
     if (result.ok) {
       this.metricas.set(result.data);
+      this.paginaAssinaturas.set(0);
+      this.paginaPagamentos.set(0);
       // Sincroniza o seletor com o perfil retornado (preenche nome/email no
       // deep-link; no fluxo de busca os valores já são iguais e nada muda).
       this.usuarioSelecionado.set({
@@ -170,6 +185,16 @@ export class AdminUsuarioMetricasComponent implements OnInit {
       );
     }
     this.isLoading.set(false);
+  }
+
+  protected mudarPaginaAssinaturas(pagina: number): void {
+    const total = this.metricas()?.assinaturas_historico.length ?? 0;
+    this.paginaAssinaturas.set(Math.max(0, Math.min(pagina, Math.max(0, Math.ceil(total / PAGE_SIZE) - 1))));
+  }
+
+  protected mudarPaginaPagamentos(pagina: number): void {
+    const total = this.metricas()?.pagamentos.length ?? 0;
+    this.paginaPagamentos.set(Math.max(0, Math.min(pagina, Math.max(0, Math.ceil(total / PAGE_SIZE) - 1))));
   }
 
   // ---- Formatação ----

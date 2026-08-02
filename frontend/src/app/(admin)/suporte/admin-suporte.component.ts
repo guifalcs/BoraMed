@@ -25,6 +25,7 @@ import {
   X,
 } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
 import { NotificationService } from '../../core/services/notification.service';
 import { SuporteService } from '../../core/services/suporte.service';
 import type {
@@ -36,11 +37,12 @@ import { CATEGORIA_LABELS, STATUS_LABELS } from '../../core/models/suporte.types
 
 type PainelAtivo = 'tickets' | 'faq';
 type FiltroStatus = 'todos' | TicketStatus;
+const FAQ_PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-admin-suporte',
   standalone: true,
-  imports: [FormsModule, NgClass, UiIconComponent],
+  imports: [FormsModule, NgClass, UiIconComponent, AdminPaginationComponent],
   templateUrl: './admin-suporte.component.html',
   styleUrl: './admin-suporte.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,6 +81,11 @@ export class AdminSuporteComponent {
   protected readonly reabrindoTicket = signal(false);
 
   protected readonly faqItems = this.suporteService.faqItems;
+  protected readonly paginaFaq = signal(0);
+  protected readonly faqPagina = computed(() => {
+    const inicio = this.paginaFaq() * FAQ_PAGE_SIZE;
+    return this.faqItems().slice(inicio, inicio + FAQ_PAGE_SIZE);
+  });
   protected readonly novoFaqPergunta = signal('');
   protected readonly novoFaqResposta = signal('');
   protected readonly novoFaqCategoria = signal('');
@@ -259,10 +266,16 @@ export class AdminSuporteComponent {
   protected async deletarFaq(id: string): Promise<void> {
     const result = await this.suporteService.adminDeletarFaq(id);
     if (result.ok) {
+      this.mudarPaginaFaq(this.paginaFaq());
       this.toast.success('FAQ removida.');
     } else {
       this.toast.error('Erro ao remover FAQ.');
     }
+  }
+
+  protected mudarPaginaFaq(pagina: number): void {
+    const totalPaginas = Math.max(1, Math.ceil(this.faqItems().length / FAQ_PAGE_SIZE));
+    this.paginaFaq.set(Math.max(0, Math.min(pagina, totalPaginas - 1)));
   }
 
   protected formatarData(iso: string): string {

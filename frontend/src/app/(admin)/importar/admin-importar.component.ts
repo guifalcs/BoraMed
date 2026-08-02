@@ -21,6 +21,9 @@ import {
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
+
+const PREVIEW_PAGE_SIZE = 20;
 
 // ──── Questões ────
 
@@ -594,7 +597,7 @@ function parseTemaBloco(
 @Component({
   selector: 'app-admin-importar',
   standalone: true,
-  imports: [FormsModule, UiIconComponent, ImagemProtegidaPipe, AsyncPipe],
+  imports: [FormsModule, UiIconComponent, ImagemProtegidaPipe, AsyncPipe, AdminPaginationComponent],
   templateUrl: './admin-importar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -618,6 +621,19 @@ export class AdminImportarComponent implements OnInit {
   protected readonly questoes = signal<QuestaoParseada[]>([]);
   protected readonly disciplinasParseadas = signal<DisciplinaParseada[]>([]);
   protected readonly temasParseados = signal<TemaParseado[]>([]);
+  protected readonly paginaPreview = signal(0);
+  protected readonly questoesPagina = computed(() => {
+    const inicio = this.paginaPreview() * PREVIEW_PAGE_SIZE;
+    return this.questoes().slice(inicio, inicio + PREVIEW_PAGE_SIZE);
+  });
+  protected readonly disciplinasPagina = computed(() => {
+    const inicio = this.paginaPreview() * PREVIEW_PAGE_SIZE;
+    return this.disciplinasParseadas().slice(inicio, inicio + PREVIEW_PAGE_SIZE);
+  });
+  protected readonly temasPagina = computed(() => {
+    const inicio = this.paginaPreview() * PREVIEW_PAGE_SIZE;
+    return this.temasParseados().slice(inicio, inicio + PREVIEW_PAGE_SIZE);
+  });
 
   protected readonly disciplinas = signal<AdminDisciplina[]>([]);
   protected readonly temasExistentes = signal<AdminTema[]>([]);
@@ -641,6 +657,17 @@ export class AdminImportarComponent implements OnInit {
 
   protected readonly validas = computed(() => this.itensParseados().filter((i) => i.valida).length);
   protected readonly invalidas = computed(() => this.itensParseados().filter((i) => !i.valida).length);
+
+  protected mudarPaginaPreview(pagina: number): void {
+    const total = this.itensParseados().length;
+    const totalPaginas = Math.max(1, Math.ceil(total / PREVIEW_PAGE_SIZE));
+    this.paginaPreview.set(Math.max(0, Math.min(pagina, totalPaginas - 1)));
+    this.expandido.set(null);
+  }
+
+  protected indicePreview(indexOnPage: number): number {
+    return this.paginaPreview() * PREVIEW_PAGE_SIZE + indexOnPage;
+  }
 
   protected readonly progressoPct = computed(() =>
     this.totalImportar() > 0 ? Math.round((this.progresso() / this.totalImportar()) * 100) : 0,
@@ -755,6 +782,7 @@ PARENT: Semiologia Cardiovascular
     this.questoes.set([]);
     this.disciplinasParseadas.set([]);
     this.temasParseados.set([]);
+    this.paginaPreview.set(0);
     this.etapa.set('input');
     this.expandido.set(null);
     this.promptAberto.set(false);
@@ -785,6 +813,8 @@ PARENT: Semiologia Cardiovascular
       }
     }
 
+    this.paginaPreview.set(0);
+    this.expandido.set(null);
     this.etapa.set('preview');
   }
 
@@ -802,6 +832,7 @@ PARENT: Semiologia Cardiovascular
 
   protected voltar(): void {
     this.etapa.set('input');
+    this.paginaPreview.set(0);
     this.expandido.set(null);
   }
 
@@ -926,6 +957,7 @@ PARENT: Semiologia Cardiovascular
     this.questoes.set([]);
     this.disciplinasParseadas.set([]);
     this.temasParseados.set([]);
+    this.paginaPreview.set(0);
     this.expandido.set(null);
     this.etapa.set('input');
   }

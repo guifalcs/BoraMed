@@ -9,6 +9,9 @@ import {
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatarCentavos, pagamentoStatusLabel } from '../../shared/utils/admin-labels.util';
+import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
+
+const PAGE_SIZE = 20;
 
 type JanelaIaKey = 'hoje' | 'd7' | 'd30' | 'total';
 const JANELAS_IA: { key: JanelaIaKey; label: string }[] = [
@@ -27,7 +30,7 @@ interface FinKpi {
 @Component({
   selector: 'app-admin-financeiro',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AdminPaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mx-auto max-w-6xl px-4 py-6">
@@ -84,7 +87,7 @@ interface FinKpi {
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                @for (p of pagamentos(); track p.id) {
+                @for (p of pagamentosPagina(); track p.id) {
                   <tr>
                     <td class="px-4 py-3 text-gray-600">{{ data(p.processado_em ?? p.criado_em) }}</td>
                     <td class="px-4 py-3 text-gray-900">{{ p.user_email ?? '—' }}</td>
@@ -109,6 +112,12 @@ interface FinKpi {
               </tbody>
             </table>
           </div>
+          <app-admin-pagination
+            [page]="paginaPagamentos()"
+            [totalItems]="pagamentos().length"
+            [pageSize]="PAGE_SIZE"
+            (pageChange)="mudarPaginaPagamentos($event)"
+          />
         }
 
         <!-- Gasto com IA (Aurora) -->
@@ -227,6 +236,12 @@ export class AdminFinanceiroComponent implements OnInit {
 
   readonly fin = signal<AdminFinanceiro | null>(null);
   readonly pagamentos = signal<AdminPagamento[]>([]);
+  readonly paginaPagamentos = signal(0);
+  readonly pagamentosPagina = computed(() => {
+    const inicio = this.paginaPagamentos() * PAGE_SIZE;
+    return this.pagamentos().slice(inicio, inicio + PAGE_SIZE);
+  });
+  readonly PAGE_SIZE = PAGE_SIZE;
   readonly ia = signal<AdminMetricasIa | null>(null);
   readonly janelaSel = signal<JanelaIaKey>('d30');
   readonly isLoading = signal(true);
@@ -275,9 +290,17 @@ export class AdminFinanceiroComponent implements OnInit {
     ]);
     if (fin.ok) this.fin.set(fin.data);
     else this.toast.error('Erro ao carregar dados financeiros.');
-    if (pags.ok) this.pagamentos.set(pags.data);
+    if (pags.ok) {
+      this.pagamentos.set(pags.data);
+      this.paginaPagamentos.set(0);
+    }
     if (ia.ok) this.ia.set(ia.data);
     this.isLoading.set(false);
+  }
+
+  mudarPaginaPagamentos(pagina: number): void {
+    const totalPaginas = Math.max(1, Math.ceil(this.pagamentos().length / PAGE_SIZE));
+    this.paginaPagamentos.set(Math.max(0, Math.min(pagina, totalPaginas - 1)));
   }
 
   /** Altura relativa da barra (0–100) proporcional ao pico de tokens da série. */

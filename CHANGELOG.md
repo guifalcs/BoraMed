@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-01 | Feature | Paginacao das tabelas do admin
+
+- Todas as tabelas de listagem do painel administrativo agora exibem controles
+  de paginação responsivos e consistentes: disciplinas, temas, campanhas,
+  destinatários, financeiro, FAQ, métricas detalhadas de usuário e previews de
+  importação.
+- O controle compartilhado mantém o intervalo visível, desabilita os limites
+  anterior/próxima e corrige páginas que ficaram inválidas após filtro, recarga
+  ou exclusão. Usuários, questões, provas, avisos, notificações e flashcards
+  preservam a paginação que já existia.
+- O modal de destinatários troca o antigo "carregar mais" por navegação de
+  páginas usando o `offset` da RPC, sem acumular e-mails de pessoas reais em
+  memória. O conteúdo completo das prévias continua disponível para importar o
+  lote inteiro.
+
 ## 2026-07-31 | Copy | sem commit
 
 - Atualizada a comunicação da landing page e do painel visual do login para destacar **+4k questões para treinar**.

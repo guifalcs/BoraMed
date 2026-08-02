@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -10,12 +11,15 @@ import { AdminService, AdminDisciplina } from '../../core/services/admin.service
 import { NotificationService } from '../../core/services/notification.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
 import { Pencil, Trash2 } from 'lucide-angular';
+
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-admin-disciplinas',
   standalone: true,
-  imports: [FormsModule, UiConfirmDialogComponent, UiIconComponent],
+  imports: [FormsModule, UiConfirmDialogComponent, UiIconComponent, AdminPaginationComponent],
   templateUrl: './admin-disciplinas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,6 +28,11 @@ export class AdminDisciplinasComponent implements OnInit {
   private readonly toast = inject(NotificationService);
 
   protected readonly disciplinas = signal<AdminDisciplina[]>([]);
+  protected readonly pagina = signal(0);
+  protected readonly disciplinasPagina = computed(() => {
+    const inicio = this.pagina() * PAGE_SIZE;
+    return this.disciplinas().slice(inicio, inicio + PAGE_SIZE);
+  });
   protected readonly isLoading = signal(true);
   protected readonly criando = signal(false);
   protected readonly processando = signal<string | null>(null);
@@ -50,10 +59,16 @@ export class AdminDisciplinasComponent implements OnInit {
     const result = await this.adminService.listarDisciplinas();
     if (result.ok) {
       this.disciplinas.set(result.data);
+      this.pagina.set(0);
     } else {
       this.toast.error('Erro ao carregar disciplinas.');
     }
     this.isLoading.set(false);
+  }
+
+  protected mudarPagina(pagina: number): void {
+    const totalPaginas = Math.max(1, Math.ceil(this.disciplinas().length / PAGE_SIZE));
+    this.pagina.set(Math.max(0, Math.min(pagina, totalPaginas - 1)));
   }
 
   async criar(): Promise<void> {
@@ -122,6 +137,7 @@ export class AdminDisciplinasComponent implements OnInit {
     const result = await this.adminService.deletarDisciplina(d.id);
     if (result.ok) {
       this.disciplinas.update((lista) => lista.filter((item) => item.id !== d.id));
+      this.mudarPagina(this.pagina());
       const { questoes_desvinculadas, temas_desvinculados } = result.data;
       this.toast.success(questoes_desvinculadas > 0 || temas_desvinculados > 0
         ? `Disciplina deletada. ${questoes_desvinculadas} questão(ões) e ${temas_desvinculados} tema(s) ficaram sem disciplina.`

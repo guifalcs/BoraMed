@@ -413,8 +413,8 @@ describe('AdminCampanhasComponent', () => {
   });
 
   it('carregar mais anexa a página seguinte usando o offset certo', async () => {
-    const primeira = { ok: true, data: { itens: [destinatario('a@x.com')], total: 2 } };
-    const segunda = { ok: true, data: { itens: [destinatario('b@x.com')], total: 2 } };
+    const primeira = { ok: true, data: { itens: [destinatario('a@x.com')], total: 400 } };
+    const segunda = { ok: true, data: { itens: [destinatario('b@x.com')], total: 400 } };
     const listar = vi.fn().mockResolvedValueOnce(primeira).mockResolvedValueOnce(segunda);
     const { comp } = await setup({ listarDestinatariosCampanha: listar });
 
@@ -423,8 +423,8 @@ describe('AdminCampanhasComponent', () => {
 
     await comp.carregarMaisDestinatarios();
 
-    expect(listar).toHaveBeenLastCalledWith('camp-1', null, 200, 1);
-    expect(comp.destinatarios().map((d) => d.email)).toEqual(['a@x.com', 'b@x.com']);
+    expect(listar).toHaveBeenLastCalledWith('camp-1', null, 200, 200);
+    expect(comp.destinatarios().map((d) => d.email)).toEqual(['b@x.com']);
     expect(comp.temMaisDestinatarios()).toBe(false);
   });
 

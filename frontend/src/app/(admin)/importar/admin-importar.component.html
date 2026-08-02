@@ -112,14 +112,14 @@
           </tr>
         </thead>
         <tbody>
-          @for (q of questoes(); track $index; let i = $index) {
+          @for (q of questoesPagina(); track $index; let i = $index) {
             <tr
               class="questao-row"
               [class.questao-row--invalida]="!q.valida"
-              [class.questao-row--expanded]="expandido() === i"
-              (click)="toggleExpand(i)"
+              [class.questao-row--expanded]="expandido() === indicePreview(i)"
+              (click)="toggleExpand(indicePreview(i))"
             >
-              <td class="num-cell">{{ i + 1 }}</td>
+              <td class="num-cell">{{ indicePreview(i) + 1 }}</td>
               <td class="enunciado-cell">{{ enunciadoCurto(q.enunciado) }}</td>
               <td>
                 <span class="format-badge format-badge--{{ q.formato }}">
@@ -138,7 +138,7 @@
               </td>
             </tr>
 
-            @if (expandido() === i) {
+            @if (expandido() === indicePreview(i)) {
               <tr class="detail-row">
                 <td colspan="7">
                   <div class="detail-body">
@@ -198,6 +198,12 @@
         </tbody>
       </table>
     </div>
+    <app-admin-pagination
+      [page]="paginaPreview()"
+      [totalItems]="questoes().length"
+      [pageSize]="20"
+      (pageChange)="mudarPaginaPreview($event)"
+    />
   }
 
   <!-- Preview: Disciplinas -->
@@ -214,9 +220,9 @@
           </tr>
         </thead>
         <tbody>
-          @for (d of disciplinasParseadas(); track $index; let i = $index) {
+          @for (d of disciplinasPagina(); track $index; let i = $index) {
             <tr class="questao-row" [class.questao-row--invalida]="!d.valida">
-              <td class="num-cell">{{ i + 1 }}</td>
+              <td class="num-cell">{{ indicePreview(i) + 1 }}</td>
               <td><strong>{{ d.sigla || '—' }}</strong></td>
               <td class="enunciado-cell">{{ d.nome || '—' }}</td>
               <td>
@@ -240,6 +246,12 @@
         </tbody>
       </table>
     </div>
+    <app-admin-pagination
+      [page]="paginaPreview()"
+      [totalItems]="disciplinasParseadas().length"
+      [pageSize]="20"
+      (pageChange)="mudarPaginaPreview($event)"
+    />
   }
 
   <!-- Preview: Temas -->
@@ -256,9 +268,9 @@
           </tr>
         </thead>
         <tbody>
-          @for (t of temasParseados(); track $index; let i = $index) {
+          @for (t of temasPagina(); track $index; let i = $index) {
             <tr class="questao-row" [class.questao-row--invalida]="!t.valida">
-              <td class="num-cell">{{ i + 1 }}</td>
+              <td class="num-cell">{{ indicePreview(i) + 1 }}</td>
               <td class="enunciado-cell">{{ t.nome || '—' }}</td>
               <td>{{ t.disciplinaDisplay }}</td>
               <td>
@@ -285,6 +297,12 @@
         </tbody>
       </table>
     </div>
+    <app-admin-pagination
+      [page]="paginaPreview()"
+      [totalItems]="temasParseados().length"
+      [pageSize]="20"
+      (pageChange)="mudarPaginaPreview($event)"
+    />
   }
 }
 

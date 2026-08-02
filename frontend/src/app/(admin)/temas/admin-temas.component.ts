@@ -12,8 +12,11 @@ import { NotificationService } from '../../core/services/notification.service';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiSelectComponent, SelectOption } from '../../shared/components/ui/select/ui-select.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
 import { UiCheckboxComponent } from '../../shared/components/ui/checkbox/ui-checkbox.component';
 import { Pencil, Trash2 } from 'lucide-angular';
+
+const PAGE_SIZE = 20;
 
 const DATA_CURTA_FMT = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -28,7 +31,7 @@ const TIPOS_PROVA: readonly TipoProvaOpcao[] = [
 @Component({
   selector: 'app-admin-temas',
   standalone: true,
-  imports: [FormsModule, UiConfirmDialogComponent, UiSelectComponent, UiIconComponent, UiCheckboxComponent],
+  imports: [FormsModule, UiConfirmDialogComponent, UiSelectComponent, UiIconComponent, UiCheckboxComponent, AdminPaginationComponent],
   templateUrl: './admin-temas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,6 +40,11 @@ export class AdminTemasComponent implements OnInit {
   private readonly toast = inject(NotificationService);
 
   protected readonly temas = signal<AdminTema[]>([]);
+  protected readonly pagina = signal(0);
+  protected readonly temasPagina = computed(() => {
+    const inicio = this.pagina() * PAGE_SIZE;
+    return this.temas().slice(inicio, inicio + PAGE_SIZE);
+  });
   protected readonly isLoading = signal(true);
   protected readonly criando = signal(false);
   protected readonly processando = signal<string | null>(null);
@@ -79,10 +87,16 @@ export class AdminTemasComponent implements OnInit {
     const result = await this.adminService.listarTemas();
     if (result.ok) {
       this.temas.set(result.data);
+      this.pagina.set(0);
     } else {
       this.toast.error('Erro ao carregar temas.');
     }
     this.isLoading.set(false);
+  }
+
+  protected mudarPagina(pagina: number): void {
+    const totalPaginas = Math.max(1, Math.ceil(this.temas().length / PAGE_SIZE));
+    this.pagina.set(Math.max(0, Math.min(pagina, totalPaginas - 1)));
   }
 
   async criar(): Promise<void> {

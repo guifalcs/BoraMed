@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   contentChildren,
+  effect,
   input,
   model,
   output,
@@ -33,6 +34,14 @@ export interface SortState {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataTableComponent<T extends object> {
+  constructor() {
+    effect(() => {
+      const totalPages = this.totalPages();
+      const page = Math.max(1, Math.min(this.currentPage(), totalPages));
+      if (page !== this.currentPage()) this.currentPage.set(page);
+    });
+  }
+
   /** Column definitions (used when no ng-template columns are projected) */
   columns = input<DataTableColumn[]>([]);
 
@@ -124,16 +133,21 @@ export class DataTableComponent<T extends object> {
   /** Total pages */
   protected readonly totalPages = computed(() => {
     if (!this.paginated()) return 1;
-    return Math.max(1, Math.ceil(this.sortedData().length / this.pageSize()));
+    return Math.max(1, Math.ceil(this.sortedData().length / Math.max(1, this.pageSize())));
   });
+
+  protected readonly effectivePage = computed(() =>
+    Math.max(1, Math.min(this.currentPage(), this.totalPages())),
+  );
 
   /** Paginated data slice */
   protected readonly paginatedData = computed<T[]>(() => {
     const sorted = this.sortedData();
     if (!this.paginated()) return sorted;
 
-    const start = (this.currentPage() - 1) * this.pageSize();
-    return sorted.slice(start, start + this.pageSize());
+    const size = Math.max(1, this.pageSize());
+    const start = (this.effectivePage() - 1) * size;
+    return sorted.slice(start, start + size);
   });
 
   /** Total filtered items count */
@@ -143,8 +157,9 @@ export class DataTableComponent<T extends object> {
   protected readonly rangeLabel = computed(() => {
     const total = this.totalItems();
     if (total === 0) return '0 itens';
-    const start = (this.currentPage() - 1) * this.pageSize() + 1;
-    const end = Math.min(this.currentPage() * this.pageSize(), total);
+    const size = Math.max(1, this.pageSize());
+    const start = (this.effectivePage() - 1) * size + 1;
+    const end = Math.min(this.effectivePage() * size, total);
     return `${start}–${end} de ${total}`;
   });
 
@@ -168,6 +183,7 @@ export class DataTableComponent<T extends object> {
     }
 
     this.sortState.set({ column: direction ? column.key : null, direction });
+    this.currentPage.set(1);
   }
 
   protected onRowClick(row: T): void {
