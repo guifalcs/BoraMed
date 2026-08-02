@@ -323,12 +323,15 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   UI identifica esses casos pelo `assinatura.mp_preapproval_id`, não pelo
   `plano.recorrente`.
 * **Planos**: definidos na tabela `plano`, com `tier` (`essencial`/`avancado`),
-  preço e frequência por linha, ajustáveis sem deploy. Catálogo vigente:
+  preço e frequência por linha, ajustáveis sem deploy — ou seja, o preço muda
+  por `UPDATE` direto em produção, sem passar por migration. Catálogo em
+  2026-08-02 (**confirmar em produção antes de usar estes números** — é dado,
+  não schema, e já mudou pelo menos uma vez sem deixar rastro em migration):
 
   | slug | tier | preço | período |
   |---|---|---|---|
-  | `essencial-mensal` | essencial | R$ 29,90 | 1 mês |
-  | `essencial-semestral` | essencial | R$ 119,40 | 6 meses |
+  | `essencial-mensal` | essencial | R$ 23,90 | 1 mês |
+  | `essencial-semestral` | essencial | R$ 83,40 | 6 meses |
   | `mensal` | avancado | R$ 69,90 | 1 mês |
   | `semestral` | avancado | R$ 299,40 | 6 meses |
 
@@ -339,7 +342,9 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   > A landing (`(marketing)/landing/landing.component.ts`) ainda repete esses
   > preços em constantes, com `TODO(integração)` para passar a ler
   > `listarPlanos()`. Ao mexer em preço, alterar os dois lugares até o TODO ser
-  > resolvido.
+  > resolvido — e checar produção primeiro: preço muda por `UPDATE`, sem
+  > migration, então o histórico de commits não é fonte confiável do valor
+  > atual.
 * **Estados da assinatura** (espelham o Mercado Pago): `pending` →
   `authorized` (ativa) → `paused`/`cancelled`. **Fonte da verdade: webhook do
   MP** (a resposta síncrona do checkout apenas antecipa o mesmo sync,

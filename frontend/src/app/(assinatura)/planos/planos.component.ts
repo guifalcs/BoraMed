@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Check, LogOut, ShieldCheck, Sparkles, X, type LucideIconData } from 'lucide-angular';
+import { ArrowLeft, Check, LogOut, ShieldCheck, Sparkles, X, type LucideIconData } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
@@ -32,7 +33,7 @@ const CABECALHO_POR_ORIGEM: Record<string, { titulo: string; subtitulo: string }
   },
   flashcards: {
     titulo: 'Flashcards no plano Avançado',
-    subtitulo: 'Baralhos oficiais e da comunidade para revisão ativa.',
+    subtitulo: 'Decks oficiais e da comunidade para revisão ativa.',
   },
   'simulado-personalizado': {
     titulo: 'Monte seus próprios simulados',
@@ -67,7 +68,7 @@ const ESSENCIAL_BENEFICIOS: readonly string[] = [
 ];
 
 const ESSENCIAL_NAO_INCLUSO: readonly string[] = [
-  'Montar simulados personalizados',
+  'Simulados processuais e de laboratório personalizados',
   'Materiais de estudo',
   'Flashcards',
 ];
@@ -123,6 +124,15 @@ function calcularPercentualEconomia(mensal: Plano, semestral: Plano): number {
 
       <div class="flex-1 px-4 py-12">
         <div class="mx-auto max-w-5xl">
+          <button
+            type="button"
+            (click)="voltar()"
+            class="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700"
+          >
+            <app-ui-icon [icon]="voltarIcon" [size]="16" />
+            Voltar
+          </button>
+
           <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-gray-900">{{ cabecalho().titulo }}</h1>
             <p class="mt-2 text-gray-600">{{ cabecalho().subtitulo }}</p>
@@ -327,6 +337,7 @@ export class PlanosComponent implements OnInit {
   private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
 
   readonly profile = this.profileService.profile;
 
@@ -342,6 +353,7 @@ export class PlanosComponent implements OnInit {
     'radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%),' +
     'linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%)';
 
+  readonly voltarIcon: LucideIconData = ArrowLeft;
   readonly checkIcon: LucideIconData = Check;
   readonly xIcon: LucideIconData = X;
   readonly logoutIcon: LucideIconData = LogOut;
@@ -456,6 +468,15 @@ export class PlanosComponent implements OnInit {
   assinar(plano: Plano): void {
     // Checkout embutido: o pagamento acontece dentro da plataforma.
     this.router.navigate(['/checkout', plano.slug]);
+  }
+
+  /** Volta para onde o usuário estava; sem histórico na aba, cai no dashboard. */
+  protected voltar(): void {
+    if (history.length > 1) {
+      this.location.back();
+    } else {
+      void this.router.navigateByUrl('/dashboard');
+    }
   }
 
   async sair(): Promise<void> {

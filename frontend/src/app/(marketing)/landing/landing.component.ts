@@ -356,7 +356,7 @@ export class LandingComponent implements OnDestroy {
       slug: 'essencial-mensal',
       name: 'Essencial',
       tagline: 'Provas nacionais até o 8º período',
-      price: 'R$ 29,90',
+      price: 'R$ 23,90',
       period: '/mês',
       note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
       ctaLabel: 'Começar no Essencial',
@@ -369,11 +369,11 @@ export class LandingComponent implements OnDestroy {
       slug: 'essencial-semestral',
       name: 'Essencial',
       tagline: 'Provas nacionais até o 8º período',
-      price: 'R$ 19,90',
+      price: 'R$ 13,90',
       period: '/mês',
-      note: 'R$ 119,40 no semestre, em até 6x sem juros.',
+      note: 'R$ 83,40 no semestre, em até 6x sem juros.',
       economy: 'R$ 60,00',
-      anchorPrice: 'R$ 179,40',
+      anchorPrice: 'R$ 143,40',
       anchorNote: 'preço de 6 meses no plano mensal',
       ctaLabel: 'Garantir 6 meses com desconto',
       features: LandingComponent.ESSENCIAL_FEATURES,
@@ -413,11 +413,11 @@ export class LandingComponent implements OnDestroy {
   /** Semestral é o ciclo padrão — melhor custo-benefício e maior conversão. */
   protected readonly cicloSelecionado = signal<PlanCycle>('semestral');
 
-  // -33% é o maior desconto do semestral (Essencial: R$ 119,40 contra
-  // R$ 179,40 de 6 meses avulsos). O Avançado economiza 29%.
+  // -42% é o maior desconto do semestral (Essencial: R$ 83,40 contra
+  // R$ 143,40 de 6 meses avulsos). O Avançado economiza 29%.
   protected readonly cicloOptions: SegmentedToggleOption[] = [
     { value: 'mensal', label: 'Mensal' },
-    { value: 'semestral', label: 'Semestral', badge: '-33%' },
+    { value: 'semestral', label: 'Semestral', badge: '-42%' },
   ];
 
   /**

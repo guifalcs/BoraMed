@@ -32,16 +32,16 @@ export const PAYWALL_CONTEUDO: Record<PaywallContexto, PaywallConteudo> = {
     beneficios: [
       'Biblioteca completa de materiais em PDF',
       'Organizados por disciplina e por período',
-      'Leitura direto no navegador, sem baixar nada',
+      'Leitura direto no navegador',
     ],
     fechamento: 'Incluso no plano Avançado.',
     cta: 'Ver planos',
   },
   flashcards: {
     titulo: 'Flashcards',
-    subtitulo: 'Revisão ativa com baralhos oficiais e da comunidade.',
+    subtitulo: 'Revisão ativa com decks oficiais e da comunidade.',
     beneficios: [
-      'Baralhos oficiais BoraMed prontos para estudar',
+      'Decks oficiais BoraMed prontos para estudar',
       'Crie os seus e compartilhe com a comunidade',
       'Revisão rápida entre um simulado e outro',
     ],
