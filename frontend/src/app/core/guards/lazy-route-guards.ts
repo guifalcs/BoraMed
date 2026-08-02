@@ -15,6 +15,13 @@ export const lazyGuestGuard: CanActivateFn = (route, state) => {
   ) as Promise<GuardResult>;
 };
 
+export const lazyRootRedirectGuard: CanActivateFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+  return import('./root-redirect.guard').then((m) =>
+    runInInjectionContext(injector, () => m.rootRedirectGuard(route, state)),
+  ) as Promise<GuardResult>;
+};
+
 export const lazyAdminGuard: CanActivateFn = (route, state) => {
   const injector = inject(EnvironmentInjector);
   return import('./admin.guard').then((m) =>

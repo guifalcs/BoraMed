@@ -91,6 +91,7 @@ export class AuthService implements OnDestroy {
       const { data } = await this.supabase.auth.getSession();
       const user = data.session?.user ?? null;
       this._user.set(user);
+      this._isRecovery.set(this.hasRecoveryAMR(data.session?.access_token));
       if (isPlatformBrowser(this.platformId) && user) {
         try {
           const saved = sessionStorage.getItem(this.ADMIN_SESSION_KEY);

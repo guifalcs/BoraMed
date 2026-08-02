@@ -89,6 +89,23 @@ describe('AuthService', () => {
       expect(service.user()).toBeNull();
       expect(service.isReady()).toBe(true);
     });
+
+    it('identifica sessao de recovery a partir do token inicial', async () => {
+      const recoveryToken =
+        'header.eyJhbXIiOlt7Im1ldGhvZCI6InJlY292ZXJ5In1dfQ.signature';
+      supabaseMock.client.auth.getSession.mockResolvedValue({
+        data: {
+          session: {
+            access_token: recoveryToken,
+            user: { id: 'u1', email: 'user@example.com' },
+          },
+        },
+      });
+
+      await service.initialize();
+
+      expect(service.isRecoverySession()).toBe(true);
+    });
   });
 
   describe('login()', () => {

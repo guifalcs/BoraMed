@@ -4,6 +4,7 @@ import {
   lazyAuthGuard,
   lazyBannedAccountGuard,
   lazyGuestGuard,
+  lazyRootRedirectGuard,
   lazySubscriptionGuard,
   lazyTierAvancadoGuard,
 } from './core/guards/lazy-route-guards';
@@ -13,7 +14,9 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    canActivate: [oauthRedirectGuard],
+    // OAuth tem prioridade para que um `?code=` nunca seja interpretado como
+    // uma sessão comum e a landing não apareça durante o callback.
+    canActivate: [oauthRedirectGuard, lazyRootRedirectGuard],
     loadComponent: () =>
       import('./(marketing)/landing/landing.component').then((m) => m.LandingComponent),
   },

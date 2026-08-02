@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-02 | Feature | Redirecionamento rapido da rota raiz
+
+- A rota `/` agora consulta a sessao local de forma idempotente antes de
+  carregar a landing: usuarios autenticados seguem direto para `/dashboard`,
+  enquanto visitantes continuam vendo a landing normalmente.
+- O guard permanece lazy e nao cria uma tela de loading; o fluxo de recovery
+  continua direcionando para `/redefinir-senha`.
+- No acesso direto ao dominio, o SSR tambem redireciona pela sessao dos
+  cookies antes de renderizar a landing, eliminando o flash visual para quem
+  ja esta autenticado.
+- Adicionado fallback lazy na propria landing para entradas hidratadas pelo
+  SSR em que o guard de rota nao e reavaliado imediatamente no navegador.
+
 ## 2026-08-01 | Feature | Paginacao das tabelas do admin
 
 - Todas as tabelas de listagem do painel administrativo agora exibem controles

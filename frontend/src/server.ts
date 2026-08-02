@@ -30,6 +30,53 @@ app.use(
 );
 
 /**
+ * Redireciona a entrada direta para o dashboard antes de renderizar a landing
+ * quando já existe uma sessão nos cookies. O callback OAuth precisa passar
+ * pelo Angular para trocar o `code` antes dessa decisão.
+ */
+app.get('/', async (req: Request, res: Response, next) => {
+  if (req.query['code'] || req.query['error']) {
+    next();
+    return;
+  }
+
+  const cookiesToSet: { name: string; value: string; options: CookieOptionsWithName }[] = [];
+  const supabase = createServerClient(environment.supabaseUrl, environment.supabaseAnonKey, {
+    cookies: {
+      getAll: () => {
+        const parsed = parse(req.headers.cookie ?? '');
+        return Object.entries(parsed).map(([name, value]) => ({ name, value }));
+      },
+      setAll: (cookies) => {
+        cookiesToSet.push(...cookies);
+      },
+    },
+  });
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session?.user) {
+      next();
+      return;
+    }
+
+    const cookieHeaders = cookiesToSet.map(({ name, value, options }) => {
+      const { name: _n, ...serializeOpts } = options ?? {};
+      return serialize(name, value, serializeOpts as CookieSerializeOptions);
+    });
+    if (cookieHeaders.length > 0) {
+      res.setHeader('Set-Cookie', cookieHeaders);
+    }
+
+    res.redirect(302, jwtHasRecoveryAMR(session.access_token) ? '/redefinir-senha' : '/dashboard');
+  } catch {
+    // A falha na leitura da sessão não deve impedir a landing pública.
+    next();
+  }
+});
+
+/**
  * Auth callback — troca o PKCE code por sessão e seta cookie.
  * Intercepta antes do Angular SSR para que o redirect seja limpo.
  */

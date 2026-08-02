@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  EnvironmentInjector,
   NgZone,
   OnDestroy,
   afterNextRender,
@@ -8,7 +9,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { SeoService } from '../../core/seo/seo.service';
 import { SITE_URL } from '../../core/seo/seo.config';
@@ -124,6 +125,8 @@ interface FaqItem {
 export class LandingComponent implements OnDestroy {
   private readonly seo = inject(SeoService);
   private readonly zone = inject(NgZone);
+  private readonly injector = inject(EnvironmentInjector);
+  private readonly router = inject(Router);
   private scrollListener: (() => void) | null = null;
   private scrollFrame = 0;
 
@@ -501,6 +504,7 @@ export class LandingComponent implements OnDestroy {
   constructor() {
     this.configureSeo();
     afterNextRender(() => {
+      void this.redirectAuthenticatedRoot();
       requestAnimationFrame(() => this.heroReady.set(true));
 
       this.zone.runOutsideAngular(() => {
@@ -515,6 +519,29 @@ export class LandingComponent implements OnDestroy {
         window.addEventListener('scroll', this.scrollListener, { passive: true });
       });
     });
+  }
+
+  /**
+   * Fallback para a hidratação SSR: em algumas entradas diretas o HTML
+   * pré-renderizado da landing já foi montado antes de os guards rodarem.
+   * Mantém a autenticação fora do bundle inicial e só age enquanto a URL é a
+   * raiz, sem interferir em OAuth ou em navegações internas.
+   */
+  private async redirectAuthenticatedRoot(): Promise<void> {
+    if (this.router.url !== '/' || window.location.search) return;
+
+    const { AuthService } = await import('../../core/services/auth.service');
+    const auth = this.injector.get(AuthService);
+    await auth.initialize();
+
+    if (this.router.url !== '/') return;
+    if (auth.isRecoverySession()) {
+      await this.router.navigateByUrl('/redefinir-senha', { replaceUrl: true });
+      return;
+    }
+    if (auth.isAuthenticated()) {
+      await this.router.navigateByUrl('/dashboard', { replaceUrl: true });
+    }
   }
 
   ngOnDestroy(): void {
