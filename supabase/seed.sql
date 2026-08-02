@@ -209,3 +209,88 @@ INSERT INTO public.flashcard_cards (id, deck_id, posicao, frente, verso, frente_
 ('f1ca0000-0000-0000-0000-000000000047','f1a90000-0000-0000-0000-000000000004',10,'O que caracteriza uma glândula exócrina?','Libera secreções através de ductos para superfícies epiteliais ou cavidades.',NULL),
 ('f1ca0000-0000-0000-0000-000000000048','f1a90000-0000-0000-0000-000000000004',11,'O que caracteriza uma glândula endócrina?','Libera secreções (hormônios) diretamente na corrente sanguínea, sem ductos.',NULL)
 ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- Simulados de teste para o free tier (2 nacionais + 1 bloqueado).
+-- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção — a prova
+-- SOI I N1 2025.2 é conteúdo real, seedado por migration; classificá-la aqui
+-- (formato/publicada) é só para o dashboard local ter treino nacional visível
+-- sem afetar o estado dela em produção, que segue por decisão do time de
+-- conteúdo via /admin/provas.
+-- ============================================================================
+
+-- Corrige de quebra o qtd_questoes=0 herdado de antes da coluna existir —
+-- sem isso o botão "Iniciar" fica desabilitado mesmo com 13 questões ativas.
+UPDATE public.prova
+   SET formato = 'nacional',
+       rede = 'afya',
+       subtipo = 'N1',
+       publicada = true,
+       qtd_questoes = (SELECT count(*) FROM public.prova_questao pq WHERE pq.prova_id = prova.id)
+ WHERE id = 'bbbbbbbb-0001-0000-0000-000000000001';
+
+-- Segundo treino nacional: reaproveita as 4 questões de Cardiologia (2
+-- múltipla escolha + 2 discursivas) definidas acima, sem prova até aqui —
+-- testa formato misto e a correção da Aurora nas discursivas.
+INSERT INTO public.prova (id, nome, tipo, origem, formato, rede, periodo, subtipo, publicada, arquivada, disciplina_id)
+VALUES (
+  'bbbbbbbb-0004-0000-0000-000000000004',
+  'Treino Nacional — Cardiologia', 'autoral', 'autoral', 'nacional', 'afya',
+  5, 'N1', true, false, 'aaaa0000-0000-0000-0000-000000000001'
+)
+ON CONFLICT (id) DO UPDATE SET
+  formato = excluded.formato, rede = excluded.rede, publicada = excluded.publicada;
+
+INSERT INTO public.prova_questao (prova_id, questao_id, ordem)
+SELECT 'bbbbbbbb-0004-0000-0000-000000000004', id, row_number() OVER (ORDER BY criado_em)
+FROM public.questao
+WHERE id IN (
+  'cccc0000-0000-0000-0000-000000000001', 'cccc0000-0000-0000-0000-000000000002',
+  'dddd0000-0000-0000-0000-000000000001', 'dddd0000-0000-0000-0000-000000000002'
+)
+ON CONFLICT DO NOTHING;
+
+UPDATE public.prova
+   SET qtd_questoes = (SELECT count(*) FROM public.prova_questao pq WHERE pq.prova_id = prova.id)
+ WHERE id = 'bbbbbbbb-0004-0000-0000-000000000004';
+
+-- Duas questões processuais mínimas — só para exercitar o bloqueio de nível
+-- (gratuito/essencial não acessam formato != 'nacional'). O conteúdo nunca
+-- chega a ser exibido: iniciar_tentativa recusa antes de montar a prova.
+INSERT INTO public.questao (id, enunciado, formato, tipo_questao, status, explicacao, disciplina_id) VALUES
+('eeee0000-0000-0000-0000-000000000001',
+ 'Paciente de 45 anos chega à consulta relatando dor torácica há 2 horas. Qual é a primeira conduta na anamnese direcionada?',
+ 'multipla_escolha', 'processual', 'ativa',
+ 'A caracterização da dor (início, localização, irradiação, fatores de melhora/piora) precede o exame físico e orienta as hipóteses diagnósticas.',
+ 'aaaa0000-0000-0000-0000-000000000001'),
+('eeee0000-0000-0000-0000-000000000002',
+ 'Durante o exame físico cardiovascular, qual é a sequência correta de inspeção, palpação e ausculta?',
+ 'multipla_escolha', 'processual', 'ativa',
+ 'A sequência semiológica clássica é inspeção, palpação, percussão e ausculta, preservando achados que a manipulação poderia mascarar.',
+ 'aaaa0000-0000-0000-0000-000000000001')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem) VALUES
+('eeee0000-0000-0000-0000-000000000001', 'A', 'Caracterizar a dor: início, localização, irradiação e fatores de melhora/piora', true, 1),
+('eeee0000-0000-0000-0000-000000000001', 'B', 'Solicitar exames laboratoriais imediatamente', false, 2),
+('eeee0000-0000-0000-0000-000000000001', 'C', 'Iniciar o exame físico antes de qualquer pergunta', false, 3),
+('eeee0000-0000-0000-0000-000000000002', 'A', 'Ausculta, palpação, inspeção', false, 1),
+('eeee0000-0000-0000-0000-000000000002', 'B', 'Inspeção, palpação, ausculta', true, 2),
+('eeee0000-0000-0000-0000-000000000002', 'C', 'Palpação, ausculta, inspeção', false, 3)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.prova (id, nome, tipo, origem, formato, rede, periodo, publicada, arquivada, disciplina_id)
+VALUES (
+  'bbbbbbbb-0003-0000-0000-000000000003',
+  'Simulado Processual — Anamnese e Exame Físico', 'autoral', 'autoral', 'processual', 'afya',
+  1, true, false, 'aaaa0000-0000-0000-0000-000000000001'
+)
+ON CONFLICT (id) DO UPDATE SET
+  nome = excluded.nome, formato = excluded.formato, publicada = excluded.publicada;
+
+INSERT INTO public.prova_questao (prova_id, questao_id, ordem) VALUES
+('bbbbbbbb-0003-0000-0000-000000000003', 'eeee0000-0000-0000-0000-000000000001', 1),
+('bbbbbbbb-0003-0000-0000-000000000003', 'eeee0000-0000-0000-0000-000000000002', 2)
+ON CONFLICT DO NOTHING;
+
+UPDATE public.prova SET qtd_questoes = 2 WHERE id = 'bbbbbbbb-0003-0000-0000-000000000003';
