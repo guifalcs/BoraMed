@@ -49,8 +49,13 @@ UPDATE public.profiles
        nome_completo = COALESCE(nome_completo, 'Admin Teste')
  WHERE email = 'teste@boramed.com';
 
+-- ativo=false: existe só para dar plano_id a uma assinatura de teste (abaixo),
+-- nunca para aparecer em listarPlanos(). Ativo, colidia com o Avançado Mensal
+-- real: mesmo (tier='avancado', frequency=1) por default de coluna, e o
+-- .find() de planos.component.ts pegava o primeiro que casasse — às vezes
+-- este de R$10, distorcendo o cálculo de desconto do semestral.
 INSERT INTO public.plano (id, slug, nome, preco_centavos, ativo)
-VALUES ('99999999-0000-0000-0000-000000000001','plano-dev-local','Plano Dev Local', 1000, true)
+VALUES ('99999999-0000-0000-0000-000000000001','plano-dev-local','Plano Dev Local', 1000, false)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.assinatura (user_id, plano_id, status, proxima_cobranca, data_inicio)
