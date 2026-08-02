@@ -211,6 +211,19 @@ INSERT INTO public.flashcard_cards (id, deck_id, posicao, frente, verso, frente_
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
+-- Preço do plano Essencial: alinha o banco local ao valor real de produção.
+-- As linhas essencial-mensal/essencial-semestral vêm de uma migration já
+-- aplicada (20260717140000_plano_tier_essencial) com o preço de quando foram
+-- criadas. Produção teve o preço ajustado depois por UPDATE direto (preço é
+-- dado, muda sem migration — ver docs/business-rules.md) e o banco local
+-- nunca foi re-sincronizado à mão, causando as telas autenticadas (/planos,
+-- /checkout) a mostrar R$29,90/R$119,40 em vez dos R$23,90/R$83,40 reais.
+-- NUNCA aplicar em produção — lá o preço já está correto.
+-- ============================================================================
+UPDATE public.plano SET preco_centavos = 2390 WHERE slug = 'essencial-mensal';
+UPDATE public.plano SET preco_centavos = 8340 WHERE slug = 'essencial-semestral';
+
+-- ============================================================================
 -- Simulados de teste para o free tier (2 nacionais + 1 bloqueado).
 -- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção — a prova
 -- SOI I N1 2025.2 é conteúdo real, seedado por migration; classificá-la aqui
