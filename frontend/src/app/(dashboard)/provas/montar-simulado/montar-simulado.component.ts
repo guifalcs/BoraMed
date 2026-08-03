@@ -18,6 +18,8 @@ import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
+import { UiMultiselectComponent } from '../../../shared/components/ui/multiselect/ui-multiselect.component';
+import type { SelectOption } from '../../../shared/components/ui/select/ui-select.component';
 import { ModoSelectorComponent } from '../../../shared/components/modo-selector/modo-selector.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 
@@ -79,7 +81,13 @@ const FORMATOS: OpcaoFormato[] = [
 @Component({
   selector: 'app-montar-simulado',
   standalone: true,
-  imports: [UiButtonComponent, UiIconComponent, ModoSelectorComponent, PageHeaderComponent],
+  imports: [
+    UiButtonComponent,
+    UiIconComponent,
+    UiMultiselectComponent,
+    ModoSelectorComponent,
+    PageHeaderComponent,
+  ],
   templateUrl: './montar-simulado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -113,6 +121,7 @@ export class MontarSimuladoComponent {
   protected readonly loadError = signal<string | null>(null);
   protected readonly temasSelecionados = signal<Set<string>>(new Set());
   protected readonly buscaTema = signal('');
+  protected readonly periodosSelecionados = signal<Set<number>>(new Set());
   protected readonly quantidade = signal(10);
   protected readonly modoSelecionado = signal<ModoProva>('simulado');
   protected readonly origemRecomendacao = signal<string | null>(null);
@@ -147,10 +156,55 @@ export class MontarSimuladoComponent {
     this.temas().filter((t) => t.qtd_questoes > 0),
   );
 
+  protected readonly temasFiltradosComQuestoes = computed(() =>
+    this.temasFiltrados().filter((t) => t.qtd_questoes > 0),
+  );
+
+  protected readonly periodosDisponiveis = computed(() => {
+    const periodos = new Set<number>();
+    for (const t of this.temas()) {
+      if (t.periodo != null) periodos.add(t.periodo);
+    }
+    return Array.from(periodos).sort((a, b) => a - b);
+  });
+
+  protected readonly periodoOpcoes = computed<SelectOption[]>(() =>
+    this.periodosDisponiveis().map((p) => ({ value: p, label: `${p}º período` })),
+  );
+
+  protected readonly periodosSelecionadosValues = computed<(string | number)[]>(() =>
+    Array.from(this.periodosSelecionados()),
+  );
+
   protected readonly temasFiltrados = computed(() => {
     const busca = normalizarTexto(this.buscaTema());
-    if (!busca) return this.temas();
-    return this.temas().filter((t) => normalizarTexto(t.nome).includes(busca));
+    const periodos = this.periodosSelecionados();
+    return this.temas().filter((t) => {
+      if (busca && !normalizarTexto(t.nome).includes(busca)) return false;
+      if (periodos.size > 0 && (t.periodo == null || !periodos.has(t.periodo))) return false;
+      return true;
+    });
+  });
+
+  protected readonly temasAgrupados = computed(() => {
+    const grupos = new Map<number | null, TemaComContagem[]>();
+    for (const tema of this.temasFiltrados()) {
+      const chave = tema.periodo;
+      const grupo = grupos.get(chave);
+      if (grupo) grupo.push(tema);
+      else grupos.set(chave, [tema]);
+    }
+    return Array.from(grupos.entries())
+      .sort(([a], [b]) => {
+        if (a == null) return 1;
+        if (b == null) return -1;
+        return a - b;
+      })
+      .map(([periodo, temas]) => ({
+        periodo,
+        label: periodo != null ? `${periodo}º período` : 'Sem período definido',
+        temas,
+      }));
   });
 
   protected readonly resumoTemas = computed(() => {
@@ -305,9 +359,13 @@ export class MontarSimuladoComponent {
     this.temasSelecionados.set(new Set());
   }
 
+  protected onPeriodosChange(values: (string | number)[]): void {
+    this.periodosSelecionados.set(new Set(values.map(Number)));
+  }
+
   protected selecionarTodosComQuestoes(): void {
     this.erro.set(null);
-    const ids = this.temasComQuestoes().map((t) => t.id);
+    const ids = this.temasFiltradosComQuestoes().map((t) => t.id);
     this.temasSelecionados.set(new Set(ids));
   }
 

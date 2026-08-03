@@ -103,7 +103,7 @@
           }
         </h2>
         <div class="flex gap-3">
-          @if (!isLoadingTemas() && temasComQuestoes().length > 0 && temasSelecionados().size === 0) {
+          @if (!isLoadingTemas() && temasFiltradosComQuestoes().length > 0 && temasSelecionados().size === 0) {
             <button
               type="button"
               (click)="selecionarTodosComQuestoes()"
@@ -138,6 +138,19 @@
         />
       }
 
+      @if (!isLoadingTemas() && periodosDisponiveis().length > 1) {
+        <div class="mb-3 max-w-xs">
+          <app-ui-multiselect
+            label="Período"
+            name="periodo"
+            placeholder="Todos os períodos"
+            [options]="periodoOpcoes()"
+            [values]="periodosSelecionadosValues()"
+            (valuesChange)="onPeriodosChange($event)"
+          />
+        </div>
+      }
+
       @if (isLoadingTemas()) {
         <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]" aria-live="polite" aria-busy="true">
           <div class="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-3 text-sm font-medium text-[var(--color-text)]">
@@ -163,32 +176,37 @@
           @if (temasFiltrados().length === 0) {
             <p class="px-4 py-3 text-sm text-[var(--color-text-muted)]">Nenhum tema encontrado.</p>
           }
-          @for (tema of temasFiltrados(); track tema.id) {
-            <button
-              type="button"
-              (click)="toggleTema(tema.id)"
-              [class]="temasSelecionados().has(tema.id)
-                ? 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
-                : tema.qtd_questoes === 0
-                  ? 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] opacity-60'
-                  : 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 hover:bg-[var(--color-surface-2)] text-[var(--color-text)]'"
-            >
-              <span
+          @for (grupo of temasAgrupados(); track grupo.periodo) {
+            <div class="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {{ grupo.label }}
+            </div>
+            @for (tema of grupo.temas; track tema.id) {
+              <button
+                type="button"
+                (click)="toggleTema(tema.id)"
                 [class]="temasSelecionados().has(tema.id)
-                  ? 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-[var(--color-primary)] bg-[var(--color-primary)] text-white text-xs font-bold'
-                  : 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-[var(--color-border)]'"
+                  ? 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                  : tema.qtd_questoes === 0
+                    ? 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] opacity-60'
+                    : 'flex w-full items-center gap-3 border-b border-[var(--color-border)] px-4 py-2.5 text-left last:border-b-0 hover:bg-[var(--color-surface-2)] text-[var(--color-text)]'"
               >
-                @if (temasSelecionados().has(tema.id)) { ✓ }
-              </span>
-              <span class="flex-1 text-sm">{{ tema.nome }}</span>
-              <span
-                [class]="tema.qtd_questoes > 0
-                  ? 'rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]'
-                  : 'rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)] opacity-50'"
-              >
-                {{ tema.qtd_questoes }} {{ tema.qtd_questoes === 1 ? 'questão' : 'questões' }}
-              </span>
-            </button>
+                <span
+                  [class]="temasSelecionados().has(tema.id)
+                    ? 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-[var(--color-primary)] bg-[var(--color-primary)] text-white text-xs font-bold'
+                    : 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-[var(--color-border)]'"
+                >
+                  @if (temasSelecionados().has(tema.id)) { ✓ }
+                </span>
+                <span class="flex-1 text-sm">{{ tema.nome }}</span>
+                <span
+                  [class]="tema.qtd_questoes > 0
+                    ? 'rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]'
+                    : 'rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)] opacity-50'"
+                >
+                  {{ tema.qtd_questoes }} {{ tema.qtd_questoes === 1 ? 'questão' : 'questões' }}
+                </span>
+              </button>
+            }
           }
         </div>
       }
