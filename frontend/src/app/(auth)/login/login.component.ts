@@ -39,7 +39,7 @@ export class LoginComponent implements OnDestroy {
     this.seo.update({
       title: 'Entrar',
       description:
-        'Acesse sua conta no BoraMed e continue treinando com simulados de medicina e questões comentadas no modelo das avaliações.',
+        'Acesse sua conta no BoraMed e continue treinando com mais de 5 mil questões comentadas em simulados de medicina no modelo das avaliações.',
       path: '/login',
     });
   }

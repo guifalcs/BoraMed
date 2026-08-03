@@ -158,7 +158,7 @@ export class LandingComponent implements OnDestroy {
   ];
 
   protected readonly stats = [
-    { value: '+4k', label: 'questões para treinar' },
+    { value: '+5k', label: 'questões para treinar' },
     { value: '4', label: 'modos de treinar' },
     { value: '100%', label: 'no modelo da prova' },
   ] as const;
@@ -584,7 +584,7 @@ export class LandingComponent implements OnDestroy {
     this.seo.update({
       title: 'BoraMed | Simulados de medicina no modelo da Afya',
       description:
-        'Simulados de medicina autorais no modelo das avaliações da Afya, com diagnóstico por tema, correção de questões discursivas por IA (Aurora) e flashcards da comunidade. Comece a treinar hoje.',
+        'Mais de 5 mil questões em simulados de medicina autorais no modelo das avaliações da Afya, com diagnóstico por tema, correção de questões discursivas por IA (Aurora) e flashcards da comunidade. Comece a treinar hoje.',
       path: '/',
       titleHasBrand: true,
     });
@@ -604,7 +604,7 @@ export class LandingComponent implements OnDestroy {
       operatingSystem: 'Web',
       inLanguage: 'pt-BR',
       description:
-        'Plataforma independente de simulados de medicina com questões autorais no modelo das provas da Afya, incluindo correção de questões discursivas por IA (Aurora). Sem vínculo oficial com a Afya.',
+        'Plataforma independente de simulados de medicina com mais de 5 mil questões autorais no modelo das provas da Afya, incluindo correção de questões discursivas por IA (Aurora). Sem vínculo oficial com a Afya.',
       audience: {
         '@type': 'Audience',
         audienceType: 'Estudantes de medicina',
