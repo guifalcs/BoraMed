@@ -21,6 +21,13 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'erro', renderMode: RenderMode.Prerender },
   { path: 'admin/**', renderMode: RenderMode.Client },
   { path: 'admin', renderMode: RenderMode.Client },
+  // Depende da sessão (authGuard) e dos planos vindos do Supabase no browser.
+  // Sem esta entrada caía no `**` = Prerender: o HTML era gerado em build, SEM
+  // usuário, então o carregamento frio (link direto, F5, e-mail) passava pelo
+  // /login e terminava no /dashboard — nunca em /planos. Passava batido porque
+  // o paywall do /dashboard devolvia o não-assinante para /planos; com o plano
+  // gratuito esse desvio deixou de existir e o destino de upsell quebrou.
+  { path: 'planos', renderMode: RenderMode.Client },
   // Checkout embutido: 100% client-side (Bricks do MP + sessão do usuário).
   { path: 'checkout/status/:intencaoId', renderMode: RenderMode.Client },
   { path: 'checkout/:plano', renderMode: RenderMode.Client },
