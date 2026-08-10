@@ -1,6 +1,6 @@
 <div class="page-header">
   <h1 class="page-title">Notificações</h1>
-  <p class="page-subtitle">Envie notificações in-app para um usuário específico ou para todos os usuários.</p>
+  <p class="page-subtitle">Envie notificações in-app para um usuário específico ou para um público por nível de acesso.</p>
 </div>
 
 <div class="create-form">
@@ -40,11 +40,26 @@
       (usuarioSelecionado)="usuarioSelecionado.set($event)"
     />
 
+    <!-- Público do broadcast: só faz sentido quando nenhum usuário está escolhido -->
+    @if (enviandoParaTodos()) {
+      <div class="form-row">
+        <app-ui-select
+          label="Público"
+          name="segmento"
+          [options]="opcoesSegmento"
+          [value]="segmento()"
+          (valueChange)="segmento.set($any($event))"
+        />
+      </div>
+    }
+
     <div class="destinatario-hint">
       @if (usuarioSelecionado()) {
         <span class="hint hint--individual">Enviará apenas para este usuário</span>
       } @else {
-        <span class="hint hint--todos">Enviará para todos os usuários cadastrados</span>
+        <span class="hint hint--todos">
+          Enviará para os alunos ativos do público escolhido. Admins e contas banidas ficam de fora.
+        </span>
       }
     </div>
 

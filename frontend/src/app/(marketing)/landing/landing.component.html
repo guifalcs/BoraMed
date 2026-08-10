@@ -13,7 +13,7 @@
 
       <div class="desktop-actions">
         <a class="link-button" routerLink="/login">Entrar</a>
-        <a class="primary-button" routerLink="/cadastro">Criar minha conta</a>
+        <a class="primary-button" routerLink="/cadastro">Começar grátis</a>
       </div>
 
       <button
@@ -33,7 +33,7 @@
           <a [href]="item.href" (click)="closeMenu()">{{ item.label }}</a>
         }
         <a routerLink="/login" (click)="closeMenu()">Entrar</a>
-        <a class="primary-button" routerLink="/cadastro" (click)="closeMenu()">Criar minha conta</a>
+        <a class="primary-button" routerLink="/cadastro" (click)="closeMenu()">Começar grátis</a>
       </div>
     }
   </header>
@@ -58,10 +58,10 @@
         </a>
 
         <div class="hero-actions" aria-label="Ações principais">
-          <a class="primary-button" routerLink="/cadastro">Criar minha conta</a>
+          <a class="primary-button" routerLink="/cadastro">Começar grátis, sem cartão</a>
           <a class="secondary-button" href="#demo">Testar 3 questões agora</a>
         </div>
-        <p class="cta-microcopy">Leva 1 minuto · Depois, escolha seu plano</p>
+        <p class="cta-microcopy">Leva 1 minuto · 3 simulados grátis · Sem cartão de crédito</p>
 
         <p class="trust-note">
           A próxima prova não espera. Plataforma independente · Questões autorais
@@ -611,8 +611,8 @@
       <!-- &ngsp; e não um espaço solto: o Angular remove whitespace entre
            elementos no build, e abaixo de 720px o <br> é display:none — sem
            isto o mobile lê "plano.Risco zero". -->
-      <h2>Escolha seu plano.<br class="heading-break" />&ngsp;<span class="heading-break-tail">Risco zero por 7 dias.</span></h2>
-      <p>Essencial para treinar com as provas nacionais, hoje até o 4º período. Avançado para acesso completo à plataforma. Os dois com pagamento único, sem renovação automática.</p>
+      <h2>Comece grátis.<br class="heading-break" />&ngsp;<span class="heading-break-tail">Assine quando fizer sentido.</span></h2>
+      <p>Faça 3 simulados sem pagar nada e sem cartão. Essencial para treinar com as provas nacionais até o 8º período. Avançado para acesso completo. Os dois com pagamento único, sem renovação automática.</p>
     </div>
 
     <div class="pricing-toggle">
@@ -625,6 +625,39 @@
     </div>
 
     <div class="pricing-grid">
+      <!-- Plano gratuito: fica fora do toggle (não tem ciclo) e ancora a grade
+           por baixo, deixando Essencial e Avançado como a escolha real -->
+      <article class="pricing-card pricing-card--free">
+        <div class="pricing-card-head">
+          <h3>{{ freePlan.name }}</h3>
+          <p class="pricing-tagline">{{ freePlan.tagline }}</p>
+        </div>
+
+        <div class="pricing-price">
+          <strong class="pricing-amount">{{ freePlan.price }}</strong>
+        </div>
+
+        <p class="pricing-note">{{ freePlan.note }}</p>
+
+        <ul class="pricing-features">
+          @for (feature of freePlan.features; track feature) {
+            <li>
+              <app-ui-icon [icon]="checkIcon" [size]="16" />
+              <span>{{ feature }}</span>
+            </li>
+          }
+          @for (item of freePlan.naoInclui; track item) {
+            <li class="pricing-feature--off">
+              <app-ui-icon [icon]="xIcon" [size]="16" />
+              <span>{{ item }}</span>
+            </li>
+          }
+        </ul>
+
+        <a class="pricing-cta" routerLink="/cadastro">{{ freePlan.ctaLabel }}</a>
+        <p class="pricing-cta-note">Sem cartão de crédito</p>
+      </article>
+
       @for (plan of visiblePricingPlans(); track plan.tier) {
         <article class="pricing-card" [class.is-featured]="plan.featured">
           @if (plan.featured) {
@@ -742,7 +775,7 @@
       <h2>A prova já tem data marcada. Seu diagnóstico ainda não.</h2>
       <p>Crie sua conta, escolha seu plano e comece a treinar no modelo da prova hoje mesmo.</p>
       <div>
-        <a class="inverse-button" routerLink="/cadastro">Criar minha conta</a>
+        <a class="inverse-button" routerLink="/cadastro">Começar grátis, sem cartão</a>
         <a class="ghost-inverse-button" href="#planos">Ver os planos</a>
       </div>
     </div>

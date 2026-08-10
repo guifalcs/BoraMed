@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { Check, LogOut, ShieldCheck, Sparkles, X, type LucideIconData } from 'lucide-angular';
+import { Location } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ArrowLeft, Check, LogOut, ShieldCheck, Sparkles, X, type LucideIconData } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
@@ -15,6 +16,50 @@ import type { Plano, PlanoTier } from '../../core/models/subscription.types';
 
 type Ciclo = 'mensal' | 'semestral';
 
+/**
+ * Copy de chegada por contexto (`?origem=`), preenchida pelos guards, pelo
+ * paywall e pelos cards de upsell. Falar do recurso que o usuário acabou de
+ * tentar usar converte melhor do que um título genérico.
+ */
+const CABECALHO_POR_ORIGEM: Record<string, { titulo: string; subtitulo: string }> = {
+  'limite-tentativas': {
+    titulo: 'Continue de onde parou',
+    subtitulo:
+      'Seus 3 simulados gratuitos acabaram, mas o histórico continua salvo. Escolha um plano para voltar a treinar.',
+  },
+  materiais: {
+    titulo: 'Materiais de estudo no plano Avançado',
+    subtitulo: 'Resumos e apostilas em PDF, organizados por disciplina e período.',
+  },
+  flashcards: {
+    titulo: 'Flashcards no plano Avançado',
+    subtitulo: 'Decks oficiais e da comunidade para revisão ativa.',
+  },
+  'simulado-personalizado': {
+    titulo: 'Monte seus próprios simulados',
+    subtitulo: 'Escolha temas, quantidade e formato. Disponível no plano Avançado.',
+  },
+  impressao: {
+    titulo: 'Imprima seus simulados',
+    subtitulo: 'A impressão em PDF está disponível a partir do plano Essencial.',
+  },
+  'prova-bloqueada': {
+    titulo: 'Acesse o acervo completo',
+    // Chega aqui tanto o gratuito quanto o Essencial: a copy não pode tratar
+    // quem já paga como se estivesse no plano grátis. Ver PAYWALL_CONTEUDO.
+    subtitulo: 'Os treinos nacionais já estão no seu plano. O Avançado libera o acervo inteiro.',
+  },
+  resultado: {
+    titulo: 'Treine sem limite',
+    subtitulo: 'Acompanhe sua evolução tema a tema, prova após prova.',
+  },
+};
+
+const CABECALHO_PADRAO = {
+  titulo: 'Escolha seu plano',
+  subtitulo: 'Dois planos, um objetivo: te levar aprovado nas provas da sua faculdade.',
+};
+
 const ESSENCIAL_BENEFICIOS: readonly string[] = [
   'Treinos no modelo das avaliações nacionais, até o 8º período',
   'Correção das questões abertas pela Aurora (IA)',
@@ -25,7 +70,7 @@ const ESSENCIAL_BENEFICIOS: readonly string[] = [
 ];
 
 const ESSENCIAL_NAO_INCLUSO: readonly string[] = [
-  'Montar simulados personalizados',
+  'Simulados processuais e de laboratório personalizados',
   'Materiais de estudo',
   'Flashcards',
 ];
@@ -81,9 +126,18 @@ function calcularPercentualEconomia(mensal: Plano, semestral: Plano): number {
 
       <div class="flex-1 px-4 py-12">
         <div class="mx-auto max-w-5xl">
+          <button
+            type="button"
+            (click)="voltar()"
+            class="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700"
+          >
+            <app-ui-icon [icon]="voltarIcon" [size]="16" />
+            Voltar
+          </button>
+
           <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-gray-900">Escolha seu plano</h1>
-            <p class="mt-2 text-gray-600">Dois planos, um objetivo: te levar aprovado nas provas da sua faculdade.</p>
+            <h1 class="text-3xl font-bold text-gray-900">{{ cabecalho().titulo }}</h1>
+            <p class="mt-2 text-gray-600">{{ cabecalho().subtitulo }}</p>
           </header>
 
           @if (assinaturaPausada()) {
@@ -284,14 +338,24 @@ export class PlanosComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
 
   readonly profile = this.profileService.profile;
+
+  /** `?origem=` define a copy de chegada; sem ele, cai no cabeçalho padrão. */
+  private readonly origem = signal<string | null>(null);
+  protected readonly cabecalho = computed(() => {
+    const origem = this.origem();
+    return (origem && CABECALHO_POR_ORIGEM[origem]) || CABECALHO_PADRAO;
+  });
 
   readonly gradiente =
     'radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%),' +
     'radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%),' +
     'linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%)';
 
+  readonly voltarIcon: LucideIconData = ArrowLeft;
   readonly checkIcon: LucideIconData = Check;
   readonly xIcon: LucideIconData = X;
   readonly logoutIcon: LucideIconData = LogOut;
@@ -324,6 +388,7 @@ export class PlanosComponent implements OnInit {
   readonly planoAvancado = computed<Plano | null>(() => this.planoPorTier('avancado'));
 
   async ngOnInit(): Promise<void> {
+    this.origem.set(this.route.snapshot.queryParamMap.get('origem'));
     if (!this.profile()) void this.profileService.loadProfile();
     try {
       await this.subscription.carregarAssinatura();
@@ -405,6 +470,15 @@ export class PlanosComponent implements OnInit {
   assinar(plano: Plano): void {
     // Checkout embutido: o pagamento acontece dentro da plataforma.
     this.router.navigate(['/checkout', plano.slug]);
+  }
+
+  /** Volta para onde o usuário estava; sem histórico na aba, cai no dashboard. */
+  protected voltar(): void {
+    if (history.length > 1) {
+      this.location.back();
+    } else {
+      void this.router.navigateByUrl('/dashboard');
+    }
   }
 
   async sair(): Promise<void> {

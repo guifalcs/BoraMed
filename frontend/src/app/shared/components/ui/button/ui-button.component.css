@@ -44,6 +44,16 @@
   filter: brightness(0.94);
 }
 
+/* Recurso pago: apagado como os itens bloqueados do menu, mas ainda clicável
+   (o clique abre o upsell). */
+.ui-button--bloqueado {
+  opacity: 0.7;
+}
+
+.ui-button--bloqueado:hover {
+  opacity: 1;
+}
+
 .ui-button:disabled {
   cursor: wait;
   opacity: 0.78;

@@ -4,12 +4,13 @@ import { AuthService } from '../services/auth.service';
 import { ProfileService } from '../services/profile.service';
 import { SubscriptionService } from '../services/subscription.service';
 
-// Gate de tier: recursos exclusivos do plano Avançado (materiais, flashcards,
-// montar simulado). Roda DEPOIS do subscriptionGuard (que já garante
-// autenticação + assinatura ativa/admin no /dashboard) — aqui só decidimos
-// entre 'essencial' e 'avancado'. Sem acesso ativo nenhum, o subscriptionGuard
-// já teria redirecionado para /planos antes deste guard ser avaliado.
-export const tierAvancadoGuard: CanActivateFn = async (_route, _state) => {
+/**
+ * Gate de tier: recursos exclusivos do plano Avançado (materiais, flashcards,
+ * montar simulado). Vale tanto para quem está no plano gratuito quanto no
+ * essencial — desde o free tier, `tierAtivoServidor()` devolve null nos dois
+ * casos e o redirect é o mesmo, só muda a copy em /planos via `origem`.
+ */
+export const tierAvancadoGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
   const profileService = inject(ProfileService);
   const subscription = inject(SubscriptionService);
@@ -29,5 +30,17 @@ export const tierAvancadoGuard: CanActivateFn = async (_route, _state) => {
   const tier = await subscription.tierAtivoServidor();
   if (tier === 'avancado') return true;
 
-  return router.createUrlTree(['/planos']);
+  return router.createUrlTree(['/planos'], {
+    queryParams: { origem: contextoDaRota(state?.url) },
+  });
 };
+
+/** Rótulo do contexto que levou ao paywall, para /planos abrir com a copy certa. */
+function contextoDaRota(url: string | undefined): string {
+  const path = url?.split(/[?#]/)[0] ?? '';
+  if (path.startsWith('/dashboard/materiais')) return 'materiais';
+  if (path.startsWith('/dashboard/flashcards')) return 'flashcards';
+  if (path.startsWith('/imprimir')) return 'impressao';
+  if (path.includes('/simulados/montar')) return 'simulado-personalizado';
+  return 'recurso-pago';
+}

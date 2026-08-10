@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -182,6 +182,7 @@ export type Database = {
           id: string
           imagem_url: string
           mensagem: string | null
+          segmento: string
           titulo: string | null
         }
         Insert: {
@@ -191,6 +192,7 @@ export type Database = {
           id?: string
           imagem_url: string
           mensagem?: string | null
+          segmento?: string
           titulo?: string | null
         }
         Update: {
@@ -200,6 +202,7 @@ export type Database = {
           id?: string
           imagem_url?: string
           mensagem?: string | null
+          segmento?: string
           titulo?: string | null
         }
         Relationships: [
@@ -276,6 +279,59 @@ export type Database = {
           xp_recompensa?: number
         }
         Relationships: []
+      }
+      cupom: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          codigo: string
+          criado_em: string
+          descricao: string | null
+          expira_em: string | null
+          id: string
+          max_por_usuario: number | null
+          max_usos: number | null
+          plano_id: string | null
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          codigo: string
+          criado_em?: string
+          descricao?: string | null
+          expira_em?: string | null
+          id?: string
+          max_por_usuario?: number | null
+          max_usos?: number | null
+          plano_id?: string | null
+          tipo?: string
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          codigo?: string
+          criado_em?: string
+          descricao?: string | null
+          expira_em?: string | null
+          id?: string
+          max_por_usuario?: number | null
+          max_usos?: number | null
+          plano_id?: string | null
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cupom_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "plano"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       desafio_diario: {
         Row: {
@@ -376,6 +432,128 @@ export type Database = {
           {
             foreignKeyName: "disciplina_criado_por_fkey"
             columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campanha: {
+        Row: {
+          assunto: string
+          atualizado_em: string
+          concluida_em: string | null
+          corpo_html: string
+          criado_em: string
+          criado_por: string | null
+          erro: string | null
+          id: string
+          nome: string
+          remetente: string
+          segmento: string
+          status: string
+          total_cancelados: number
+          total_destinatarios: number
+          total_enviados: number
+          total_falhas: number
+        }
+        Insert: {
+          assunto: string
+          atualizado_em?: string
+          concluida_em?: string | null
+          corpo_html: string
+          criado_em?: string
+          criado_por?: string | null
+          erro?: string | null
+          id?: string
+          nome: string
+          remetente: string
+          segmento: string
+          status?: string
+          total_cancelados?: number
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhas?: number
+        }
+        Update: {
+          assunto?: string
+          atualizado_em?: string
+          concluida_em?: string | null
+          corpo_html?: string
+          criado_em?: string
+          criado_por?: string | null
+          erro?: string | null
+          id?: string
+          nome?: string
+          remetente?: string
+          segmento?: string
+          status?: string
+          total_cancelados?: number
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campanha_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campanha_destinatario: {
+        Row: {
+          campanha_id: string
+          criado_em: string
+          email: string
+          email_token: string
+          enviado_em: string | null
+          erro: string | null
+          id: string
+          nome_completo: string | null
+          resend_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          campanha_id: string
+          criado_em?: string
+          email: string
+          email_token: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          nome_completo?: string | null
+          resend_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          campanha_id?: string
+          criado_em?: string
+          email?: string
+          email_token?: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          nome_completo?: string | null
+          resend_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campanha_destinatario_campanha_id_fkey"
+            columns: ["campanha_id"]
+            isOneToOne: false
+            referencedRelation: "email_campanha"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campanha_destinatario_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -860,6 +1038,8 @@ export type Database = {
         Row: {
           atualizado_em: string
           criado_em: string
+          cupom_id: string | null
+          desconto_centavos: number
           expira_em: string | null
           id: string
           idempotency_key: string
@@ -877,6 +1057,8 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           criado_em?: string
+          cupom_id?: string | null
+          desconto_centavos?: number
           expira_em?: string | null
           id?: string
           idempotency_key: string
@@ -894,6 +1076,8 @@ export type Database = {
         Update: {
           atualizado_em?: string
           criado_em?: string
+          cupom_id?: string | null
+          desconto_centavos?: number
           expira_em?: string | null
           id?: string
           idempotency_key?: string
@@ -909,6 +1093,13 @@ export type Database = {
           valor_centavos?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "pagamento_intencao_cupom_id_fkey"
+            columns: ["cupom_id"]
+            isOneToOne: false
+            referencedRelation: "cupom"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pagamento_intencao_plano_id_fkey"
             columns: ["plano_id"]
@@ -960,6 +1151,7 @@ export type Database = {
           preco_centavos: number
           recorrente: boolean
           slug: string
+          tier: string
         }
         Insert: {
           ativo?: boolean
@@ -977,6 +1169,7 @@ export type Database = {
           preco_centavos: number
           recorrente?: boolean
           slug: string
+          tier?: string
         }
         Update: {
           ativo?: boolean
@@ -994,6 +1187,7 @@ export type Database = {
           preco_centavos?: number
           recorrente?: boolean
           slug?: string
+          tier?: string
         }
         Relationships: []
       }
@@ -1007,6 +1201,9 @@ export type Database = {
           competir_publico: boolean
           criado_em: string
           email: string
+          email_marketing_optout: boolean
+          email_marketing_optout_em: string | null
+          email_token: string
           faculdade_rede: string | null
           id: string
           motivo_banimento: string | null
@@ -1024,6 +1221,9 @@ export type Database = {
           competir_publico?: boolean
           criado_em?: string
           email: string
+          email_marketing_optout?: boolean
+          email_marketing_optout_em?: string | null
+          email_token?: string
           faculdade_rede?: string | null
           id: string
           motivo_banimento?: string | null
@@ -1041,6 +1241,9 @@ export type Database = {
           competir_publico?: boolean
           criado_em?: string
           email?: string
+          email_marketing_optout?: boolean
+          email_marketing_optout_em?: string | null
+          email_token?: string
           faculdade_rede?: string | null
           id?: string
           motivo_banimento?: string | null
@@ -1057,12 +1260,13 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           criado_por: string | null
+          disciplina_id: string | null
           faculdade_id: string | null
           formato: string | null
           id: string
           nome: string
           origem: string
-          periodo: number
+          periodo: number | null
           publicada: boolean
           qtd_questoes: number
           rede: string | null
@@ -1075,12 +1279,13 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
+          disciplina_id?: string | null
           faculdade_id?: string | null
           formato?: string | null
           id?: string
           nome: string
           origem?: string
-          periodo: number
+          periodo?: number | null
           publicada?: boolean
           qtd_questoes?: number
           rede?: string | null
@@ -1093,12 +1298,13 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           criado_por?: string | null
+          disciplina_id?: string | null
           faculdade_id?: string | null
           formato?: string | null
           id?: string
           nome?: string
           origem?: string
-          periodo?: number
+          periodo?: number | null
           publicada?: boolean
           qtd_questoes?: number
           rede?: string | null
@@ -1112,6 +1318,13 @@ export type Database = {
             columns: ["criado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prova_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplina"
             referencedColumns: ["id"]
           },
           {
@@ -1158,6 +1371,7 @@ export type Database = {
       }
       questao: {
         Row: {
+          anulada: boolean
           aprovada_em: string | null
           apto_desafio_diario: boolean
           atualizado_em: string
@@ -1184,6 +1398,7 @@ export type Database = {
           pontos_chave: Json
           prova_id: string | null
           publicada_em: string | null
+          recurso_texto: string | null
           referencia: string | null
           resposta_correta_texto: string | null
           resposta_modelo: string | null
@@ -1198,6 +1413,7 @@ export type Database = {
           vezes_respondida: number
         }
         Insert: {
+          anulada?: boolean
           aprovada_em?: string | null
           apto_desafio_diario?: boolean
           atualizado_em?: string
@@ -1224,6 +1440,7 @@ export type Database = {
           pontos_chave?: Json
           prova_id?: string | null
           publicada_em?: string | null
+          recurso_texto?: string | null
           referencia?: string | null
           resposta_correta_texto?: string | null
           resposta_modelo?: string | null
@@ -1238,6 +1455,7 @@ export type Database = {
           vezes_respondida?: number
         }
         Update: {
+          anulada?: boolean
           aprovada_em?: string | null
           apto_desafio_diario?: boolean
           atualizado_em?: string
@@ -1264,6 +1482,7 @@ export type Database = {
           pontos_chave?: Json
           prova_id?: string | null
           publicada_em?: string | null
+          recurso_texto?: string | null
           referencia?: string | null
           resposta_correta_texto?: string | null
           resposta_modelo?: string | null
@@ -1856,6 +2075,7 @@ export type Database = {
       tentativa_resposta: {
         Row: {
           alternativa_id: string | null
+          anulada_usuario: boolean
           correta: boolean | null
           enviada_em: string | null
           id: string
@@ -1869,6 +2089,7 @@ export type Database = {
         }
         Insert: {
           alternativa_id?: string | null
+          anulada_usuario?: boolean
           correta?: boolean | null
           enviada_em?: string | null
           id?: string
@@ -1882,6 +2103,7 @@ export type Database = {
         }
         Update: {
           alternativa_id?: string | null
+          anulada_usuario?: boolean
           correta?: boolean | null
           enviada_em?: string | null
           id?: string
@@ -2069,6 +2291,9 @@ export type Database = {
           competir_publico: boolean
           criado_em: string
           email: string
+          email_marketing_optout: boolean
+          email_marketing_optout_em: string | null
+          email_token: string
           faculdade_rede: string | null
           id: string
           motivo_banimento: string | null
@@ -2089,6 +2314,10 @@ export type Database = {
         Returns: {
           questao_id: string
         }[]
+      }
+      admin_contar_publico_email: {
+        Args: { p_segmento: string }
+        Returns: number
       }
       admin_criar_faq: {
         Args: { p_categoria?: string; p_pergunta: string; p_resposta: string }
@@ -2120,12 +2349,13 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           criado_por: string | null
+          disciplina_id: string | null
           faculdade_id: string | null
           formato: string | null
           id: string
           nome: string
           origem: string
-          periodo: number
+          periodo: number | null
           publicada: boolean
           qtd_questoes: number
           rede: string | null
@@ -2159,6 +2389,9 @@ export type Database = {
           competir_publico: boolean
           criado_em: string
           email: string
+          email_marketing_optout: boolean
+          email_marketing_optout_em: string | null
+          email_token: string
           faculdade_rede: string | null
           id: string
           motivo_banimento: string | null
@@ -2178,6 +2411,7 @@ export type Database = {
       admin_enviar_notificacao: {
         Args: {
           p_mensagem?: string
+          p_segmento?: string
           p_tipo: string
           p_titulo: string
           p_user_id?: string
@@ -2207,6 +2441,7 @@ export type Database = {
           id: string
           imagem_url: string
           mensagem: string | null
+          segmento: string
           titulo: string | null
         }[]
         SetofOptions: {
@@ -2215,6 +2450,40 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      admin_listar_campanhas_email: {
+        Args: { p_limit?: number }
+        Returns: {
+          assunto: string
+          criado_em: string
+          criado_por_email: string
+          erro: string
+          id: string
+          nome: string
+          segmento: string
+          status: string
+          total_cancelados: number
+          total_destinatarios: number
+          total_enviados: number
+          total_falhas: number
+        }[]
+      }
+      admin_listar_destinatarios_campanha: {
+        Args: {
+          p_campanha_id: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+        }
+        Returns: {
+          email: string
+          enviado_em: string
+          erro: string
+          nome_completo: string
+          resend_id: string
+          status: string
+          total: number
+        }[]
       }
       admin_listar_faq: {
         Args: never
@@ -2332,6 +2601,9 @@ export type Database = {
           competir_publico: boolean
           criado_em: string
           email: string
+          email_marketing_optout: boolean
+          email_marketing_optout_em: string | null
+          email_token: string
           faculdade_rede: string | null
           id: string
           motivo_banimento: string | null
@@ -2347,6 +2619,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      anular_questao_usuario: {
+        Args: {
+          p_anular: boolean
+          p_questao_id: string
+          p_tentativa_id: string
+        }
+        Returns: {
+          alternativa_id: string | null
+          anulada_usuario: boolean
+          correta: boolean | null
+          enviada_em: string | null
+          id: string
+          ordem_na_tentativa: number | null
+          pontos: number | null
+          questao_id: string
+          respondida_em: string | null
+          resposta_texto: string | null
+          tempo_gasto_segundos: number | null
+          tentativa_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tentativa_resposta"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assinatura_tier: { Args: { uid?: string }; Returns: string }
       buscar_anexos_ticket: {
         Args: { p_ticket_id: string }
         Returns: {
@@ -2376,6 +2676,7 @@ export type Database = {
           id: string
           imagem_url: string
           mensagem: string | null
+          segmento: string
           titulo: string | null
         }[]
         SetofOptions: {
@@ -2490,9 +2791,23 @@ export type Database = {
         Args: { p_comentario_id: string; p_motivo?: string }
         Returns: undefined
       }
+      descadastrar_email_marketing: {
+        Args: { p_token: string }
+        Returns: boolean
+      }
       editar_comentario_questao: {
         Args: { p_comentario_id: string; p_conteudo: string }
         Returns: Json
+      }
+      email_publico_alvo: {
+        Args: { p_segmento: string }
+        Returns: {
+          criado_em: string
+          email: string
+          email_token: string
+          nome_completo: string
+          user_id: string
+        }[]
       }
       enviar_mensagem_ticket: {
         Args: { p_mensagem: string; p_ticket_id: string }
@@ -2530,7 +2845,7 @@ export type Database = {
       flashcards_admin_salvar_deck_oficial: {
         Args: {
           p_cards: Json
-          p_deck_id: string | null
+          p_deck_id: string
           p_descricao: string
           p_publico: boolean
           p_titulo: string
@@ -2563,6 +2878,10 @@ export type Database = {
       flashcards_feed: {
         Args: { p_limit?: number; p_offset?: number; p_ordenacao?: string }
         Returns: Json
+      }
+      flashcards_imagem_url_valida: {
+        Args: { p_admin: boolean; p_url: string; p_user_id: string }
+        Returns: boolean
       }
       flashcards_listar_likes_deck: {
         Args: { p_deck_id: string; p_limit?: number; p_offset?: number }
@@ -2617,6 +2936,7 @@ export type Database = {
         Args: { p_com_gabarito?: boolean; p_prova_id: string }
         Returns: Json
       }
+      get_status_acesso: { Args: never; Returns: Json }
       get_status_correcoes: { Args: { p_tentativa_id: string }; Returns: Json }
       get_streak_estudo: { Args: never; Returns: number }
       get_streak_estudo_v2: { Args: never; Returns: Json }
@@ -2627,6 +2947,7 @@ export type Database = {
       is_admin: { Args: { uid?: string }; Returns: boolean }
       is_banned: { Args: { uid?: string }; Returns: boolean }
       is_super_admin: { Args: { uid?: string }; Returns: boolean }
+      limite_tentativas_gratuitas: { Args: never; Returns: number }
       listar_anotacoes_tentativa: {
         Args: { p_tentativa_id: string }
         Returns: {
@@ -2668,6 +2989,11 @@ export type Database = {
       montar_resultado_tentativa: {
         Args: { p_tentativa_id: string }
         Returns: Json
+      }
+      nivel_acesso: { Args: { uid?: string }; Returns: string }
+      nivel_no_segmento: {
+        Args: { p_nivel: string; p_segmento: string }
+        Returns: boolean
       }
       reabrir_ticket: {
         Args: { p_ticket_id: string }
@@ -2743,6 +3069,7 @@ export type Database = {
         }
         Returns: {
           alternativa_id: string | null
+          anulada_usuario: boolean
           correta: boolean | null
           enviada_em: string | null
           id: string
@@ -2765,6 +3092,7 @@ export type Database = {
         Args: { p_questao_id: string; p_tentativa_id: string; p_texto: string }
         Returns: {
           alternativa_id: string | null
+          anulada_usuario: boolean
           correta: boolean | null
           enviada_em: string | null
           id: string
@@ -2783,10 +3111,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      tem_acesso_avancado: { Args: { uid?: string }; Returns: boolean }
       tem_assinatura_ativa: { Args: { uid?: string }; Returns: boolean }
+      tentativas_gratuitas_restantes: {
+        Args: { uid?: string }
+        Returns: number
+      }
       toggle_favorito_tentativa: {
         Args: { p_favorito: boolean; p_tentativa_id: string }
         Returns: undefined
+      }
+      validar_cupom: {
+        Args: { p_codigo: string; p_plano_slug: string; p_user_id?: string }
+        Returns: {
+          cupom_id: string
+          desconto_centavos: number
+          motivo: string
+          valido: boolean
+          valor_final_centavos: number
+          valor_original_centavos: number
+        }[]
       }
       verificar_conquistas_usuario: {
         Args: { p_user_id?: string }

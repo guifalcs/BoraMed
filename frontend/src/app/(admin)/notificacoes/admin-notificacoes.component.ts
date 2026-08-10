@@ -17,6 +17,7 @@ import {
   AdminUserSearchComponent,
   UsuarioBusca,
 } from '../../shared/components/admin-user-search/admin-user-search.component';
+import { SEGMENTOS_ACESSO, type SegmentoAcesso } from '../../core/models/subscription.types';
 
 const PAGE_SIZE = 20;
 
@@ -44,6 +45,15 @@ export class AdminNotificacoesComponent implements OnInit {
   protected readonly mensagem = signal('');
 
   protected readonly usuarioSelecionado = signal<UsuarioBusca | null>(null);
+
+  // Público do broadcast. Ignorado quando há um usuário selecionado (envio
+  // individual). Evita que aviso de assinante chegue em quem não paga.
+  protected readonly segmento = signal<SegmentoAcesso>('todos');
+  protected readonly opcoesSegmento: SelectOption[] = SEGMENTOS_ACESSO.map((s) => ({
+    value: s.valor,
+    label: `${s.label} · ${s.ajuda}`,
+  }));
+  protected readonly enviandoParaTodos = computed(() => this.usuarioSelecionado() === null);
 
   protected readonly pagina = signal(0);
   protected readonly totalPaginas = computed(() =>
@@ -97,6 +107,7 @@ export class AdminNotificacoesComponent implements OnInit {
       this.titulo().trim(),
       this.mensagem().trim() || null,
       userId,
+      this.segmento(),
     );
 
     if (result.ok) {

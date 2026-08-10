@@ -326,6 +326,31 @@ Processual:  background #EDE9FE; color #5B21B6;
 Laboratório: background #CCFBF1; color #0F766E;
 ```
 
+## Upsell (plano gratuito e essencial)
+
+Quatro componentes compartilhados, todos usando o gradiente institucional
+(`--gradient-brand` + highlights radiais) quando precisam de destaque.
+
+* **`app-upgrade-badge`** — selo "PRO" com cadeado. Variantes `suave` (âmbar,
+  padrão), `solido` (sobre superfície clara) e `contorno` (sobre gradiente).
+* **`app-upgrade-card`** — bloco de upsell com gradiente. `inline` para o corpo
+  da página, `compacto` para o rodapé da sidebar. Aceita `origem`, propagada
+  para `/planos` como query param.
+* **`app-limite-tentativas-banner`** — contador com barra de progresso. O tom
+  escala com o saldo: **neutro** (2+ restantes) → **âmbar** (1) → **vermelho**
+  (0). O limite precisa ficar visível antes de bloquear.
+* **`app-paywall-modal`** — modal contextual, disparado pelo `PaywallService`
+  e montado uma única vez no shell do dashboard. Cabeçalho em gradiente, lista
+  de benefícios com check verde, fechamento em caixa neutra e CTA primário.
+
+Ordem dos benefícios no modal segue **efeito de posição serial**: o mais forte
+primeiro, o utilitário no meio, o fechamento por perda logo acima do CTA.
+
+**Regra de navegação**: recurso pago aparece **bloqueado**, nunca escondido.
+Item de menu vira `<button>` com `opacity` reduzida, ícone original preservado
+e selo PRO à direita; o clique abre o paywall no contexto daquele recurso.
+Esconder o item esconde junto o motivo para assinar.
+
 ## Navegação
 
 Desktop:

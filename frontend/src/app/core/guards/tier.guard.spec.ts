@@ -144,7 +144,9 @@ describe('tierAvancadoGuard', () => {
       tierAvancadoGuard({} as never, {} as never),
     );
 
-    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos']);
+    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos'], {
+      queryParams: { origem: 'recurso-pago' },
+    });
     expect(result).toBe('/planos');
   });
 
@@ -155,7 +157,27 @@ describe('tierAvancadoGuard', () => {
       tierAvancadoGuard({} as never, {} as never),
     );
 
-    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos']);
+    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos'], {
+      queryParams: { origem: 'recurso-pago' },
+    });
     expect(result).toBe('/planos');
+  });
+
+  // ── Contexto do paywall (copy de /planos) ──────────────────────────────────
+
+  it.each([
+    ['/dashboard/materiais', 'materiais'],
+    ['/dashboard/flashcards/novo', 'flashcards'],
+    ['/dashboard/simulados/montar', 'simulado-personalizado'],
+    ['/imprimir/simulado/montado', 'impressao'],
+    ['/dashboard/simulados/montar?tema=x', 'simulado-personalizado'],
+  ])('mapeia %s para origem "%s"', async (url, origem) => {
+    setup({ tier: null });
+
+    await TestBed.runInInjectionContext(() => tierAvancadoGuard({} as never, { url } as never));
+
+    expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/planos'], {
+      queryParams: { origem },
+    });
   });
 });

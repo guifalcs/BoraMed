@@ -5,7 +5,13 @@ import { AuthService } from './auth.service';
 import { GamificacaoService } from './gamificacao.service';
 import { NotificationService } from './notification.service';
 import { CacheService, CACHE_KEYS } from './cache.service';
-import { TIER_UPGRADE_REQUIRED, isTierUpgradeError } from '../utils/tier-error.util';
+import { SubscriptionService } from './subscription.service';
+import {
+  FREE_LIMIT_REACHED,
+  TIER_UPGRADE_REQUIRED,
+  isFreeLimitError,
+  isTierUpgradeError,
+} from '../utils/tier-error.util';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { RespostaCorrecao, StatusCorrecoesTentativa } from '../models/correcao';
 import type { QuestaoComAlternativas } from '../models/questao';
@@ -19,6 +25,7 @@ export class TentativaService {
   private readonly gamificacao = inject(GamificacaoService);
   private readonly notifications = inject(NotificationService);
   private readonly cache = inject(CacheService);
+  private readonly subscription = inject(SubscriptionService);
   private hydrationPromise: Promise<void> | null = null;
 
   private readonly _tentativaAtiva = signal<Tentativa | null>(null);
@@ -204,11 +211,23 @@ export class TentativaService {
       this._questoes.set(result.questoes);
       this._respostas.set([]);
 
+      // No plano gratuito, iniciar debita uma das tentativas vitalícias. Sem
+      // invalidar aqui, o contador em cache (TTL de 5 min) seguiria anunciando
+      // o valor antigo e o aluno veria "3 restantes" depois de gastar uma.
+      this.recarregarStatusAcesso();
+
       return { ok: true, data: result };
     } catch (e: unknown) {
+      if (isFreeLimitError(e)) return { ok: false, error: FREE_LIMIT_REACHED };
       if (isTierUpgradeError(e)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
       return { ok: false, error: 'Não foi possível iniciar a tentativa.' };
     }
+  }
+
+  /** Invalida e já refaz a consulta, para os indicadores de UI atualizarem na hora. */
+  private recarregarStatusAcesso(): void {
+    this.subscription.invalidarAcesso();
+    void this.subscription.statusAcessoServidor();
   }
 
   async retomar(
@@ -531,6 +550,8 @@ export class TentativaService {
       this._tentativaAtiva.set(result.tentativa);
       this._questoes.set(result.questoes);
       this._respostas.set([]);
+
+      this.recarregarStatusAcesso();
 
       return { ok: true, data: result };
     } catch (e: unknown) {

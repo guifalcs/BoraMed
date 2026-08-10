@@ -165,13 +165,25 @@
       </p>
     } @else {
       <div class="flex flex-col gap-3 sm:flex-row">
-        <a
-          class="flex-1"
-          [routerLink]="['/imprimir/simulado', provaId()]"
-          [queryParams]="{ gabarito: 1 }"
-        >
-          <app-ui-button label="Imprimir com gabarito" variant="secondary" />
-        </a>
+        @if (impressaoBloqueada()) {
+          <div class="flex-1">
+            <app-ui-button
+              label="Imprimir com gabarito"
+              variant="secondary"
+              [bloqueado]="true"
+              ariaLabel="Imprimir com gabarito (recurso de assinante)"
+              (buttonClick)="impressaoBloqueadaClick.emit()"
+            />
+          </div>
+        } @else {
+          <a
+            class="flex-1"
+            [routerLink]="['/imprimir/simulado', provaId()]"
+            [queryParams]="{ gabarito: 1 }"
+          >
+            <app-ui-button label="Imprimir com gabarito" variant="secondary" />
+          </a>
+        }
         <a
           class="flex-1"
           [routerLink]="['/dashboard/simulados', provaId(), 'tentativa', resultado().tentativa.id, 'revisao']"

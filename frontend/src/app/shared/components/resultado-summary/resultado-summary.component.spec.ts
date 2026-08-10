@@ -267,5 +267,34 @@ describe('ResultadoSummaryComponent', () => {
 
       expect(botoes.slice(-2)).toEqual(['Imprimir com gabarito', 'Revisar e anotar']);
     });
+
+    it('bloqueia a impressão com selo PRO e sem link quando impressaoBloqueada', async () => {
+      await setup(resultadoFactory());
+      fixture.componentRef.setInput('impressaoBloqueada', true);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const links = Array.from(el.querySelectorAll('a')).map((a) => a.getAttribute('href') ?? '');
+
+      expect(links.some((href) => href.includes('/imprimir/simulado'))).toBe(false);
+      expect(el.querySelector('app-upgrade-badge')).not.toBeNull();
+    });
+
+    it('emite impressaoBloqueadaClick no clique do botão bloqueado', async () => {
+      await setup(resultadoFactory());
+      fixture.componentRef.setInput('impressaoBloqueada', true);
+      fixture.detectChanges();
+
+      let emitiu = false;
+      component.impressaoBloqueadaClick.subscribe(() => (emitiu = true));
+
+      const el = fixture.nativeElement as HTMLElement;
+      const botao = Array.from(el.querySelectorAll('app-ui-button button')).find((b) =>
+        b.textContent?.includes('Imprimir com gabarito'),
+      ) as HTMLButtonElement | undefined;
+      botao?.click();
+
+      expect(emitiu).toBe(true);
+    });
   });
 });

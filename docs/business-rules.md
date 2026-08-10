@@ -257,10 +257,51 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 
 ## Monetização
 
-* **Modelo**: paywall total. Todo o conteúdo (`/dashboard/*`) exige assinatura
-  ativa (`assinatura.status = 'authorized'`). Sem assinatura, o aluno só acessa
-  `/planos`, `/checkout/*`, `/assinatura/retorno` (legado) e telas públicas.
-  Admins/super_admins não passam pelo paywall.
+* **Modelo**: freemium com três níveis de acesso. `/dashboard/*` é acessível a
+  qualquer autenticado; o que muda é o que cada nível pode fazer lá dentro.
+  Admins/super_admins têm acesso de `avancado`.
+
+### Níveis de acesso
+
+A fonte da verdade é `public.nivel_acesso(uid)`, função TOTAL que devolve
+`gratuito | essencial | avancado` (nunca NULL). `assinatura_tier()` é derivada
+dela e mantém o contrato antigo (NULL para quem não paga).
+
+| Recurso | Gratuito | Essencial | Avançado |
+|---|---|---|---|
+| Treinos nacionais (`prova.formato = 'nacional'`) | até 3 tentativas | sem limite | sem limite |
+| Provas processual / laboratório / integradora | não | não | sim |
+| Montar simulado personalizado | não | não | sim |
+| Impressão em PDF | não | sim | sim |
+| Materiais de estudo | não | não | sim |
+| Flashcards | não | não | sim |
+| Histórico e revisão das próprias tentativas | sim | sim | sim |
+| Desafio diário | sim | sim | sim |
+| Competitivo / ranking | sim | sim | sim |
+| Correção da Aurora (discursivas) | sim, dentro das 3 tentativas | sim | sim |
+
+* **Teto do plano gratuito**: `limite_tentativas_gratuitas()` (hoje 3),
+  **vitalício**, não por período. `tentativas_gratuitas_restantes()` conta TODO
+  o histórico de `tentativa` do usuário (exceto `modo = 'visualizar'`), então
+  não existe coluna de contador nem backfill: quem usou a plataforma como
+  assinante e depois churnou chega em 0 tentativas gratuitas.
+* **O que debita**: `iniciar_tentativa` com `modo <> 'visualizar'`. Sem estorno,
+  mesmo se o aluno abandonar a prova. `retomar_tentativa` é outra RPC e nunca
+  debita de novo.
+* **Onde o gate vive**: dentro das RPCs `SECURITY DEFINER` (a escrita direta em
+  `tentativa` já é revogada de `authenticated`), mais o RLS de
+  `questao`/`alternativa` (`tem_assinatura_ativa()`) e de
+  materiais/flashcards (`tem_acesso_avancado()`). Os guards Angular são
+  conveniência de navegação, não a fronteira de segurança.
+* **Erros**: `P0015 tier_upgrade_required` (recurso de plano superior),
+  `P0016 free_limit_reached` (teto do gratuito esgotado), `P0009
+  subscription_required` (gate binário legado nas RPCs de simulado
+  personalizado e impressão). Os três abrem paywall na UI.
+* **Segmentação de comunicação**: avisos (`avisos.segmento`) e notificações
+  in-app (`admin_enviar_notificacao(p_segmento)`) filtram por nível
+  (`todos | pagantes | gratuitos | essencial | avancado`), para conteúdo de
+  assinante não chegar em quem não paga. O broadcast alcança apenas
+  `papel = 'aluno'` não banido com e-mail confirmado.
 * **Gateway**: Mercado Pago com **checkout embutido** na plataforma (Payment
   Brick + Checkout API, ver ADR-029). O aluno paga sem sair do BoraMed; os
   dados de cartão são digitados em campos seguros (iframes) do Mercado Pago —
@@ -281,10 +322,29 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
   trocar cartão via `mp-gerenciar-assinatura`), no valor contratado à época. A
   UI identifica esses casos pelo `assinatura.mp_preapproval_id`, não pelo
   `plano.recorrente`.
-* **Planos**: definidos na tabela `plano` (mensal R$59,90 por 1 mês e
-  semestral R$240,00 por 6 meses). Preço e frequência ficam por linha,
-  ajustáveis sem deploy. As colunas `mp_preapproval_plan_id`/`mp_init_point`
-  são legadas (redirect) e não são usadas em compras novas.
+* **Planos**: definidos na tabela `plano`, com `tier` (`essencial`/`avancado`),
+  preço e frequência por linha, ajustáveis sem deploy — ou seja, o preço muda
+  por `UPDATE` direto em produção, sem passar por migration. Catálogo em
+  2026-08-02 (**confirmar em produção antes de usar estes números** — é dado,
+  não schema, e já mudou pelo menos uma vez sem deixar rastro em migration):
+
+  | slug | tier | preço | período |
+  |---|---|---|---|
+  | `essencial-mensal` | essencial | R$ 23,90 | 1 mês |
+  | `essencial-semestral` | essencial | R$ 83,40 | 6 meses |
+  | `mensal` | avancado | R$ 69,90 | 1 mês |
+  | `semestral` | avancado | R$ 299,40 | 6 meses |
+
+  O plano gratuito NÃO tem linha em `plano`: é a ausência de assinatura ativa.
+  As colunas `mp_preapproval_plan_id`/`mp_init_point` são legadas (redirect) e
+  não são usadas em compras novas.
+
+  > A landing (`(marketing)/landing/landing.component.ts`) ainda repete esses
+  > preços em constantes, com `TODO(integração)` para passar a ler
+  > `listarPlanos()`. Ao mexer em preço, alterar os dois lugares até o TODO ser
+  > resolvido — e checar produção primeiro: preço muda por `UPDATE`, sem
+  > migration, então o histórico de commits não é fonte confiável do valor
+  > atual.
 * **Estados da assinatura** (espelham o Mercado Pago): `pending` →
   `authorized` (ativa) → `paused`/`cancelled`. **Fonte da verdade: webhook do
   MP** (a resposta síncrona do checkout apenas antecipa o mesmo sync,

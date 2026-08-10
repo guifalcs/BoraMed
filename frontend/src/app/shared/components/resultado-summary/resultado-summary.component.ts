@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
@@ -23,6 +23,11 @@ export class ResultadoSummaryComponent {
   backRota = input<string>('/dashboard/simulados');
   backLabel = input<string>('Todos os simulados');
   notaAnterior = input<number | null>(null);
+  /** Plano gratuito: impressão fica visível com o selo PRO, sem navegar. */
+  impressaoBloqueada = input(false);
+
+  /** Clique na impressão bloqueada — o pai abre o upsell. */
+  impressaoBloqueadaClick = output<void>();
 
   protected readonly provaId = computed(() => this.resultado().tentativa.prova_id);
 

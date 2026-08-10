@@ -11,9 +11,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { CorrecaoIaService } from '../../../core/services/correcao-ia.service';
+import { SubscriptionService } from '../../../core/services/subscription.service';
+import { PaywallService } from '../../../core/services/paywall.service';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
 import { ResultadoSummaryComponent } from '../../../shared/components/resultado-summary/resultado-summary.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { UpgradeCardComponent } from '../../../shared/components/upgrade-card/upgrade-card.component';
 
 const POLL_INTERVAL_MS = 3_000;
 const TIMEOUT_CORRECOES_MS = 90_000;
@@ -21,7 +24,7 @@ const TIMEOUT_CORRECOES_MS = 90_000;
 @Component({
   selector: 'app-tentativa-resultado',
   standalone: true,
-  imports: [ResultadoSummaryComponent, EmptyStateComponent, RouterLink],
+  imports: [ResultadoSummaryComponent, EmptyStateComponent, RouterLink, UpgradeCardComponent],
   templateUrl: './tentativa-resultado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,6 +33,8 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
   private readonly tentativaService = inject(TentativaService);
   private readonly provaService = inject(ProvaService);
   private readonly correcaoIa = inject(CorrecaoIaService);
+  private readonly subscription = inject(SubscriptionService);
+  private readonly paywall = inject(PaywallService);
 
   protected readonly resultado = signal<ResultadoTentativa | null>(null);
   protected readonly isLoading = signal(true);
@@ -51,6 +56,47 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
     if (total === 0) return '';
     return `${this.correcoesResolvidas()}/${total}`;
   });
+
+  // ---- Upsell do plano gratuito ----
+  // O aluno acabou de ver a própria nota: é o ponto de maior intenção da
+  // jornada, e o único em que o custo afundado já existe para ser citado.
+  protected readonly gratuito = this.subscription.isGratuito;
+  private readonly restantes = this.subscription.tentativasRestantes;
+
+  protected readonly mostrarUpsell = computed(
+    () => this.gratuito() && this.restantes() !== null && !this.corrigindo(),
+  );
+
+  protected readonly upsellTitulo = computed(() => {
+    const restantes = this.restantes() ?? 0;
+    if (restantes <= 0) return 'Esse foi seu último simulado grátis';
+    if (restantes === 1) return 'Resta 1 simulado grátis';
+    return `Restam ${restantes} simulados grátis`;
+  });
+
+  /**
+   * Enquadramento de perda, não de ganho: o que já foi construído e fica para
+   * trás pesa mais na decisão do que a promessa do que viria.
+   */
+  protected readonly upsellDescricao = computed(() => {
+    const restantes = this.restantes() ?? 0;
+    const respondidas = this.resultado()?.tentativa.total_questoes ?? 0;
+    if (restantes <= 0) {
+      return respondidas > 0
+        ? `Você já respondeu ${respondidas} questões e tem um histórico começando. Assine para continuar de onde parou.`
+        : 'Seu histórico continua salvo. Assine para continuar de onde parou.';
+    }
+    return 'Assinantes treinam sem limite e acompanham a evolução tema a tema.';
+  });
+
+  protected readonly upsellCta = computed(() =>
+    (this.restantes() ?? 0) <= 0 ? 'Assinar agora' : 'Ver planos',
+  );
+
+  /** Impressão é benefício de assinante: o gratuito vê o selo e o upsell. */
+  protected abrirPaywallImpressao(): void {
+    this.paywall.abrir('impressao');
+  }
 
   private destruido = false;
   private tentativaId = '';

@@ -46,5 +46,20 @@
     [backRota]="backRota()"
     [backLabel]="backLabel()"
     [notaAnterior]="notaAnterior()"
+    [impressaoBloqueada]="gratuito()"
+    (impressaoBloqueadaClick)="abrirPaywallImpressao()"
   />
+
+  <!-- Upsell logo abaixo da nota: o aluno acabou de ver o resultado e é aqui
+       que o custo afundado dele já existe para ser citado -->
+  @if (mostrarUpsell()) {
+    <div class="mx-auto mt-6 max-w-3xl px-4 pb-8">
+      <app-upgrade-card
+        [titulo]="upsellTitulo()"
+        [descricao]="upsellDescricao()"
+        [cta]="upsellCta()"
+        origem="resultado"
+      />
+    </div>
+  }
 }

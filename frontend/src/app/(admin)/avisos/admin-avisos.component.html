@@ -1,6 +1,6 @@
 <div class="page-header">
   <h1 class="page-title">Avisos</h1>
-  <p class="page-subtitle">Avisos ativos são exibidos como modal para todos os usuários ao entrar no app.</p>
+  <p class="page-subtitle">Avisos ativos são exibidos como modal ao entrar no app, para o público escolhido em cada aviso.</p>
 </div>
 
 <div class="create-form">
@@ -43,6 +43,19 @@
           (change)="handleFileSelect($event)"
         />
       </label>
+    </div>
+
+    <div class="form-row">
+      <select
+        class="form-input"
+        aria-label="Público do aviso"
+        [ngModel]="novoSegmento()"
+        (ngModelChange)="novoSegmento.set($event)"
+      >
+        @for (opcao of segmentos; track opcao.valor) {
+          <option [value]="opcao.valor">{{ opcao.label }} · {{ opcao.ajuda }}</option>
+        }
+      </select>
     </div>
 
     @if (novoImagemUrl()) {

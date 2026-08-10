@@ -1,0 +1,51 @@
+@if (variante() === 'compacto') {
+  <a
+    routerLink="/planos"
+    [queryParams]="origem() ? { origem: origem() } : null"
+    class="group relative block overflow-hidden rounded-xl p-3 text-white shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+    [style.background]="GRADIENTE"
+  >
+    <div class="pointer-events-none absolute inset-0" [style.background]="HIGHLIGHTS"></div>
+    <div class="relative flex items-center gap-2">
+      <app-ui-icon [icon]="sparklesIcon" [size]="16" />
+      <p class="min-w-0 flex-1 text-xs font-bold leading-tight">{{ titulo() }}</p>
+    </div>
+    @if (descricao()) {
+      <p class="relative mt-1 text-[0.6875rem] leading-snug text-white/75">{{ descricao() }}</p>
+    }
+    <span
+      class="relative mt-2 flex items-center justify-center gap-1 rounded-lg bg-white/20 px-2 py-1.5 text-[0.6875rem] font-bold backdrop-blur-sm transition-colors group-hover:bg-white/30"
+    >
+      {{ cta() }}
+      <app-ui-icon [icon]="arrowRightIcon" [size]="12" />
+    </span>
+  </a>
+} @else {
+  <a
+    routerLink="/planos"
+    [queryParams]="origem() ? { origem: origem() } : null"
+    class="group relative flex items-center gap-5 overflow-hidden rounded-xl p-6 text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+    [style.background]="GRADIENTE"
+  >
+    <div class="pointer-events-none absolute inset-0" [style.background]="HIGHLIGHTS"></div>
+
+    <div
+      class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm"
+    >
+      <app-ui-icon [icon]="sparklesIcon" [size]="24" />
+    </div>
+
+    <div class="relative min-w-0 flex-1">
+      <h3 class="text-lg font-bold">{{ titulo() }}</h3>
+      @if (descricao()) {
+        <p class="mt-1 text-sm leading-relaxed text-white/75">{{ descricao() }}</p>
+      }
+    </div>
+
+    <span
+      class="relative shrink-0 whitespace-nowrap rounded-lg bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur-sm transition-transform group-hover:translate-x-1"
+    >
+      {{ cta() }}
+    </span>
+  </a>
+}

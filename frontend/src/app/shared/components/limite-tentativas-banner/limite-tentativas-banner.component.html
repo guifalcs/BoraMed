@@ -1,0 +1,27 @@
+<div [class]="classes()">
+  <div [class]="classesIcone()">
+    <app-ui-icon [icon]="icone()" [size]="18" />
+  </div>
+
+  <div class="min-w-0 flex-1">
+    <p class="text-sm font-semibold leading-tight">{{ titulo() }}</p>
+    <p class="mt-0.5 text-xs opacity-80">{{ descricao() }}</p>
+
+    <div
+      class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/10"
+      role="progressbar"
+      [attr.aria-valuenow]="usadas()"
+      aria-valuemin="0"
+      [attr.aria-valuemax]="limite()"
+      [attr.aria-label]="descricaoAcessivel()"
+    >
+      <div [class]="classesBarra()" [style.width.%]="percentual()"></div>
+    </div>
+  </div>
+
+  @if (comCta()) {
+    <a routerLink="/planos" [queryParams]="{ origem: 'limite-tentativas' }" [class]="classesCta()">
+      {{ cta() }}
+    </a>
+  }
+</div>

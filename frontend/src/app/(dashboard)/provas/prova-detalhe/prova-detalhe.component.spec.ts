@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ProvaDetalheComponent } from './prova-detalhe.component';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { SubscriptionService } from '../../../core/services/subscription.service';
+import { PaywallService } from '../../../core/services/paywall.service';
 import type { ProvaComFaculdade } from '../../../core/models/prova';
 import type { Tentativa } from '../../../core/models/tentativa';
 
@@ -238,6 +240,81 @@ describe('ProvaDetalheComponent', () => {
 
     it('exibe "pausada" quando status é pausada', () => {
       expect(el.textContent).toContain('pausada');
+    });
+  });
+
+  // ── Impressão bloqueada no plano gratuito ──────────────────────────────────
+
+  describe('impressão', () => {
+    const mockPaywall = { abrir: vi.fn() };
+    const mockRouter = { navigate: vi.fn() };
+
+    async function setupComNivel(nivel: 'gratuito' | 'essencial') {
+      mockProvaService.buscarProva.mockResolvedValue({ ok: true, data: provaFactory() });
+      mockTentativaService.buscarTentativaAtiva.mockResolvedValue({ ok: true, data: null });
+
+      await TestBed.configureTestingModule({
+        imports: [ProvaDetalheComponent],
+        providers: [
+          provideRouter([]),
+          { provide: ActivatedRoute, useValue: mockActivatedRoute },
+          { provide: ProvaService, useValue: mockProvaService },
+          { provide: TentativaService, useValue: mockTentativaService },
+          { provide: PaywallService, useValue: mockPaywall },
+          { provide: Router, useValue: mockRouter },
+          {
+            provide: SubscriptionService,
+            useValue: {
+              statusAcessoServidor: vi.fn().mockResolvedValue({
+                nivel,
+                tentativasLimite: 3,
+                tentativasRestantes: nivel === 'gratuito' ? 3 : null,
+                tentativasUsadas: nivel === 'gratuito' ? 0 : null,
+              }),
+            },
+          },
+        ],
+      }).compileComponents();
+
+      fixture = TestBed.createComponent(ProvaDetalheComponent);
+      el = fixture.nativeElement as HTMLElement;
+      await fixture.componentInstance.ngOnInit();
+      fixture.detectChanges();
+    }
+
+    /** Botão de imprimir = o segundo app-ui-button da coluna de ações. */
+    function botaoImprimir(): HTMLElement {
+      const botoes = Array.from(el.querySelectorAll('app-ui-button'));
+      return botoes[botoes.length - 1] as HTMLElement;
+    }
+
+    it('marca o botão com o selo PRO no plano gratuito', async () => {
+      await setupComNivel('gratuito');
+
+      const botao = botaoImprimir();
+      expect(botao.querySelector('app-upgrade-badge')).not.toBeNull();
+      expect(botao.querySelector('.ui-button--bloqueado')).not.toBeNull();
+    });
+
+    it('abre o upsell em vez de navegar para a impressão', async () => {
+      await setupComNivel('gratuito');
+
+      botaoImprimir().querySelector('button')?.click();
+
+      expect(mockPaywall.abrir).toHaveBeenCalledWith('impressao');
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    });
+
+    it('mantém a impressão liberada para nível pago', async () => {
+      await setupComNivel('essencial');
+
+      const botao = botaoImprimir();
+      expect(botao.querySelector('app-upgrade-badge')).toBeNull();
+
+      botao.querySelector('button')?.click();
+
+      expect(mockPaywall.abrir).not.toHaveBeenCalled();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/imprimir/simulado', 'prova-1']);
     });
   });
 });

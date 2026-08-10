@@ -13,6 +13,8 @@ import { TentativaService } from '../../../core/services/tentativa.service';
 import { AnotacaoQuestaoService } from '../../../core/services/anotacao-questao.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
+import { SubscriptionService } from '../../../core/services/subscription.service';
+import { PaywallService } from '../../../core/services/paywall.service';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { TentativaResposta } from '../../../core/models/tentativa';
 import type { RespostaCorrecao } from '../../../core/models/correcao';
@@ -20,10 +22,11 @@ import { QuestaoCardComponent } from '../../../shared/components/questao-card/qu
 import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-anotacao/questao-anotacao.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { UpgradeBadgeComponent } from '../../../shared/components/upgrade-badge/upgrade-badge.component';
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,6 +36,14 @@ export class ProvaVisualizarComponent {
   private readonly anotacaoService = inject(AnotacaoQuestaoService);
   private readonly provaService = inject(ProvaService);
   private readonly nav = inject(NavigationProgressService);
+  private readonly subscription = inject(SubscriptionService);
+  private readonly paywall = inject(PaywallService);
+
+  /**
+   * Impressão é benefício de assinante. `false` enquanto o nível é desconhecido
+   * — nada de cadeado piscando na tela de quem paga.
+   */
+  protected readonly gratuito = this.subscription.isGratuito;
 
   protected readonly chevronLeftIcon = ChevronLeft;
   protected readonly printerIcon = Printer;
@@ -97,7 +108,14 @@ export class ProvaVisualizarComponent {
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
       void this.nav.track(this.carregar(id, routeTentativaId || null));
       this.hidratarRespostas(id);
+      // Fora do caminho crítico: só decide se o botão de imprimir aparece
+      // bloqueado (RPC cacheada em SubscriptionService).
+      void this.subscription.statusAcessoServidor();
     }
+  }
+
+  protected abrirPaywallImpressao(): void {
+    this.paywall.abrir('impressao');
   }
 
   private async carregar(provaId: string, tentativaId: string | null): Promise<void> {

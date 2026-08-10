@@ -18,7 +18,13 @@ describe('authGuard', () => {
       loadProfile: vi.fn().mockResolvedValue(undefined),
     };
     const subscriptionMock = {
-      temAssinaturaAtivaServidor: vi.fn().mockResolvedValue(false),
+      statusAcessoServidor: vi.fn().mockResolvedValue({
+        nivel: 'gratuito',
+        tentativasLimite: 3,
+        tentativasRestantes: 3,
+        tentativasUsadas: 0,
+      }),
+      vincular: vi.fn().mockResolvedValue({ ok: true }),
     };
     const routerMock = { createUrlTree: vi.fn().mockReturnValue('/login-tree') };
 

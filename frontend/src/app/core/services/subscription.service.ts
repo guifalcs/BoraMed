@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
-import type { Assinatura, Pagamento, Plano } from '../models/subscription.types';
+import type { Assinatura, NivelAcesso, Pagamento, Plano, StatusAcesso } from '../models/subscription.types';
 
 export type CheckoutResult =
   | { ok: true; initPoint: string }
@@ -31,15 +31,38 @@ export class SubscriptionService {
   private acessoAtivo: { userId: string; expiraEm: number } | null = null;
   private acessoPromise: Promise<boolean> | null = null;
 
-  // Cache do tier: mesmo padrão do cache de acesso acima — só o resultado é
-  // cacheado quando conhecido (positivo ou negativo aqui, pois tier não tem a
-  // mesma volatilidade do paywall pós-checkout), chaveado por usuário e com o
-  // mesmo TTL. Invalidado junto com o acesso (mesmos eventos disparam ambos).
-  private tierAtivo: { userId: string; tier: 'essencial' | 'avancado' | null; expiraEm: number } | null = null;
-  private tierPromise: Promise<'essencial' | 'avancado' | null> | null = null;
+  // Cache do status de acesso (nível + contador de tentativas gratuitas): mesmo
+  // padrão do cache de acesso acima — chaveado por usuário, mesmo TTL,
+  // invalidado junto com o acesso (os mesmos eventos disparam ambos). Aqui o
+  // resultado negativo TAMBÉM é cacheado: nível não tem a volatilidade do
+  // paywall pós-checkout. O contador de tentativas é a exceção e obriga a
+  // invalidar após iniciar/finalizar uma tentativa — ver TentativaService.
+  private statusCache: { userId: string; status: StatusAcesso; expiraEm: number } | null = null;
+  private statusPromise: Promise<StatusAcesso> | null = null;
+
+  private readonly _statusAcesso = signal<StatusAcesso | null>(null);
 
   readonly assinatura = this._assinatura.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
+
+  /**
+   * Status de acesso conhecido — alimenta os indicadores de UI (contador de
+   * tentativas, itens bloqueados no menu, banners de upsell). `null` enquanto
+   * ainda não foi buscado; nesse estado a UI não deve bloquear nada, porque o
+   * gating real é dos guards e das RPCs.
+   */
+  readonly statusAcesso = this._statusAcesso.asReadonly();
+
+  /** Nível de acesso para uso de UI. `null` = ainda desconhecido. */
+  readonly nivelAcesso = computed<NivelAcesso | null>(() => this._statusAcesso()?.nivel ?? null);
+
+  /** Tentativas gratuitas restantes. `null` = ilimitado ou ainda desconhecido. */
+  readonly tentativasRestantes = computed<number | null>(
+    () => this._statusAcesso()?.tentativasRestantes ?? null,
+  );
+
+  /** Só o plano gratuito tem teto de tentativas e recursos bloqueados. */
+  readonly isGratuito = computed(() => this._statusAcesso()?.nivel === 'gratuito');
 
   /** Acesso liberado quando há assinatura autorizada (admins não passam por aqui). */
   readonly temAcesso = computed(() => this._assinatura()?.status === 'authorized');
@@ -57,6 +80,7 @@ export class SubscriptionService {
 
   clear(): void {
     this._assinatura.set(null);
+    this._statusAcesso.set(null);
     this.invalidarAcesso();
   }
 
@@ -66,8 +90,8 @@ export class SubscriptionService {
     // Também descarta a requisição em voo: ela partiu antes da mudança de
     // status e novos chamadores não devem herdar seu resultado obsoleto.
     this.acessoPromise = null;
-    this.tierAtivo = null;
-    this.tierPromise = null;
+    this.statusCache = null;
+    this.statusPromise = null;
   }
 
   async carregarAssinatura(): Promise<void> {
@@ -152,32 +176,74 @@ export class SubscriptionService {
   }
 
   /**
-   * Tier autoritativo no servidor (RPC `assinatura_tier`), para decisões de
-   * GATING (guards). Busca sob demanda — nunca no boot do app — para não
-   * introduzir round-trips seriais na inicialização. Mesmo padrão de
-   * cache/dedup/TTL de `temAssinaturaAtivaServidor` (ver `invalidarAcesso`).
+   * Status de acesso autoritativo no servidor (RPC `get_status_acesso`): nível
+   * + contador de tentativas gratuitas numa única chamada, já que praticamente
+   * toda tela precisa dos dois juntos. Busca sob demanda — nunca no boot do
+   * app — para não introduzir round-trips seriais na inicialização. Mesmo
+   * padrão de cache/dedup/TTL de `temAssinaturaAtivaServidor`.
    */
-  async tierAtivoServidor(): Promise<'essencial' | 'avancado' | null> {
+  async statusAcessoServidor(): Promise<StatusAcesso> {
     const userId = this.auth.user()?.id;
-    const cache = this.tierAtivo;
-    if (userId && cache?.userId === userId && Date.now() < cache.expiraEm) return cache.tier;
+    const cache = this.statusCache;
+    if (userId && cache?.userId === userId && Date.now() < cache.expiraEm) return cache.status;
 
-    if (this.tierPromise) return this.tierPromise;
+    if (this.statusPromise) return this.statusPromise;
 
-    const promise = this.consultarTierServidor(userId).finally(() => {
-      if (this.tierPromise === promise) this.tierPromise = null;
+    const promise = this.consultarStatusServidor(userId).finally(() => {
+      if (this.statusPromise === promise) this.statusPromise = null;
     });
-    this.tierPromise = promise;
+    this.statusPromise = promise;
     return promise;
   }
 
-  private async consultarTierServidor(userId: string | undefined): Promise<'essencial' | 'avancado' | null> {
-    const { data, error } = await this.supabase.rpc('assinatura_tier');
-    const tier = !error && (data === 'essencial' || data === 'avancado') ? data : null;
-    if (!error && userId) {
-      this.tierAtivo = { userId, tier, expiraEm: Date.now() + SubscriptionService.ACESSO_TTL_MS };
+  private async consultarStatusServidor(userId: string | undefined): Promise<StatusAcesso> {
+    const { data, error } = await this.supabase.rpc('get_status_acesso');
+    if (error || !data) {
+      // Falha fecha o acesso (mesma postura do antigo `tierAtivoServidor`, que
+      // devolvia null e fazia o guard redirecionar). Erro nunca entra no cache:
+      // a próxima navegação consulta o servidor de novo.
+      return SubscriptionService.STATUS_FALLBACK;
     }
-    return tier;
+
+    const status = SubscriptionService.parseStatus(data);
+    this._statusAcesso.set(status);
+    if (userId) {
+      this.statusCache = { userId, status, expiraEm: Date.now() + SubscriptionService.ACESSO_TTL_MS };
+    }
+    return status;
+  }
+
+  private static readonly STATUS_FALLBACK: StatusAcesso = {
+    nivel: 'gratuito',
+    tentativasLimite: 0,
+    tentativasRestantes: 0,
+    tentativasUsadas: 0,
+  };
+
+  private static parseStatus(data: unknown): StatusAcesso {
+    const r = (data ?? {}) as Record<string, unknown>;
+    const nivel = r['nivel'];
+    return {
+      nivel: nivel === 'essencial' || nivel === 'avancado' ? nivel : 'gratuito',
+      tentativasLimite: typeof r['tentativas_limite'] === 'number' ? r['tentativas_limite'] : 0,
+      tentativasRestantes: typeof r['tentativas_restantes'] === 'number' ? r['tentativas_restantes'] : null,
+      tentativasUsadas: typeof r['tentativas_usadas'] === 'number' ? r['tentativas_usadas'] : null,
+    };
+  }
+
+  /**
+   * Tier no contrato antigo ('essencial' | 'avancado' | null), derivado do
+   * status. Mantido para `tierAvancadoGuard` e telas que já o consomem: null
+   * continua significando "sem acesso pago".
+   */
+  async tierAtivoServidor(): Promise<'essencial' | 'avancado' | null> {
+    const { nivel } = await this.statusAcessoServidor();
+    return nivel === 'gratuito' ? null : nivel;
+  }
+
+  /** Nível de acesso autoritativo, para gating que precisa distinguir gratuito. */
+  async nivelAcessoServidor(): Promise<NivelAcesso> {
+    return (await this.statusAcessoServidor()).nivel;
   }
 
   async listarPlanos(): Promise<Plano[]> {

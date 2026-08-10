@@ -4,6 +4,7 @@
   [class.ui-button--secondary]="variant() === 'secondary'"
   [class.ui-button--danger]="variant() === 'danger'"
   [class.ui-button--full]="fullWidth()"
+  [class.ui-button--bloqueado]="bloqueado()"
   [type]="type()"
   [disabled]="disabled() || loading()"
   [attr.aria-label]="ariaLabel()"
@@ -11,6 +12,9 @@
   (click)="handleClick($event)"
 >
   <span>{{ loading() ? loadingLabel() : label() }}</span>
+  @if (bloqueado() && !loading()) {
+    <app-upgrade-badge />
+  }
   @if (showArrow() && !loading()) {
     <span class="ui-button__arrow" aria-hidden="true">→</span>
   }
