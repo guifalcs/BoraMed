@@ -45,7 +45,9 @@ const CABECALHO_POR_ORIGEM: Record<string, { titulo: string; subtitulo: string }
   },
   'prova-bloqueada': {
     titulo: 'Acesse o acervo completo',
-    subtitulo: 'O plano gratuito cobre os treinos nacionais. Os planos pagos liberam o resto.',
+    // Chega aqui tanto o gratuito quanto o Essencial: a copy não pode tratar
+    // quem já paga como se estivesse no plano grátis. Ver PAYWALL_CONTEUDO.
+    subtitulo: 'Os treinos nacionais já estão no seu plano. O Avançado libera o acervo inteiro.',
   },
   resultado: {
     titulo: 'Treine sem limite',

@@ -82,12 +82,16 @@ export const PAYWALL_CONTEUDO: Record<PaywallContexto, PaywallConteudo> = {
     cta: 'Ver planos',
   },
   'prova-bloqueada': {
-    titulo: 'Treino exclusivo para assinantes',
-    subtitulo: 'O plano gratuito cobre os treinos nacionais. Este aqui vai além.',
+    // Este contexto atende gratuito E essencial (os dois batem no P0015 de
+    // `iniciar_tentativa`), então a copy não pode presumir plano gratuito nem
+    // prometer "sem limite" — quem paga o Essencial já não tem limite e ficaria
+    // ouvindo que está no plano grátis na hora do upsell.
+    titulo: 'Treino exclusivo do plano Avançado',
+    subtitulo: 'Seu plano cobre os treinos nacionais. Este aqui vai além.',
     beneficios: [
       'Acervo completo, não só os treinos nacionais',
       'Provas processuais e de laboratório com imagem',
-      'Sem limite de tentativas',
+      'Simulados personalizados por tema, com impressão',
     ],
     fechamento: 'Incluso no plano Avançado.',
     cta: 'Ver planos',
