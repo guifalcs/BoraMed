@@ -12,6 +12,7 @@ import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { CorrecaoIaService } from '../../../core/services/correcao-ia.service';
 import { SubscriptionService } from '../../../core/services/subscription.service';
+import { PaywallService } from '../../../core/services/paywall.service';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
 import { ResultadoSummaryComponent } from '../../../shared/components/resultado-summary/resultado-summary.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -33,6 +34,7 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
   private readonly provaService = inject(ProvaService);
   private readonly correcaoIa = inject(CorrecaoIaService);
   private readonly subscription = inject(SubscriptionService);
+  private readonly paywall = inject(PaywallService);
 
   protected readonly resultado = signal<ResultadoTentativa | null>(null);
   protected readonly isLoading = signal(true);
@@ -58,7 +60,7 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
   // ---- Upsell do plano gratuito ----
   // O aluno acabou de ver a própria nota: é o ponto de maior intenção da
   // jornada, e o único em que o custo afundado já existe para ser citado.
-  private readonly gratuito = this.subscription.isGratuito;
+  protected readonly gratuito = this.subscription.isGratuito;
   private readonly restantes = this.subscription.tentativasRestantes;
 
   protected readonly mostrarUpsell = computed(
@@ -90,6 +92,11 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
   protected readonly upsellCta = computed(() =>
     (this.restantes() ?? 0) <= 0 ? 'Assinar agora' : 'Ver planos',
   );
+
+  /** Impressão é benefício de assinante: o gratuito vê o selo e o upsell. */
+  protected abrirPaywallImpressao(): void {
+    this.paywall.abrir('impressao');
+  }
 
   private destruido = false;
   private tentativaId = '';

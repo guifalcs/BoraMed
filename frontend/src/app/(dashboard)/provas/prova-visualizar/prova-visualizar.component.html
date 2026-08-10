@@ -10,14 +10,29 @@
   @if (tituloPagina()) {
     <div class="mb-2 flex items-start justify-between gap-3">
       <h1 class="text-xl font-extrabold text-[var(--color-text)]">{{ tituloPagina() }}</h1>
-      <a
-        [routerLink]="['/imprimir/simulado', provaId()]"
-        [queryParams]="{ gabarito: 1 }"
-        class="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-      >
-        <app-ui-icon [icon]="printerIcon" [size]="16" />
-        Imprimir
-      </a>
+      @if (gratuito()) {
+        <!-- Recurso de assinante: fica visível e apagado, com o selo PRO, e o
+             clique abre o upsell — mesmo tratamento dos itens do menu. -->
+        <button
+          type="button"
+          aria-label="Imprimir (recurso de assinante)"
+          class="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] opacity-70 transition-opacity hover:opacity-100"
+          (click)="abrirPaywallImpressao()"
+        >
+          <app-ui-icon [icon]="printerIcon" [size]="16" />
+          Imprimir
+          <app-upgrade-badge />
+        </button>
+      } @else {
+        <a
+          [routerLink]="['/imprimir/simulado', provaId()]"
+          [queryParams]="{ gabarito: 1 }"
+          class="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
+          <app-ui-icon [icon]="printerIcon" [size]="16" />
+          Imprimir
+        </a>
+      }
     </div>
   }
 

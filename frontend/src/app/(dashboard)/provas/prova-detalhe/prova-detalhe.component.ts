@@ -155,6 +155,15 @@ export class ProvaDetalheComponent implements OnInit {
   protected imprimir(): void {
     const prova = this.prova();
     if (!prova) return;
+
+    // Impressão é benefício de assinante (get_simulado_impressao recusa o
+    // gratuito com P0009, e a rota /imprimir cai no nivelPagoGuard): abre o
+    // upsell aqui em vez de mandar o aluno para um redirect sem explicação.
+    if (this.gratuito()) {
+      this.paywall.abrir('impressao');
+      return;
+    }
+
     void this.router.navigate(['/imprimir/simulado', prova.id]);
   }
 

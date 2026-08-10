@@ -62,3 +62,13 @@ export const Compact: Story = {
     showArrow: false,
   },
 };
+
+/** Recurso pago: botão apagado com o selo PRO, mas ainda clicável (abre o upsell). */
+export const Bloqueado: Story = {
+  args: {
+    label: 'Imprimir',
+    variant: 'secondary',
+    bloqueado: true,
+    showArrow: false,
+  },
+};

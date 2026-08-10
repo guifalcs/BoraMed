@@ -82,6 +82,8 @@
               label="Imprimir"
               variant="secondary"
               [disabled]="iniciando()"
+              [bloqueado]="gratuito()"
+              [ariaLabel]="gratuito() ? 'Imprimir (recurso de assinante)' : null"
               (buttonClick)="imprimir()"
             />
           </div>

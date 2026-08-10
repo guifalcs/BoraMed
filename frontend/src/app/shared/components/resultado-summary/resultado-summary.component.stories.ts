@@ -73,3 +73,10 @@ export const SemTemas: Story = {
     },
   },
 };
+
+/** Plano gratuito: impressão visível com o selo PRO, sem navegar. */
+export const ImpressaoBloqueada: Story = {
+  args: {
+    impressaoBloqueada: true,
+  },
+};
