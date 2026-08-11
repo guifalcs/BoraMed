@@ -44,7 +44,7 @@ GitHub Actions roda CI → Vercel gera preview
        ↓
 Você revisa PR → merge
        ↓
-GitHub Actions deploya para produção
+Vercel publica o frontend + `db push` das migrations (manual)
 ```
 
 ## Regras do Processo
@@ -55,7 +55,10 @@ GitHub Actions deploya para produção
 4. **Changelog atualizado** — ao final de cada feature/fix/tweak
 5. **Story para todo componente novo** — sem exceções
 6. **Testes para toda lógica nova** — sem exceções
-7. **Deploy para prod só via CI/CD** — nunca manual pelo Claude Code
+7. **Deploy** — frontend sai automático pela Vercel no merge da `main`; as
+   migrations são manuais, por `npx supabase db push --linked` (nenhum job de CI
+   faz isso hoje). Banco antes do frontend, e sempre com `--dry-run` primeiro.
+   Ver `supabase/CLAUDE.md`.
 
 ## Dicas de Uso
 
