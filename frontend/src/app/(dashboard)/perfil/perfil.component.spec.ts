@@ -182,22 +182,29 @@ describe('PerfilComponent', () => {
 
   describe('effect de preenchimento do formulário', () => {
     it('popula os campos quando o perfil é carregado', () => {
-      profileSignal.set(fakeProfile({ nome_completo: 'Maria Silva', tipo_usuario: 'residente' }));
+      profileSignal.set(fakeProfile({ nome_completo: 'Maria Silva', tipo_usuario: 'estudante_medicina' }));
       TestBed.flushEffects();
 
       expect((component as any).nomeCompleto()).toBe('Maria Silva');
-      expect((component as any).tipoUsuario()).toBe('residente');
+      expect((component as any).tipoUsuario()).toBe('estudante_medicina');
     });
 
-    it('define periodo quando tipo_usuario é estudante_medicina', () => {
+    it('normaliza perfis legados para estudante_medicina', () => {
+      profileSignal.set(fakeProfile({ tipo_usuario: 'residente' }));
+      TestBed.flushEffects();
+
+      expect((component as any).tipoUsuario()).toBe('estudante_medicina');
+    });
+
+    it('define periodo a partir do perfil carregado', () => {
       profileSignal.set(fakeProfile({ tipo_usuario: 'estudante_medicina', periodo: 5 }));
       TestBed.flushEffects();
 
       expect((component as any).periodo()).toBe(5);
     });
 
-    it('define periodo como null para tipos não-estudante', () => {
-      profileSignal.set(fakeProfile({ tipo_usuario: 'medico', periodo: null }));
+    it('mantém periodo null quando o perfil não tem periodo', () => {
+      profileSignal.set(fakeProfile({ tipo_usuario: 'estudante_medicina', periodo: null }));
       TestBed.flushEffects();
 
       expect((component as any).periodo()).toBeNull();

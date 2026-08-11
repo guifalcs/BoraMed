@@ -39,24 +39,22 @@ test.describe('Página de Perfil', () => {
     await expect(perfilLabel.locator('.ui-field__required')).toBeVisible();
   });
 
-  test('campo Período aparece ao selecionar Estudante de Medicina', async ({ page }) => {
-    await expect(perfil.periodoSelect).not.toBeVisible();
-    await perfil.selectPerfil('Estudante de Medicina');
-    await expect(perfil.periodoSelect).toBeVisible();
+  test('Perfil oferece apenas Estudante de Medicina', async ({ page }) => {
+    await perfil.perfilSelect.click();
+    const dropdown = page.getByRole('listbox', { name: 'Perfil' });
+    await expect(dropdown.getByRole('option')).toHaveCount(1);
+    await expect(dropdown.getByRole('option')).toHaveText('Estudante de Medicina');
   });
 
-  test('campo Período some ao trocar para outro perfil', async ({ page }) => {
-    await perfil.selectPerfil('Estudante de Medicina');
+  test('campo Período fica disponível para o estudante', async () => {
     await expect(perfil.periodoSelect).toBeVisible();
-
-    await perfil.selectPerfil('Médico');
-    await expect(perfil.periodoSelect).not.toBeVisible();
+    await perfil.selectPeriodo('5º período');
   });
 
   test('salva dados pessoais com sucesso', async ({ page }) => {
     await perfil.nomeInput.clear();
     await perfil.nomeInput.fill('Nome de Teste E2E');
-    await perfil.selectPerfil('Médico');
+    await perfil.selectPeriodo('5º período');
     await perfil.saveButton.click();
 
     // Toast de sucesso deve aparecer
@@ -68,7 +66,7 @@ test.describe('Página de Perfil', () => {
     const dropdown = page.getByRole('listbox', { name: 'Perfil' });
     await expect(dropdown).toBeVisible();
 
-    await dropdown.getByText('Residente').click();
+    await dropdown.getByText('Estudante de Medicina').click();
     await expect(dropdown).not.toBeVisible();
   });
 

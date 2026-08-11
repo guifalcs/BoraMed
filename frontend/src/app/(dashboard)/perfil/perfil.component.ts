@@ -17,13 +17,10 @@ import { currentWeekRange } from '../../shared/utils/current-week-range';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
+// Único perfil disponível por enquanto — os demais tipos seguem existindo no
+// banco (perfis legados), mas não são mais oferecidos na seleção.
 const TIPO_USUARIO_OPTIONS: SelectOption<string>[] = [
   { value: 'estudante_medicina', label: 'Estudante de Medicina' },
-  { value: 'medico',             label: 'Médico' },
-  { value: 'residente',          label: 'Residente' },
-  { value: 'cursinho',           label: 'Cursinho / Pré-vestibular' },
-  { value: 'ensino_medio',       label: 'Ensino Médio' },
-  { value: 'outro',              label: 'Outro' },
 ];
 
 const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i) => ({
@@ -145,9 +142,11 @@ export class PerfilComponent {
       const p = this.profileService.profile();
       if (p) {
         this.nomeCompleto.set(p.nome_completo ?? '');
-        this.tipoUsuario.set(p.tipo_usuario);
-        this.periodo.set(p.tipo_usuario === 'estudante_medicina' ? p.periodo : null);
-        this.faculdadeRede.set(p.tipo_usuario === 'estudante_medicina' ? p.faculdade_rede : null);
+        // Perfis legados (médico, residente...) e perfis sem tipo caem no único
+        // valor oferecido hoje, para que Período e Faculdade fiquem editáveis.
+        this.tipoUsuario.set('estudante_medicina');
+        this.periodo.set(p.periodo);
+        this.faculdadeRede.set(p.faculdade_rede);
         this.competirPublico.set(p.competir_publico);
       }
     });
