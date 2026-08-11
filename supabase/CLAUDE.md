@@ -4,7 +4,7 @@
 ## Project Refs
 
 ```
-PROD_REF: gakvktwtdunljojghpff   (NUNCA db push / seed de teste contra este ref)
+PROD_REF: gakvktwtdunljojghpff   (NUNCA seed de teste contra este ref)
 DEV_REF:  branch de preview efêmero (criar sob demanda; ver docs/ambiente-testes-pagamento.md)
 ```
 
@@ -26,7 +26,15 @@ npx supabase db reset                     # reseta e aplica todas as migrations
 npx supabase functions serve              # roda edge functions localmente
 npx supabase functions deploy nome        # deploy de edge function
 npx supabase gen types typescript --local # gera tipos TS do schema
+npx supabase db push --linked --dry-run   # lista as migrations pendentes em PROD (nao aplica)
+npx supabase db push --linked             # aplica as migrations em PROD
 ```
+
+> Deploy de migrations é manual, por `db push` (não há job de CI que faça isso).
+> Rode o `--dry-run` antes e confirme que só as migrations esperadas estão
+> pendentes e que `seeds` veio vazio. **Banco antes do frontend**: se a Vercel
+> publicar primeiro, o app novo chama RPCs que ainda não existem — foi o caso do
+> `get_status_acesso`, cuja ausência joga todo pagante no fallback de gratuito.
 
 ## Regras
 
