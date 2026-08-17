@@ -515,3 +515,156 @@
     gap: 0.625rem;
   }
 }
+
+/* --- Drill-down "quem interagiu" no gráfico de pico de uso --- */
+
+.chart--clickable canvas {
+  cursor: pointer;
+}
+
+.panel-hint {
+  margin: 0.5rem 0 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.dia-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.dia-chip {
+  padding: 0.125rem 0.5rem;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.dia-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dia-chip--active {
+  color: #4338ca;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  font-weight: 600;
+}
+
+.dia-detalhe {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dia-detalhe__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dia-detalhe__header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.dia-detalhe__header p {
+  margin: 0.125rem 0 0;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.dia-detalhe__close {
+  color: #64748b;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.dia-detalhe__empty {
+  margin: 0.75rem 0 0;
+  color: #64748b;
+  font-size: 0.8125rem;
+}
+
+.usuario-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.usuario-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.usuario-item__id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.usuario-item__id strong {
+  font-size: 0.8125rem;
+  color: #0f172a;
+}
+
+.usuario-item__id span {
+  font-size: 0.6875rem;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usuario-item__nums {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.usuario-item__nums strong {
+  font-size: 0.8125rem;
+  color: #4338ca;
+}
+
+.usuario-item__nums span {
+  font-size: 0.6875rem;
+  color: #64748b;
+}
+
+@media (max-width: 480px) {
+  .usuario-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .usuario-item__nums {
+    align-items: flex-start;
+    text-align: left;
+  }
+}

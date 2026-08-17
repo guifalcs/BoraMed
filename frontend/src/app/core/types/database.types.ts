@@ -2428,6 +2428,10 @@ export type Database = {
       admin_get_questao: { Args: { p_id: string }; Returns: Json }
       admin_get_stats: { Args: never; Returns: Json }
       admin_get_uso_plataforma: { Args: never; Returns: Json }
+      admin_get_uso_usuarios_dia: {
+        Args: { p_dia: string; p_limit?: number }
+        Returns: Json
+      }
       admin_liberar_acesso_gratuito: {
         Args: { p_meses?: number; p_user_id: string }
         Returns: Json

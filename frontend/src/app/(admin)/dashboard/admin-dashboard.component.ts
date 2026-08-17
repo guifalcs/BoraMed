@@ -17,7 +17,13 @@ import {
   Wallet,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
-import { AdminService, AdminFinanceiro, AdminStats, AdminUsoPlataforma } from '../../core/services/admin.service';
+import {
+  AdminService,
+  AdminFinanceiro,
+  AdminStats,
+  AdminUsoPlataforma,
+  AdminUsoUsuariosDia,
+} from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 
@@ -65,6 +71,9 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly fin = signal<AdminFinanceiro | null>(null);
   protected readonly uso = signal<AdminUsoPlataforma | null>(null);
   protected readonly isLoading = signal(true);
+  protected readonly diaSelecionado = signal<string | null>(null);
+  protected readonly usuariosDia = signal<AdminUsoUsuariosDia | null>(null);
+  protected readonly usuariosDiaLoading = signal(false);
   protected readonly activityIcon = Activity;
   protected readonly checkIcon = CheckCircle2;
 
@@ -463,6 +472,57 @@ export class AdminDashboardComponent implements OnInit {
       },
     },
   };
+
+  /**
+   * Drill-down do gráfico de pico de uso: clique numa barra/dia carrega
+   * quem interagiu naquele dia.
+   */
+  protected async onUsoDiaClick(event: { active?: object[] }): Promise<void> {
+    const ativo = (event.active ?? [])[0] as { index?: number } | undefined;
+    if (!ativo || typeof ativo.index !== 'number') return;
+    const ponto = (this.uso()?.por_dia ?? [])[ativo.index];
+    if (!ponto) return;
+    await this.selecionarDia(ponto.dia);
+  }
+
+  protected async selecionarDia(dia: string): Promise<void> {
+    if (this.diaSelecionado() === dia) {
+      this.fecharUsuariosDia();
+      return;
+    }
+    this.diaSelecionado.set(dia);
+    this.usuariosDia.set(null);
+    this.usuariosDiaLoading.set(true);
+    const res = await this.adminService.getUsoUsuariosDia(dia);
+    this.usuariosDiaLoading.set(false);
+    if (!res.ok) {
+      this.toast.error('Erro ao carregar os usuários do dia.');
+      this.diaSelecionado.set(null);
+      return;
+    }
+    // Ignora resposta de um dia que já não é o selecionado (cliques rápidos).
+    if (this.diaSelecionado() === dia) this.usuariosDia.set(res.data);
+  }
+
+  protected fecharUsuariosDia(): void {
+    this.diaSelecionado.set(null);
+    this.usuariosDia.set(null);
+    this.usuariosDiaLoading.set(false);
+  }
+
+  /** 'YYYY-MM-DD' -> '17/08/2026' sem depender de fuso. */
+  protected formatDiaLongo(dia: string): string {
+    const [ano, mes, dataDia] = dia.split('-');
+    return `${dataDia}/${mes}/${ano}`;
+  }
+
+  protected formatHora(iso: string): string {
+    return new Date(iso).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     const [result, fin, uso] = await Promise.all([

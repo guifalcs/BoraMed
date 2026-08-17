@@ -45,6 +45,25 @@ export interface AdminUsoPlataforma {
   interacoes_14d: number;
 }
 
+export interface AdminUsoUsuarioDia {
+  user_id: string;
+  nome: string;
+  email: string | null;
+  avatar_url: string | null;
+  interacoes: number;
+  tentativas: number;
+  respostas: number;
+  primeira_em: string;
+  ultima_em: string;
+}
+
+export interface AdminUsoUsuariosDia {
+  dia: string;
+  total_usuarios: number;
+  total_interacoes: number;
+  usuarios: AdminUsoUsuarioDia[];
+}
+
 export interface AdminFinanceiroPlano {
   slug: string;
   nome: string;
@@ -663,6 +682,16 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_uso_plataforma');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminUsoPlataforma };
+  }
+
+  /** Usuários que interagiram em um dia específico (drill-down do gráfico de pico de uso). */
+  async getUsoUsuariosDia(dia: string, limit = 50): Promise<ServiceResult<AdminUsoUsuariosDia>> {
+    const { data, error } = await this.supabase.rpc('admin_get_uso_usuarios_dia', {
+      p_dia: dia,
+      p_limit: limit,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminUsoUsuariosDia };
   }
 
   // ---- Financeiro ----

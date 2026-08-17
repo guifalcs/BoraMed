@@ -146,14 +146,79 @@
         }
       </div>
 
-      <div class="chart chart--usage">
+      <div class="chart chart--usage chart--clickable">
         <canvas
           baseChart
           type="bar"
           [data]="usoDiarioData()"
           [options]="usoComboOptions"
+          (chartClick)="onUsoDiaClick($event)"
         ></canvas>
       </div>
+
+      <p class="panel-hint">Clique em um dia do gráfico para ver quem interagiu.</p>
+
+      <div class="dia-chips" role="group" aria-label="Selecionar dia">
+        @for (p of uso()?.por_dia ?? []; track p.dia) {
+          <button
+            type="button"
+            class="dia-chip"
+            [class.dia-chip--active]="diaSelecionado() === p.dia"
+            [disabled]="p.interacoes === 0"
+            (click)="selecionarDia(p.dia)"
+          >
+            {{ formatDiaCurto(p.dia) }}
+          </button>
+        }
+      </div>
+
+      @if (diaSelecionado(); as dia) {
+        <div class="dia-detalhe">
+          <div class="dia-detalhe__header">
+            <div>
+              <h3>Interações em {{ formatDiaLongo(dia) }}</h3>
+              @if (usuariosDia(); as u) {
+                <p>
+                  {{ formatNumber(u.total_usuarios) }} usuários ·
+                  {{ formatNumber(u.total_interacoes) }} interações
+                </p>
+              }
+            </div>
+            <button type="button" class="dia-detalhe__close" (click)="fecharUsuariosDia()">
+              Fechar
+            </button>
+          </div>
+
+          @if (usuariosDiaLoading()) {
+            <p class="dia-detalhe__empty">Carregando usuários…</p>
+          } @else if (usuariosDia(); as u) {
+            @if (u.usuarios.length === 0) {
+              <p class="dia-detalhe__empty">Nenhuma interação registrada nesse dia.</p>
+            } @else {
+              <ul class="usuario-list">
+                @for (usuario of u.usuarios; track usuario.user_id) {
+                  <li class="usuario-item">
+                    <div class="usuario-item__id">
+                      <strong>{{ usuario.nome }}</strong>
+                      @if (usuario.email) {
+                        <span>{{ usuario.email }}</span>
+                      }
+                    </div>
+                    <div class="usuario-item__nums">
+                      <strong>{{ formatNumber(usuario.interacoes) }}</strong>
+                      <span>
+                        {{ formatNumber(usuario.tentativas) }} simulados ·
+                        {{ formatNumber(usuario.respostas) }} respostas ·
+                        {{ formatHora(usuario.primeira_em) }}–{{ formatHora(usuario.ultima_em) }}
+                      </span>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      }
     </article>
 
     <article class="panel">
