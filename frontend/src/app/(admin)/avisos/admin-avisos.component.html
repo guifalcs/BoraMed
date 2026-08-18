@@ -107,7 +107,7 @@
         @for (a of avisosAtual(); track a.id) {
           <tr [class.row--inativo]="!a.ativo">
             <td>
-              <img class="thumb" [src]="a.imagem_url" [alt]="a.titulo ?? 'Aviso'" />
+              <img class="thumb" [src]="a.imagem_url" [alt]="a.titulo ?? 'Aviso'" loading="lazy" decoding="async" />
             </td>
             <td>{{ a.titulo ?? '—' }}</td>
             <td class="mensagem-cell">{{ a.mensagem ?? '—' }}</td>

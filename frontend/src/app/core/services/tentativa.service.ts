@@ -234,22 +234,23 @@ export class TentativaService {
     tentativaId: string,
   ): Promise<ProvaResult<{ tentativa: Tentativa; questoes: QuestaoComAlternativas[] }>> {
     try {
-      const { data, error } = await this.supabase.rpc('retomar_tentativa', {
-        p_tentativa_id: tentativaId,
-      });
+      // A busca de respostas só depende do tentativaId (param), não do
+      // resultado da RPC — independentes, rodam em paralelo.
+      const [{ data, error }, { data: respostasData, error: respostasError }] = await Promise.all([
+        this.supabase.rpc('retomar_tentativa', { p_tentativa_id: tentativaId }),
+        this.supabase
+          .from('tentativa_resposta')
+          .select('*')
+          .eq('tentativa_id', tentativaId)
+          .order('ordem_na_tentativa', { ascending: true })
+          .order('id', { ascending: true }),
+      ]);
 
       if (error) throw error;
 
       const result = data as { tentativa: Tentativa; questoes: QuestaoComAlternativas[] };
       this._tentativaAtiva.set(result.tentativa);
       this._questoes.set(result.questoes);
-
-      const { data: respostasData, error: respostasError } = await this.supabase
-        .from('tentativa_resposta')
-        .select('*')
-        .eq('tentativa_id', tentativaId)
-        .order('ordem_na_tentativa', { ascending: true })
-        .order('id', { ascending: true });
 
       if (!respostasError) {
         this._respostas.set((respostasData ?? []) as TentativaResposta[]);

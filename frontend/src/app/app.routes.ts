@@ -63,6 +63,7 @@ export const routes: Routes = [
     // simulado — ver dashboard.routes.ts.
     path: 'dashboard',
     canActivate: [lazyAuthGuard],
+    data: { preload: true },
     loadComponent: () =>
       import('./(dashboard)/dashboard.component').then((m) => m.DashboardComponent),
     loadChildren: () =>

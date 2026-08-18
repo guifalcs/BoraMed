@@ -42,6 +42,12 @@ export async function handleWebhook(
       dataFromBody ?? "",
   );
   const type = String(body["type"] ?? url.searchParams.get("type") ?? "");
+  // `action` (ex.: "payment.created", "payment.updated") distingue eventos
+  // distintos do MP para o MESMO recurso (dataId); reentregas do mesmo evento
+  // repetem a mesma action, então entram na chave de idempotência.
+  const action = String(
+    body["action"] ?? url.searchParams.get("action") ?? "",
+  );
 
   // Validar assinatura HMAC
   const ok = await verifyMpSignature(req, dataId, webhookSecret);
@@ -53,6 +59,39 @@ export async function handleWebhook(
   if (!dataId) return new Response("ok", { status: 200 });
 
   const admin = deps.admin();
+
+  // Idempotência: registra o evento ANTES de processar. Se a chave já existe
+  // (23505), é uma reentrega/replay do MP do MESMO evento — responde 200 sem
+  // reprocessar. Em caso de falha no processamento (catch abaixo ou usuário
+  // não resolvido), o registro é removido para permitir retry do MP.
+  const idempotencyKey = `${type}:${dataId}:${action}`;
+  const { error: idempotencyError } = await admin
+    .from("mp_webhook_evento")
+    .insert({ id: idempotencyKey, payload: body });
+  if (idempotencyError) {
+    if ((idempotencyError as { code?: string }).code === "23505") {
+      console.log("webhook duplicado (replay), ignorando", { idempotencyKey });
+      return new Response("ok", { status: 200 });
+    }
+    // Erro inesperado ao registrar (ex.: indisponibilidade momentânea da
+    // tabela) — loga e segue processando para não bloquear o webhook por uma
+    // falha de infraestrutura auxiliar.
+    console.error(
+      "erro ao registrar mp_webhook_evento:",
+      (idempotencyError as { message?: string }).message,
+    );
+  }
+
+  // Remove o registro de idempotência: usado em toda saída não-2xx (pede
+  // retry ao MP), para que a reentrega do MESMO evento seja reprocessada em
+  // vez de cair no atalho de replay acima.
+  const deleteEvento = async (): Promise<void> => {
+    await admin.from("mp_webhook_evento").delete().eq("id", idempotencyKey);
+  };
+  const failAndRetry = async (): Promise<Response> => {
+    await deleteEvento();
+    return new Response("processing failed, retry", { status: 500 });
+  };
 
   const mpGet = async (
     path: string,
@@ -189,13 +228,22 @@ export async function handleWebhook(
           await admin.from("assinatura").upsert(row, {
             onConflict: "mp_preapproval_id",
           });
-          console.log("assinatura upsert", { dataId, status, userId });
+          console.log("assinatura upsert", {
+            dataId,
+            status,
+            userId: userId.slice(0, 8),
+          });
         } else {
+          // Usuário não resolvido: NÃO faz upsert com user_id null. Responde
+          // 500 para o MP reenviar o webhook (a resolução pode passar a
+          // funcionar, ex.: mp-vincular-assinatura criar o vínculo entre
+          // tentativas); a reconciliação horária cobre o restante.
           console.error("webhook: usuário não resolvido", {
             dataId,
             externalRef,
             payerEmail,
           });
+          return await failAndRetry();
         }
       }
     } else if (type === "subscription_authorized_payment") {
@@ -217,6 +265,7 @@ export async function handleWebhook(
             "authorized_payment sem assinatura vinculada; pedindo retry",
             { dataId },
           );
+          await deleteEvento();
           return new Response("subscription not linked yet", { status: 409 });
         }
         // Mapeia o status do authorized_payment para o enum de pagamento.
@@ -305,14 +354,17 @@ export async function handleWebhook(
           console.warn("payment approved sem acesso concedido; pedindo retry", {
             dataId,
           });
+          await deleteEvento();
           return new Response("grant pending, retry", { status: 409 });
         }
       }
     }
   } catch (e) {
     console.error("erro processando webhook:", (e as Error).message);
-    // Responder 200 mesmo assim evita re-tentativas infinitas em erro transitório
-    // de dados; erros reais aparecem no log para inspeção.
+    // Remove o registro de idempotência e responde 500: o MP reenvia o
+    // evento e a reentrega é reprocessada normalmente (não fica presa no
+    // atalho de replay, já que a chave de idempotência foi liberada).
+    return await failAndRetry();
   }
 
   return new Response("ok", { status: 200 });

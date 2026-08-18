@@ -37,6 +37,7 @@ export const provasRoutes: Routes = [
   },
   {
     path: ':provaId/tentativa/:tentativaId',
+    data: { preload: true },
     loadComponent: () =>
       import('./tentativa-exec/tentativa-exec.component').then(
         (m) => m.TentativaExecComponent,

@@ -63,7 +63,7 @@ export class FakeDb {
 }
 
 class FakeBuilder {
-  private op: 'select' | 'insert' | 'update' | 'upsert' = 'select';
+  private op: 'select' | 'insert' | 'update' | 'upsert' | 'delete' = 'select';
   private cols = '*';
   private filters: Filter[] = [];
   private payload: Row | Row[] | null = null;
@@ -117,6 +117,10 @@ class FakeBuilder {
     this.op = 'upsert';
     this.payload = payload;
     this.conflict = opts?.onConflict;
+    return this;
+  }
+  delete(): this {
+    this.op = 'delete';
     return this;
   }
 
@@ -174,6 +178,15 @@ class FakeBuilder {
       }
       store.push(...items);
       return { rows: items, error: null };
+    }
+
+    if (this.op === 'delete') {
+      const target = store.filter((r) => this.matches(r));
+      for (const r of target) {
+        const idx = store.indexOf(r);
+        if (idx >= 0) store.splice(idx, 1);
+      }
+      return { rows: target, error: null };
     }
 
     if (this.op === 'update') {

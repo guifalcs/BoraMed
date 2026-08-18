@@ -82,6 +82,22 @@ Deno.serve(async (req) => {
     return reply({ error: 'cannot impersonate admin account' }, 403);
   }
 
+  // Rate limit: no máximo 5 impersonações por admin a cada 60s, medido pelo
+  // próprio log de auditoria (fonte única de verdade, sem tabela extra).
+  const sessenta_s_atras = new Date(Date.now() - 60_000).toISOString();
+  const { count: recentCount, error: rateLimitError } = await adminClient
+    .from('admin_impersonation_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('admin_id', caller.id)
+    .gte('criado_em', sessenta_s_atras);
+  if (rateLimitError) {
+    console.error('rate limit check error:', rateLimitError.message);
+    return reply({ error: 'failed to check rate limit' }, 500);
+  }
+  if ((recentCount ?? 0) >= 5) {
+    return reply({ error: 'rate limit exceeded, try again later' }, 429);
+  }
+
   // Registrar audit log ANTES de emitir o token. Se a auditoria falhar, a
   // impersonação é abortada — nunca impersonar sem registro.
   const { error: auditError } = await adminClient.from('admin_impersonation_log').insert({

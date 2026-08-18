@@ -4,6 +4,7 @@ import { lazyTierAvancadoGuard } from '../core/guards/lazy-route-guards';
 export const dashboardRoutes: Routes = [
   {
     path: '',
+    data: { preload: true },
     loadComponent: () =>
       import('./inicio/inicio.component').then((m) => m.InicioComponent),
   },
@@ -15,6 +16,7 @@ export const dashboardRoutes: Routes = [
   { path: 'perfil/competitivo', pathMatch: 'full', redirectTo: 'perfil' },
   {
     path: 'simulados',
+    data: { preload: true },
     loadChildren: () =>
       import('./provas/provas.routes').then((m) => m.provasRoutes),
   },

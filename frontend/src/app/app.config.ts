@@ -1,20 +1,21 @@
 import { ApplicationConfig } from '@angular/core';
 import {
-  PreloadAllModules,
   provideRouter,
   withPreloading,
   withViewTransitions,
 } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { routes } from './app.routes';
+import { SelectivePreloadingStrategy } from './core/selective-preloading.strategy';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(
       routes,
-      // Pré-carrega os chunks lazy em background após o load inicial, para que
-      // o clique de navegação não pague o download do chunk pela rede.
-      withPreloading(PreloadAllModules),
+      // Pré-carrega em background só os chunks lazy marcados com
+      // `data: { preload: true }` (rotas de aluno mais acessadas). Evita
+      // baixar telas admin ou telas pesadas (chart.js) que a maioria nunca abre.
+      withPreloading(SelectivePreloadingStrategy),
       // Transição suave entre rotas (progressive enhancement no browser).
       withViewTransitions(),
     ),

@@ -1,6 +1,5 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { inject as injectAnalytics } from '@vercel/analytics';
 import { UiToastsContainerComponent } from './shared/components/ui/toast/ui-toasts-container.component';
 import { NavigationProgressService } from './core/services/navigation-progress.service';
 
@@ -22,6 +21,8 @@ export class AppComponent {
   protected readonly nav = inject(NavigationProgressService);
 
   constructor() {
-    afterNextRender(() => injectAnalytics());
+    afterNextRender(() => {
+      void import('@vercel/analytics').then(({ inject }) => inject());
+    });
   }
 }

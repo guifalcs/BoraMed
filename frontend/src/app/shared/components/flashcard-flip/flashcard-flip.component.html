@@ -16,7 +16,7 @@
         <div class="flip-card__conteudo">
           @if (frenteImagemUrl()) {
             <div class="flip-card__imagem-wrap">
-              <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" />
+              <img [src]="frenteImagemUrl()!" alt="" class="flip-card__imagem" loading="lazy" decoding="async" />
               <button
                 type="button"
                 class="flip-card__zoom"
@@ -45,7 +45,7 @@
         <div class="flip-card__conteudo">
           @if (versoImagemUrl()) {
             <div class="flip-card__imagem-wrap">
-              <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" />
+              <img [src]="versoImagemUrl()!" alt="" class="flip-card__imagem" loading="lazy" decoding="async" />
               <button
                 type="button"
                 class="flip-card__zoom"

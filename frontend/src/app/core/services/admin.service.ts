@@ -1365,7 +1365,7 @@ export class AdminService {
   async listarDisciplinas(): Promise<ServiceResult<AdminDisciplina[]>> {
     const { data, error } = await this.supabase
       .from('disciplina')
-      .select('*')
+      .select('id,sigla,nome,periodo,ativa,criado_em')
       .order('periodo')
       .order('sigla');
     if (error) return { ok: false, error: error.message };
@@ -1378,7 +1378,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('disciplina')
       .insert(input)
-      .select()
+      .select('id,sigla,nome,periodo,ativa,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminDisciplina };
@@ -1392,7 +1392,7 @@ export class AdminService {
       .from('disciplina')
       .update(input)
       .eq('id', id)
-      .select()
+      .select('id,sigla,nome,periodo,ativa,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminDisciplina };
@@ -1432,7 +1432,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('avisos')
       .insert(input)
-      .select()
+      .select('id,titulo,mensagem,imagem_url,ativo,criado_em,segmento')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminAviso };
@@ -1443,7 +1443,7 @@ export class AdminService {
       .from('avisos')
       .update({ ativo })
       .eq('id', id)
-      .select()
+      .select('id,titulo,mensagem,imagem_url,ativo,criado_em,segmento')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminAviso };
@@ -1631,7 +1631,7 @@ export class AdminService {
   async listarMateriaisCategorias(): Promise<ServiceResult<AdminMaterialCategoria[]>> {
     const { data, error } = await this.supabase
       .from('material_categoria')
-      .select('*')
+      .select('id,slug,titulo,descricao,icone,gradiente,ordem,ativo,criado_em')
       .order('ordem')
       .order('criado_em');
     if (error) return { ok: false, error: error.message };
@@ -1644,7 +1644,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('material_categoria')
       .insert(input)
-      .select()
+      .select('id,slug,titulo,descricao,icone,gradiente,ordem,ativo,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminMaterialCategoria };
@@ -1658,7 +1658,7 @@ export class AdminService {
       .from('material_categoria')
       .update(input)
       .eq('id', id)
-      .select()
+      .select('id,slug,titulo,descricao,icone,gradiente,ordem,ativo,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminMaterialCategoria };
@@ -1673,7 +1673,7 @@ export class AdminService {
   async listarMateriaisArquivos(categoriaId: string): Promise<ServiceResult<AdminMaterialArquivo[]>> {
     const { data, error } = await this.supabase
       .from('material_arquivo')
-      .select('*')
+      .select('id,categoria_id,topico_id,titulo,descricao,storage_path,mime_type,tamanho_bytes,ordem,ativo,criado_em')
       .eq('categoria_id', categoriaId)
       .order('ordem')
       .order('criado_em');
@@ -1687,7 +1687,7 @@ export class AdminService {
     const { data, error } = await this.supabase
       .from('material_arquivo')
       .insert(input)
-      .select()
+      .select('id,categoria_id,topico_id,titulo,descricao,storage_path,mime_type,tamanho_bytes,ordem,ativo,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminMaterialArquivo };
@@ -1701,7 +1701,7 @@ export class AdminService {
       .from('material_arquivo')
       .update(input)
       .eq('id', id)
-      .select()
+      .select('id,categoria_id,topico_id,titulo,descricao,storage_path,mime_type,tamanho_bytes,ordem,ativo,criado_em')
       .single();
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminMaterialArquivo };
@@ -1727,19 +1727,24 @@ export class AdminService {
   }
 
   async obterFlashcardDeckOficial(id: string): Promise<ServiceResult<AdminFlashcardDeckCompleto>> {
-    const { data: deck, error } = await this.supabase
-      .from('flashcard_decks')
-      .select('id,titulo,descricao,publico,likes_count,cards_count,criado_em,atualizado_em')
-      .eq('id', id)
-      .eq('oficial', true)
-      .single();
+    // Deck e cards são independentes (ambos filtram só por id/deck_id): buscar em paralelo.
+    const [
+      { data: deck, error },
+      { data: cards, error: cardsError },
+    ] = await Promise.all([
+      this.supabase
+        .from('flashcard_decks')
+        .select('id,titulo,descricao,publico,likes_count,cards_count,criado_em,atualizado_em')
+        .eq('id', id)
+        .eq('oficial', true)
+        .single(),
+      this.supabase
+        .from('flashcard_cards')
+        .select('id,posicao,frente,verso,frente_imagem_url,verso_imagem_url')
+        .eq('deck_id', id)
+        .order('posicao', { ascending: true }),
+    ]);
     if (error) return { ok: false, error: error.message };
-
-    const { data: cards, error: cardsError } = await this.supabase
-      .from('flashcard_cards')
-      .select('id,posicao,frente,verso,frente_imagem_url,verso_imagem_url')
-      .eq('deck_id', id)
-      .order('posicao', { ascending: true });
     if (cardsError) return { ok: false, error: cardsError.message };
 
     return {

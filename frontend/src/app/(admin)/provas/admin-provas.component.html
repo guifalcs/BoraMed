@@ -494,6 +494,7 @@ EXPLICACAO: O infarto agudo se caracteriza por...
                                 [src]="a.imagem_url | imagemProtegida | async"
                                 [alt]="'Imagem da alternativa ' + a.letra"
                                 loading="lazy"
+                                decoding="async"
                                 class="alt-imagem-thumb"
                               />
                             }
