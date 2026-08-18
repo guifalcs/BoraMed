@@ -22,7 +22,11 @@
           >
             {{ alt.letra }}
           </span>
-          <p class="min-w-0 flex-1 text-sm leading-relaxed">{{ alt.texto }}</p>
+          <!-- Markdown, e não interpolação: o texto da alternativa pode trazer
+               parágrafos e tópicos, que a interpolação achataria em uma linha. -->
+          <div class="min-w-0 flex-1 text-sm leading-relaxed">
+            <markdown [data]="alt.texto"></markdown>
+          </div>
         </div>
       }
     } @else {

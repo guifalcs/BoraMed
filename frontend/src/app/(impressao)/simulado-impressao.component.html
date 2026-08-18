@@ -292,7 +292,9 @@
                       <p class="text-gray-700"><strong>Resposta padrão:</strong> {{ item.respostaModelo }}</p>
                     }
                     @if (item.explicacao) {
-                      <p class="text-gray-700">{{ item.explicacao }}</p>
+                      <div class="text-gray-700">
+                        <markdown [data]="item.explicacao"></markdown>
+                      </div>
                     }
                   </div>
                 }

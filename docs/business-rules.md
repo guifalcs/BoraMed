@@ -42,6 +42,18 @@
 * Questões vinculadas a tentativas, desafios diários ou provas não devem ser deletadas diretamente; usar arquivamento/status quando for preciso remover da experiência do aluno.
 * A visualização administrativa de questão deve reutilizar a mesma renderização do aluno e exibir abaixo um panorama com status, classificação, vínculos, gabarito, revisão e métricas.
 
+#### Formatação do texto (enunciado, apoio e explicação)
+
+`enunciado`, `enunciado_apoio` e `explicacao` são renderizados como **Markdown**. O acervo segue um padrão único de formatação, aplicado em massa pela migration `20260818120000_normalizar_formatacao_questoes` e obrigatório para todo conteúdo novo:
+
+* **Parágrafo separado por linha em branco.** Quebra de linha simples é ignorada pelo Markdown e cola os blocos; sempre `\n\n`.
+* **Máximo de ~4–5 linhas por parágrafo** (~420 caracteres). Textos maiores são cortados em fim de frase, nunca no meio.
+* **Tópico é lista Markdown de verdade** (`- item`), com linha em branco antes do primeiro e depois do último item. Marcador `•`, travessão ou hífen no meio da frase não vira tópico na tela — vira texto corrido.
+* **Enumerações separadas por ponto-e-vírgula** e blocos de dados de exame (`Rótulo: valor. Rótulo: valor.`) viram lista.
+* **Rótulos de seção** (`Mecanismo cobrado:`, `Exame físico:`, `Exames laboratoriais:`, `Justificativa:`, `Distratores:`, `Referências bibliográficas:`) abrem parágrafo próprio.
+* **A imagem é renderizada ANTES do enunciado.** O texto nunca deve dizer que a imagem está "abaixo" ou "a seguir" — sempre "acima". Enunciados vindos de PDF costumam trazer o sentido invertido.
+* Itens em numeral romano (`I.`, `II.`, …) e assertivas ficam cada um em seu parágrafo; a normalização em tempo de exibição continua em `formatarEnunciado` (`shared/utils/`), que é complementar e idempotente.
+
 ### Recurso e Anulação de Questões
 
 Três conceitos independentes, todos configurados no admin no criar/editar questão:

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { provideMarkdown } from 'ngx-markdown';
+import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 import { ChevronLeft, Printer } from 'lucide-angular';
 import { ImpressaoSimuladoService } from '../core/services/impressao-simulado.service';
 import { TIER_UPGRADE_REQUIRED } from '../core/utils/tier-error.util';
@@ -45,7 +45,7 @@ interface GabaritoItem {
 @Component({
   selector: 'app-simulado-impressao',
   standalone: true,
-  imports: [RouterLink, QuestaoImpressaoComponent, UiIconComponent, UiButtonComponent, EmptyStateComponent],
+  imports: [RouterLink, QuestaoImpressaoComponent, UiIconComponent, UiButtonComponent, EmptyStateComponent, MarkdownComponent],
   templateUrl: './simulado-impressao.component.html',
   styleUrls: ['./simulado-impressao.component.css'],
   providers: [provideMarkdown()],

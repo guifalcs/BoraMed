@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-18 | Fix | Formatação das questões
+
+**Acervo inteiro normalizado: tópicos viram tópicos, parágrafos param de virar parede de texto e imagem deixa de ser "abaixo"**
+
+- **O acervo tinha 5.808 blocos de texto acima de 450 caracteres** (o maior com 4.012, ~40 linhas na tela). Enunciado, apoio e explicação são renderizados como Markdown, então quebra de linha simples era engolida e o aluno lia parágrafos de 10+ linhas. Sobraram 535 blocos grandes, e nenhum deles é divisível sem reescrever conteúdo: ou é uma frase única longa, ou é uma lista inteira (que não pode ser partida sem quebrar a lista).
+- **Tópico não aparecia como tópico.** As questões guardavam listas com marcador `•`, travessão ou hífen no meio da frase (`Incorretas: – item – item – item`), que o Markdown renderiza como texto corrido. Viraram listas `- item` de verdade — 387 questões passaram a ter lista Markdown. Também entram nessa conta as enumerações separadas por ponto-e-vírgula (`intro: item; item; item`) e os blocos de dados de exame (`IMC: 31,5. Pressão arterial: 148/90.`), que agora são um item por linha.
+- **`markdown ul/ol` não tinha `list-style`.** O preflight do Tailwind zera o marcador e o `styles.css` só restaurava margem e padding — ou seja, mesmo a lista Markdown que já existia no banco renderizava sem bolinha nenhuma, indistinguível de parágrafos soltos. Sem essa correção, metade do trabalho no banco não apareceria na tela.
+- **Imagem é renderizada ANTES do enunciado, mas 14 questões diziam "abaixo".** Herança das provas em PDF, onde a figura vem depois do texto. Cada caso foi conferido individualmente antes de trocar para "acima" — "as alternativas abaixo" e "as assertivas a seguir" apontam para o texto, não para a imagem, e ficaram como estavam. De carona, dois erros de digitação: `imagem a acima` e `acimarepresentado`.
+- **Rótulos de seção ganharam parágrafo próprio** (`Mecanismo cobrado:`, `Exame físico:`, `Exames laboratoriais:`, `Justificativa:`, `Distratores:`, `Referências bibliográficas:`). Só quando aparecem em início de frase: `Porto Alegre:` e `São Paulo:` de referência bibliográfica não são rótulo, e `Explicação dos Distratores:` não pode ser partido no meio.
+- **A explicação estruturada renderizava o texto da alternativa com interpolação** (`{{ alt.texto }}`), que achata tudo em uma linha só — qualquer parágrafo ou tópico gravado no banco era perdido exatamente ali, onde as explicações são mais longas. Passou a renderizar Markdown. Mesmo problema no gabarito da impressão de simulado (`simulado-impressao`), também corrigido.
+- **A normalização não altera conteúdo.** Invariante verificada antes e depois em todas as 4.952 questões: a projeção alfanumérica de cada campo (texto sem espaço nem pontuação) é idêntica — só mudam espaçamento e marcadores. As 14 diferenças alfanuméricas registradas são exatamente as trocas de "abaixo" por "acima". 4.252 questões foram alteradas.
+- **`questao_backup_formatacao` guarda o snapshot dos três campos** antes da migration, com RLS ligado e sem policy (só service role). Rollback é um `update ... from` direto.
+- Convenção de formatação documentada em `docs/business-rules.md` → Questão → Formatação do texto.
+- **Defeitos pontuais de origem, corrigidos junto:** marcador de item sozinho na linha com o texto do item na linha seguinte (`1.` / `Confusão mental nova…`, 4 ocorrências); a tabela do escore CRB-65 desenhada com espaços — que o Markdown colapsa, embaralhando as colunas — virou tabela Markdown, com a linha de cabeçalho duplicada no meio dos dados removida; e espaços repetidos no meio da frase.
+- **Não corrigido de propósito, precisa de decisão de conteúdo:** 2 questões com o texto intercalado por extração de PDF em duas colunas (`781fd5c8`, `0417f7fc`), que nenhuma regra determinística reconstitui, e 1 questão que cita "ver imagem a seguir" duas vezes mas não tem `imagem_url` (`120d068e`) — falta a imagem, não é erro de direção.
+
+
 ## 2026-08-10 | Feature | Free tier
 
 **Free tier: plano gratuito com 3 simulados, upsell em vez de paywall**

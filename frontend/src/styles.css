@@ -16,6 +16,20 @@ markdown ol {
   margin: 0.25rem 0;
   padding-left: 1.25rem;
 }
+/* O preflight zera list-style; sem isto os tópicos do banco (listas Markdown)
+   renderizam sem marcador nenhum, indistinguíveis de parágrafos soltos. */
+markdown ul {
+  list-style: disc outside;
+}
+markdown ol {
+  list-style: decimal outside;
+}
+markdown li {
+  margin: 0.125rem 0;
+}
+markdown li > p {
+  margin: 0;
+}
 
 :root {
   --color-primary: #1e40af;
