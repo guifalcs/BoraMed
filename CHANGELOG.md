@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-24 | Fix | Enunciado de apoio no desafio diário
+
+**O desafio diário nunca renderizou o enunciado de apoio — 80% do acervo elegível responde a questão sem ler o caso**
+
+- **O card do desafio imprimia só `enunciado`.** A RPC `get_desafio_diario()` sempre devolveu `enunciado_apoio`, o `DesafioService` sempre fez o parse dele e o `DesafioQuestao` sempre teve o campo: o que faltava era o bloco no template do `competir-hub`. Em questão de comando curto — o caso clínico e as afirmativas I a IV vivem no apoio — o aluno via "É correto o que se afirma em" seguido direto de "I e III, apenas", sem nunca ver as afirmativas.
+- **Não era caso isolado do dia:** 4.001 das 4.983 questões aptas ao desafio têm `enunciado_apoio`. O sorteio é LRU sobre a base inteira, então a chance de cair numa questão mutilada era ~80% todo dia. O desafio de 23/08 (malária no Pará) tinha o mesmo problema.
+- **Ordem de renderização segue o `questao-card`**: badge de disciplina → imagem/legenda → apoio → enunciado. O bloco de apoio usa `var(--color-bg-soft)` em vez do `bg-slate-50` fixo do `questao-card`, que não acompanha o tema escuro.
+- **`Influenza A (H1N3)` na questão de 24/08 (`08275fa9`) virou `H1N1`.** Subtipo inexistente, erro de transcrição na origem (`origem_geracao: ia_assistida`, `revisado: false`). Duas ocorrências no apoio; nenhuma outra questão do acervo cita H1N3.
+- **Não corrigido, precisa de decisão de conteúdo:** essa mesma questão está com `disciplina_id` nulo, então o desafio de hoje também apareceu sem o badge de disciplina.
+
 ## 2026-08-18 | Fix | Formatação das questões
 
 **Acervo inteiro normalizado: tópicos viram tópicos, parágrafos param de virar parede de texto e imagem deixa de ser "abaixo"**
