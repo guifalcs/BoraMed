@@ -323,6 +323,36 @@ describe('CompetirHubComponent', () => {
     });
   });
 
+  describe('enunciado de apoio do desafio', () => {
+    it('exibe o enunciado de apoio junto do comando quando a questão possui apoio', async () => {
+      desafioSignal.set({
+        ...makeDesafioPendente(),
+        questao: {
+          ...makeDesafioPendente().questao!,
+          enunciado: 'É correto o que se afirma em',
+          enunciado_apoio: 'Paciente de 32 anos com febre alta.\n\nI. Primeira afirmativa.\n\nII. Segunda afirmativa.',
+        },
+      });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Paciente de 32 anos com febre alta.');
+      expect(el.textContent).toContain('I. Primeira afirmativa.');
+      expect(el.textContent).toContain('É correto o que se afirma em');
+    });
+
+    it('não renderiza o bloco de apoio quando a questão não possui apoio', async () => {
+      desafioSignal.set(makeDesafioPendente());
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Questão teste');
+      expect(el.querySelectorAll('markdown').length).toBe(1);
+    });
+  });
+
   describe('rankingXp', () => {
     const rankXp = (item: RankingItem) =>
       (component as unknown as { rankingXp: (i: RankingItem) => string }).rankingXp(item);

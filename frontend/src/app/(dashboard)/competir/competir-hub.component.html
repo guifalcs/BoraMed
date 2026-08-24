@@ -107,6 +107,11 @@
                   }
                 </figure>
               }
+              @if (d.questao?.enunciado_apoio) {
+                <div class="mb-4 rounded-lg bg-[var(--color-bg-soft)] p-4 text-sm leading-6 text-[var(--color-text)]">
+                  <markdown [data]="d.questao!.enunciado_apoio! | formatarEnunciado"></markdown>
+                </div>
+              }
               <div class="text-sm leading-6 text-[var(--color-text)]">
                 <markdown [data]="(d.questao?.enunciado ?? '') | formatarEnunciado"></markdown>
               </div>
