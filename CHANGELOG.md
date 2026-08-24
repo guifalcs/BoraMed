@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-24 | Feature | Pódio do ranking competitivo
+
+**Os três primeiros do ranking ganham coroa de ouro, prata e bronze; o 1º ganha manto de rei**
+
+- **O top 3 era indistinguível do resto da lista**: mesma linha, mesmo `#1 #2 #3` em cinza. Sem hierarquia visual, o ranking não criava nenhuma aspiração — a posição só era legível lendo o número.
+- **Coroa em SVG inline, não imagem.** Dois componentes novos em `shared/components/ui/coroa-podio/`: `ui-coroa-podio` (coroa de três pontas com gemas, gradiente por metal) e `ui-manto-rei` (capa vermelha atrás do avatar do 1º). A 18px — o tamanho real na linha — um PNG ilustrado vira mancha; o SVG fica nítido em qualquer DPI, pesa ~1KB contra ~40KB por arquivo e não custa requisição.
+- **Cada instância gera o próprio id de gradiente.** Sem isso as três coroas colidiriam no mesmo DOM e as três sairiam douradas, porque `url(#id)` resolve pelo primeiro match do documento.
+- **O metal aparece em quatro lugares por linha**, para a posição ser legível sem ler o número: coroa sobre o avatar, anel colorido no avatar, o `#N` tingido e um fundo bem claro na linha.
+- **Bronze puxado para o marrom avermelhado** (`#c2803f`), não para o ouro escuro: a 18px, bronze e ouro com a mesma matiz amarela ficam indistinguíveis.
+- **`is_me` continua visível dentro do pódio.** O fundo do metal vence o azul, e a identidade fica na borda esquerda azul mais o "(você)" — antes era `bg-blue-50` puro, que apagaria o pódio de quem está em 1º.
+- **O manto é todo em retas** (`M7 17 L2 42 L22 37 L42 42 L37 17 Z`), saindo 4px de cada lado do avatar. A primeira versão, curva e larga, lia como pedestal de pódio em vez de capa — o oposto do efeito. Com o tamanho atual a capa cabe no `py-3` da linha, então todas as linhas do ranking mantêm a mesma altura.
+- Sem animação nenhuma: o reset global de `prefers-reduced-motion` do projeto congelaria qualquer transição aqui.
 ## 2026-08-24 | Fix | Enunciado de apoio no desafio diário
 
 **O desafio diário nunca renderizou o enunciado de apoio — 80% do acervo elegível responde a questão sem ler o caso**

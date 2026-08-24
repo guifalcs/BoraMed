@@ -11,6 +11,8 @@ import {
   Trophy,
 } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { UiCoroaPodioComponent } from '../../shared/components/ui/coroa-podio/ui-coroa-podio.component';
+import { UiMantoReiComponent } from '../../shared/components/ui/coroa-podio/ui-manto-rei.component';
 import { QuestaoExplicacaoComponent } from '../../shared/components/questao-explicacao/questao-explicacao.component';
 import { FormatarEnunciadoPipe } from '../../shared/pipes/formatar-enunciado.pipe';
 import { GamificacaoService } from '../../core/services/gamificacao.service';
@@ -40,6 +42,8 @@ type RankingTab = 'global' | 'semana';
   imports: [
     RouterLink,
     UiIconComponent,
+    UiCoroaPodioComponent,
+    UiMantoReiComponent,
     QuestaoExplicacaoComponent,
     MarkdownComponent,
     FormatarEnunciadoPipe,
@@ -174,6 +178,51 @@ export class CompetirHubComponent {
         return 'bg-amber-50 text-amber-600';
       case 'blue':
         return 'bg-blue-50 text-blue-600';
+    }
+  }
+
+  /** Os três primeiros ganham coroa, anel metálico e fundo próprio. */
+  protected isPodio(posicao: number): boolean {
+    return posicao >= 1 && posicao <= 3;
+  }
+
+  protected linhaClass(item: RankingItem): string {
+    const eu = item.is_me ? ' border-l-2 border-[var(--color-primary)]' : '';
+    switch (item.posicao) {
+      case 1:
+        return 'py-3 bg-amber-50/70' + eu;
+      case 2:
+        return 'py-3 bg-slate-50' + eu;
+      case 3:
+        return 'py-3 bg-orange-50/60' + eu;
+      default:
+        return item.is_me ? 'py-3 bg-blue-50 border-l-2 border-[var(--color-primary)]' : 'py-3 bg-white';
+    }
+  }
+
+  protected posicaoClass(posicao: number): string {
+    switch (posicao) {
+      case 1:
+        return 'text-amber-600';
+      case 2:
+        return 'text-slate-500';
+      case 3:
+        return 'text-orange-700';
+      default:
+        return 'text-[var(--color-text-muted)]';
+    }
+  }
+
+  protected avatarRingClass(posicao: number): string {
+    switch (posicao) {
+      case 1:
+        return 'ring-2 ring-amber-400';
+      case 2:
+        return 'ring-2 ring-slate-300';
+      case 3:
+        return 'ring-2 ring-orange-300';
+      default:
+        return '';
     }
   }
 

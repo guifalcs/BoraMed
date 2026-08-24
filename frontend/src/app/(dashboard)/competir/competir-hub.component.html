@@ -248,37 +248,46 @@
             @if (row.showGap) {
               <div class="px-4 py-1.5 text-xs text-center text-[var(--color-text-muted)] select-none tracking-widest">···</div>
             }
-            <div
-              class="flex items-center gap-3 px-4 py-3 transition-colors"
-              [class.bg-blue-50]="row.item.is_me"
-              [class.border-l-2]="row.item.is_me"
-              [class.bg-white]="!row.item.is_me"
-            >
+            <div class="flex items-center gap-3 px-4 transition-colors" [class]="linhaClass(row.item)">
               <!-- Posição -->
-              <span class="w-6 shrink-0 text-right text-xs font-bold text-[var(--color-text-muted)]">
+              <span class="w-6 shrink-0 text-right text-xs font-bold" [class]="posicaoClass(row.item.posicao)">
                 #{{ row.item.posicao }}
               </span>
 
-              <!-- Avatar -->
-              <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full">
-                @if (row.item.avatar_url) {
-                  <img
-                    [src]="row.item.avatar_url"
-                    [alt]="row.item.nome_display"
-                    class="h-full w-full object-cover"
-                    width="32"
-                    height="32"
-                    loading="lazy"
-                    decoding="async"
+              <!-- Avatar (com coroa de pódio nos três primeiros e manto no 1º) -->
+              <div class="relative h-8 w-8 shrink-0">
+                @if (row.item.posicao === 1) {
+                  <app-ui-manto-rei
+                    class="pointer-events-none absolute left-[calc(50%-22px)] top-[calc(50%-19px)] z-0"
                   />
-                } @else {
-                  <div
-                    class="flex h-full w-full items-center justify-center text-xs font-bold"
-                    [class]="avatarBgClass(row.item.nome_display)"
-                  >
-                    {{ row.item.nome_display.charAt(0).toUpperCase() }}
-                  </div>
                 }
+                @if (isPodio(row.item.posicao)) {
+                  <app-ui-coroa-podio
+                    class="pointer-events-none absolute -top-2.5 left-1/2 z-20 -translate-x-1/2"
+                    [posicao]="row.item.posicao"
+                    [size]="18"
+                  />
+                }
+                <div class="relative z-10 h-8 w-8 overflow-hidden rounded-full" [class]="avatarRingClass(row.item.posicao)">
+                  @if (row.item.avatar_url) {
+                    <img
+                      [src]="row.item.avatar_url"
+                      [alt]="row.item.nome_display"
+                      class="h-full w-full object-cover"
+                      width="32"
+                      height="32"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  } @else {
+                    <div
+                      class="flex h-full w-full items-center justify-center text-xs font-bold"
+                      [class]="avatarBgClass(row.item.nome_display)"
+                    >
+                      {{ row.item.nome_display.charAt(0).toUpperCase() }}
+                    </div>
+                  }
+                </div>
               </div>
 
               <!-- Nome + nível -->
