@@ -46,7 +46,10 @@
         [anuladaUsuario]="anuladaAtual()"
         [podeAnular]="podeAnularAtual()"
         [anulandoQuestao]="anulandoAtual()"
+        [formatoGemea]="formatoGemeaAtual()"
+        [trocandoFormato]="trocandoFormatoAtual()"
         (responder)="onResponder($event)"
+        (trocarFormato)="onTrocarFormato()"
         (salvarRascunho)="onSalvarRascunho($event)"
         (enviarTexto)="onEnviarTexto($event)"
         (tentarCorrecaoNovamente)="onTentarCorrecaoNovamente()"
@@ -175,6 +178,19 @@
       variante="danger"
       (confirmar)="confirmarFinalizacao()"
       (cancelar)="cancelarFinalizacao()"
+    />
+  }
+
+  <!-- Trocar o formato descarta o rascunho: o enunciado muda -->
+  @if (mostrarConfirmacaoTroca()) {
+    <app-ui-confirm-dialog
+      titulo="Trocar o formato da questão?"
+      mensagem="O que você já escreveu nesta questão será descartado, porque a outra versão tem enunciado próprio."
+      labelConfirmar="Trocar mesmo assim"
+      labelCancelar="Voltar"
+      variante="danger"
+      (confirmar)="confirmarTroca()"
+      (cancelar)="cancelarTroca()"
     />
   }
 }

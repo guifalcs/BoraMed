@@ -52,3 +52,15 @@ export interface QuestaoComAlternativas extends Questao {
   alternativas: Alternativa[];
   temas: Tema[];
 }
+
+/**
+ * Gêmea disponível para troca de formato dentro de uma tentativa: a mesma
+ * questão lógica (`grupo_equivalencia_id`) no outro formato. Só existe em
+ * acervo não-nacional.
+ */
+export interface GemeaDisponivel {
+  questao_id: string;
+  gemea_id: string;
+  formato_atual: Questao['formato'];
+  formato_gemea: Questao['formato'];
+}

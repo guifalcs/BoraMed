@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-25 | Feature | Trocar o formato da questão durante a prova
+
+**Onde existe gêmea, o aluno decide na hora se responde por alternativas ou por escrito**
+
+- **A escolha de formato só existia na montagem do simulado** (`fechadas`/`discursivas`/`misto`), antes de ver uma única questão. Agora, na execução, questão que tem gêmea (mesma questão lógica no outro formato, ADR-032) mostra um botão discreto no topo do card — "Responder por escrito" ou "Responder por alternativas".
+- **A troca é um `UPDATE` de uma linha de `tentativa_resposta`.** Simulado não-nacional é sempre personalizado e não tem `prova_questao`: as questões da tentativa vivem só em `tentativa_resposta`, e resultado, revisão, KPIs do histórico, desempenho por tema e `taxa_acerto` já derivam dali. Trocar o `questao_id` propaga sozinho — nenhuma dessas telas precisou de uma linha de mudança.
+- **A nota não precisou de nada.** A expressão canônica `coalesce(tr.pontos, correta::int*100)` já mistura formatos (é o caso `misto`), `total_pontuaveis` é calculado na consolidação — depois da troca — e a gêmea herda os temas da origem, então a distribuição por tema não muda de bucket.
+- **Só troca questão intocada** (`respondida_em IS NULL AND enviada_em IS NULL`). Depois de enviada, a discursiva já criou `resposta_correcao` e já consumiu correção de IA; depois de respondida, a fechada já pode ter revelado o gabarito em modo estudo. Permitir a troca ali exigiria estorno de correção, que não existe. O rascunho de texto não bloqueia — é descartado, com diálogo de confirmação antes (o enunciado da outra versão é outro).
+- **Guard de duplicidade porque não há UNIQUE em `(tentativa_id, questao_id)`**: se a gêmea já estivesse na mesma tentativa, a troca duplicaria a questão na tela. O sorteio nunca monta assim (dedup do ADR-032, e nenhuma prova do acervo tem as duas hoje), mas a RPC recusa (`P0013`) e o mapa nem oferece.
+- **A questão nova volta mascarada.** Helper interno `montar_questao_tentativa_json` replica a máscara de `iniciar_tentativa`: em modo simulado, `resposta_modelo`/`criterios_correcao` NULL, `pontos_chave` `[]` e `alternativa.correta` NULL. Sem isso, trocar de formato seria um caminho para extrair gabarito no meio da prova.
+- **O id da questão muda, e todo o estado da tela é indexado por ele.** Marcação de revisão e anulação do aluno migram de chave (são do aluno sobre a questão lógica); rascunho e resposta são descartados; o autosave em voo é cancelado antes, senão escreveria o rascunho na questão que está saindo. O mapa de gêmeas é invertido com o que a própria RPC devolve, então dá para voltar ao formato anterior sem nova consulta.
+- **`get_gemeas_tentativa` é acessória e falha em silêncio**: sem ela a prova roda igual, só sem o botão. Devolve só ids e formato — nunca gabarito.
+- **Cobertura hoje: 290 pares, todos de laboratório.** A conversão em lote (24/08) ainda não chegou nas 787 processuais fechadas, então o botão só aparece em questão de lâmina por enquanto. As gêmeas novas seguem com `revisao_conversao='pendente'` — flag de curadoria, que não afeta aluno nem sorteio.
+- Testes: 6 de regressão em `supabase/tests/troca_formato_gemea_test.sql` (troca/máscara/simetria, bloqueio por resposta, duplicidade, elegibilidade, integridade do resultado, dono), 14 unitários do `tentativa-exec` e 3 e2e no projeto `mocked`.
+
 ## 2026-08-24 | Feature | Pódio do ranking competitivo
 
 **Os três primeiros do ranking ganham coroa de ouro, prata e bronze; o 1º ganha manto de rei**

@@ -7,7 +7,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import type { QuestaoComAlternativas } from '../../../core/models/questao';
+import type { Questao, QuestaoComAlternativas } from '../../../core/models/questao';
 import type { ModoProva } from '../../../core/models/tentativa';
 import type { RespostaCorrecao } from '../../../core/models/correcao';
 import type { EstadoAlternativa } from '../alternativa-item/alternativa-item.component';
@@ -22,7 +22,7 @@ import { CorrecaoFeedbackComponent } from '../correcao-feedback/correcao-feedbac
 import { RespostaPadraoComponent } from '../resposta-padrao/resposta-padrao.component';
 import { QuestaoRecursoComponent } from '../questao-recurso/questao-recurso.component';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
-import { Ban } from 'lucide-angular';
+import { ArrowLeftRight, Ban } from 'lucide-angular';
 import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
 import { ImagemProtegidaPipe } from '../../pipes/imagem-protegida.pipe';
 import { AsyncPipe } from '@angular/common';
@@ -69,14 +69,33 @@ export class QuestaoCardComponent {
   /** Requisição de anulação em andamento (trava o botão). */
   anulandoQuestao = input<boolean>(false);
 
+  // ---- Troca de formato (questão gêmea) ----
+  /**
+   * Formato da gêmea disponível para esta questão (mesma questão lógica no
+   * outro formato). `null` = sem gêmea trocável, o botão não aparece.
+   */
+  formatoGemea = input<Questao['formato'] | null>(null);
+  /** Troca em andamento (trava o botão). */
+  trocandoFormato = input<boolean>(false);
+
   responder = output<string>();
   salvarRascunho = output<string>();
   enviarTexto = output<string>();
   tentarCorrecaoNovamente = output<void>();
   /** Emite o novo estado de anulação: true = anular, false = desanular. */
   toggleAnular = output<boolean>();
+  /** Pede a troca desta questão pela gêmea do outro formato. */
+  trocarFormato = output<void>();
 
   protected readonly iconAnular = Ban;
+  protected readonly iconTrocarFormato = ArrowLeftRight;
+
+  /** Rótulo do botão descreve o DESTINO da troca, não o estado atual. */
+  protected readonly rotuloTrocaFormato = computed(() =>
+    this.formatoGemea() === 'resposta_aberta_curta'
+      ? 'Responder por escrito'
+      : 'Responder por alternativas',
+  );
   protected readonly imgCarregada = signal(false);
   protected readonly imgErro = signal(false);
 

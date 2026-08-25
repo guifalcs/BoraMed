@@ -14,7 +14,7 @@ import {
 } from '../utils/tier-error.util';
 import type { Tentativa, TentativaResposta, ResultadoTentativa, ModoProva } from '../models/tentativa';
 import type { RespostaCorrecao, StatusCorrecoesTentativa } from '../models/correcao';
-import type { QuestaoComAlternativas } from '../models/questao';
+import type { GemeaDisponivel, QuestaoComAlternativas } from '../models/questao';
 import type { ProvaResult } from './prova.service';
 
 @Injectable({ providedIn: 'root' })
@@ -331,6 +331,76 @@ export class TentativaService {
         return { ok: false, error: 'Esta questão já foi anulada pela administração.' };
       }
       return { ok: false, error: 'Não foi possível anular a questão.' };
+    }
+  }
+
+  /**
+   * Mapa das questões da tentativa que possuem gêmea trocável (mesma questão
+   * lógica no outro formato). Só devolve ids e formato — nada de gabarito.
+   */
+  async listarGemeas(tentativaId: string): Promise<ProvaResult<GemeaDisponivel[]>> {
+    try {
+      const { data, error } = await this.supabase.rpc('get_gemeas_tentativa', {
+        p_tentativa_id: tentativaId,
+      });
+
+      if (error) throw error;
+
+      return { ok: true, data: (data ?? []) as unknown as GemeaDisponivel[] };
+    } catch {
+      // Recurso acessório: sem o mapa a prova roda igual, só sem o botão.
+      return { ok: false, error: 'Não foi possível verificar as versões alternativas.' };
+    }
+  }
+
+  /**
+   * Troca a questão pela gêmea do outro formato dentro da tentativa. Só é
+   * aceita enquanto a questão está intocada — depois de respondida/enviada o
+   * servidor recusa (a discursiva enviada já consumiu correção de IA).
+   */
+  async trocarFormatoQuestao(
+    tentativaId: string,
+    questaoId: string,
+  ): Promise<
+    ProvaResult<{
+      questao: QuestaoComAlternativas;
+      resposta: TentativaResposta;
+      gemea: GemeaDisponivel;
+    }>
+  > {
+    try {
+      const { data, error } = await this.supabase.rpc('trocar_formato_questao_tentativa', {
+        p_tentativa_id: tentativaId,
+        p_questao_id: questaoId,
+      });
+
+      if (error) throw error;
+
+      const result = data as unknown as {
+        questao: QuestaoComAlternativas;
+        resposta: TentativaResposta;
+        gemea: GemeaDisponivel;
+      };
+
+      // A questão troca de id: substitui na mesma posição para preservar a
+      // numeração da prova. A resposta é casada por id da linha (o questao_id
+      // dela acabou de mudar).
+      this._questoes.update((qs) => qs.map((q) => (q.id === questaoId ? result.questao : q)));
+      this._respostas.update((rs) =>
+        rs.map((r) => (r.id === result.resposta.id ? result.resposta : r)),
+      );
+
+      return { ok: true, data: result };
+    } catch (e: unknown) {
+      if (isTierUpgradeError(e)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
+      const message = getErrorMessage(e);
+      if (message.includes('ja respondida')) {
+        return { ok: false, error: 'Só dá para trocar o formato antes de responder.' };
+      }
+      if (message.includes('versao equivalente')) {
+        return { ok: false, error: 'Esta questão não tem versão em outro formato.' };
+      }
+      return { ok: false, error: 'Não foi possível trocar o formato da questão.' };
     }
   }
 

@@ -162,3 +162,32 @@ export const AnuladaPeloAluno: Story = {
     anuladaUsuario: true,
   },
 };
+
+/** Questão fechada com gêmea discursiva: dá para responder por escrito. */
+export const ComGemeaDiscursiva: Story = {
+  args: {
+    podeAnular: true,
+    formatoGemea: 'resposta_aberta_curta',
+  },
+};
+
+/** A mesma questão no formato discursivo, oferecendo a volta às alternativas. */
+export const ComGemeaFechada: Story = {
+  args: {
+    questao: {
+      ...questaoBase,
+      formato: 'resposta_aberta_curta',
+      enunciado: 'Descreva a conduta imediata para este caso e justifique.',
+      alternativas: [],
+    },
+    formatoGemea: 'multipla_escolha',
+  },
+};
+
+/** Troca em andamento: botão travado até o servidor responder. */
+export const TrocandoFormato: Story = {
+  args: {
+    formatoGemea: 'resposta_aberta_curta',
+    trocandoFormato: true,
+  },
+};

@@ -2928,6 +2928,7 @@ export type Database = {
           total: number
         }[]
       }
+      get_gemeas_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
       get_historico_kpis: { Args: never; Returns: Json }
       get_meu_xp: { Args: never; Returns: Json }
       get_minha_posicao_ranking: { Args: never; Returns: Json }
@@ -3124,6 +3125,10 @@ export type Database = {
       toggle_favorito_tentativa: {
         Args: { p_favorito: boolean; p_tentativa_id: string }
         Returns: undefined
+      }
+      trocar_formato_questao_tentativa: {
+        Args: { p_questao_id: string; p_tentativa_id: string }
+        Returns: Json
       }
       validar_cupom: {
         Args: { p_codigo: string; p_plano_slug: string; p_user_id?: string }

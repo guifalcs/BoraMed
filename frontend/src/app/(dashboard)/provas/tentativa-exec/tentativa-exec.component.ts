@@ -16,7 +16,7 @@ import { TimerService } from '../../../core/services/timer.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FocoModoService } from '../../../core/services/foco-modo.service';
 import { CorrecaoIaService } from '../../../core/services/correcao-ia.service';
-import type { QuestaoComAlternativas } from '../../../core/models/questao';
+import type { GemeaDisponivel, QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
 import type { RespostaCorrecao } from '../../../core/models/correcao';
 import type { EstadoRespostaAberta } from '../../../shared/components/resposta-aberta-input/resposta-aberta-input.component';
@@ -71,6 +71,13 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly anuladas = signal<Set<string>>(new Set());
   /** Anulação em andamento (por questão), para travar o botão. */
   protected readonly anulandoQuestao = signal<Set<string>>(new Set());
+  // ---- Troca de formato (questão gêmea) ----
+  /** Gêmea trocável por questao_id (só existe em acervo não-nacional). */
+  protected readonly gemeas = signal<Map<string, GemeaDisponivel>>(new Map());
+  /** Troca de formato em andamento (por questão), para travar o botão. */
+  protected readonly trocandoFormato = signal<Set<string>>(new Set());
+  /** Confirmação de descarte de rascunho antes de trocar o formato. */
+  protected readonly mostrarConfirmacaoTroca = signal(false);
 
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly chevronUpIcon = ChevronUp;
@@ -149,6 +156,25 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     if (!q) return false;
     const temRecurso = (q.recurso_texto ?? '').trim().length > 0;
     return !temRecurso && !q.anulada;
+  });
+
+  /**
+   * Formato da gêmea oferecida na questão atual, ou null (sem gêmea, questão
+   * já tocada, anulada, ou modo sem resposta). A trava de "já respondida" é a
+   * mesma do servidor — aqui só evita oferecer um botão que vai falhar.
+   */
+  protected readonly formatoGemeaAtual = computed<QuestaoComAlternativas['formato'] | null>(() => {
+    const q = this.questaoAtual();
+    if (!q || this.modo() === 'visualizar') return null;
+    if (this.respostas().has(q.id) || this.enviadas().has(q.id)) return null;
+    if (this.anuladas().has(q.id) || q.anulada) return null;
+    return this.gemeas().get(q.id)?.formato_gemea ?? null;
+  });
+
+  /** Troca da questão atual em andamento. */
+  protected readonly trocandoFormatoAtual = computed(() => {
+    const q = this.questaoAtual();
+    return q ? this.trocandoFormato().has(q.id) : false;
   });
 
   protected readonly totalMarcadas = computed(() => this.marcadas().size);
@@ -249,6 +275,13 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
         }
       }
       this.respostasCorretas.set(corretasMap);
+    }
+
+    // Gêmeas trocáveis: acessório. Se a chamada falhar a prova roda igual,
+    // só sem o botão de trocar formato.
+    const gemeasResult = await this.tentativaService.listarGemeas(tentativaAtiva.id);
+    if (gemeasResult.ok) {
+      this.gemeas.set(new Map(gemeasResult.data.map((g) => [g.questao_id, g])));
     }
 
     this.timer.start(tentativaAtiva.tempo_acumulado_segundos);
@@ -493,6 +526,106 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ---- Troca de formato (questão gêmea) ----
+
+  /** Rascunho digitado na questão atual — perdido na troca, então confirma. */
+  private temRascunhoAtual(): boolean {
+    const q = this.questaoAtual();
+    if (!q) return false;
+    return (this.respostasTexto().get(q.id) ?? '').trim().length > 0;
+  }
+
+  protected onTrocarFormato(): void {
+    if (this.temRascunhoAtual()) {
+      this.mostrarConfirmacaoTroca.set(true);
+      return;
+    }
+    void this.trocarFormato();
+  }
+
+  protected cancelarTroca(): void {
+    this.mostrarConfirmacaoTroca.set(false);
+  }
+
+  protected confirmarTroca(): void {
+    this.mostrarConfirmacaoTroca.set(false);
+    void this.trocarFormato();
+  }
+
+  /**
+   * Substitui a questão atual pela gêmea do outro formato. Todo o estado local
+   * é indexado por `questao.id` e o id MUDA na troca, então cada mapa precisa
+   * migrar de chave — senão o rascunho, a marcação e a gêmea ficam órfãos.
+   */
+  private async trocarFormato(): Promise<void> {
+    const tentativa = this.tentativa();
+    const questao = this.questaoAtual();
+    if (!tentativa || !questao) return;
+    if (this.trocandoFormato().has(questao.id)) return;
+
+    const antigoId = questao.id;
+
+    // Autosave em voo escreveria o rascunho na questão que está saindo.
+    const timerRascunho = this.rascunhoTimers.get(antigoId);
+    if (timerRascunho) {
+      clearTimeout(timerRascunho);
+      this.rascunhoTimers.delete(antigoId);
+    }
+
+    this.trocandoFormato.update((s) => new Set(s).add(antigoId));
+
+    const result = await this.tentativaService.trocarFormatoQuestao(tentativa.id, antigoId);
+
+    this.trocandoFormato.update((s) => {
+      const next = new Set(s);
+      next.delete(antigoId);
+      return next;
+    });
+
+    if (!result.ok) {
+      this.notifications.error(result.error);
+      return;
+    }
+
+    const nova = result.data.questao;
+
+    // Mesma posição: a numeração da prova não muda.
+    this.questoes.update((qs) => qs.map((q) => (q.id === antigoId ? nova : q)));
+
+    // O rascunho pertencia ao enunciado antigo — o servidor já o descartou.
+    this.respostasTexto.update((m) => {
+      const next = new Map(m);
+      next.delete(antigoId);
+      return next;
+    });
+    this.respostas.update((m) => {
+      const next = new Map(m);
+      next.delete(antigoId);
+      return next;
+    });
+
+    // Marcação e anulação são do aluno sobre a questão LÓGICA: acompanham.
+    this.marcadas.update((s) => this.migrarChave(s, antigoId, nova.id));
+    this.anuladas.update((s) => this.migrarChave(s, antigoId, nova.id));
+
+    // Mapa invertido: dá para voltar ao formato anterior.
+    this.gemeas.update((m) => {
+      const next = new Map(m);
+      next.delete(antigoId);
+      next.set(nova.id, result.data.gemea);
+      return next;
+    });
+  }
+
+  /** Move um item de Set de uma chave para outra, preservando a presença. */
+  private migrarChave(set: Set<string>, de: string, para: string): Set<string> {
+    if (!set.has(de)) return set;
+    const next = new Set(set);
+    next.delete(de);
+    next.add(para);
+    return next;
+  }
+
   protected toggleMarcar(): void {
     const q = this.questaoAtual();
     if (!q) return;
@@ -627,7 +760,15 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(event: KeyboardEvent): void {
-    if (this.isLoading() || this.isPaused() || this.salvando() || this._finalizado || this.mostrarConfirmacao()) return;
+    if (
+      this.isLoading() ||
+      this.isPaused() ||
+      this.salvando() ||
+      this._finalizado ||
+      this.mostrarConfirmacao() ||
+      this.mostrarConfirmacaoTroca()
+    )
+      return;
 
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;

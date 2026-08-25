@@ -115,6 +115,7 @@ describe('TentativaExecComponent — navegação por teclado', () => {
     setProvaNome: vi.fn(),
     setLastResultado: vi.fn(),
     finalizar: vi.fn(),
+    listarGemeas: vi.fn().mockResolvedValue({ ok: true, data: [] }),
   };
 
   const mockProvaService = {
@@ -184,6 +185,7 @@ describe('TentativaExecComponent — navegação por teclado', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockTentativaService.salvarResposta.mockResolvedValue({ ok: true, data: null });
+    mockTentativaService.listarGemeas.mockResolvedValue({ ok: true, data: [] });
     mockTentativaService.tentativaAtiva.set(tentativa);
     mockTentativaService.questoes.set(questoes);
     mockTentativaService.respostas.set([]);
