@@ -28,7 +28,9 @@ describe('AdminService — equivalência e revisão de conversão', () => {
   let service: AdminService;
   const mockFrom = vi.fn();
   const mockRpc = vi.fn();
-  const mockSupabaseClient = { from: mockFrom, rpc: mockRpc };
+  const mockRemove = vi.fn().mockResolvedValue({ error: null });
+  const mockStorageFrom = vi.fn().mockReturnValue({ remove: mockRemove });
+  const mockSupabaseClient = { from: mockFrom, rpc: mockRpc, storage: { from: mockStorageFrom } };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -154,6 +156,48 @@ describe('AdminService — equivalência e revisão de conversão', () => {
       expect(eqCalls.some((c) => c[0] === 'revisao_conversao')).toBe(false);
       // neq só o de status='deletada' (sempre presente), não o de formato.
       expect(neqCalls.some((c) => c[0] === 'formato')).toBe(false);
+    });
+  });
+  describe('deletarArquivoStorage — imagem compartilhada por gêmeas', () => {
+    const URL = 'https://x.supabase.co/storage/v1/object/public/questao-imagens/lamina.png';
+
+    it('não apaga o arquivo enquanto outra questão ainda o referencia', async () => {
+      // questao: 1 referência (a gêmea discursiva) | alternativa: 0
+      mockFrom
+        .mockReturnValueOnce(makeQueryBuilder({ error: null, count: 1 }))
+        .mockReturnValueOnce(makeQueryBuilder({ error: null, count: 0 }));
+
+      await service.deletarArquivoStorage(URL);
+
+      expect(mockRemove).not.toHaveBeenCalled();
+    });
+
+    it('apaga quando nenhuma linha referencia mais a URL', async () => {
+      mockFrom
+        .mockReturnValueOnce(makeQueryBuilder({ error: null, count: 0 }))
+        .mockReturnValueOnce(makeQueryBuilder({ error: null, count: 0 }));
+
+      await service.deletarArquivoStorage(URL);
+
+      expect(mockStorageFrom).toHaveBeenCalledWith('questao-imagens');
+      expect(mockRemove).toHaveBeenCalledWith(['lamina.png']);
+    });
+
+    it('preserva o arquivo se a checagem de referências falhar', async () => {
+      mockFrom
+        .mockReturnValueOnce(makeQueryBuilder({ error: { message: 'boom' } }))
+        .mockReturnValueOnce(makeQueryBuilder({ error: null, count: 0 }));
+
+      await service.deletarArquivoStorage(URL);
+
+      expect(mockRemove).not.toHaveBeenCalled();
+    });
+
+    it('ignora URL fora do bucket sem consultar o banco', async () => {
+      await service.deletarArquivoStorage('https://exemplo.com/foto.png');
+
+      expect(mockFrom).not.toHaveBeenCalled();
+      expect(mockRemove).not.toHaveBeenCalled();
     });
   });
 });

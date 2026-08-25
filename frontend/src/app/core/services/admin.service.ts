@@ -1414,8 +1414,26 @@ export class AdminService {
     const marker = `/object/public/${bucket}/`;
     const idx = url.indexOf(marker);
     if (idx === -1) return;
+
+    // Gêmeas discursivas compartilham a mesma imagem_url da questão fechada de
+    // origem. Apagar o arquivo aqui deixaria a outra questão sem imagem — e uma
+    // questão de laboratório sem imagem some do sorteio. Só removemos o arquivo
+    // quando nenhuma outra linha o referencia. Em caso de erro na checagem,
+    // preservamos o arquivo (órfão no storage é barato; imagem quebrada não).
+    if (await this.urlAindaReferenciada(url)) return;
+
     const path = url.substring(idx + marker.length);
     await this.supabase.storage.from(bucket).remove([path]);
+  }
+
+  /** true se alguma questão ou alternativa ainda aponta para esta URL (ou se a checagem falhou). */
+  private async urlAindaReferenciada(url: string): Promise<boolean> {
+    const [questoes, alternativas] = await Promise.all([
+      this.supabase.from('questao').select('id', { count: 'exact', head: true }).eq('imagem_url', url),
+      this.supabase.from('alternativa').select('id', { count: 'exact', head: true }).eq('imagem_url', url),
+    ]);
+    if (questoes.error || alternativas.error) return true;
+    return (questoes.count ?? 0) + (alternativas.count ?? 0) > 0;
   }
 
   // ---- Avisos ----
