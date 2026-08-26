@@ -45,7 +45,7 @@ assunto derruba entregabilidade (ver seção 6 de `docs/campanhas-email.md`).
 | Essencial | R$ 23,90/mês | R$ 13,90/mês (R$ 83,40, até 6x) |
 | Avançado | R$ 69,90/mês | R$ 49,90/mês (R$ 299,40, até 6x) |
 
-Os valores estão escritos no corpo do e-mail. **Reconferir antes de disparar** —
+O e-mail cita só o "a partir de R$ 13,90/mês" (Essencial semestral). **Reconferir antes de disparar** —
 o preço vive no banco (`plano.preco_centavos`) e já divergiu do que estava no
 código uma vez (commit `e458fe8`).
 
@@ -59,16 +59,22 @@ código uma vez (commit `e458fe8`).
 
 ### Decisões da copy
 
-- **Nada de escassez falsa.** A urgência é a data da prova, que é real, e não um
-  desconto que expira em 24h. É o mesmo gancho que traz a pessoa de volta na
-  próxima N2 sem queimar a lista.
+- **Curto de propósito.** ~70 palavras: gancho, uma frase de valor, preço e
+  botão. Vender o app inteiro por e-mail é trabalho da landing e do app — aqui
+  o objetivo é só o clique.
+- **Nada de escassez falsa.** A urgência é a data da prova, que é real. Desconto
+  que "expira em 24h" queima a lista e o mesmo gancho volta a servir na N2.
 - **Sem mencionar os 3 simulados gratuitos.** O segmento inclui quem já gastou
   os três; prometer o que a pessoa não tem mais custa mais que o CTA ganha.
-- **CTA para `https://www.boramedoficial.com.br/#planos`**, não para `/planos`
-  do app: a rota interna é guardada e jogaria a pessoa no login antes da oferta.
+- **CTA para `/planos` do app.** É rota guardada: quem não estiver logado passa
+  pelo login e cai no dashboard, não na tela de planos (o `authGuard` não guarda
+  a rota de destino). Se a conversão pedir a oferta sem login, trocar o href por
+  `https://www.boramedoficial.com.br/#planos`.
 - **Link de descadastro no rodapé do conteúdo.** O envelope não anexa mais um
   automaticamente (só o header `List-Unsubscribe`), e campanha de conversão para
   base fria é justamente o caso em que a falta do link visível vira clique em
-  spam. Para tirar, apague o último parágrafo.
-- **Disclaimer de independência** junto de toda referência ao modelo das
-  avaliações — regra do `CLAUDE.MD`.
+  spam.
+- **Sem citar a Afya no corpo.** Sem a referência, não é preciso carregar o
+  disclaimer de independência num e-mail que precisa ser curto. Se voltar a
+  falar em "modelo das avaliações da Afya", o disclaimer volta junto (regra do
+  `CLAUDE.MD`).
