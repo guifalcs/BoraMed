@@ -38,7 +38,9 @@
   flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  padding: 1.75rem;
+  /* Padding acompanha a largura: em 3 colunas o card fica estreito e o
+     respiro fixo de 1.75rem espremia o conteúdo (CTA quebrava em 2 linhas). */
+  padding: clamp(1.35rem, 1.95vw, 1.75rem);
   background: var(--color-surface);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
@@ -145,7 +147,7 @@
 .pricing-features {
   display: grid;
   gap: 0.7rem;
-  margin: 1.4rem 0 0;
+  margin: 1.4rem 0 1.6rem;
   padding: 1.4rem 0 0;
   list-style: none;
   border-top: 1px solid var(--color-border);
@@ -178,10 +180,13 @@
   align-items: center;
   justify-content: center;
   min-height: 2.85rem;
-  margin-top: 1.6rem;
+  /* auto: com os cards esticados na mesma altura, o CTA encosta no rodapé
+     dos três e os botões ficam alinhados na linha. */
+  margin-top: auto;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 0.78rem 1.1rem;
+  padding: 0.78rem clamp(0.7rem, 1vw, 1.1rem);
+  font-size: clamp(0.92rem, 1.05vw, 1rem);
   font-weight: 800;
   text-decoration: none;
   color: var(--color-text);
@@ -334,26 +339,31 @@
   border: 1px solid #bbf7d0;
 }
 
-@media (min-width: 1024px) {
+/* A ordem destes blocos importa: todos têm a mesma especificidade, então o
+   último que casar com a viewport vence. O bloco de 3 colunas precisa vir por
+   último — antes, o de 720px o sobrescrevia no desktop e os três planos
+   quebravam em duas linhas. */
+@media (min-width: 720px) {
   .pricing-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pricing-card.is-featured {
+    transform: translateY(-0.5rem);
   }
 }
 
-@media (min-width: 720px) and (max-width: 1023.98px) {
+@media (min-width: 720px) and (max-width: 959.98px) {
   /* Em 2 colunas o gratuito ocupa a linha inteira, acima dos pagos. */
   .pricing-card--free {
     grid-column: 1 / -1;
   }
 }
 
-@media (min-width: 720px) {
+/* A partir daqui os três planos cabem lado a lado, em uma linha só. */
+@media (min-width: 960px) {
   .pricing-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .pricing-card.is-featured {
-    transform: translateY(-0.5rem);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
   }
 }
