@@ -139,6 +139,12 @@ O corpo é renderizado num `<iframe sandbox>` sem `allow-scripts` nem
 `allow-same-origin`: o HTML da campanha não executa nada nem alcança a sessão do
 admin.
 
+### Conteúdos prontos
+
+Campanhas já escritas ficam em `docs/campanhas/` — um `.html` por campanha (o
+conteúdo do card, pronto para colar) e um `README.md` com assunto sugerido,
+público e o que conferir antes do disparo.
+
 ### Segmentos
 
 | Segmento | Quem entra |
