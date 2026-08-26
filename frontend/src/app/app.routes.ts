@@ -6,6 +6,7 @@ import {
   lazyGuestGuard,
   lazyRootRedirectGuard,
   lazyNivelPagoGuard,
+  lazyPlanosPublicoGuard,
   lazyTierAvancadoGuard,
 } from './core/guards/lazy-route-guards';
 import { oauthRedirectGuard } from './core/guards/oauth-redirect.guard';
@@ -70,8 +71,12 @@ export const routes: Routes = [
       import('./(dashboard)/dashboard.routes').then((m) => m.dashboardRoutes),
   },
   {
+    // `planosPublicoGuard` ANTES do `authGuard`: um link só (`/planos`) atende
+    // aos dois estados de sessão. Logado, cai na tela de planos do app; sem
+    // sessão, vai para a seção de planos da landing, que é pública, em vez de
+    // parar no /login e terminar no /dashboard sem ver a oferta.
     path: 'planos',
-    canActivate: [lazyAuthGuard],
+    canActivate: [lazyPlanosPublicoGuard, lazyAuthGuard],
     loadComponent: () =>
       import('./(assinatura)/planos/planos.component').then((m) => m.PlanosComponent),
   },

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-26 | Feature | `/planos` decide o destino pela sessão
+
+**Um link só para campanha, bio e anúncio: logado cai na tela de planos do app, deslogado cai na seção de planos da landing**
+
+- **O problema era o link de campanha.** `/planos` é rota guardada e o `authGuard` manda quem não tem sessão para `/login` sem guardar a rota de destino — depois de entrar, a pessoa terminava no `/dashboard`, nunca na oferta que a fez clicar. Mandar o link para `/#planos` resolvia o deslogado e quebrava o logado, que o `rootRedirectGuard` desvia de `/` para `/dashboard`.
+- **Novo `planosPublicoGuard`** (`core/guards/planos-publico.guard.ts`), declarado ANTES do `authGuard` no `canActivate` da rota: sem sessão, desvia para `/#planos`; com sessão, devolve `true` e o `authGuard` segue tratando recovery, conta suspensa e vínculo pendente de assinatura como sempre.
+- **`location.replace`, não `Router`**: a âncora só rola até a seção num carregamento de página (o router não está com `anchorScrolling` ligado), e o `replace` mantém `/planos` fora do histórico — com `assign`, o "voltar" cairia no mesmo desvio. Fora do browser o guard devolve `UrlTree` para a landing; como `/planos` é `RenderMode.Client`, esse caminho é só rede de segurança.
+- Testes: 3 unitários em `planos-publico.guard.spec.ts` (sessão segue para o app, visitante vai para a âncora da landing, SSR usa `UrlTree`).
+- Conteúdo pronto da campanha da N1 em `docs/campanhas/`, apontando para esse link. Documentação em `docs/auth-root-routing.md`.
+
 ## 2026-08-25 | Feature | Trocar o formato da questão durante a prova
 
 **Onde existe gêmea, o aluno decide na hora se responde por alternativas ou por escrito**

@@ -22,6 +22,13 @@ export const lazyRootRedirectGuard: CanActivateFn = (route, state) => {
   ) as Promise<GuardResult>;
 };
 
+export const lazyPlanosPublicoGuard: CanActivateFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+  return import('./planos-publico.guard').then((m) =>
+    runInInjectionContext(injector, () => m.planosPublicoGuard(route, state)),
+  ) as Promise<GuardResult>;
+};
+
 export const lazyAdminGuard: CanActivateFn = (route, state) => {
   const injector = inject(EnvironmentInjector);
   return import('./admin.guard').then((m) =>
