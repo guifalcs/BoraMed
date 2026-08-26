@@ -66,10 +66,10 @@ código uma vez (commit `e458fe8`).
   que "expira em 24h" queima a lista e o mesmo gancho volta a servir na N2.
 - **Sem mencionar os 3 simulados gratuitos.** O segmento inclui quem já gastou
   os três; prometer o que a pessoa não tem mais custa mais que o CTA ganha.
-- **CTA para `/planos` do app.** É rota guardada: quem não estiver logado passa
-  pelo login e cai no dashboard, não na tela de planos (o `authGuard` não guarda
-  a rota de destino). Se a conversão pedir a oferta sem login, trocar o href por
-  `https://www.boramedoficial.com.br/#planos`.
+- **CTA para `https://www.boramedoficial.com.br/#planos`**, a seção de planos da
+  landing. É público: a oferta aparece no primeiro clique. O `/planos` do app é
+  rota guardada e o `authGuard` não guarda a rota de destino, então quem não
+  estivesse logado cairia no dashboard em vez da tela de planos.
 - **Link de descadastro no rodapé do conteúdo.** O envelope não anexa mais um
   automaticamente (só o header `List-Unsubscribe`), e campanha de conversão para
   base fria é justamente o caso em que a falta do link visível vira clique em
