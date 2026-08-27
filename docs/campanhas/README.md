@@ -79,3 +79,72 @@ código uma vez (commit `e458fe8`).
   disclaimer de independência num e-mail que precisa ser curto. Se voltar a
   falar em "modelo das avaliações da Afya", o disclaimer volta junto (regra do
   `CLAUDE.MD`).
+
+---
+
+## `2026-08-parabens-mais-ativos.html`
+
+Reconhecimento de quem usa muito a plataforma. Não vende nada — o público pode
+(e neste disparo é) assinante ativo. O objetivo real é duplo: reforçar o hábito
+de quem já voltou sozinho, e abrir um canal de resposta com a pessoa que mais
+tem o que dizer sobre o produto.
+
+- **Público:** `mais_ativos` (segmento criado em
+  `20260827120000_campanha_segmento_mais_ativos.sql`): ≥20 interações e ≥3 dias
+  distintos nos últimos 14 dias.
+- **Nome interno sugerido:** `2026-08 · parabéns · mais ativos`
+
+### Assunto
+
+Principal:
+
+```
+{{primeiro_nome}}, você foi quem mais treinou por aqui
+```
+
+Alternativas:
+
+```
+{{primeiro_nome}}, 82 questões em duas semanas
+{{primeiro_nome}}, passando só para te dar os parabéns
+```
+
+### ⚠️ Números fixos no corpo
+
+Os números do texto (7 simulados, 82 questões, 84,9%, o 100% em Anatomia) são da
+**Eduarda Cristhine**, apurados em 27/08/2026, e estão **escritos no HTML** — o
+envelope só personaliza `{{nome}}`, `{{primeiro_nome}}`, `{{email}}` e
+`{{link_descadastro}}`; não existe token de estatística.
+
+Na apuração de 27/08 o segmento tinha **exatamente 1 pessoa**, o que torna isso
+seguro. **Se a contagem do público na tela vier > 1, não dispare este conteúdo
+como está** — os números de uma pessoa sairiam para todas. Reescreva sem números
+ou dispare individualmente.
+
+### Antes de disparar
+
+1. **Reconferir a contagem do público na tela.** A janela de `mais_ativos` é
+   móvel: o público de hoje não é o de ontem.
+2. **Reconferir os números do corpo** se tiver passado tempo desde 27/08 — eles
+   envelhecem junto com a janela de 14 dias.
+3. O corpo diz "com um 100% cravado em Anatomia e Histologia Cardíaca". Confirme
+   que esse resultado ainda está na janela antes de disparar.
+4. Enviar teste para si mesmo — a prévia não é palavra final de layout.
+
+### Decisões da copy
+
+- **Zero venda.** A destinatária é assinante do Avançado Semestral. Qualquer CTA
+  de plano num e-mail de parabéns transforma o elogio em pretexto e queima os
+  dois.
+- **Pedido de resposta como CTA real.** O botão leva ao `/dashboard`, mas o que
+  mais vale é o "responde esse e-mail": é feedback da usuária mais engajada, e
+  resposta a e-mail de marca também ajuda entregabilidade no Gmail.
+- **Sem dizer que ninguém chegou perto.** "Você foi quem mais treinou" é elogio;
+  "nenhum outro aluno chegou perto" entrega que a base é pequena.
+- **Assinado "Guilherme — BoraMed"**, não "Equipe BoraMed". Para um e-mail que
+  pede resposta pessoal, assinatura institucional é contraditória.
+- **Nada de gênero gramatical.** "Foi o maior volume de treino da plataforma",
+  não "a aluna mais ativa" — o perfil guarda nome, não gênero, e o segmento é
+  reutilizável.
+- **Link de descadastro no rodapé.** Mesmo em e-mail bem recebido: o envelope só
+  manda o header `List-Unsubscribe`, e o custo de deixar visível é zero.

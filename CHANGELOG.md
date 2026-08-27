@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-27 | Feature | Segmento `mais_ativos` nas campanhas de e-mail
+
+**Os quatro segmentos recortavam a base por estado de assinatura; faltava o recorte de quem já usa**
+
+- **O problema era o inverso do de sempre.** `sem_assinatura_ativa`, `nunca_assinou`, `ex_assinantes` e `todos` existem para converter quem não paga. Não havia como falar com quem já está dentro — e reter quem volta sozinho custa menos que converter quem nunca entrou.
+- **`mais_ativos`**: alunos com **≥20 interações e ≥3 dias distintos nos últimos 14 dias**. Os dois limiares valem juntos de propósito: só volume deixaria passar quem despeja 40 questões numa madrugada e some; só dias deixaria passar quem abre o app três vezes para responder uma questão.
+- **"Interação" é a definição que já existia** — simulado iniciado + questão respondida, a mesma de `admin_get_uso_plataforma()` e `admin_get_uso_usuarios_dia()` — **mais o desafio diário**, que é uso real e não entra naquelas duas por ser um fluxo à parte do simulado. Dia contado em `America/Sao_Paulo`, como no resto do dashboard: em UTC a sessão da madrugada cairia no dia seguinte e inflaria a contagem de dias.
+- **`email_publico_alvo` continua sendo a definição única** (prévia do admin e disparo real passam por ela). A CTE de atividade só é consumida no ramo novo do `CASE`; nos outros quatro o planner a descarta. Conferido contra produção antes de aplicar: os quatro segmentos existentes devolvem exatamente o mesmo conjunto de antes, nos dois sentidos da diferença.
+- **Único segmento de janela móvel.** O público muda sozinho de um dia para o outro — a contagem da prévia só vale para o disparo imediato, e está documentado assim.
+- **Índices de apoio** em `tentativa.iniciada_em`, `tentativa_resposta.respondida_em` (parcial: é a única das três NULL-ável) e `desafio_diario_resposta.respondido_em`. Sem eles o segmento é seq scan em `tentativa_resposta`, a tabela que mais cresce.
+- **Não existe token de estatística.** A personalização segue com `{{nome}}`, `{{primeiro_nome}}`, `{{email}}` e `{{link_descadastro}}`; e-mail que cita número individual precisa do número escrito no corpo, e só é seguro com público de uma pessoa. Está avisado no `docs/campanhas/README.md` e no topo do HTML.
+- Conteúdo pronto do primeiro disparo em `docs/campanhas/2026-08-parabens-mais-ativos.html` (reconhecimento, sem venda — o público pode ser assinante ativo). Documentação em `docs/campanhas-email.md` e `docs/architecture.md`.
+
 ## 2026-08-26 | Feature | `/planos` decide o destino pela sessão
 
 **Um link só para campanha, bio e anúncio: logado cai na tela de planos do app, deslogado cai na seção de planos da landing**

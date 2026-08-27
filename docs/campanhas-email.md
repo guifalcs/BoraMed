@@ -153,10 +153,27 @@ público e o que conferir antes do disparo.
 | `nunca_assinou` | Nunca chegou a ter assinatura efetivada. Checkout aberto e abandonado (`pending`) conta aqui. |
 | `ex_assinantes` | Já assinou e hoje não tem acesso. |
 | `todos` | Todos os alunos elegíveis. |
+| `mais_ativos` | Uso consistente nos **últimos 14 dias**: ≥20 interações **e** ≥3 dias distintos. Recorte de retenção, não de conversão — pode conter assinante ativo. |
 
 Fora de qualquer segmento, sempre: admins e super_admins, contas banidas, quem
 pediu descadastro e **contas com e-mail não confirmado** (endereço provavelmente
 inválido; hard bounce derruba a reputação do domínio).
+
+Sobre `mais_ativos`: "interação" é simulado iniciado + questão respondida — a
+mesma definição de `admin_get_uso_plataforma()` — mais o desafio diário, que é
+uso real e não entra naquelas por ser um fluxo à parte. Os dois limiares valem
+juntos de propósito: só volume deixaria passar quem despeja 40 questões numa
+madrugada e some; só dias deixaria passar quem abre o app três vezes para
+responder uma questão. O dia é contado em `America/Sao_Paulo`, como no resto do
+dashboard.
+
+Este é o único segmento cujo público **muda sozinho com o tempo** — a janela é
+móvel. Confira a contagem na tela imediatamente antes de disparar, e não reutilize
+uma contagem apurada em outro dia.
+
+Não há sinal no banco que marque conta de teste. Se você usa uma conta própria
+com `papel = 'aluno'` para testar, marque `email_marketing_optout = true` nela —
+é o que a mantém fora deste e de qualquer outro segmento quando ela ficar ativa.
 
 ### Variáveis de personalização
 

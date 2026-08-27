@@ -54,6 +54,10 @@ jobs:
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 -f supabase/tests/grants_gabarito_test.sql
+      - name: Invariantes do público de campanha de e-mail
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -f supabase/tests/campanha_segmento_test.sql
       - name: Diagnóstico do stack em caso de falha
         if: failure()
         run: supabase status || true

@@ -6,6 +6,7 @@ export const SEGMENTOS = [
   'nunca_assinou',
   'ex_assinantes',
   'todos',
+  'mais_ativos',
 ] as const;
 
 export type Segmento = (typeof SEGMENTOS)[number];

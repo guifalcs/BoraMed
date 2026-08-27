@@ -143,6 +143,10 @@ Deno.test('remetenteValido: aceita os dois formatos do Resend e rejeita lixo', (
 
 Deno.test('isSegmento: só aceita os segmentos do CHECK da migration', () => {
   assert(isSegmento('sem_assinatura_ativa'));
+  assert(isSegmento('nunca_assinou'));
+  assert(isSegmento('ex_assinantes'));
+  assert(isSegmento('todos'));
+  assert(isSegmento('mais_ativos'));
   assert(!isSegmento('inventado'));
   assert(!isSegmento(null));
 });

@@ -42,6 +42,7 @@ const ROTULO_SEGMENTO: Record<SegmentoCampanha, string> = {
   nunca_assinou: 'Nunca assinou',
   ex_assinantes: 'Ex-assinantes (assinou e saiu)',
   todos: 'Todos os alunos',
+  mais_ativos: 'Mais ativos (14 dias)',
 };
 
 /**

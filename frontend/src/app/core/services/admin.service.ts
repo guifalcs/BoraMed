@@ -386,7 +386,8 @@ export type SegmentoCampanha =
   | 'sem_assinatura_ativa'
   | 'nunca_assinou'
   | 'ex_assinantes'
-  | 'todos';
+  | 'todos'
+  | 'mais_ativos';
 
 export interface AdminCampanhaEmail {
   id: string;
