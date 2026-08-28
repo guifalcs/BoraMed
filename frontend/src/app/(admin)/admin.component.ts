@@ -92,8 +92,13 @@ export class AdminComponent {
     { initialValue: this.router.url },
   );
 
-  /** Grupos que o usuário abriu/fechou manualmente (sobrepõe o auto-expand). */
-  private readonly gruposToggle = signal<Record<string, boolean>>({});
+  /**
+   * Seleção manual do accordion — só um grupo aberto por vez.
+   * `undefined` = sem interação, segue o grupo da rota ativa.
+   * `null` = usuário fechou o grupo ativo, todos colapsados.
+   * `string` = label do único grupo aberto.
+   */
+  private readonly grupoExpandido = signal<string | null | undefined>(undefined);
 
   constructor() {
     afterNextRender(() => { void this.suporteService.carregarContagemTicketsAbertos(); });
@@ -146,11 +151,11 @@ export class AdminComponent {
     );
   }
 
-  /** Aberto se o usuário abriu manualmente OU se contém a rota ativa. */
+  /** Accordion: aberto se for o grupo selecionado manualmente, ou o da rota ativa quando não há seleção. */
   protected grupoAberto(group: AdminNavGroup): boolean {
-    const override = this.gruposToggle()[group.label];
-    if (override !== undefined) return override;
-    return this.grupoTemRotaAtiva(group);
+    const selecionado = this.grupoExpandido();
+    if (selecionado === undefined) return this.grupoTemRotaAtiva(group);
+    return selecionado === group.label;
   }
 
   /** Soma dos badges dos filhos — exibida no header quando o grupo está fechado. */
@@ -161,7 +166,7 @@ export class AdminComponent {
 
   protected toggleGrupo(group: AdminNavGroup): void {
     const aberto = this.grupoAberto(group);
-    this.gruposToggle.update((state) => ({ ...state, [group.label]: !aberto }));
+    this.grupoExpandido.set(aberto ? null : group.label);
   }
 
   protected toggleMenu(): void {
