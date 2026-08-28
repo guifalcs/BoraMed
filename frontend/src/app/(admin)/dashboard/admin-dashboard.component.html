@@ -128,6 +128,33 @@
     </article>
   </section>
 
+  <article class="panel panel--standalone" aria-label="Distribuição de usuários por cidade">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Distribuição por cidade</h2>
+        <p class="panel-subtitle">
+          Percentual de usuários por cidade da unidade Afya, entre os que informaram a unidade.
+          @if (semCidadeTotal() > 0) {
+            {{ formatNumber(semCidadeTotal()) }} sem cidade cadastrada (fora do gráfico).
+          }
+        </p>
+      </div>
+    </div>
+
+    @if (distribuicaoUnidadeItens().length === 0) {
+      <p class="panel-hint">Ainda não há usuários com cidade cadastrada.</p>
+    } @else {
+      <div class="chart chart--cidades">
+        <canvas
+          baseChart
+          type="bar"
+          [data]="distribuicaoUnidadeData()"
+          [options]="distribuicaoUnidadeOptions"
+        ></canvas>
+      </div>
+    }
+  </article>
+
   <section class="usage-grid" aria-label="Pico de uso da plataforma">
     <article class="panel">
       <div class="panel-header">

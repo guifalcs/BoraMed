@@ -22,10 +22,12 @@
         <tr>
           <th>Usuário</th>
           <th>Tipo</th>
+          <th>Cidade</th>
           <th>Cadastro</th>
           <th>Último login</th>
           <th>Papel</th>
           <th>Assinatura</th>
+          <th>Assinado em</th>
           <th>Status</th>
           <th>Ação</th>
         </tr>
@@ -40,6 +42,7 @@
               </div>
             </td>
             <td>{{ tipoUsuarioLabel(u.tipo_usuario) }}</td>
+            <td>{{ faculdadeUnidadeLabel(u.faculdade_unidade) }}</td>
             <td>{{ u.criado_em | date:'dd/MM/yyyy' }}</td>
             <td>
               @if (u.ultimo_login) {
@@ -69,6 +72,13 @@
                 </span>
               } @else {
                 <span class="no-action">Não assinante</span>
+              }
+            </td>
+            <td>
+              @if (u.assinatura) {
+                {{ u.assinatura.criado_em | date:'dd/MM/yyyy' }}
+              } @else {
+                <span class="no-action">—</span>
               }
             </td>
             <td>
@@ -587,7 +597,7 @@
     .page-title { font-size: 1.35rem; }
     .search-input { max-width: none; min-height: 2.75rem; }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 980px; }
+    .data-table { min-width: 1120px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
     .action-cell { align-items: stretch; }

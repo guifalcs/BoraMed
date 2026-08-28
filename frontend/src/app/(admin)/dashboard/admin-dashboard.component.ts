@@ -19,6 +19,7 @@ import {
 import type { LucideIconData } from 'lucide-angular';
 import {
   AdminService,
+  AdminDistribuicaoUnidade,
   AdminFinanceiro,
   AdminStats,
   AdminUsoPlataforma,
@@ -26,6 +27,7 @@ import {
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { FACULDADE_UNIDADE_LABELS } from '../../core/models/faculdade-unidade';
 
 interface AdminKpi {
   label: string;
@@ -70,6 +72,7 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly stats = signal<AdminStats | null>(null);
   protected readonly fin = signal<AdminFinanceiro | null>(null);
   protected readonly uso = signal<AdminUsoPlataforma | null>(null);
+  protected readonly distribuicaoUnidades = signal<AdminDistribuicaoUnidade[] | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly diaSelecionado = signal<string | null>(null);
   protected readonly usuariosDia = signal<AdminUsoUsuariosDia | null>(null);
@@ -207,6 +210,98 @@ export class AdminDashboardComponent implements OnInit {
       ],
     };
   });
+
+  private readonly maxCidadesNoGrafico = 8;
+
+  /** Quantos usuários não têm cidade/unidade cadastrada (fora da base do gráfico). */
+  protected readonly semCidadeTotal = computed(() => {
+    const linhas = this.distribuicaoUnidades() ?? [];
+    return linhas.find((l) => l.faculdade_unidade === null)?.total ?? 0;
+  });
+
+  /**
+   * Top N cidades por total, com o restante agregado em "Outras". A base do
+   * percentual é só quem tem cidade cadastrada — quem não informou não é uma
+   * sede e entraria como um bloco dominante, mascarando a distribuição real.
+   */
+  protected readonly distribuicaoUnidadeItens = computed(() => {
+    const linhas = (this.distribuicaoUnidades() ?? []).filter((l) => l.faculdade_unidade !== null);
+    const total = linhas.reduce((acc, l) => acc + l.total, 0);
+    if (total === 0) return [] as { label: string; total: number; percent: number }[];
+
+    const rotulo = (u: AdminDistribuicaoUnidade['faculdade_unidade']) =>
+      u ? (FACULDADE_UNIDADE_LABELS[u] ?? u) : '';
+
+    const ordenadas = [...linhas].sort((a, b) => b.total - a.total);
+    const principais = ordenadas.slice(0, this.maxCidadesNoGrafico);
+    const restante = ordenadas.slice(this.maxCidadesNoGrafico);
+
+    const itens = principais.map((l) => ({
+      label: rotulo(l.faculdade_unidade),
+      total: l.total,
+      percent: Math.round((l.total / total) * 1000) / 10,
+    }));
+
+    const totalRestante = restante.reduce((acc, l) => acc + l.total, 0);
+    if (totalRestante > 0) {
+      itens.push({
+        label: 'Outras',
+        total: totalRestante,
+        percent: Math.round((totalRestante / total) * 1000) / 10,
+      });
+    }
+
+    return itens;
+  });
+
+  protected readonly distribuicaoUnidadeData = computed<ChartData<'bar'>>(() => {
+    const itens = this.distribuicaoUnidadeItens();
+    return {
+      labels: itens.map((i) => i.label),
+      datasets: [
+        {
+          label: 'Usuários',
+          data: itens.map((i) => i.percent),
+          backgroundColor: '#3b82f6',
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 20,
+        },
+      ],
+    };
+  });
+
+  protected readonly distribuicaoUnidadeOptions: ChartOptions<'bar'> = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#020617',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: (ctx) => `${this.decimalFormatter.format(Number(ctx.parsed.x))}%`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        max: 100,
+        ticks: { color: '#64748b', font: { size: 11 }, callback: (v) => `${v}%` },
+        grid: { color: 'rgba(148, 163, 184, 0.22)' },
+        border: { display: false },
+      },
+      y: {
+        ticks: { color: '#64748b', font: { size: 11 } },
+        grid: { display: false },
+        border: { display: false },
+      },
+    },
+  };
 
   protected readonly usoDiarioData = computed<ChartData<'bar'>>(() => {
     const pontos = this.uso()?.por_dia ?? [];
@@ -525,10 +620,11 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    const [result, fin, uso] = await Promise.all([
+    const [result, fin, uso, distribuicao] = await Promise.all([
       this.adminService.getStats(),
       this.adminService.getFinanceiro(),
       this.adminService.getUsoPlataforma(),
+      this.adminService.getDistribuicaoUnidades(),
     ]);
     if (result.ok) {
       this.stats.set(result.data);
@@ -537,6 +633,7 @@ export class AdminDashboardComponent implements OnInit {
     }
     if (fin.ok) this.fin.set(fin.data);
     if (uso.ok) this.uso.set(uso.data);
+    if (distribuicao.ok) this.distribuicaoUnidades.set(distribuicao.data);
     this.isLoading.set(false);
   }
 

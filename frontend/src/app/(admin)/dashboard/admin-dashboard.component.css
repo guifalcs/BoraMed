@@ -142,6 +142,10 @@
   grid-row: span 2;
 }
 
+.panel--standalone {
+  margin-bottom: 1rem;
+}
+
 .panel-header {
   display: flex;
   align-items: flex-start;
@@ -196,6 +200,10 @@
 
 .chart--usage {
   height: 280px;
+}
+
+.chart--cidades {
+  height: 300px;
 }
 
 .donut-wrap {
@@ -465,6 +473,10 @@
   .chart--bar {
     height: 250px;
   }
+
+  .chart--cidades {
+    height: 260px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -509,6 +521,10 @@
   .chart--donut,
   .chart--small-bar {
     height: 220px;
+  }
+
+  .chart--cidades {
+    height: 240px;
   }
 
   .priority-list {

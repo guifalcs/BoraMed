@@ -4,6 +4,8 @@
  * evita mapas duplicados que divergem entre telas.
  */
 
+import { FACULDADE_UNIDADE_LABELS, type FaculdadeUnidade } from '../../core/models/faculdade-unidade';
+
 const PAGAMENTO_STATUS_LABELS: Record<string, string> = {
   approved: 'Aprovado',
   pending: 'Pendente',
@@ -47,6 +49,11 @@ export function papelLabel(papel: string): string {
   if (papel === 'super_admin') return 'Super Admin';
   if (papel === 'admin') return 'Admin';
   return 'Aluno';
+}
+
+/** Deriva o nome da cidade a partir da unidade Afya (formato "Cidade (UF)"). */
+export function faculdadeUnidadeLabel(unidade: FaculdadeUnidade | null): string {
+  return unidade ? (FACULDADE_UNIDADE_LABELS[unidade] ?? unidade) : '—';
 }
 
 /** Formata centavos na moeda informada (padrão BRL); null vira '—'. */

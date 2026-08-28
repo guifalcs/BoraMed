@@ -7,6 +7,7 @@ import {
 } from '../utils/storage-imagens.util';
 import type { PapelUsuario, Profile } from '../models/auth.types';
 import type { AssinaturaStatus, SegmentoAcesso } from '../models/subscription.types';
+import type { FaculdadeUnidade } from '../models/faculdade-unidade';
 
 export interface AdminDisciplina {
   id: string;
@@ -27,6 +28,11 @@ export interface AdminStats {
   total_tentativas: number;
   tentativas_hoje: number;
   total_temas: number;
+}
+
+export interface AdminDistribuicaoUnidade {
+  faculdade_unidade: FaculdadeUnidade | null;
+  total: number;
 }
 
 export interface AdminUsoPonto {
@@ -643,6 +649,8 @@ export interface ImpersonacaoResult {
 export interface UsuarioAdminAssinatura {
   status: AssinaturaStatus;
   proxima_cobranca: string | null;
+  /** Data em que a assinatura foi criada (usada como "assinou em" no admin). */
+  criado_em: string;
   plano_nome: string | null;
   plano_slug: string | null;
   /** true quando a assinatura dá acesso ativo no momento (espelha tem_assinatura_ativa). */
@@ -676,6 +684,13 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_stats');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminStats };
+  }
+
+  /** Distribuição de usuários por unidade/cidade (para o gráfico do dashboard). */
+  async getDistribuicaoUnidades(): Promise<ServiceResult<AdminDistribuicaoUnidade[]>> {
+    const { data, error } = await this.supabase.rpc('admin_get_distribuicao_unidades');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminDistribuicaoUnidade[] };
   }
 
   async getUsoPlataforma(): Promise<ServiceResult<AdminUsoPlataforma>> {
@@ -810,6 +825,7 @@ export class AdminService {
     return {
       status: escolhida.status,
       proxima_cobranca: escolhida.proxima_cobranca,
+      criado_em: escolhida.criado_em,
       plano_nome: escolhida.plano?.nome ?? null,
       plano_slug: escolhida.plano?.slug ?? null,
       ativa: estaAtiva(escolhida),

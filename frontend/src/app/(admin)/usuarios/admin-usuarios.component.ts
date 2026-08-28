@@ -29,6 +29,7 @@ import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dia
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import {
   assinaturaStatusLabel,
+  faculdadeUnidadeLabel,
   papelLabel,
   tipoUsuarioLabel,
 } from '../../shared/utils/admin-labels.util';
@@ -194,6 +195,7 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly tipoUsuarioLabel = tipoUsuarioLabel;
   protected readonly papelLabel = papelLabel;
   protected readonly assinaturaStatusLabel = assinaturaStatusLabel;
+  protected readonly faculdadeUnidadeLabel = faculdadeUnidadeLabel;
 
   protected get totalPaginas(): number {
     return Math.max(1, Math.ceil(this.total() / this.porPagina));
