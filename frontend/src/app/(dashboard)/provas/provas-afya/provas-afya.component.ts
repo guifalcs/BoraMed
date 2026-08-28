@@ -50,6 +50,7 @@ export class ProvasAfyaComponent {
   protected readonly buscaFiltro = signal('');
 
   protected readonly disciplinas = signal<Disciplina[]>([]);
+  protected readonly isLoadingDisciplinas = signal(true);
 
   private buscaDebounce: ReturnType<typeof setTimeout> | null = null;
 
@@ -72,16 +73,25 @@ export class ProvasAfyaComponent {
     label: `${i + 1}º período`,
   }));
 
-  /** Matérias agrupadas por período (1º, 2º, ...) para o filtro hierárquico. */
-  protected readonly materiaOpcoes = computed<SelectOption[]>(() =>
-    this.disciplinas().map((d) => ({
+  /**
+   * Matérias agrupadas por período (1º, 2º, ...) para o filtro hierárquico.
+   * Sem período selecionado, mostra todas; com período(s) selecionado(s),
+   * restringe às matérias desses períodos.
+   */
+  protected readonly materiaOpcoes = computed<SelectOption[]>(() => {
+    const periodos = this.periodosFiltro();
+    const disciplinas =
+      periodos.length > 0
+        ? this.disciplinas().filter((d) => periodos.includes(d.periodo))
+        : this.disciplinas();
+    return disciplinas.map((d) => ({
       value: d.id,
       // Sigla sem o algarismo romano do período (ex: "SOI I" → "SOI") — o
       // período já aparece como cabeçalho do grupo.
       label: d.sigla.replace(/\s+[IVXLCDM]+$/i, ''),
       group: `${d.periodo}º período`,
-    })),
-  );
+    }));
+  });
 
   constructor() {
     // Navega instantaneamente; os dados são buscados aqui, sem bloquear a rota.
@@ -92,8 +102,13 @@ export class ProvasAfyaComponent {
   }
 
   private async carregarDisciplinas(): Promise<void> {
-    const result = await this.provaService.listarDisciplinas();
-    if (result.ok) this.disciplinas.set(result.data);
+    this.isLoadingDisciplinas.set(true);
+    try {
+      const result = await this.provaService.listarDisciplinas();
+      if (result.ok) this.disciplinas.set(result.data);
+    } finally {
+      this.isLoadingDisciplinas.set(false);
+    }
   }
 
   protected async carregarProvas(): Promise<void> {
@@ -153,7 +168,24 @@ export class ProvasAfyaComponent {
   }
 
   protected onPeriodoChange(values: (string | number)[]): void {
-    this.periodosFiltro.set(values.map(Number));
+    const periodos = values.map(Number);
+    this.periodosFiltro.set(periodos);
+
+    // Matérias já selecionadas que não pertencem mais aos períodos escolhidos
+    // saem do filtro — senão ficam "escondidas" no multiselect (fora das
+    // opções visíveis) mas continuam valendo na busca.
+    if (periodos.length > 0) {
+      const materiasValidas = new Set(
+        this.disciplinas()
+          .filter((d) => periodos.includes(d.periodo))
+          .map((d) => d.id),
+      );
+      const materiasFiltradas = this.materiasFiltro().filter((id) => materiasValidas.has(id));
+      if (materiasFiltradas.length !== this.materiasFiltro().length) {
+        this.materiasFiltro.set(materiasFiltradas);
+      }
+    }
+
     void this.recarregarPrimeiraPagina();
   }
 

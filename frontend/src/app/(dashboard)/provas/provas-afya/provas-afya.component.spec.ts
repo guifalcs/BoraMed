@@ -206,6 +206,60 @@ describe('ProvasAfyaComponent', () => {
         expect.objectContaining({ disciplinaIds: [], periodos: [2] }),
       );
     });
+
+    it('restringe as opções de matéria ao período selecionado', () => {
+      (component as any).onPeriodoChange([1]);
+      const opcoes = (component as any).materiaOpcoes();
+      expect(opcoes.map((o: any) => o.value)).toEqual(['soi-1']);
+    });
+
+    it('sem período selecionado, mostra matérias de todos os períodos', () => {
+      const opcoes = (component as any).materiaOpcoes();
+      expect(opcoes.map((o: any) => o.value)).toEqual(['soi-1', 'soi-4']);
+    });
+
+    it('remove do filtro uma matéria que deixou de pertencer ao período escolhido', () => {
+      (component as any).onMateriaChange(['soi-4']);
+      (component as any).onPeriodoChange([1]);
+      expect((component as any).materiasFiltro()).toEqual([]);
+      expect(mockProvaService.listarProvasNacionais).toHaveBeenLastCalledWith(
+        expect.objectContaining({ disciplinaIds: [] }),
+      );
+    });
+
+    it('mantém no filtro uma matéria que ainda pertence ao período escolhido', () => {
+      (component as any).onMateriaChange(['soi-1']);
+      (component as any).onPeriodoChange([1]);
+      expect((component as any).materiasFiltro()).toEqual(['soi-1']);
+    });
+  });
+
+  // ── Loading das disciplinas (select de matéria) ───────────────────────────
+  describe('carregamento das disciplinas', () => {
+    it('desabilita o select de matéria enquanto as disciplinas carregam', async () => {
+      vi.clearAllMocks();
+      mockProvaService.listarProvasNacionais.mockReturnValue(
+        Promise.resolve({ ok: true, data: pagina([provaFactory()], 1) }),
+      );
+      mockProvaService.listarDisciplinas.mockReturnValue(new Promise(() => {}));
+
+      await TestBed.configureTestingModule({
+        imports: [ProvasAfyaComponent],
+        providers: [provideRouter([]), { provide: ProvaService, useValue: mockProvaService }],
+      }).compileComponents();
+
+      fixture = TestBed.createComponent(ProvasAfyaComponent);
+      component = fixture.componentInstance;
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect((component as any).isLoadingDisciplinas()).toBe(true);
+    });
+
+    it('reabilita o select de matéria após as disciplinas carregarem', async () => {
+      await setup({ ok: true, data: pagina([provaFactory()], 1) });
+      expect((component as any).isLoadingDisciplinas()).toBe(false);
+    });
   });
 
   // ── Paginação ─────────────────────────────────────────────────────────────

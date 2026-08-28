@@ -46,6 +46,8 @@
             name="materia"
             [options]="materiaOpcoes()"
             [values]="materiasFiltro()"
+            [disabled]="isLoadingDisciplinas()"
+            [placeholder]="isLoadingDisciplinas() ? 'Carregando...' : 'Todos'"
             (valuesChange)="onMateriaChange($event)"
           />
         </div>
