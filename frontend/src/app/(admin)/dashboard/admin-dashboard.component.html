@@ -144,14 +144,34 @@
     @if (distribuicaoUnidadeItens().length === 0) {
       <p class="panel-hint">Ainda não há usuários com cidade cadastrada.</p>
     } @else {
-      <div class="chart chart--cidades">
+      <div class="chart chart--cidades chart--clickable">
         <canvas
           baseChart
           type="bar"
           [data]="distribuicaoUnidadeData()"
           [options]="distribuicaoUnidadeOptions"
+          (chartClick)="onDistribuicaoUnidadeClick($event)"
         ></canvas>
       </div>
+
+      <p class="panel-hint">Clique em uma barra para ver o total absoluto de usuários.</p>
+
+      @if (cidadeSelecionada(); as c) {
+        <div class="dia-detalhe">
+          <div class="dia-detalhe__header">
+            <div>
+              <h3>{{ c.label }}</h3>
+              <p>
+                {{ formatNumber(c.total) }} usuário{{ c.total !== 1 ? 's' : '' }} ·
+                {{ c.percent }}% do total com cidade informada
+              </p>
+            </div>
+            <button type="button" class="dia-detalhe__close" (click)="fecharCidadeSelecionada()">
+              Fechar
+            </button>
+          </div>
+        </div>
+      }
     }
   </article>
 

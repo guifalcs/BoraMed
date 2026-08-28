@@ -212,6 +212,7 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   private readonly maxCidadesNoGrafico = 8;
+  protected readonly cidadeSelecionada = signal<{ label: string; total: number; percent: number } | null>(null);
 
   /** Quantos usuários não têm cidade/unidade cadastrada (fora da base do gráfico). */
   protected readonly semCidadeTotal = computed(() => {
@@ -283,7 +284,13 @@ export class AdminDashboardComponent implements OnInit {
         borderWidth: 1,
         padding: 10,
         callbacks: {
-          label: (ctx) => `${this.decimalFormatter.format(Number(ctx.parsed.x))}%`,
+          label: (ctx) => {
+            const item = this.distribuicaoUnidadeItens()[ctx.dataIndex];
+            const percent = this.decimalFormatter.format(Number(ctx.parsed.x));
+            if (!item) return `${percent}%`;
+            const usuarios = item.total === 1 ? 'usuário' : 'usuários';
+            return `${this.formatNumber(item.total)} ${usuarios} (${percent}%)`;
+          },
         },
       },
     },
@@ -603,6 +610,19 @@ export class AdminDashboardComponent implements OnInit {
     this.diaSelecionado.set(null);
     this.usuariosDia.set(null);
     this.usuariosDiaLoading.set(false);
+  }
+
+  /** Clique numa barra do gráfico de cidades: mostra o total absoluto de usuários. */
+  protected onDistribuicaoUnidadeClick(event: { active?: object[] }): void {
+    const ativo = (event.active ?? [])[0] as { index?: number } | undefined;
+    if (!ativo || typeof ativo.index !== 'number') return;
+    const item = this.distribuicaoUnidadeItens()[ativo.index];
+    if (!item) return;
+    this.cidadeSelecionada.set(this.cidadeSelecionada()?.label === item.label ? null : item);
+  }
+
+  protected fecharCidadeSelecionada(): void {
+    this.cidadeSelecionada.set(null);
   }
 
   /** 'YYYY-MM-DD' -> '17/08/2026' sem depender de fuso. */
