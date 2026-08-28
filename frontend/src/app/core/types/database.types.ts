@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -922,6 +922,24 @@ export type Database = {
           },
         ]
       }
+      mp_webhook_evento: {
+        Row: {
+          id: string
+          payload: Json | null
+          processado_em: string
+        }
+        Insert: {
+          id: string
+          payload?: Json | null
+          processado_em?: string
+        }
+        Update: {
+          id?: string
+          payload?: Json | null
+          processado_em?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           criado_em: string
@@ -1526,6 +1544,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      questao_backup_formatacao: {
+        Row: {
+          enunciado: string | null
+          enunciado_apoio: string | null
+          explicacao: string | null
+          id: string
+          salvo_em: string
+        }
+        Insert: {
+          enunciado?: string | null
+          enunciado_apoio?: string | null
+          explicacao?: string | null
+          id: string
+          salvo_em?: string
+        }
+        Update: {
+          enunciado?: string | null
+          enunciado_apoio?: string | null
+          explicacao?: string | null
+          id?: string
+          salvo_em?: string
+        }
+        Relationships: []
       }
       questao_comentario: {
         Row: {
@@ -2338,6 +2380,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_criar_gemea_discursiva: {
+        Args: {
+          p_criterios_correcao: string
+          p_enunciado: string
+          p_explicacao: string
+          p_origem_id: string
+          p_pontos_chave: Json
+          p_resposta_modelo: string
+        }
+        Returns: string
+      }
       admin_criar_prova_com_questoes: {
         Args: {
           p_prova: Json
@@ -2418,6 +2471,7 @@ export type Database = {
         }
         Returns: number
       }
+      admin_get_distribuicao_unidades: { Args: never; Returns: Json }
       admin_get_financeiro: { Args: never; Returns: Json }
       admin_get_flashcards_stats: { Args: never; Returns: Json }
       admin_get_metricas_ia: { Args: never; Returns: Json }
@@ -2991,6 +3045,15 @@ export type Database = {
       marcar_aviso_visto: { Args: { p_aviso_id: string }; Returns: undefined }
       marcar_notificacao_lida: { Args: { p_id: string }; Returns: undefined }
       marcar_todas_notificacoes_lidas: { Args: never; Returns: undefined }
+      montar_questao_tentativa_json: {
+        Args: {
+          p_modo: string
+          p_ordem: number
+          p_prova_id: string
+          p_questao_id: string
+        }
+        Returns: Json
+      }
       montar_resultado_tentativa: {
         Args: { p_tentativa_id: string }
         Returns: Json
