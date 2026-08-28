@@ -39,6 +39,17 @@
           (valueChange)="email.set($event)"
         />
 
+        <app-ui-select
+          label="Unidade Afya"
+          name="faculdadeUnidade"
+          placeholder="Selecione sua unidade"
+          [required]="true"
+          [options]="faculdadeUnidadeOptions"
+          [value]="faculdadeUnidade()"
+          [error]="fieldErrors()['faculdadeUnidade'] ?? null"
+          (valueChange)="handleFaculdadeUnidadeChange($event)"
+        />
+
         <app-ui-input
           label="Senha"
           name="password"
@@ -64,17 +75,6 @@
           [error]="fieldErrors()['confirmPassword'] ?? null"
           [showPasswordToggle]="true"
           (valueChange)="confirmPassword.set($event)"
-        />
-
-        <app-ui-select
-          label="Unidade Afya"
-          name="faculdadeUnidade"
-          placeholder="Selecione sua unidade"
-          [required]="true"
-          [options]="faculdadeUnidadeOptions"
-          [value]="faculdadeUnidade()"
-          [error]="fieldErrors()['faculdadeUnidade'] ?? null"
-          (valueChange)="handleFaculdadeUnidadeChange($event)"
         />
 
         @if (state() === 'success') {
