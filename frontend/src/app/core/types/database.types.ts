@@ -1204,7 +1204,7 @@ export type Database = {
           email_marketing_optout: boolean
           email_marketing_optout_em: string | null
           email_token: string
-          faculdade_rede: string | null
+          faculdade_unidade: string | null
           id: string
           motivo_banimento: string | null
           nome_completo: string | null
@@ -1224,7 +1224,7 @@ export type Database = {
           email_marketing_optout?: boolean
           email_marketing_optout_em?: string | null
           email_token?: string
-          faculdade_rede?: string | null
+          faculdade_unidade?: string | null
           id: string
           motivo_banimento?: string | null
           nome_completo?: string | null
@@ -1244,7 +1244,7 @@ export type Database = {
           email_marketing_optout?: boolean
           email_marketing_optout_em?: string | null
           email_token?: string
-          faculdade_rede?: string | null
+          faculdade_unidade?: string | null
           id?: string
           motivo_banimento?: string | null
           nome_completo?: string | null
@@ -2294,7 +2294,7 @@ export type Database = {
           email_marketing_optout: boolean
           email_marketing_optout_em: string | null
           email_token: string
-          faculdade_rede: string | null
+          faculdade_unidade: string | null
           id: string
           motivo_banimento: string | null
           nome_completo: string | null
@@ -2392,7 +2392,7 @@ export type Database = {
           email_marketing_optout: boolean
           email_marketing_optout_em: string | null
           email_token: string
-          faculdade_rede: string | null
+          faculdade_unidade: string | null
           id: string
           motivo_banimento: string | null
           nome_completo: string | null
@@ -2608,7 +2608,7 @@ export type Database = {
           email_marketing_optout: boolean
           email_marketing_optout_em: string | null
           email_token: string
-          faculdade_rede: string | null
+          faculdade_unidade: string | null
           id: string
           motivo_banimento: string | null
           nome_completo: string | null

@@ -1,8 +1,9 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
 import { compressImage } from '../utils/image-compress.util';
 import type { Profile } from '../models/auth.types';
+import type { FaculdadeUnidade } from '../models/faculdade-unidade';
 import type { ChangePasswordInput, UpdateProfileInput } from '../models/profile.schemas';
 
 export type ProfileResult = { ok: true } | { ok: false; error: string };
@@ -18,6 +19,17 @@ export class ProfileService {
 
   readonly profile = this._profile.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
+
+  /**
+   * Gate obrigatório de unidade Afya: enquanto verdadeiro, o shell do
+   * dashboard suprime avisos/onboarding/paywall (ver dashboard.component)
+   * para que Esc/setas globais desses overlays não vazem por trás do modal
+   * de faculdade_unidade, que não tem esses atalhos de fechar.
+   */
+  readonly precisaFaculdadeUnidade = computed(() => {
+    const profile = this._profile();
+    return profile !== null && profile.faculdade_unidade === null && !this.auth.impersonando();
+  });
 
   clear(): void {
     this._profile.set(null);
@@ -60,14 +72,21 @@ export class ProfileService {
     if (!user) return { ok: false, error: 'Usuário não autenticado.' };
 
     try {
+      // faculdade_unidade só é limpo se explicitamente enviado como null — omitir
+      // a chave preserva o valor já preenchido pelo modal obrigatório em vez de
+      // zerá-lo numa race entre o modal e este form (mesma linha de perfis).
+      const payload: Record<string, unknown> = {
+        nome_completo: input.nome_completo,
+        tipo_usuario: input.tipo_usuario ?? null,
+        periodo: input.periodo ?? null,
+      };
+      if ('faculdade_unidade' in input) {
+        payload['faculdade_unidade'] = input.faculdade_unidade ?? null;
+      }
+
       const { data, error } = await this.supabase
         .from('profiles')
-        .update({
-          nome_completo: input.nome_completo,
-          tipo_usuario: input.tipo_usuario ?? null,
-          periodo: input.periodo ?? null,
-          faculdade_rede: input.faculdade_rede ?? null,
-        })
+        .update(payload)
         .eq('id', user.id)
         .select()
         .single();
@@ -77,6 +96,26 @@ export class ProfileService {
       return { ok: true };
     } catch {
       return { ok: false, error: 'Não foi possível salvar os dados. Tente novamente.' };
+    }
+  }
+
+  async updateFaculdadeUnidade(faculdadeUnidade: FaculdadeUnidade): Promise<ProfileResult> {
+    const user = this.auth.user();
+    if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .update({ faculdade_unidade: faculdadeUnidade })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      this._profile.set(data as Profile);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Não foi possível salvar sua unidade. Tente novamente.' };
     }
   }
 

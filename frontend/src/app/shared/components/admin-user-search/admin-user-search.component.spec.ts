@@ -13,7 +13,7 @@ function perfilMock(overrides: Partial<Profile>): Profile {
     avatar_url: null,
     tipo_usuario: 'estudante_medicina',
     periodo: 3,
-    faculdade_rede: 'rede_afya',
+    faculdade_unidade: 'salvador_ba',
     competir_publico: true,
     papel: 'aluno',
     atualizado_em: '2026-06-01T12:00:00Z',

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FACULDADE_UNIDADE_LABELS, type FaculdadeUnidade } from '../../../core/models/faculdade-unidade';
 
 @Component({
   selector: 'app-greeting-hero',
@@ -12,7 +13,7 @@ import { RouterLink } from '@angular/router';
 export class GreetingHeroComponent {
   nomeCompleto = input<string | null>(null);
   periodo = input<number | null>(null);
-  faculdadeRede = input<string | null>(null);
+  faculdadeUnidade = input<string | null>(null);
   temTentativaAtiva = input(false);
   rotaCta = input<string[]>(['/dashboard/simulados']);
 
@@ -35,8 +36,8 @@ export class GreetingHeroComponent {
 
   protected readonly contexto = computed(() => {
     const p = this.periodo();
-    const f = this.faculdadeRede();
-    const facLabel = f === 'rede_afya' ? 'Rede Afya' : f === 'outros' ? 'Outros' : null;
+    const f = this.faculdadeUnidade();
+    const facLabel = f ? (FACULDADE_UNIDADE_LABELS[f as FaculdadeUnidade] ?? null) : null;
     if (p && facLabel) return `${p}º período · ${facLabel}`;
     if (p) return `${p}º período`;
     if (facLabel) return facLabel;

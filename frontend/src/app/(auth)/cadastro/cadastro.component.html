@@ -66,6 +66,17 @@
           (valueChange)="confirmPassword.set($event)"
         />
 
+        <app-ui-select
+          label="Unidade Afya"
+          name="faculdadeUnidade"
+          placeholder="Selecione sua unidade"
+          [required]="true"
+          [options]="faculdadeUnidadeOptions"
+          [value]="faculdadeUnidade()"
+          [error]="fieldErrors()['faculdadeUnidade'] ?? null"
+          (valueChange)="handleFaculdadeUnidadeChange($event)"
+        />
+
         @if (state() === 'success') {
           <p class="success">Conta criada! Verifique seu e-mail para confirmar o cadastro.</p>
           <p class="resend-hint">

@@ -22,6 +22,7 @@ const validData = {
   email: 'joao@example.com',
   password: 'Abc1234!',
   confirmPassword: 'Abc1234!',
+  faculdadeUnidade: 'salvador_ba',
 };
 
 describe('CadastroComponent', () => {
@@ -58,6 +59,7 @@ describe('CadastroComponent', () => {
     (component as any).email.set(data.email);
     (component as any).password.set(data.password);
     (component as any).confirmPassword.set(data.confirmPassword);
+    (component as any).faculdadeUnidade.set(data.faculdadeUnidade);
   }
 
   describe('estado inicial', () => {
@@ -100,6 +102,15 @@ describe('CadastroComponent', () => {
       await vi.runAllTimersAsync();
 
       expect((component as any).fieldErrors()['confirmPassword']).toBe('As senhas não conferem');
+    });
+
+    it('não chama auth.signup e define erro quando unidade Afya não é selecionada', async () => {
+      fillForm({ faculdadeUnidade: null as unknown as string });
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect(mockAuth.signup).not.toHaveBeenCalled();
+      expect((component as any).fieldErrors()['faculdadeUnidade']).toBe('Selecione sua unidade Afya');
     });
 
     it('limpa fieldErrors ao submeter novamente', async () => {

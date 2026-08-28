@@ -115,6 +115,55 @@ export class UiSelectComponent {
         if (prev) this.valueChange.emit(prev.value);
         break;
       }
+      default:
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          this.handleTypeahead(event.key);
+        }
+    }
+  }
+
+  // Busca por teclado (como o <select> nativo): digitar "i" pula pra primeira
+  // opção que começa com "i"; repetir a mesma tecla cicla entre as opções
+  // daquela letra; digitar letras diferentes em sequência refina a busca.
+  private typeaheadQuery = '';
+  private typeaheadResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private static normalizeForSearch(value: string): string {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  private matchesFor(searchTerm: string): SelectOption[] {
+    return this.options().filter((o) => UiSelectComponent.normalizeForSearch(o.label).startsWith(searchTerm));
+  }
+
+  private handleTypeahead(key: string): void {
+    if (this.typeaheadResetTimer) clearTimeout(this.typeaheadResetTimer);
+    this.typeaheadResetTimer = setTimeout(() => { this.typeaheadQuery = ''; }, 700);
+
+    const lowerKey = key.toLowerCase();
+    this.typeaheadQuery += lowerKey;
+
+    // Se todas as teclas digitadas até agora forem iguais (ex.: "iii"), o
+    // usuário está ciclando pelas opções daquela letra — como no <select>
+    // nativo — em vez de refinar uma busca por várias letras.
+    const isSingleRepeatedChar = [...this.typeaheadQuery].every((c) => c === this.typeaheadQuery[0]);
+    let searchTerm = UiSelectComponent.normalizeForSearch(isSingleRepeatedChar ? this.typeaheadQuery[0] : this.typeaheadQuery);
+    let matches = this.matchesFor(searchTerm);
+
+    // Nenhuma opção bate com o buffer acumulado (ex.: "sa" seguido de "l" já
+    // funcionava, mas "sax"): recomeça a busca só com a tecla atual.
+    if (matches.length === 0) {
+      this.typeaheadQuery = lowerKey;
+      searchTerm = UiSelectComponent.normalizeForSearch(lowerKey);
+      matches = this.matchesFor(searchTerm);
+      if (matches.length === 0) return;
+    }
+
+    if (isSingleRepeatedChar) {
+      const currentIdx = matches.findIndex((o) => o.value === this.value());
+      this.valueChange.emit(matches[(currentIdx + 1) % matches.length].value);
+    } else {
+      this.valueChange.emit(matches[0].value);
     }
   }
 }

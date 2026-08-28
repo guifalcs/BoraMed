@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@
 import { Router, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
+import { UiSelectComponent } from '../../shared/components/ui/select/ui-select.component';
 import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-panel.component';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { signupSchema } from '../../core/models/auth.schemas';
+import { FACULDADE_UNIDADE_OPTIONS, type FaculdadeUnidade } from '../../core/models/faculdade-unidade';
 import { SeoService } from '../../core/seo/seo.service';
 
 type CadastroState = 'idle' | 'error' | 'loading' | 'success';
@@ -15,7 +17,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 @Component({
   selector: 'app-cadastro',
-  imports: [RouterLink, UiButtonComponent, UiInputComponent, BrandPanelComponent],
+  imports: [RouterLink, UiButtonComponent, UiInputComponent, UiSelectComponent, BrandPanelComponent],
   templateUrl: './cadastro.component.html',
   styleUrls: ['../auth-layout.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,10 +43,16 @@ export class CadastroComponent implements OnDestroy {
   protected readonly email = signal('');
   protected readonly password = signal('');
   protected readonly confirmPassword = signal('');
+  protected readonly faculdadeUnidade = signal<FaculdadeUnidade | null>(null);
+  protected readonly faculdadeUnidadeOptions = FACULDADE_UNIDADE_OPTIONS;
   protected readonly state = signal<CadastroState>('idle');
   protected readonly fieldErrors = signal<Partial<Record<string, string>>>({});
   protected readonly resendState = signal<ResendState>('idle');
   protected readonly resendCooldown = signal(0);
+
+  protected handleFaculdadeUnidadeChange(value: string | number | null): void {
+    this.faculdadeUnidade.set(typeof value === 'string' ? (value as FaculdadeUnidade) : null);
+  }
 
   protected async handleSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
@@ -55,6 +63,7 @@ export class CadastroComponent implements OnDestroy {
       email: this.email(),
       password: this.password(),
       confirmPassword: this.confirmPassword(),
+      faculdadeUnidade: this.faculdadeUnidade(),
     });
 
     if (!parsed.success) {

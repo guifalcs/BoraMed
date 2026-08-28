@@ -21,6 +21,7 @@ import { ImageViewerComponent } from '../shared/components/image-viewer/image-vi
 import { FocoModoService } from '../core/services/foco-modo.service';
 import { PaywallService } from '../core/services/paywall.service';
 import { PaywallModalComponent } from '../shared/components/paywall-modal/paywall-modal.component';
+import { FaculdadeUnidadeModalComponent } from '../shared/components/faculdade-unidade-modal/faculdade-unidade-modal.component';
 import { UpgradeBadgeComponent } from '../shared/components/upgrade-badge/upgrade-badge.component';
 import { UpgradeCardComponent } from '../shared/components/upgrade-card/upgrade-card.component';
 import type { PaywallContexto } from '../core/models/paywall.types';
@@ -46,7 +47,7 @@ interface NavItemEstado extends NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, FaculdadeUnidadeModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +55,7 @@ interface NavItemEstado extends NavItem {
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificationService);
-  private readonly profileService = inject(ProfileService);
+  protected readonly profileService = inject(ProfileService);
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly tentativaService = inject(TentativaService);
   private readonly router = inject(Router);

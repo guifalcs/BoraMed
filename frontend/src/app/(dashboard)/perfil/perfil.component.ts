@@ -12,7 +12,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { ConquistaService } from '../../core/services/conquista.service';
 import { NotificationService } from '../../core/services/notification.service';
-import type { TipoUsuario, FaculdadeRede } from '../../core/models/auth.types';
+import type { TipoUsuario } from '../../core/models/auth.types';
+import type { FaculdadeUnidade } from '../../core/models/faculdade-unidade';
+import { FACULDADE_UNIDADE_OPTIONS } from '../../core/models/faculdade-unidade';
 import { currentWeekRange } from '../../shared/utils/current-week-range';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -27,11 +29,6 @@ const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i
   value: i + 1,
   label: `${i + 1}º período`,
 }));
-
-const FACULDADE_REDE_OPTIONS: SelectOption<string>[] = [
-  { value: 'rede_afya', label: 'Rede Afya' },
-  { value: 'outros',    label: 'Outros' },
-];
 
 @Component({
   selector: 'app-perfil',
@@ -62,7 +59,7 @@ export class PerfilComponent {
   protected readonly awardIcon: LucideIconData = Award;
   protected readonly tipoUsuarioOptions = TIPO_USUARIO_OPTIONS;
   protected readonly periodoOptions = PERIODO_OPTIONS;
-  protected readonly faculdadeRedeOptions = FACULDADE_REDE_OPTIONS;
+  protected readonly faculdadeUnidadeOptions = FACULDADE_UNIDADE_OPTIONS;
 
   // Derived from services
   protected readonly email = computed(() => this.auth.user()?.email ?? '');
@@ -95,7 +92,7 @@ export class PerfilComponent {
   protected readonly nomeCompleto = signal('');
   protected readonly tipoUsuario = signal<TipoUsuario | null>(null);
   protected readonly periodo = signal<number | null>(null);
-  protected readonly faculdadeRede = signal<FaculdadeRede | null>(null);
+  protected readonly faculdadeUnidade = signal<FaculdadeUnidade | null>(null);
   protected readonly competirPublico = signal(true);
   protected readonly competirPublicoStatus = signal<FormStatus>('idle');
   protected readonly showPeriodo = computed(() => this.tipoUsuario() === 'estudante_medicina');
@@ -120,8 +117,8 @@ export class PerfilComponent {
   protected readonly periodoError = computed<string | null>(
     () => this.profileFieldErrors()['periodo'] ?? null,
   );
-  protected readonly faculdadeRedeError = computed<string | null>(
-    () => this.profileFieldErrors()['faculdade_rede'] ?? null,
+  protected readonly faculdadeUnidadeError = computed<string | null>(
+    () => this.profileFieldErrors()['faculdade_unidade'] ?? null,
   );
 
   // Computed errors — password
@@ -146,7 +143,7 @@ export class PerfilComponent {
         // valor oferecido hoje, para que Período e Faculdade fiquem editáveis.
         this.tipoUsuario.set('estudante_medicina');
         this.periodo.set(p.periodo);
-        this.faculdadeRede.set(p.faculdade_rede);
+        this.faculdadeUnidade.set(p.faculdade_unidade);
         this.competirPublico.set(p.competir_publico);
       }
     });
@@ -164,11 +161,15 @@ export class PerfilComponent {
     event.preventDefault();
     this.profileFieldErrors.set({});
 
+    // faculdade_unidade só entra no payload quando há valor: omitir a chave
+    // (em vez de mandar null) evita que este form apague, por uma corrida com
+    // o modal obrigatório, uma unidade que já tenha sido salva.
+    const faculdadeUnidade = this.showFaculdade() ? this.faculdadeUnidade() : null;
     const parsed = updateProfileSchema.safeParse({
       nome_completo: this.nomeCompleto(),
       tipo_usuario: this.tipoUsuario(),
       periodo: this.showPeriodo() ? this.periodo() : null,
-      faculdade_rede: this.showFaculdade() ? this.faculdadeRede() : null,
+      ...(faculdadeUnidade ? { faculdade_unidade: faculdadeUnidade } : {}),
     });
 
     if (!parsed.success) {
@@ -276,7 +277,7 @@ export class PerfilComponent {
     this.tipoUsuario.set(tipo);
     if (tipo !== 'estudante_medicina') {
       this.periodo.set(null);
-      this.faculdadeRede.set(null);
+      this.faculdadeUnidade.set(null);
     }
   }
 
@@ -284,8 +285,8 @@ export class PerfilComponent {
     this.periodo.set(typeof value === 'number' ? value : null);
   }
 
-  protected handleFaculdadeRedeChange(value: string | number | null): void {
-    this.faculdadeRede.set(typeof value === 'string' ? (value as FaculdadeRede) : null);
+  protected handleFaculdadeUnidadeChange(value: string | number | null): void {
+    this.faculdadeUnidade.set(typeof value === 'string' ? (value as FaculdadeUnidade) : null);
   }
 
   protected handleCompetirPublicoChange(event: Event): void {

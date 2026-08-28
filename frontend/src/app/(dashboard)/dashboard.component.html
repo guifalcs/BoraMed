@@ -207,21 +207,25 @@
     }
   </nav>
 
-  <app-onboarding-tour
-    [flow]="onboarding.flow"
-    [activeStep]="onboarding.activeStep()"
-    [progressLabel]="onboarding.progressLabel()"
-    [canGoBack]="onboarding.canGoBack()"
-    [isVisible]="onboarding.isVisible()"
-    (avancar)="handleOnboardingNext()"
-    (voltar)="handleOnboardingBack()"
-    (pular)="handleOnboardingSkip()"
-    (finalizar)="handleOnboardingComplete()"
-  />
+  @if (!profileService.precisaFaculdadeUnidade()) {
+    <app-onboarding-tour
+      [flow]="onboarding.flow"
+      [activeStep]="onboarding.activeStep()"
+      [progressLabel]="onboarding.progressLabel()"
+      [canGoBack]="onboarding.canGoBack()"
+      [isVisible]="onboarding.isVisible()"
+      (avancar)="handleOnboardingNext()"
+      (voltar)="handleOnboardingBack()"
+      (pular)="handleOnboardingSkip()"
+      (finalizar)="handleOnboardingComplete()"
+    />
 
-  <app-aviso-modal />
+    <app-aviso-modal />
 
-  <app-paywall-modal />
+    <app-paywall-modal />
+  }
+
+  <app-faculdade-unidade-modal />
 
   <app-suporte-widget />
 

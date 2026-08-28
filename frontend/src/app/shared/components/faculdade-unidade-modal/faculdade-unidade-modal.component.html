@@ -1,0 +1,39 @@
+@if (visivel()) {
+  <div
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Selecione sua unidade Afya"
+  >
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-xl">
+      <div class="px-6 pt-6">
+        <h2 class="text-lg font-bold text-[var(--color-text)]">Só mais um passo antes de começar!</h2>
+        <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
+          Conta pra gente em qual unidade da Afya você estuda, assim conseguimos entender melhor onde o BoraMed está chegando.
+        </p>
+      </div>
+
+      <form class="px-6 pb-6 pt-4" (submit)="handleSubmit($event)">
+        <app-ui-select
+          label="Unidade Afya"
+          name="faculdade_unidade"
+          placeholder="Selecione sua unidade"
+          [required]="true"
+          [options]="faculdadeUnidadeOptions"
+          [value]="valor()"
+          [error]="erro()"
+          (valueChange)="handleValorChange($event)"
+        />
+
+        <div class="mt-5">
+          <app-ui-button
+            label="Continuar"
+            loadingLabel="Salvando..."
+            type="submit"
+            [loading]="salvando()"
+          />
+        </div>
+      </form>
+    </div>
+  </div>
+}

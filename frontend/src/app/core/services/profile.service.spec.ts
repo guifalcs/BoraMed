@@ -30,7 +30,7 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     nome_completo: 'Fulano de Tal',
     tipo_usuario: 'medico',
     periodo: null,
-    faculdade_rede: null,
+    faculdade_unidade: null,
     avatar_url: null,
     competir_publico: true,
     papel: 'aluno',
@@ -66,6 +66,7 @@ describe('ProfileService', () => {
 
   // Mutable user signal driven by each test
   const userSignal = signal<User | null>(null);
+  const impersonandoSignal = signal<{ adminName: string; targetName: string } | null>(null);
 
   // Supabase mock surfaces: .from(), .storage, and .auth
   const mockFrom = vi.fn();
@@ -85,13 +86,14 @@ describe('ProfileService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userSignal.set(null);
+    impersonandoSignal.set(null);
 
     TestBed.configureTestingModule({
       providers: [
         ProfileService,
         {
           provide: AuthService,
-          useValue: { user: userSignal.asReadonly() },
+          useValue: { user: userSignal.asReadonly(), impersonando: impersonandoSignal.asReadonly() },
         },
         {
           provide: SupabaseService,
@@ -142,6 +144,41 @@ describe('ProfileService', () => {
       await service.loadProfile();
 
       expect(service.isLoading()).toBe(false);
+    });
+  });
+
+  // ── precisaFaculdadeUnidade ─────────────────────────────────────────────────
+
+  describe('precisaFaculdadeUnidade()', () => {
+    it('é false quando o profile ainda não carregou', () => {
+      expect(service.precisaFaculdadeUnidade()).toBe(false);
+    });
+
+    it('é true quando o profile carregou sem faculdade_unidade', async () => {
+      userSignal.set(fakeUser());
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: fakeProfile({ faculdade_unidade: null }), error: null }));
+      await service.loadProfile();
+
+      expect(service.precisaFaculdadeUnidade()).toBe(true);
+    });
+
+    it('é false quando o profile já tem faculdade_unidade', async () => {
+      userSignal.set(fakeUser());
+      mockFrom.mockReturnValue(
+        makeQueryBuilder({ data: fakeProfile({ faculdade_unidade: 'salvador_ba' }), error: null }),
+      );
+      await service.loadProfile();
+
+      expect(service.precisaFaculdadeUnidade()).toBe(false);
+    });
+
+    it('é false durante impersonation, mesmo sem faculdade_unidade', async () => {
+      userSignal.set(fakeUser());
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: fakeProfile({ faculdade_unidade: null }), error: null }));
+      await service.loadProfile();
+      impersonandoSignal.set({ adminName: 'Admin', targetName: 'Estudante' });
+
+      expect(service.precisaFaculdadeUnidade()).toBe(false);
     });
   });
 
@@ -196,7 +233,28 @@ describe('ProfileService', () => {
         nome_completo: 'João',
         tipo_usuario: 'residente',
         periodo: null,
-        faculdade_rede: null,
+      });
+    });
+
+    it('inclui faculdade_unidade no update quando enviado no input', async () => {
+      const profile = fakeProfile();
+      userSignal.set(fakeUser());
+      const builder = makeQueryBuilder({ data: profile, error: null });
+      mockFrom.mockReturnValue(builder);
+
+      await service.updateProfile({
+        nome_completo: 'João',
+        tipo_usuario: 'estudante_medicina',
+        periodo: 1,
+        faculdade_unidade: 'salvador_ba',
+      });
+
+      const updateMock = builder['update'] as ReturnType<typeof vi.fn>;
+      expect(updateMock).toHaveBeenCalledWith({
+        nome_completo: 'João',
+        tipo_usuario: 'estudante_medicina',
+        periodo: 1,
+        faculdade_unidade: 'salvador_ba',
       });
     });
   });

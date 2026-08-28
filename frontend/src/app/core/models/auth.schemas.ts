@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FACULDADE_UNIDADE_VALUES } from './faculdade-unidade';
 
 const emailField = z.string().email('E-mail inválido');
 
@@ -21,6 +22,7 @@ export const signupSchema = z
     email: emailField,
     password: strongPassword,
     confirmPassword: z.string(),
+    faculdadeUnidade: z.enum(FACULDADE_UNIDADE_VALUES, { message: 'Selecione sua unidade Afya' }),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: 'As senhas não conferem',

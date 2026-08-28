@@ -33,10 +33,23 @@ describe('signupSchema', () => {
     email: 'joao@example.com',
     password: 'Abc1234!',
     confirmPassword: 'Abc1234!',
+    faculdadeUnidade: 'salvador_ba',
   };
 
   it('aceita dados válidos', () => {
     expect(signupSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('rejeita quando unidade Afya não é selecionada', () => {
+    const result = signupSchema.safeParse({ ...valid, faculdadeUnidade: null });
+    expect(result.success).toBe(false);
+    const msgs = result.error!.issues.map((i) => i.message);
+    expect(msgs).toContain('Selecione sua unidade Afya');
+  });
+
+  it('rejeita unidade fora da lista permitida', () => {
+    const result = signupSchema.safeParse({ ...valid, faculdadeUnidade: 'inexistente' });
+    expect(result.success).toBe(false);
   });
 
   it('rejeita nome muito curto', () => {

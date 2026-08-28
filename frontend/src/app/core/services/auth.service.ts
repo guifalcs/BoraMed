@@ -127,7 +127,7 @@ export class AuthService implements OnDestroy {
       email: input.email,
       password: input.password,
       options: {
-        data: { full_name: input.fullName },
+        data: { full_name: input.fullName, faculdade_unidade: input.faculdadeUnidade },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     });

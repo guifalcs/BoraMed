@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js';
+import type { FaculdadeUnidade } from './faculdade-unidade';
 
 export const TIPO_USUARIO_VALUES = [
   'estudante_medicina',
@@ -11,9 +12,6 @@ export const TIPO_USUARIO_VALUES = [
 
 export type TipoUsuario = (typeof TIPO_USUARIO_VALUES)[number];
 
-export const FACULDADE_REDE_VALUES = ['rede_afya', 'outros'] as const;
-export type FaculdadeRede = (typeof FACULDADE_REDE_VALUES)[number];
-
 export type PapelUsuario = 'aluno' | 'admin' | 'super_admin';
 
 export interface Profile {
@@ -24,7 +22,7 @@ export interface Profile {
   avatar_url: string | null;
   tipo_usuario: TipoUsuario | null;
   periodo: number | null;
-  faculdade_rede: FaculdadeRede | null;
+  faculdade_unidade: FaculdadeUnidade | null;
   competir_publico: boolean;
   papel: PapelUsuario;
   atualizado_em: string;

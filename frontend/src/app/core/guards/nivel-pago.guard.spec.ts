@@ -17,7 +17,7 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     nome_completo: 'Fulano de Tal',
     tipo_usuario: 'medico',
     periodo: null,
-    faculdade_rede: null,
+    faculdade_unidade: null,
     avatar_url: null,
     competir_publico: true,
     papel: 'aluno',

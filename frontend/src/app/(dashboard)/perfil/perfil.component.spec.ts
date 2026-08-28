@@ -30,7 +30,7 @@ function fakeProfile(overrides: Partial<Profile> = {}): Profile {
     nome_completo: 'Fulano de Tal',
     tipo_usuario: 'medico',
     periodo: null,
-    faculdade_rede: null,
+    faculdade_unidade: null,
     avatar_url: null,
     competir_publico: true,
     papel: 'aluno',
@@ -329,7 +329,6 @@ describe('PerfilComponent', () => {
         nome_completo: 'Maria Silva',
         tipo_usuario: 'medico',
         periodo: null,
-        faculdade_rede: null,
       });
     });
 
@@ -345,8 +344,20 @@ describe('PerfilComponent', () => {
         nome_completo: 'João Silva',
         tipo_usuario: 'estudante_medicina',
         periodo: 4,
-        faculdade_rede: null,
       });
+    });
+
+    it('inclui faculdade_unidade quando preenchida', async () => {
+      (component as any).nomeCompleto.set('João Silva');
+      (component as any).tipoUsuario.set('estudante_medicina');
+      (component as any).faculdadeUnidade.set('salvador_ba');
+
+      (component as any).handleProfileSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect(mockProfileService.updateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ faculdade_unidade: 'salvador_ba' }),
+      );
     });
 
     it('envia periodo null quando tipo_usuario não é estudante_medicina', async () => {

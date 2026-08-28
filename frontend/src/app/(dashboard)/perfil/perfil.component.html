@@ -150,13 +150,13 @@
 
               @if (showFaculdade()) {
                 <app-ui-select
-                  label="Faculdade"
-                  name="faculdade_rede"
-                  placeholder="Selecione sua rede"
-                  [options]="faculdadeRedeOptions"
-                  [value]="faculdadeRede()"
-                  [error]="faculdadeRedeError()"
-                  (valueChange)="handleFaculdadeRedeChange($event)"
+                  label="Unidade Afya"
+                  name="faculdade_unidade"
+                  placeholder="Selecione sua unidade"
+                  [options]="faculdadeUnidadeOptions"
+                  [value]="faculdadeUnidade()"
+                  [error]="faculdadeUnidadeError()"
+                  (valueChange)="handleFaculdadeUnidadeChange($event)"
                 />
               }
 
