@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-29 | Fix | Novo usuário voltou a chegar com nome
+
+**O trigger de criação de perfil tinha parado de gravar `nome_completo`; todo cadastro desde 28/08 nascia sem nome e a UI caía no fallback de e-mail**
+
+- **A causa foi um `create or replace` que reescreveu a função inteira.** A migration `20260828210000` alterou `handle_new_user()` para ler `faculdade_unidade` do metadata, mas o corpo novo passou a inserir só `(id, email, faculdade_unidade)` — a versão anterior também gravava `nome_completo` a partir de `raw_user_meta_data->>'full_name'`. Como `create or replace` substitui a função toda, o campo saiu junto.
+- **O que despistava: essa versão anterior nunca esteve no repositório.** Ela tinha sido editada direto no banco, então o diff da migration não mostra nenhuma linha sendo removida — só o corpo novo, aparentemente completo. O `git log` de `handle_new_user` tem exatamente dois arquivos, e nenhum dos dois menciona o nome.
+- **O frontend nunca teve culpa.** `auth.service.ts` sempre mandou `full_name` no `options.data` do `signUp`, e o Google preenche `full_name` e `name` sozinho. O dado chegava intacto em `auth.users` o tempo todo — só não era copiado para `profiles`.
+- **Números:** 54 de 54 perfis criados até 27/08 têm nome; a partir de 28/08, 2 de 7 (e esses dois preencheram na mão pelo perfil). Dos 56 perfis com nome, 52 são idênticos ao `full_name` do metadata — a assinatura do preenchimento automático que havia parado. 5 usuários afetados, todos recuperáveis.
+- **`coalesce('full_name', 'name')`** porque o cadastro por e-mail/senha manda só a primeira chave e o Google manda as duas. **`trim` + `left(…, 200)`** porque o metadata é preenchido pelo cliente e esse texto aparece em ranking, comentários e e-mail de campanha; string vazia ou só de espaços vira `NULL`, não `''`.
+- **O backfill só toca em quem está sem nome**, para não sobrescrever quem já tinha corrigido na tela de perfil. A `faculdade_unidade` segue com o mesmo descarte silencioso de valor fora do CHECK — nome preenchido não pode abortar a criação da conta.
+- Validado num Postgres 16 local com schema espelhando `auth.users` + `profiles`: o bug foi reproduzido com a função de produção (3 de 3 sem nome), e depois da migration foram conferidos backfill, preservação do nome editado à mão, cadastro por e-mail e por Google, fallback para `name`, `trim`, metadata vazio, nome de 500 caracteres truncado em 200, unidade inválida descartada sem abortar a conta, e reaplicação idempotente.
+- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+
 ## 2026-08-26 | Feature | `/planos` decide o destino pela sessão
 
 **Um link só para campanha, bio e anúncio: logado cai na tela de planos do app, deslogado cai na seção de planos da landing**
