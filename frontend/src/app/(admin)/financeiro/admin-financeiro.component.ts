@@ -74,12 +74,13 @@ interface FinKpi {
           </p>
         } @else {
           <div class="mt-3 overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table class="w-full min-w-[640px] text-sm">
+            <table class="w-full min-w-[760px] text-sm">
               <thead class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th class="px-4 py-3 font-medium">Data</th>
                   <th class="px-4 py-3 font-medium">Usuário</th>
                   <th class="px-4 py-3 font-medium">Plano</th>
+                  <th class="px-4 py-3 font-medium">Cupom</th>
                   <th class="px-4 py-3 font-medium">Bruto</th>
                   <th class="px-4 py-3 font-medium">Líquido</th>
                   <th class="px-4 py-3 font-medium">Método</th>
@@ -92,6 +93,21 @@ interface FinKpi {
                     <td class="px-4 py-3 text-gray-600">{{ data(p.processado_em ?? p.criado_em) }}</td>
                     <td class="px-4 py-3 text-gray-900">{{ p.user_email ?? '—' }}</td>
                     <td class="px-4 py-3 text-gray-600">{{ p.plano_nome ?? '—' }}</td>
+                    <td class="px-4 py-3">
+                      @if (p.cupom_codigo) {
+                        <span
+                          class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700"
+                          [title]="p.desconto_centavos > 0
+                            ? 'Desconto de ' + valor(p.desconto_centavos, p.moeda)
+                            : 'Cupom aplicado'"
+                        >{{ p.cupom_codigo }}</span>
+                        @if (p.desconto_centavos > 0) {
+                          <span class="ml-2 text-xs text-gray-500">−{{ valor(p.desconto_centavos, p.moeda) }}</span>
+                        }
+                      } @else {
+                        <span class="text-gray-400">—</span>
+                      }
+                    </td>
                     <td class="px-4 py-3 font-medium text-gray-900">{{ valor(p.valor_centavos, p.moeda) }}</td>
                     <td class="px-4 py-3 text-gray-700">{{ valor(p.liquido_centavos, p.moeda) }}</td>
                     <td class="px-4 py-3 text-gray-600">{{ p.metodo_pagamento ?? '—' }}</td>

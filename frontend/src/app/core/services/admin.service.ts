@@ -158,6 +158,10 @@ export interface AdminPagamento {
   moeda: string;
   status: string;
   metodo_pagamento: string | null;
+  /** Código do cupom aplicado na intenção que originou o pagamento (null se não houve). */
+  cupom_codigo: string | null;
+  /** Desconto do cupom em centavos; 0 quando não houve cupom. */
+  desconto_centavos: number;
 }
 
 export interface AdminQuestao {

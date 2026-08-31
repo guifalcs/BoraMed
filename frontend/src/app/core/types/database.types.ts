@@ -2579,6 +2579,8 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           criado_em: string
+          cupom_codigo: string
+          desconto_centavos: number
           id: string
           liquido_centavos: number
           metodo_pagamento: string
