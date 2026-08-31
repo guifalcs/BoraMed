@@ -4,11 +4,11 @@
 
 **`/admin/financeiro` passa a mostrar qual cupom foi usado em cada pagamento, com o desconto ao lado**
 
-- **O cupom não vive em `pagamento`.** O snapshot fica em `pagamento_intencao.cupom_id/desconto_centavos` (checkout embutido) e o pagamento aponta para a intenção por `pagamento.intencao_id`. A migration `20260831120000` recria `admin_listar_pagamentos` com dois `LEFT JOIN` nesse caminho (`pagamento_intencao` → `cupom`) e devolve `cupom_codigo` + `desconto_centavos`.
+- **O cupom não vive em `pagamento`.** O snapshot fica em `pagamento_intencao.cupom_id/desconto_centavos` (checkout embutido) e o pagamento aponta para a intenção por `pagamento.intencao_id`. A migration `20260831182947` recria `admin_listar_pagamentos` com dois `LEFT JOIN` nesse caminho (`pagamento_intencao` → `cupom`) e devolve `cupom_codigo` + `desconto_centavos`.
 - **`LEFT JOIN`, não `JOIN`:** pagamento de assinatura recorrente e cobrança antiga não têm intenção — voltam com `cupom_codigo` null e `desconto_centavos` 0, e a UI mostra "—". Nenhuma linha some da tabela.
 - **UI:** coluna "Cupom" entre Plano e Bruto, com o código em badge roxo e o desconto (`−R$ x,xx`) em texto secundário; o `title` do badge repete o valor do desconto. `min-w` da tabela de 640px para 760px para a coluna nova não espremer as outras no mobile.
 - Tipos atualizados em `admin.service.ts` (`AdminPagamento`) e `database.types.ts`. Build de produção limpo.
-- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+- **Aplicada em produção** (projeto `gakvktwtdunljojghpff`) via MCP, com autorização explícita do Guilherme — migrations não saem por CI. Prod não tinha drift: a função lá era idêntica à do repo antes da troca. Conferido depois de aplicar: 45 pagamentos no total, 21 com intenção, 11 com cupom (CALOURO20 ×6, MA20 ×3, YAS20 ×2) e desconto > 0; o nome do arquivo segue a versão gravada no ledger.
 
 ## 2026-08-29 | Fix | Novo usuário voltou a chegar com nome
 
