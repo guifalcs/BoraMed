@@ -171,6 +171,15 @@ export const ComGemeaDiscursiva: Story = {
   },
 };
 
+/** Modo foco: sem trocar formato nem anular — só enunciado e alternativas. */
+export const ModoFoco: Story = {
+  args: {
+    podeAnular: true,
+    formatoGemea: 'resposta_aberta_curta',
+    focoAtivo: true,
+  },
+};
+
 /** A mesma questão no formato discursivo, oferecendo a volta às alternativas. */
 export const ComGemeaFechada: Story = {
   args: {

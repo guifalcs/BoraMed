@@ -78,6 +78,15 @@ export class QuestaoCardComponent {
   /** Troca em andamento (trava o botão). */
   trocandoFormato = input<boolean>(false);
 
+  // ---- Modo foco ----
+  /**
+   * Modo foco ativo: esconde as ações acessórias do cabeçalho (trocar formato
+   * e anular) para deixar só enunciado e resposta na tela. O "Desfazer" do
+   * banner de anulação continua disponível, senão o aluno ficaria preso com a
+   * questão anulada sem sair do foco.
+   */
+  focoAtivo = input<boolean>(false);
+
   responder = output<string>();
   salvarRascunho = output<string>();
   enviarTexto = output<string>();
