@@ -345,6 +345,7 @@ Padrões:
 * Conteúdo principal: título, badge de estado, descrição curta, blocos informativos e uma linha final de atributos objetivos.
 * Cards devem ter altura mínima suficiente para ocupar a área útil apenas em desktop largo (`lg+`, `min-height` aproximado de 16rem). Em mobile e tablet, usar chips compactos e ocultar os blocos informativos maiores.
 * Ação lateral em desktop com rótulo curto e botão quadrado com `ArrowRight`; abaixo de `lg`, a área de ação ocupa a largura inteira como rodapé do card.
+* Abaixo de `sm` o card empilha (`flex-col items-start`, `p-6`): as três colunas — ícone, conteúdo, seta — deixariam ~154px para o texto em 390px, quebrando o título e desmontando a fileira de chips. O `ArrowRight` some (`hidden sm:flex`), porque empilhado ele fica solto no canto e no toque não há hover para sinalizar; o card inteiro já é o link. O CTA textual do estado bloqueado (`Fazer upgrade`) NUNCA é ocultado.
 * Separador textual entre opções quando houver caminhos com intenção diferente, como treino pronto vs. montagem personalizada.
 * Evitar círculos/orbes decorativos nessa tela operacional; usar densidade, gradiente institucional e chips para ocupar espaço.
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-02 | Melhoria | Cards do hub de Simulados param de quebrar no mobile
+
+**Fecha os dois pontos que a auditoria de texto deixou abertos: o layout de três colunas do hub e o parágrafo de apresentação do Competitivo**
+
+- **O problema não era texto, era o `flex items-center` de três colunas.** O card do hub é ícone (56px) · conteúdo · seta (44px) na mesma linha. Em 390px, descontando o padding da página (32px), o `p-7` do card (56px), o ícone, a seta e os dois `gap-6` (48px), sobravam **154px** para o conteúdo — daí o título quebrar em duas linhas e os três chips empilharem um por linha. A redução de texto do commit anterior aliviou (780→502px) sem resolver a causa.
+- **Correção:** `flex-col items-start gap-4 p-6` no mobile, voltando a `sm:flex-row sm:items-center sm:gap-6 sm:p-7` daí para cima. Vale para os dois cards (o de treinos nacionais no template, o de montar simulado no `montarSimuladoCardClass`). 502→462px, título em uma linha, chips em duas.
+- **A seta some abaixo de `sm` (`hidden sm:flex`).** Empilhada ela virava um elemento solto no canto inferior esquerdo, e no toque não existe hover para ela sinalizar afordância — o card inteiro já é o link. Só a seta: o botão **“Fazer upgrade”** e o texto “Disponível no plano Avançado.” do card bloqueado continuam visíveis no mobile, porque são a conversão da tela. Validado com print do estado gratuito.
+- **Desktop inalterado**, conferido em print a 1280px: parágrafo, chips em linha única e seta todos no lugar.
+- **Parágrafo do Competitivo removido em todos os breakpoints** (“Progresso competitivo do BoraMed, começando por XP, sequência e conquistas ligadas aos simulados.”). O commit anterior só o ocultou no mobile; ele descrevia o que a própria tela mostra logo abaixo. −56px no desktop.
+- Harness de prints ganhou `SHOT_VP=desktop` (viewport 1280×900) e `propostas.spec.ts`, que captura os casos acima incluindo o card bloqueado.
+- Verificado: `tsc` limpo, 826 unitários verdes, 11 e2e em `pagamento --project=mocked` (o que o CI roda). `provas.spec.ts` falha 10 testes com e sem esta mudança — spec desatualizada, aponta para a rota antiga `/dashboard/provas`, e fica como dívida separada.
+
 ## 2026-09-02 | Melhoria | Menos texto no mobile
 
 **Auditoria de densidade de texto abaixo de 640px: −1050px de altura somados em 18 pontos do app, sem tirar nada do desktop**
@@ -11,7 +23,7 @@
 - **CSS puro, zero JS.** `hidden sm:block` e swap `sm:hidden`/`hidden sm:inline`. Detectar viewport em JS quebraria no SSR (o servidor não sabe a largura e daria flash de conteúdo errado). O Perfil corta em 768px porque o `perfil.component.css` já tinha esse `@media`; seguir o breakpoint do arquivo ao mexer lá.
 - **Nada saiu do desktop.** Toda regra é `min-width`-reversível: acima do breakpoint o texto volta idêntico.
 - **Harness de prints em `frontend/tests/screenshots/`** (config própria, `testMatch` isolado — o `npx playwright test` do CI não coleta). Boota autenticado via cookie `base64-` com rede 100% mockada e dados ricos, recorta a união das bounding boxes de cada ponto auditado e gera `comparacao-mobile.html` com os 18 pares antes/depois lado a lado. `out/` e o HTML ficam fora do git. Repetir com `SHOT_DIR=depois npx playwright test --config=tests/screenshots/playwright.screenshots.config.ts`.
-- Verificado: `tsc` limpo, 826 unitários e 71 e2e (`mocked`) verdes.
+- Verificado: `tsc` limpo e 826 unitários verdes. E2E: 11 passando em `pagamento --project=mocked`, que é o que o CI roda. **Correção de uma afirmação anterior deste changelog:** eu havia escrito "71 e2e (`mocked`) verdes" — errado. `npx playwright test --project=mocked` coleta 123 testes e 52 falham desde antes desta mudança, porque a maior parte das specs pertence ao projeto `chromium` (auth real via `auth.setup.ts`) e não sobrevive sem sessão. O número 71 vinha de ler só o fim da saída, sem o `52 failed` logo acima.
 - **Achado que não é texto e ficou pendente:** os dois cards do hub de Simulados usam `flex items-center gap-6` com ícone e seta de largura fixa — em 390px sobram ~180px para o meio, então o título quebra em duas linhas e os chips empilham. É layout, já era assim antes da auditoria, e o fix é `flex-col sm:flex-row`. Não aplicado: fora do escopo pedido.
 
 ## 2026-09-02 | Feature | Eliminar alternativas durante a prova

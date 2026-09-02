@@ -35,7 +35,7 @@
       <!-- Treinos Nacionais -->
       <a
         routerLink="/dashboard/simulados/rede-afya"
-        class="group relative flex items-center gap-6 overflow-hidden rounded-xl p-7 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 lg:p-9"
+        class="group relative flex flex-col items-start gap-4 overflow-hidden rounded-xl p-6 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:p-9"
         style="background: linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%);"
       >
         <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%);"></div>
@@ -56,7 +56,7 @@
           </div>
         </div>
 
-        <span class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm transition-transform group-hover:translate-x-1">
+        <span class="relative hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm transition-transform group-hover:translate-x-1 sm:flex">
           <app-ui-icon [icon]="arrowRightIcon" [size]="20" />
         </span>
       </a>
@@ -103,7 +103,7 @@
             Fazer upgrade
           </span>
         } @else {
-          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-transform group-hover:translate-x-1">
+          <span class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-transform group-hover:translate-x-1 sm:flex">
             <app-ui-icon [icon]="arrowRightIcon" [size]="20" />
           </span>
         }

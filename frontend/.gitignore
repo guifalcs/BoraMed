@@ -54,3 +54,5 @@ playwright-report/
 # Prints da auditoria mobile (harness versionado, saída não)
 tests/screenshots/out/
 tests/screenshots/comparacao-mobile.html
+
+tests/screenshots/comparacao-propostas.html

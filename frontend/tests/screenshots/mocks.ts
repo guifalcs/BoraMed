@@ -262,10 +262,14 @@ async function rotasRicas(page: Page): Promise<void> {
 }
 
 /** Boota autenticado em /dashboard com dados ricos e navega client-side. */
-export async function abrirTela(page: Page, url: string): Promise<void> {
+export async function abrirTela(
+  page: Page,
+  url: string,
+  nivel: 'gratuito' | 'essencial' | 'avancado' = 'avancado',
+): Promise<void> {
   await setupTierMocks(page, '/dashboard', {
-    nivel: 'avancado',
-    temAcesso: true,
+    nivel,
+    temAcesso: nivel !== 'gratuito',
     extraRoutes: rotasRicas,
   });
   await page.locator('.sidebar-nav').waitFor({ state: 'attached', timeout: 30_000 });

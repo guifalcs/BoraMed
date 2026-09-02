@@ -57,7 +57,7 @@ export class ProvasHomeComponent implements OnInit {
 
   protected readonly montarSimuladoCardClass = computed(() => {
     const base =
-      'group flex items-center gap-6 rounded-xl border border-l-4 bg-[var(--color-surface)] p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 lg:p-9';
+      'group flex flex-col items-start gap-4 rounded-xl border border-l-4 bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:p-9';
     if (this.bloqueado()) {
       return `${base} opacity-70 border-[var(--color-border)] border-l-gray-300 hover:border-l-gray-400 focus-visible:ring-gray-400`;
     }
