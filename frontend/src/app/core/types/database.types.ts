@@ -946,6 +946,7 @@ export type Database = {
           dados: Json | null
           id: string
           lida: boolean
+          lida_em: string | null
           mensagem: string | null
           tipo: string
           titulo: string
@@ -956,6 +957,7 @@ export type Database = {
           dados?: Json | null
           id?: string
           lida?: boolean
+          lida_em?: string | null
           mensagem?: string | null
           tipo: string
           titulo: string
@@ -966,6 +968,7 @@ export type Database = {
           dados?: Json | null
           id?: string
           lida?: boolean
+          lida_em?: string | null
           mensagem?: string | null
           tipo?: string
           titulo?: string
@@ -2802,6 +2805,7 @@ export type Database = {
           dados: Json | null
           id: string
           lida: boolean
+          lida_em: string | null
           mensagem: string | null
           tipo: string
           titulo: string

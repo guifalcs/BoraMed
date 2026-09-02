@@ -310,6 +310,9 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   `P0016 free_limit_reached` (teto do gratuito esgotado), `P0009
   subscription_required` (gate binário legado nas RPCs de simulado
   personalizado e impressão). Os três abrem paywall na UI.
+* **Validade na caixa**: notificação in-app lida deixa de ser exibida 7 dias
+  depois da leitura (`notificacoes.lida_em`), para a caixa não acumular
+  histórico. Não lida nunca expira, e nada é apagado do banco.
 * **Segmentação de comunicação**: avisos (`avisos.segmento`) e notificações
   in-app (`admin_enviar_notificacao(p_segmento)`) filtram por nível
   (`todos | pagantes | gratuitos | essencial | avancado`), para conteúdo de

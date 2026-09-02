@@ -11,6 +11,7 @@ const notifBase = {
   titulo: 'Bem-vindo ao BoraMed!',
   mensagem: 'Complete seu perfil para aproveitar ao máximo.',
   lida: false,
+  lida_em: null as string | null,
   dados: null,
   criado_em: new Date().toISOString(),
 };
@@ -45,7 +46,7 @@ export const ComNaoLidas: Story = {
 export const TodasLidas: Story = {
   decorators: [
     moduleMetadata({
-      providers: [{ provide: AppNotificacaoService, useValue: makeService([{ ...notifBase, lida: true }]) }],
+      providers: [{ provide: AppNotificacaoService, useValue: makeService([{ ...notifBase, lida: true, lida_em: new Date().toISOString() }]) }],
     }),
   ],
 };
