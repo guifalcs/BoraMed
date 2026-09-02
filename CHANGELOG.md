@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-02 | Feature | Notificação lida some da caixa depois de 7 dias
+
+**A caixa de notificações passa a mostrar só o que é não lido ou lido há menos de uma semana**
+
+- **A tabela só tinha `lida` boolean**, então não havia como saber quando a leitura aconteceu. A migration `20260902120000` adiciona `notificacoes.lida_em TIMESTAMPTZ` e faz backfill com `criado_em` para o histórico já lido — o efeito prático é que tudo que já estava lido há mais de 7 dias sai da caixa na primeira carga.
+- **Trigger, não RPC:** `notificacoes_lida_em_trg` (BEFORE INSERT OR UPDATE OF `lida`) preenche `lida_em` quando `lida` vira `true` e zera quando volta para `false`. Cobre `marcar_notificacao_lida`, `marcar_todas_notificacoes_lidas` e qualquer UPDATE direto pela policy `notificacoes_update_own` sem duplicar a regra em cada caminho.
+- **`buscar_notificacoes`** passa a filtrar `lida = false OR lida_em IS NULL OR lida_em > now() - interval '7 days'`. Não lida nunca expira. Índice parcial `notificacoes_lida_em_idx` para o filtro.
+- **Nada é apagado.** A linha continua no banco e `admin_listar_notificacoes` segue mostrando o histórico completo — a expiração é só de exibição, reversível baixando/subindo o intervalo em uma linha da RPC.
+- Frontend: `AppNotificacao.lida_em`, atualização otimista no `AppNotificacaoService` e tipos gerados. Typecheck limpo.
+- Validado num Postgres 16 local: backfill escondendo o lido antigo e preservando o lido recente, leitura nova continuando visível, sumiço depois de 8 dias simulados, `marcar_todas_notificacoes_lidas` carimbando `lida_em`, reversão limpando o carimbo e reaplicação idempotente da migration.
+- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+
 ## 2026-08-31 | Feature | Coluna de cupom na tabela de pagamentos do admin
 
 **`/admin/financeiro` passa a mostrar qual cupom foi usado em cada pagamento, com o desconto ao lado**

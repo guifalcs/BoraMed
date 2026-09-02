@@ -7,6 +7,8 @@ export interface AppNotificacao {
   titulo: string;
   mensagem: string | null;
   lida: boolean;
+  /** Momento da leitura. Notificações lidas somem da caixa após 7 dias. */
+  lida_em: string | null;
   dados: Record<string, unknown> | null;
   criado_em: string;
 }

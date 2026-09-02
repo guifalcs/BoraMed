@@ -91,6 +91,7 @@
  **Data** : 2026-05
  **Decisão** : A tabela `notificacoes` e o `AppNotificacaoService` estão implementados, mas sem gatilhos automáticos ainda. Novos tipos (`sistema`, `conquista`, `info`, `aviso`) serão adicionados via RPCs SECURITY DEFINER em migrations futuras conforme a necessidade.
  **Motivo** : Evitar acoplamento prematuro a eventos de negócio ainda indefinidos. A estrutura está pronta para receber qualquer tipo de notificação sem reescrever o frontend.
+ **Atualização 2026-09** : notificação lida some da caixa 7 dias depois da leitura. `notificacoes.lida_em` é preenchida por trigger (`notificacoes_lida_em_trg`) sempre que `lida` vira `true`, e zerada se voltar para `false`; `buscar_notificacoes` filtra `lida = false OR lida_em > now() - interval '7 days'`. A linha continua no banco — some só da caixa do aluno, e o histórico do admin (`admin_listar_notificacoes`) não muda.
 
 ## ADR-019: Buckets públicos sem listagem ampla
 

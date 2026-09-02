@@ -20,12 +20,12 @@ export class AppNotificacaoService {
   async marcarLida(id: string): Promise<void> {
     await this.supabase.rpc('marcar_notificacao_lida', { p_id: id });
     this._notificacoes.update(lista =>
-      lista.map(n => n.id === id ? { ...n, lida: true } : n)
+      lista.map(n => n.id === id ? { ...n, lida: true, lida_em: n.lida_em ?? new Date().toISOString() } : n)
     );
   }
 
   async marcarTodasLidas(): Promise<void> {
     await this.supabase.rpc('marcar_todas_notificacoes_lidas');
-    this._notificacoes.update(lista => lista.map(n => ({ ...n, lida: true })));
+    this._notificacoes.update(lista => lista.map(n => ({ ...n, lida: true, lida_em: n.lida_em ?? new Date().toISOString() })));
   }
 }
