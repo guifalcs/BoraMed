@@ -171,7 +171,7 @@ export const ComGemeaDiscursiva: Story = {
   },
 };
 
-/** Modo foco: sem trocar formato nem anular — só enunciado e alternativas. */
+/** Modo foco: sem a troca de formato, mas ainda com o botão de anular. */
 export const ModoFoco: Story = {
   args: {
     podeAnular: true,

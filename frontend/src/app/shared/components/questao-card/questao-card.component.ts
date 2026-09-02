@@ -80,10 +80,10 @@ export class QuestaoCardComponent {
 
   // ---- Modo foco ----
   /**
-   * Modo foco ativo: esconde as ações acessórias do cabeçalho (trocar formato
-   * e anular) para deixar só enunciado e resposta na tela. O "Desfazer" do
-   * banner de anulação continua disponível, senão o aluno ficaria preso com a
-   * questão anulada sem sair do foco.
+   * Modo foco ativo: esconde a troca de formato do cabeçalho para deixar só
+   * enunciado e resposta na tela. Anular/desanular continua disponível — é
+   * uma decisão sobre a própria questão, e escondê-la obrigaria o aluno a sair
+   * do foco só para descartar uma questão ruim.
    */
   focoAtivo = input<boolean>(false);
 
