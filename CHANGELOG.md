@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-02 | Melhoria | Menos texto no mobile
+
+**Auditoria de densidade de texto abaixo de 640px: −1050px de altura somados em 18 pontos do app, sem tirar nada do desktop**
+
+- **O corte é por função do texto, não por tamanho.** Sai o que o elemento ao lado já comunica (título, chip, CTA, valor do KPI); fica o que é a única forma de entender o estado — aviso de plano bloqueado, erro e o texto de `empty-state`, onde a frase *é* o valor da tela. Regra escrita em `docs/design-system.md` (Layout → Densidade De Texto No Mobile).
+- **`page-header` resolve 7 telas num arquivo só:** o subtítulo vira `sr-only` abaixo de 640px (Simulados, Montar simulado, Histórico, Perfil, Materiais, Flashcards, Editor de deck). `sr-only` e não `display:none` de propósito — o título já é o descritor visual, mas o leitor de tela continua recebendo a frase. −43px por tela.
+- **Maiores ganhos:** hub de Simulados 780→502px (parágrafo dos dois cards; os chips já carregavam a informação, e "Laboratório com imagem" virou "Laboratório"), Montar simulado 580→420px (legenda dos 6 cards de formato, que quebravam em 2–3 linhas cada), cards do competitivo no Perfil 359→272px, "próximos passos" do resultado 314→242px, cabeçalho do Competitivo 188→108px.
+- **Trocas de texto curto/longo** onde a informação não podia sumir: "Você tem um simulado para continuar" → "Continuar simulado"; "em relação à tentativa anterior" → "vs. anterior"; "XP para o próximo nível" → "XP p/ próximo".
+- **CSS puro, zero JS.** `hidden sm:block` e swap `sm:hidden`/`hidden sm:inline`. Detectar viewport em JS quebraria no SSR (o servidor não sabe a largura e daria flash de conteúdo errado). O Perfil corta em 768px porque o `perfil.component.css` já tinha esse `@media`; seguir o breakpoint do arquivo ao mexer lá.
+- **Nada saiu do desktop.** Toda regra é `min-width`-reversível: acima do breakpoint o texto volta idêntico.
+- **Harness de prints em `frontend/tests/screenshots/`** (config própria, `testMatch` isolado — o `npx playwright test` do CI não coleta). Boota autenticado via cookie `base64-` com rede 100% mockada e dados ricos, recorta a união das bounding boxes de cada ponto auditado e gera `comparacao-mobile.html` com os 18 pares antes/depois lado a lado. `out/` e o HTML ficam fora do git. Repetir com `SHOT_DIR=depois npx playwright test --config=tests/screenshots/playwright.screenshots.config.ts`.
+- Verificado: `tsc` limpo, 826 unitários e 71 e2e (`mocked`) verdes.
+- **Achado que não é texto e ficou pendente:** os dois cards do hub de Simulados usam `flex items-center gap-6` com ícone e seta de largura fixa — em 390px sobram ~180px para o meio, então o título quebra em duas linhas e os chips empilham. É layout, já era assim antes da auditoria, e o fix é `flex-col sm:flex-row`. Não aplicado: fora do escopo pedido.
+
 ## 2026-09-02 | Feature | Eliminar alternativas durante a prova
 
 **O aluno risca o que já descartou, como faria na prova em papel — sem precisar de mouse e sem tocar no banco**

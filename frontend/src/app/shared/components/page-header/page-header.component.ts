@@ -78,6 +78,19 @@ export interface Breadcrumb {
       color: var(--color-text-muted);
       line-height: 1.4;
     }
+    /* No mobile o título + breadcrumb já dão o contexto: o subtítulo só empurra
+       o conteúdo para baixo. Sai do fluxo visual, mas segue no leitor de tela. */
+    @media (max-width: 639px) {
+      .page-subtitle {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

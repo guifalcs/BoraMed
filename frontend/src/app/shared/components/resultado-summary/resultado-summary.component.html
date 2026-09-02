@@ -10,11 +10,11 @@
         [class.text-[var(--color-text-muted)]]="deltaNota()! === 0"
       >
         @if (deltaNota()! > 0) {
-          ↑ {{ deltaNota() | number:'1.0-1' }}% em relação à tentativa anterior
+          ↑ {{ deltaNota() | number:'1.0-1' }}%<span class="sm:hidden"> vs. anterior</span><span class="hidden sm:inline"> em relação à tentativa anterior</span>
         } @else if (deltaNota()! < 0) {
-          ↓ {{ -deltaNota()! | number:'1.0-1' }}% em relação à tentativa anterior
+          ↓ {{ -deltaNota()! | number:'1.0-1' }}%<span class="sm:hidden"> vs. anterior</span><span class="hidden sm:inline"> em relação à tentativa anterior</span>
         } @else {
-          = mesma nota da tentativa anterior
+          = mesma nota<span class="hidden sm:inline"> da tentativa anterior</span>
         }
       </p>
     }
@@ -110,7 +110,7 @@
           [state]="{ fromResultado: true }"
         >
           <p class="text-sm font-semibold">Revisar erros</p>
-          <p class="mt-1 text-xs leading-5 text-rose-700">
+          <p class="mt-1 hidden text-xs leading-5 text-rose-700 sm:block">
             @if (questoesErradas() === 1) {
               Revise diretamente a questão em que você errou.
             } @else {
@@ -127,7 +127,7 @@
           [queryParams]="queryParamsRefazerEstudo()"
         >
           <p class="text-sm font-semibold">{{ labelRefazerEstudo() }}</p>
-          <p class="mt-1 text-xs leading-5 text-emerald-700">
+          <p class="mt-1 hidden text-xs leading-5 text-emerald-700 sm:block">
             @if (modoOposto() === 'estudo') {
               Refaça com gabarito visível e foco em fixação.
             } @else {
@@ -144,7 +144,7 @@
           [queryParams]="queryParamsTreinoPrioritario()"
         >
           <p class="text-sm font-semibold">{{ labelTreinoPrioritario() }}</p>
-          <p class="mt-1 text-xs leading-5 text-blue-700">
+          <p class="mt-1 hidden text-xs leading-5 text-blue-700 sm:block">
             {{ descricaoTreinoPrioritario() }}
           </p>
           <span

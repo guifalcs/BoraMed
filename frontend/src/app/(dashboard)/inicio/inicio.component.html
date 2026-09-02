@@ -33,7 +33,10 @@
         <app-ui-icon [icon]="chevronIcon" [size]="22" />
       </span>
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-bold">Você tem um simulado para continuar</p>
+        <p class="text-sm font-bold">
+          <span class="sm:hidden">Continuar simulado</span>
+          <span class="hidden sm:inline">Você tem um simulado para continuar</span>
+        </p>
         <p class="truncate text-xs text-amber-800">{{ resumo }}</p>
       </div>
       <span class="shrink-0 rounded-full bg-white px-3.5 py-1 text-xs font-bold text-amber-700 shadow-sm transition-transform group-hover:translate-x-0.5">
@@ -117,7 +120,7 @@
         <div>
           <h2 class="text-base font-bold text-[var(--color-text)]">Evolução das notas</h2>
           @if (evolucao().count > 0) {
-            <p class="text-xs text-[var(--color-text-muted)]">últimas {{ evolucao().count }} notas</p>
+            <p class="hidden text-xs text-[var(--color-text-muted)] sm:block">últimas {{ evolucao().count }} notas</p>
           }
         </div>
         @if (evolucao().media !== null) {
@@ -171,7 +174,7 @@
           </div>
           <div class="relative mt-4">
             <h3 class="text-xl font-extrabold">Desafio do dia</h3>
-            <p class="mt-1 text-sm text-white/80">Responda a questão de hoje e ganhe XP.</p>
+            <p class="mt-1 hidden text-sm text-white/80 sm:block">Responda a questão de hoje e ganhe XP.</p>
             <span class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-bold text-violet-700 shadow-sm transition-transform group-hover:translate-x-0.5">
               Fazer agora →
             </span>
@@ -230,7 +233,7 @@
         </div>
       </div>
       <p class="mt-3 text-sm font-bold text-[var(--color-text)]">Acerto geral</p>
-      <p class="text-xs text-[var(--color-text-muted)]">todas as tentativas</p>
+      <p class="hidden text-xs text-[var(--color-text-muted)] sm:block">todas as tentativas</p>
     </article>
 
     <!-- Última nota (anel) -->
@@ -253,7 +256,7 @@
         </div>
       </div>
       <p class="mt-3 text-sm font-bold text-[var(--color-text)]">Última nota</p>
-      <p class="text-xs text-[var(--color-text-muted)]">simulado mais recente</p>
+      <p class="hidden text-xs text-[var(--color-text-muted)] sm:block">simulado mais recente</p>
     </article>
 
     <!-- Questões respondidas + Simulados concluídos -->
@@ -264,7 +267,7 @@
       <div class="mt-4">
         <p class="text-4xl font-extrabold leading-none text-[var(--color-text)]">{{ formatNumber(kpisData()?.total_questoes_respondidas ?? 0) }}</p>
         <p class="mt-2 text-sm font-bold text-[var(--color-text)]">Questões respondidas</p>
-        <p class="text-xs text-[var(--color-text-muted)]">em {{ kpisData()?.total_finalizadas ?? 0 }} simulado{{ (kpisData()?.total_finalizadas ?? 0) !== 1 ? 's' : '' }}</p>
+        <p class="hidden text-xs text-[var(--color-text-muted)] sm:block">em {{ kpisData()?.total_finalizadas ?? 0 }} simulado{{ (kpisData()?.total_finalizadas ?? 0) !== 1 ? 's' : '' }}</p>
       </div>
     </article>
 
@@ -284,7 +287,7 @@
         @if (rankingPosicao()?.posicao_global; as pos) {
           <p class="text-4xl font-extrabold leading-none text-[var(--color-text)]">#{{ pos }}</p>
           <p class="mt-2 text-sm font-bold text-[var(--color-text)]">Ranking geral</p>
-          <p class="text-xs text-[var(--color-text-muted)]">{{ formatNumber(gamificacao()?.xp_semana_atual ?? 0) }} XP na semana</p>
+          <p class="hidden text-xs text-[var(--color-text-muted)] sm:block">{{ formatNumber(gamificacao()?.xp_semana_atual ?? 0) }} XP na semana</p>
         } @else {
           <p class="text-2xl font-extrabold leading-tight text-[var(--color-text)]">Entre no<br />ranking</p>
           <p class="mt-2 text-xs text-[var(--color-text-muted)]">Finalize um simulado para competir.</p>
@@ -390,9 +393,9 @@
           <app-ui-icon [icon]="communityIcon" [size]="22" />
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-xs font-semibold uppercase tracking-wide text-green-600">Comunidade</p>
+          <p class="hidden text-xs font-semibold uppercase tracking-wide text-green-600 sm:block">Comunidade</p>
           <p class="text-sm font-bold text-[var(--color-text)]">Grupo no WhatsApp</p>
-          <p class="text-xs text-[var(--color-text-muted)]">Networking e troca de conteúdo</p>
+          <p class="hidden text-xs text-[var(--color-text-muted)] sm:block">Networking e troca de conteúdo</p>
         </div>
         <span class="shrink-0 rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white transition-transform group-hover:translate-x-0.5">Entrar</span>
       </a>

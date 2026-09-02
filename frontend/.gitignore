@@ -50,3 +50,7 @@ src/environments/environment.local.ts
 # Artefatos de teste do Playwright
 test-results/
 playwright-report/
+
+# Prints da auditoria mobile (harness versionado, saída não)
+tests/screenshots/out/
+tests/screenshots/comparacao-mobile.html

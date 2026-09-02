@@ -269,7 +269,12 @@
             <div class="perfil-nivel-progress">
               <div class="perfil-nivel-progress-labels">
                 <span>{{ formatNumber(gamificacaoStats().xp_total) }} XP total</span>
-                <span>{{ formatNumber(xpParaProximoNivel()) }} XP para o próximo nível</span>
+                <span>
+                  {{ formatNumber(xpParaProximoNivel()) }} XP
+                  <!-- md: mesmo corte do bloco @media do perfil.component.css -->
+                  <span class="md:hidden">p/ próximo</span>
+                  <span class="hidden md:inline">para o próximo nível</span>
+                </span>
               </div>
               <div class="perfil-progress-track">
                 <div class="perfil-progress-fill" [style.width.%]="progressoNivel()"></div>

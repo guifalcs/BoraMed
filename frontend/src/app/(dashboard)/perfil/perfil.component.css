@@ -756,6 +756,14 @@
   .perfil-conquistas-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Terceira linha dos cards, parágrafo de privacidade e helper do e-mail:
+     redundantes com o valor/switch/campo readonly logo acima. */
+  .perfil-competitivo-detail,
+  .perfil-privacidade-card p,
+  .dados-email-field .ui-field__helper {
+    display: none;
+  }
 }
 
 /* ── Atalho suporte ── */

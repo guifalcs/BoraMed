@@ -33,7 +33,7 @@
         </svg>
       }
       <p
-        class="truncate text-xs text-[var(--color-text-muted)]"
+        class="hidden truncate text-xs text-[var(--color-text-muted)] sm:block"
         [class.invisible]="!sublabel()"
         [title]="sublabel() ?? ''"
       >{{ sublabel() ?? '-' }}</p>

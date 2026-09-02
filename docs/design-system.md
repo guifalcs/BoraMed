@@ -74,6 +74,26 @@ Mobile-first:
 * Conteúdo de formulários: `max-width: 400px`.
 * Conteúdo de estudo: `max-w-3xl mx-auto`.
 
+### Densidade De Texto No Mobile
+
+Abaixo de `sm` (640px) o texto de apoio some; o de decisão fica. A regra é a
+altura acima da dobra, não a economia de palavras.
+
+* **Sai:** subtítulo de `page-header`, terceira linha de card de KPI, parágrafo
+  descritivo cujo título/chip/CTA ao lado já comunica a mesma coisa, legenda de
+  opção cujo label se explica sozinho.
+* **Fica:** qualquer texto que seja a única forma de entender o estado —
+  bloqueio de plano, erro, aviso e o texto de `empty-state` (ali a frase *é* o
+  valor; corte o `py-16`, não a explicação).
+* **Como:** CSS puro — `hidden sm:block`, ou swap `sm:hidden` + `hidden sm:inline`
+  para versão curta/longa. Nunca detectar largura em JS: o app é SSR e o servidor
+  não sabe o viewport.
+* **Acessibilidade:** `hidden` tira do leitor de tela. Quando o texto oculto é o
+  único descritor do elemento, usar `sr-only` (é o que o `page-header` faz) em vez
+  de escondê-lo de vez.
+* O Perfil corta em 768px, não 640px, porque o `perfil.component.css` já tinha um
+  `@media (max-width: 767px)`. Ao mexer lá, seguir o breakpoint do arquivo.
+
 Autenticação:
 
 ```css
