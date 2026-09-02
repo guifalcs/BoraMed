@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-02 | Feature | Eliminar alternativas durante a prova
+
+**O aluno risca o que já descartou, como faria na prova em papel — sem precisar de mouse e sem tocar no banco**
+
+- **A ação é um botão fantasma na própria alternativa**, não clique com o botão direito: o `X` aparece só no hover ou no foco de teclado da alternativa, com tooltip escuro que repete o rótulo e ensina o atalho (`Eliminar alternativa A (Shift + A)`). Riscada, o botão vira `Undo2` em opacidade cheia — é o único caminho de volta, então não pode se esconder. Atalho equivalente: `Shift` + `A`–`E` ou `Shift` + `1`–`5`, anunciado na linha de dicas junto com os outros.
+- **No toque, o gesto é segurar a alternativa** (500ms) — sem hover o `X` nunca apareceria, e encher a lista de cinco ícones permanentes no mobile era justamente o que se queria evitar. Toque curto segue marcando; arrastar mais de 10px cancela, senão rolar a página riscaria sem querer. O `click` que fecha o long press é descartado (flag que sobrevive ao `pointerup`), o menu de contexto é suprimido, `select-none` mata a alça de seleção de texto e `navigator.vibrate(10)` confirma a ação onde existe. Dica abaixo de `sm`: "Segure uma alternativa para eliminá-la".
+- **Visual da riscada:** fundo `--color-surface-2`, texto em `--color-text-muted` com `line-through`, letra em círculo vazado. Imagem de alternativa riscada em `grayscale` a 40%.
+- **Invariante: marcada e riscada nunca coexistem.** A alternativa selecionada não oferece o botão de riscar (a risca contradiria a resposta) e a riscada não pode ser selecionada — nem por clique (o `radio` fica `disabled`), nem por atalho, nem pelo `onResponder`, que rejeita id riscado por qualquer caminho. Para escolher uma riscada, restaure antes.
+- **A risca some sozinha quando o gabarito entra na tela** (modo estudo já respondido, revisão, `visualizar`): a partir daí ela é ruído. `riscada` é computed sobre o estado da alternativa, não sobre o input cru.
+- **Não é dado de tentativa.** Nada de migration, RPC ou coluna nova: é apoio de raciocínio, não resposta. Fica em `sessionStorage` (`bm_eliminadas_<tentativa_id>`), sobrevive ao F5 no meio da prova — que é justamente quando doeria perder — e é apagado ao finalizar. Nota: as métricas, o resultado e a revisão nunca enxergam esse estado.
+- **`Shift` + tecla é tratado antes do `switch` do teclado**: com `Shift` o `key` das letras chega maiúsculo (colidiria com responder) e o dos números vira símbolo (`!`, `@`), por isso o dígito é lido de `event.code`.
+- Testes: 12 unitários em `alternativa-item` (incluindo os 6 de long press: dispara, cancela na rolagem, ignora mouse, toque curto ainda marca), 8 em `tentativa-exec` (atalho, invariantes, persistência) e 7 e2e novos em `eliminar-alternativa.spec.ts` (projeto `mocked`: riscar, bloquear seleção, restaurar, atalho sem responder, long press, arrastar não risca, risca sobrevivendo ao reload). Suíte completa verde: 826 unitários.
+- Stories novas em `alternativa-item.component.stories.ts`; `docs/design-system.md` e `docs/business-rules.md` atualizados.
+
 ## 2026-09-02 | Feature | Notificação lida some da caixa depois de 7 dias
 
 **A caixa de notificações passa a mostrar só o que é não lido ou lido há menos de uma semana**

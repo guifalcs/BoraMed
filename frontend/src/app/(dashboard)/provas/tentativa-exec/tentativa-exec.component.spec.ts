@@ -169,11 +169,17 @@ describe('TentativaExecComponent — navegação por teclado', () => {
     fixture.detectChanges();
   }
 
-  function dispatchKey(key: string, target?: HTMLElement): KeyboardEvent {
+  function dispatchKey(
+    key: string,
+    target?: HTMLElement,
+    extras: { shiftKey?: boolean; code?: string } = {},
+  ): KeyboardEvent {
     const event = new KeyboardEvent('keydown', {
       key,
       bubbles: true,
       cancelable: true,
+      shiftKey: extras.shiftKey ?? false,
+      code: extras.code ?? '',
     });
     if (target) {
       Object.defineProperty(event, 'target', { value: target });
@@ -184,6 +190,8 @@ describe('TentativaExecComponent — navegação por teclado', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    // As riscas ficam em sessionStorage: sem limpar, um teste herda o do anterior.
+    sessionStorage.clear();
     mockTentativaService.salvarResposta.mockResolvedValue({ ok: true, data: null });
     mockTentativaService.listarGemeas.mockResolvedValue({ ok: true, data: [] });
     mockTentativaService.tentativaAtiva.set(tentativa);
@@ -544,6 +552,57 @@ describe('TentativaExecComponent — navegação por teclado', () => {
       const msg = component['mensagemFinalizacao']();
       expect(msg).toContain('questões sem resposta');
       expect(msg).toContain('questão marcada para revisão');
+    });
+  });
+
+  // ── Eliminação de alternativas ──────────────────────────────────────────
+
+  describe('eliminar alternativas', () => {
+    it('deve riscar a alternativa com Shift + letra', () => {
+      dispatchKey('B', undefined, { shiftKey: true });
+      expect(component['eliminadas']().has('alt-B')).toBe(true);
+    });
+
+    it('deve restaurar ao repetir o atalho', () => {
+      dispatchKey('B', undefined, { shiftKey: true });
+      dispatchKey('B', undefined, { shiftKey: true });
+      expect(component['eliminadas']().has('alt-B')).toBe(false);
+    });
+
+    it('deve riscar com Shift + número pelo código da tecla', () => {
+      dispatchKey('!', undefined, { shiftKey: true, code: 'Digit1' });
+      expect(component['eliminadas']().has('alt-A')).toBe(true);
+    });
+
+    it('não deve responder ao riscar', () => {
+      dispatchKey('B', undefined, { shiftKey: true });
+      expect(mockTentativaService.salvarResposta).not.toHaveBeenCalled();
+    });
+
+    it('não deve riscar a alternativa já marcada', () => {
+      dispatchKey('b');
+      dispatchKey('B', undefined, { shiftKey: true });
+      expect(component['eliminadas']().has('alt-B')).toBe(false);
+    });
+
+    it('não deve selecionar alternativa riscada pelo teclado', () => {
+      dispatchKey('B', undefined, { shiftKey: true });
+      dispatchKey('b');
+      expect(mockTentativaService.salvarResposta).not.toHaveBeenCalled();
+    });
+
+    it('deve manter a risca ao navegar entre questões', () => {
+      dispatchKey('B', undefined, { shiftKey: true });
+      dispatchKey('ArrowRight');
+      dispatchKey('ArrowLeft');
+      expect(component['eliminadas']().has('alt-B')).toBe(true);
+    });
+
+    it('deve persistir as riscas no sessionStorage', () => {
+      dispatchKey('B', undefined, { shiftKey: true });
+      const raw = sessionStorage.getItem('bm_eliminadas_tent-1');
+      expect(raw).not.toBeNull();
+      expect(JSON.parse(raw!)).toContain('alt-B');
     });
   });
 });

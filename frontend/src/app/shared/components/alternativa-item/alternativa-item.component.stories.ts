@@ -37,6 +37,23 @@ export const Errada: Story = { args: { estado: 'errada' } };
 
 export const Desabilitada: Story = { args: { estado: 'desabilitada' } };
 
+/** Botão de riscar disponível — discreto até o hover no desktop. */
+export const PodeEliminar: Story = { args: { podeEliminar: true } };
+
+export const Eliminada: Story = { args: { podeEliminar: true, eliminada: true } };
+
+export const EliminadaTextoLongo: Story = {
+  args: {
+    podeEliminar: true,
+    eliminada: true,
+    alternativa: {
+      ...alternativa,
+      texto:
+        'Iniciar antibioticoterapia empírica de amplo espectro por via endovenosa e solicitar hemoculturas pareadas antes da primeira dose, mantendo reavaliação clínica a cada seis horas.',
+    },
+  },
+};
+
 export const ComImagem: Story = {
   args: {
     alternativa: {

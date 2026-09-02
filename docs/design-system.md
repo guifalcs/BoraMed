@@ -269,6 +269,16 @@ Estados:
 * Selecionada: `background: #EFF6FF`, borda `--color-primary`.
 * Correta: `background: #ECFDF5`, borda `--color-success`, texto `--color-success`.
 * Errada: `background: #FEF2F2`, borda `--color-danger`, texto `--color-danger`.
+* Riscada (eliminada pelo aluno): `background: var(--color-surface-2)`, texto `--color-text-muted` com `line-through`, letra em círculo vazado com `ring` na cor da borda. Imagem de alternativa riscada fica em `grayscale` com 40% de opacidade.
+
+Ação de riscar:
+
+* Botão fantasma de 28px no canto direito da alternativa, ícone `X` (riscar) ou `Undo2` (restaurar).
+* O `X` só aparece no hover ou no foco de teclado da alternativa — em repouso a lista fica idêntica ao que era antes da feature.
+* Riscada, o botão de restaurar fica 100% visível: é o único caminho de volta.
+* **Toque:** sem hover o `X` nunca apareceria, então o gesto é segurar a alternativa por 500ms (risca e restaura). Toque curto continua marcando. Arrastar mais de 10px cancela — senão rolar a página riscaria sem querer. `select-none` no container evita a alça de seleção de texto do sistema durante o gesto; `navigator.vibrate(10)` confirma a ação onde existe. Dica visível só abaixo de `sm`: "Segure uma alternativa para eliminá-la".
+* Tooltip escuro abaixo do botão, no mesmo padrão do "Anular questão", com o rótulo e o atalho: `Eliminar alternativa A (Shift + A)`. Usa `group` nomeado (`group/risca`) para não acender junto com o hover da alternativa inteira.
+* Atalho equivalente: `Shift` + `A`–`E` (ou `Shift` + `1`–`5`).
 
 ### SimuladoHeader
 

@@ -1,26 +1,67 @@
-<div [class]="classes()" (click)="handleClick()">
-  <button
-    type="button"
-    role="radio"
-    class="flex w-full items-start gap-3 text-left"
-    [disabled]="estado() === 'desabilitada'"
-    [attr.aria-checked]="estado() === 'selecionada' || estado() === 'correta'"
-    [attr.aria-label]="'Alternativa ' + alternativa().letra + ': ' + alternativa().texto"
-  >
-    <span [class]="letraClasses()">{{ alternativa().letra }}</span>
-    <span class="flex-1">{{ alternativa().texto }}</span>
-    @if (estado() === 'correta') {
-      <span class="shrink-0 text-[var(--color-success)]">✓</span>
+<div
+  [class]="classes()"
+  (click)="handleClick()"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="cancelarLongPress()"
+  (pointercancel)="cancelarLongPress()"
+  (pointerleave)="cancelarLongPress()"
+  (contextmenu)="onContextMenu($event)"
+>
+  <div class="flex items-start gap-2">
+    <button
+      type="button"
+      role="radio"
+      class="flex flex-1 items-start gap-3 text-left"
+      [disabled]="estado() === 'desabilitada' || riscada()"
+      [attr.aria-checked]="estado() === 'selecionada' || estado() === 'correta'"
+      [attr.aria-label]="'Alternativa ' + alternativa().letra + ': ' + alternativa().texto"
+    >
+      <span [class]="letraClasses()">{{ alternativa().letra }}</span>
+      <span
+        class="flex-1"
+        [class.line-through]="riscada()"
+        [attr.data-testid]="riscada() ? 'risca' : null"
+        >{{ alternativa().texto }}</span
+      >
+      @if (estado() === 'correta') {
+        <span class="shrink-0 text-[var(--color-success)]">✓</span>
+      }
+      @if (estado() === 'errada') {
+        <span class="shrink-0 text-[var(--color-danger)]">✗</span>
+      }
+    </button>
+
+    @if (podeEliminar()) {
+      <!-- Grupo nomeado: o `group` de fora já controla o aparecer/sumir do
+           botão, e um `group-hover` solto acenderia o tooltip ao passar o
+           mouse em qualquer canto da alternativa. -->
+      <div class="group/risca relative">
+        <button
+          type="button"
+          [class]="botaoEliminarClasses()"
+          (click)="onToggleEliminar($event)"
+          [attr.aria-label]="rotuloEliminar()"
+          [attr.aria-pressed]="riscada()"
+        >
+          <app-ui-icon [icon]="riscada() ? iconRestaurar : iconEliminar" [size]="14" />
+        </button>
+        <span
+          role="tooltip"
+          class="pointer-events-none absolute right-0 top-full z-10 mt-1 whitespace-nowrap rounded-md bg-[var(--color-text)] px-2 py-1 text-xs font-medium text-[var(--color-surface)] opacity-0 shadow-md transition-opacity duration-150 group-hover/risca:opacity-100 group-focus-within/risca:opacity-100"
+        >
+          {{ dicaEliminar() }}
+        </span>
+      </div>
     }
-    @if (estado() === 'errada') {
-      <span class="shrink-0 text-[var(--color-danger)]">✗</span>
-    }
-  </button>
+  </div>
 
   @if (alternativa().imagem_url; as imagemUrl) {
     <button
       type="button"
       class="mt-2 ml-9 block w-fit max-w-full cursor-zoom-in rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+      [class.opacity-40]="riscada()"
+      [class.grayscale]="riscada()"
       (click)="abrirImagem($event)"
       [attr.aria-label]="'Ampliar imagem da alternativa ' + alternativa().letra"
     >

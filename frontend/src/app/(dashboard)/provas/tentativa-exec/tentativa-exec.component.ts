@@ -7,8 +7,10 @@ import {
   inject,
   signal,
   computed,
+  PLATFORM_ID,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
 import { Bookmark, ChevronDown, ChevronUp, FileX } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { ProvaService } from '../../../core/services/prova.service';
@@ -28,6 +30,9 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { GradeItemComponent } from '../../../shared/components/grade-item/grade-item.component';
 import { QuestaoComentariosComponent } from '../../../shared/components/questao-comentarios/questao-comentarios.component';
 
+/** Prefixo do rascunho local de alternativas riscadas (uma chave por tentativa). */
+const ELIMINADAS_KEY_PREFIX = 'bm_eliminadas_';
+
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
@@ -45,6 +50,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   private readonly notifications = inject(NotificationService);
   private readonly correcaoIa = inject(CorrecaoIaService);
   protected readonly focoMode = inject(FocoModoService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly tentativa = signal<Tentativa | null>(null);
   protected readonly questoes = signal<QuestaoComAlternativas[]>([]);
@@ -78,6 +84,12 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly trocandoFormato = signal<Set<string>>(new Set());
   /** Confirmação de descarte de rascunho antes de trocar o formato. */
   protected readonly mostrarConfirmacaoTroca = signal(false);
+  /**
+   * Alternativas riscadas pelo aluno, por id de alternativa (únicos no acervo,
+   * então um conjunto só cobre a prova inteira). É apoio de raciocínio: fica no
+   * navegador, nunca vai para o banco nem entra em métrica.
+   */
+  protected readonly eliminadas = signal<ReadonlySet<string>>(new Set<string>());
 
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly chevronUpIcon = ChevronUp;
@@ -244,6 +256,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     this.respostasTexto.set(textosMap);
     this.enviadas.set(enviadasSet);
     this.anuladas.set(anuladasSet);
+    this.eliminadas.set(this.lerEliminadasSalvas(tentativaAtiva.id));
 
     // Restaura correções das abertas já enviadas (pós-F5)
     if (enviadasSet.size > 0) {
@@ -326,6 +339,9 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     if (!tentativa || !questao) return;
 
     if (this.modo() === 'estudo' && this.respostasCorretas().has(questao.id)) return;
+
+    // Alternativa riscada está fora do jogo: nem clique nem atalho a seleciona.
+    if (this.eliminadas().has(alternativaId)) return;
 
     const anteriorResposta = this.respostas().get(questao.id);
     if (anteriorResposta === alternativaId) return;
@@ -640,6 +656,77 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ---- Eliminação de alternativas ----
+
+  /**
+   * Risca/restaura uma alternativa. Puro apoio visual: não altera resposta nem
+   * chama o servidor, só persiste local para sobreviver a um F5 no meio da prova.
+   */
+  protected onToggleEliminarAlternativa(evento: {
+    alternativaId: string;
+    eliminar: boolean;
+  }): void {
+    this.eliminadas.update((s) => {
+      const next = new Set(s);
+      if (evento.eliminar) next.add(evento.alternativaId);
+      else next.delete(evento.alternativaId);
+      return next;
+    });
+    this.salvarEliminadas();
+  }
+
+  /** Atalho Shift + A–E / 1–5: risca a alternativa daquela posição. */
+  private toggleEliminarPorIndice(idx: number): void {
+    const alternativas = this.questaoAtual()?.alternativas;
+    if (!alternativas?.length || idx < 0 || idx >= alternativas.length) return;
+    const alt = [...alternativas].sort((a, b) => a.ordem - b.ordem)[idx];
+    if (!alt) return;
+    // A alternativa marcada não pode ser riscada — a risca contradiria a resposta.
+    if (this.respostas().get(this.questaoAtual()!.id) === alt.id) return;
+    // Com gabarito na tela (estudo já respondido) riscar não faz mais sentido.
+    if (this.modo() === 'estudo' && this.respostasCorretas().has(this.questaoAtual()!.id)) return;
+    this.onToggleEliminarAlternativa({
+      alternativaId: alt.id,
+      eliminar: !this.eliminadas().has(alt.id),
+    });
+  }
+
+  private lerEliminadasSalvas(tentativaId: string): ReadonlySet<string> {
+    if (!this.isBrowser) return new Set<string>();
+    try {
+      const raw = sessionStorage.getItem(ELIMINADAS_KEY_PREFIX + tentativaId);
+      if (!raw) return new Set<string>();
+      const ids: unknown = JSON.parse(raw);
+      if (!Array.isArray(ids)) return new Set<string>();
+      return new Set(ids.filter((id): id is string => typeof id === 'string'));
+    } catch {
+      return new Set<string>();
+    }
+  }
+
+  private salvarEliminadas(): void {
+    const tentativa = this.tentativa();
+    if (!this.isBrowser || !tentativa) return;
+    try {
+      sessionStorage.setItem(
+        ELIMINADAS_KEY_PREFIX + tentativa.id,
+        JSON.stringify([...this.eliminadas()]),
+      );
+    } catch {
+      // Storage cheio ou bloqueado: a risca continua valendo em memória.
+    }
+  }
+
+  private limparEliminadasSalvas(): void {
+    const tentativa = this.tentativa();
+    if (!this.isBrowser || !tentativa) return;
+    try {
+      sessionStorage.removeItem(ELIMINADAS_KEY_PREFIX + tentativa.id);
+    } catch {
+      // Sem storage não há o que limpar.
+    }
+  }
+
   protected irParaQuestao(idx: number): void {
     this.questaoAtualIdx.set(idx);
   }
@@ -744,6 +831,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
     if (result.ok) {
       this._finalizado = true;
+      this.limparEliminadasSalvas();
       this.tentativaService.setLastResultado(result.data);
       void this.router.navigate([
         '/dashboard/simulados',
@@ -772,6 +860,19 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
 
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    // Shift + A–E / 1–5 risca a alternativa. Vem antes do switch porque com
+    // Shift o `key` das letras chega maiúsculo e o dos números vira símbolo.
+    if (event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const letraIdx = { a: 0, b: 1, c: 2, d: 3, e: 4 }[event.key.toLowerCase()] ?? -1;
+      const digitoIdx = /^Digit[1-5]$/.test(event.code) ? Number(event.code.slice(5)) - 1 : -1;
+      const idx = letraIdx >= 0 ? letraIdx : digitoIdx;
+      if (idx >= 0) {
+        event.preventDefault();
+        this.toggleEliminarPorIndice(idx);
+        return;
+      }
+    }
 
     switch (event.key) {
       case 'ArrowLeft':

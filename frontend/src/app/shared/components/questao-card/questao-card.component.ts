@@ -87,6 +87,15 @@ export class QuestaoCardComponent {
    */
   focoAtivo = input<boolean>(false);
 
+  // ---- Eliminação de alternativas ----
+  /**
+   * Ids das alternativas riscadas pelo aluno. Chega o conjunto inteiro da
+   * tentativa: os ids são únicos, então cada card só enxerga os seus.
+   */
+  alternativasEliminadas = input<ReadonlySet<string>>(new Set<string>());
+  /** Libera o botão de riscar (só faz sentido com a tentativa em andamento). */
+  permitirEliminar = input<boolean>(false);
+
   responder = output<string>();
   salvarRascunho = output<string>();
   enviarTexto = output<string>();
@@ -95,6 +104,8 @@ export class QuestaoCardComponent {
   toggleAnular = output<boolean>();
   /** Pede a troca desta questão pela gêmea do outro formato. */
   trocarFormato = output<void>();
+  /** Risca/restaura uma alternativa como apoio de raciocínio. */
+  toggleEliminarAlternativa = output<{ alternativaId: string; eliminar: boolean }>();
 
   protected readonly iconAnular = Ban;
   protected readonly iconTrocarFormato = ArrowLeftRight;
@@ -189,6 +200,21 @@ export class QuestaoCardComponent {
 
     if (altId === selecionada) return 'selecionada';
     return 'idle';
+  }
+
+  /**
+   * Riscar só vale para a alternativa que ainda está em jogo: nunca a que o
+   * aluno marcou (a risca contradiria a resposta) e nunca com gabarito na tela.
+   */
+  protected podeEliminar(altId: string): boolean {
+    if (!this.permitirEliminar() || this.ehDiscursiva()) return false;
+    if (this.respostaSelecionada() === altId) return false;
+    const estado = this.estadoAlternativa(altId);
+    return estado === 'idle' || estado === 'selecionada';
+  }
+
+  protected estaEliminada(altId: string): boolean {
+    return this.alternativasEliminadas().has(altId);
   }
 
   protected onImgLoad(): void {

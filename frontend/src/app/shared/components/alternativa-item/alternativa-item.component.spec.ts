@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AlternativaItemComponent } from './alternativa-item.component';
 import type { Alternativa } from '../../../core/models/alternativa';
 
@@ -121,6 +121,164 @@ describe('AlternativaItemComponent', () => {
     const img = fixture.nativeElement.querySelector('img') as HTMLImageElement;
     expect(img).not.toBeNull();
     expect(img.src).toContain('alt-a.webp');
+  });
+
+  it('não deve exibir o botão de eliminar sem podeEliminar', async () => {
+    await setup('idle');
+    expect(fixture.nativeElement.querySelector('button[aria-label^="Eliminar"]')).toBeNull();
+  });
+
+  it('deve emitir toggleEliminar ao riscar', async () => {
+    await setup('idle');
+    fixture.componentRef.setInput('podeEliminar', true);
+    fixture.detectChanges();
+    let emitted: boolean | null = null;
+    component.toggleEliminar.subscribe((v: boolean) => (emitted = v));
+    (
+      fixture.nativeElement.querySelector('button[aria-label^="Eliminar"]') as HTMLButtonElement
+    ).click();
+    expect(emitted).toBe(true);
+  });
+
+  it('riscar não deve selecionar a alternativa', async () => {
+    await setup('idle');
+    fixture.componentRef.setInput('podeEliminar', true);
+    fixture.detectChanges();
+    let emitted = false;
+    component.selecionar.subscribe(() => (emitted = true));
+    (
+      fixture.nativeElement.querySelector('button[aria-label^="Eliminar"]') as HTMLButtonElement
+    ).click();
+    expect(emitted).toBe(false);
+  });
+
+  it('eliminada deve desabilitar a seleção e mostrar o traço', async () => {
+    await setup('idle');
+    fixture.componentRef.setInput('podeEliminar', true);
+    fixture.componentRef.setInput('eliminada', true);
+    fixture.detectChanges();
+    let emitted = false;
+    component.selecionar.subscribe(() => (emitted = true));
+    const radio = fixture.nativeElement.querySelector('button[role="radio"]') as HTMLButtonElement;
+    radio.click();
+    expect(emitted).toBe(false);
+    expect(radio.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-testid="risca"]')).not.toBeNull();
+  });
+
+  it('eliminada deve oferecer restaurar', async () => {
+    await setup('idle');
+    fixture.componentRef.setInput('podeEliminar', true);
+    fixture.componentRef.setInput('eliminada', true);
+    fixture.detectChanges();
+    let emitted: boolean | null = null;
+    component.toggleEliminar.subscribe((v: boolean) => (emitted = v));
+    const btn = fixture.nativeElement.querySelector(
+      'button[aria-label^="Restaurar"]',
+    ) as HTMLButtonElement;
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    btn.click();
+    expect(emitted).toBe(false);
+  });
+
+  it('com gabarito na tela a risca não é aplicada', async () => {
+    await setup('errada');
+    fixture.componentRef.setInput('eliminada', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="risca"]')).toBeNull();
+  });
+
+  // ── Long press (toque) ──────────────────────────────────────────────────
+
+  describe('long press no toque', () => {
+    function ponteiro(tipo: string, x = 0, y = 0): PointerEvent {
+      return { pointerType: tipo, clientX: x, clientY: y } as PointerEvent;
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function setupTouch() {
+      await setup('idle');
+      fixture.componentRef.setInput('podeEliminar', true);
+      fixture.detectChanges();
+    }
+
+    it('segurar risca a alternativa', async () => {
+      await setupTouch();
+      let emitted: boolean | null = null;
+      component.toggleEliminar.subscribe((v: boolean) => (emitted = v));
+
+      component['onPointerDown'](ponteiro('touch'));
+      vi.advanceTimersByTime(500);
+
+      expect(emitted).toBe(true);
+    });
+
+    it('o clique que fecha o long press não seleciona', async () => {
+      await setupTouch();
+      let selecionou = false;
+      component.selecionar.subscribe(() => (selecionou = true));
+
+      component['onPointerDown'](ponteiro('touch'));
+      vi.advanceTimersByTime(500);
+      component['cancelarLongPress']();
+      component['handleClick']();
+
+      expect(selecionou).toBe(false);
+    });
+
+    it('toque curto continua marcando a alternativa', async () => {
+      await setupTouch();
+      let selecionou = false;
+      component.selecionar.subscribe(() => (selecionou = true));
+
+      component['onPointerDown'](ponteiro('touch'));
+      vi.advanceTimersByTime(200);
+      component['cancelarLongPress']();
+      component['handleClick']();
+
+      expect(selecionou).toBe(true);
+    });
+
+    it('rolar a página cancela o long press', async () => {
+      await setupTouch();
+      let emitted = false;
+      component.toggleEliminar.subscribe(() => (emitted = true));
+
+      component['onPointerDown'](ponteiro('touch', 100, 100));
+      component['onPointerMove'](ponteiro('touch', 100, 140));
+      vi.advanceTimersByTime(500);
+
+      expect(emitted).toBe(false);
+    });
+
+    it('mouse não dispara long press — lá existe o botão', async () => {
+      await setupTouch();
+      let emitted = false;
+      component.toggleEliminar.subscribe(() => (emitted = true));
+
+      component['onPointerDown'](ponteiro('mouse'));
+      vi.advanceTimersByTime(500);
+
+      expect(emitted).toBe(false);
+    });
+
+    it('sem podeEliminar o gesto não faz nada', async () => {
+      await setup('idle');
+      let emitted = false;
+      component.toggleEliminar.subscribe(() => (emitted = true));
+
+      component['onPointerDown'](ponteiro('touch'));
+      vi.advanceTimersByTime(500);
+
+      expect(emitted).toBe(false);
+    });
   });
 
   it('clicar na imagem não deve selecionar a alternativa', async () => {

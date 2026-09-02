@@ -144,7 +144,10 @@
           <app-alternativa-item
             [alternativa]="alt"
             [estado]="estadoAlternativa(alt.id)"
+            [eliminada]="estaEliminada(alt.id)"
+            [podeEliminar]="podeEliminar(alt.id)"
             (selecionar)="responder.emit($event)"
+            (toggleEliminar)="toggleEliminarAlternativa.emit({ alternativaId: alt.id, eliminar: $event })"
           />
         </li>
       }

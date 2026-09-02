@@ -49,7 +49,10 @@
         [formatoGemea]="formatoGemeaAtual()"
         [trocandoFormato]="trocandoFormatoAtual()"
         [focoAtivo]="focoMode.ativo()"
+        [alternativasEliminadas]="eliminadas()"
+        [permitirEliminar]="true"
         (responder)="onResponder($event)"
+        (toggleEliminarAlternativa)="onToggleEliminarAlternativa($event)"
         (trocarFormato)="onTrocarFormato()"
         (salvarRascunho)="onSalvarRascunho($event)"
         (enviarTexto)="onEnviarTexto($event)"
@@ -125,7 +128,11 @@
       <!-- Dica de atalhos de teclado -->
       @if (!focoMode.ativo()) {
         <p class="mt-2 hidden text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:block">
-          ← → para navegar &nbsp;·&nbsp; A–E ou 1–5 para responder &nbsp;·&nbsp; M para marcar
+          ← → para navegar &nbsp;·&nbsp; A–E ou 1–5 para responder &nbsp;·&nbsp; Shift + A–E para eliminar &nbsp;·&nbsp; M para marcar
+        </p>
+        <!-- No toque não existe hover: o botão de eliminar não aparece, o gesto é o caminho. -->
+        <p class="mt-2 text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:hidden">
+          Segure uma alternativa para eliminá-la
         </p>
       }
 
