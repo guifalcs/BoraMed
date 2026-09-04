@@ -20,6 +20,7 @@ import { SuporteWidgetComponent } from '../shared/components/suporte-widget/supo
 import { ImageViewerComponent } from '../shared/components/image-viewer/image-viewer.component';
 import { FocoModoService } from '../core/services/foco-modo.service';
 import { PaywallService } from '../core/services/paywall.service';
+import { AcessoService } from '../core/services/acesso.service';
 import { PaywallModalComponent } from '../shared/components/paywall-modal/paywall-modal.component';
 import { FaculdadeUnidadeModalComponent } from '../shared/components/faculdade-unidade-modal/faculdade-unidade-modal.component';
 import { UpgradeBadgeComponent } from '../shared/components/upgrade-badge/upgrade-badge.component';
@@ -64,6 +65,7 @@ export class DashboardComponent {
   private readonly notifService = inject(AppNotificacaoService);
   protected readonly focoMode = inject(FocoModoService);
   private readonly paywall = inject(PaywallService);
+  private readonly acesso = inject(AcessoService);
 
   protected readonly logOutIcon = LogOut;
   protected readonly historyIcon = History;
@@ -138,6 +140,9 @@ export class DashboardComponent {
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
       effect(() => {
         if (this.auth.user() && !this.auth.impersonando()) {
+          // Só fora de impersonação: durante o suporte o IP é o do admin e
+          // poluiria o monitoramento de contas compartilhadas.
+          this.acesso.iniciar();
           void this.profileService.loadProfile();
           void this.onboarding.load();
           void this.tentativaService.hidratarTentativaAtiva();

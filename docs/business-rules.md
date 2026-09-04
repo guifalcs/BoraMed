@@ -223,6 +223,16 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Buckets públicos de imagens podem expor arquivos por URL pública, mas não devem permitir listagem ampla de objetos pelo cliente.
 * Métricas individuais de um usuário (tentativas, XP, atividade, assinatura, pagamentos) são visíveis apenas para administradores, exclusivamente via RPC `admin_get_metricas_usuario` (SECURITY DEFINER, exige `is_admin()`); nenhuma policy de SELECT cross-user é aberta nas tabelas `assinatura`, `pagamento` ou `gamificacao_evento` para o cliente.
 
+### Monitoramento de acessos (contas compartilhadas)
+
+* Cada acesso à conta é registrado em `acesso_log` com IP, país, rótulo de dispositivo e id de dispositivo do navegador. As fontes são o trigger de `auth.sessions` (login e troca de IP) e o heartbeat `registrar_acesso` do app (a cada 30 min de uso).
+* A coleta é **declarada na política de privacidade** ("dados técnicos: endereço IP, tipo de navegador e sistema operacional, coletados automaticamente para segurança e diagnóstico") e limitada a 180 dias de retenção.
+* A finalidade atual é **exclusivamente observação**: nenhuma sessão é expirada, nenhum acesso é bloqueado e nenhum usuário é avisado ou penalizado automaticamente por indício de compartilhamento.
+* Os dados são visíveis apenas para administradores, em `/admin/acessos`, via as RPCs `admin_get_acessos_resumo`, `admin_get_acessos_usuario` e `admin_get_redes_multiconta` (SECURITY DEFINER, exigem `is_admin()`). A tabela tem RLS admin-only para SELECT e nenhuma policy de escrita.
+* Acessos gerados por impersonação de admin carregam o IP do admin e são marcados `impersonado`; ficam fora de todas as análises.
+* O indício forte de compartilhamento é **sobreposição de janelas de acesso em redes diferentes e dispositivos diferentes**. Contagem alta de redes, isolada, não é conclusiva: CGNAT de operadora móvel e wi-fi de faculdade inflam o número legitimamente.
+* Os termos de uso **não** proíbem hoje o compartilhamento de conta. Qualquer medida futura contra contas compartilhadas depende de incluir antes a cláusula de conta pessoal e intransferível.
+
 ## Integridade de Dados
 
 * Toda entidade acadêmica (prova, questão, disciplina, tema) pode ser deletada pelo admin; a regra é preservar o histórico do aluno, nunca bloquear a exclusão.

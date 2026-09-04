@@ -18,6 +18,7 @@ import {
   Mail,
   Menu,
   MessageSquare,
+  Radar,
   Send,
   Settings,
   ShieldCheck,
@@ -133,6 +134,7 @@ export class AdminComponent {
       children: [
         { label: 'Usuários', icon: Users, route: '/admin/usuarios' },
         { label: 'Financeiro', icon: DollarSign, route: '/admin/financeiro' },
+        { label: 'Acessos', icon: Radar, route: '/admin/acessos' },
       ],
     },
     { kind: 'item', label: 'IA · Aurora', icon: Sparkles, route: '/admin/ia' },

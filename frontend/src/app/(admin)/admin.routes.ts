@@ -30,6 +30,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'acessos',
+    loadComponent: () =>
+      import('./acessos/admin-acessos.component').then(
+        (m) => m.AdminAcessosComponent,
+      ),
+  },
+  {
     path: 'financeiro',
     loadComponent: () =>
       import('./financeiro/admin-financeiro.component').then(

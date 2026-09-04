@@ -34,6 +34,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      acesso_log: {
+        Row: {
+          device_id: string | null
+          dispositivo: string | null
+          eventos: number
+          id: number
+          impersonado: boolean
+          ip: unknown
+          origem: string
+          pais: string | null
+          primeiro_em: string
+          session_id: string | null
+          ultimo_em: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          device_id?: string | null
+          dispositivo?: string | null
+          eventos?: number
+          id?: never
+          impersonado?: boolean
+          ip?: unknown
+          origem: string
+          pais?: string | null
+          primeiro_em?: string
+          session_id?: string | null
+          ultimo_em?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          device_id?: string | null
+          dispositivo?: string | null
+          eventos?: number
+          id?: never
+          impersonado?: boolean
+          ip?: unknown
+          origem?: string
+          pais?: string | null
+          primeiro_em?: string
+          session_id?: string | null
+          ultimo_em?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_impersonation_log: {
         Row: {
           admin_email: string
@@ -2474,6 +2522,14 @@ export type Database = {
         }
         Returns: number
       }
+      admin_get_acessos_resumo: {
+        Args: { p_dias?: number; p_limit?: number }
+        Returns: Json
+      }
+      admin_get_acessos_usuario: {
+        Args: { p_dias?: number; p_limit?: number; p_user_id: string }
+        Returns: Json
+      }
       admin_get_distribuicao_unidades: { Args: never; Returns: Json }
       admin_get_financeiro: { Args: never; Returns: Json }
       admin_get_flashcards_stats: { Args: never; Returns: Json }
@@ -2483,6 +2539,10 @@ export type Database = {
         Returns: Json
       }
       admin_get_questao: { Args: { p_id: string }; Returns: Json }
+      admin_get_redes_multiconta: {
+        Args: { p_dias?: number; p_limit?: number; p_min?: number }
+        Returns: Json
+      }
       admin_get_stats: { Args: never; Returns: Json }
       admin_get_uso_plataforma: { Args: never; Returns: Json }
       admin_get_uso_usuarios_dia: {
@@ -3069,6 +3129,7 @@ export type Database = {
         Args: { p_nivel: string; p_segmento: string }
         Returns: boolean
       }
+      purgar_acesso_log: { Args: never; Returns: undefined }
       reabrir_ticket: {
         Args: { p_ticket_id: string }
         Returns: {
@@ -3087,6 +3148,21 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      rede_do_ip: { Args: { p_ip: unknown }; Returns: unknown }
+      registrar_acesso: { Args: { p_device_id?: string }; Returns: undefined }
+      registrar_acesso_evento: {
+        Args: {
+          p_device_id?: string
+          p_impersonado?: boolean
+          p_ip: unknown
+          p_origem: string
+          p_pais?: string
+          p_session_id?: string
+          p_user_agent: string
+          p_user_id: string
+        }
+        Returns: number
       }
       registrar_anexos_mensagem: {
         Args: { p_anexos: Json; p_mensagem_id: string }
@@ -3113,6 +3189,7 @@ export type Database = {
         Returns: Json
       }
       retomar_tentativa: { Args: { p_tentativa_id: string }; Returns: Json }
+      rotulo_dispositivo: { Args: { p_ua: string }; Returns: string }
       salvar_anotacao_questao: {
         Args: {
           p_conteudo: string

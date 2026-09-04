@@ -70,6 +70,124 @@ export interface AdminUsoUsuariosDia {
   usuarios: AdminUsoUsuarioDia[];
 }
 
+// ---- Monitoramento de acessos (contas compartilhadas) ----
+
+export interface AdminAcessoUsuario {
+  user_id: string;
+  nome: string;
+  email: string | null;
+  avatar_url: string | null;
+  papel: string | null;
+  banido: boolean;
+  plano: string | null;
+  assinatura_ativa: boolean;
+  /** Janelas de presença consolidadas no período. */
+  janelas: number;
+  eventos: number;
+  ips: number;
+  /** IPs agrupados por /24 (v4) ou /48 (v6). */
+  redes: number;
+  dispositivos: number;
+  navegadores: number;
+  paises: number;
+  sessoes: number;
+  /** Pares de acessos simultâneos em redes diferentes — o sinal mais forte. */
+  sobreposicoes: number;
+  score: number;
+  nivel: 'alto' | 'medio' | 'baixo';
+  primeiro_em: string;
+  ultimo_em: string;
+}
+
+export interface AdminAcessosResumo {
+  dias: number;
+  gerado_em: string;
+  total_usuarios: number;
+  total_janelas: number;
+  com_sobreposicao: number;
+  usuarios: AdminAcessoUsuario[];
+}
+
+export interface AdminAcessoRegistro {
+  id: number;
+  ip: string | null;
+  rede: string | null;
+  pais: string | null;
+  origem: string;
+  dispositivo: string | null;
+  device_id: string | null;
+  session_id: string | null;
+  impersonado: boolean;
+  eventos: number;
+  primeiro_em: string;
+  ultimo_em: string;
+}
+
+export interface AdminAcessoPorIp {
+  ip: string | null;
+  rede: string | null;
+  pais: string | null;
+  janelas: number;
+  eventos: number;
+  dispositivos: number;
+  rotulos: string[] | null;
+  primeiro_em: string;
+  ultimo_em: string;
+}
+
+export interface AdminAcessoSobreposicao {
+  a_ip: string | null;
+  a_disp: string | null;
+  a_inicio: string;
+  a_fim: string;
+  b_ip: string | null;
+  b_disp: string | null;
+  b_inicio: string;
+  b_fim: string;
+}
+
+export interface AdminAcessosUsuarioDetalhe {
+  dias: number;
+  usuario: {
+    user_id: string;
+    nome: string;
+    email: string | null;
+    avatar_url: string | null;
+    papel: string | null;
+    banido: boolean;
+    criado_em: string;
+    ultimo_login: string | null;
+  } | null;
+  totais: {
+    janelas: number;
+    eventos: number;
+    ips: number;
+    redes: number;
+    dispositivos: number;
+    navegadores: number;
+    paises: number;
+    sessoes: number;
+  };
+  sobreposicoes: AdminAcessoSobreposicao[];
+  por_ip: AdminAcessoPorIp[];
+  acessos: AdminAcessoRegistro[];
+}
+
+export interface AdminRedeMulticonta {
+  rede: string;
+  contas: number;
+  ips: number;
+  dispositivos: number;
+  ultimo_em: string;
+  usuarios: { user_id: string; nome: string; email: string | null }[];
+}
+
+export interface AdminRedesMulticonta {
+  dias: number;
+  total_redes: number;
+  redes: AdminRedeMulticonta[];
+}
+
 export interface AdminFinanceiroPlano {
   slug: string;
   nome: string;
@@ -711,6 +829,37 @@ export class AdminService {
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminUsoUsuariosDia };
+  }
+
+  // ---- Monitoramento de acessos ----
+
+  /** Ranking de contas com indício de compartilhamento no período. */
+  async getAcessosResumo(dias = 30, limit = 50): Promise<ServiceResult<AdminAcessosResumo>> {
+    const { data, error } = await this.supabase.rpc('admin_get_acessos_resumo', {
+      p_dias: dias,
+      p_limit: limit,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminAcessosResumo };
+  }
+
+  async getAcessosUsuario(userId: string, dias = 90): Promise<ServiceResult<AdminAcessosUsuarioDetalhe>> {
+    const { data, error } = await this.supabase.rpc('admin_get_acessos_usuario', {
+      p_user_id: userId,
+      p_dias: dias,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminAcessosUsuarioDetalhe };
+  }
+
+  /** Redes (/24) usadas por mais de uma conta no período. */
+  async getRedesMulticonta(dias = 30, minContas = 2): Promise<ServiceResult<AdminRedesMulticonta>> {
+    const { data, error } = await this.supabase.rpc('admin_get_redes_multiconta', {
+      p_dias: dias,
+      p_min: minContas,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminRedesMulticonta };
   }
 
   // ---- Financeiro ----
