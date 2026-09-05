@@ -1,13 +1,14 @@
 -- ============================================================
--- Riquelme Andrade Berto: acesso estava marcado como CORTESIA, mas ele pagou
--- por fora (PIX/dinheiro) o preço do plano Essencial Mensal. Cortesia fica fora
--- de todas as métricas financeiras, então a receita real dele não aparecia.
+-- Riquelme Andrade Berto (bertoriquelme118@gmail.com): o acesso dele estava
+-- marcado como CORTESIA, mas ele pagou por fora o preço do plano Essencial
+-- Mensal. Cortesia fica fora de todas as métricas financeiras, então essa
+-- receita real não aparecia.
 --
 -- Reclassifica a assinatura ativa como PAGA (cortesia = false) no plano
 -- 'essencial-mensal' e registra o pagamento manual correspondente, mesma
 -- semântica de admin_ativar_assinatura_manual (líquido = bruto, sem taxa de
--- gateway). O acesso não é encurtado: a validade vira a maior entre a que ele
--- já tinha e 1 mês a partir do início.
+-- gateway). O acesso não é encurtado: a validade concedida na cortesia é
+-- mantida quando for maior que 1 mês.
 --
 -- Idempotente e sem efeito em ambientes onde o usuário não existe.
 -- ============================================================
@@ -18,7 +19,7 @@ WITH alvo AS (
   JOIN public.profiles p ON p.id = a.user_id
   WHERE a.status = 'authorized'
     AND a.cortesia
-    AND (p.nome_completo ILIKE '%riquelme%andrade%' OR p.email ILIKE '%riquelme%')
+    AND lower(p.email) = 'bertoriquelme118@gmail.com'
 )
 UPDATE public.assinatura a
    SET cortesia = false,
@@ -31,7 +32,8 @@ UPDATE public.assinatura a
   FROM alvo
  WHERE a.id = alvo.id;
 
--- Registra o pagamento por fora (só se ainda não houver pagamento aprovado).
+-- Registra o pagamento por fora (só se ainda não houver pagamento aprovado
+-- nessa assinatura).
 INSERT INTO public.pagamento (
   user_id, assinatura_id, valor_centavos, liquido_centavos, moeda,
   status, metodo_pagamento, processado_em
@@ -45,7 +47,7 @@ JOIN public.plano pl ON pl.id = a.plano_id
 WHERE a.status = 'authorized'
   AND NOT a.cortesia
   AND pl.slug = 'essencial-mensal'
-  AND (p.nome_completo ILIKE '%riquelme%andrade%' OR p.email ILIKE '%riquelme%')
+  AND lower(p.email) = 'bertoriquelme118@gmail.com'
   AND NOT EXISTS (
     SELECT 1 FROM public.pagamento pg
     WHERE pg.assinatura_id = a.id AND pg.status = 'approved'
