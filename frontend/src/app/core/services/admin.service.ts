@@ -211,6 +211,74 @@ export interface AdminFinanceiro {
   por_plano: AdminFinanceiroPlano[];
 }
 
+/** Categorias de despesa aceitas pelo CHECK da tabela `despesa`. */
+export const DESPESA_CATEGORIAS = [
+  { valor: 'infraestrutura', label: 'Infraestrutura' },
+  { valor: 'ia', label: 'IA / LLM' },
+  { valor: 'marketing', label: 'Marketing' },
+  { valor: 'comissao', label: 'Comissão / afiliados' },
+  { valor: 'ferramentas', label: 'Ferramentas e assinaturas' },
+  { valor: 'conteudo', label: 'Conteúdo' },
+  { valor: 'juridico_contabil', label: 'Jurídico e contábil' },
+  { valor: 'impostos', label: 'Impostos e taxas' },
+  { valor: 'equipamentos', label: 'Equipamentos' },
+  { valor: 'outros', label: 'Outros' },
+] as const;
+
+export type DespesaCategoria = (typeof DESPESA_CATEGORIAS)[number]['valor'];
+
+export const DESPESA_RECORRENCIAS = [
+  { valor: 'unica', label: 'Única' },
+  { valor: 'mensal', label: 'Mensal' },
+  { valor: 'anual', label: 'Anual' },
+] as const;
+
+export type DespesaRecorrencia = (typeof DESPESA_RECORRENCIAS)[number]['valor'];
+
+export interface AdminDespesa {
+  id: string;
+  descricao: string;
+  categoria: DespesaCategoria;
+  fornecedor: string | null;
+  valor_centavos: number;
+  /** Data (YYYY-MM-DD) a que o gasto pertence — não o instante do lançamento. */
+  competencia: string;
+  recorrencia: DespesaRecorrencia;
+  observacao: string | null;
+  criado_em: string;
+}
+
+/** Payload de criação/edição: o banco preenche id, criado_em e criado_por. */
+export type AdminDespesaInput = Omit<AdminDespesa, 'id' | 'criado_em'>;
+
+export interface AdminDespesaCategoriaTotal {
+  categoria: DespesaCategoria;
+  total_centavos: number;
+  mes_centavos: number;
+}
+
+export interface AdminResultadoMes {
+  /** 'YYYY-MM'. */
+  mes: string;
+  receita_liquida_centavos: number;
+  despesas_centavos: number;
+  lucro_centavos: number;
+}
+
+/** Receita líquida × despesa lançada. Fonte: `admin_get_resultado_financeiro`. */
+export interface AdminResultadoFinanceiro {
+  despesas_mes_centavos: number;
+  despesas_total_centavos: number;
+  fixo_mensal_centavos: number;
+  receita_liquida_mes_centavos: number;
+  receita_liquida_total_centavos: number;
+  lucro_mes_centavos: number;
+  lucro_total_centavos: number;
+  lancamentos: number;
+  por_categoria: AdminDespesaCategoriaTotal[];
+  por_mes: AdminResultadoMes[];
+}
+
 export interface AdminIaJanela {
   correcoes: number;
   tokens_prompt: number;
@@ -571,6 +639,9 @@ export interface ResultadoDisparoCampanha {
   destino?: string;
 }
 
+const DESPESA_COLS =
+  'id, descricao, categoria, fornecedor, valor_centavos, competencia, recorrencia, observacao, criado_em';
+
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 /**
@@ -874,6 +945,58 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_listar_pagamentos', { p_limit: limit });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as AdminPagamento[] };
+  }
+
+  // ---- Despesas ----
+  // Escrita direta na tabela: RLS admin-only (is_admin) faz o gate no banco.
+
+  async getResultadoFinanceiro(meses = 12): Promise<ServiceResult<AdminResultadoFinanceiro>> {
+    const { data, error } = await this.supabase.rpc('admin_get_resultado_financeiro', {
+      p_meses: meses,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as unknown as AdminResultadoFinanceiro };
+  }
+
+  async listarDespesas(limit = 500): Promise<ServiceResult<AdminDespesa[]>> {
+    const { data, error } = await this.supabase
+      .from('despesa')
+      .select(DESPESA_COLS)
+      .order('competencia', { ascending: false })
+      .order('criado_em', { ascending: false })
+      .limit(limit);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminDespesa[] };
+  }
+
+  async criarDespesa(input: AdminDespesaInput): Promise<ServiceResult<AdminDespesa>> {
+    const { data, error } = await this.supabase
+      .from('despesa')
+      .insert(input)
+      .select(DESPESA_COLS)
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminDespesa };
+  }
+
+  async atualizarDespesa(
+    id: string,
+    input: AdminDespesaInput,
+  ): Promise<ServiceResult<AdminDespesa>> {
+    const { data, error } = await this.supabase
+      .from('despesa')
+      .update(input)
+      .eq('id', id)
+      .select(DESPESA_COLS)
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminDespesa };
+  }
+
+  async deletarDespesa(id: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.from('despesa').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
   }
 
   async getMetricasIa(): Promise<ServiceResult<AdminMetricasIa>> {

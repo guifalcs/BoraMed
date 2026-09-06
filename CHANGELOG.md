@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-06 | Feature | Despesas no admin — o financeiro passa a mostrar lucro
+
+**Lançamento manual de gastos e o cruzamento com a receita líquida, que é o que responde "sobrou quanto?"**
+
+- **O financeiro só via a entrada.** Receita, MRR, previsão, pagamentos — nada do outro lado. `public.despesa` é uma linha por gasto: descrição, categoria (lista fechada por CHECK), valor em centavos de BRL, `competencia`, `recorrencia`, fornecedor e observação.
+- **`competencia` é `date` e separada de `criado_em`**, então dá para lançar em setembro um custo de agosto sem sujar o mês corrente — o valor cai no mês a que pertence.
+- **Recorrência é rótulo, não gerador.** Custo mensal é lançado mês a mês; nada é criado automaticamente, o que elimina por construção a dupla contagem entre linha real e projeção. O rótulo alimenta o KPI "custo fixo do mês".
+- **Lucro sobre o líquido, não sobre o bruto.** `admin_get_resultado_financeiro(p_meses)` cruza a despesa com `COALESCE(liquido_centavos, valor_centavos)` dos pagamentos aprovados — mesma base do KPI "Líquido no mês". Usar o bruto inflaria o resultado em ~4% (a taxa do Mercado Pago sai antes do dinheiro chegar).
+- **Só BRL na tabela.** Gasto em dólar (OpenRouter, Vercel) entra convertido, com a cotação na observação: guardar duas moedas na mesma coluna exigiria câmbio por linha e data, complexidade sem retorno nessa escala. O formulário diz isso na tela.
+- **`/admin/financeiro/despesas`** (menu Gestão → Despesas): KPIs do mês (receita líquida, despesas, lucro com margem, acumulado), formulário de lançamento/edição, resultado mês a mês, gasto por categoria e a lista com filtro por mês e categoria, total do filtro e paginação. A página do Financeiro ganhou o bloco "Resultado" com os mesmos números e um botão para lançar.
+- **Admin-only ponta a ponta:** RLS com `is_admin()` nas quatro operações, RPC `SECURITY DEFINER` com guard e `REVOKE` de `anon`/`PUBLIC`. Trigger preenche `criado_por` de `auth.uid()` no insert e congela `criado_em`/`criado_por` no update.
+- **Detalhes de fuso tratados:** competência é montada a partir da data local (não `toISOString`, que joga o lançamento para o dia anterior à noite no Brasil) e exibida por split da string ISO, não por `new Date(iso)`.
+- Verificado: migration aplicada e exercitada em Postgres 16 local com stubs de `profiles`/`pagamento`/`is_admin` — RPC conferida contra dados sintéticos (série mensal, categoria, fixo mensal, lucro do mês e acumulado), CHECK de valor > 0 rejeitando zero, trigger de update preservando `criado_em`, e guard devolvendo `permission_denied` com `is_admin()` falso. `tsc` limpo, build de produção OK e **832 unitários verdes**.
+- **Ainda não aplicada em produção**: deploy de migration é manual (`npx supabase db push --linked`, com `--dry-run` antes), conforme `supabase/CLAUDE.md`.
+- `docs/architecture.md` (ADR-037) e `docs/business-rules.md` atualizados.
+
 ## 2026-09-04 | Feature | Monitoramento de acessos por IP
 
 **Estrutura para saber se uma assinatura está sendo usada por mais de uma pessoa — coleta, análise e tela. Nada bloqueia ninguém**

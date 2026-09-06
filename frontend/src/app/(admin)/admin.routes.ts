@@ -44,6 +44,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'financeiro/despesas',
+    loadComponent: () =>
+      import('./financeiro/despesas/admin-despesas.component').then(
+        (m) => m.AdminDespesasComponent,
+      ),
+  },
+  {
     path: 'questoes',
     loadComponent: () =>
       import('./questoes/admin-questoes.component').then(

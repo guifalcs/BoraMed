@@ -385,6 +385,23 @@ dela e mantém o contrato antigo (NULL para quem não paga).
 * **Assinantes legados (pré-checkout embutido)**: continuam nos preapprovals
   criados via redirect, cobrados e geridos normalmente — não há migração.
 
+### Despesas e resultado
+
+* **Toda despesa é lançamento manual** em `/admin/financeiro/despesas` (menu
+  Gestão → Despesas). Não há integração com fornecedor: o que não for lançado
+  não existe no resultado.
+* **`competencia`** é o mês/dia a que o gasto pertence — lançar em setembro um
+  custo de agosto joga o valor no mês de agosto, não no corrente.
+* **Custo recorrente é lançado mês a mês.** A marca `mensal`/`anual` serve só
+  para leitura e para o KPI "custo fixo do mês"; nada é criado automaticamente.
+* **Gasto em moeda estrangeira entra convertido em reais**, com a cotação usada
+  anotada na observação. A tabela só guarda BRL.
+* **Lucro = receita líquida − despesas da competência.** Receita líquida é o
+  valor já sem a taxa do Mercado Pago, ou seja, o que entrou na conta.
+* **Comissão de afiliado (cupom) é despesa da categoria `comissao`** e só deve
+  ser lançada quando o repasse for efetivamente pago.
+* Tela e dados são **admin-only** (RLS em todas as operações).
+
 ## Conteúdo por Período
 
 ### 1º Período — fonte: Arthur Barata (a preencher)

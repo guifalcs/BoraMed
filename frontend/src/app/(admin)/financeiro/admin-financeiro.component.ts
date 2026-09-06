@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   AdminService,
   AdminFinanceiro,
   AdminPagamento,
   AdminMetricasIa,
   AdminIaJanela,
+  AdminResultadoFinanceiro,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatarCentavos, pagamentoStatusLabel } from '../../shared/utils/admin-labels.util';
@@ -30,7 +32,7 @@ interface FinKpi {
 @Component({
   selector: 'app-admin-financeiro',
   standalone: true,
-  imports: [CommonModule, AdminPaginationComponent],
+  imports: [CommonModule, RouterLink, AdminPaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mx-auto max-w-6xl px-4 py-6">
@@ -52,6 +54,49 @@ interface FinKpi {
             </div>
           }
         </div>
+
+        <!-- Resultado: receita líquida × despesas lançadas -->
+        <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">Resultado</h2>
+            <p class="text-xs text-gray-500">Receita líquida menos as despesas lançadas em Despesas.</p>
+          </div>
+          <a
+            routerLink="/admin/financeiro/despesas"
+            class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >Lançar despesa</a
+          >
+        </div>
+        @if (resultado(); as r) {
+          <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Despesas no mês</p>
+              <p class="mt-2 text-2xl font-bold text-red-600">{{ valor(r.despesas_mes_centavos, 'BRL') }}</p>
+              <p class="mt-1 text-xs text-gray-500">{{ valor(r.fixo_mensal_centavos, 'BRL') }} em custo fixo</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Lucro no mês</p>
+              <p
+                class="mt-2 text-2xl font-bold"
+                [ngClass]="r.lucro_mes_centavos >= 0 ? 'text-green-600' : 'text-red-600'"
+              >{{ valor(r.lucro_mes_centavos, 'BRL') }}</p>
+              <p class="mt-1 text-xs text-gray-500">líquido menos despesas</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Despesas totais</p>
+              <p class="mt-2 text-2xl font-bold text-gray-900">{{ valor(r.despesas_total_centavos, 'BRL') }}</p>
+              <p class="mt-1 text-xs text-gray-500">{{ r.lancamentos }} lançamentos</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Lucro acumulado</p>
+              <p
+                class="mt-2 text-2xl font-bold"
+                [ngClass]="r.lucro_total_centavos >= 0 ? 'text-green-600' : 'text-red-600'"
+              >{{ valor(r.lucro_total_centavos, 'BRL') }}</p>
+              <p class="mt-1 text-xs text-gray-500">desde o início</p>
+            </div>
+          </div>
+        }
 
         <!-- Por plano -->
         @if (fin()!.por_plano.length > 0) {
@@ -259,6 +304,7 @@ export class AdminFinanceiroComponent implements OnInit {
   });
   readonly PAGE_SIZE = PAGE_SIZE;
   readonly ia = signal<AdminMetricasIa | null>(null);
+  readonly resultado = signal<AdminResultadoFinanceiro | null>(null);
   readonly janelaSel = signal<JanelaIaKey>('d30');
   readonly isLoading = signal(true);
 
@@ -299,10 +345,11 @@ export class AdminFinanceiroComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const [fin, pags, ia] = await Promise.all([
+    const [fin, pags, ia, resultado] = await Promise.all([
       this.admin.getFinanceiro(),
       this.admin.listarPagamentos(100),
       this.admin.getMetricasIa(),
+      this.admin.getResultadoFinanceiro(),
     ]);
     if (fin.ok) this.fin.set(fin.data);
     else this.toast.error('Erro ao carregar dados financeiros.');
@@ -311,6 +358,7 @@ export class AdminFinanceiroComponent implements OnInit {
       this.paginaPagamentos.set(0);
     }
     if (ia.ok) this.ia.set(ia.data);
+    if (resultado.ok) this.resultado.set(resultado.data);
     this.isLoading.set(false);
   }
 

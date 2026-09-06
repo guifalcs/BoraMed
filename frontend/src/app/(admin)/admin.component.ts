@@ -7,6 +7,7 @@ import {
   BookOpen,
   ChevronDown,
   DollarSign,
+  Receipt,
   FileText,
   GraduationCap,
   Headphones,
@@ -134,6 +135,7 @@ export class AdminComponent {
       children: [
         { label: 'Usuários', icon: Users, route: '/admin/usuarios' },
         { label: 'Financeiro', icon: DollarSign, route: '/admin/financeiro' },
+        { label: 'Despesas', icon: Receipt, route: '/admin/financeiro/despesas' },
         { label: 'Acessos', icon: Radar, route: '/admin/acessos' },
       ],
     },
