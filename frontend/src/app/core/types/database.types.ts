@@ -2534,6 +2534,10 @@ export type Database = {
       admin_get_financeiro: { Args: never; Returns: Json }
       admin_get_flashcards_stats: { Args: never; Returns: Json }
       admin_get_metricas_ia: { Args: never; Returns: Json }
+      admin_get_ranking_ia_usuarios: {
+        Args: { p_dias?: number; p_limit?: number }
+        Returns: Json
+      }
       admin_get_metricas_usuario: {
         Args: { p_ate?: string; p_desde?: string; p_user_id: string }
         Returns: Json

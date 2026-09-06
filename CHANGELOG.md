@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-06 | Feature | Consumo de IA por aluno no `/admin/ia`
+
+**O painel de IA já dizia quanto a Aurora custa. Agora diz de quem é o custo**
+
+- **Nova RPC `admin_get_ranking_ia_usuarios(p_dias, p_limit)`**: correções, tokens (prompt/resposta), custo em USD, falhas (`erro`/`sem_ia`), uso de hoje e primeira/última correção — por aluno, com janelas de 7/30/90 dias e "tudo" (`p_dias = 0`).
+- **Sem tabela nova.** A atribuição sai da própria auditoria de correção (`resposta_correcao → tentativa_resposta → tentativa.user_id`), que já guarda tokens e `custo_usd` reportados pelo provider. Uma tabela de uso paralela só criaria uma segunda versão do custo, com chance de divergir da primeira (ADR-037).
+- **Tela**: seção "Quem mais usa a IA" em `/admin/ia`, abaixo da configuração da Aurora. Totais do período no topo, tabela ordenável por custo (padrão), correções ou tokens, e a coluna "Hoje" comparada ao **cap diário do agente** — quem bateu o limite aparece destacado, que é o sinal prático de abuso ou de limite mal calibrado.
+- **Acesso fechado** no padrão do resto do admin: `SECURITY DEFINER` + `is_admin()`, `REVOKE` de `anon`/`PUBLIC`, `GRANT` só para `authenticated` (o guard interno é quem decide). Índice `resposta_correcao_criado_em_idx` para o recorte por data.
+- Verificado: `ng build` de produção OK e **837 unitários verdes** (6 novos em `admin-ia.component.spec.ts` — carga, ordenações, troca de janela, marcação de limite e falha isolada do ranking sem derrubar o form).
+- **Aplicado em produção** em 06/09 via MCP (`apply_migration`, versão `20260906001225`, mesmo caminho das duas últimas migrations). Conferido em prod: RPC responde com dados reais (6 alunos, 32 correções, US$ 0,0124 em 30 dias), aluno não-admin recebe `permission_denied`, `anon` sem `EXECUTE`, índice criado. `get_advisors` sem alerta novo além do `authenticated_security_definer_function_executable` que os outros 81 RPCs já têm.
+- `docs/architecture.md` (ADR-037) atualizado.
+
 ## 2026-09-04 | Feature | Monitoramento de acessos por IP
 
 **Estrutura para saber se uma assinatura está sendo usada por mais de uma pessoa — coleta, análise e tela. Nada bloqueia ninguém**
