@@ -308,6 +308,35 @@ export interface AdminMetricasIa {
   falhas: { erro: number; sem_ia: number };
 }
 
+/** Uma linha do ranking de consumo de IA por aluno (`admin_get_ranking_ia_usuarios`). */
+export interface AdminIaRankingUsuario {
+  user_id: string;
+  nome: string;
+  email: string | null;
+  avatar_url: string | null;
+  tipo_usuario: string | null;
+  correcoes: number;
+  erros: number;
+  sem_ia: number;
+  tokens_prompt: number;
+  tokens_resposta: number;
+  tokens_total: number;
+  custo_usd: number;
+  correcoes_hoje: number;
+  primeira_em: string | null;
+  ultima_em: string | null;
+}
+
+/** Quem mais consome IA numa janela de dias (0 = total histórico). */
+export interface AdminIaRanking {
+  dias: number;
+  total_usuarios: number;
+  total_correcoes: number;
+  total_tokens: number;
+  total_custo_usd: number;
+  usuarios: AdminIaRankingUsuario[];
+}
+
 /**
  * Comportamento NÃO-SECRETO de um agente de IA (tabela `ia_agente`), gerenciável
  * no painel /admin/ia. Modelo/conexão/chave NÃO vivem aqui — ficam em env/secrets
@@ -1003,6 +1032,16 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_metricas_ia');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: data as AdminMetricasIa };
+  }
+
+  /** Ranking de consumo de IA por aluno. `dias = 0` → total histórico. */
+  async getRankingIaUsuarios(dias = 30, limit = 50): Promise<ServiceResult<AdminIaRanking>> {
+    const { data, error } = await this.supabase.rpc('admin_get_ranking_ia_usuarios', {
+      p_dias: dias,
+      p_limit: limit,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminIaRanking };
   }
 
   // ---- Agentes de IA (Aurora) ----

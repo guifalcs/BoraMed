@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-06 | Feature | Consumo de IA por aluno no `/admin/ia`
+
+**O painel de IA já dizia quanto a Aurora custa. Agora diz de quem é o custo**
+
+- **Nova RPC `admin_get_ranking_ia_usuarios(p_dias, p_limit)`**: correções, tokens (prompt/resposta), custo em USD, falhas (`erro`/`sem_ia`), uso de hoje e primeira/última correção — por aluno, com janelas de 7/30/90 dias e "tudo" (`p_dias = 0`).
+- **Sem tabela nova.** A atribuição sai da própria auditoria de correção (`resposta_correcao → tentativa_resposta → tentativa.user_id`), que já guarda tokens e `custo_usd` reportados pelo provider. Uma tabela de uso paralela só criaria uma segunda versão do custo, com chance de divergir da primeira (ADR-037).
+- **Tela**: seção "Quem mais usa a IA" em `/admin/ia`, abaixo da configuração da Aurora. Totais do período no topo, tabela ordenável por custo (padrão), correções ou tokens, e a coluna "Hoje" comparada ao **cap diário do agente** — quem bateu o limite aparece destacado, que é o sinal prático de abuso ou de limite mal calibrado.
+- **Acesso fechado** no padrão do resto do admin: `SECURITY DEFINER` + `is_admin()`, `REVOKE` de `anon`/`PUBLIC`, `GRANT` só para `authenticated` (o guard interno é quem decide). Índice `resposta_correcao_criado_em_idx` para o recorte por data.
+- Verificado: `ng build` de produção OK e **837 unitários verdes** (6 novos em `admin-ia.component.spec.ts` — carga, ordenações, troca de janela, marcação de limite e falha isolada do ranking sem derrubar o form).
+- **Aplicado em produção** em 06/09 via MCP (`apply_migration`, versão `20260906001225`, mesmo caminho das duas últimas migrations). Conferido em prod: RPC responde com dados reais (6 alunos, 32 correções, US$ 0,0124 em 30 dias), aluno não-admin recebe `permission_denied`, `anon` sem `EXECUTE`, índice criado. `get_advisors` sem alerta novo além do `authenticated_security_definer_function_executable` que os outros 81 RPCs já têm.
+- `docs/architecture.md` (ADR-037) atualizado.
+
 ## 2026-09-06 | Feature | Despesas no admin — o financeiro passa a mostrar lucro
 
 **Lançamento manual de gastos e o cruzamento com a receita líquida, que é o que responde "sobrou quanto?"**
@@ -15,7 +27,7 @@
 - Verificado: migration aplicada e exercitada em Postgres 16 local com stubs de `profiles`/`pagamento`/`is_admin` — RPC conferida contra dados sintéticos (série mensal, categoria, fixo mensal, lucro do mês e acumulado), CHECK de valor > 0 rejeitando zero, trigger de update preservando `criado_em`, e guard devolvendo `permission_denied` com `is_admin()` falso. `tsc` limpo, build de produção OK e **832 unitários verdes**.
 - **Aplicada em produção** em 06/09, banco antes do frontend: tabela, policies, trigger e RPC criados no ref de prod com autorização explícita do Guilherme, e a migration registrada em `supabase_migrations.schema_migrations` como `20260906120000`. Conferido no banco real — RPC devolvendo a série dos 3 últimos meses com a receita líquida verdadeira e despesas zeradas (nada lançado ainda), e o guard devolvendo `permission_denied` para sessão não-admin. `get_advisors` (security) não trouxe nenhum alerta citando `despesa`.
 - **Divergência repo↔prod encontrada no caminho** (não tratada aqui, mas trava um futuro `db push`): prod tem `20260906001225_admin_ranking_ia_usuarios` aplicada direto, sem arquivo no repo, e as duas migrations do Riquelme estão registradas com versões diferentes das commitadas (`20260905235528`/`20260905235701` em prod × `20260905120000`/`20260905130000` no repo).
-- `docs/architecture.md` (ADR-037) e `docs/business-rules.md` atualizados.
+- `docs/architecture.md` (ADR-038) e `docs/business-rules.md` atualizados.
 
 ## 2026-09-04 | Feature | Monitoramento de acessos por IP
 

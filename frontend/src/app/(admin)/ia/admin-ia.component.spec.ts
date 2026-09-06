@@ -1,7 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AdminIaComponent } from './admin-ia.component';
-import { AdminService, AdminIaAgente } from '../../core/services/admin.service';
+import {
+  AdminService,
+  AdminIaAgente,
+  AdminIaRanking,
+  AdminIaRankingUsuario,
+} from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 /** Template blanqueado — exercitamos só a lógica da classe (signals/computed). */
@@ -22,6 +27,39 @@ const AURORA: AdminIaAgente = {
   atualizado_em: '2026-07-09T12:00:00Z',
 };
 
+function usuarioRanking(over: Partial<AdminIaRankingUsuario>): AdminIaRankingUsuario {
+  return {
+    user_id: 'u-1',
+    nome: 'Aluno',
+    email: 'aluno@ex.com',
+    avatar_url: null,
+    tipo_usuario: 'aluno',
+    correcoes: 0,
+    erros: 0,
+    sem_ia: 0,
+    tokens_prompt: 0,
+    tokens_resposta: 0,
+    tokens_total: 0,
+    custo_usd: 0,
+    correcoes_hoje: 0,
+    primeira_em: null,
+    ultima_em: null,
+    ...over,
+  };
+}
+
+const RANKING: AdminIaRanking = {
+  dias: 30,
+  total_usuarios: 2,
+  total_correcoes: 30,
+  total_tokens: 3000,
+  total_custo_usd: 0.3,
+  usuarios: [
+    usuarioRanking({ user_id: 'u-1', nome: 'Ana', correcoes: 10, tokens_total: 2000, custo_usd: 0.1, correcoes_hoje: 200 }),
+    usuarioRanking({ user_id: 'u-2', nome: 'Bruno', correcoes: 20, tokens_total: 1000, custo_usd: 0.2, correcoes_hoje: 3 }),
+  ],
+};
+
 interface CompApi {
   ngOnInit(): Promise<void>;
   form(): {
@@ -35,12 +73,20 @@ interface CompApi {
   marcarSujo(): void;
   salvar(): Promise<void>;
   selecionadoId(): string | null;
+  ranking(): AdminIaRanking | null;
+  rankingOrdenado(): AdminIaRankingUsuario[];
+  rankingDias(): number;
+  ordenarPor(chave: 'custo' | 'correcoes' | 'tokens'): void;
+  mudarJanela(dias: number): Promise<void>;
+  atingiuLimite(u: AdminIaRankingUsuario): boolean;
+  erroRanking(): string | null;
 }
 
 async function setup(agente: AdminIaAgente = AURORA) {
   const admin = {
     listarIaAgentes: vi.fn().mockResolvedValue({ ok: true, data: [agente] }),
     salvarIaAgente: vi.fn().mockResolvedValue({ ok: true, data: { ...agente, limite_diario: 150 } }),
+    getRankingIaUsuarios: vi.fn().mockResolvedValue({ ok: true, data: RANKING }),
   };
   const toast = { success: vi.fn(), error: vi.fn(), warning: vi.fn() };
 
@@ -106,5 +152,53 @@ describe('AdminIaComponent', () => {
     await comp.salvar();
 
     expect(admin.salvarIaAgente).not.toHaveBeenCalled();
+  });
+
+  it('carrega o ranking de consumo por aluno em 30 dias e ordena por custo', async () => {
+    const { comp, admin } = await setup();
+    await comp.ngOnInit();
+
+    expect(admin.getRankingIaUsuarios).toHaveBeenCalledWith(30, 50);
+    expect(comp.ranking()?.total_usuarios).toBe(2);
+    expect(comp.rankingOrdenado().map((u) => u.user_id)).toEqual(['u-2', 'u-1']);
+  });
+
+  it('ordenação alternativa por correções e por tokens', async () => {
+    const { comp } = await setup();
+    await comp.ngOnInit();
+
+    comp.ordenarPor('correcoes');
+    expect(comp.rankingOrdenado()[0].user_id).toBe('u-2');
+
+    comp.ordenarPor('tokens');
+    expect(comp.rankingOrdenado()[0].user_id).toBe('u-1');
+  });
+
+  it('troca de janela refaz a consulta com os dias novos', async () => {
+    const { comp, admin } = await setup();
+    await comp.ngOnInit();
+
+    await comp.mudarJanela(0);
+
+    expect(comp.rankingDias()).toBe(0);
+    expect(admin.getRankingIaUsuarios).toHaveBeenLastCalledWith(0, 50);
+  });
+
+  it('marca quem bateu o limite diário do agente', async () => {
+    const { comp } = await setup();
+    await comp.ngOnInit();
+
+    const [ana, bruno] = RANKING.usuarios;
+    expect(comp.atingiuLimite(ana)).toBe(true);
+    expect(comp.atingiuLimite(bruno)).toBe(false);
+  });
+
+  it('falha no ranking não derruba a tela de configuração', async () => {
+    const { comp, admin } = await setup();
+    admin.getRankingIaUsuarios.mockResolvedValueOnce({ ok: false, error: 'permission_denied' });
+    await comp.ngOnInit();
+
+    expect(comp.erroRanking()).toContain('consumo');
+    expect(comp.form()?.limite_diario).toBe(200);
   });
 });

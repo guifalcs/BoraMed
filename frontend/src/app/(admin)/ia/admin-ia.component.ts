@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Info, Sparkles } from 'lucide-angular';
+import { Info, Sparkles, Users } from 'lucide-angular';
 import {
   AdminService,
   AdminIaAgente,
   AdminIaAgentePatch,
+  AdminIaRanking,
+  AdminIaRankingUsuario,
 } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
@@ -22,6 +24,16 @@ interface FormState {
   regras_correcao: string;
   regras_extras: string;
 }
+
+/** Janelas do ranking de consumo (0 = total histórico). */
+const JANELAS_RANKING = [
+  { dias: 7, label: '7 dias' },
+  { dias: 30, label: '30 dias' },
+  { dias: 90, label: '90 dias' },
+  { dias: 0, label: 'Tudo' },
+] as const;
+
+type OrdemRanking = 'custo' | 'correcoes' | 'tokens';
 
 function formFrom(a: AdminIaAgente): FormState {
   return {
@@ -256,6 +268,115 @@ function formFrom(a: AdminIaAgente): FormState {
           </div>
         }
       }
+
+      <!-- Consumo por aluno -->
+      <section class="mt-10 rounded-xl border border-gray-200 bg-white p-5">
+        <header class="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-start gap-3">
+            <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <app-ui-icon [icon]="users" [size]="16" />
+            </span>
+            <div>
+              <h2 class="text-lg font-semibold text-gray-900">Quem mais usa a IA</h2>
+              <p class="text-xs text-gray-500">
+                Correções, tokens e custo real por aluno. Só entram correções concluídas
+                (as com erro aparecem na coluna de falhas).
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            @for (j of janelasRanking; track j.dias) {
+              <button
+                type="button"
+                (click)="mudarJanela(j.dias)"
+                class="rounded-full border px-3 py-1 text-xs font-medium transition"
+                [class]="j.dias === rankingDias()
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+              >
+                {{ j.label }}
+              </button>
+            }
+          </div>
+        </header>
+
+        @if (isLoadingRanking()) {
+          <p class="py-10 text-center text-sm text-gray-500">Carregando consumo…</p>
+        } @else if (erroRanking()) {
+          <p class="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-700">
+            {{ erroRanking() }}
+          </p>
+        } @else if (rankingOrdenado().length === 0) {
+          <p class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+            Nenhuma correção por IA no período.
+          </p>
+        } @else {
+          <div class="mb-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-lg bg-gray-50 px-4 py-3">
+              <span class="block text-xs text-gray-500">Alunos usando IA</span>
+              <strong class="text-lg text-gray-900">{{ num(ranking()!.total_usuarios) }}</strong>
+            </div>
+            <div class="rounded-lg bg-gray-50 px-4 py-3">
+              <span class="block text-xs text-gray-500">Correções</span>
+              <strong class="text-lg text-gray-900">{{ num(ranking()!.total_correcoes) }}</strong>
+            </div>
+            <div class="rounded-lg bg-gray-50 px-4 py-3">
+              <span class="block text-xs text-gray-500">Custo no período</span>
+              <strong class="text-lg text-gray-900">{{ usd(ranking()!.total_custo_usd) }}</strong>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[720px] text-left text-sm">
+              <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th class="py-2 pr-3 font-medium">#</th>
+                  <th class="py-2 pr-3 font-medium">Aluno</th>
+                  <th class="py-2 pr-3 font-medium">
+                    <button type="button" (click)="ordenarPor('correcoes')" class="hover:text-gray-800"
+                      [class.text-indigo-600]="ordem() === 'correcoes'">Correções</button>
+                  </th>
+                  <th class="py-2 pr-3 font-medium">Hoje</th>
+                  <th class="py-2 pr-3 font-medium">
+                    <button type="button" (click)="ordenarPor('tokens')" class="hover:text-gray-800"
+                      [class.text-indigo-600]="ordem() === 'tokens'">Tokens</button>
+                  </th>
+                  <th class="py-2 pr-3 font-medium">
+                    <button type="button" (click)="ordenarPor('custo')" class="hover:text-gray-800"
+                      [class.text-indigo-600]="ordem() === 'custo'">Custo (USD)</button>
+                  </th>
+                  <th class="py-2 pr-3 font-medium">Falhas</th>
+                  <th class="py-2 font-medium">Último uso</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                @for (u of rankingOrdenado(); track u.user_id; let i = $index) {
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-2 pr-3 text-xs text-gray-400">{{ i + 1 }}</td>
+                    <td class="py-2 pr-3">
+                      <span class="block font-medium text-gray-900">{{ u.nome }}</span>
+                      <span class="block text-xs text-gray-500">{{ u.email }}</span>
+                    </td>
+                    <td class="py-2 pr-3 tabular-nums text-gray-900">{{ num(u.correcoes) }}</td>
+                    <td class="py-2 pr-3 tabular-nums"
+                      [class]="atingiuLimite(u) ? 'font-semibold text-amber-600' : 'text-gray-500'">
+                      {{ num(u.correcoes_hoje) }}@if (limiteDiario(); as l) {<span class="text-xs text-gray-400">/{{ l }}</span>}
+                    </td>
+                    <td class="py-2 pr-3 tabular-nums text-gray-500">{{ num(u.tokens_total) }}</td>
+                    <td class="py-2 pr-3 tabular-nums text-gray-900">{{ usd(u.custo_usd) }}</td>
+                    <td class="py-2 pr-3 tabular-nums text-gray-500">{{ num(u.erros) }}</td>
+                    <td class="py-2 text-xs text-gray-500">{{ dataCurta(u.ultima_em) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="mt-3 text-xs text-gray-400">
+            Custo em USD reportado pelo provider por chamada. Correções antigas sem custo
+            informado entram como zero.
+          </p>
+        }
+      </section>
     </div>
   `,
 })
@@ -265,6 +386,8 @@ export class AdminIaComponent implements OnInit {
 
   protected readonly sparkles = Sparkles;
   protected readonly info = Info;
+  protected readonly users = Users;
+  protected readonly janelasRanking = JANELAS_RANKING;
 
   protected readonly isLoading = signal(true);
   protected readonly isSaving = signal(false);
@@ -273,6 +396,26 @@ export class AdminIaComponent implements OnInit {
   protected readonly selecionadoId = signal<string | null>(null);
   protected readonly form = signal<FormState | null>(null);
   protected readonly sujo = signal(false);
+
+  // ---- Consumo por aluno ----
+  protected readonly ranking = signal<AdminIaRanking | null>(null);
+  protected readonly rankingDias = signal<number>(30);
+  protected readonly isLoadingRanking = signal(true);
+  protected readonly erroRanking = signal<string | null>(null);
+  protected readonly ordem = signal<OrdemRanking>('custo');
+
+  protected readonly rankingOrdenado = computed<AdminIaRankingUsuario[]>(() => {
+    const lista = [...(this.ranking()?.usuarios ?? [])];
+    const chave = this.ordem();
+    return lista.sort((a, b) => {
+      if (chave === 'correcoes') return b.correcoes - a.correcoes;
+      if (chave === 'tokens') return b.tokens_total - a.tokens_total;
+      return b.custo_usd - a.custo_usd;
+    });
+  });
+
+  /** Limite diário do agente selecionado — contextualiza a coluna "Hoje". */
+  protected readonly limiteDiario = computed(() => this.selecionado()?.limite_diario ?? null);
 
   protected readonly selecionado = computed(() =>
     this.agentes().find((a) => a.id === this.selecionadoId()) ?? null,
@@ -295,7 +438,7 @@ export class AdminIaComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const res = await this.admin.listarIaAgentes();
+    const [res] = await Promise.all([this.admin.listarIaAgentes(), this.carregarRanking()]);
     this.isLoading.set(false);
     if (!res.ok) {
       this.erroCarregar.set(res.error);
@@ -303,6 +446,52 @@ export class AdminIaComponent implements OnInit {
     }
     this.agentes.set(res.data);
     if (res.data.length > 0) this.selecionar(res.data[0].id);
+  }
+
+  protected async carregarRanking(): Promise<void> {
+    this.isLoadingRanking.set(true);
+    this.erroRanking.set(null);
+    const res = await this.admin.getRankingIaUsuarios(this.rankingDias(), 50);
+    this.isLoadingRanking.set(false);
+    if (!res.ok) {
+      this.erroRanking.set('Não foi possível carregar o consumo por aluno.');
+      return;
+    }
+    this.ranking.set(res.data);
+  }
+
+  protected async mudarJanela(dias: number): Promise<void> {
+    if (dias === this.rankingDias()) return;
+    this.rankingDias.set(dias);
+    await this.carregarRanking();
+  }
+
+  protected ordenarPor(chave: OrdemRanking): void {
+    this.ordem.set(chave);
+  }
+
+  /** Aluno já bateu (ou passou) o cap diário do agente hoje. */
+  protected atingiuLimite(u: AdminIaRankingUsuario): boolean {
+    const limite = this.limiteDiario();
+    return limite !== null && u.correcoes_hoje >= limite;
+  }
+
+  protected num(v: number): string {
+    return (v ?? 0).toLocaleString('pt-BR');
+  }
+
+  protected usd(v: number): string {
+    return `$${(v ?? 0).toFixed(4)}`;
+  }
+
+  protected dataCurta(iso: string | null): string {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   protected selecionar(id: string): void {
