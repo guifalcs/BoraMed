@@ -9,6 +9,7 @@
 - **Tela**: seção "Quem mais usa a IA" em `/admin/ia`, abaixo da configuração da Aurora. Totais do período no topo, tabela ordenável por custo (padrão), correções ou tokens, e a coluna "Hoje" comparada ao **cap diário do agente** — quem bateu o limite aparece destacado, que é o sinal prático de abuso ou de limite mal calibrado.
 - **Acesso fechado** no padrão do resto do admin: `SECURITY DEFINER` + `is_admin()`, `REVOKE` de `anon`/`PUBLIC`, `GRANT` só para `authenticated` (o guard interno é quem decide). Índice `resposta_correcao_criado_em_idx` para o recorte por data.
 - Verificado: `ng build` de produção OK e **837 unitários verdes** (6 novos em `admin-ia.component.spec.ts` — carga, ordenações, troca de janela, marcação de limite e falha isolada do ranking sem derrubar o form).
+- **Aplicado em produção** em 06/09 via MCP (`apply_migration`, versão `20260906001225`, mesmo caminho das duas últimas migrations). Conferido em prod: RPC responde com dados reais (6 alunos, 32 correções, US$ 0,0124 em 30 dias), aluno não-admin recebe `permission_denied`, `anon` sem `EXECUTE`, índice criado. `get_advisors` sem alerta novo além do `authenticated_security_definer_function_executable` que os outros 81 RPCs já têm.
 - `docs/architecture.md` (ADR-037) atualizado.
 
 ## 2026-09-04 | Feature | Monitoramento de acessos por IP
