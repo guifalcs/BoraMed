@@ -32,14 +32,29 @@ export const SEGMENTOS_ACESSO: readonly { valor: SegmentoAcesso; label: string; 
   { valor: 'avancado', label: 'Somente Avançado', ajuda: 'Quem já tem tudo liberado.' },
 ];
 
-/** Payload da RPC `get_status_acesso()`: nível + contador em uma só chamada. */
+/**
+ * Payload da RPC `get_status_acesso()`: nível + contadores em uma só chamada.
+ *
+ * O teto do gratuito é dividido em dois baldes independentes — treino pronto e
+ * simulado montado —, então o total sozinho não diz se um caminho específico
+ * ainda está aberto. Ver migration 20260908120000.
+ */
 export interface StatusAcesso {
   nivel: NivelAcesso;
+  /** Teto total do gratuito: soma dos dois baldes. */
   tentativasLimite: number;
   /** null quando o nível não é gratuito (sem teto). */
   tentativasRestantes: number | null;
   /** null quando o nível não é gratuito (sem teto). */
   tentativasUsadas: number | null;
+  /** Balde dos treinos prontos (`iniciar_tentativa`). */
+  nacionalLimite: number;
+  /** null quando o nível não é gratuito (sem teto). */
+  nacionalRestantes: number | null;
+  /** Balde do simulado montado (`gerar_simulado_personalizado`). */
+  montadoLimite: number;
+  /** null quando o nível não é gratuito (sem teto). */
+  montadoRestantes: number | null;
 }
 
 export interface Plano {

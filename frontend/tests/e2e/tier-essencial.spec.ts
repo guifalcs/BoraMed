@@ -162,7 +162,9 @@ test.describe('Landing — seção de planos (sem autenticação)', () => {
 
     await expect(pricing.headingGratis).toBeVisible({ timeout: 10_000 });
     const cardGratis = pricing.cards.filter({ hasText: 'Grátis' }).first();
-    await expect(cardGratis).toContainText('3 simulados');
+    // Desde 20260908120000 o teto de 3 é anunciado quebrado: 2 prontos + 1 montado.
+    await expect(cardGratis).toContainText('2 treinos no modelo das avaliações nacionais');
+    await expect(cardGratis).toContainText('1 simulado montado por você');
     await expect(cardGratis).toContainText('Sem cartão de crédito');
   });
 });
@@ -205,5 +207,58 @@ test.describe('Plano gratuito — teto de tentativas no dashboard', () => {
   test('/dashboard/materiais redireciona para /planos com a origem no link', async ({ page }) => {
     await setupAndNavigate(page, '/dashboard/materiais', { nivel: 'gratuito' });
     await expect(page).toHaveURL(/\/planos\?origem=materiais/, { timeout: 10_000 });
+  });
+
+  test('o banner quebra o saldo nos dois baldes', async ({ page }) => {
+    await setupAndNavigate(page, '/dashboard/simulados', { nivel: 'gratuito' });
+
+    await expect(
+      page.getByText('Ainda dá para fazer 2 treinos nacionais e 1 simulado montado por você.'),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+// O gratuito monta simulado; o Essencial (pago) não. É inversão deliberada da
+// escada — o que separa os dois é o teto de tentativas, não o catálogo.
+test.describe('Plano gratuito — montar simulado (crédito único)', () => {
+  test('com crédito, o card leva direto para a tela de montar', async ({ page }) => {
+    const simulados = new SimuladosPage(page);
+    await setupAndNavigate(page, '/dashboard/simulados', { nivel: 'gratuito' });
+
+    await expect(simulados.montarSimuladoCard).toBeVisible({ timeout: 10_000 });
+    await expect(simulados.montarSimuladoUpgradeLabel).toHaveCount(0);
+    await expect(simulados.montarSimuladoCard).toContainText('1 grátis');
+
+    await simulados.montarSimuladoCard.click();
+    await expect(page).toHaveURL(/\/dashboard\/simulados\/montar$/, { timeout: 10_000 });
+  });
+
+  test('/dashboard/simulados/montar NÃO redireciona o gratuito', async ({ page }) => {
+    await setupAndNavigate(page, '/dashboard/simulados/montar', { nivel: 'gratuito' });
+    await expect(page).toHaveURL(/\/dashboard\/simulados\/montar$/, { timeout: 10_000 });
+  });
+
+  test('sem crédito, o card vira CTA de planos sem sumir da tela', async ({ page }) => {
+    const simulados = new SimuladosPage(page);
+    await setupAndNavigate(page, '/dashboard/simulados', {
+      nivel: 'gratuito',
+      tentativasRestantes: 2,
+      nacionalRestantes: 2,
+      montadoRestantes: 0,
+    });
+
+    await expect(simulados.montarSimuladoCard).toBeVisible({ timeout: 10_000 });
+    await expect(simulados.montarSimuladoCard).toContainText('Você já montou seu simulado grátis');
+
+    await simulados.montarSimuladoCard.click();
+    await expect(page).toHaveURL(/\/planos\?origem=limite-tentativas/, { timeout: 10_000 });
+  });
+
+  test('a tela de montar avisa que o simulado grátis é um só', async ({ page }) => {
+    await setupAndNavigate(page, '/dashboard/simulados/montar', { nivel: 'gratuito' });
+
+    await expect(page.getByText('Seu simulado grátis')).toBeVisible({ timeout: 10_000 });
+    // Impressão é benefício de assinante: o botão nem aparece.
+    await expect(page.getByRole('button', { name: 'Apenas imprimir' })).toHaveCount(0);
   });
 });

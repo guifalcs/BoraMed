@@ -62,14 +62,16 @@ const METODO_PAGAMENTO_LABEL: Record<string, string> = {
             <div class="mt-4">
               <app-limite-tentativas-banner
                 [restantes]="tentativasRestantes()!"
+                [nacionalRestantes]="nacionalRestantes()"
+                [montadoRestantes]="montadoRestantes()"
                 [comCta]="false"
               />
             </div>
           }
 
           <p class="mt-4 text-sm text-gray-600">
-            No plano gratuito você faz treinos nacionais com limite. Materiais, flashcards e
-            simulados por tema ficam nos planos pagos.
+            No plano gratuito você faz 2 treinos nacionais e monta 1 simulado seu. Depois disso,
+            os treinos sem limite, os materiais e os flashcards ficam nos planos pagos.
           </p>
 
           <button
@@ -283,6 +285,8 @@ export class MinhaAssinaturaComponent implements OnInit {
 
   readonly assinatura = this.subscription.assinatura;
   readonly tentativasRestantes = this.subscription.tentativasRestantes;
+  readonly nacionalRestantes = this.subscription.nacionalRestantes;
+  readonly montadoRestantes = this.subscription.montadoRestantes;
   readonly pagamentos = signal<Pagamento[]>([]);
   readonly loading = signal(true);
   readonly processando = signal(false);

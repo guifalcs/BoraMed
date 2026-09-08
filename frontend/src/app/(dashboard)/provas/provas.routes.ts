@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { lazyTierAvancadoGuard } from '../../core/guards/lazy-route-guards';
+import { lazyMontarSimuladoGuard } from '../../core/guards/lazy-route-guards';
 
 export const provasRoutes: Routes = [
   {
@@ -19,7 +19,9 @@ export const provasRoutes: Routes = [
   },
   {
     path: 'montar',
-    canActivate: [lazyTierAvancadoGuard],
+    // Só o Essencial é barrado aqui — o gratuito monta gastando o crédito
+    // único. Ver montar-simulado.guard.ts.
+    canActivate: [lazyMontarSimuladoGuard],
     loadComponent: () =>
       import('./montar-simulado/montar-simulado.component').then((m) => m.MontarSimuladoComponent),
   },

@@ -613,6 +613,9 @@ export class TentativaService {
 
       if (error) {
         if (isTierUpgradeError(error)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
+        // Desde 20260908120000 o gratuito monta, e o teto do balde de montado
+        // sai por P0016 — antes esta RPC só recusava com P0009/P0015.
+        if (isFreeLimitError(error)) return { ok: false, error: FREE_LIMIT_REACHED };
         const msg = error.message || 'Não foi possível gerar o simulado.';
         return { ok: false, error: msg };
       }
@@ -627,6 +630,7 @@ export class TentativaService {
       return { ok: true, data: result };
     } catch (e: unknown) {
       if (isTierUpgradeError(e)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
+      if (isFreeLimitError(e)) return { ok: false, error: FREE_LIMIT_REACHED };
       const msg = e instanceof Error ? e.message : 'Não foi possível gerar o simulado.';
       return { ok: false, error: msg };
     }

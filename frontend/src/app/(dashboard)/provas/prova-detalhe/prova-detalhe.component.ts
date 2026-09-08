@@ -65,16 +65,21 @@ export class ProvaDetalheComponent implements OnInit {
   // Contador do plano gratuito. null = nível pago ou ainda desconhecido, e nos
   // dois casos nada de free tier aparece na tela.
   protected readonly tentativasRestantes = signal<number | null>(null);
+  // Esta tela inicia uma prova PRONTA, então quem manda é o balde nacional, não
+  // o total: com 0 nacionais e 1 montado o total ainda é 1, mas `iniciar` aqui
+  // seria recusado com P0016.
+  protected readonly nacionalRestantes = signal<number | null>(null);
+  protected readonly montadoRestantes = signal<number | null>(null);
   protected readonly gratuito = signal(false);
 
   /** Sem saldo, o botão vira o próprio CTA de assinatura. */
   protected readonly semSaldo = computed(
-    () => this.gratuito() && (this.tentativasRestantes() ?? 0) <= 0,
+    () => this.gratuito() && (this.nacionalRestantes() ?? 0) <= 0,
   );
 
   protected readonly labelIniciar = computed(() => {
     if (this.semSaldo()) return 'Assinar para continuar';
-    const restantes = this.tentativasRestantes();
+    const restantes = this.nacionalRestantes();
     if (this.gratuito() && restantes !== null) {
       return restantes === 1 ? 'Iniciar (último grátis)' : `Iniciar (${restantes} grátis)`;
     }
@@ -107,6 +112,8 @@ export class ProvaDetalheComponent implements OnInit {
     const status = await this.subscription.statusAcessoServidor();
     this.gratuito.set(status.nivel === 'gratuito');
     this.tentativasRestantes.set(status.tentativasRestantes);
+    this.nacionalRestantes.set(status.nacionalRestantes);
+    this.montadoRestantes.set(status.montadoRestantes);
 
     this.isLoading.set(false);
   }
@@ -139,7 +146,7 @@ export class ProvaDetalheComponent implements OnInit {
     // O contador em cache pode ter ficado para trás (outra aba, outro
     // dispositivo): se o servidor recusar, o paywall é a resposta certa.
     if (result.error === FREE_LIMIT_REACHED) {
-      this.tentativasRestantes.set(0);
+      this.nacionalRestantes.set(0);
       this.paywall.abrir('limite-tentativas');
       return;
     }

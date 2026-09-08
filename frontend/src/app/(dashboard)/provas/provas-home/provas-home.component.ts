@@ -39,26 +39,48 @@ export class ProvasHomeComponent implements OnInit {
   // e nesse estado nada é exibido como bloqueado (evita flash para assinante).
   private readonly nivel = signal<NivelAcesso | null>(null);
   private readonly restantes = signal<number | null>(null);
+  private readonly montadoRestantes = signal<number | null>(null);
+  private readonly nacRestantes = signal<number | null>(null);
 
-  /** Montar simulado é exclusivo do Avançado: bloqueia gratuito e essencial. */
-  protected readonly bloqueado = computed(() => {
-    const nivel = this.nivel();
-    return nivel !== null && nivel !== 'avancado';
-  });
+  /**
+   * Montar simulado agora é o único recurso que o gratuito tem e o Essencial
+   * não: o grátis monta uma vez, o Essencial não monta nunca. Por isso o card
+   * bloqueia SÓ o essencial, e não "todo mundo que não é avançado".
+   */
+  protected readonly bloqueado = computed(() => this.nivel() === 'essencial');
 
   protected readonly gratuito = computed(() => this.nivel() === 'gratuito');
   protected readonly tentativasRestantes = this.restantes.asReadonly();
+  protected readonly nacionalRestantes = this.nacRestantes.asReadonly();
+
+  /** Créditos de simulado montado do gratuito. null = sem teto (quem paga). */
+  protected readonly montadoDisponivel = computed(() => this.montadoRestantes());
+
+  /** Gratuito que já gastou a bala de prata: entra na tela, mas já sabe disso. */
+  protected readonly montadoEsgotado = computed(
+    () => this.gratuito() && this.montadoRestantes() === 0,
+  );
+
+  /** Selo do card para o gratuito, com o saldo do balde de montado. */
+  protected readonly montadoSelo = computed(() => {
+    if (!this.gratuito()) return null;
+    const restantes = this.montadoRestantes();
+    if (restantes === null) return null;
+    return restantes > 0 ? `${restantes} grátis` : 'Sem saldo';
+  });
 
   async ngOnInit(): Promise<void> {
     const status = await this.subscription.statusAcessoServidor();
     this.nivel.set(status.nivel);
     this.restantes.set(status.tentativasRestantes);
+    this.montadoRestantes.set(status.montadoRestantes);
+    this.nacRestantes.set(status.nacionalRestantes);
   }
 
   protected readonly montarSimuladoCardClass = computed(() => {
     const base =
       'group flex flex-col items-start gap-4 rounded-xl border border-l-4 bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:p-9';
-    if (this.bloqueado()) {
+    if (this.bloqueado() || this.montadoEsgotado()) {
       return `${base} opacity-70 border-[var(--color-border)] border-l-gray-300 hover:border-l-gray-400 focus-visible:ring-gray-400`;
     }
     return `${base} border-[var(--color-border)] border-l-emerald-500 hover:border-emerald-200 hover:border-l-emerald-500 focus-visible:ring-emerald-500`;
@@ -66,7 +88,9 @@ export class ProvasHomeComponent implements OnInit {
 
   protected readonly montarSimuladoIconWrapperClass = computed(() => {
     const base = 'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl';
-    return this.bloqueado() ? `${base} bg-gray-100 text-gray-500` : `${base} bg-emerald-50 text-emerald-700`;
+    return this.bloqueado() || this.montadoEsgotado()
+      ? `${base} bg-gray-100 text-gray-500`
+      : `${base} bg-emerald-50 text-emerald-700`;
   });
 
   protected readonly rotaTentativaAtiva = computed(() => {

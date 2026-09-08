@@ -56,9 +56,19 @@ export class SubscriptionService {
   /** Nível de acesso para uso de UI. `null` = ainda desconhecido. */
   readonly nivelAcesso = computed<NivelAcesso | null>(() => this._statusAcesso()?.nivel ?? null);
 
-  /** Tentativas gratuitas restantes. `null` = ilimitado ou ainda desconhecido. */
+  /** Tentativas gratuitas restantes (total). `null` = ilimitado ou ainda desconhecido. */
   readonly tentativasRestantes = computed<number | null>(
     () => this._statusAcesso()?.tentativasRestantes ?? null,
+  );
+
+  /** Saldo do balde de treinos prontos. `null` = ilimitado ou desconhecido. */
+  readonly nacionalRestantes = computed<number | null>(
+    () => this._statusAcesso()?.nacionalRestantes ?? null,
+  );
+
+  /** Saldo do balde de simulado montado. `null` = ilimitado ou desconhecido. */
+  readonly montadoRestantes = computed<number | null>(
+    () => this._statusAcesso()?.montadoRestantes ?? null,
   );
 
   /** Só o plano gratuito tem teto de tentativas e recursos bloqueados. */
@@ -218,6 +228,10 @@ export class SubscriptionService {
     tentativasLimite: 0,
     tentativasRestantes: 0,
     tentativasUsadas: 0,
+    nacionalLimite: 0,
+    nacionalRestantes: 0,
+    montadoLimite: 0,
+    montadoRestantes: 0,
   };
 
   private static parseStatus(data: unknown): StatusAcesso {
@@ -225,9 +239,13 @@ export class SubscriptionService {
     const nivel = r['nivel'];
     return {
       nivel: nivel === 'essencial' || nivel === 'avancado' ? nivel : 'gratuito',
-      tentativasLimite: typeof r['tentativas_limite'] === 'number' ? r['tentativas_limite'] : 0,
-      tentativasRestantes: typeof r['tentativas_restantes'] === 'number' ? r['tentativas_restantes'] : null,
-      tentativasUsadas: typeof r['tentativas_usadas'] === 'number' ? r['tentativas_usadas'] : null,
+      tentativasLimite: numeroOuZero(r['tentativas_limite']),
+      tentativasRestantes: numeroOuNulo(r['tentativas_restantes']),
+      tentativasUsadas: numeroOuNulo(r['tentativas_usadas']),
+      nacionalLimite: numeroOuZero(r['nacional_limite']),
+      nacionalRestantes: numeroOuNulo(r['nacional_restantes']),
+      montadoLimite: numeroOuZero(r['montado_limite']),
+      montadoRestantes: numeroOuNulo(r['montado_restantes']),
     };
   }
 
@@ -338,4 +356,14 @@ export class SubscriptionService {
     await this.fetchAssinatura(this.auth.user()?.id ?? '');
     return { ok: true };
   }
+}
+
+/** Campo numérico obrigatório do payload; ausência vira 0 (sem saldo). */
+function numeroOuZero(valor: unknown): number {
+  return typeof valor === 'number' ? valor : 0;
+}
+
+/** Campo numérico que o servidor devolve NULL para quem não tem teto. */
+function numeroOuNulo(valor: unknown): number | null {
+  return typeof valor === 'number' ? valor : null;
 }

@@ -12,15 +12,20 @@
 export const TIER_UPGRADE_REQUIRED = 'tier_upgrade_required';
 
 /**
- * ERRCODE P0016 (`free_limit_reached`): o usuário do plano gratuito esgotou as
- * tentativas vitalícias. Usado por `iniciar_tentativa`. Ver 20260801115817.
+ * ERRCODE P0016 (`free_limit_reached`): o usuário do plano gratuito esgotou o
+ * balde de tentativas daquele caminho — `iniciar_tentativa` (treino pronto) ou
+ * `gerar_simulado_personalizado` (simulado montado). Os baldes são
+ * independentes: esgotar um não esgota o outro. Ver 20260801115817 e
+ * 20260908120000.
  */
 export const FREE_LIMIT_REACHED = 'free_limit_reached';
 
 /**
- * ERRCODE P0009 (`subscription_required`): gate binário legado, ainda presente
- * nas RPCs de simulado personalizado e impressão. Para o usuário gratuito é
- * indistinguível de um upsell, então a UI trata igual.
+ * ERRCODE P0009 (`subscription_required`): gate binário legado, hoje só nas
+ * RPCs de impressão (`gerar_simulado_impressao`, `get_simulado_impressao`) —
+ * `gerar_simulado_personalizado` saiu dele em 20260908120000, quando o gratuito
+ * passou a montar. Para o usuário gratuito é indistinguível de um upsell,
+ * então a UI trata igual.
  */
 export const SUBSCRIPTION_REQUIRED = 'subscription_required';
 

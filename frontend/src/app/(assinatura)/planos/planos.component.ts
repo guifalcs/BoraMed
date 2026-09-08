@@ -25,7 +25,7 @@ const CABECALHO_POR_ORIGEM: Record<string, { titulo: string; subtitulo: string }
   'limite-tentativas': {
     titulo: 'Continue de onde parou',
     subtitulo:
-      'Seus 3 simulados gratuitos acabaram, mas o histórico continua salvo. Escolha um plano para voltar a treinar.',
+      'Seus simulados gratuitos acabaram, mas o histórico continua salvo. Escolha um plano para voltar a treinar.',
   },
   materiais: {
     titulo: 'Materiais de estudo no plano Avançado',
@@ -37,7 +37,7 @@ const CABECALHO_POR_ORIGEM: Record<string, { titulo: string; subtitulo: string }
   },
   'simulado-personalizado': {
     titulo: 'Monte seus próprios simulados',
-    subtitulo: 'Escolha temas, quantidade e formato. Disponível no plano Avançado.',
+    subtitulo: 'Escolha temas, quantidade e formato, sem limite. Disponível no plano Avançado.',
   },
   impressao: {
     titulo: 'Imprima seus simulados',
@@ -70,14 +70,14 @@ const ESSENCIAL_BENEFICIOS: readonly string[] = [
 ];
 
 const ESSENCIAL_NAO_INCLUSO: readonly string[] = [
-  'Simulados processuais e de laboratório personalizados',
+  'Montar simulado por tema (processual e laboratório)',
   'Materiais de estudo',
   'Flashcards',
 ];
 
 const AVANCADO_BENEFICIOS: readonly string[] = [
   'Tudo do plano Essencial',
-  'Simulados personalizados (processual e laboratório) do 1º período, com impressão em PDF',
+  'Montar simulados sem limite (processual e laboratório) do 1º período, com impressão em PDF',
   'Materiais de estudo',
   'Flashcards',
 ];

@@ -347,7 +347,7 @@ export class LandingComponent implements OnDestroy {
 
   private static readonly AVANCADO_FEATURES: readonly string[] = [
     'Tudo do plano Essencial',
-    'Simulados personalizados (processual e laboratório) do 1º período, com impressão em PDF',
+    'Montar simulados sem limite (processual e laboratório) do 1º período, com impressão em PDF',
     'Materiais de estudo',
     'Flashcards: decks oficiais, seus e da comunidade',
   ];
@@ -436,15 +436,15 @@ export class LandingComponent implements OnDestroy {
     note: 'Sem cartão de crédito. Sem prazo para usar.',
     ctaLabel: 'Começar grátis',
     features: [
-      '3 simulados no modelo das avaliações nacionais',
+      '2 treinos no modelo das avaliações nacionais',
+      '1 simulado montado por você, escolhendo os temas',
       'Correção e gabarito comentado ao final',
-      'Histórico e modo competitivo',
-      'Desafio diário',
+      'Histórico, modo competitivo e desafio diário',
     ] as readonly string[],
     naoInclui: [
       'Simulados sem limite',
       'Materiais de estudo e flashcards',
-      'Simulados personalizados por tema',
+      'Impressão em PDF',
     ] as readonly string[],
   };
 
@@ -510,7 +510,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Existe simulado de laboratório?',
       answer:
-        'Sim, no plano Avançado. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra. Hoje o acervo de laboratório cobre o conteúdo do primeiro período e segue crescendo.',
+        'Sim. As questões de laboratório trazem imagens reais de lâminas e peças no enunciado, para treinar o reconhecimento visual que a prova prática cobra. Você pode experimentar já no plano grátis, no simulado que monta escolhendo os temas; para montar sem limite, é o plano Avançado. Hoje o acervo de laboratório cobre o conteúdo do primeiro período e segue crescendo.',
     },
     {
       question: 'Como funcionam os flashcards?',

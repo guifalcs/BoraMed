@@ -6,6 +6,28 @@
       [breadcrumbs]="breadcrumbs"
     />
 
+    <!-- Free tier: a bala de prata precisa estar visível ANTES das escolhas,
+         não depois do clique — o aluno decide o tema sabendo que é uma só. -->
+    @if (gratuito()) {
+      @if (semCreditoMontado()) {
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <p class="text-sm font-semibold text-red-900">Você já montou seu simulado grátis</p>
+          <p class="mt-1 text-xs leading-5 text-red-800">
+            O plano gratuito inclui 1 simulado montado por você. Assine para montar quantos quiser,
+            com todos os temas e formatos.
+          </p>
+        </div>
+      } @else {
+        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p class="text-sm font-semibold text-emerald-900">Seu simulado grátis</p>
+          <p class="mt-1 text-xs leading-5 text-emerald-800">
+            No plano gratuito você monta 1 simulado, e ele consome uma das suas 3 tentativas.
+            Escolha os temas com calma — vale uma vez só.
+          </p>
+        </div>
+      }
+    }
+
     @if (origemRecomendacao()) {
       <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
         <p class="text-sm font-semibold text-emerald-800">Treino recomendado</p>
@@ -252,19 +274,24 @@
 
     <!-- Botões -->
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <app-ui-button
-        label="Apenas imprimir"
-        variant="secondary"
-        [loading]="imprimindo()"
-        [disabled]="desabilitado()"
-        loadingLabel="Gerando..."
-        (buttonClick)="imprimirApenas()"
-        class="flex-1"
-      />
+      <!-- Impressão é benefício de assinante (a RPC recusa o gratuito com
+           P0009 e a rota /imprimir tem o nivelPagoGuard): não mostramos um
+           botão que só serviria para dar erro. -->
+      @if (podeImprimir()) {
+        <app-ui-button
+          label="Apenas imprimir"
+          variant="secondary"
+          [loading]="imprimindo()"
+          [disabled]="desabilitado()"
+          loadingLabel="Gerando..."
+          (buttonClick)="imprimirApenas()"
+          class="flex-1"
+        />
+      }
       <app-ui-button
         [label]="botaoLabel()"
         [loading]="gerando()"
-        [disabled]="desabilitado()"
+        [disabled]="desabilitado() && !semCreditoMontado()"
         loadingLabel="Gerando..."
         (buttonClick)="gerar()"
         class="flex-1"

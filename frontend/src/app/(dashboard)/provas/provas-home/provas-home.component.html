@@ -8,7 +8,11 @@
 
     @if (gratuito() && tentativasRestantes() !== null) {
       <div class="mb-5">
-        <app-limite-tentativas-banner [restantes]="tentativasRestantes()!" />
+        <app-limite-tentativas-banner
+          [restantes]="tentativasRestantes()!"
+          [nacionalRestantes]="nacionalRestantes()"
+          [montadoRestantes]="montadoDisponivel()"
+        />
       </div>
     }
 
@@ -68,26 +72,54 @@
       </div>
 
       <!-- Montar Simulado -->
+      <!-- Três estados: essencial (fora do recurso), gratuito sem saldo (já usou
+           a bala de prata) e liberado. Só o primeiro vai para /planos sem passar
+           pela tela; o gratuito esgotado ainda entra, para ver o que perdeu. -->
       <a
-        [routerLink]="bloqueado() ? '/planos' : '/dashboard/simulados/montar'"
+        [routerLink]="bloqueado()
+          ? '/planos'
+          : (montadoEsgotado() ? '/planos' : '/dashboard/simulados/montar')"
+        [queryParams]="montadoEsgotado() && !bloqueado()
+          ? { origem: 'limite-tentativas' }
+          : (bloqueado() ? { origem: 'simulado-personalizado' } : null)"
         [class]="montarSimuladoCardClass()"
       >
         <div [class]="montarSimuladoIconWrapperClass()">
-          <app-ui-icon [icon]="bloqueado() ? lockIcon : shuffleIcon" [size]="28" />
+          <app-ui-icon [icon]="bloqueado() || montadoEsgotado() ? lockIcon : shuffleIcon" [size]="28" />
         </div>
 
         <div class="min-w-0 flex-1">
-          <h2 class="text-xl font-bold text-[var(--color-text)]">Montar simulado</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-xl font-bold text-[var(--color-text)]">Montar simulado</h2>
+            @if (montadoSelo(); as selo) {
+              <span
+                [class]="montadoEsgotado()
+                  ? 'rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-600'
+                  : 'rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800'"
+              >
+                {{ selo }}
+              </span>
+            }
+          </div>
           @if (bloqueado()) {
             <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
               Disponível no plano Avançado.
             </p>
+          } @else if (montadoEsgotado()) {
+            <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
+              Você já montou seu simulado grátis. Assine para montar sem limite.
+            </p>
           } @else {
             <p class="mt-1.5 hidden text-sm leading-relaxed text-[var(--color-text-muted)] sm:block">
-              Escolha temas, quantidade e modo para gerar um simulado personalizado com foco na sua revisão.
+              @if (gratuito()) {
+                Escolha temas, quantidade e modo. No plano gratuito você monta 1 simulado — ele consome
+                uma das suas 3 tentativas.
+              } @else {
+                Escolha temas, quantidade e modo para gerar um simulado personalizado com foco na sua revisão.
+              }
             </p>
           }
-          @if (!bloqueado()) {
+          @if (!bloqueado() && !montadoEsgotado()) {
             <div class="mt-4 flex flex-wrap gap-2">
               <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Por tema</span>
               <span class="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">Processual</span>
@@ -98,9 +130,9 @@
           }
         </div>
 
-        @if (bloqueado()) {
+        @if (bloqueado() || montadoEsgotado()) {
           <span class="shrink-0 whitespace-nowrap rounded-lg bg-gray-800 px-3 py-2 text-xs font-semibold text-white transition-transform group-hover:translate-x-1">
-            Fazer upgrade
+            {{ bloqueado() ? 'Fazer upgrade' : 'Ver planos' }}
           </span>
         } @else {
           <span class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-transform group-hover:translate-x-1 sm:flex">

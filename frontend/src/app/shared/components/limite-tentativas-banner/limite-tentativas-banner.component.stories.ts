@@ -32,3 +32,18 @@ export const Esgotado: Story = {
 export const SemCta: Story = {
   args: { restantes: 1, comCta: false },
 };
+
+/** Com os dois baldes informados, a descrição diz o que ainda dá para fazer. */
+export const PorBalde: Story = {
+  args: { restantes: 3, nacionalRestantes: 2, montadoRestantes: 1 },
+};
+
+/** Gastou o simulado montado: sobra só treino pronto. */
+export const SoNacional: Story = {
+  args: { restantes: 2, nacionalRestantes: 2, montadoRestantes: 0 },
+};
+
+/** Gastou os dois treinos prontos: sobra só a bala de prata do montado. */
+export const SoMontado: Story = {
+  args: { restantes: 1, nacionalRestantes: 0, montadoRestantes: 1 },
+};

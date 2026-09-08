@@ -49,7 +49,10 @@ export const PAYWALL_CONTEUDO: Record<PaywallContexto, PaywallConteudo> = {
     cta: 'Ver planos',
   },
   'simulado-personalizado': {
-    titulo: 'Montar simulado',
+    // Desde 20260908120000 este contexto atende SÓ o Essencial — o gratuito
+    // monta 1 simulado e, quando esgota, cai em 'limite-tentativas'. Por isso a
+    // copy não pode falar em "começar a montar": quem chega aqui já paga.
+    titulo: 'Montar simulado é do plano Avançado',
     subtitulo: 'Você escolhe os temas, a quantidade e o formato. A prova sai na hora.',
     beneficios: [
       'Treine exatamente o tema que você errou',
@@ -61,7 +64,7 @@ export const PAYWALL_CONTEUDO: Record<PaywallContexto, PaywallConteudo> = {
   },
   'limite-tentativas': {
     titulo: 'Seus simulados grátis acabaram',
-    subtitulo: 'Você já usou os 3 simulados do plano gratuito.',
+    subtitulo: 'O plano gratuito dá 2 treinos nacionais e 1 simulado montado por você.',
     beneficios: [
       'Simulados nacionais sem limite',
       'Correção da Aurora nas questões discursivas',

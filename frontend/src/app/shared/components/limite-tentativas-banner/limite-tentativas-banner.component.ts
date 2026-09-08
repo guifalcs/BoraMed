@@ -20,6 +20,14 @@ type Tom = 'neutro' | 'atencao' | 'critico';
 export class LimiteTentativasBannerComponent {
   restantes = input.required<number>();
   limite = input(3);
+  /**
+   * Saldo por balde. O total sozinho não diz o que ainda dá para fazer: com
+   * `restantes = 1` o aluno pode estar com 1 treino pronto OU com 1 simulado
+   * montado, que são caminhos diferentes. `null` = balde desconhecido (o
+   * chamador não passou), e aí o banner só fala do total.
+   */
+  nacionalRestantes = input<number | null>(null);
+  montadoRestantes = input<number | null>(null);
   /** Some com o CTA quando o banner já vive dentro de um bloco de upsell. */
   comCta = input(true);
 
@@ -67,10 +75,35 @@ export class LimiteTentativasBannerComponent {
     if (restantes <= 0) {
       return 'Seu histórico continua salvo. Assine para retomar de onde parou.';
     }
+
+    const detalhe = this.detalhePorBalde();
+    if (detalhe) return detalhe;
+
     if (restantes === 1) {
       return 'Depois dele, o acesso aos treinos fica só para assinantes.';
     }
-    return 'No plano gratuito você faz até ' + this.limite() + ' treinos nacionais.';
+    return 'No plano gratuito você faz até ' + this.limite() + ' simulados.';
+  });
+
+  /**
+   * Quebra do saldo nos dois baldes, quando o chamador informou os dois.
+   * Sem isso o aluno com "1 restante" não sabe se ainda pode montar um
+   * simulado — que é justamente o caminho novo que a gente quer que ele prove.
+   */
+  private readonly detalhePorBalde = computed<string | null>(() => {
+    const nacional = this.nacionalRestantes();
+    const montado = this.montadoRestantes();
+    if (nacional === null || montado === null) return null;
+
+    const partes: string[] = [];
+    if (nacional > 0) {
+      partes.push(nacional > 1 ? `${nacional} treinos nacionais` : '1 treino nacional');
+    }
+    if (montado > 0) {
+      partes.push(`${montado} simulado montado por você`);
+    }
+    if (partes.length === 0) return null;
+    return `Ainda dá para fazer ${partes.join(' e ')}.`;
   });
 
   protected readonly cta = computed(() =>

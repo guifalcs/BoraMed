@@ -340,6 +340,7 @@ describe('SubscriptionService', () => {
   function statusRpc(
     nivel: 'gratuito' | 'essencial' | 'avancado',
     restantes: number | null = null,
+    baldes: { nacional?: number | null; montado?: number | null } = {},
   ) {
     return {
       data: {
@@ -347,6 +348,10 @@ describe('SubscriptionService', () => {
         tentativas_limite: 3,
         tentativas_restantes: restantes,
         tentativas_usadas: restantes === null ? null : 3 - restantes,
+        nacional_limite: 2,
+        nacional_restantes: baldes.nacional ?? null,
+        montado_limite: 1,
+        montado_restantes: baldes.montado ?? null,
       },
       error: null,
     };
@@ -361,15 +366,28 @@ describe('SubscriptionService', () => {
       expect(mockRpc).toHaveBeenCalledWith('get_status_acesso');
     });
 
-    it('mapeia o payload snake_case para o modelo camelCase', async () => {
-      mockRpc.mockResolvedValue(statusRpc('gratuito', 2));
+    it('mapeia o payload snake_case para o modelo camelCase, baldes inclusive', async () => {
+      mockRpc.mockResolvedValue(statusRpc('gratuito', 2, { nacional: 1, montado: 1 }));
 
       expect(await service.statusAcessoServidor()).toEqual({
         nivel: 'gratuito',
         tentativasLimite: 3,
         tentativasRestantes: 2,
         tentativasUsadas: 1,
+        nacionalLimite: 2,
+        nacionalRestantes: 1,
+        montadoLimite: 1,
+        montadoRestantes: 1,
       });
+    });
+
+    it('expõe os baldes em signals separados para a UI', async () => {
+      mockRpc.mockResolvedValue(statusRpc('gratuito', 1, { nacional: 0, montado: 1 }));
+
+      await service.statusAcessoServidor();
+
+      expect(service.nacionalRestantes()).toBe(0);
+      expect(service.montadoRestantes()).toBe(1);
     });
 
     it('publica o status no signal para a UI consumir', async () => {
@@ -391,6 +409,10 @@ describe('SubscriptionService', () => {
         tentativasLimite: 0,
         tentativasRestantes: 0,
         tentativasUsadas: 0,
+        nacionalLimite: 0,
+        nacionalRestantes: 0,
+        montadoLimite: 0,
+        montadoRestantes: 0,
       });
     });
 

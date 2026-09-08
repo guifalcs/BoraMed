@@ -56,3 +56,10 @@ export const lazyTierAvancadoGuard: CanActivateFn = (route, state) => {
     runInInjectionContext(injector, () => m.tierAvancadoGuard(route, state)),
   ) as Promise<GuardResult>;
 };
+
+export const lazyMontarSimuladoGuard: CanActivateFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+  return import('./montar-simulado.guard').then((m) =>
+    runInInjectionContext(injector, () => m.montarSimuladoGuard(route, state)),
+  ) as Promise<GuardResult>;
+};

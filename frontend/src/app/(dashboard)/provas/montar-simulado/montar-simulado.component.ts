@@ -13,7 +13,8 @@ import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
 import { ImpressaoSimuladoService } from '../../../core/services/impressao-simulado.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
-import { TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
+import { FREE_LIMIT_REACHED, TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
+import { SubscriptionService } from '../../../core/services/subscription.service';
 import type { TemaComContagem } from '../../../core/models/tema';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
@@ -97,6 +98,7 @@ export class MontarSimuladoComponent {
   private readonly tentativaService = inject(TentativaService);
   private readonly temaService = inject(TemaService);
   private readonly impressaoService = inject(ImpressaoSimuladoService);
+  private readonly subscription = inject(SubscriptionService);
   private readonly nav = inject(NavigationProgressService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -128,6 +130,19 @@ export class MontarSimuladoComponent {
   protected readonly gerando = signal(false);
   protected readonly imprimindo = signal(false);
   protected readonly erro = signal<string | null>(null);
+
+  // Free tier. O guard já barrou o Essencial; aqui só interessa se o gratuito
+  // ainda tem o crédito único de simulado montado. null = pago ou desconhecido.
+  protected readonly gratuito = signal(false);
+  protected readonly montadoRestantes = signal<number | null>(null);
+
+  /** Gratuito que já gastou a bala de prata: gerar aqui devolveria P0016. */
+  protected readonly semCreditoMontado = computed(
+    () => this.gratuito() && (this.montadoRestantes() ?? 0) <= 0,
+  );
+
+  /** Impressão é benefício de assinante — o gratuito nem vê o botão. */
+  protected readonly podeImprimir = computed(() => !this.gratuito());
 
   protected readonly opcoesQtd = [5, 10, 15, 20, 30];
 
@@ -234,6 +249,7 @@ export class MontarSimuladoComponent {
   protected readonly desabilitado = computed(() => {
     if (this.gerando()) return true;
     if (this.isLoadingTemas()) return true;
+    if (this.semCreditoMontado()) return true;
     const disponivel = this.questoesDisponiveis();
     if (this.temasSelecionados().size > 0 && disponivel === 0) return true;
     return false;
@@ -241,7 +257,9 @@ export class MontarSimuladoComponent {
 
   protected readonly botaoLabel = computed(() => {
     if (this.gerando()) return 'Gerando...';
+    if (this.semCreditoMontado()) return 'Assinar para montar de novo';
     if (this.desabilitado() && !this.gerando()) return 'Selecione temas com questões';
+    if (this.gratuito()) return 'Gerar meu simulado grátis';
     return 'Gerar simulado';
   });
 
@@ -249,7 +267,14 @@ export class MontarSimuladoComponent {
     // Navega instantaneamente; os temas são buscados aqui, sem bloquear a rota.
     if (this.isBrowser) {
       void this.nav.track(this.carregarTemasIniciais());
+      void this.carregarStatusAcesso();
     }
+  }
+
+  private async carregarStatusAcesso(): Promise<void> {
+    const status = await this.subscription.statusAcessoServidor();
+    this.gratuito.set(status.nivel === 'gratuito');
+    this.montadoRestantes.set(status.montadoRestantes);
   }
 
   private async carregarTemasIniciais(): Promise<void> {
@@ -403,6 +428,12 @@ export class MontarSimuladoComponent {
   }
 
   protected async gerar(): Promise<void> {
+    // Sem crédito o botão vira CTA: leva ao upsell em vez de deixar o servidor
+    // recusar e mostrar um erro cru.
+    if (this.semCreditoMontado()) {
+      void this.router.navigate(['/planos'], { queryParams: { origem: 'limite-tentativas' } });
+      return;
+    }
     if (this.desabilitado()) return;
     this.gerando.set(true);
     this.erro.set(null);
@@ -426,7 +457,14 @@ export class MontarSimuladoComponent {
       this.tentativaService.setProvaNome(nomeProva);
       void this.router.navigate(['/dashboard/simulados', prova_id, 'tentativa', tentativa.id]);
     } else if (result.error === TIER_UPGRADE_REQUIRED) {
-      void this.router.navigate(['/planos']);
+      void this.router.navigate(['/planos'], {
+        queryParams: { origem: 'simulado-personalizado' },
+      });
+    } else if (result.error === FREE_LIMIT_REACHED) {
+      // O contador em cache pode ter ficado para trás (outra aba, outro
+      // dispositivo): o servidor é quem manda.
+      this.montadoRestantes.set(0);
+      void this.router.navigate(['/planos'], { queryParams: { origem: 'limite-tentativas' } });
     } else {
       this.erro.set(result.error);
     }

@@ -3077,6 +3077,8 @@ export type Database = {
       is_banned: { Args: { uid?: string }; Returns: boolean }
       is_super_admin: { Args: { uid?: string }; Returns: boolean }
       limite_tentativas_gratuitas: { Args: never; Returns: number }
+      limite_tentativas_gratuitas_montado: { Args: never; Returns: number }
+      limite_tentativas_gratuitas_nacional: { Args: never; Returns: number }
       listar_anotacoes_tentativa: {
         Args: { p_tentativa_id: string }
         Returns: {
@@ -3271,6 +3273,21 @@ export type Database = {
       tentativas_gratuitas_restantes: {
         Args: { uid?: string }
         Returns: number
+      }
+      tentativas_gratuitas_restantes_montado: {
+        Args: { uid?: string }
+        Returns: number
+      }
+      tentativas_gratuitas_restantes_nacional: {
+        Args: { uid?: string }
+        Returns: number
+      }
+      tentativas_gratuitas_usadas: {
+        Args: { uid?: string }
+        Returns: {
+          montado: number
+          nacional: number
+        }[]
       }
       toggle_favorito_tentativa: {
         Args: { p_favorito: boolean; p_tentativa_id: string }

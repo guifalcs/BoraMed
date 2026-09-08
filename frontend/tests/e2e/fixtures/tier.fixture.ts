@@ -12,6 +12,9 @@ export type Tier = 'essencial' | 'avancado' | null;
 export type Nivel = 'gratuito' | 'essencial' | 'avancado';
 
 export const LIMITE_TENTATIVAS_GRATUITAS = 3;
+/** Baldes do teto gratuito (migration 20260908120000): 2 prontos + 1 montado. */
+export const LIMITE_TENTATIVAS_NACIONAL = 2;
+export const LIMITE_TENTATIVAS_MONTADO = 1;
 
 /**
  * Catálogo de planos espelhando a migration `20260717140000_plano_tier_essencial`:
@@ -136,8 +139,14 @@ export interface TierMockOptions {
   nivel?: Nivel;
   /** @deprecated Use `nivel`. Mantido para os testes que já usavam tier. */
   tier?: Tier;
-  /** Tentativas gratuitas restantes. Só se aplica ao nível gratuito. */
+  /** Tentativas gratuitas restantes (total). Só se aplica ao nível gratuito. */
   tentativasRestantes?: number;
+  /**
+   * Saldo por balde. Quando omitidos, são derivados do total gastando primeiro
+   * os treinos prontos — a ordem mais comum na vida real.
+   */
+  nacionalRestantes?: number;
+  montadoRestantes?: number;
   /** Resultado do RPC `tem_assinatura_ativa` (usado por telas de assinatura). */
   temAcesso?: boolean;
   /** Rotas adicionais registradas por último (maior prioridade). */
@@ -198,8 +207,12 @@ export async function setupTierMocks(page: Page, targetUrl: string, opts: TierMo
   });
   const nivel = nivelDe(opts);
   const restantes = nivel === 'gratuito' ? (opts.tentativasRestantes ?? LIMITE_TENTATIVAS_GRATUITAS) : null;
+  const nacionalRestantes =
+    restantes === null ? null : (opts.nacionalRestantes ?? Math.min(LIMITE_TENTATIVAS_NACIONAL, restantes));
+  const montadoRestantes =
+    restantes === null ? null : (opts.montadoRestantes ?? Math.max(0, restantes - (nacionalRestantes ?? 0)));
 
-  // RPC principal do gating desde o free tier: nível + contador num payload só.
+  // RPC principal do gating desde o free tier: nível + contadores num payload só.
   await page.route('**/rest/v1/rpc/get_status_acesso**', (route) => {
     void route.fulfill({
       status: 200,
@@ -209,6 +222,10 @@ export async function setupTierMocks(page: Page, targetUrl: string, opts: TierMo
         tentativas_limite: LIMITE_TENTATIVAS_GRATUITAS,
         tentativas_restantes: restantes,
         tentativas_usadas: restantes === null ? null : LIMITE_TENTATIVAS_GRATUITAS - restantes,
+        nacional_limite: LIMITE_TENTATIVAS_NACIONAL,
+        nacional_restantes: nacionalRestantes,
+        montado_limite: LIMITE_TENTATIVAS_MONTADO,
+        montado_restantes: montadoRestantes,
       }),
     });
   });

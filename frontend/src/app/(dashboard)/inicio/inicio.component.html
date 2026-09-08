@@ -49,7 +49,11 @@
        visível bem antes de bloquear -->
   @if (gratuito() && tentativasRestantes() !== null) {
     <div class="mb-4">
-      <app-limite-tentativas-banner [restantes]="tentativasRestantes()!" />
+      <app-limite-tentativas-banner
+        [restantes]="tentativasRestantes()!"
+        [nacionalRestantes]="nacionalRestantes()"
+        [montadoRestantes]="montadoRestantes()"
+      />
     </div>
   }
 

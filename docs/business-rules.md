@@ -293,9 +293,9 @@ dela e mantém o contrato antigo (NULL para quem não paga).
 
 | Recurso | Gratuito | Essencial | Avançado |
 |---|---|---|---|
-| Treinos nacionais (`prova.formato = 'nacional'`) | até 3 tentativas | sem limite | sem limite |
+| Treinos nacionais (`prova.formato = 'nacional'`) | até 2 tentativas | sem limite | sem limite |
 | Provas processual / laboratório / integradora | não | não | sim |
-| Montar simulado personalizado | não | não | sim |
+| Montar simulado personalizado | **1 vez**, com o acervo inteiro | **não** | sem limite |
 | Impressão em PDF | não | sim | sim |
 | Materiais de estudo | não | não | sim |
 | Flashcards | não | não | sim |
@@ -304,23 +304,61 @@ dela e mantém o contrato antigo (NULL para quem não paga).
 | Competitivo / ranking | sim | sim | sim |
 | Correção da Aurora (discursivas) | sim, dentro das 3 tentativas | sim | sim |
 
+> **A inversão gratuito × Essencial é deliberada.** Montar simulado é o único
+> recurso que o grátis tem e o Essencial não. O que separa os dois planos é o
+> **teto de tentativas**, não o catálogo: o gratuito monta uma vez na vida, o
+> Essencial treina sem limite no conteúdo que ele vende (nacional pronto).
+> Decisão de produto de 08/09/2026 — não "consertar" liberando o Essencial no
+> montador sem passar pelo Guilherme.
+
 * **Teto do plano gratuito**: `limite_tentativas_gratuitas()` (hoje 3),
-  **vitalício**, não por período. `tentativas_gratuitas_restantes()` conta TODO
-  o histórico de `tentativa` do usuário (exceto `modo = 'visualizar'`), então
-  não existe coluna de contador nem backfill: quem usou a plataforma como
-  assinante e depois churnou chega em 0 tentativas gratuitas.
-* **O que debita**: `iniciar_tentativa` com `modo <> 'visualizar'`. Sem estorno,
-  mesmo se o aluno abandonar a prova. `retomar_tentativa` é outra RPC e nunca
-  debita de novo.
+  **vitalício**, não por período, e dividido em **dois baldes independentes**:
+
+  | Balde | Limite | RPC que debita | Função de saldo |
+  |---|---|---|---|
+  | nacional (treino PRONTO) | `limite_tentativas_gratuitas_nacional()` = 2 | `iniciar_tentativa` | `tentativas_gratuitas_restantes_nacional()` |
+  | montado (simulado do aluno) | `limite_tentativas_gratuitas_montado()` = 1 | `gerar_simulado_personalizado` | `tentativas_gratuitas_restantes_montado()` |
+
+  `limite_tentativas_gratuitas()` é DERIVADA (soma dos dois), para o total nunca
+  divergir dos baldes. `tentativas_gratuitas_restantes()` continua sendo o saldo
+  total e é o que o banner de tentativas exibe.
+
+* **Cap global por cima dos baldes**: cada saldo é
+  `greatest(0, least(limite_do_balde − usadas_do_balde, 3 − usadas_no_total))`.
+  O segundo termo existe para a conta legada que já queimou 3 tentativas
+  nacionais na regra antiga não ganhar uma 4ª de brinde ao estrear o montador.
+* **Como os baldes são medidos**: `prova.origem = 'personalizado'` marca a prova
+  sintética que só `gerar_simulado_personalizado` cria. Os conjuntos são
+  disjuntos por construção — prova personalizada não tem linha em
+  `prova_questao`, então `iniciar_tentativa` nunca a aceita (P0004). Não há
+  coluna de contador nem backfill: o cálculo varre o histórico de `tentativa`,
+  e quem usou a plataforma como assinante e depois churnou chega em 0.
+* **O simulado montado do gratuito sorteia do acervo INTEIRO** — nacional,
+  processual e laboratório, objetivas ou discursivas. É a amostra grátis do
+  Avançado, limitada a uma única geração. Consequência assumida: uma tentativa
+  discursiva por conta gratuita consome correção da Aurora (custo de IA).
+* **O que debita**: `iniciar_tentativa` com `modo <> 'visualizar'` (balde
+  nacional) e `gerar_simulado_personalizado` (balde montado). Sem estorno, mesmo
+  se o aluno abandonar a prova. `retomar_tentativa` é outra RPC e nunca debita
+  de novo.
+* **`listar_temas_com_contagem` é `SECURITY DEFINER`** por causa disso: o RLS de
+  `questao` exige `tem_assinatura_ativa()`, e sem o DEFINER a tela de montar
+  abriria com 0 questões em todo tema para o gratuito. A função devolve apenas
+  contagem agregada por tema, nunca conteúdo de questão.
 * **Onde o gate vive**: dentro das RPCs `SECURITY DEFINER` (a escrita direta em
   `tentativa` já é revogada de `authenticated`), mais o RLS de
   `questao`/`alternativa` (`tem_assinatura_ativa()`) e de
   materiais/flashcards (`tem_acesso_avancado()`). Os guards Angular são
   conveniência de navegação, não a fronteira de segurança.
-* **Erros**: `P0015 tier_upgrade_required` (recurso de plano superior),
-  `P0016 free_limit_reached` (teto do gratuito esgotado), `P0009
-  subscription_required` (gate binário legado nas RPCs de simulado
-  personalizado e impressão). Os três abrem paywall na UI.
+* **Erros**: `P0015 tier_upgrade_required` (recurso de plano superior — no
+  montador, hoje só o Essencial), `P0016 free_limit_reached` (balde do gratuito
+  esgotado; esgotar um balde não esgota o outro), `P0009
+  subscription_required` (gate binário legado, hoje só nas RPCs de impressão).
+  Os três abrem paywall na UI.
+* **Guards Angular**: `/dashboard/simulados/montar` usa o `montarSimuladoGuard`,
+  que barra **apenas** o essencial — não o `tierAvancadoGuard`. O gratuito sem
+  crédito entra na tela e vê o aviso ali; barrar a rota esconderia o recurso de
+  quem está justamente no momento de decidir assinar.
 * **Validade na caixa**: notificação in-app lida deixa de ser exibida 7 dias
   depois da leitura (`notificacoes.lida_em`), para a caixa não acumular
   histórico. Não lida nunca expira, e nada é apagado do banco.

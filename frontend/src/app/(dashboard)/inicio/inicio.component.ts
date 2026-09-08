@@ -93,6 +93,8 @@ export class InicioComponent {
   // dispara a consulta no boot), então não há round-trip extra nesta tela.
   protected readonly gratuito = this.subscription.isGratuito;
   protected readonly tentativasRestantes = this.subscription.tentativasRestantes;
+  protected readonly nacionalRestantes = this.subscription.nacionalRestantes;
+  protected readonly montadoRestantes = this.subscription.montadoRestantes;
 
   // ── Dados crus do resolver ────────────────────────────
   protected readonly kpisData = signal<HistoricoKpis | null>(null);
