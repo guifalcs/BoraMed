@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-09 | Fix | Campanha parada em "401 API key is invalid" depois da rotação da chave
+
+**A chave gravada no secret não era a nova; o e-mail de cadastro continuar funcionando não provava nada sobre ela**
+
+- **Sintoma:** `Enviar teste` e o disparo da campanha "Chamada N1" voltando `Resend: 401 {"message":"API key is invalid"}` (38 destinatários, 0 enviados, todas as linhas em `falhou`, nada entregue). O que confundiu o diagnóstico foi o e-mail de cadastro seguir normal: ele sai pelo SMTP do Supabase Auth (GoTrue), outro caminho e outra credencial, então não valida a `RESEND_API_KEY`.
+- **O que provou que não era código nem configuração da campanha:** a MESMA versão da function (deployment 5, de 30/07, sem redeploy desde então) entregou 39/39 na campanha de 26/08. Entre uma coisa e outra só a chave mudou.
+- **`supabase secrets set` religa as functions sozinho — não precisa redeploy.** Medido aqui: o `secrets set` subiu a versão de todas as edge functions do projeto (`enviar-campanha-email` 6→7, `mp-webhook` 42→43, …) mantendo o `ezbr_sha256` de cada uma, e o envio de teste passou em seguida sem nenhum deploy. O doc pedia um redeploy desnecessário e foi corrigido.
+- **`.trim()` na `RESEND_API_KEY` e no `RESEND_FROM`** (`enviar-campanha-email/index.ts`): espaço ou `\n` no fim do secret entra literal no header `Authorization: Bearer <chave>` e o Resend responde o mesmo 401 sem dizer que o problema é o invisível no fim. Não era a causa desta vez, mas é a que mais custa a achar.
+- **Ordem de diagnóstico registrada em `docs/campanhas-email.md`**, começando pelo curl direto na API do Resend, que separa "chave inválida" (401) de "chave boa, valor errado no secret". Chave *restricted* sem permissão de envio devolveria 403, não 401 — o que descarta essa hipótese na leitura da mensagem.
+- **A campanha falha é retomável e não duplica:** linhas em `falhou` voltam para a fila do botão "Retomar", `enviado` nunca volta. Criar uma campanha nova no lugar do Retomar é que sujaria o histórico.
+- Junto: conteúdo pronto do e-mail de reta final da N1 em `docs/campanhas/2026-09-n1-semana-que-vem.html`, com a janela de disparo (5 a 8 dias antes da prova) e a regra de parar no segundo toque no mesmo público.
+
 ## 2026-09-09 | Feature | Selo de "já fez" na lista de treinos nacionais
 
 **A tabela de provas nacionais passa a dizer, sem ocupar espaço, quais o aluno já concluiu**
