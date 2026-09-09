@@ -246,6 +246,56 @@ remetente fora do domínio. A resposta literal do Resend fica em
 `email_campanha_destinatario.erro` — dá para diagnosticar pelo histórico, sem
 abrir o log da function.
 
+### "Resend: 401 API key is invalid"
+
+O disparo (ou o **Enviar teste**) volta com 401 e a tela mostra a resposta
+literal do Resend. É credencial, e o caminho é sempre o mesmo secret:
+`RESEND_API_KEY` das edge functions.
+
+**O e-mail de cadastro continuar funcionando não diz nada sobre essa chave.**
+Confirmação de cadastro e recuperação de senha saem pelo SMTP do Supabase Auth
+(GoTrue), que é outro caminho e outra credencial: se o SMTP estiver apontado
+para o Resend, ele usa **usuário e senha SMTP**, não a API key. Rotacionar a
+chave no Resend invalida a antiga na hora; atualizar só o lado do Auth deixa a
+campanha com a chave morta.
+
+Ordem de diagnóstico:
+
+1. **Teste a chave direto**, fora do Supabase, com o valor que você colou lá:
+
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "Authorization: Bearer re_sua_chave" https://api.resend.com/domains
+   ```
+
+   `200` = a chave é válida e o problema é o que está guardado no secret.
+   `401` = a chave em si não vale (revogada na rotação, de outra conta/time do
+   Resend, ou copiada pela metade).
+
+2. **Regrave o secret e redeploy**, nessa ordem:
+
+   ```bash
+   npx supabase secrets set RESEND_API_KEY=re_sua_chave --project-ref <PROJECT_REF>
+   npx supabase functions deploy enviar-campanha-email --project-ref <PROJECT_REF>
+   ```
+
+   Sem aspas em volta do valor: elas entram no secret e viajam no header.
+
+3. **Espaço ou `\n` no fim do valor** é a causa clássica quando a chave passa no
+   passo 1 e mesmo assim dá 401 — colar do painel ou usar `--env-file` com quebra
+   de linha final. A função agora aplica `.trim()` na chave e no `RESEND_FROM`
+   (`enviar-campanha-email/index.ts`), então esse caso morre a partir do próximo
+   deploy da function.
+
+4. **Chave gravada no lugar errado**: secret de edge function é `supabase
+   secrets set` (ou Dashboard → Edge Functions → Secrets). Colar em Auth → SMTP
+   ou nas variáveis do frontend não chega na function.
+
+Para ver o que aconteceu de fato, os logs contam: `POST | 502` em
+`function_edge_logs` para `enviar-campanha-email` é exatamente o teste recusado
+pelo Resend (o modo `teste` devolve 502 quando o envio falha). O `deployment_id`
+na mesma linha diz qual versão da function atendeu.
+
 ### "falha ao registrar a campanha"
 
 É erro de **grant**, não de Resend: o `service_role` não tem INSERT em
