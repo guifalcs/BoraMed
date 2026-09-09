@@ -272,14 +272,21 @@ Ordem de diagnóstico:
    `401` = a chave em si não vale (revogada na rotação, de outra conta/time do
    Resend, ou copiada pela metade).
 
-2. **Regrave o secret e redeploy**, nessa ordem:
+2. **Regrave o secret**:
 
    ```bash
    npx supabase secrets set RESEND_API_KEY=re_sua_chave --project-ref <PROJECT_REF>
-   npx supabase functions deploy enviar-campanha-email --project-ref <PROJECT_REF>
    ```
 
-   Sem aspas em volta do valor: elas entram no secret e viajam no header.
+   Sem aspas em volta do valor: elas entram no secret e viajam no header. E o
+   valor é a chave real do painel do Resend — em 09/09 o `re_sua_chave` deste
+   exemplo foi colado literalmente e o 401 continuou, com a mesma mensagem.
+
+   **Não precisa redeploy.** Medido em 09/09: o `secrets set` sozinho subiu a
+   versão de TODAS as edge functions do projeto (`enviar-campanha-email` 6→7,
+   `mp-webhook` 42→43, …) mantendo o `ezbr_sha256` de cada uma, ou seja, o
+   Supabase religa os workers com o env novo sem tocar no código. O envio de
+   teste passou logo depois, sem nenhum deploy.
 
 3. **Espaço ou `\n` no fim do valor** é a causa clássica quando a chave passa no
    passo 1 e mesmo assim dá 401 — colar do painel ou usar `--env-file` com quebra
