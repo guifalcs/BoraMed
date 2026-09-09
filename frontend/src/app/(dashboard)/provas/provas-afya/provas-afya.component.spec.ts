@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
 import { ProvasAfyaComponent } from './provas-afya.component';
 import { ProvaService, type ProvaResult } from '../../../core/services/prova.service';
+import { TentativaService } from '../../../core/services/tentativa.service';
 import type { Prova, ProvasPaginadas } from '../../../core/models/prova';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -44,12 +45,17 @@ describe('ProvasAfyaComponent', () => {
     listarDisciplinas: vi.fn(),
   };
 
+  const mockTentativaService = {
+    provasJaFeitas: vi.fn(),
+  };
+
   /**
    * Monta o componente. Sem `provasResult`, o fetch fica pendente (isLoading
    * permanece true) para exercitar o estado de skeleton.
    */
-  async function setup(provasResult?: ProvaResult<ProvasPaginadas>) {
+  async function setup(provasResult?: ProvaResult<ProvasPaginadas>, feitas: string[] = []) {
     vi.clearAllMocks();
+    mockTentativaService.provasJaFeitas.mockResolvedValue(new Set(feitas));
     mockProvaService.listarProvasNacionais.mockReturnValue(
       provasResult ? Promise.resolve(provasResult) : new Promise(() => {}),
     );
@@ -60,6 +66,7 @@ describe('ProvasAfyaComponent', () => {
       providers: [
         provideRouter([]),
         { provide: ProvaService, useValue: mockProvaService },
+        { provide: TentativaService, useValue: mockTentativaService },
       ],
     }).compileComponents();
 
@@ -78,6 +85,32 @@ describe('ProvasAfyaComponent', () => {
 
       const skeletonItems = el.querySelectorAll('li .animate-pulse');
       expect(skeletonItems.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── Selo "Feita" ──────────────────────────────────────────────────────────
+
+  describe('selo de prova já realizada', () => {
+    it('marca apenas a prova com tentativa finalizada', async () => {
+      await setup(
+        {
+          ok: true,
+          data: pagina([provaFactory(), provaFactory({ id: 'prova-2', nome: 'Prova N2 2024' })]),
+        },
+        ['prova-2'],
+      );
+
+      expect(mockTentativaService.provasJaFeitas).toHaveBeenCalledWith(['prova-1', 'prova-2']);
+
+      const rows = el.querySelectorAll('app-prova-card');
+      expect(rows[0].textContent).not.toContain('Você já fez essa prova uma vez');
+      expect(rows[1].textContent).toContain('Você já fez essa prova uma vez');
+    });
+
+    it('não consulta tentativas quando a lista vem vazia', async () => {
+      await setup({ ok: true, data: pagina([]) });
+
+      expect(mockTentativaService.provasJaFeitas).not.toHaveBeenCalled();
     });
   });
 
@@ -242,10 +275,15 @@ describe('ProvasAfyaComponent', () => {
         Promise.resolve({ ok: true, data: pagina([provaFactory()], 1) }),
       );
       mockProvaService.listarDisciplinas.mockReturnValue(new Promise(() => {}));
+      mockTentativaService.provasJaFeitas.mockResolvedValue(new Set());
 
       await TestBed.configureTestingModule({
         imports: [ProvasAfyaComponent],
-        providers: [provideRouter([]), { provide: ProvaService, useValue: mockProvaService }],
+        providers: [
+          provideRouter([]),
+          { provide: ProvaService, useValue: mockProvaService },
+          { provide: TentativaService, useValue: mockTentativaService },
+        ],
       }).compileComponents();
 
       fixture = TestBed.createComponent(ProvasAfyaComponent);

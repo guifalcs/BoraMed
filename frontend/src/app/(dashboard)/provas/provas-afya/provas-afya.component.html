@@ -93,6 +93,7 @@
               <app-prova-card
                 [prova]="prova"
                 variant="row"
+                [feita]="provasFeitas().has(prova.id)"
                 (abrirProva)="abrirProva($event)"
               />
             </li>

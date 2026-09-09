@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { CircleCheck } from 'lucide-angular';
 import { periodoLabel, type Prova, type SubtipoProva } from '../../../core/models/prova';
+import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 export type ProvaCardVariant = 'card' | 'row';
 
@@ -20,12 +22,17 @@ const SUBTIPO_LABEL_FULL: Record<SubtipoProva, string> = {
 @Component({
   selector: 'app-prova-card',
   standalone: true,
+  imports: [UiIconComponent],
   templateUrl: './prova-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProvaCardComponent {
   prova = input.required<Prova>();
   variant = input<ProvaCardVariant>('card');
+  /** Usuário já concluiu esta prova ao menos uma vez — exibe o selo de feita. */
+  feita = input(false);
+
+  protected readonly iconFeita = CircleCheck;
 
   abrirProva = output<string>();
 

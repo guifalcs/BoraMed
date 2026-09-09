@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-09 | Feature | Selo de "já fez" na lista de treinos nacionais
+
+**A tabela de provas nacionais passa a dizer, sem ocupar espaço, quais o aluno já concluiu**
+
+- **O problema era de navegação, não de dados.** O aluno já tinha o histórico, mas na hora de escolher a próxima prova a lista não distinguia o que ele já tinha feito do que era inédito — a conferência exigia sair da tela.
+- **Selo discreto na linha:** bolinha com check (`CircleCheck`, `--color-success`) alinhada à direita, antes da seta. O texto "Você já fez essa prova uma vez" só aparece no hover do próprio ícone — grupo nomeado (`group/feita`), porque a linha inteira já é um `group` e o balão abriria em qualquer hover da linha. Balão posicionado à esquerda do ícone, não abaixo: o card da lista tem `overflow-hidden` e cortaria o balão na última linha.
+- **"Já fez" = tentativa `finalizada`, excluindo modo `visualizar`.** Ver o gabarito não conta como ter feito a prova. Tentativa em andamento ou pausada também não marca o selo — o estado "retomar" já é resolvido pelo CTA de continuidade na home.
+- **Requisição própria, depois da lista.** `TentativaService.provasJaFeitas(ids)` consulta só os ids da página visível, então o custo não cresce com o histórico do aluno, e a listagem renderiza sem esperar o selo. Resposta de página que já saiu da tela é descartada. Se a consulta falhar, devolve conjunto vazio: selo é enfeite e não pode derrubar a lista.
+- **Sem migration e sem RPC nova** — a query usa a RLS que já existe em `tentativa` (o aluno só lê as próprias).
+- Verificado: **847 unitários verdes** (+10 entre `prova-card` e `provas-afya`, cobrindo o selo por linha, o caso de lista vazia sem consulta, o rótulo acessível e o balão), `tsc` limpo e build de produção OK. Prints de validação (desktop e mobile, com e sem hover) gerados por `tests/screenshots/prova-feita.spec.ts`, no mesmo padrão do `propostas.spec.ts`.
+- **Acessibilidade:** o ícone vive dentro do `<button>` da linha, então o gatilho não pode ser outro elemento focável — o texto vai como `sr-only` (lido junto com a linha) e o balão fica `aria-hidden`. No mobile não há hover: o ícone comunica sozinho e o leitor de tela lê o `sr-only`.
+- Pendência conhecida: o selo aparece com **uma ou mais** tentativas finalizadas, mas o texto diz "uma vez". Para quem repetiu a prova, o rótulo fica impreciso — corrigir depois exige trocar o `select` por contagem agregada por `prova_id`.
+- `docs/business-rules.md` atualizado.
+
 ## 2026-09-08 | Feature | Plano gratuito passa a montar simulado — a cota de 3 vira 2 + 1
 
 **O grátis deixa de ser só "prova pronta": ganha uma bala de prata para montar o próprio simulado, com o acervo inteiro**

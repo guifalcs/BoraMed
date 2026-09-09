@@ -9,6 +9,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
+import { TentativaService } from '../../../core/services/tentativa.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { Prova, SubtipoProva } from '../../../core/models/prova';
 import type { Disciplina } from '../../../core/models/disciplina';
@@ -29,6 +30,7 @@ const POR_PAGINA = 15;
 })
 export class ProvasAfyaComponent {
   private readonly provaService = inject(ProvaService);
+  private readonly tentativaService = inject(TentativaService);
   private readonly router = inject(Router);
   private readonly nav = inject(NavigationProgressService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -43,6 +45,8 @@ export class ProvasAfyaComponent {
   protected readonly total = signal(0);
   protected readonly isLoading = signal(true);
   protected readonly erro = signal<string | null>(null);
+  /** Ids das provas da página atual que o usuário já concluiu. */
+  protected readonly provasFeitas = signal<ReadonlySet<string>>(new Set());
 
   protected readonly subtiposFiltro = signal<SubtipoProva[]>([]);
   protected readonly periodosFiltro = signal<number[]>([]);
@@ -130,6 +134,23 @@ export class ProvasAfyaComponent {
       this.erro.set(result.error);
     }
     this.isLoading.set(false);
+    if (result.ok) await this.carregarProvasFeitas(result.data.provas);
+  }
+
+  /**
+   * Selo "Feita" — buscado depois da lista, em requisição própria, para não
+   * atrasar a renderização das provas. Sem provas, nada a consultar.
+   */
+  private async carregarProvasFeitas(provas: Prova[]): Promise<void> {
+    if (provas.length === 0) {
+      this.provasFeitas.set(new Set());
+      return;
+    }
+    const feitas = await this.tentativaService.provasJaFeitas(provas.map((p) => p.id));
+    // Descarta resposta de uma página que já não está na tela.
+    const atuais = new Set(this.provas().map((p) => p.id));
+    if (provas.some((p) => !atuais.has(p.id))) return;
+    this.provasFeitas.set(feitas);
   }
 
   /**

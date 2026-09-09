@@ -7,7 +7,7 @@ const DESKTOP = process.env['SHOT_VP'] === 'desktop';
 // (testDir ./tests/e2e) nunca colete estes prints de auditoria.
 export default defineConfig({
   testDir: '.',
-  testMatch: /(shots|propostas)\.spec\.ts/,
+  testMatch: /(shots|propostas|prova-feita)\.spec\.ts/,
   fullyParallel: false,
   workers: 1,
   retries: 0,

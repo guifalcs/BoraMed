@@ -114,6 +114,40 @@ export class TentativaService {
     }
   }
 
+  /**
+   * Dentre as provas informadas, quais o usuário já concluiu ao menos uma vez.
+   * Usado só para o selo "Feita" da listagem — a consulta é restrita aos ids da
+   * página atual para não trazer o histórico inteiro. `visualizar` não conta:
+   * é leitura do gabarito, não realização da prova.
+   */
+  async provasJaFeitas(provaIds: string[]): Promise<Set<string>> {
+    if (provaIds.length === 0) return new Set();
+    try {
+      const user = this.auth.user();
+      if (!user) return new Set();
+
+      const { data, error } = await this.supabase
+        .from('tentativa')
+        .select('prova_id')
+        .eq('user_id', user.id)
+        .eq('status', 'finalizada')
+        .neq('modo', 'visualizar')
+        .in('prova_id', provaIds);
+
+      if (error) throw error;
+
+      const idsDaPagina = new Set(provaIds);
+      const feitas = new Set<string>();
+      for (const row of (data ?? []) as { prova_id: string | null }[]) {
+        if (row.prova_id && idsDaPagina.has(row.prova_id)) feitas.add(row.prova_id);
+      }
+      return feitas;
+    } catch {
+      // Selo é enfeite: falhar aqui não pode derrubar a listagem.
+      return new Set();
+    }
+  }
+
   async buscarTentativaAtivaRecente(): Promise<ProvaResult<Tentativa | null>> {
     try {
       const user = this.auth.user();

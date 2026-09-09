@@ -44,3 +44,7 @@ export const N2: Story = {
 export const Integradora: Story = {
   args: { prova: { ...prova, subtipo_nacional: 'integradora', nome: 'Simulado Integradora — 1º Período' } },
 };
+
+export const Feita: Story = { args: { feita: true } };
+
+export const RowFeita: Story = { args: { variant: 'row', feita: true } };

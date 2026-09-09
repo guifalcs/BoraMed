@@ -28,6 +28,7 @@ function provaFactory(overrides: Partial<Prova> = {}): Prova {
 async function createComponent(
   prova: Prova,
   variant: 'card' | 'row' = 'card',
+  feita = false,
 ): Promise<ComponentFixture<ProvaCardComponent>> {
   await TestBed.configureTestingModule({
     imports: [ProvaCardComponent],
@@ -36,6 +37,7 @@ async function createComponent(
   const fixture = TestBed.createComponent(ProvaCardComponent);
   fixture.componentRef.setInput('prova', prova);
   fixture.componentRef.setInput('variant', variant);
+  fixture.componentRef.setInput('feita', feita);
   fixture.detectChanges();
   return fixture;
 }
@@ -143,6 +145,34 @@ describe('ProvaCardComponent', () => {
       );
       const badge = (fixture.nativeElement as HTMLElement).querySelector('span.rounded-md');
       expect(badge?.textContent?.trim()).toBe('TPI');
+    });
+  });
+
+  // ── Selo "Feita" ──────────────────────────────────────────────────────────
+
+  describe('selo de prova já realizada', () => {
+    const TEXTO = 'Você já fez essa prova uma vez';
+
+    it('não aparece por padrão', async () => {
+      const fixture = await createComponent(provaFactory(), 'row');
+      expect((fixture.nativeElement as HTMLElement).textContent).not.toContain(TEXTO);
+    });
+
+    it('aparece na variante "row" quando feita', async () => {
+      const fixture = await createComponent(provaFactory(), 'row', true);
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain(TEXTO);
+      // Ícone + rótulo acessível + balão de hover.
+      expect(el.querySelector('lucide-angular')).not.toBeNull();
+      expect(el.querySelector('.sr-only')?.textContent?.trim()).toBe(TEXTO);
+      expect(el.querySelector('[role="tooltip"]')).not.toBeNull();
+    });
+
+    it('aparece na variante "card" quando feita', async () => {
+      const fixture = await createComponent(provaFactory(), 'card', true);
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain(TEXTO);
+      expect(el.querySelector('[role="tooltip"]')).not.toBeNull();
     });
   });
 
