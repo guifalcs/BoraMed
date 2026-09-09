@@ -8,10 +8,47 @@ HTML completo. Mecânica, segmentos e tokens: `docs/campanhas-email.md`.
 
 ---
 
+## `2026-09-n1-semana-que-vem.html`
+
+Reta final: a N1 é na semana seguinte ao disparo. Mesma oferta e mesmo público da
+campanha de agosto, com a urgência apertada e um número concreto no lugar do
+"dá tempo" genérico (200 questões = 30 por dia, sete dias).
+
+- **Público:** `sem_assinatura_ativa`.
+- **Nome interno sugerido:** `2026-09 · N1 · semana que vem`
+- **Janela de disparo:** só faz sentido de 5 a 8 dias antes da prova. Depois
+  disso a conta de 30/dia não fecha e o e-mail vira promessa furada.
+- Preços citados, checklist de disparo e decisões de copy valem iguais para as
+  duas campanhas: estão nas seções da campanha de agosto, mais abaixo.
+
+### Assunto
+
+Principal:
+
+```
+{{primeiro_nome}}, a N1 é semana que vem
+```
+
+Alternativas para A/B:
+
+```
+{{primeiro_nome}}, falta uma semana para a N1
+{{primeiro_nome}}, ainda cabem 200 questões até a N1
+```
+
+### Se a campanha de agosto já saiu para esta lista
+
+É o segundo toque no mesmo público e ele precisa parecer segundo toque, não
+reenvio: o gancho aqui é a data em cima, o corpo é outro e o assunto também.
+Depois deste, parar. Terceiro e-mail com o mesmo pedido, na mesma semana, é o
+que faz a pessoa clicar em spam em vez de descadastrar, e complaint pesa mais na
+reputação do domínio.
+
 ## `2026-08-n1-treinos-nacionais.html`
 
 Conversão de quem criou conta e não assinou, usando a proximidade da N1 como
-gancho. Vende o plano Essencial (treinos nacionais até o 8º período).
+gancho. Vende o plano Essencial (treinos nacionais até o 8º período). Versão de
+antecedência; para a semana da prova, use a de setembro acima.
 
 - **Público:** `sem_assinatura_ativa` (padrão da tela). Pega quem nunca assinou
   e ex-assinantes — os dois grupos estão sem acesso agora e a copy serve para
@@ -38,7 +75,7 @@ continua fazendo sentido — "a N1 vem aí, Tudo bem" não):
 Sem caixa alta, sem "GRÁTIS/URGENTE", sem excesso de `!` — palavra de gatilho no
 assunto derruba entregabilidade (ver seção 6 de `docs/campanhas-email.md`).
 
-### Preços citados (produção, conferidos em 2026-08-26)
+### Preços citados (produção, conferidos em 2026-08-26 e reconferidos em 2026-09-09)
 
 | Plano | Mensal | Semestral |
 | --- | --- | --- |
