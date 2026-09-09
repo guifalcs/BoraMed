@@ -126,8 +126,13 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const resendKey = Deno.env.get('RESEND_API_KEY');
-  const remetentePadrao = Deno.env.get('RESEND_FROM') ?? '';
+  // `.trim()` porque a causa mais comum de "401 API key is invalid" depois de
+  // uma rotação de chave é espaço ou \n no valor do secret (copiar e colar do
+  // painel, `secrets set --env-file` com quebra de linha final). A chave vai
+  // literal no header `Authorization: Bearer <chave>`, e o Resend recusa a
+  // string inteira sem dizer que o problema é o invisível no fim.
+  const resendKey = Deno.env.get('RESEND_API_KEY')?.trim();
+  const remetentePadrao = (Deno.env.get('RESEND_FROM') ?? '').trim();
   const appUrl = (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '');
   /**
    * Host da logo do envelope. Separado da APP_URL porque o Gmail/Outlook busca
