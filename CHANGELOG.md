@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-10 | Fix | Impersonação de admin contava como acesso do aluno em /admin/acessos
+
+**Contas que só receberam suporte apareciam com uma rede a mais — o IP do admin — inflando o indício de compartilhamento**
+
+- **Sintoma:** no ranking de `/admin/acessos`, alunos que nunca compartilharam a conta apareciam com 2 redes e score inflado. Auditando o banco: 327 janelas registradas, só 3 marcadas como `impersonado`, contra 30+ entradas em `admin_impersonation_log`.
+- **Eram quatro furos na marcação, não um:**
+  1. **Detecção só por tempo.** O trigger marcava qualquer login do usuário até 5 min depois da entrada de auditoria. Errava dos dois lados: perdia a impersonação quando o GoTrue demorava e marcava como suporte o login **real** do aluno logo em seguida — que é justamente o caso em que esconder o acesso apaga evidência de compartilhamento.
+  2. **Só o login era marcado.** Refresh de token com troca de IP na mesma sessão de impersonação e heartbeats do app entravam como acesso legítimo.
+  3. **A consolidação apagava a marca.** `impersonado = impersonado AND p_impersonado` rebaixava a linha do login para `false` assim que qualquer evento não marcado caísse nos 30 min seguintes no mesmo IP.
+  4. **A carga inicial nunca consultou a auditoria.** Toda sessão de impersonação anterior a 04/09 entrou como acesso do aluno — a origem da maior parte dos falsos positivos visíveis hoje.
+- **A correlação passa a exigir IP e user agent do admin.** A sessão do alvo nasce no navegador do próprio admin: mesmo IP e mesmo `user-agent` que o edge function gravou segundos antes. Com os dois, um login real do aluno saindo por acaso do mesmo IP (café, mesma operadora) continua contando como acesso real. O IP do admin é o **primeiro** elemento do `x-forwarded-for` guardado em `admin_impersonation_log.ip`; o resto são proxies.
+- **A sessão inteira herda a marca pelo `session_id`.** O heartbeat passa a mandar o `session_id` que vem do claim do JWT, então refresh e heartbeat dentro do atendimento herdam de quem o trigger de login já classificou. O frontend continua não disparando heartbeat sob impersonação — a checagem no banco é rede de segurança para reload de página e rotas fora do dashboard.
+- **Janela impersonada e janela real nunca mais se consolidam na mesma linha:** `impersonado` entrou no critério de casamento de `registrar_acesso_evento`, junto com o `session_id`. Some a linha do UPDATE que rebaixava a marca.
+- **Backfill retroativo em duas etapas:** casamento por (usuário, IP do admin, user agent, momento) e depois propagação por `session_id`. No estado atual do banco isso corrige 7 janelas que estavam contando como acesso do aluno, em 7 contas diferentes.
+- **Nova coluna `acesso_log.admin_id`:** qual admin gerou o acesso de suporte. Antes só dava para saber *que* houve impersonação, não de quem.
+- **O detalhe do usuário passa a mostrar "Suporte: N"** com a nota de quantas janelas ficaram fora dos números. Sem isso não dá para distinguir "conta limpa" de "conta cujo suporte sumiu do cálculo".
+- Verificado: migration aplicada em Postgres 16 limpo com as anteriores da série, cobrindo login de impersonação, login real na mesma janela e **no mesmo IP** do admin, refresh com troca de IP dentro do atendimento, heartbeat de cada sessão e o backfill das linhas legadas. **847 unitários verdes**, `tsc` limpo e build de produção OK.
+- `docs/business-rules.md` e `docs/architecture.md` atualizados.
+
 ## 2026-09-09 | Fix | Campanha parada em "401 API key is invalid" depois da rotação da chave
 
 **A chave gravada no secret não era a nova; o e-mail de cadastro continuar funcionando não provava nada sobre ela**

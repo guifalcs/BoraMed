@@ -80,7 +80,7 @@ const PERIODOS = [
             </div>
           </div>
 
-          <div class="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div class="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
             @for (t of totaisDetalhe(); track t.label) {
               <div class="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
                 <p class="text-[11px] font-medium uppercase tracking-wide text-gray-500">{{ t.label }}</p>
@@ -88,6 +88,14 @@ const PERIODOS = [
               </div>
             }
           </div>
+
+          @if (d.totais.impersonados > 0) {
+            <p class="mt-3 text-xs text-gray-400">
+              {{ d.totais.impersonados }} {{ d.totais.impersonados === 1 ? 'janela' : 'janelas' }} de
+              impersonação de admin {{ d.totais.impersonados === 1 ? 'foi ignorada' : 'foram ignoradas' }}
+              nos números acima — o IP nesses acessos é o do admin, não o do dono da conta.
+            </p>
+          }
         </div>
 
         @if (d.sobreposicoes.length > 0) {
@@ -335,6 +343,7 @@ export class AdminAcessosComponent implements OnInit {
       { label: 'Navegadores', valor: t.navegadores },
       { label: 'Logins', valor: t.sessoes },
       { label: 'Países', valor: t.paises },
+      { label: 'Suporte', valor: t.impersonados },
     ];
   });
 

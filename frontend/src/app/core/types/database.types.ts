@@ -36,6 +36,7 @@ export type Database = {
     Tables: {
       acesso_log: {
         Row: {
+          admin_id: string | null
           device_id: string | null
           dispositivo: string | null
           eventos: number
@@ -51,6 +52,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_id?: string | null
           device_id?: string | null
           dispositivo?: string | null
           eventos?: number
@@ -66,6 +68,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_id?: string | null
           device_id?: string | null
           dispositivo?: string | null
           eventos?: number
@@ -3159,6 +3162,7 @@ export type Database = {
       registrar_acesso: { Args: { p_device_id?: string }; Returns: undefined }
       registrar_acesso_evento: {
         Args: {
+          p_admin_id?: string
           p_device_id?: string
           p_impersonado?: boolean
           p_ip: unknown
