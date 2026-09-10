@@ -418,6 +418,16 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   MP** (a resposta síncrona do checkout apenas antecipa o mesmo sync,
   idempotente). Reconciliação ativa via `mp-consultar-pagamento` ("Já paguei",
   webhook atrasado, pós-3DS).
+* **O webhook aceita os dois canais do MP.** O moderno
+  (`?data.id=..&type=..`) vem assinado e é validado por HMAC. O IPN legado
+  (`?id=..&topic=..`) **não é assinado pelo MP** e vale só como *gatilho*: o
+  estado sempre vem de um `GET` no recurso da nossa conta e o sync é
+  idempotente, então nada do corpo dele é confiado. Assinatura **presente e
+  inválida** continua 401 — isso é adulteração, não canal legado.
+* **Nenhuma intenção de acesso único fica `pendente` para sempre.** Além do
+  webhook e do "Já paguei", a reconciliação horária varre as intenções
+  `pendente` com payment criado nas últimas 72h e reconsulta o MP: concede o
+  acesso de quem pagou e marca `expirada`/`recusada` quem não pagou.
 * **Retry de cobrança** (regra do MP): após 3 parcelas recusadas a assinatura é
   cancelada automaticamente.
 * **Vínculo aluno↔assinatura**: `external_reference` = `profiles.id` nos

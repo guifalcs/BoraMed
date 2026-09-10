@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-10 | Fix | Desfecho do Pix perdido — intenção presa em "pendente" e acesso pago em risco
+
+**O Mercado Pago passou a entregar o `payment.updated` só pelo canal que o webhook rejeitava com 401**
+
+- **Sintoma:** aluno gera o Pix do Avançado Semestral, o registro nasce `pendente` e nunca mais muda — nem para `aprovada`, nem para `expirada`. No caso que levantou isto o aluno não chegou a pagar, então nada foi cobrado indevidamente; o que a auditoria mostrou é que **um Pix pago teria dado no mesmo**: dinheiro dentro e sem acesso.
+- **A causa são dois canais de notificação, não um bug de assinatura.** O MP entrega o mesmo evento pelo webhook moderno (`?data.id=..&type=..`, assinado) e pelo IPN legado (`?id=..&topic=..`, **sem `x-signature`**). O IPN sempre bateu 401 aqui — ruído inofensivo enquanto o moderno entregava tudo. De 09/09 em diante o canal moderno passou a trazer só o `payment.created`: o último `payment.updated` processado foi 08/09 21:04, e todas as transições posteriores morreram em 401.
+- **O IPN passa a valer como gatilho, não como fonte.** O `topic` é traduzido para o `type` interno, o estado real vem sempre de um `GET` no recurso da nossa conta no MP e o sync é idempotente — nada do corpo da notificação é confiado. **`x-signature` presente e inválida continua 401**: aí é adulteração, não canal legado.
+- **IPN não usa o atalho de replay.** Ele não manda `action`, então "criado", "aprovado" e "expirado" do mesmo payment colidiriam na mesma chave de idempotência e só o primeiro seria processado — exatamente o desfecho que se queria recuperar. Ele registra o evento para auditoria e segue processando sempre.
+- **A reconciliação horária deixou de ignorar o acesso único.** Ela só varria recorrentes (as que têm `preapproval`), e acesso único não tem — o semestral estava fora de qualquer rede de segurança, com o botão "Já paguei" como único resgate, e ele depende do aluno continuar com a tela aberta. Agora varre as intenções `pendente` com payment criado nas últimas 72h (janela que cobre o boleto de 3 dias) e roda nelas o mesmo sync: concede o acesso de quem pagou e marca `expirada`/`recusada` quem não pagou.
+- **A varredura é barata e idempotente:** intenção genuinamente pendente no MP continua pendente aqui, sem escrita; sem `mp_payment_id` nem chega a consultar o MP. O resumo do cron ganhou `acesso_unico_verificados` e `acesso_unico_resolvidos`.
+- **Vale conferir no painel do MP** se o endpoint moderno ainda tem o evento de atualização de pagamento marcado — o fix torna o sistema imune à resposta, mas o canal assinado é o caminho preferido.
+- Verificado: **194 testes de edge function verdes**, `deno check` e `deno lint` limpos. Cobertura nova: IPN aceito como gatilho concedendo acesso, reentrega de IPN com novo status escapando do replay, `topic` fora do escopo, assinatura adulterada ainda em 401, e os quatro cenários de reconciliação do acesso único.
+- `docs/architecture.md` (ADR-039), `docs/business-rules.md` e `docs/testes-automatizados-pagamento.md` atualizados.
+
 ## 2026-09-10 | Fix | Impersonação de admin contava como acesso do aluno em /admin/acessos
 
 **Contas que só receberam suporte apareciam com uma rede a mais — o IP do admin — inflando o indício de compartilhamento**

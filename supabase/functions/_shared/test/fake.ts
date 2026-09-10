@@ -370,3 +370,14 @@ export async function signedWebhookRequest(opts: {
     body: JSON.stringify({ type: opts.type, data: { id: opts.dataId } }),
   });
 }
+
+/**
+ * Monta a notificação do IPN LEGADO do Mercado Pago: dados só na querystring
+ * (`?id=..&topic=..`), corpo vazio e SEM `x-signature` — o canal não assina.
+ */
+export function ipnWebhookRequest(opts: { topic: string; id: string }): Request {
+  const url = new URL('https://proj.supabase.co/functions/v1/mp-webhook');
+  url.searchParams.set('id', opts.id);
+  url.searchParams.set('topic', opts.topic);
+  return new Request(url, { method: 'POST' });
+}

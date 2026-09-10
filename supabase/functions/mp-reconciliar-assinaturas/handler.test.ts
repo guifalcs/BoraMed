@@ -294,3 +294,155 @@ Deno.test("reconciliar: fatura pendente sem desfecho → aguardando, sem escrita
   assertEquals((await res.json()).aguardando, 1);
   assertEquals(db.rows("pagamento").length, 0);
 });
+
+// --- Acesso único (checkout embutido, sem preapproval) ---------------------
+// Regressão do incidente de 10/09/2026: com o webhook do desfecho perdido, a
+// intenção do aluno ficava `pendente` para sempre — nenhum cron olhava para ela.
+
+/** Intenção de acesso único ainda `pendente`, criada há `horas` horas. */
+function dbIntencaoPendente(horas = 2): FakeDb {
+  return new FakeDb({
+    assinatura: [],
+    pagamento: [],
+    plano: [{ id: "pl-sem", slug: "semestral" }],
+    pagamento_intencao: [
+      {
+        id: "int-1",
+        user_id: "user-1",
+        tipo: "acesso_unico",
+        status: "pendente",
+        mp_payment_id: "PAY-1",
+        criado_em: new Date(NOW.getTime() - horas * 60 * 60 * 1000)
+          .toISOString(),
+      },
+    ],
+  });
+}
+
+Deno.test("reconciliar acesso único: Pix aprovado com webhook perdido → concede o acesso", async () => {
+  const db = dbIntencaoPendente();
+  const fetch = fakeFetch([
+    {
+      match: "/v1/payments/PAY-1",
+      body: {
+        id: "PAY-1",
+        status: "approved",
+        status_detail: "accredited",
+        payment_method_id: "pix",
+        date_approved: "2026-07-10T14:30:00.000Z",
+        transaction_amount: 239.52,
+        metadata: {
+          tipo: "acesso_unico",
+          user_id: "user-1",
+          plano_slug: "semestral",
+          intencao_id: "int-1",
+          acesso_meses: 6,
+        },
+      },
+    },
+  ]);
+  const res = await handleReconciliarAssinaturas(
+    request(),
+    makeDeps({ db, env: CRON_ENV, fetch, now: NOW }),
+  );
+  assertEquals(res.status, 200);
+  const out = await res.json();
+  assertEquals(out.acesso_unico_verificados, 1);
+  assertEquals(out.acesso_unico_resolvidos, 1);
+
+  assertEquals(
+    find(db, "pagamento_intencao", (r) => r.id === "int-1")?.status,
+    "aprovada",
+  );
+  const assin = find(db, "assinatura", (r) => r.mp_payment_id === "PAY-1");
+  assertExists(assin);
+  assertEquals(assin?.status, "authorized");
+  assertEquals(
+    find(db, "pagamento", (r) => r.mp_payment_id === "PAY-1")?.status,
+    "approved",
+  );
+});
+
+Deno.test("reconciliar acesso único: Pix expirado no MP → intenção vira expirada, sem acesso", async () => {
+  const db = dbIntencaoPendente();
+  const fetch = fakeFetch([
+    {
+      match: "/v1/payments/PAY-1",
+      body: {
+        id: "PAY-1",
+        status: "cancelled",
+        status_detail: "expired",
+        payment_method_id: "pix",
+        metadata: {
+          tipo: "acesso_unico",
+          user_id: "user-1",
+          plano_slug: "semestral",
+          intencao_id: "int-1",
+        },
+      },
+    },
+  ]);
+  const res = await handleReconciliarAssinaturas(
+    request(),
+    makeDeps({ db, env: CRON_ENV, fetch, now: NOW }),
+  );
+  assertEquals((await res.json()).acesso_unico_resolvidos, 1);
+  assertEquals(
+    find(db, "pagamento_intencao", (r) => r.id === "int-1")?.status,
+    "expirada",
+  );
+  assertEquals(db.rows("assinatura").length, 0);
+});
+
+Deno.test("reconciliar acesso único: ainda pendente no MP → nada muda", async () => {
+  const db = dbIntencaoPendente();
+  const fetch = fakeFetch([
+    {
+      match: "/v1/payments/PAY-1",
+      body: {
+        id: "PAY-1",
+        status: "pending",
+        status_detail: "pending_waiting_transfer",
+        payment_method_id: "pix",
+        metadata: {
+          tipo: "acesso_unico",
+          user_id: "user-1",
+          plano_slug: "semestral",
+          intencao_id: "int-1",
+        },
+      },
+    },
+  ]);
+  const res = await handleReconciliarAssinaturas(
+    request(),
+    makeDeps({ db, env: CRON_ENV, fetch, now: NOW }),
+  );
+  const out = await res.json();
+  assertEquals(out.acesso_unico_verificados, 1);
+  assertEquals(out.acesso_unico_resolvidos, 0);
+  assertEquals(
+    find(db, "pagamento_intencao", (r) => r.id === "int-1")?.status,
+    "pendente",
+  );
+  assertEquals(db.rows("assinatura").length, 0);
+});
+
+Deno.test("reconciliar acesso único: intenção fora da janela de 72h não é consultada", async () => {
+  // fetch não mockado: qualquer chamada ao MP rejeitaria o teste.
+  const db = dbIntencaoPendente(80);
+  const res = await handleReconciliarAssinaturas(
+    request(),
+    makeDeps({ db, env: CRON_ENV, now: NOW }),
+  );
+  assertEquals((await res.json()).acesso_unico_verificados, 0);
+});
+
+Deno.test("reconciliar acesso único: intenção sem payment no MP é ignorada", async () => {
+  const db = dbIntencaoPendente();
+  db.rows("pagamento_intencao")[0].mp_payment_id = null;
+  const res = await handleReconciliarAssinaturas(
+    request(),
+    makeDeps({ db, env: CRON_ENV, now: NOW }),
+  );
+  assertEquals((await res.json()).acesso_unico_verificados, 0);
+});

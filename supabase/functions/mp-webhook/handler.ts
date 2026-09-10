@@ -1,7 +1,8 @@
 import type { Deps } from "../_shared/deps.ts";
 import {
+  classifyMpSignature,
   mapAuthorizedPaymentStatus,
-  verifyMpSignature,
+  mpTopicToType,
 } from "../_shared/mp-signature.ts";
 import { syncAcessoUnicoPayment } from "../_shared/mp-payment-sync.ts";
 
@@ -9,6 +10,17 @@ import { syncAcessoUnicoPayment } from "../_shared/mp-payment-sync.ts";
 // Chamado pelo MP (não pelo app), então NÃO valida JWT; em vez disso valida a
 // assinatura HMAC-SHA256 do header x-signature. Deve responder 200 em ≤22s.
 // config.toml: verify_jwt = false para esta função.
+//
+// DOIS CANAIS, UM HANDLER (10/09/2026): o MP entrega o mesmo evento pelo
+// webhook moderno (`?data.id=..&type=..`, assinado) e pelo IPN legado
+// (`?id=..&topic=..`, SEM x-signature). O IPN sempre morreu em 401 aqui — era
+// ruído inofensivo enquanto o canal moderno entregava. Quando o moderno passou
+// a entregar só o `payment.created`, todo `payment.updated` do Pix caiu no IPN
+// e sumiu: a intenção do aluno ficou `pendente` para sempre e o acesso pago
+// nunca seria concedido. Agora a notificação SEM assinatura é aceita como
+// GATILHO — nada do corpo dela é confiado, o estado vem sempre de um GET no
+// recurso da nossa conta no MP, e o sync é idempotente. Assinatura PRESENTE e
+// inválida continua 401: aí é adulteração, não canal legado.
 const MP_API = "https://api.mercadopago.com";
 
 export async function handleWebhook(
@@ -41,7 +53,13 @@ export async function handleWebhook(
     url.searchParams.get("data.id") ?? url.searchParams.get("id") ??
       dataFromBody ?? "",
   );
-  const type = String(body["type"] ?? url.searchParams.get("type") ?? "");
+  // `type` (webhook moderno) ou `topic` (IPN legado, ex.: "?topic=payment").
+  const type = String(
+    body["type"] ?? url.searchParams.get("type") ??
+      mpTopicToType(
+        String(body["topic"] ?? url.searchParams.get("topic") ?? ""),
+      ),
+  );
   // `action` (ex.: "payment.created", "payment.updated") distingue eventos
   // distintos do MP para o MESMO recurso (dataId); reentregas do mesmo evento
   // repetem a mesma action, então entram na chave de idempotência.
@@ -50,10 +68,20 @@ export async function handleWebhook(
   );
 
   // Validar assinatura HMAC
-  const ok = await verifyMpSignature(req, dataId, webhookSecret);
-  if (!ok) {
+  const assinatura = await classifyMpSignature(req, dataId, webhookSecret);
+  if (assinatura === "invalida") {
     console.error("x-signature inválido", { type, dataId });
     return new Response("invalid signature", { status: 401 });
+  }
+  const assinado = assinatura === "valida";
+  if (!assinado) {
+    console.log(
+      "notificação sem x-signature (IPN legado): usada só como gatilho",
+      {
+        type,
+        dataId,
+      },
+    );
   }
 
   if (!dataId) return new Response("ok", { status: 200 });
@@ -64,22 +92,33 @@ export async function handleWebhook(
   // (23505), é uma reentrega/replay do MP do MESMO evento — responde 200 sem
   // reprocessar. Em caso de falha no processamento (catch abaixo ou usuário
   // não resolvido), o registro é removido para permitir retry do MP.
-  const idempotencyKey = `${type}:${dataId}:${action}`;
+  //
+  // O IPN legado NÃO tem `action`: todas as suas notificações para um mesmo
+  // recurso (criado, aprovado, expirado) colidiriam na chave "<type>:<id>:ipn"
+  // e só a primeira seria processada — exatamente o que precisamos evitar.
+  // Por isso ele registra o evento para auditoria mas NUNCA usa o atalho de
+  // replay: o estado real vem do GET no MP e o sync é idempotente.
+  const idempotencyKey = `${type}:${dataId}:${assinado ? action : "ipn"}`;
   const { error: idempotencyError } = await admin
     .from("mp_webhook_evento")
     .insert({ id: idempotencyKey, payload: body });
   if (idempotencyError) {
     if ((idempotencyError as { code?: string }).code === "23505") {
-      console.log("webhook duplicado (replay), ignorando", { idempotencyKey });
-      return new Response("ok", { status: 200 });
+      if (assinado) {
+        console.log("webhook duplicado (replay), ignorando", {
+          idempotencyKey,
+        });
+        return new Response("ok", { status: 200 });
+      }
+    } else {
+      // Erro inesperado ao registrar (ex.: indisponibilidade momentânea da
+      // tabela) — loga e segue processando para não bloquear o webhook por uma
+      // falha de infraestrutura auxiliar.
+      console.error(
+        "erro ao registrar mp_webhook_evento:",
+        (idempotencyError as { message?: string }).message,
+      );
     }
-    // Erro inesperado ao registrar (ex.: indisponibilidade momentânea da
-    // tabela) — loga e segue processando para não bloquear o webhook por uma
-    // falha de infraestrutura auxiliar.
-    console.error(
-      "erro ao registrar mp_webhook_evento:",
-      (idempotencyError as { message?: string }).message,
-    );
   }
 
   // Remove o registro de idempotência: usado em toda saída não-2xx (pede
