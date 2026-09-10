@@ -230,7 +230,9 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * A coleta é **declarada na política de privacidade** ("dados técnicos: endereço IP, tipo de navegador e sistema operacional, coletados automaticamente para segurança e diagnóstico") e limitada a 180 dias de retenção.
 * A finalidade atual é **exclusivamente observação**: nenhuma sessão é expirada, nenhum acesso é bloqueado e nenhum usuário é avisado ou penalizado automaticamente por indício de compartilhamento.
 * Os dados são visíveis apenas para administradores, em `/admin/acessos`, via as RPCs `admin_get_acessos_resumo`, `admin_get_acessos_usuario` e `admin_get_redes_multiconta` (SECURITY DEFINER, exigem `is_admin()`). A tabela tem RLS admin-only para SELECT e nenhuma policy de escrita.
-* Acessos gerados por impersonação de admin carregam o IP do admin e são marcados `impersonado`; ficam fora de todas as análises.
+* Acessos gerados por impersonação de admin carregam o IP do admin e são marcados `impersonado`; ficam fora de todas as análises (contagens de IP, rede, dispositivo, país, login e sobreposição). O detalhe do usuário mostra quantas janelas foram ignoradas por esse motivo.
+* A marcação é feita casando a sessão criada pelo magic link com `admin_impersonation_log`: **mesmo IP e mesmo user agent** do admin, na janela de 15 min do registro de auditoria. Só tempo não basta — marcava como suporte o login real do aluno logo em seguida, o que esconderia compartilhamento verdadeiro.
+* A sessão inteira herda a marca pelo `session_id`: refresh de token com troca de IP e heartbeats do app dentro da impersonação também ficam de fora. Janela impersonada e janela real nunca são consolidadas na mesma linha.
 * O indício forte de compartilhamento é **sobreposição de janelas de acesso em redes diferentes e dispositivos diferentes**. Contagem alta de redes, isolada, não é conclusiva: CGNAT de operadora móvel e wi-fi de faculdade inflam o número legitimamente.
 * Os termos de uso **não** proíbem hoje o compartilhamento de conta. Qualquer medida futura contra contas compartilhadas depende de incluir antes a cláusula de conta pessoal e intransferível.
 

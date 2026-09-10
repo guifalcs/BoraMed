@@ -118,6 +118,7 @@ export interface AdminAcessoRegistro {
   device_id: string | null;
   session_id: string | null;
   impersonado: boolean;
+  admin_id: string | null;
   eventos: number;
   primeiro_em: string;
   ultimo_em: string;
@@ -167,6 +168,8 @@ export interface AdminAcessosUsuarioDetalhe {
     navegadores: number;
     paises: number;
     sessoes: number;
+    /** Janelas de impersonação de admin, excluídas de todos os números acima. */
+    impersonados: number;
   };
   sobreposicoes: AdminAcessoSobreposicao[];
   por_ip: AdminAcessoPorIp[];
