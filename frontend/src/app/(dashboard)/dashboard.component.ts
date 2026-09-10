@@ -167,6 +167,12 @@ export class DashboardComponent {
   }
 
   protected async handleVoltarParaAdmin(): Promise<void> {
+    // Espelha o que admin-usuarios faz ao ENTRAR na impersonação: o perfil e o
+    // estado de assinatura ficam em signals fora do CacheService, então sem
+    // limpar aqui o admin volta carregando o nome e o plano do aluno até a
+    // próxima navegação que os recarregue.
+    this.profileService.clear();
+    this.subscriptionService.clear();
     await this.auth.voltarParaAdmin();
   }
 

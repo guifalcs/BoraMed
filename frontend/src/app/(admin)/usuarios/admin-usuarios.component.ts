@@ -24,6 +24,7 @@ import type { UsuarioAdmin } from '../../core/services/admin.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import type { Profile } from '../../core/models/auth.types';
 import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
@@ -46,6 +47,7 @@ export class AdminUsuariosComponent implements OnInit {
   private readonly toast = inject(NotificationService);
   private readonly auth = inject(AuthService);
   private readonly profileService = inject(ProfileService);
+  private readonly subscriptionService = inject(SubscriptionService);
 
   protected readonly currentUserId = computed(() => this.auth.user()?.id);
   protected readonly isSuperAdmin = computed(() => this.profileService.profile()?.papel === 'super_admin');
@@ -179,6 +181,10 @@ export class AdminUsuariosComponent implements OnInit {
       'Admin';
 
     this.profileService.clear();
+    // O status de acesso vive em signals fora do CacheService: sem descartar,
+    // o aluno incorporado é avaliado com o plano do admin (paywall e gates de
+    // nível liberados indevidamente).
+    this.subscriptionService.clear();
     const impResult = await this.auth.impersonar(
       result.data.token_hash,
       result.data.target_user_id,

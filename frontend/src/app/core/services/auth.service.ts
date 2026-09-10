@@ -220,6 +220,12 @@ export class AuthService implements OnDestroy {
       return { ok: false, error: 'Sessão incorporada não corresponde ao usuário selecionado.' };
     }
 
+    // A identidade da sessão mudou: descarta o que foi cacheado sob a conta do
+    // admin antes de entregar o dashboard ao usuário incorporado. Sem isto o
+    // painel do aluno é servido com os números do admin (CACHE_KEYS não é
+    // chaveado por usuário), o que é vazamento de dados entre contas.
+    this.clearIdentityScopedCaches();
+
     this._user.set(userData.user);
     this._impersonando.set({ adminName, targetName: targetName ?? 'Usuário' });
     void this.router.navigate(['/dashboard']);
@@ -271,10 +277,24 @@ export class AuthService implements OnDestroy {
     this.adminAccessToken = null;
     this.adminRefreshToken = null;
     this._impersonando.set(null);
+    this.clearIdentityScopedCaches();
+  }
+
+  /**
+   * Caches presos à identidade da sessão, descartados em toda troca de
+   * identidade (login, logout, entrar e sair de impersonação):
+   *
+   * - CacheService: as CACHE_KEYS ('inicio_data', 'historico_data') não são
+   *   chaveadas por usuário, então sobrevivem à troca e o próximo usuário lê
+   *   os dados do anterior.
+   * - URLs assinadas de imagem: valem por 1h e são emitidas para a sessão que
+   *   as pediu, então continuariam válidas para o próximo usuário do mesmo
+   *   navegador.
+   */
+  private clearIdentityScopedCaches(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.cache.clear();
-    // URLs assinadas de imagem valem por 1h e são emitidas para a sessão que
-    // as pediu: descartar no logout/troca de identidade evita que continuem
-    // válidas para o próximo usuário do mesmo navegador.
     this.imagensProtegidas.limpar();
   }
 
