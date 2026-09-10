@@ -22,16 +22,15 @@
 --      acesso legítimo do aluno.
 --
 -- Correções:
---   • Detecção passa a casar o IP do admin gravado em admin_impersonation_log
---     com o IP da sessão criada. IP igual = impersonação; sem IP dos dois
---     lados, cai para janela curta de tempo (2 min).
+--   • Detecção passa a casar o IP e o user agent do admin gravados em
+--     admin_impersonation_log com os da sessão criada.
 --   • A sessão inteira herda a marca: qualquer evento com o mesmo session_id
 --     de uma sessão já marcada é impersonação. O heartbeat passa a mandar o
 --     session_id (vem do claim do JWT), então também herda.
 --   • Janelas impersonadas e reais nunca se consolidam na mesma linha.
 --   • Nova coluna admin_id: qual admin gerou o acesso de suporte.
---   • Backfill retroativo por (usuário, IP do admin, momento) + propagação
---     por session_id.
+--   • Backfill retroativo por (usuário, IP do admin, user agent, momento) +
+--     propagação por session_id.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- ─── 1. Qual admin gerou o acesso de suporte ────────────────────────────────
@@ -53,13 +52,13 @@ LANGUAGE plpgsql
 IMMUTABLE
 STRICT
 SET search_path = pg_catalog, pg_temp
-AS $$
+AS $fn$
 BEGIN
   RETURN btrim(p_txt)::inet;
 EXCEPTION WHEN OTHERS THEN
   RETURN NULL;
 END;
-$$;
+$fn$;
 
 -- ─── 3. Correlação sessão ↔ impersonação ────────────────────────────────────
 -- Devolve o id da entrada de auditoria que explica este acesso, ou NULL.
@@ -79,7 +78,7 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $fn$
   SELECT l.id
   FROM public.admin_impersonation_log l
   CROSS JOIN LATERAL (
@@ -102,7 +101,7 @@ AS $$
     )
   ORDER BY (x.admin_ip IS NOT DISTINCT FROM p_ip) DESC, l.criado_em DESC
   LIMIT 1;
-$$;
+$fn$;
 
 REVOKE EXECUTE ON FUNCTION public.impersonacao_recente(uuid, inet, text, timestamptz) FROM public;
 REVOKE EXECUTE ON FUNCTION public.impersonacao_recente(uuid, inet, text, timestamptz) FROM anon;
@@ -128,7 +127,7 @@ RETURNS bigint
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $fn$
 DECLARE
   v_id     bigint;
   v_imp    boolean := coalesce(p_impersonado, false);
@@ -181,7 +180,7 @@ BEGIN
 
   RETURN v_id;
 END;
-$$;
+$fn$;
 
 REVOKE EXECUTE ON FUNCTION public.registrar_acesso_evento(uuid, inet, text, text, uuid, uuid, text, boolean, uuid) FROM public;
 REVOKE EXECUTE ON FUNCTION public.registrar_acesso_evento(uuid, inet, text, text, uuid, uuid, text, boolean, uuid) FROM anon;
@@ -195,7 +194,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $fn$
 DECLARE
   v_log_id      uuid;
   v_impersonado boolean := false;
@@ -237,7 +236,7 @@ BEGIN
   END;
   RETURN NULL;
 END;
-$$;
+$fn$;
 
 REVOKE EXECUTE ON FUNCTION public.trg_acesso_sessao() FROM public;
 REVOKE EXECUTE ON FUNCTION public.trg_acesso_sessao() FROM anon;
@@ -252,7 +251,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $fn$
 DECLARE
   v_user     uuid := auth.uid();
   v_headers  jsonb;
@@ -330,7 +329,7 @@ BEGIN
     p_admin_id    => v_admin_id
   );
 END;
-$$;
+$fn$;
 
 REVOKE EXECUTE ON FUNCTION public.registrar_acesso(uuid) FROM public;
 REVOKE EXECUTE ON FUNCTION public.registrar_acesso(uuid) FROM anon;
@@ -391,7 +390,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 STABLE
 SET search_path = public, pg_temp
-AS $$
+AS $fn$
 DECLARE
   result  jsonb;
   v_dias  integer := least(greatest(coalesce(p_dias, 90), 1), 365);
@@ -486,7 +485,7 @@ BEGIN
 
   RETURN result;
 END;
-$$;
+$fn$;
 
 REVOKE EXECUTE ON FUNCTION public.admin_get_acessos_usuario(uuid, integer, integer) FROM public;
 REVOKE EXECUTE ON FUNCTION public.admin_get_acessos_usuario(uuid, integer, integer) FROM anon;
