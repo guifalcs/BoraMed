@@ -212,7 +212,12 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   private readonly maxCidadesNoGrafico = 8;
-  protected readonly cidadeSelecionada = signal<{ label: string; total: number; percent: number } | null>(null);
+  protected readonly cidadeSelecionada = signal<{
+    label: string;
+    total: number;
+    assinantes: number;
+    percent: number;
+  } | null>(null);
 
   /** Quantos usuários não têm cidade/unidade cadastrada (fora da base do gráfico). */
   protected readonly semCidadeTotal = computed(() => {
@@ -228,7 +233,7 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly distribuicaoUnidadeItens = computed(() => {
     const linhas = (this.distribuicaoUnidades() ?? []).filter((l) => l.faculdade_unidade !== null);
     const total = linhas.reduce((acc, l) => acc + l.total, 0);
-    if (total === 0) return [] as { label: string; total: number; percent: number }[];
+    if (total === 0) return [] as { label: string; total: number; assinantes: number; percent: number }[];
 
     const rotulo = (u: AdminDistribuicaoUnidade['faculdade_unidade']) =>
       u ? (FACULDADE_UNIDADE_LABELS[u] ?? u) : '';
@@ -240,6 +245,7 @@ export class AdminDashboardComponent implements OnInit {
     const itens = principais.map((l) => ({
       label: rotulo(l.faculdade_unidade),
       total: l.total,
+      assinantes: l.assinantes ?? 0,
       percent: Math.round((l.total / total) * 1000) / 10,
     }));
 
@@ -248,6 +254,7 @@ export class AdminDashboardComponent implements OnInit {
       itens.push({
         label: 'Outras',
         total: totalRestante,
+        assinantes: restante.reduce((acc, l) => acc + (l.assinantes ?? 0), 0),
         percent: Math.round((totalRestante / total) * 1000) / 10,
       });
     }
@@ -289,7 +296,12 @@ export class AdminDashboardComponent implements OnInit {
             const percent = this.decimalFormatter.format(Number(ctx.parsed.x));
             if (!item) return `${percent}%`;
             const usuarios = item.total === 1 ? 'usuário' : 'usuários';
-            return `${this.formatNumber(item.total)} ${usuarios} (${percent}%)`;
+            const assinantesPercent =
+              item.total > 0 ? this.decimalFormatter.format(Math.round((item.assinantes / item.total) * 1000) / 10) : '0';
+            return [
+              `${this.formatNumber(item.total)} ${usuarios} (${percent}%)`,
+              `${this.formatNumber(item.assinantes)} assinante${item.assinantes === 1 ? '' : 's'} (${assinantesPercent}%)`,
+            ];
           },
         },
       },
