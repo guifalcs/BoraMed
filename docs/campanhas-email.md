@@ -153,10 +153,34 @@ público e o que conferir antes do disparo.
 | `nunca_assinou` | Nunca chegou a ter assinatura efetivada. Checkout aberto e abandonado (`pending`) conta aqui. |
 | `ex_assinantes` | Já assinou e hoje não tem acesso. |
 | `todos` | Todos os alunos elegíveis. |
+| `lista_manual` | Não é um recorte da base: o público é a lista de e-mails que o admin digitou/colou na tela. |
 
 Fora de qualquer segmento, sempre: admins e super_admins, contas banidas, quem
 pediu descadastro e **contas com e-mail não confirmado** (endereço provavelmente
-inválido; hard bounce derruba a reputação do domínio).
+inválido; hard bounce derruba a reputação do domínio). `lista_manual` respeita as
+mesmas regras — colar o e-mail de um admin, de uma conta banida ou de quem já
+descadastrou simplesmente não entrega nada para aquele endereço.
+
+#### `lista_manual` — mandar para pessoas específicas
+
+Antes disto, a única forma de mandar e-mail para alguém específico era o botão
+**Enviar teste**, que manda uma cópia avulsa (sem registrar nada no banco) para
+um único endereço. Serve para conferir o próprio e-mail antes do disparo, não
+para se comunicar com um aluno de verdade.
+
+`lista_manual` resolve o caso "preciso mandar isto para 3-4 pessoas específicas"
+reaproveitando toda a tubulação de campanha: escolha o segmento **Pessoas
+específicas**, cole os e-mails no campo que aparece (vírgula, espaço ou quebra
+de linha, um por linha ou colado de planilha — tudo funciona), confira a
+contagem ("X de Y e-mails são elegíveis") e dispare. Vira uma `email_campanha`
+normal: aparece no histórico, tem log por destinatário e dá para **Retomar** se
+alguma entrega falhar.
+
+Teto de 200 e-mails por disparo (`MAX_LISTA_MANUAL` em
+`_shared/campanha-email.ts`) — acima disso é caso de segmento de verdade, não
+de lista manual. E-mail fora do formato básico (`nome@dominio`) é descartado
+silenciosamente da lista antes de contar/enviar, com aviso na tela de quantos
+tokens foram ignorados.
 
 ### Variáveis de personalização
 

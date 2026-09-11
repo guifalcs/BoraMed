@@ -1,11 +1,13 @@
 import { assert, assertEquals, assertStringIncludes } from '@std/assert';
 import {
   dividirEmLotes,
+  emailValido,
   envelopeCampanha,
   escaparHtml,
   isSegmento,
   linkDescadastro,
   montarEmail,
+  normalizarListaEmails,
   normalizarNome,
   personalizar,
   primeiroNome,
@@ -143,8 +145,24 @@ Deno.test('remetenteValido: aceita os dois formatos do Resend e rejeita lixo', (
 
 Deno.test('isSegmento: só aceita os segmentos do CHECK da migration', () => {
   assert(isSegmento('sem_assinatura_ativa'));
+  assert(isSegmento('lista_manual'));
   assert(!isSegmento('inventado'));
   assert(!isSegmento(null));
+});
+
+Deno.test('emailValido: formato mínimo aceito pelo Resend', () => {
+  assert(emailValido('maria@exemplo.com'));
+  assert(!emailValido('maria@'));
+  assert(!emailValido('maria'));
+  assert(!emailValido(''));
+});
+
+Deno.test('normalizarListaEmails: baixa a caixa, dedup e descarta lixo', () => {
+  assertEquals(
+    normalizarListaEmails(['Maria@Exemplo.com', ' joao@exemplo.com ', 'maria@exemplo.com', 'invalido', 42, null]),
+    ['maria@exemplo.com', 'joao@exemplo.com'],
+  );
+  assertEquals(normalizarListaEmails([]), []);
 });
 
 Deno.test('montarEmail: um destinatário por envio, com List-Unsubscribe', () => {

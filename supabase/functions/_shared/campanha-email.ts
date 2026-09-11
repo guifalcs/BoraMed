@@ -6,12 +6,47 @@ export const SEGMENTOS = [
   'nunca_assinou',
   'ex_assinantes',
   'todos',
+  /** Lista de e-mails específicos escolhida pelo admin, não um recorte da base. */
+  'lista_manual',
 ] as const;
 
 export type Segmento = (typeof SEGMENTOS)[number];
 
 export function isSegmento(valor: unknown): valor is Segmento {
   return typeof valor === 'string' && (SEGMENTOS as readonly string[]).includes(valor);
+}
+
+/** Mesma forma exigida pelo campo `to` do Resend — sem nome, só o endereço. */
+const EMAIL_REGEX = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
+export function emailValido(email: string): boolean {
+  return EMAIL_REGEX.test(email.trim());
+}
+
+/**
+ * Teto do segmento 'lista_manual'. Acima disso é caso de segmento de verdade,
+ * não de "mandar para pessoas específicas" — e o Resend batch já limita 100
+ * por lote de qualquer forma.
+ */
+export const MAX_LISTA_MANUAL = 200;
+
+/**
+ * Limpa a lista bruta vinda do admin: tira espaço, baixa a caixa (e-mail não
+ * é case-sensitive na prática), descarta o que não parece e-mail e remove
+ * repetição. O que sobrar aqui é o que vira `p_emails` da RPC — o admin nunca
+ * vê "adicionei 5, chegou pra 3" sem entender que 2 eram lixo/duplicata.
+ */
+export function normalizarListaEmails(valores: readonly unknown[]): string[] {
+  const vistos = new Set<string>();
+  const validos: string[] = [];
+  for (const valor of valores) {
+    if (typeof valor !== 'string') continue;
+    const limpo = valor.trim().toLowerCase();
+    if (!limpo || !emailValido(limpo) || vistos.has(limpo)) continue;
+    vistos.add(limpo);
+    validos.push(limpo);
+  }
+  return validos;
 }
 
 export type Destinatario = {

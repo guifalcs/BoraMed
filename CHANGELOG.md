@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-11 | Feature | Campanha de e-mail para pessoas específicas (segmento `lista_manual`)
+
+**Antes disto, mandar e-mail para alguém específico era abusar do botão "Enviar teste"**
+
+- **Sintoma/lacuna:** o único jeito de mandar e-mail fora de um segmento inteiro da base era o modo `teste` — uma cópia avulsa para um único endereço, sem registrar nada no banco. Não existia meio-termo entre "campanha para milhares" e "cópia de teste para um".
+- **Novo segmento `lista_manual`** no seletor de público de `/admin/campanhas`: aparece como "Pessoas específicas" e abre um campo de texto para colar os e-mails (vírgula, espaço, quebra de linha ou colado de planilha — tudo aceito).
+- **Reaproveita toda a tubulação de campanha existente**, em vez de inventar um caminho novo: vira uma `email_campanha` normal, aparece no histórico, tem log por destinatário e o botão **Retomar** funciona se alguma entrega falhar.
+- **Elegibilidade continua sendo verificada pela mesma função** (`email_publico_alvo`), agora com um parâmetro `p_emails` opcional: admin, banido, optout e e-mail não confirmado continuam de fora mesmo na lista manual. Colar o e-mail de um admin ou de quem já descadastrou simplesmente não entrega nada para aquele endereço, sem furar a regra.
+- **Teto de 200 e-mails por disparo** (`MAX_LISTA_MANUAL`), e-mail fora do formato básico é descartado antes de contar/enviar, com aviso na tela de quantos tokens foram ignorados.
+- Verificado localmente: 19 testes unitários verdes (2 novos, para os helpers de validação/normalização da lista), `deno check`/`deno lint` limpos, e a RPC testada diretamente contra dados de seed (resolve e-mail case-insensitive, ignora inválido, respeita optout/banimento) e via REST autenticado como admin — mesma chamada que o frontend faz.
+- `docs/campanhas-email.md` atualizado com a nova seção do segmento.
+
 ## 2026-09-10 | Fix | Desfecho do Pix perdido — intenção presa em "pendente" e acesso pago em risco
 
 **O Mercado Pago passou a entregar o `payment.updated` só pelo canal que o webhook rejeitava com 401**

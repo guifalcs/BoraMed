@@ -42,6 +42,7 @@ const ROTULO_SEGMENTO: Record<SegmentoCampanha, string> = {
   nunca_assinou: 'Nunca assinou',
   ex_assinantes: 'Ex-assinantes (assinou e saiu)',
   todos: 'Todos os alunos',
+  lista_manual: 'Pessoas específicas',
 };
 
 /**
@@ -49,6 +50,29 @@ const ROTULO_SEGMENTO: Record<SegmentoCampanha, string> = {
  * chamada à edge function — sem isto seria uma por caractere digitado.
  */
 const DEBOUNCE_PREVIA_MS = 700;
+
+/** Mesmo espaçamento de debounce para não contar o público a cada tecla. */
+const DEBOUNCE_LISTA_MANUAL_MS = 700;
+
+/** Separa por vírgula, ponto e vírgula, espaço ou quebra de linha — cobre colar de planilha. */
+const SEPARADOR_LISTA_MANUAL = /[\s,;]+/;
+const EMAIL_REGEX = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
+/** Máximo de e-mails aceitos na lista manual — espelha MAX_LISTA_MANUAL da edge function. */
+const MAX_LISTA_MANUAL = 200;
+
+/** Mesma normalização da edge function: baixa a caixa, valida formato, remove repetição. */
+function parseListaEmails(texto: string): string[] {
+  const vistos = new Set<string>();
+  const validos: string[] = [];
+  for (const token of texto.split(SEPARADOR_LISTA_MANUAL)) {
+    const limpo = token.trim().toLowerCase();
+    if (!limpo || !EMAIL_REGEX.test(limpo) || vistos.has(limpo)) continue;
+    vistos.add(limpo);
+    validos.push(limpo);
+  }
+  return validos;
+}
 
 /** Página do modal de destinatários. O teto da RPC é 500. */
 const PAGINA_DESTINATARIOS = 200;
@@ -130,6 +154,23 @@ export class AdminCampanhasComponent implements OnInit {
   protected readonly segmento = signal<SegmentoCampanha>('sem_assinatura_ativa');
   protected readonly emailTeste = signal('');
 
+  // ---- Lista manual (segmento 'lista_manual') ----
+  /** Texto bruto do textarea — um e-mail por linha, ou colado de planilha. */
+  protected readonly destinatariosTexto = signal('');
+  /** Só os tokens com formato de e-mail, sem repetição — o que de fato vai no disparo. */
+  protected readonly destinatariosLista = computed(() =>
+    parseListaEmails(this.destinatariosTexto()),
+  );
+  /** Tokens digitados que não parecem e-mail — feedback antes de tentar contar/enviar. */
+  protected readonly destinatariosInvalidos = computed(() => {
+    const brutos = this.destinatariosTexto().split(SEPARADOR_LISTA_MANUAL).filter(Boolean);
+    return brutos.filter((t) => !EMAIL_REGEX.test(t.trim().toLowerCase()));
+  });
+  protected readonly excedeuMaximoLista = computed(
+    () => this.destinatariosLista().length > MAX_LISTA_MANUAL,
+  );
+  protected readonly maxListaManual = MAX_LISTA_MANUAL;
+
   protected readonly totalPublico = signal<number | null>(null);
   protected readonly contando = signal(false);
   protected readonly enviandoTeste = signal(false);
@@ -205,6 +246,16 @@ export class AdminCampanhasComponent implements OnInit {
       const timer = setTimeout(() => void this.atualizarPrevia(assunto, html), DEBOUNCE_PREVIA_MS);
       onCleanup(() => clearTimeout(timer));
     });
+
+    // Idem para a lista manual: recontar a cada tecla faria uma chamada por
+    // caractere colado (colar 50 e-mails de uma vez dispararia 50 chamadas).
+    effect((onCleanup) => {
+      if (this.segmento() !== 'lista_manual') return;
+      this.destinatariosTexto();
+
+      const timer = setTimeout(() => void this.contarPublico(), DEBOUNCE_LISTA_MANUAL_MS);
+      onCleanup(() => clearTimeout(timer));
+    });
   }
 
   protected readonly segmentosDisponiveis: SelectOption[] = (
@@ -229,7 +280,9 @@ export class AdminCampanhasComponent implements OnInit {
     () =>
       this.nome().trim().length > 0 &&
       this.assunto().trim().length > 0 &&
-      this.html().trim().length > 0,
+      this.html().trim().length > 0 &&
+      (this.segmento() !== 'lista_manual' ||
+        (this.destinatariosLista().length > 0 && !this.excedeuMaximoLista())),
   );
 
   protected readonly ocupado = computed(
@@ -251,8 +304,15 @@ export class AdminCampanhasComponent implements OnInit {
   }
 
   async contarPublico(): Promise<void> {
+    if (this.segmento() === 'lista_manual' && this.destinatariosLista().length === 0) {
+      this.totalPublico.set(0);
+      return;
+    }
     this.contando.set(true);
-    const resultado = await this.adminService.contarPublicoCampanha(this.segmento());
+    const resultado = await this.adminService.contarPublicoCampanha(
+      this.segmento(),
+      this.destinatariosLista(),
+    );
     if (resultado.ok) {
       this.totalPublico.set(resultado.data);
     } else {
@@ -333,11 +393,19 @@ export class AdminCampanhasComponent implements OnInit {
 
   protected pedirConfirmacao(): void {
     if (!this.formularioValido()) {
-      this.toast.error('Preencha nome, assunto e corpo do e-mail.');
+      this.toast.error(
+        this.segmento() === 'lista_manual'
+          ? 'Preencha nome, assunto, corpo do e-mail e ao menos um destinatário.'
+          : 'Preencha nome, assunto e corpo do e-mail.',
+      );
       return;
     }
     if (!this.totalPublico()) {
-      this.toast.error('Nenhum destinatário nesse segmento.');
+      this.toast.error(
+        this.segmento() === 'lista_manual'
+          ? 'Nenhum e-mail da lista corresponde a um aluno elegível.'
+          : 'Nenhum destinatário nesse segmento.',
+      );
       return;
     }
     this.confirmandoDisparo.set(true);
@@ -356,6 +424,8 @@ export class AdminCampanhasComponent implements OnInit {
       this.assunto().trim(),
       this.html(),
       this.segmento(),
+      undefined,
+      this.segmento() === 'lista_manual' ? this.destinatariosLista() : undefined,
     );
 
     if (resultado.ok) {
@@ -374,6 +444,7 @@ export class AdminCampanhasComponent implements OnInit {
         this.toast.success(`Campanha enviada para ${enviados} pessoas.`);
       }
       this.nome.set('');
+      if (this.segmento() === 'lista_manual') this.destinatariosTexto.set('');
       await Promise.all([this.carregarHistorico(), this.contarPublico()]);
     } else {
       this.toast.error(resultado.error);

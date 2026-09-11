@@ -614,7 +614,9 @@ export type SegmentoCampanha =
   | 'sem_assinatura_ativa'
   | 'nunca_assinou'
   | 'ex_assinantes'
-  | 'todos';
+  | 'todos'
+  /** Não é um recorte da base: a lista de e-mails vem do admin. */
+  | 'lista_manual';
 
 export interface AdminCampanhaEmail {
   id: string;
@@ -1863,9 +1865,13 @@ export class AdminService {
    * Prévia do público. Usa a MESMA função SQL que a edge function usa para
    * montar a lista real, então a contagem da tela é a contagem do disparo.
    */
-  async contarPublicoCampanha(segmento: SegmentoCampanha): Promise<ServiceResult<number>> {
+  async contarPublicoCampanha(
+    segmento: SegmentoCampanha,
+    emailsManuais?: string[],
+  ): Promise<ServiceResult<number>> {
     const { data, error } = await this.supabase.rpc('admin_contar_publico_email', {
       p_segmento: segmento,
+      p_emails: segmento === 'lista_manual' ? emailsManuais ?? [] : null,
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? 0) as number };
@@ -1952,8 +1958,17 @@ export class AdminService {
     html: string,
     segmento: SegmentoCampanha,
     remetente?: string,
+    destinatariosManual?: string[],
   ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
-    return this.invocarCampanha({ modo: 'enviar', nome, assunto, html, segmento, remetente });
+    return this.invocarCampanha({
+      modo: 'enviar',
+      nome,
+      assunto,
+      html,
+      segmento,
+      remetente,
+      destinatarios_manual: segmento === 'lista_manual' ? destinatariosManual : undefined,
+    });
   }
 
   /** Reenvia apenas o que ficou pendente numa campanha interrompida. */
