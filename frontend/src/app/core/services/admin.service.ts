@@ -33,6 +33,8 @@ export interface AdminStats {
 export interface AdminDistribuicaoUnidade {
   faculdade_unidade: FaculdadeUnidade | null;
   total: number;
+  /** Quantos desses usuários têm assinatura ativa (authorized válida ou cancelled em carência). */
+  assinantes: number;
 }
 
 export interface AdminUsoPonto {
