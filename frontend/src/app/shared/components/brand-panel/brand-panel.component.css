@@ -1,6 +1,16 @@
+:host {
+  display: block;
+  /* Sem isto, o host fica mais alto que a div interna quando a coluna do
+     formulário cresce além de 100vh (mais campos, zoom do navegador): o grid
+     estica o host, mas a div só respeita o próprio min-height e para antes,
+     sobrando fundo branco embaixo do gradiente. */
+  height: 100%;
+}
+
 .brand-panel {
   position: relative;
   display: flex;
+  height: 100%;
   min-height: 36vh;
   flex-direction: column;
   justify-content: space-between;
