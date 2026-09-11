@@ -134,65 +134,6 @@ export class AdminDashboardComponent implements OnInit {
     ];
   });
 
-  protected readonly questionStatusData = computed<ChartData<'doughnut'>>(() => {
-    const s = this.stats();
-    const total = s?.total_questoes ?? 0;
-    const ativas = s?.questoes_ativas ?? 0;
-    const rascunho = s?.questoes_rascunho ?? 0;
-    const outras = Math.max(total - ativas - rascunho, 0);
-
-    if (total === 0) {
-      return {
-        labels: ['Sem questões'],
-        datasets: [
-          {
-            data: [1],
-            backgroundColor: ['#475569'],
-            borderColor: '#ffffff',
-            borderWidth: 2,
-          },
-        ],
-      };
-    }
-
-    return {
-      labels: ['Ativas', 'Rascunhos', 'Outras'],
-      datasets: [
-        {
-          data: [ativas, rascunho, outras],
-          backgroundColor: ['#10b981', '#f59e0b', '#64748b'],
-          borderColor: '#ffffff',
-          borderWidth: 2,
-          hoverOffset: 6,
-        },
-      ],
-    };
-  });
-
-  protected readonly platformVolumeData = computed<ChartData<'bar'>>(() => {
-    const s = this.stats();
-
-    return {
-      labels: ['Usuários', 'Questões', 'Provas', 'Temas', 'Tentativas'],
-      datasets: [
-        {
-          label: 'Total',
-          data: [
-            s?.total_usuarios ?? 0,
-            s?.total_questoes ?? 0,
-            s?.total_provas ?? 0,
-            s?.total_temas ?? 0,
-            s?.total_tentativas ?? 0,
-          ],
-          backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6', '#06b6d4', '#f97316'],
-          borderRadius: 8,
-          borderSkipped: false,
-          maxBarThickness: 42,
-        },
-      ],
-    };
-  });
-
   protected readonly todayActivityData = computed<ChartData<'bar'>>(() => {
     const s = this.stats();
 
@@ -533,24 +474,6 @@ export class AdminDashboardComponent implements OnInit {
 
     return priorities.slice(0, 3);
   });
-
-  protected readonly doughnutOptions: ChartOptions<'doughnut'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '68%',
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#020617',
-        borderColor: '#334155',
-        borderWidth: 1,
-        padding: 10,
-        callbacks: {
-          label: (ctx) => `${ctx.label}: ${this.formatNumber(ctx.parsed)}`,
-        },
-      },
-    },
-  };
 
   protected readonly barOptions: ChartOptions<'bar'> = {
     responsive: true,
