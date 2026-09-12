@@ -134,6 +134,17 @@ export const routes: Routes = [
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
   },
   {
+    // Prestação de contas de comissão em A4 (vira PDF pelo "Salvar como PDF").
+    // Fora do shell do /admin de propósito: o documento tem que sair limpo,
+    // sem sidebar nem topbar. O guard de admin continua valendo.
+    path: 'imprimir/comissao/:cupomId/:competencia',
+    canActivate: [lazyAdminGuard],
+    loadComponent: () =>
+      import('./(impressao)/comissao-impressao.component').then(
+        (m) => m.ComissaoImpressaoComponent,
+      ),
+  },
+  {
     path: 'admin',
     canActivate: [lazyAdminGuard],
     loadComponent: () =>

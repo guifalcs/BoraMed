@@ -1,0 +1,144 @@
+@if (carregando()) {
+  <p class="aviso">Carregando a prestação de contas…</p>
+} @else if (erro()) {
+  <p class="aviso aviso--erro">{{ erro() }}</p>
+} @else if (detalhe(); as d) {
+  <div class="barra-acoes">
+    <button type="button" class="btn-imprimir" (click)="imprimir()">Salvar como PDF</button>
+    <span class="dica">Na caixa de impressão, escolha "Salvar como PDF".</span>
+  </div>
+
+  <div class="pagina">
+    <header class="doc-header">
+      <img class="doc-logo" src="/brand/logo-branca.webp" alt="BoraMed" />
+      <h1>Prestação de contas · Cupom {{ d.codigo }}</h1>
+      <p class="sub">
+        {{ d.responsavel ?? 'Sem responsável definido' }} · Competência: {{ competenciaLabel() }} ·
+        Emitido em {{ emitidoEm() }}
+      </p>
+    </header>
+
+    <main>
+      <div class="meta">
+        <div>
+          <span>Cupom</span>
+          <strong>{{ d.codigo }} ({{ descontoLabel() }})</strong>
+        </div>
+        <div>
+          <span>Vendas com repasse</span>
+          <strong>{{ vendasPagaveis().length }}</strong>
+        </div>
+        <div>
+          <span>Comissão</span>
+          <strong>{{ regraResumo() }}</strong>
+        </div>
+      </div>
+
+      <p class="situacao">{{ statusLabel() }}</p>
+
+      <h2>Vendas confirmadas</h2>
+      @if (vendasPagaveis().length === 0) {
+        <p class="vazio">Nenhuma venda com repasse nesta competência.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Assinante</th>
+              <th>Plano</th>
+              <th>Unidade</th>
+              <th class="num">Valor pago</th>
+              <th class="num">%</th>
+              <th class="num">Comissão</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of vendasPagaveis(); track v.pagamento_id) {
+              <tr>
+                <td>{{ dataBr(v.data) }}</td>
+                <td>{{ assinante(v.aluno_email, v.aluno_nome) }}</td>
+                <td>{{ v.plano_nome ?? '—' }}</td>
+                <td>{{ unidade(v.unidade) }}</td>
+                <td class="num">{{ brl(v.bruto_centavos) }}</td>
+                <td class="num">{{ pct(v.pct) }}</td>
+                <td class="num">{{ brl(v.comissao_centavos) }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">Total</td>
+              <td class="num">{{ brl(totalBase()) }}</td>
+              <td class="num"></td>
+              <td class="num">{{ brl(totalComissao()) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      }
+
+      <div class="total">
+        <span>Valor a receber</span>
+        <strong>{{ brl(totalComissao()) }}</strong>
+      </div>
+
+      @if (vendasSemRepasse().length > 0) {
+        <h2>Vendas fora do repasse</h2>
+        <table class="tabela-secundaria">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Plano</th>
+              <th>Unidade</th>
+              <th class="num">Valor pago</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of vendasSemRepasse(); track v.pagamento_id) {
+              <tr>
+                <td>{{ dataBr(v.data) }}</td>
+                <td>{{ v.plano_nome ?? '—' }}</td>
+                <td>{{ unidade(v.unidade) }}</td>
+                <td class="num">{{ brl(v.bruto_centavos) }}</td>
+                <td>
+                  @switch (v.motivo) {
+                    @case ('tier_nao_elegivel') { Plano fora da regra de comissão }
+                    @case ('comissao_desativada') { Comissão desativada no cupom }
+                    @case ('percentual_zero') { Percentual zerado para esta faixa }
+                    @default { — }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <h2>Como foi calculado</h2>
+      <ul>
+        <li>Base: valor efetivamente pago pelo assinante, já com o desconto do cupom aplicado.</li>
+        <li>Só entram pagamentos aprovados. Recusas, estornos e cancelamentos ficam fora.</li>
+        <li>{{ regraResumo() }}, conforme a unidade do assinante.</li>
+        @if (d.totais.unidades_indefinidas > 0) {
+          <li>
+            {{ d.totais.unidades_indefinidas }} venda(s) de assinante sem unidade informada no
+            perfil foram tratadas como "demais unidades".
+          </li>
+        }
+        @if (divergente()) {
+          <li>
+            Valor fechado em {{ dataBr(d.fechada_em!) }}. As vendas registradas hoje somam
+            {{ brl(totalBase()) }} de base; o repasse segue o valor congelado no fechamento.
+          </li>
+        }
+        @if (d.observacao) {
+          <li>{{ d.observacao }}</li>
+        }
+      </ul>
+
+      <footer>
+        BoraMed · Documento gerado a partir dos pagamentos aprovados registrados na plataforma.
+      </footer>
+    </main>
+  </div>
+}

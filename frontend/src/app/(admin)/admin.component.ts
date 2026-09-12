@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Sparkles,
   Tag,
+  Ticket,
   Upload,
   Users,
   X,
@@ -135,6 +136,7 @@ export class AdminComponent {
       children: [
         { label: 'Usuários', icon: Users, route: '/admin/usuarios' },
         { label: 'Financeiro', icon: DollarSign, route: '/admin/financeiro' },
+        { label: 'Cupons', icon: Ticket, route: '/admin/cupons' },
         { label: 'Despesas', icon: Receipt, route: '/admin/financeiro/despesas' },
         { label: 'Acessos', icon: Radar, route: '/admin/acessos' },
       ],
