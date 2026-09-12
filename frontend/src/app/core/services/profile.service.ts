@@ -20,15 +20,20 @@ export class ProfileService {
   readonly profile = this._profile.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
 
+  /** Campos que o perfil legado pode não ter e o modal obrigatório cobra. */
+  readonly faltaFaculdadeUnidade = computed(() => this._profile()?.faculdade_unidade == null);
+  readonly faltaPeriodo = computed(() => this._profile()?.periodo == null);
+
   /**
-   * Gate obrigatório de unidade Afya: enquanto verdadeiro, o shell do
+   * Gate obrigatório de unidade Afya + período: enquanto verdadeiro, o shell do
    * dashboard suprime avisos/onboarding/paywall (ver dashboard.component)
    * para que Esc/setas globais desses overlays não vazem por trás do modal
-   * de faculdade_unidade, que não tem esses atalhos de fechar.
+   * de dados obrigatórios, que não tem esses atalhos de fechar.
    */
-  readonly precisaFaculdadeUnidade = computed(() => {
+  readonly precisaDadosObrigatorios = computed(() => {
     const profile = this._profile();
-    return profile !== null && profile.faculdade_unidade === null && !this.auth.impersonando();
+    if (profile === null || this.auth.impersonando()) return false;
+    return profile.faculdade_unidade === null || profile.periodo === null;
   });
 
   clear(): void {
@@ -99,14 +104,26 @@ export class ProfileService {
     }
   }
 
-  async updateFaculdadeUnidade(faculdadeUnidade: FaculdadeUnidade): Promise<ProfileResult> {
+  /**
+   * Grava só os campos que o modal obrigatório pediu — quem já tinha unidade ou
+   * período não tem o valor atual sobrescrito.
+   */
+  async updateDadosObrigatorios(input: {
+    faculdade_unidade?: FaculdadeUnidade;
+    periodo?: number;
+  }): Promise<ProfileResult> {
     const user = this.auth.user();
     if (!user) return { ok: false, error: 'Usuário não autenticado.' };
+
+    const payload: Record<string, unknown> = {};
+    if (input.faculdade_unidade !== undefined) payload['faculdade_unidade'] = input.faculdade_unidade;
+    if (input.periodo !== undefined) payload['periodo'] = input.periodo;
+    if (Object.keys(payload).length === 0) return { ok: true };
 
     try {
       const { data, error } = await this.supabase
         .from('profiles')
-        .update({ faculdade_unidade: faculdadeUnidade })
+        .update(payload)
         .eq('id', user.id)
         .select()
         .single();
@@ -115,7 +132,7 @@ export class ProfileService {
       this._profile.set(data as Profile);
       return { ok: true };
     } catch {
-      return { ok: false, error: 'Não foi possível salvar sua unidade. Tente novamente.' };
+      return { ok: false, error: 'Não foi possível salvar seus dados. Tente novamente.' };
     }
   }
 

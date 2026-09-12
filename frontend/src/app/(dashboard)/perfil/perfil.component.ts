@@ -15,6 +15,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import type { TipoUsuario } from '../../core/models/auth.types';
 import type { FaculdadeUnidade } from '../../core/models/faculdade-unidade';
 import { FACULDADE_UNIDADE_OPTIONS } from '../../core/models/faculdade-unidade';
+import { PERIODO_OPTIONS } from '../../core/models/periodo';
 import { currentWeekRange } from '../../shared/utils/current-week-range';
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -24,11 +25,6 @@ type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 const TIPO_USUARIO_OPTIONS: SelectOption<string>[] = [
   { value: 'estudante_medicina', label: 'Estudante de Medicina' },
 ];
-
-const PERIODO_OPTIONS: SelectOption<number>[] = Array.from({ length: 12 }, (_, i) => ({
-  value: i + 1,
-  label: `${i + 1}º período`,
-}));
 
 @Component({
   selector: 'app-perfil',

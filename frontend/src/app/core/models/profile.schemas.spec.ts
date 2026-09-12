@@ -5,13 +5,25 @@ describe('updateProfileSchema', () => {
   const base = { nome_completo: 'João Silva', tipo_usuario: 'medico' as const };
 
   it('aceita dados válidos', () => {
-    expect(updateProfileSchema.safeParse(base).success).toBe(true);
+    expect(updateProfileSchema.safeParse({ ...base, periodo: null }).success).toBe(true);
+  });
+
+  it('rejeita estudante de Medicina sem período', () => {
+    const result = updateProfileSchema.safeParse({
+      ...base,
+      tipo_usuario: 'estudante_medicina',
+      periodo: null,
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe('Selecione seu período');
   });
 
   it('aceita todas as opções de tipo_usuario', () => {
     const tipos = ['estudante_medicina', 'medico', 'residente', 'cursinho', 'ensino_medio', 'outro'] as const;
     for (const tipo_usuario of tipos) {
-      expect(updateProfileSchema.safeParse({ ...base, tipo_usuario }).success).toBe(true);
+      // Estudante de Medicina é o único tipo com período obrigatório.
+      const periodo = tipo_usuario === 'estudante_medicina' ? 5 : null;
+      expect(updateProfileSchema.safeParse({ ...base, tipo_usuario, periodo }).success).toBe(true);
     }
   });
 

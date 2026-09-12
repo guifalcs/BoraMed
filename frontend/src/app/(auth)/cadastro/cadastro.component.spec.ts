@@ -23,6 +23,7 @@ const validData = {
   password: 'Abc1234!',
   confirmPassword: 'Abc1234!',
   faculdadeUnidade: 'salvador_ba',
+  periodo: 5 as number | null,
 };
 
 describe('CadastroComponent', () => {
@@ -60,6 +61,7 @@ describe('CadastroComponent', () => {
     (component as any).password.set(data.password);
     (component as any).confirmPassword.set(data.confirmPassword);
     (component as any).faculdadeUnidade.set(data.faculdadeUnidade);
+    (component as any).periodo.set(data.periodo);
   }
 
   describe('estado inicial', () => {
@@ -111,6 +113,16 @@ describe('CadastroComponent', () => {
 
       expect(mockAuth.signup).not.toHaveBeenCalled();
       expect((component as any).fieldErrors()['faculdadeUnidade']).toBe('Selecione sua unidade Afya');
+    });
+
+    it('não chama auth.signup e define erro quando o período não é selecionado', async () => {
+      fillForm({ periodo: null });
+
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect(mockAuth.signup).not.toHaveBeenCalled();
+      expect((component as any).fieldErrors()['periodo']).toBe('Selecione seu período');
     });
 
     it('limpa fieldErrors ao submeter novamente', async () => {

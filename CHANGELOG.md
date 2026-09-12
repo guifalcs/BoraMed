@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-11 | Feature | Período obrigatório no cadastro e gate de dados do perfil
+
+**Quem cria conta informa o período junto da unidade. Quem já tinha conta preenche o que falta ao entrar**
+
+- **O cadastro pedia unidade Afya, mas não o período** — justo o dado que define quais provas e treinos fazem sentido para o aluno. `/cadastro` ganha o select de **Período** (1º a 12º), obrigatório como os demais campos, e o formulário passa a **dois campos por linha no desktop**: Nome + E-mail, Unidade + Período, Senha + Confirmar senha. No mobile segue em coluna única.
+- **O período viaja no metadata do `signUp`**, como a unidade: `handle_new_user()` lê `raw_user_meta_data->>'periodo'`, valida contra o intervalo 1–12 e grava no perfil. **Metadata é do cliente, então não é confiado**: valor fora da faixa (ou nem numérico) vira `null` em vez de estourar o CHECK e abortar a criação da conta inteira — mesmo tratamento que a unidade já tinha. Quem cai nesse caminho é coberto pelo modal do dashboard.
+- **O modal obrigatório que cobrava a unidade passa a cobrar os dois campos** e só mostra o que falta: perfil legado sem nada vê unidade e período; quem já tem unidade vê só período, e vice-versa; quem está completo não vê modal nenhum. Continua sem Esc, sem backdrop clicável e com foco preso, e o shell do dashboard segue suprimindo aviso/onboarding/paywall enquanto ele está de pé.
+- **Grava só o que foi pedido.** O `update` monta o payload apenas com os campos exibidos, em vez de mandar a linha inteira — sem isso, o modal aberto por falta de período apagaria a unidade de quem já a tinha, numa corrida com o formulário do perfil.
+- **`profiles.periodo` entrou no repo.** A coluna existe em produção desde os "campos pessoais", mas a migration correspondente (`20260508150659`) está vazia em arquivo: banco recriado por `db reset` nascia sem ela, e o `update` do perfil falhava em silêncio no ambiente local. A migration nova é idempotente (`add column if not exists` + CHECK 1–12 criado só se ausente), então em produção é no-op e o local passa a bater com o remoto.
+- **Período vira obrigatório também na tela de perfil**, mas só para `estudante_medicina` (único tipo oferecido hoje). Tipos legados — médico, residente, cursinho — continuam podendo salvar sem período, senão ficariam impedidos de editar qualquer dado.
+- Verificado no banco local: trigger testado com metadata válido (unidade + período gravados) e com lixo (`"faculdade_unidade":"marte"`, `"periodo":"abc"` → ambos `null`, conta criada); `db reset` aplica a migration limpa do zero. 850 testes unitários verdes, incluindo os novos de schema (período ausente/fora do intervalo), do cadastro e do gate (`precisaDadosObrigatorios`, `updateDadosObrigatorios`).
+- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+
 ## 2026-09-11 | Feature | Campanha de e-mail para pessoas específicas (segmento `lista_manual`)
 
 **Antes disto, mandar e-mail para alguém específico era abusar do botão "Enviar teste"**
@@ -11,6 +24,27 @@
 - **Teto de 200 e-mails por disparo** (`MAX_LISTA_MANUAL`), e-mail fora do formato básico é descartado antes de contar/enviar, com aviso na tela de quantos tokens foram ignorados.
 - Verificado localmente: 19 testes unitários verdes (2 novos, para os helpers de validação/normalização da lista), `deno check`/`deno lint` limpos, e a RPC testada diretamente contra dados de seed (resolve e-mail case-insensitive, ignora inválido, respeita optout/banimento) e via REST autenticado como admin — mesma chamada que o frontend faz.
 - `docs/campanhas-email.md` atualizado com a nova seção do segmento.
+
+## 2026-09-11 | Feature | Cupons e comissões no admin — CRUD, responsável e fechamento mensal de repasse
+
+**Cupom deixa de nascer por migration, e a conta da comissão deixa de ser feita à mão**
+
+- **Novo módulo `/admin/cupons`** (menu Gestão → Cupons), com duas abas: **Cupons** (CRUD completo) e **Comissões** (fechamento mensal de repasse, com histórico do que já foi pago).
+- **Antes, criar cupom era escrever uma migration** — `MA20`, `MARIBRASIL` e `IZA15` foram aplicados direto em produção e depois reconstruídos em arquivo para o histórico voltar a bater. Agora código, tipo de desconto, plano, validade e limites (total e por usuário) são editáveis na tela. A validação do checkout continua onde estava: `validar_cupom` server-side, intocada.
+- **Cupom já usado em checkout não é excluído, é desativado.** Apagar arrastaria o vínculo da venda (`pagamento_intencao.cupom_id`); a RPC detecta o uso, desativa e a UI explica o que aconteceu.
+- **Responsável por cupom, em duas formas opcionais e combináveis:** vínculo com um usuário da plataforma (com busca por nome/e-mail) e/ou nome livre, para embaixador sem conta. Sem responsável, é campanha da casa.
+- **A regra de comissão mora no cupom, não no usuário.** É o cupom que aparece na venda, e o mesmo responsável pode ter cupons com regras diferentes. A regra guarda: percentual para **aluno de Ipatinga**, percentual para **aluno de fora**, e quais tiers de plano geram comissão (**Avançado** e/ou **Essencial**), além do liga/desliga do repasse.
+- **A faixa aplicada é a do aluno que comprou**, lida de `profiles.faculdade_unidade`. Perfil sem unidade cai na faixa "fora de Ipatinga" e sai **marcado** na tela e no PDF: a skill manda perguntar a unidade nesses casos, e o número não pode fingir certeza que não tem.
+- **Venda que não gera comissão continua aparecendo, com o motivo** (`tier_nao_elegivel`, `comissao_desativada`, `percentual_zero`). O que ficou de fora do repasse é visível em vez de sumir da lista.
+- **A apuração é automática por mês, não sob demanda.** Relatório por período livre não deixava rastro: não havia como saber o que já tinha sido apurado, fechado ou pago. Agora todo mês com venda aparece por cupom sem ninguém pedir, com ciclo de vida em `comissao_competencia`: **aberta** (sem linha no banco, valor recalculado a cada leitura, mês corrente incluído) → **fechada** (valores congelados) → **paga** (data e observação do repasse).
+- **Fechar congela o snapshot** porque venda ou estorno posterior não pode mudar em silêncio um valor já acertado com o responsável. Quando o cálculo ao vivo passa a divergir, a linha sinaliza e oferece "Recalcular" — a decisão é do admin, não do sistema. Reabrir descarta o fechamento e a marca de pagamento.
+- **Marcar como paga fecha antes, se ainda estiver aberta**: não existe repasse pago sem valor congelado.
+- **O PDF de repasse sai da própria tela** (`/imprimir/comissao/:cupom/:competencia`), no layout do `gerar.py` da skill `prestacao-contas-cupom` — header em gradiente com a logo branca, cartões de metadados, tabela de vendas e faixa de "valor a receber". Mesma conta da skill (junção `pagamento → pagamento_intencao → cupom`, recorte por `criado_em`, base = valor pago, só `approved`), então os dois documentos nunca divergem. Vendas fora do repasse saem em tabela separada com o motivo, e o e-mail do assinante é sempre mascarado.
+- **Todo select da tela é o `app-ui-select` do design system**, não o `<select>` nativo — o dropdown nativo aparecia com o estilo cru do navegador, fora do padrão da plataforma.
+- **Base de cálculo: valor pago pelo aluno**, já com o desconto do cupom. Estorno e cancelamento ficam fora. O repasse continua sendo lançamento manual de despesa `comissao` — fechar ou marcar como paga não mexe no financeiro.
+- **Segurança:** todas as RPCs novas são `security definer` com guard explícito de `is_admin()` e `search_path` fixo; `grant execute` só para `authenticated`. A tabela `cupom` segue sem policy de escrita direta.
+- Verificado no banco local com dados povoados: 16 vendas em 4 cupons ao longo de 4 meses, incluindo plano não elegível, comissão desativada e aluno sem unidade, com competências pagas, fechadas e o mês corrente aberto. Conferência manual de agosto do YAS20 (71,86 + 16,78 + 0 + 95,81 + 22,37 = R$ 206,82) bate com o snapshot do fechamento. E2E cobre o ciclo fechar → pagar → reabrir e a emissão do PDF.
+- `docs/business-rules.md` atualizado (seção "Cupons de desconto e comissão de indicação").
 
 ## 2026-09-10 | Fix | Desfecho do Pix perdido — intenção presa em "pendente" e acesso pago em risco
 

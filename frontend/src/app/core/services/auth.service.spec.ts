@@ -163,6 +163,7 @@ describe('AuthService', () => {
       password: 'Abc1!',
       confirmPassword: 'Abc1!',
       faculdadeUnidade: 'salvador_ba' as const,
+      periodo: 5,
     };
 
     it('retorna ok: true com needsConfirmation quando session é null', async () => {
@@ -186,14 +187,14 @@ describe('AuthService', () => {
       expect(result).toEqual({ ok: false, error: 'EMAIL_IN_USE' });
     });
 
-    it('envia full_name e faculdade_unidade no metadata do signUp', async () => {
+    it('envia full_name, faculdade_unidade e periodo no metadata do signUp', async () => {
       supabaseMock.client.auth.signUp.mockResolvedValue({ data: { session: null }, error: null });
       await service.signup(input);
 
       expect(supabaseMock.client.auth.signUp).toHaveBeenCalledWith(
         expect.objectContaining({
           options: expect.objectContaining({
-            data: { full_name: 'Test', faculdade_unidade: 'salvador_ba' },
+            data: { full_name: 'Test', faculdade_unidade: 'salvador_ba', periodo: 5 },
           }),
         }),
       );

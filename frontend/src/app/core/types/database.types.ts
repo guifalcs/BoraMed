@@ -1281,6 +1281,7 @@ export type Database = {
           motivo_banimento: string | null
           nome_completo: string | null
           papel: string
+          periodo: number | null
           tipo_usuario: string | null
           ultimo_login: string | null
         }
@@ -1301,6 +1302,7 @@ export type Database = {
           motivo_banimento?: string | null
           nome_completo?: string | null
           papel?: string
+          periodo?: number | null
           tipo_usuario?: string | null
           ultimo_login?: string | null
         }
@@ -1321,6 +1323,7 @@ export type Database = {
           motivo_banimento?: string | null
           nome_completo?: string | null
           papel?: string
+          periodo?: number | null
           tipo_usuario?: string | null
           ultimo_login?: string | null
         }

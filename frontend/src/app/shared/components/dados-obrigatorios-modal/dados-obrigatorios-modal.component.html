@@ -1,0 +1,60 @@
+@if (visivel()) {
+  <div
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Complete seus dados"
+  >
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-xl">
+      <div class="px-6 pt-6">
+        <h2 class="text-lg font-bold text-[var(--color-text)]">Só mais um passo antes de começar!</h2>
+        <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
+          @if (pedeFaculdadeUnidade() && pedePeriodo()) {
+            Conta pra gente em qual unidade da Afya você estuda e em que período você está, assim conseguimos recomendar os treinos certos pra você.
+          } @else if (pedeFaculdadeUnidade()) {
+            Conta pra gente em qual unidade da Afya você estuda, assim conseguimos entender melhor onde o BoraMed está chegando.
+          } @else {
+            Conta pra gente em que período você está, assim conseguimos recomendar os treinos certos pra você.
+          }
+        </p>
+      </div>
+
+      <form class="flex flex-col gap-4 px-6 pb-6 pt-4" (submit)="handleSubmit($event)">
+        @if (pedeFaculdadeUnidade()) {
+          <app-ui-select
+            label="Unidade Afya"
+            name="faculdade_unidade"
+            placeholder="Selecione sua unidade"
+            [required]="true"
+            [options]="faculdadeUnidadeOptions"
+            [value]="faculdadeUnidade()"
+            [error]="erroFaculdadeUnidade()"
+            (valueChange)="handleFaculdadeUnidadeChange($event)"
+          />
+        }
+
+        @if (pedePeriodo()) {
+          <app-ui-select
+            label="Período"
+            name="periodo"
+            placeholder="Selecione seu período"
+            [required]="true"
+            [options]="periodoOptions"
+            [value]="periodo()"
+            [error]="erroPeriodo()"
+            (valueChange)="handlePeriodoChange($event)"
+          />
+        }
+
+        <div class="mt-1">
+          <app-ui-button
+            label="Continuar"
+            loadingLabel="Salvando..."
+            type="submit"
+            [loading]="salvando()"
+          />
+        </div>
+      </form>
+    </div>
+  </div>
+}

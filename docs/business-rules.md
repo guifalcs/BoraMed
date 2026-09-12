@@ -211,6 +211,9 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 
 * Plataforma fechada: apenas alunos cadastrados
 * Cadastro: manual por ora
+* **Cadastro exige unidade Afya e período (1º a 12º).** Os dois viajam no metadata do `signUp` e são gravados pelo trigger `handle_new_user()`, que descarta silenciosamente valor fora da lista/intervalo (metadata é do cliente; valor inválido não pode abortar a criação da conta).
+* **Perfil sem unidade ou sem período é cobrado ao entrar na plataforma**, por modal obrigatório no dashboard (sem Esc, sem fechar no backdrop). O modal mostra só o campo que falta e grava apenas o que pediu, sem sobrescrever o campo já preenchido. Enquanto ele está aberto, avisos, onboarding e paywall ficam suprimidos.
+* Na tela de perfil, período é obrigatório para `estudante_medicina`; tipos legados (médico, residente, cursinho, ensino médio, outro) podem permanecer sem período.
 * Dados de desempenho: privados por aluno
 * Admin: Arthur e Guilherme têm acesso total
 * Na criação administrativa de provas, os detalhes, as questões importadas e as questões existentes selecionadas ficam somente no rascunho do navegador até a confirmação final em **Salvar prova**. A gravação é transacional: se qualquer validação ou inserção falhar, nenhuma prova, questão, alternativa, tema ou vínculo é persistido.
@@ -435,6 +438,65 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   linha de assinatura existente) preservados para assinantes antigos.
 * **Assinantes legados (pré-checkout embutido)**: continuam nos preapprovals
   criados via redirect, cobrados e geridos normalmente — não há migração.
+
+### Cupons de desconto e comissão de indicação
+
+Gestão em `/admin/cupons` (menu Gestão → Cupons). Antes disso, cupom só nascia
+por migration — hoje migration de cupom é exceção, não fluxo.
+
+* **CRUD pela plataforma.** Código (sempre em maiúsculas, único), desconto
+  percentual ou fixo, plano específico ou qualquer plano, validade, limite total
+  e limite por usuário. A validação do checkout continua sendo `validar_cupom`
+  server-side: a tela só administra a linha, nunca o preço.
+* **Cupom já usado em checkout não é excluído, é desativado.** Apagar quebraria
+  o histórico da venda (`pagamento_intencao.cupom_id`). A RPC faz isso sozinha e
+  avisa na UI.
+* **Responsável é opcional e tem duas formas**, não excludentes: vínculo com um
+  usuário da plataforma (`responsavel_user_id`) e/ou nome livre
+  (`responsavel_nome`), para quem não tem conta. Sem responsável = campanha da
+  casa, sem repasse.
+* **A regra de comissão mora no cupom**, não no usuário: é o cupom que aparece
+  na venda, e o mesmo responsável pode ter cupons com regras diferentes.
+  Compõem a regra:
+  * `comissao_ativa` — liga/desliga o repasse do cupom;
+  * `comissao_pct_ipatinga` e `comissao_pct_fora` — percentuais distintos por
+    origem do **aluno que comprou** (`profiles.faculdade_unidade`);
+  * `comissao_planos_avancado` / `comissao_planos_essencial` — quais tiers de
+    plano geram comissão.
+* **Aluno sem unidade no perfil entra pela faixa "fora de Ipatinga"** e sai
+  marcado na tela e no PDF (`unidade_indefinida`). Conferir antes de fechar o
+  repasse — é chute assumido, não fato.
+* **Base de cálculo: valor pago pelo aluno** (`pagamento.valor_centavos`, já com
+  o desconto aplicado), só em pagamentos `approved`. Estorno e cancelamento não
+  geram comissão. Recorte do período por `pagamento.criado_em`.
+* **Venda de plano fora da regra aparece na competência com comissão zero e o
+  motivo** (`tier_nao_elegivel`, `comissao_desativada`, `percentual_zero`),
+  nunca sumindo da lista — o que não entrou no repasse fica visível.
+
+#### Competência mensal: aberta → fechada → paga
+
+A apuração é **automática por mês**, não sob demanda: todo mês com venda por
+cupom aparece na aba Comissões sem ninguém pedir. O ciclo de vida fica em
+`comissao_competencia`, e é ele que dá o histórico do que já foi pago.
+
+* **Aberta** — não existe linha em `comissao_competencia`. O valor é recalculado
+  a cada leitura. O mês corrente vive aqui (exibido como "em andamento").
+* **Fechada** — o fechamento **congela** vendas, bruto e comissão num snapshot.
+  Venda ou estorno posterior não mexe no valor já acertado com o responsável.
+* **Paga** — repasse efetuado, com data e observação (ex.: "Pix enviado").
+* **Reabrir descarta o fechamento** (e a marca de pagamento): o mês volta a ser
+  recalculado ao vivo. É a saída para fechamento feito errado.
+* **Divergência é mostrada, não corrigida em silêncio.** Se o cálculo ao vivo
+  passar a diferir do snapshot, a linha sinaliza e oferece "Recalcular" — quem
+  decide se o valor acertado muda é o admin.
+* **Marcar como paga fecha antes, se preciso**: não existe repasse pago sem
+  valor congelado.
+* **O PDF de repasse sai da própria tela** (`/imprimir/comissao/:cupom/:mes`),
+  no mesmo layout do `gerar.py` da skill `prestacao-contas-cupom` — mesma conta,
+  mesmo documento. Vendas sem repasse saem numa tabela separada, com o motivo, e
+  o e-mail do assinante é sempre mascarado.
+* **O repasse continua sendo despesa manual**: fechar ou marcar como paga não
+  lança nada no financeiro (ver abaixo).
 
 ### Despesas e resultado
 

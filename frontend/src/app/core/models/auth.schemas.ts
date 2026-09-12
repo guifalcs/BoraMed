@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FACULDADE_UNIDADE_VALUES } from './faculdade-unidade';
+import { PERIODO_MAX, PERIODO_MIN } from './periodo';
 
 const emailField = z.string().email('E-mail inválido');
 
@@ -23,6 +24,11 @@ export const signupSchema = z
     password: strongPassword,
     confirmPassword: z.string(),
     faculdadeUnidade: z.enum(FACULDADE_UNIDADE_VALUES, { message: 'Selecione sua unidade Afya' }),
+    periodo: z
+      .number({ message: 'Selecione seu período' })
+      .int('Selecione seu período')
+      .min(PERIODO_MIN, 'Selecione seu período')
+      .max(PERIODO_MAX, 'Período inválido'),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: 'As senhas não conferem',

@@ -147,38 +147,70 @@ describe('ProfileService', () => {
     });
   });
 
-  // ── precisaFaculdadeUnidade ─────────────────────────────────────────────────
+  // ── precisaDadosObrigatorios ────────────────────────────────────────────────
 
-  describe('precisaFaculdadeUnidade()', () => {
+  describe('precisaDadosObrigatorios()', () => {
+    const carregar = async (patch: Parameters<typeof fakeProfile>[0]) => {
+      userSignal.set(fakeUser());
+      mockFrom.mockReturnValue(makeQueryBuilder({ data: fakeProfile(patch), error: null }));
+      await service.loadProfile();
+    };
+
     it('é false quando o profile ainda não carregou', () => {
-      expect(service.precisaFaculdadeUnidade()).toBe(false);
+      expect(service.precisaDadosObrigatorios()).toBe(false);
     });
 
     it('é true quando o profile carregou sem faculdade_unidade', async () => {
-      userSignal.set(fakeUser());
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: fakeProfile({ faculdade_unidade: null }), error: null }));
-      await service.loadProfile();
+      await carregar({ faculdade_unidade: null, periodo: 3 });
 
-      expect(service.precisaFaculdadeUnidade()).toBe(true);
+      expect(service.precisaDadosObrigatorios()).toBe(true);
+      expect(service.faltaFaculdadeUnidade()).toBe(true);
+      expect(service.faltaPeriodo()).toBe(false);
     });
 
-    it('é false quando o profile já tem faculdade_unidade', async () => {
-      userSignal.set(fakeUser());
-      mockFrom.mockReturnValue(
-        makeQueryBuilder({ data: fakeProfile({ faculdade_unidade: 'salvador_ba' }), error: null }),
-      );
-      await service.loadProfile();
+    it('é true quando o profile carregou sem periodo', async () => {
+      await carregar({ faculdade_unidade: 'salvador_ba', periodo: null });
 
-      expect(service.precisaFaculdadeUnidade()).toBe(false);
+      expect(service.precisaDadosObrigatorios()).toBe(true);
+      expect(service.faltaFaculdadeUnidade()).toBe(false);
+      expect(service.faltaPeriodo()).toBe(true);
     });
 
-    it('é false durante impersonation, mesmo sem faculdade_unidade', async () => {
-      userSignal.set(fakeUser());
-      mockFrom.mockReturnValue(makeQueryBuilder({ data: fakeProfile({ faculdade_unidade: null }), error: null }));
-      await service.loadProfile();
+    it('é false quando o profile já tem faculdade_unidade e periodo', async () => {
+      await carregar({ faculdade_unidade: 'salvador_ba', periodo: 3 });
+
+      expect(service.precisaDadosObrigatorios()).toBe(false);
+    });
+
+    it('é false durante impersonation, mesmo com dados faltando', async () => {
+      await carregar({ faculdade_unidade: null, periodo: null });
       impersonandoSignal.set({ adminName: 'Admin', targetName: 'Estudante' });
 
-      expect(service.precisaFaculdadeUnidade()).toBe(false);
+      expect(service.precisaDadosObrigatorios()).toBe(false);
+    });
+  });
+
+  // ── updateDadosObrigatorios ────────────────────────────────────────────────
+
+  describe('updateDadosObrigatorios()', () => {
+    it('envia só os campos informados', async () => {
+      userSignal.set(fakeUser());
+      const builder = makeQueryBuilder({ data: fakeProfile({ periodo: 4 }), error: null });
+      mockFrom.mockReturnValue(builder);
+
+      const result = await service.updateDadosObrigatorios({ periodo: 4 });
+
+      expect(result.ok).toBe(true);
+      expect(builder['update'] as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({ periodo: 4 });
+    });
+
+    it('não chama o Supabase quando não há nada a gravar', async () => {
+      userSignal.set(fakeUser());
+
+      const result = await service.updateDadosObrigatorios({});
+
+      expect(result.ok).toBe(true);
+      expect(mockFrom).not.toHaveBeenCalled();
     });
   });
 
@@ -188,7 +220,7 @@ describe('ProfileService', () => {
     const validInput = {
       nome_completo: 'Maria Silva',
       tipo_usuario: 'medico' as const,
-      periodo: null,
+      periodo: 3,
     };
 
     it('retorna { ok: false } quando user é null', async () => {
@@ -226,13 +258,13 @@ describe('ProfileService', () => {
       const builder = makeQueryBuilder({ data: profile, error: null });
       mockFrom.mockReturnValue(builder);
 
-      await service.updateProfile({ nome_completo: 'João', tipo_usuario: 'residente', periodo: null });
+      await service.updateProfile({ nome_completo: 'João', tipo_usuario: 'residente', periodo: 3 });
 
       const updateMock = builder['update'] as ReturnType<typeof vi.fn>;
       expect(updateMock).toHaveBeenCalledWith({
         nome_completo: 'João',
         tipo_usuario: 'residente',
-        periodo: null,
+        periodo: 3,
       });
     });
 
