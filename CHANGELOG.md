@@ -1,5 +1,77 @@
 # Changelog
 
+## 2026-09-13 | Fix | Simulados que não pontuavam XP
+
+**O XP saiu do cliente e passou a ser creditado no servidor, e o cap diário de 500 XP acabou**
+
+- **Sintoma:** alunos relataram provas finalizadas que não geravam XP nenhum, sem aviso e sem padrão claro ("algumas pontuam, outras não").
+- **Causa 1 — XP dependia do cliente.** `conceder_xp_tentativa` só era chamada pelo front, depois de `finalizar_tentativa`/consolidação. Qualquer falha nesse ponto (rede, aba fechada, navegação imediata para o resultado, erro engolido pelo `catch`) perdia o XP daquela prova **para sempre**. Agora o evento é gravado dentro de `consolidar_pontos_tentativa` — o ponto canônico em que a nota fecha — via `conceder_xp_tentativa_interno`, sem `auth.uid()` e sem cliente no caminho.
+- **Causa 2 — cap diário de 500 XP, invisível.** Uma prova nacional de 60 questões com nota alta calcula 650 XP: estourava o teto e **zerava silenciosamente tudo o que viesse depois no mesmo dia**. O cap foi **removido**: toda tentativa vale o XP que calculou, quantas provas o aluno fizer.
+- **Recrédito e backfill:** eventos antigos cortados pelo cap voltam ao valor cheio (`metadata.xp_calculado`), e toda tentativa finalizada (fora do modo `visualizar`) sem `gamificacao_evento` ganha o evento que faltava. Em seguida `xp_total`/`xp_semana_atual`/`nivel` são recalculados a partir dos eventos — necessário porque eventos retroativos entram com `criado_em` antigo e o trigger só soma no insert, sobrescrevendo a semana corrente.
+- **Toast sem repetição:** revisitar um resultado antigo pelo histórico não mostra mais "+X XP" de novo — o aviso só sai quando `concedido_agora` (janela de 10 min).
+- Verificado em Postgres local com todas as migrations aplicadas do zero: três provas de 60 questões no mesmo dia creditam 650 XP cada, **sem o front chamar a RPC**; a RPC devolve o mesmo valor com `ja_concedido: true` e não duplica evento; evento cortado em 500 volta para 650 no recrédito; tentativa sem evento é recuperada pelo backfill; stats fecham em 1950 XP. Typecheck do frontend limpo.
+- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+
+## 2026-09-11 | Feature | Período obrigatório no cadastro e gate de dados do perfil
+
+**Quem cria conta informa o período junto da unidade. Quem já tinha conta preenche o que falta ao entrar**
+
+- **O cadastro pedia unidade Afya, mas não o período** — justo o dado que define quais provas e treinos fazem sentido para o aluno. `/cadastro` ganha o select de **Período** (1º a 12º), obrigatório como os demais campos, e o formulário passa a **dois campos por linha no desktop**: Nome + E-mail, Unidade + Período, Senha + Confirmar senha. No mobile segue em coluna única.
+- **O período viaja no metadata do `signUp`**, como a unidade: `handle_new_user()` lê `raw_user_meta_data->>'periodo'`, valida contra o intervalo 1–12 e grava no perfil. **Metadata é do cliente, então não é confiado**: valor fora da faixa (ou nem numérico) vira `null` em vez de estourar o CHECK e abortar a criação da conta inteira — mesmo tratamento que a unidade já tinha. Quem cai nesse caminho é coberto pelo modal do dashboard.
+- **O modal obrigatório que cobrava a unidade passa a cobrar os dois campos** e só mostra o que falta: perfil legado sem nada vê unidade e período; quem já tem unidade vê só período, e vice-versa; quem está completo não vê modal nenhum. Continua sem Esc, sem backdrop clicável e com foco preso, e o shell do dashboard segue suprimindo aviso/onboarding/paywall enquanto ele está de pé.
+- **Grava só o que foi pedido.** O `update` monta o payload apenas com os campos exibidos, em vez de mandar a linha inteira — sem isso, o modal aberto por falta de período apagaria a unidade de quem já a tinha, numa corrida com o formulário do perfil.
+- **`profiles.periodo` entrou no repo.** A coluna existe em produção desde os "campos pessoais", mas a migration correspondente (`20260508150659`) está vazia em arquivo: banco recriado por `db reset` nascia sem ela, e o `update` do perfil falhava em silêncio no ambiente local. A migration nova é idempotente (`add column if not exists` + CHECK 1–12 criado só se ausente), então em produção é no-op e o local passa a bater com o remoto.
+- **Período vira obrigatório também na tela de perfil**, mas só para `estudante_medicina` (único tipo oferecido hoje). Tipos legados — médico, residente, cursinho — continuam podendo salvar sem período, senão ficariam impedidos de editar qualquer dado.
+- Verificado no banco local: trigger testado com metadata válido (unidade + período gravados) e com lixo (`"faculdade_unidade":"marte"`, `"periodo":"abc"` → ambos `null`, conta criada); `db reset` aplica a migration limpa do zero. 850 testes unitários verdes, incluindo os novos de schema (período ausente/fora do intervalo), do cadastro e do gate (`precisaDadosObrigatorios`, `updateDadosObrigatorios`).
+- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+
+## 2026-09-11 | Feature | Campanha de e-mail para pessoas específicas (segmento `lista_manual`)
+
+**Antes disto, mandar e-mail para alguém específico era abusar do botão "Enviar teste"**
+
+- **Sintoma/lacuna:** o único jeito de mandar e-mail fora de um segmento inteiro da base era o modo `teste` — uma cópia avulsa para um único endereço, sem registrar nada no banco. Não existia meio-termo entre "campanha para milhares" e "cópia de teste para um".
+- **Novo segmento `lista_manual`** no seletor de público de `/admin/campanhas`: aparece como "Pessoas específicas" e abre um campo de texto para colar os e-mails (vírgula, espaço, quebra de linha ou colado de planilha — tudo aceito).
+- **Reaproveita toda a tubulação de campanha existente**, em vez de inventar um caminho novo: vira uma `email_campanha` normal, aparece no histórico, tem log por destinatário e o botão **Retomar** funciona se alguma entrega falhar.
+- **Elegibilidade continua sendo verificada pela mesma função** (`email_publico_alvo`), agora com um parâmetro `p_emails` opcional: admin, banido, optout e e-mail não confirmado continuam de fora mesmo na lista manual. Colar o e-mail de um admin ou de quem já descadastrou simplesmente não entrega nada para aquele endereço, sem furar a regra.
+- **Teto de 200 e-mails por disparo** (`MAX_LISTA_MANUAL`), e-mail fora do formato básico é descartado antes de contar/enviar, com aviso na tela de quantos tokens foram ignorados.
+- Verificado localmente: 19 testes unitários verdes (2 novos, para os helpers de validação/normalização da lista), `deno check`/`deno lint` limpos, e a RPC testada diretamente contra dados de seed (resolve e-mail case-insensitive, ignora inválido, respeita optout/banimento) e via REST autenticado como admin — mesma chamada que o frontend faz.
+- `docs/campanhas-email.md` atualizado com a nova seção do segmento.
+
+## 2026-09-11 | Feature | Cupons e comissões no admin — CRUD, responsável e fechamento mensal de repasse
+
+**Cupom deixa de nascer por migration, e a conta da comissão deixa de ser feita à mão**
+
+- **Novo módulo `/admin/cupons`** (menu Gestão → Cupons), com duas abas: **Cupons** (CRUD completo) e **Comissões** (fechamento mensal de repasse, com histórico do que já foi pago).
+- **Antes, criar cupom era escrever uma migration** — `MA20`, `MARIBRASIL` e `IZA15` foram aplicados direto em produção e depois reconstruídos em arquivo para o histórico voltar a bater. Agora código, tipo de desconto, plano, validade e limites (total e por usuário) são editáveis na tela. A validação do checkout continua onde estava: `validar_cupom` server-side, intocada.
+- **Cupom já usado em checkout não é excluído, é desativado.** Apagar arrastaria o vínculo da venda (`pagamento_intencao.cupom_id`); a RPC detecta o uso, desativa e a UI explica o que aconteceu.
+- **Responsável por cupom, em duas formas opcionais e combináveis:** vínculo com um usuário da plataforma (com busca por nome/e-mail) e/ou nome livre, para embaixador sem conta. Sem responsável, é campanha da casa.
+- **A regra de comissão mora no cupom, não no usuário.** É o cupom que aparece na venda, e o mesmo responsável pode ter cupons com regras diferentes. A regra guarda: percentual para **aluno de Ipatinga**, percentual para **aluno de fora**, e quais tiers de plano geram comissão (**Avançado** e/ou **Essencial**), além do liga/desliga do repasse.
+- **A faixa aplicada é a do aluno que comprou**, lida de `profiles.faculdade_unidade`. Perfil sem unidade cai na faixa "fora de Ipatinga" e sai **marcado** na tela e no PDF: a skill manda perguntar a unidade nesses casos, e o número não pode fingir certeza que não tem.
+- **Venda que não gera comissão continua aparecendo, com o motivo** (`tier_nao_elegivel`, `comissao_desativada`, `percentual_zero`). O que ficou de fora do repasse é visível em vez de sumir da lista.
+- **A apuração é automática por mês, não sob demanda.** Relatório por período livre não deixava rastro: não havia como saber o que já tinha sido apurado, fechado ou pago. Agora todo mês com venda aparece por cupom sem ninguém pedir, com ciclo de vida em `comissao_competencia`: **aberta** (sem linha no banco, valor recalculado a cada leitura, mês corrente incluído) → **fechada** (valores congelados) → **paga** (data e observação do repasse).
+- **Fechar congela o snapshot** porque venda ou estorno posterior não pode mudar em silêncio um valor já acertado com o responsável. Quando o cálculo ao vivo passa a divergir, a linha sinaliza e oferece "Recalcular" — a decisão é do admin, não do sistema. Reabrir descarta o fechamento e a marca de pagamento.
+- **Marcar como paga fecha antes, se ainda estiver aberta**: não existe repasse pago sem valor congelado.
+- **O PDF de repasse sai da própria tela** (`/imprimir/comissao/:cupom/:competencia`), no layout do `gerar.py` da skill `prestacao-contas-cupom` — header em gradiente com a logo branca, cartões de metadados, tabela de vendas e faixa de "valor a receber". Mesma conta da skill (junção `pagamento → pagamento_intencao → cupom`, recorte por `criado_em`, base = valor pago, só `approved`), então os dois documentos nunca divergem. Vendas fora do repasse saem em tabela separada com o motivo, e o e-mail do assinante é sempre mascarado.
+- **Todo select da tela é o `app-ui-select` do design system**, não o `<select>` nativo — o dropdown nativo aparecia com o estilo cru do navegador, fora do padrão da plataforma.
+- **Base de cálculo: valor pago pelo aluno**, já com o desconto do cupom. Estorno e cancelamento ficam fora. O repasse continua sendo lançamento manual de despesa `comissao` — fechar ou marcar como paga não mexe no financeiro.
+- **Segurança:** todas as RPCs novas são `security definer` com guard explícito de `is_admin()` e `search_path` fixo; `grant execute` só para `authenticated`. A tabela `cupom` segue sem policy de escrita direta.
+- Verificado no banco local com dados povoados: 16 vendas em 4 cupons ao longo de 4 meses, incluindo plano não elegível, comissão desativada e aluno sem unidade, com competências pagas, fechadas e o mês corrente aberto. Conferência manual de agosto do YAS20 (71,86 + 16,78 + 0 + 95,81 + 22,37 = R$ 206,82) bate com o snapshot do fechamento. E2E cobre o ciclo fechar → pagar → reabrir e a emissão do PDF.
+- `docs/business-rules.md` atualizado (seção "Cupons de desconto e comissão de indicação").
+
+## 2026-09-10 | Fix | Desfecho do Pix perdido — intenção presa em "pendente" e acesso pago em risco
+
+**O Mercado Pago passou a entregar o `payment.updated` só pelo canal que o webhook rejeitava com 401**
+
+- **Sintoma:** aluno gera o Pix do Avançado Semestral, o registro nasce `pendente` e nunca mais muda — nem para `aprovada`, nem para `expirada`. No caso que levantou isto o aluno não chegou a pagar, então nada foi cobrado indevidamente; o que a auditoria mostrou é que **um Pix pago teria dado no mesmo**: dinheiro dentro e sem acesso.
+- **A causa são dois canais de notificação, não um bug de assinatura.** O MP entrega o mesmo evento pelo webhook moderno (`?data.id=..&type=..`, assinado) e pelo IPN legado (`?id=..&topic=..`, **sem `x-signature`**). O IPN sempre bateu 401 aqui — ruído inofensivo enquanto o moderno entregava tudo. De 09/09 em diante o canal moderno passou a trazer só o `payment.created`: o último `payment.updated` processado foi 08/09 21:04, e todas as transições posteriores morreram em 401.
+- **O IPN passa a valer como gatilho, não como fonte.** O `topic` é traduzido para o `type` interno, o estado real vem sempre de um `GET` no recurso da nossa conta no MP e o sync é idempotente — nada do corpo da notificação é confiado. **`x-signature` presente e inválida continua 401**: aí é adulteração, não canal legado.
+- **IPN não usa o atalho de replay.** Ele não manda `action`, então "criado", "aprovado" e "expirado" do mesmo payment colidiriam na mesma chave de idempotência e só o primeiro seria processado — exatamente o desfecho que se queria recuperar. Ele registra o evento para auditoria e segue processando sempre.
+- **A reconciliação horária deixou de ignorar o acesso único.** Ela só varria recorrentes (as que têm `preapproval`), e acesso único não tem — o semestral estava fora de qualquer rede de segurança, com o botão "Já paguei" como único resgate, e ele depende do aluno continuar com a tela aberta. Agora varre as intenções `pendente` com payment criado nas últimas 72h (janela que cobre o boleto de 3 dias) e roda nelas o mesmo sync: concede o acesso de quem pagou e marca `expirada`/`recusada` quem não pagou.
+- **A varredura é barata e idempotente:** intenção genuinamente pendente no MP continua pendente aqui, sem escrita; sem `mp_payment_id` nem chega a consultar o MP. O resumo do cron ganhou `acesso_unico_verificados` e `acesso_unico_resolvidos`.
+- **Vale conferir no painel do MP** se o endpoint moderno ainda tem o evento de atualização de pagamento marcado — o fix torna o sistema imune à resposta, mas o canal assinado é o caminho preferido.
+- Verificado: **194 testes de edge function verdes**, `deno check` e `deno lint` limpos. Cobertura nova: IPN aceito como gatilho concedendo acesso, reentrega de IPN com novo status escapando do replay, `topic` fora do escopo, assinatura adulterada ainda em 401, e os quatro cenários de reconciliação do acesso único.
+- `docs/architecture.md` (ADR-039), `docs/business-rules.md` e `docs/testes-automatizados-pagamento.md` atualizados.
+
 ## 2026-09-10 | Fix | Impersonação de admin contava como acesso do aluno em /admin/acessos
 
 **Contas que só receberam suporte apareciam com uma rede a mais — o IP do admin — inflando o indício de compartilhamento**

@@ -22,7 +22,7 @@ import { FocoModoService } from '../core/services/foco-modo.service';
 import { PaywallService } from '../core/services/paywall.service';
 import { AcessoService } from '../core/services/acesso.service';
 import { PaywallModalComponent } from '../shared/components/paywall-modal/paywall-modal.component';
-import { FaculdadeUnidadeModalComponent } from '../shared/components/faculdade-unidade-modal/faculdade-unidade-modal.component';
+import { DadosObrigatoriosModalComponent } from '../shared/components/dados-obrigatorios-modal/dados-obrigatorios-modal.component';
 import { UpgradeBadgeComponent } from '../shared/components/upgrade-badge/upgrade-badge.component';
 import { UpgradeCardComponent } from '../shared/components/upgrade-card/upgrade-card.component';
 import type { PaywallContexto } from '../core/models/paywall.types';
@@ -48,7 +48,7 @@ interface NavItemEstado extends NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, FaculdadeUnidadeModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, DadosObrigatoriosModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

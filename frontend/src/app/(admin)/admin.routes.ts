@@ -51,6 +51,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'cupons',
+    loadComponent: () =>
+      import('./cupons/admin-cupons.component').then(
+        (m) => m.AdminCuponsComponent,
+      ),
+  },
+  {
     path: 'questoes',
     loadComponent: () =>
       import('./questoes/admin-questoes.component').then(

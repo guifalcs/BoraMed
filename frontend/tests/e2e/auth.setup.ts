@@ -8,6 +8,10 @@ const TEST_PASSWORD = 'Teste123!';
 setup('autenticar usuário de teste', async ({ page }) => {
   const login = new LoginPage(page);
   await login.goto();
+  // /login é prerenderizada: o HTML chega com o formulário pronto antes de o
+  // bundle hidratar. Sem esperar, o clique cai num botão ainda sem handler e o
+  // submit acontece nativo (GET com a senha na URL) em vez de chamar o Supabase.
+  await page.waitForLoadState('networkidle');
   await login.login(TEST_EMAIL, TEST_PASSWORD);
 
   await expect(page).toHaveURL(/\/(inicio|dashboard)/, { timeout: 10_000 });

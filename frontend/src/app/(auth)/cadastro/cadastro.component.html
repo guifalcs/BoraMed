@@ -1,4 +1,4 @@
-<main class="auth-page">
+<main class="auth-page auth-page--wide">
   <app-brand-panel
     kicker="Seu plano de revisão começa aqui"
     titulo="Monte simulados por tema, formato e <em>período.</em>"
@@ -15,7 +15,7 @@
       <h2 class="auth-heading">Crie sua conta.</h2>
       <p class="auth-copy">Use seu e-mail para começar.</p>
 
-      <form class="form" (submit)="handleSubmit($event)">
+      <form class="form form--pares" (submit)="handleSubmit($event)">
         <app-ui-input
           label="Nome completo"
           name="fullName"
@@ -50,6 +50,17 @@
           (valueChange)="handleFaculdadeUnidadeChange($event)"
         />
 
+        <app-ui-select
+          label="Período"
+          name="periodo"
+          placeholder="Selecione seu período"
+          [required]="true"
+          [options]="periodoOptions"
+          [value]="periodo()"
+          [error]="fieldErrors()['periodo'] ?? null"
+          (valueChange)="handlePeriodoChange($event)"
+        />
+
         <app-ui-input
           label="Senha"
           name="password"
@@ -78,8 +89,8 @@
         />
 
         @if (state() === 'success') {
-          <p class="success">Conta criada! Verifique seu e-mail para confirmar o cadastro.</p>
-          <p class="resend-hint">
+          <p class="success span-2">Conta criada! Verifique seu e-mail para confirmar o cadastro.</p>
+          <p class="resend-hint span-2">
             Não recebeu? Confira a caixa de spam ou
             <button
               type="button"
@@ -99,6 +110,7 @@
         }
 
         <app-ui-button
+          class="span-2"
           label="Criar conta"
           loadingLabel="Criando conta..."
           type="submit"

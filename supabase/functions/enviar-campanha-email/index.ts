@@ -4,7 +4,10 @@
 // Modos (body.modo):
 //   'teste'   → envia UMA cópia para o e-mail informado (ou o do próprio admin),
 //               sem criar campanha nem tocar na base de destinatários;
-//   'enviar'  → materializa o público do segmento, cria a campanha e dispara;
+//   'enviar'  → materializa o público do segmento, cria a campanha e dispara.
+//               Com segmento 'lista_manual', o público vem de
+//               body.destinatarios_manual (e-mails digitados pelo admin) em
+//               vez de um recorte da base — mesmo rastro das demais campanhas;
 //   'previa'  → renderiza o e-mail (mesmo montarEmail() do envio) e devolve o
 //               HTML sem tocar no Resend nem na base — é o preview do admin;
 //   'retomar' → reprocessa os destinatários 'pendente' (nunca tentados) e
@@ -26,7 +29,9 @@ import {
   Destinatario,
   dividirEmLotes,
   isSegmento,
+  MAX_LISTA_MANUAL,
   montarEmail,
+  normalizarListaEmails,
   remetenteValido,
   TAMANHO_LOTE,
 } from '../_shared/campanha-email.ts';
@@ -55,6 +60,8 @@ type Body = {
   remetente?: string;
   email_teste?: string;
   campanha_id?: string;
+  /** Só lido quando segmento === 'lista_manual'. */
+  destinatarios_manual?: unknown;
 };
 
 type LinhaDestinatario = {
@@ -258,10 +265,30 @@ Deno.serve(async (req) => {
     if (!html.trim()) return reply({ error: 'corpo do e-mail obrigatório' }, 400);
     if (!isSegmento(segmento)) return reply({ error: 'segmento inválido' }, 400);
 
+    // 'lista_manual' não materializa um recorte da base: os e-mails vêm do
+    // admin, digitados/colados um a um. A RPC ainda filtra optout/banido/e-mail
+    // não confirmado — o admin escolhe QUEM, não ganha um jeito de furar isso.
+    let emailsManuais: string[] | undefined;
+    if (segmento === 'lista_manual') {
+      const bruto = Array.isArray(body.destinatarios_manual) ? body.destinatarios_manual : [];
+      emailsManuais = normalizarListaEmails(bruto);
+      if (emailsManuais.length === 0) {
+        return reply({ error: 'informe ao menos um e-mail válido' }, 400);
+      }
+      if (emailsManuais.length > MAX_LISTA_MANUAL) {
+        return reply(
+          { error: `máximo de ${MAX_LISTA_MANUAL} e-mails na lista manual` },
+          400,
+        );
+      }
+    }
+
     let publico: Destinatario[];
     try {
       publico = await buscarTudo<Destinatario>((de, ate) =>
-        admin.rpc('email_publico_alvo', { p_segmento: segmento }).range(de, ate)
+        admin
+          .rpc('email_publico_alvo', { p_segmento: segmento, p_emails: emailsManuais ?? null })
+          .range(de, ate)
       );
     } catch (e) {
       console.error('email_publico_alvo:', e instanceof Error ? e.message : e);
@@ -269,7 +296,14 @@ Deno.serve(async (req) => {
     }
 
     if (publico.length === 0) {
-      return reply({ error: 'nenhum destinatário nesse segmento' }, 400);
+      return reply(
+        {
+          error: segmento === 'lista_manual'
+            ? 'nenhum e-mail da lista corresponde a um aluno elegível (confira optout, banimento e confirmação de cadastro)'
+            : 'nenhum destinatário nesse segmento',
+        },
+        400,
+      );
     }
 
     const { data: campanha, error: campanhaError } = await admin

@@ -21,6 +21,8 @@ test.describe('Página de Cadastro', () => {
     await expect(cadastro.emailInput).toBeVisible();
     await expect(cadastro.passwordInput).toBeVisible();
     await expect(cadastro.confirmPasswordInput).toBeVisible();
+    await expect(cadastro.unidadeSelect).toBeVisible();
+    await expect(cadastro.periodoSelect).toBeVisible();
     await expect(cadastro.submitButton).toBeVisible();
   });
 
@@ -77,6 +79,19 @@ test.describe('Página de Cadastro', () => {
       await expect(page.getByText('As senhas não conferem')).toBeVisible();
     });
 
+    test('exibe erro quando o período não é selecionado', async ({ page }) => {
+      await cadastro.fill({
+        fullName: 'João Silva',
+        email: 'novo@example.com',
+        password: STRONG_PASSWORD,
+        confirmPassword: STRONG_PASSWORD,
+        unidade: 'Salvador (BA)',
+      });
+      await cadastro.submitButton.click();
+
+      await expect(page.getByText('Selecione seu período')).toBeVisible();
+    });
+
     test('exibe erro ao submeter com campos vazios', async ({ page }) => {
       await cadastro.submitButton.click();
       await expect(page.locator('.ui-field__error').first()).toBeVisible();
@@ -90,6 +105,8 @@ test.describe('Página de Cadastro', () => {
         email: EXISTING_EMAIL,
         password: STRONG_PASSWORD,
         confirmPassword: STRONG_PASSWORD,
+        unidade: 'Salvador (BA)',
+        periodo: '5º período',
       });
       await cadastro.submitButton.click();
 

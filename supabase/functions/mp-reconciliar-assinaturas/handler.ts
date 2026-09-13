@@ -1,6 +1,7 @@
 import type { Deps } from "../_shared/deps.ts";
 import { json } from "../_shared/cors.ts";
 import { mpGet, mpPut } from "../_shared/mp-api.ts";
+import { syncAcessoUnicoPayment } from "../_shared/mp-payment-sync.ts";
 
 // Reconciliação periódica das assinaturas recorrentes (chamada pelo pg_cron,
 // não por usuário): cobre os buracos entre o acesso provisório de 3 dias do
@@ -17,11 +18,21 @@ import { mpGet, mpPut } from "../_shared/mp-api.ts";
 //   4. Preapproval divergente no MP (cancelado/pausado lá, 'authorized' aqui)
 //      → sincroniza o status local.
 //
+// Desde 10/09/2026 também reconcilia o ACESSO ÚNICO (Pix/boleto/cartão do
+// checkout embutido), que não tem preapproval e por isso ficava fora daqui: se
+// o webhook do desfecho se perde, a intenção fica `pendente` para sempre —
+// sem acesso para quem pagou e sem `expirada` para quem não pagou. Só o botão
+// "Já paguei" salvava, e ele depende do aluno estar com a tela aberta.
+//
 // Auth: header x-cron-secret == env CRON_SECRET (verify_jwt = false; quem chama
 // é o pg_net, com o secret vindo do Vault).
 
 const JANELA_ALERTA_SEM_FATURA_MS = 24 * 60 * 60 * 1000;
 const MAX_POR_EXECUCAO = 100;
+// Janela de varredura das intenções de acesso único pendentes. Pix expira em
+// 30min e cartão resolve na hora; 72h cobre o boleto e qualquer atraso do MP
+// sem varrer o histórico inteiro a cada hora.
+const JANELA_INTENCAO_PENDENTE_MS = 72 * 60 * 60 * 1000;
 
 interface ApPayment {
   id?: string | number;
@@ -45,6 +56,10 @@ export interface ReconciliacaoResumo {
   sem_fatura_24h: number;
   divergencias_sincronizadas: number;
   erros: number;
+  /** Intenções de acesso único ainda `pendente` que foram reconsultadas no MP. */
+  acesso_unico_verificados: number;
+  /** Dessas, as que o MP já tinha resolvido (aprovada/expirada/recusada). */
+  acesso_unico_resolvidos: number;
 }
 
 export async function handleReconciliarAssinaturas(
@@ -110,7 +125,11 @@ export async function handleReconciliarAssinaturas(
     sem_fatura_24h: 0,
     divergencias_sincronizadas: 0,
     erros: 0,
+    acesso_unico_verificados: 0,
+    acesso_unico_resolvidos: 0,
   };
+
+  await reconciliarAcessoUnico(admin, mp, deps.now(), resumo);
 
   for (const assin of pendentes) {
     const preId = assin.mp_preapproval_id as string;
@@ -285,4 +304,81 @@ export async function handleReconciliarAssinaturas(
   }
 
   return json(resumo, 200, {});
+}
+
+/**
+ * Rede de segurança do ACESSO ÚNICO: reconsulta no MP toda intenção que ainda
+ * está `pendente` com payment criado e roda o MESMO sync do webhook. Cobre o
+ * desfecho perdido nos dois sentidos — concede o acesso de quem pagou e marca
+ * como `expirada`/`recusada` quem não pagou, em vez de deixar a intenção presa
+ * em `pendente` (produção, 10/09/2026).
+ *
+ * Idempotente e barata: quem ainda está pendente de verdade no MP continua
+ * pendente aqui, sem escrita relevante.
+ */
+async function reconciliarAcessoUnico(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  mp: { fetch: typeof fetch; token: string },
+  now: Date,
+  resumo: ReconciliacaoResumo,
+): Promise<void> {
+  const corte = new Date(now.getTime() - JANELA_INTENCAO_PENDENTE_MS)
+    .toISOString();
+  const { data: intencoes, error } = await admin
+    .from("pagamento_intencao")
+    .select("id, user_id, mp_payment_id, criado_em")
+    .eq("tipo", "acesso_unico")
+    .eq("status", "pendente")
+    .gte("criado_em", corte)
+    .order("criado_em", { ascending: true })
+    .limit(MAX_POR_EXECUCAO);
+  if (error) {
+    console.error("reconciliação: falha ao listar intenções pendentes", error);
+    resumo.erros++;
+    return;
+  }
+
+  // Sem payment no MP a intenção morreu antes do POST /v1/payments: não há o
+  // que reconsultar.
+  const pendentes = (intencoes ?? []).filter(
+    (i: { mp_payment_id: string | null }) => i.mp_payment_id != null,
+  );
+  resumo.acesso_unico_verificados = pendentes.length;
+
+  for (const intencao of pendentes) {
+    const paymentId = intencao.mp_payment_id as string;
+    const pay = await mpGet(mp, `/v1/payments/${paymentId}`);
+    if (!pay) {
+      resumo.erros++;
+      continue;
+    }
+    // `id` vem do banco (o recurso do MP traz o mesmo valor): mantém o
+    // mp_payment_id idêntico ao já gravado, como faz o webhook.
+    const r = await syncAcessoUnicoPayment(
+      admin,
+      { ...pay, id: paymentId },
+      now,
+      mp,
+    );
+    if (!r.handled || r.status === "pending" || r.status === "in_process") {
+      continue;
+    }
+    if (r.concessaoPendente) {
+      // Approved no MP e acesso ainda não concedido: a próxima execução
+      // reexecuta o sync (mesmo padrão do retry do webhook).
+      console.error(
+        "reconciliação: acesso único approved sem acesso concedido",
+        { paymentId, intencao_id: intencao.id },
+      );
+      resumo.erros++;
+      continue;
+    }
+    console.log("reconciliação: intenção de acesso único resolvida", {
+      paymentId,
+      intencao_id: intencao.id,
+      status: r.status,
+    });
+    resumo.acesso_unico_resolvidos++;
+  }
 }

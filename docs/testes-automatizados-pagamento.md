@@ -39,16 +39,26 @@ global. Nos testes, `_shared/test/fake.ts` injeta:
 - `fakeFetch([...])` — roteia chamadas à API do MP por trecho de URL.
 - `signedWebhookRequest(...)` — monta uma requisição de webhook já com
   `x-signature` HMAC válido.
+- `ipnWebhookRequest(...)` — monta a notificação do **IPN legado**
+  (`?id=..&topic=..`, corpo vazio, sem `x-signature`).
 - `now` fixo — datas determinísticas (carência, +N meses).
 
-Lógica pura extraída para testes diretos: `verifyMpSignature` e
-`mapAuthorizedPaymentStatus` (`_shared/mp-signature.ts`) e `hasActiveAccess`
-(`_shared/access.ts`).
+Lógica pura extraída para testes diretos: `verifyMpSignature`,
+`classifyMpSignature`, `mpTopicToType` e `mapAuthorizedPaymentStatus`
+(`_shared/mp-signature.ts`) e `hasActiveAccess` (`_shared/access.ts`).
 
 ## Cenários cobertos (edge functions)
 
 - **Webhook — segurança:** rejeita HMAC inválido (401), `secret` errado,
   `data.id`/`request-id` divergentes; bloqueia método ≠ POST e config ausente.
+- **Webhook — IPN legado (sem `x-signature`):** aceito como gatilho e concede o
+  acesso; reentrega com novo status **não** cai no atalho de replay (era o que
+  perdia o desfecho do Pix); `topic` fora do escopo responde 200 sem processar;
+  `x-signature` presente e adulterado continua 401.
+- **Reconciliação — acesso único:** intenção `pendente` cujo payment já está
+  `approved` no MP concede o acesso; `cancelled` vira `expirada` sem conceder;
+  ainda `pending` não muda nada; fora da janela de 72h ou sem `mp_payment_id`
+  nem chega a consultar o MP.
 - **Webhook — `subscription_preapproval`:** concede acesso, resolve usuário por
   `external_reference` e por `payer_email`, e supera assinaturas anteriores (B5).
 - **Webhook — `subscription_authorized_payment`:** sem assinatura vinculada pede

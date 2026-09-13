@@ -34,6 +34,7 @@ describe('signupSchema', () => {
     password: 'Abc1234!',
     confirmPassword: 'Abc1234!',
     faculdadeUnidade: 'salvador_ba',
+    periodo: 5,
   };
 
   it('aceita dados válidos', () => {
@@ -45,6 +46,18 @@ describe('signupSchema', () => {
     expect(result.success).toBe(false);
     const msgs = result.error!.issues.map((i) => i.message);
     expect(msgs).toContain('Selecione sua unidade Afya');
+  });
+
+  it('rejeita quando o período não é selecionado', () => {
+    const result = signupSchema.safeParse({ ...valid, periodo: null });
+    expect(result.success).toBe(false);
+    const msgs = result.error!.issues.map((i) => i.message);
+    expect(msgs).toContain('Selecione seu período');
+  });
+
+  it('rejeita período fora do intervalo de 1 a 12', () => {
+    expect(signupSchema.safeParse({ ...valid, periodo: 0 }).success).toBe(false);
+    expect(signupSchema.safeParse({ ...valid, periodo: 13 }).success).toBe(false);
   });
 
   it('rejeita unidade fora da lista permitida', () => {

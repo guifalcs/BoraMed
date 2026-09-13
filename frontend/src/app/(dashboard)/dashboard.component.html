@@ -207,7 +207,7 @@
     }
   </nav>
 
-  @if (!profileService.precisaFaculdadeUnidade()) {
+  @if (!profileService.precisaDadosObrigatorios()) {
     <app-onboarding-tour
       [flow]="onboarding.flow"
       [activeStep]="onboarding.activeStep()"
@@ -225,7 +225,7 @@
     <app-paywall-modal />
   }
 
-  <app-faculdade-unidade-modal />
+  <app-dados-obrigatorios-modal />
 
   <app-suporte-widget />
 

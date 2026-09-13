@@ -3,6 +3,7 @@ import { handleWebhook } from "./handler.ts";
 import {
   FakeDb,
   fakeFetch,
+  ipnWebhookRequest,
   makeDeps,
   signedWebhookRequest,
 } from "../_shared/test/fake.ts";
@@ -656,4 +657,150 @@ Deno.test("webhook payment cancelled (checkout embutido): intenção vira expira
     find(db, "pagamento", (r) => r.mp_payment_id === "PAY-PIX")?.status,
     "cancelled",
   );
+});
+
+// --- Canal IPN legado (?id=..&topic=.., sem x-signature) -------------------
+// Regressão do incidente de 10/09/2026: o `payment.updated` do Pix só chegou
+// por esse canal e morria em 401, deixando a intenção `pendente` para sempre.
+
+Deno.test("webhook IPN legado (sem x-signature): aceita como gatilho e concede o acesso", async () => {
+  const db = new FakeDb({
+    plano: [{ id: "pl-sem", slug: "semestral" }],
+    assinatura: [],
+    pagamento: [],
+    pagamento_intencao: [{
+      id: "int-ipn",
+      user_id: "user-7",
+      status: "pendente",
+    }],
+  });
+  const fetch = fakeFetch([
+    {
+      match: "/v1/payments/PAY-IPN",
+      body: {
+        id: "PAY-IPN",
+        status: "approved",
+        status_detail: "accredited",
+        payment_method_id: "pix",
+        date_approved: "2026-06-24T12:00:00.000Z",
+        transaction_amount: 239.52,
+        metadata: {
+          tipo: "acesso_unico",
+          user_id: "user-7",
+          plano_slug: "semestral",
+          intencao_id: "int-ipn",
+          acesso_meses: 6,
+        },
+      },
+    },
+  ]);
+  const res = await handleWebhook(
+    ipnWebhookRequest({ topic: "payment", id: "PAY-IPN" }),
+    makeDeps({ db, fetch, now: NOW }),
+  );
+  assertEquals(res.status, 200);
+
+  assertEquals(
+    find(db, "pagamento_intencao", (r) => r.id === "int-ipn")?.status,
+    "aprovada",
+  );
+  const assin = find(db, "assinatura", (r) => r.mp_payment_id === "PAY-IPN");
+  assertExists(assin);
+  assertEquals(assin?.status, "authorized");
+  assertEquals(assin?.user_id, "user-7");
+});
+
+Deno.test("webhook IPN legado: reentrega com novo status NÃO cai no atalho de replay", async () => {
+  const db = new FakeDb({
+    plano: [{ id: "pl-sem", slug: "semestral" }],
+    assinatura: [],
+    pagamento: [],
+    pagamento_intencao: [{
+      id: "int-ipn2",
+      user_id: "user-8",
+      status: "pendente",
+    }],
+  });
+  const metadata = {
+    tipo: "acesso_unico",
+    user_id: "user-8",
+    plano_slug: "semestral",
+    intencao_id: "int-ipn2",
+  };
+  const pagamentoPendente = {
+    match: "/v1/payments/PAY-IPN2",
+    body: {
+      id: "PAY-IPN2",
+      status: "pending",
+      status_detail: "pending_waiting_transfer",
+      payment_method_id: "pix",
+      metadata,
+    },
+  };
+  const req = () => ipnWebhookRequest({ topic: "payment", id: "PAY-IPN2" });
+
+  // 1ª notificação: ainda pendente no MP.
+  let res = await handleWebhook(
+    req(),
+    makeDeps({ db, fetch: fakeFetch([pagamentoPendente]), now: NOW }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(
+    find(db, "pagamento_intencao", (r) => r.id === "int-ipn2")?.status,
+    "pendente",
+  );
+
+  // 2ª notificação, mesmo payment e mesma chave de idempotência: o desfecho
+  // (expirado) precisa ser gravado mesmo assim.
+  res = await handleWebhook(
+    req(),
+    makeDeps({
+      db,
+      now: NOW,
+      fetch: fakeFetch([{
+        match: "/v1/payments/PAY-IPN2",
+        body: {
+          id: "PAY-IPN2",
+          status: "cancelled",
+          status_detail: "expired",
+          payment_method_id: "pix",
+          metadata,
+        },
+      }]),
+    }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(
+    find(db, "pagamento_intencao", (r) => r.id === "int-ipn2")?.status,
+    "expirada",
+  );
+  assertEquals(
+    find(db, "pagamento", (r) => r.mp_payment_id === "PAY-IPN2")?.status,
+    "cancelled",
+  );
+});
+
+Deno.test("webhook IPN legado com topic fora do escopo: 200 sem processar nada", async () => {
+  const db = new FakeDb({ pagamento: [], assinatura: [] });
+  const res = await handleWebhook(
+    ipnWebhookRequest({ topic: "merchant_order", id: "MO-1" }),
+    makeDeps({ db, now: NOW }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(db.rows("pagamento").length, 0);
+  assertEquals(db.rows("assinatura").length, 0);
+});
+
+Deno.test("webhook: x-signature PRESENTE e adulterado continua 401 (não vira gatilho)", async () => {
+  const db = new FakeDb({ pagamento: [] });
+  const req = new Request(
+    "https://proj.supabase.co/functions/v1/mp-webhook?id=PAY-X&topic=payment",
+    {
+      method: "POST",
+      headers: { "x-signature": "ts=1,v1=deadbeef", "x-request-id": "r" },
+    },
+  );
+  const res = await handleWebhook(req, makeDeps({ db }));
+  assertEquals(res.status, 401);
+  assertEquals(db.rows("pagamento").length, 0);
 });

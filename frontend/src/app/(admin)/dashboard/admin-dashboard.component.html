@@ -58,75 +58,24 @@
     </section>
   }
 
-  <section class="dashboard-grid" aria-label="Análises">
-    <article class="panel panel--wide">
-      <div class="panel-header">
-        <div>
-          <h2 class="panel-title">Volume da plataforma</h2>
-          <p class="panel-subtitle">Totais de cadastro, conteúdo e prática.</p>
-        </div>
-        <span class="panel-badge">Histórico</span>
+  <article class="panel panel--standalone" aria-label="Movimento de hoje">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Movimento de hoje</h2>
+        <p class="panel-subtitle">Entradas novas e tentativas registradas.</p>
       </div>
+      <span class="panel-badge panel-badge--live">Hoje</span>
+    </div>
 
-      <div class="chart chart--bar">
-        <canvas
-          baseChart
-          type="bar"
-          [data]="platformVolumeData()"
-          [options]="barOptions"
-        ></canvas>
-      </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-header">
-        <div>
-          <h2 class="panel-title">Questões por status</h2>
-          <p class="panel-subtitle">{{ formatNumber(s.total_questoes) }} questões no banco.</p>
-        </div>
-      </div>
-
-      <div class="donut-wrap">
-        <div class="chart chart--donut">
-          <canvas
-            baseChart
-            type="doughnut"
-            [data]="questionStatusData()"
-            [options]="doughnutOptions"
-          ></canvas>
-        </div>
-        <div class="donut-center">
-          <strong>{{ formatNumber(s.questoes_ativas) }}</strong>
-          <span>ativas</span>
-        </div>
-      </div>
-
-      <div class="legend-list" aria-label="Legenda de status das questões">
-        <span><i class="dot dot--emerald"></i>Ativas</span>
-        <span><i class="dot dot--amber"></i>Rascunhos</span>
-        <span><i class="dot dot--slate"></i>Outras</span>
-      </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-header">
-        <div>
-          <h2 class="panel-title">Movimento de hoje</h2>
-          <p class="panel-subtitle">Entradas novas e tentativas registradas.</p>
-        </div>
-        <span class="panel-badge panel-badge--live">Hoje</span>
-      </div>
-
-      <div class="chart chart--small-bar">
-        <canvas
-          baseChart
-          type="bar"
-          [data]="todayActivityData()"
-          [options]="barOptions"
-        ></canvas>
-      </div>
-    </article>
-  </section>
+    <div class="chart chart--small-bar">
+      <canvas
+        baseChart
+        type="bar"
+        [data]="todayActivityData()"
+        [options]="barOptions"
+      ></canvas>
+    </div>
+  </article>
 
   <article class="panel panel--standalone" aria-label="Distribuição de usuários por cidade">
     <div class="panel-header">
@@ -163,6 +112,7 @@
               <h3>{{ c.label }}</h3>
               <p>
                 {{ formatNumber(c.total) }} usuário{{ c.total !== 1 ? 's' : '' }} ·
+                {{ formatNumber(c.assinantes) }} assinante{{ c.assinantes !== 1 ? 's' : '' }} ·
                 {{ c.percent }}% do total com cidade informada
               </p>
             </div>

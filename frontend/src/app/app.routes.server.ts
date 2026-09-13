@@ -31,6 +31,7 @@ export const serverRoutes: ServerRoute[] = [
   // Checkout embutido: 100% client-side (Bricks do MP + sessão do usuário).
   { path: 'checkout/status/:intencaoId', renderMode: RenderMode.Client },
   { path: 'checkout/:plano', renderMode: RenderMode.Client },
+  { path: 'imprimir/comissao/:cupomId/:competencia', renderMode: RenderMode.Client },
   { path: 'imprimir/simulado/montado', renderMode: RenderMode.Client },
   { path: 'imprimir/simulado/:provaId', renderMode: RenderMode.Client },
   { path: 'dashboard/**', renderMode: RenderMode.Server },

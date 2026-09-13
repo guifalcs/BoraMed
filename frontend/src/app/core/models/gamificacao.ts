@@ -12,6 +12,8 @@ export interface GamificacaoStats {
 export interface ConcederXpTentativaResult {
   xp_ganho: number;
   ja_concedido: boolean;
+  /** XP creditado agora (ou nos últimos 10 min) — evita re-avisar em revisita. */
+  concedido_agora: boolean;
   novas_conquistas: ConquistaUsuario[];
   stats: GamificacaoStats;
 }

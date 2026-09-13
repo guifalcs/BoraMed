@@ -138,10 +138,6 @@
   padding: 1.125rem;
 }
 
-.panel--wide {
-  grid-row: span 2;
-}
-
 .panel--standalone {
   margin-bottom: 1rem;
 }
@@ -186,14 +182,6 @@
   width: 100%;
 }
 
-.chart--bar {
-  height: 312px;
-}
-
-.chart--donut {
-  height: 210px;
-}
-
 .chart--small-bar {
   height: 190px;
 }
@@ -204,68 +192,6 @@
 
 .chart--cidades {
   height: 300px;
-}
-
-.donut-wrap {
-  position: relative;
-}
-
-.donut-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  pointer-events: none;
-}
-
-.donut-center strong {
-  color: #1e293b;
-  font-size: 1.55rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.donut-center span {
-  margin-top: 0.25rem;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.legend-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.875rem;
-  color: #475569;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.legend-list span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-}
-
-.dot--emerald {
-  background: #10b981;
-}
-
-.dot--amber {
-  background: #f59e0b;
-}
-
-.dot--slate {
-  background: #64748b;
 }
 
 .insight-card {
@@ -454,10 +380,6 @@
   .priority-list {
     grid-template-columns: 1fr;
   }
-
-  .panel--wide {
-    grid-row: auto;
-  }
 }
 
 @media (max-width: 760px) {
@@ -517,8 +439,6 @@
     align-items: flex-start;
   }
 
-  .chart--bar,
-  .chart--donut,
   .chart--small-bar {
     height: 220px;
   }

@@ -33,6 +33,8 @@ export interface AdminStats {
 export interface AdminDistribuicaoUnidade {
   faculdade_unidade: FaculdadeUnidade | null;
   total: number;
+  /** Quantos desses usuários são assinantes pagantes (cortesia não conta). */
+  assinantes: number;
 }
 
 export interface AdminUsoPonto {
@@ -195,6 +197,174 @@ export interface AdminFinanceiroPlano {
   slug: string;
   nome: string;
   ativas: number;
+}
+
+// ---- Cupons e comissões ----
+
+export type CupomTipo = 'percentual' | 'fixo';
+
+export interface AdminCupom {
+  id: string;
+  codigo: string;
+  descricao: string | null;
+  tipo: CupomTipo;
+  /** Percentual (1–100) quando tipo = 'percentual'; centavos quando 'fixo'. */
+  valor: number;
+  plano_id: string | null;
+  plano_nome: string | null;
+  plano_slug: string | null;
+  ativo: boolean;
+  expira_em: string | null;
+  max_usos: number | null;
+  max_por_usuario: number | null;
+  /** Responsável com conta na plataforma (opcional). */
+  responsavel_user_id: string | null;
+  responsavel_user_nome: string | null;
+  responsavel_user_email: string | null;
+  /** Responsável sem conta, só o nome (opcional). */
+  responsavel_nome: string | null;
+  comissao_ativa: boolean;
+  comissao_pct_ipatinga: number;
+  comissao_pct_fora: number;
+  comissao_planos_avancado: boolean;
+  comissao_planos_essencial: boolean;
+  criado_em: string;
+  /** Pagamentos aprovados com este cupom (histórico completo). */
+  usos: number;
+  receita_centavos: number;
+  expirado: boolean;
+}
+
+export interface AdminCupomInput {
+  id: string | null;
+  codigo: string;
+  descricao: string | null;
+  tipo: CupomTipo;
+  valor: number;
+  plano_id: string | null;
+  ativo: boolean;
+  expira_em: string | null;
+  max_usos: number | null;
+  max_por_usuario: number | null;
+  responsavel_user_id: string | null;
+  responsavel_nome: string | null;
+  comissao_ativa: boolean;
+  comissao_pct_ipatinga: number;
+  comissao_pct_fora: number;
+  comissao_planos_avancado: boolean;
+  comissao_planos_essencial: boolean;
+}
+
+export interface AdminCupomExclusao {
+  excluido: boolean;
+  /** Cupom já usado em checkout não é apagado: vira inativo. */
+  desativado: boolean;
+  usos: number;
+}
+
+export interface AdminUsuarioBusca {
+  id: string;
+  nome_completo: string | null;
+  email: string;
+  faculdade_unidade: FaculdadeUnidade | null;
+}
+
+export interface AdminPlanoOpcao {
+  id: string;
+  slug: string;
+  nome: string;
+  tier: string;
+  ativo: boolean;
+}
+
+export type ComissaoStatus = 'aberta' | 'fechada' | 'paga';
+
+export interface AdminComissaoVenda {
+  pagamento_id: string;
+  data: string;
+  aluno_nome: string | null;
+  aluno_email: string | null;
+  unidade: string | null;
+  unidade_label: string | null;
+  /** Perfil sem unidade: entra como "fora de Ipatinga" e pede conferência. */
+  unidade_indefinida: boolean;
+  e_ipatinga: boolean;
+  plano_nome: string | null;
+  tier: string | null;
+  bruto_centavos: number;
+  liquido_centavos: number;
+  desconto_centavos: number;
+  pct: number;
+  comissao_centavos: number;
+  elegivel: boolean;
+  motivo: string | null;
+}
+
+export interface AdminComissaoCompetencia {
+  cupom_id: string;
+  codigo: string;
+  responsavel: string | null;
+  responsavel_email: string | null;
+  /** Primeiro dia do mês de competência (ISO). */
+  competencia: string;
+  /** Mês corrente: a apuração ainda vai mudar. */
+  em_andamento: boolean;
+  status: ComissaoStatus;
+  // Apurado ao vivo, sempre recalculado a partir das vendas.
+  vendas: number;
+  bruto_centavos: number;
+  liquido_centavos: number;
+  desconto_centavos: number;
+  comissao_centavos: number;
+  vendas_ipatinga: number;
+  vendas_fora: number;
+  unidades_indefinidas: number;
+  // Snapshot congelado no fechamento (null enquanto aberta).
+  fechado_vendas: number | null;
+  fechado_bruto_centavos: number | null;
+  fechado_comissao_centavos: number | null;
+  fechada_em: string | null;
+  paga_em: string | null;
+  observacao: string | null;
+  /** Venda ou estorno entrou depois do fechamento. */
+  divergente: boolean;
+  comissao_ativa: boolean;
+  comissao_pct_ipatinga: number;
+  comissao_pct_fora: number;
+}
+
+export interface AdminComissaoDetalhe {
+  cupom_id: string;
+  codigo: string;
+  descricao: string | null;
+  cupom_tipo: CupomTipo;
+  cupom_valor: number;
+  responsavel: string | null;
+  responsavel_email: string | null;
+  comissao_ativa: boolean;
+  comissao_pct_ipatinga: number;
+  comissao_pct_fora: number;
+  comissao_planos_avancado: boolean;
+  comissao_planos_essencial: boolean;
+  competencia: string;
+  status: ComissaoStatus;
+  em_andamento: boolean;
+  fechada_em: string | null;
+  paga_em: string | null;
+  observacao: string | null;
+  /** Snapshot do fechamento: é o valor que vale no documento de repasse. */
+  fechado_vendas: number | null;
+  fechado_bruto_centavos: number | null;
+  fechado_comissao_centavos: number | null;
+  totais: {
+    vendas: number;
+    bruto_centavos: number;
+    liquido_centavos: number;
+    desconto_centavos: number;
+    comissao_centavos: number;
+    unidades_indefinidas: number;
+  };
+  vendas: AdminComissaoVenda[];
 }
 
 export interface AdminFinanceiro {
@@ -614,7 +784,9 @@ export type SegmentoCampanha =
   | 'sem_assinatura_ativa'
   | 'nunca_assinou'
   | 'ex_assinantes'
-  | 'todos';
+  | 'todos'
+  /** Não é um recorte da base: a lista de e-mails vem do admin. */
+  | 'lista_manual';
 
 export interface AdminCampanhaEmail {
   id: string;
@@ -675,6 +847,21 @@ const DESPESA_COLS =
   'id, descricao, categoria, fornecedor, valor_centavos, competencia, recorrencia, observacao, criado_em';
 
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/** Os `raise exception` das RPCs de cupom viram mensagem de UI aqui. */
+function traduzErroCupom(mensagem: string): string {
+  const mapa: Record<string, string> = {
+    codigo_obrigatorio: 'Informe o código do cupom.',
+    codigo_duplicado: 'Já existe um cupom com esse código.',
+    tipo_invalido: 'Tipo de desconto inválido.',
+    valor_invalido: 'O valor do desconto precisa ser maior que zero.',
+    percentual_acima_de_100: 'Desconto percentual não pode passar de 100%.',
+    cupom_nao_encontrado: 'Cupom não encontrado.',
+    permission_denied: 'Sem permissão para essa ação.',
+  };
+  const chave = Object.keys(mapa).find((k) => mensagem.includes(k));
+  return chave ? mapa[chave] : mensagem;
+}
 
 /**
  * Extrai a mensagem de `{ error: "..." }` devolvida por uma edge function.
@@ -1028,6 +1215,132 @@ export class AdminService {
   async deletarDespesa(id: string): Promise<ServiceResult<void>> {
     const { error } = await this.supabase.from('despesa').delete().eq('id', id);
     if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
+  }
+
+  // ---- Cupons e comissões ----
+
+  async listarCupons(): Promise<ServiceResult<AdminCupom[]>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_cupons');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as unknown as AdminCupom[] };
+  }
+
+  async salvarCupom(input: AdminCupomInput): Promise<ServiceResult<string>> {
+    const { data, error } = await this.supabase.rpc('admin_salvar_cupom', {
+      p_id: input.id,
+      p_codigo: input.codigo,
+      p_descricao: input.descricao,
+      p_tipo: input.tipo,
+      p_valor: input.valor,
+      p_plano_id: input.plano_id,
+      p_ativo: input.ativo,
+      p_expira_em: input.expira_em,
+      p_max_usos: input.max_usos,
+      p_max_por_usuario: input.max_por_usuario,
+      p_responsavel_user_id: input.responsavel_user_id,
+      p_responsavel_nome: input.responsavel_nome,
+      p_comissao_ativa: input.comissao_ativa,
+      p_comissao_pct_ipatinga: input.comissao_pct_ipatinga,
+      p_comissao_pct_fora: input.comissao_pct_fora,
+      p_comissao_planos_avancado: input.comissao_planos_avancado,
+      p_comissao_planos_essencial: input.comissao_planos_essencial,
+    });
+    if (error) return { ok: false, error: traduzErroCupom(error.message) };
+    return { ok: true, data: data as unknown as string };
+  }
+
+  async excluirCupom(id: string): Promise<ServiceResult<AdminCupomExclusao>> {
+    const { data, error } = await this.supabase.rpc('admin_excluir_cupom', { p_id: id });
+    if (error) return { ok: false, error: traduzErroCupom(error.message) };
+    return { ok: true, data: data as unknown as AdminCupomExclusao };
+  }
+
+  async buscarUsuariosCupom(busca: string): Promise<ServiceResult<AdminUsuarioBusca[]>> {
+    const { data, error } = await this.supabase.rpc('admin_buscar_usuarios_cupom', {
+      p_busca: busca,
+      p_limit: 10,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as unknown as AdminUsuarioBusca[] };
+  }
+
+  async listarPlanosOpcoes(): Promise<ServiceResult<AdminPlanoOpcao[]>> {
+    const { data, error } = await this.supabase
+      .from('plano')
+      .select('id, slug, nome, tier, ativo')
+      .order('ordem');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminPlanoOpcao[] };
+  }
+
+  /**
+   * Competências mensais de comissão. Meses com venda aparecem sozinhos, sem
+   * precisar gerar relatório; o mês só ganha registro no banco ao ser fechado.
+   */
+  async listarComissoesCompetencias(
+    cupomId: string | null = null,
+    status: ComissaoStatus | null = null,
+    ano: number | null = null,
+  ): Promise<ServiceResult<AdminComissaoCompetencia[]>> {
+    const { data, error } = await this.supabase.rpc('admin_comissoes_competencias', {
+      p_cupom_id: cupomId,
+      p_status: status,
+      p_ano: ano,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as unknown as AdminComissaoCompetencia[] };
+  }
+
+  /** Vendas e totais de um mês: alimenta o detalhe na tela e o PDF de repasse. */
+  async getComissaoDetalhe(
+    cupomId: string,
+    competencia: string,
+  ): Promise<ServiceResult<AdminComissaoDetalhe>> {
+    const { data, error } = await this.supabase.rpc('admin_comissao_detalhe', {
+      p_cupom_id: cupomId,
+      p_competencia: competencia,
+    });
+    if (error) return { ok: false, error: traduzErroCupom(error.message) };
+    return { ok: true, data: data as unknown as AdminComissaoDetalhe };
+  }
+
+  /** Congela o valor do mês para acerto com o responsável. */
+  async fecharComissao(
+    cupomId: string,
+    competencia: string,
+    observacao: string | null = null,
+  ): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.rpc('admin_fechar_comissao', {
+      p_cupom_id: cupomId,
+      p_competencia: competencia,
+      p_observacao: observacao,
+    });
+    if (error) return { ok: false, error: traduzErroCupom(error.message) };
+    return { ok: true, data: undefined };
+  }
+
+  async marcarComissaoPaga(
+    cupomId: string,
+    competencia: string,
+    observacao: string | null = null,
+  ): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.rpc('admin_marcar_comissao_paga', {
+      p_cupom_id: cupomId,
+      p_competencia: competencia,
+      p_observacao: observacao,
+    });
+    if (error) return { ok: false, error: traduzErroCupom(error.message) };
+    return { ok: true, data: undefined };
+  }
+
+  /** Descarta o fechamento: o mês volta a ser recalculado ao vivo. */
+  async reabrirComissao(cupomId: string, competencia: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.rpc('admin_reabrir_comissao', {
+      p_cupom_id: cupomId,
+      p_competencia: competencia,
+    });
+    if (error) return { ok: false, error: traduzErroCupom(error.message) };
     return { ok: true, data: undefined };
   }
 
@@ -1863,9 +2176,13 @@ export class AdminService {
    * Prévia do público. Usa a MESMA função SQL que a edge function usa para
    * montar a lista real, então a contagem da tela é a contagem do disparo.
    */
-  async contarPublicoCampanha(segmento: SegmentoCampanha): Promise<ServiceResult<number>> {
+  async contarPublicoCampanha(
+    segmento: SegmentoCampanha,
+    emailsManuais?: string[],
+  ): Promise<ServiceResult<number>> {
     const { data, error } = await this.supabase.rpc('admin_contar_publico_email', {
       p_segmento: segmento,
+      p_emails: segmento === 'lista_manual' ? emailsManuais ?? [] : null,
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? 0) as number };
@@ -1952,8 +2269,17 @@ export class AdminService {
     html: string,
     segmento: SegmentoCampanha,
     remetente?: string,
+    destinatariosManual?: string[],
   ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
-    return this.invocarCampanha({ modo: 'enviar', nome, assunto, html, segmento, remetente });
+    return this.invocarCampanha({
+      modo: 'enviar',
+      nome,
+      assunto,
+      html,
+      segmento,
+      remetente,
+      destinatarios_manual: segmento === 'lista_manual' ? destinatariosManual : undefined,
+    });
   }
 
   /** Reenvia apenas o que ficou pendente numa campanha interrompida. */

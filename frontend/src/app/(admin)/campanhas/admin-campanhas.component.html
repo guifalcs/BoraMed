@@ -6,8 +6,8 @@
         Campanhas de e-mail
       </h1>
       <p class="mt-1 text-sm text-[var(--color-text-muted)]">
-        Disparo via Resend para segmentos de alunos. Admins, contas banidas e quem pediu
-        descadastro nunca entram na lista.
+        Disparo via Resend para segmentos de alunos ou para pessoas específicas. Admins, contas
+        banidas e quem pediu descadastro nunca entram na lista.
       </p>
     </div>
 
@@ -37,7 +37,14 @@
             (valueChange)="onSegmentoChange($any($event))"
           />
           <span class="field-hint">
-            @if (contando()) {
+            @if (segmento() === 'lista_manual') {
+              @if (contando()) {
+                Contando…
+              } @else {
+                <strong>{{ totalPublico() }}</strong> de {{ destinatariosLista().length }} e-mails
+                são elegíveis (aluno, sem optout, não banido).
+              }
+            } @else if (contando()) {
               Contando destinatários…
             } @else if (totalPublico() === null) {
               Não foi possível contar.
@@ -47,6 +54,34 @@
           </span>
         </div>
       </div>
+
+      @if (segmento() === 'lista_manual') {
+        <label class="field mt-4">
+          <span class="field-label">Destinatários</span>
+          <textarea
+            class="field-input font-mono text-[13px]"
+            rows="4"
+            placeholder="um-aluno@exemplo.com, outro-aluno@exemplo.com&#10;(ou um por linha — também aceita colar de planilha)"
+            [ngModel]="destinatariosTexto()"
+            (ngModelChange)="destinatariosTexto.set($event)"
+          ></textarea>
+          <span class="field-hint">
+            Separe por vírgula, espaço ou quebra de linha.
+            @if (destinatariosInvalidos().length > 0) {
+              <span class="text-[var(--color-danger)]">
+                {{ destinatariosInvalidos().length }} token(s) sem formato de e-mail foram
+                ignorados.
+              </span>
+            }
+            @if (excedeuMaximoLista()) {
+              <span class="text-[var(--color-danger)]">
+                Máximo de {{ maxListaManual }} e-mails por envio. Remova
+                {{ destinatariosLista().length - maxListaManual }}.
+              </span>
+            }
+          </span>
+        </label>
+      }
 
       <label class="field mt-4">
         <span class="field-label">Assunto</span>

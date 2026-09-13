@@ -2,6 +2,34 @@
 // testar isoladamente. Usadas pelo mp-webhook.
 
 /**
+ * Resultado da checagem do `x-signature`:
+ *   - `valida`   → HMAC confere; o corpo da notificação é confiável;
+ *   - `invalida` → veio assinatura e ela NÃO confere (adulteração) → rejeitar;
+ *   - `ausente`  → notificação sem `x-signature`. É o canal IPN legado do MP
+ *     (`?id=<id>&topic=<topic>`), que nunca assina. Não é adulteração e não
+ *     pode ser descartada: em produção (10/09/2026) TODA transição de status
+ *     do Pix do checkout embutido chegou só por esse canal e morreu em 401,
+ *     deixando a intenção `pendente` para sempre. Quem trata `ausente` só
+ *     pode usar o `id` como GATILHO e reconsultar o recurso na API do MP —
+ *     nunca confiar no corpo.
+ */
+export type MpSignatureCheck = 'valida' | 'invalida' | 'ausente';
+
+/**
+ * Classifica o header `x-signature` do Mercado Pago. Mesma verificação do
+ * `verifyMpSignature`, distinguindo "não veio assinatura" de "assinatura não
+ * confere".
+ */
+export async function classifyMpSignature(
+  req: Request,
+  dataId: string,
+  secret: string,
+): Promise<MpSignatureCheck> {
+  if (!req.headers.get('x-signature')) return 'ausente';
+  return (await verifyMpSignature(req, dataId, secret)) ? 'valida' : 'invalida';
+}
+
+/**
  * Valida o header `x-signature` do Mercado Pago.
  * Recalcula o HMAC-SHA256 do manifest e compara, em tempo constante, com o `v1`.
  * Manifest: `id:<data.id minúsculo>;request-id:<x-request-id>;ts:<ts>;`
@@ -46,6 +74,26 @@ export async function verifyMpSignature(
   let diff = 0;
   for (let i = 0; i < computed.length; i++) diff |= computed.charCodeAt(i) ^ v1.charCodeAt(i);
   return diff === 0;
+}
+
+/**
+ * Traduz o `topic` do IPN legado (`?id=...&topic=payment`) para o `type` do
+ * webhook moderno, que é o vocabulário usado no roteamento do handler.
+ * Topic desconhecido devolve string vazia — o handler ignora e responde 200.
+ */
+export function mpTopicToType(topic: string): string {
+  switch (topic) {
+    case 'payment':
+      return 'payment';
+    case 'preapproval':
+    case 'subscription_preapproval':
+      return 'subscription_preapproval';
+    case 'authorized_payment':
+    case 'subscription_authorized_payment':
+      return 'subscription_authorized_payment';
+    default:
+      return '';
+  }
 }
 
 export type PagamentoStatus =

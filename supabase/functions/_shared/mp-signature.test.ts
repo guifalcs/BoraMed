@@ -1,5 +1,10 @@
 import { assertEquals } from '@std/assert';
-import { mapAuthorizedPaymentStatus, verifyMpSignature } from './mp-signature.ts';
+import {
+  classifyMpSignature,
+  mapAuthorizedPaymentStatus,
+  mpTopicToType,
+  verifyMpSignature,
+} from './mp-signature.ts';
 import { signWebhook } from './test/fake.ts';
 
 const SECRET = 'whsec_test';
@@ -41,6 +46,31 @@ Deno.test('verifyMpSignature: é sensível ao x-request-id (parte do manifest)',
   const sig = await signWebhook(SECRET, 'DATA-123', '1700000000', 'req-1');
   // mesma assinatura, request-id diferente → manifest diferente → inválido
   assertEquals(await verifyMpSignature(reqWith(sig, 'req-OUTRO'), 'DATA-123', SECRET), false);
+});
+
+Deno.test('classifyMpSignature: distingue válida, inválida e ausente', async () => {
+  const sig = await signWebhook(SECRET, 'DATA-123', '1700000000', 'req-1');
+  assertEquals(await classifyMpSignature(reqWith(sig), 'DATA-123', SECRET), 'valida');
+  assertEquals(await classifyMpSignature(reqWith(sig), 'DATA-999', SECRET), 'invalida');
+
+  // IPN legado: nenhum header x-signature. Não é adulteração — é outro canal.
+  const semHeader = new Request('https://x/functions/v1/mp-webhook?id=DATA-123&topic=payment', {
+    method: 'POST',
+  });
+  assertEquals(await classifyMpSignature(semHeader, 'DATA-123', SECRET), 'ausente');
+});
+
+Deno.test('classifyMpSignature: header presente mas vazio/sem v1 é inválido, não ausente', async () => {
+  assertEquals(await classifyMpSignature(reqWith('foo=bar'), 'DATA-123', SECRET), 'invalida');
+});
+
+Deno.test('mpTopicToType: traduz os topics do IPN legado', () => {
+  assertEquals(mpTopicToType('payment'), 'payment');
+  assertEquals(mpTopicToType('preapproval'), 'subscription_preapproval');
+  assertEquals(mpTopicToType('authorized_payment'), 'subscription_authorized_payment');
+  // Topic fora do nosso escopo (ex.: merchant_order) não vira evento.
+  assertEquals(mpTopicToType('merchant_order'), '');
+  assertEquals(mpTopicToType(''), '');
 });
 
 Deno.test('mapAuthorizedPaymentStatus: mapeia todos os estados conhecidos', () => {

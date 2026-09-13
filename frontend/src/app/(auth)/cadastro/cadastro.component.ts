@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { signupSchema } from '../../core/models/auth.schemas';
 import { FACULDADE_UNIDADE_OPTIONS, type FaculdadeUnidade } from '../../core/models/faculdade-unidade';
+import { PERIODO_OPTIONS } from '../../core/models/periodo';
 import { SeoService } from '../../core/seo/seo.service';
 
 type CadastroState = 'idle' | 'error' | 'loading' | 'success';
@@ -45,6 +46,8 @@ export class CadastroComponent implements OnDestroy {
   protected readonly confirmPassword = signal('');
   protected readonly faculdadeUnidade = signal<FaculdadeUnidade | null>(null);
   protected readonly faculdadeUnidadeOptions = FACULDADE_UNIDADE_OPTIONS;
+  protected readonly periodo = signal<number | null>(null);
+  protected readonly periodoOptions = PERIODO_OPTIONS;
   protected readonly state = signal<CadastroState>('idle');
   protected readonly fieldErrors = signal<Partial<Record<string, string>>>({});
   protected readonly resendState = signal<ResendState>('idle');
@@ -52,6 +55,10 @@ export class CadastroComponent implements OnDestroy {
 
   protected handleFaculdadeUnidadeChange(value: string | number | null): void {
     this.faculdadeUnidade.set(typeof value === 'string' ? (value as FaculdadeUnidade) : null);
+  }
+
+  protected handlePeriodoChange(value: string | number | null): void {
+    this.periodo.set(typeof value === 'number' ? value : null);
   }
 
   protected async handleSubmit(event: SubmitEvent): Promise<void> {
@@ -64,6 +71,7 @@ export class CadastroComponent implements OnDestroy {
       password: this.password(),
       confirmPassword: this.confirmPassword(),
       faculdadeUnidade: this.faculdadeUnidade(),
+      periodo: this.periodo(),
     });
 
     if (!parsed.success) {

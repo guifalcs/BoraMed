@@ -134,65 +134,6 @@ export class AdminDashboardComponent implements OnInit {
     ];
   });
 
-  protected readonly questionStatusData = computed<ChartData<'doughnut'>>(() => {
-    const s = this.stats();
-    const total = s?.total_questoes ?? 0;
-    const ativas = s?.questoes_ativas ?? 0;
-    const rascunho = s?.questoes_rascunho ?? 0;
-    const outras = Math.max(total - ativas - rascunho, 0);
-
-    if (total === 0) {
-      return {
-        labels: ['Sem questões'],
-        datasets: [
-          {
-            data: [1],
-            backgroundColor: ['#475569'],
-            borderColor: '#ffffff',
-            borderWidth: 2,
-          },
-        ],
-      };
-    }
-
-    return {
-      labels: ['Ativas', 'Rascunhos', 'Outras'],
-      datasets: [
-        {
-          data: [ativas, rascunho, outras],
-          backgroundColor: ['#10b981', '#f59e0b', '#64748b'],
-          borderColor: '#ffffff',
-          borderWidth: 2,
-          hoverOffset: 6,
-        },
-      ],
-    };
-  });
-
-  protected readonly platformVolumeData = computed<ChartData<'bar'>>(() => {
-    const s = this.stats();
-
-    return {
-      labels: ['Usuários', 'Questões', 'Provas', 'Temas', 'Tentativas'],
-      datasets: [
-        {
-          label: 'Total',
-          data: [
-            s?.total_usuarios ?? 0,
-            s?.total_questoes ?? 0,
-            s?.total_provas ?? 0,
-            s?.total_temas ?? 0,
-            s?.total_tentativas ?? 0,
-          ],
-          backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6', '#06b6d4', '#f97316'],
-          borderRadius: 8,
-          borderSkipped: false,
-          maxBarThickness: 42,
-        },
-      ],
-    };
-  });
-
   protected readonly todayActivityData = computed<ChartData<'bar'>>(() => {
     const s = this.stats();
 
@@ -212,7 +153,12 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   private readonly maxCidadesNoGrafico = 8;
-  protected readonly cidadeSelecionada = signal<{ label: string; total: number; percent: number } | null>(null);
+  protected readonly cidadeSelecionada = signal<{
+    label: string;
+    total: number;
+    assinantes: number;
+    percent: number;
+  } | null>(null);
 
   /** Quantos usuários não têm cidade/unidade cadastrada (fora da base do gráfico). */
   protected readonly semCidadeTotal = computed(() => {
@@ -228,7 +174,7 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly distribuicaoUnidadeItens = computed(() => {
     const linhas = (this.distribuicaoUnidades() ?? []).filter((l) => l.faculdade_unidade !== null);
     const total = linhas.reduce((acc, l) => acc + l.total, 0);
-    if (total === 0) return [] as { label: string; total: number; percent: number }[];
+    if (total === 0) return [] as { label: string; total: number; assinantes: number; percent: number }[];
 
     const rotulo = (u: AdminDistribuicaoUnidade['faculdade_unidade']) =>
       u ? (FACULDADE_UNIDADE_LABELS[u] ?? u) : '';
@@ -240,6 +186,7 @@ export class AdminDashboardComponent implements OnInit {
     const itens = principais.map((l) => ({
       label: rotulo(l.faculdade_unidade),
       total: l.total,
+      assinantes: l.assinantes ?? 0,
       percent: Math.round((l.total / total) * 1000) / 10,
     }));
 
@@ -248,6 +195,7 @@ export class AdminDashboardComponent implements OnInit {
       itens.push({
         label: 'Outras',
         total: totalRestante,
+        assinantes: restante.reduce((acc, l) => acc + (l.assinantes ?? 0), 0),
         percent: Math.round((totalRestante / total) * 1000) / 10,
       });
     }
@@ -289,7 +237,12 @@ export class AdminDashboardComponent implements OnInit {
             const percent = this.decimalFormatter.format(Number(ctx.parsed.x));
             if (!item) return `${percent}%`;
             const usuarios = item.total === 1 ? 'usuário' : 'usuários';
-            return `${this.formatNumber(item.total)} ${usuarios} (${percent}%)`;
+            const assinantesPercent =
+              item.total > 0 ? this.decimalFormatter.format(Math.round((item.assinantes / item.total) * 1000) / 10) : '0';
+            return [
+              `${this.formatNumber(item.total)} ${usuarios} (${percent}%)`,
+              `${this.formatNumber(item.assinantes)} assinante${item.assinantes === 1 ? '' : 's'} (${assinantesPercent}%)`,
+            ];
           },
         },
       },
@@ -521,24 +474,6 @@ export class AdminDashboardComponent implements OnInit {
 
     return priorities.slice(0, 3);
   });
-
-  protected readonly doughnutOptions: ChartOptions<'doughnut'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '68%',
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#020617',
-        borderColor: '#334155',
-        borderWidth: 1,
-        padding: 10,
-        callbacks: {
-          label: (ctx) => `${ctx.label}: ${this.formatNumber(ctx.parsed)}`,
-        },
-      },
-    },
-  };
 
   protected readonly barOptions: ChartOptions<'bar'> = {
     responsive: true,

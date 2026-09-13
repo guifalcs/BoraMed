@@ -350,6 +350,7 @@ describe('PerfilComponent', () => {
     it('inclui faculdade_unidade quando preenchida', async () => {
       (component as any).nomeCompleto.set('João Silva');
       (component as any).tipoUsuario.set('estudante_medicina');
+      (component as any).periodo.set(4);
       (component as any).faculdadeUnidade.set('salvador_ba');
 
       (component as any).handleProfileSubmit(mockSubmitEvent());

@@ -1,0 +1,256 @@
+/* Estética idêntica ao `gerar.py` da skill `prestacao-contas-cupom`: o PDF
+   emitido aqui e o emitido pela skill são o mesmo documento. */
+
+:host {
+  display: block;
+  background: #eef2f7;
+  min-height: 100vh;
+  font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #0f172a;
+}
+
+.aviso {
+  margin: 0;
+  padding: 4rem 1rem;
+  text-align: center;
+  color: #475569;
+}
+
+.aviso--erro {
+  color: #b91c1c;
+}
+
+.barra-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.btn-imprimir {
+  border: 0;
+  border-radius: 8px;
+  background: #2451d8;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+}
+
+.btn-imprimir:hover {
+  background: #1e40af;
+}
+
+.dica {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.pagina {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 3rem;
+  padding-bottom: 18mm;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12);
+}
+
+.doc-header {
+  background: linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
+  color: #fff;
+  padding: 16mm 16mm 12mm;
+}
+
+.doc-logo {
+  height: 11mm;
+  display: block;
+  margin-bottom: 7mm;
+}
+
+.doc-header h1 {
+  font-size: 20pt;
+  margin: 0 0 2mm;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.sub {
+  font-size: 10pt;
+  opacity: 0.85;
+  margin: 0;
+}
+
+main {
+  padding: 10mm 16mm 0;
+}
+
+.meta {
+  display: flex;
+  gap: 6mm;
+  margin-bottom: 6mm;
+}
+
+.meta div {
+  flex: 1;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4mm 5mm;
+}
+
+.meta span {
+  display: block;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748b;
+  margin-bottom: 1.5mm;
+}
+
+.meta strong {
+  font-size: 11pt;
+  font-weight: 600;
+}
+
+.situacao {
+  margin: 0 0 8mm;
+  font-size: 9pt;
+  color: #475569;
+}
+
+h2 {
+  font-size: 11pt;
+  margin: 0 0 3mm;
+  color: #1e3a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  margin-bottom: 8mm;
+}
+
+th {
+  text-align: left;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3mm;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+td {
+  padding: 3mm;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+tfoot td {
+  font-weight: 700;
+  background: #f8fafc;
+  border-bottom: none;
+}
+
+.tabela-secundaria {
+  font-size: 8.5pt;
+  color: #475569;
+}
+
+.vazio {
+  font-size: 9.5pt;
+  color: #64748b;
+  margin: 0 0 8mm;
+}
+
+.total {
+  background: linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
+  color: #fff;
+  border-radius: 12px;
+  padding: 6mm 7mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8mm;
+}
+
+.total span {
+  font-size: 10pt;
+  opacity: 0.9;
+}
+
+.total strong {
+  font-size: 20pt;
+}
+
+ul {
+  margin: 0;
+  padding-left: 5mm;
+  font-size: 9pt;
+  color: #475569;
+  line-height: 1.6;
+  list-style: disc outside;
+}
+
+footer {
+  margin-top: 10mm;
+  padding-top: 4mm;
+  border-top: 1px solid #e2e8f0;
+  font-size: 8pt;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Na impressão a folha é o próprio papel: sem sombra, sem fundo, sem a barra. */
+@media print {
+  :host {
+    background: #fff;
+  }
+
+  .barra-acoes {
+    display: none;
+  }
+
+  .pagina {
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .doc-header {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .total,
+  th,
+  tfoot td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
