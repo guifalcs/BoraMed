@@ -8,7 +8,12 @@
 -- Agora o XP é concedido no servidor, dentro de consolidar_pontos_tentativa
 -- (ponto canônico em que a nota fecha, chamado por finalizar_tentativa e por
 -- consolidar_correcoes_tentativa). A RPC do cliente vira idempotente de fato:
--- devolve o XP do evento já existente e diz se o cap diário zerou a prova.
+-- devolve o XP do evento já existente.
+--
+-- O cap diário de 500 XP por tentativas também cai aqui: era a segunda causa
+-- das "provas que não pontuam" (prova nacional grande calcula ~650 XP, estoura
+-- o teto e zera tudo o que vier depois no mesmo dia). Eventos antigos cortados
+-- pelo cap são recreditados pelo valor cheio (metadata.xp_calculado).
 --
 -- ⚠️ AVISO ANTI-REGRESSÃO DE GRANTS: não regenerar via `db pull`/`db diff`.
 -- ============================================================================
@@ -32,16 +37,13 @@ DECLARE
   v_bonus_tempo     integer;
   v_tempo_medio     numeric;
   v_xp_calculado    integer;
-  v_xp_hoje         integer;
-  v_xp_concedido    integer;
 BEGIN
   SELECT * INTO v_tentativa
   FROM public.tentativa
   WHERE id = p_tentativa_id;
 
   IF NOT FOUND THEN
-    RETURN jsonb_build_object('xp_ganho', 0, 'ja_concedido', false, 'concedido_agora', false,
-                              'xp_calculado', 0, 'limite_diario_atingido', false);
+    RETURN jsonb_build_object('xp_ganho', 0, 'ja_concedido', false, 'concedido_agora', false);
   END IF;
 
   v_idempotency_key := 'tentativa:' || p_tentativa_id::text;
@@ -52,17 +54,14 @@ BEGIN
 
   IF FOUND THEN
     RETURN jsonb_build_object(
-      'xp_ganho',               v_evento.xp,
-      'ja_concedido',           true,
-      'concedido_agora',        v_evento.criado_em > now() - interval '10 minutes',
-      'xp_calculado',           COALESCE((v_evento.metadata ->> 'xp_calculado')::integer, v_evento.xp),
-      'limite_diario_atingido', COALESCE((v_evento.metadata ->> 'xp_calculado')::integer, v_evento.xp) > v_evento.xp
+      'xp_ganho',        v_evento.xp,
+      'ja_concedido',    true,
+      'concedido_agora', v_evento.criado_em > now() - interval '10 minutes'
     );
   END IF;
 
   IF v_tentativa.status <> 'finalizada' OR v_tentativa.modo = 'visualizar' THEN
-    RETURN jsonb_build_object('xp_ganho', 0, 'ja_concedido', false, 'concedido_agora', false,
-                              'xp_calculado', 0, 'limite_diario_atingido', false);
+    RETURN jsonb_build_object('xp_ganho', 0, 'ja_concedido', false, 'concedido_agora', false);
   END IF;
 
   -- XP base: 10 XP por acerto — com discursivas usa os pontos consolidados
@@ -92,22 +91,12 @@ BEGIN
     ELSE 0
   END;
 
+  -- Sem cap diário: a tentativa vale o que calculou.
   v_xp_calculado := v_base + v_bonus_nota + v_bonus_tempo;
-
-  -- Cap diário de 500 XP por tentativas
-  SELECT COALESCE(SUM(xp), 0)::integer
-  INTO v_xp_hoje
-  FROM public.gamificacao_evento
-  WHERE user_id = v_tentativa.user_id
-    AND tipo = 'tentativa'
-    AND (criado_em AT TIME ZONE 'America/Sao_Paulo')::date
-        = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
-
-  v_xp_concedido := LEAST(v_xp_calculado, GREATEST(500 - v_xp_hoje, 0));
 
   INSERT INTO public.gamificacao_evento (user_id, tipo, xp, metadata, idempotency_key)
   VALUES (
-    v_tentativa.user_id, 'tentativa', v_xp_concedido,
+    v_tentativa.user_id, 'tentativa', v_xp_calculado,
     jsonb_build_object(
       'tentativa_id', p_tentativa_id,
       'xp_calculado', v_xp_calculado,
@@ -120,11 +109,9 @@ BEGIN
   ON CONFLICT (user_id, idempotency_key) DO NOTHING;
 
   RETURN jsonb_build_object(
-    'xp_ganho',               v_xp_concedido,
-    'ja_concedido',           false,
-    'concedido_agora',        true,
-    'xp_calculado',           v_xp_calculado,
-    'limite_diario_atingido', v_xp_calculado > v_xp_concedido
+    'xp_ganho',        v_xp_calculado,
+    'ja_concedido',    false,
+    'concedido_agora', true
   );
 END;
 $function$;
@@ -247,8 +234,18 @@ $$;
 REVOKE ALL ON FUNCTION public.consolidar_pontos_tentativa(uuid) FROM public, anon, authenticated;
 
 -------------------------------------------------------------------------------
--- 4. Backfill — tentativas finalizadas e consolidadas que ficaram sem evento
---    de XP (o bug). Respeita o cap diário de 500 XP do dia da tentativa.
+-- 4. Recrédito — eventos cortados pelo antigo cap diário voltam ao valor cheio
+-------------------------------------------------------------------------------
+
+UPDATE public.gamificacao_evento
+SET xp = (metadata ->> 'xp_calculado')::integer
+WHERE tipo = 'tentativa'
+  AND metadata ? 'xp_calculado'
+  AND (metadata ->> 'xp_calculado')::integer > xp;
+
+-------------------------------------------------------------------------------
+-- 5. Backfill — tentativas finalizadas e consolidadas que ficaram sem evento
+--    de XP (o bug), pelo valor cheio (sem cap).
 -------------------------------------------------------------------------------
 
 WITH pendentes AS (
@@ -256,7 +253,6 @@ WITH pendentes AS (
     t.id,
     t.user_id,
     t.finalizada_em,
-    (t.finalizada_em AT TIME ZONE 'America/Sao_Paulo')::date AS dia,
     (
       GREATEST(round(COALESCE(t.pontos, COALESCE(t.acertos, 0) * 100)::numeric / 10), 0)::integer
       + CASE
@@ -281,33 +277,12 @@ WITH pendentes AS (
       WHERE g.user_id = t.user_id
         AND g.idempotency_key = 'tentativa:' || t.id::text
     )
-),
-ja_concedido AS (
-  SELECT
-    user_id,
-    (criado_em AT TIME ZONE 'America/Sao_Paulo')::date AS dia,
-    SUM(xp)::integer AS xp
-  FROM public.gamificacao_evento
-  WHERE tipo = 'tentativa'
-  GROUP BY 1, 2
-),
-calculado AS (
-  SELECT
-    p.*,
-    COALESCE(j.xp, 0) AS xp_do_dia,
-    COALESCE(SUM(p.xp_calculado) OVER (
-      PARTITION BY p.user_id, p.dia
-      ORDER BY p.finalizada_em
-      ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-    ), 0) AS xp_anteriores
-  FROM pendentes p
-  LEFT JOIN ja_concedido j ON j.user_id = p.user_id AND j.dia = p.dia
 )
 INSERT INTO public.gamificacao_evento (user_id, tipo, xp, metadata, idempotency_key, criado_em)
 SELECT
   user_id,
   'tentativa',
-  LEAST(xp_calculado, GREATEST(500 - (xp_do_dia + xp_anteriores), 0)),
+  xp_calculado,
   jsonb_build_object(
     'tentativa_id', id,
     'xp_calculado', xp_calculado,
@@ -315,13 +290,13 @@ SELECT
   ),
   'tentativa:' || id::text,
   finalizada_em
-FROM calculado
+FROM pendentes
 ON CONFLICT (user_id, idempotency_key) DO NOTHING;
 
 -------------------------------------------------------------------------------
--- 5. Recalcula as stats a partir dos eventos — o backfill entra com criado_em
---    retroativo, então xp_total/xp_semana_atual/nivel são refeitos do zero
---    (evita que um evento antigo sobrescreva a semana corrente no trigger).
+-- 6. Recalcula as stats a partir dos eventos — recrédito e backfill mexem em
+--    eventos com criado_em retroativo, então xp_total/xp_semana_atual/nivel são
+--    refeitos do zero (o trigger só soma no insert e sobrescreveria a semana).
 -------------------------------------------------------------------------------
 
 WITH semana AS (
