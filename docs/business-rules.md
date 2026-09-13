@@ -123,8 +123,10 @@ Regras de combinação:
 ### Gamificação Competitiva
 
 * XP é concedido somente após tentativa finalizada e nunca no modo `visualizar`
+* XP é creditado **no servidor**, dentro de `consolidar_pontos_tentativa` — o ponto em que a nota fecha (chamado por `finalizar_tentativa` e por `consolidar_correcoes_tentativa`). Não depende de o cliente chamar `conceder_xp_tentativa`: fechar a aba logo após finalizar não faz mais a prova ficar sem XP
+* A RPC `conceder_xp_tentativa` continua existindo para o front dar o retorno visual — devolve o XP do evento já gravado (`ja_concedido`), se foi creditado agora (`concedido_agora`, janela de 10 min) e se o cap diário cortou a prova (`limite_diario_atingido`)
 * Cada tentativa concede XP uma única vez por chave idempotente `tentativa:{tentativa_id}`
-* XP de tentativas tem cap diário de 500 XP por usuário
+* XP de tentativas tem cap diário de 500 XP por usuário — batido o teto, as provas seguintes do dia valem 0 XP e o aluno vê o aviso "Limite diário de 500 XP atingido" no resultado
 * Streak v2 considera dias de atividade com tentativa ou desafio diário
 * Streak atual permanece válido se o último dia ativo foi hoje ou ontem
 * Streak Freeze é consumido automaticamente quando há exatamente 1 dia perdido e o aluno tem protetor disponível

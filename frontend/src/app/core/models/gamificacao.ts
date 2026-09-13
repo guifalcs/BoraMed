@@ -12,6 +12,12 @@ export interface GamificacaoStats {
 export interface ConcederXpTentativaResult {
   xp_ganho: number;
   ja_concedido: boolean;
+  /** XP creditado agora (ou nos últimos 10 min) — evita re-avisar em revisita. */
+  concedido_agora: boolean;
+  /** XP antes do cap diário de 500. */
+  xp_calculado: number;
+  /** true quando o cap diário cortou parte (ou todo) o XP da tentativa. */
+  limite_diario_atingido: boolean;
   novas_conquistas: ConquistaUsuario[];
   stats: GamificacaoStats;
 }

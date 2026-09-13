@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-13 | Fix | Simulados que não pontuavam XP
+
+**O XP saiu do cliente e passou a ser creditado no servidor, junto do fechamento da nota**
+
+- **Sintoma:** alunos relataram provas finalizadas que não geravam XP nenhum, sem aviso e sem padrão claro ("algumas pontuam, outras não").
+- **Causa 1 — XP dependia do cliente.** `conceder_xp_tentativa` só era chamada pelo front, depois de `finalizar_tentativa`/consolidação. Qualquer falha nesse ponto (rede, aba fechada, navegação imediata para o resultado, erro engolido pelo `catch`) perdia o XP daquela prova **para sempre**. Agora o evento é gravado dentro de `consolidar_pontos_tentativa` — o ponto canônico em que a nota fecha — via `conceder_xp_tentativa_interno`, sem `auth.uid()` e sem cliente no caminho.
+- **Causa 2 — cap diário invisível.** O teto de 500 XP/dia é regra de negócio, mas a prova capada devolvia `xp_ganho = 0` **sem mensagem nenhuma**: uma prova nacional de 60 questões com nota alta calcula 650 XP, estoura o teto e zera tudo o que vier depois no mesmo dia. A RPC passa a devolver `xp_calculado`, `limite_diario_atingido` e `concedido_agora`, e o resultado avisa "Limite diário de 500 XP atingido — esta prova não pontuou no ranking".
+- **Backfill das provas afetadas:** a migration cria o evento faltante de toda tentativa finalizada (fora do modo `visualizar`) sem `gamificacao_evento`, respeitando o cap de 500 XP do dia da tentativa, e recalcula `xp_total`/`xp_semana_atual`/`nivel` a partir dos eventos — necessário porque o evento retroativo entra com `criado_em` antigo e o trigger sobrescreveria a semana corrente.
+- **Toast sem repetição:** revisitar um resultado antigo pelo histórico não mostra mais "+X XP" de novo — o aviso só sai quando `concedido_agora`.
+- Verificado em Postgres local com todas as migrations aplicadas do zero: prova 100% acertada credita 105 XP **sem o front chamar a RPC**; a RPC devolve o mesmo valor com `ja_concedido: true` e não duplica evento; duas provas de 60 questões no mesmo dia dão 500 e 0 XP com `limite_diario_atingido: true`; o backfill reproduz exatamente os mesmos valores dos eventos apagados. Typecheck do frontend limpo.
+- Pendente de `npx supabase db push --linked` (migrations não saem por CI).
+
 ## 2026-09-11 | Feature | Período obrigatório no cadastro e gate de dados do perfil
 
 **Quem cria conta informa o período junto da unidade. Quem já tinha conta preenche o que falta ao entrar**

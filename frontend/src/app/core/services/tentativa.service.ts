@@ -618,10 +618,20 @@ export class TentativaService {
 
   async registrarXpTentativa(tentativaId: string): Promise<void> {
     const result = await this.gamificacao.concederXpTentativa(tentativaId);
-    if (result.ok && result.data.xp_ganho > 0) {
-      this.notifications.success(`+${result.data.xp_ganho} XP conquistados`);
+    if (!result.ok) return;
+
+    // O XP já é concedido no servidor ao fechar a nota; aqui só damos o retorno
+    // visual — e sem repetir o aviso quando o aluno revisita um resultado antigo.
+    if (result.data.concedido_agora) {
+      if (result.data.xp_ganho > 0) {
+        this.notifications.success(`+${result.data.xp_ganho} XP conquistados`);
+      } else if (result.data.limite_diario_atingido) {
+        this.notifications.warning(
+          'Limite diário de 500 XP atingido — esta prova não pontuou no ranking.',
+        );
+      }
     }
-    if (result.ok && result.data.novas_conquistas.length > 0) {
+    if (result.data.novas_conquistas.length > 0) {
       const primeira = result.data.novas_conquistas[0];
       this.notifications.success(`Conquista desbloqueada: ${primeira.nome}`);
     }

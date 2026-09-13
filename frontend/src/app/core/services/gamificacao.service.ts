@@ -58,6 +58,9 @@ function parseConcederXpResult(value: unknown): ConcederXpTentativaResult {
   return {
     xp_ganho: toNumber(record['xp_ganho']),
     ja_concedido: record['ja_concedido'] === true,
+    concedido_agora: record['concedido_agora'] === true,
+    xp_calculado: toNumber(record['xp_calculado']),
+    limite_diario_atingido: record['limite_diario_atingido'] === true,
     novas_conquistas: parseConquistas(record['novas_conquistas']),
     stats: parseStats(record['stats']),
   };
