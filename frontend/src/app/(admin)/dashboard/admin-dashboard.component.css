@@ -198,6 +198,47 @@
   height: 280px;
 }
 
+.panel-filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.panel-filtro__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.panel-filtro__select {
+  min-width: 11rem;
+  max-width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e293b;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.panel-filtro__select:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.14);
+}
+
+@media (max-width: 520px) {
+  .panel-filtro__select {
+    width: 100%;
+    min-height: 2.5rem;
+  }
+}
+
 .insight-card {
   padding: 1rem;
 }

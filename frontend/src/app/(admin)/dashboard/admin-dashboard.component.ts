@@ -19,7 +19,7 @@ import {
 import type { LucideIconData } from 'lucide-angular';
 import {
   AdminService,
-  AdminDistribuicaoPeriodo,
+  AdminDistribuicaoPeriodoUnidade,
   AdminDistribuicaoUnidade,
   AdminFinanceiro,
   AdminStats,
@@ -29,6 +29,7 @@ import {
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { FACULDADE_UNIDADE_LABELS } from '../../core/models/faculdade-unidade';
+import type { FaculdadeUnidade } from '../../core/models/faculdade-unidade';
 import { PERIODO_MAX } from '../../core/models/periodo';
 
 interface AdminKpi {
@@ -75,7 +76,9 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly fin = signal<AdminFinanceiro | null>(null);
   protected readonly uso = signal<AdminUsoPlataforma | null>(null);
   protected readonly distribuicaoUnidades = signal<AdminDistribuicaoUnidade[] | null>(null);
-  protected readonly distribuicaoPeriodos = signal<AdminDistribuicaoPeriodo[] | null>(null);
+  protected readonly distribuicaoPeriodoUnidade = signal<AdminDistribuicaoPeriodoUnidade[] | null>(null);
+  /** Cidade selecionada no filtro do gráfico de períodos; 'todas' = sem recorte. */
+  protected readonly filtroUnidadePeriodo = signal<FaculdadeUnidade | 'todas'>('todas');
   protected readonly isLoading = signal(true);
   protected readonly diaSelecionado = signal<string | null>(null);
   protected readonly usuariosDia = signal<AdminUsoUsuariosDia | null>(null);
@@ -273,11 +276,38 @@ export class AdminDashboardComponent implements OnInit {
     percent: number;
   } | null>(null);
 
-  /** Quantos usuários não têm período cadastrado (fora da base do gráfico). */
-  protected readonly semPeriodoTotal = computed(() => {
-    const linhas = this.distribuicaoPeriodos() ?? [];
-    return linhas.find((l) => l.periodo === null)?.total ?? 0;
+  /** Linhas da grade período x cidade já recortadas pela cidade do filtro. */
+  private readonly linhasPeriodoFiltradas = computed(() => {
+    const linhas = this.distribuicaoPeriodoUnidade() ?? [];
+    const unidade = this.filtroUnidadePeriodo();
+    return unidade === 'todas' ? linhas : linhas.filter((l) => l.faculdade_unidade === unidade);
   });
+
+  /** Cidades com usuários, para o select do filtro (mais populosas primeiro). */
+  protected readonly unidadesComUsuarios = computed(() => {
+    const totais = new Map<FaculdadeUnidade, number>();
+    for (const linha of this.distribuicaoPeriodoUnidade() ?? []) {
+      if (!linha.faculdade_unidade) continue;
+      totais.set(linha.faculdade_unidade, (totais.get(linha.faculdade_unidade) ?? 0) + linha.total);
+    }
+    return [...totais.entries()]
+      .map(([valor, total]) => ({ valor, label: FACULDADE_UNIDADE_LABELS[valor] ?? valor, total }))
+      .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label, 'pt-BR'));
+  });
+
+  /** Rótulo da cidade selecionada, para o subtítulo e o detalhe da barra. */
+  protected readonly filtroUnidadePeriodoLabel = computed(() => {
+    const unidade = this.filtroUnidadePeriodo();
+    if (unidade === 'todas') return null;
+    return FACULDADE_UNIDADE_LABELS[unidade] ?? unidade;
+  });
+
+  /** Quantos usuários (da cidade filtrada) não têm período cadastrado. */
+  protected readonly semPeriodoTotal = computed(() =>
+    this.linhasPeriodoFiltradas()
+      .filter((l) => l.periodo === null)
+      .reduce((acc, l) => acc + l.total, 0),
+  );
 
   /**
    * Um item por período de 1 a 12, sempre na ordem do curso (mesmo os zerados) —
@@ -285,18 +315,21 @@ export class AdminDashboardComponent implements OnInit {
    * período fica fora da base do percentual, como no gráfico de cidades.
    */
   protected readonly distribuicaoPeriodoItens = computed(() => {
-    const linhas = (this.distribuicaoPeriodos() ?? []).filter((l) => l.periodo !== null);
+    const linhas = this.linhasPeriodoFiltradas().filter((l) => l.periodo !== null);
     const total = linhas.reduce((acc, l) => acc + l.total, 0);
     if (total === 0) return [] as { label: string; total: number; assinantes: number; percent: number }[];
 
+    // Uma cidade pode ter várias linhas do mesmo período? Não na grade atual,
+    // mas com 'todas' as linhas de todas as cidades caem no mesmo período —
+    // daí a soma em vez de um find.
     return Array.from({ length: PERIODO_MAX }, (_, i) => {
       const periodo = i + 1;
-      const linha = linhas.find((l) => l.periodo === periodo);
-      const totalPeriodo = linha?.total ?? 0;
+      const doPeriodo = linhas.filter((l) => l.periodo === periodo);
+      const totalPeriodo = doPeriodo.reduce((acc, l) => acc + l.total, 0);
       return {
         label: `${periodo}º`,
         total: totalPeriodo,
-        assinantes: linha?.assinantes ?? 0,
+        assinantes: doPeriodo.reduce((acc, l) => acc + l.assinantes, 0),
         percent: Math.round((totalPeriodo / total) * 1000) / 10,
       };
     });
@@ -671,6 +704,12 @@ export class AdminDashboardComponent implements OnInit {
     this.periodoSelecionado.set(null);
   }
 
+  /** Troca a cidade do recorte; o detalhe aberto vira de outra base e é fechado. */
+  protected onFiltroUnidadePeriodoChange(valor: string): void {
+    this.filtroUnidadePeriodo.set(valor === 'todas' ? 'todas' : (valor as FaculdadeUnidade));
+    this.periodoSelecionado.set(null);
+  }
+
   /** 'YYYY-MM-DD' -> '17/08/2026' sem depender de fuso. */
   protected formatDiaLongo(dia: string): string {
     const [ano, mes, dataDia] = dia.split('-');
@@ -691,7 +730,7 @@ export class AdminDashboardComponent implements OnInit {
       this.adminService.getFinanceiro(),
       this.adminService.getUsoPlataforma(),
       this.adminService.getDistribuicaoUnidades(),
-      this.adminService.getDistribuicaoPeriodos(),
+      this.adminService.getDistribuicaoPeriodoUnidade(),
     ]);
     if (result.ok) {
       this.stats.set(result.data);
@@ -701,7 +740,7 @@ export class AdminDashboardComponent implements OnInit {
     if (fin.ok) this.fin.set(fin.data);
     if (uso.ok) this.uso.set(uso.data);
     if (distribuicao.ok) this.distribuicaoUnidades.set(distribuicao.data);
-    if (distribuicaoPeriodo.ok) this.distribuicaoPeriodos.set(distribuicaoPeriodo.data);
+    if (distribuicaoPeriodo.ok) this.distribuicaoPeriodoUnidade.set(distribuicaoPeriodo.data);
     this.isLoading.set(false);
   }
 

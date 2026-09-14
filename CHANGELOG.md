@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-14 | Feature | Distribuição por período com recorte por cidade
+
+**O gráfico de períodos do dashboard admin passa a aceitar filtro de cidade ("1º período em Ipatinga")**
+
+- **Nova RPC `admin_get_distribuicao_periodo_unidade()`**: grade cruzada cidade x período com total e assinantes pagantes por célula. Uma chamada só — agregar todas as cidades dá o total por período, então o filtro é instantâneo, sem ida ao banco a cada troca.
+- **`admin_get_distribuicao_periodos()` foi removida** na mesma migration: nasceu e morreu no mesmo dia, substituída pela grade cruzada.
+- **Select "Cidade" no card**, com as unidades ordenadas por volume e o total de cada uma no rótulo. O percentual, o eixo e o "sem período cadastrado" passam a ser da cidade escolhida, não do geral.
+- Trocar a cidade fecha o detalhe aberto: ele vinha de outra base e o número ficaria mentindo.
+- Verificado: build de produção OK; 856 unitários verdes (as 3 falhas em `admin-campanhas.component.spec.ts` já existiam antes da mudança).
+
 ## 2026-09-14 | Feature | Período no admin: coluna e relatório de distribuição
 
 **Período do aluno passa a aparecer na lista de usuários e vira gráfico no dashboard**
