@@ -19,6 +19,7 @@ import {
 import type { LucideIconData } from 'lucide-angular';
 import {
   AdminService,
+  AdminDistribuicaoPeriodo,
   AdminDistribuicaoUnidade,
   AdminFinanceiro,
   AdminStats,
@@ -28,6 +29,7 @@ import {
 import { NotificationService } from '../../core/services/notification.service';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { FACULDADE_UNIDADE_LABELS } from '../../core/models/faculdade-unidade';
+import { PERIODO_MAX } from '../../core/models/periodo';
 
 interface AdminKpi {
   label: string;
@@ -73,6 +75,7 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly fin = signal<AdminFinanceiro | null>(null);
   protected readonly uso = signal<AdminUsoPlataforma | null>(null);
   protected readonly distribuicaoUnidades = signal<AdminDistribuicaoUnidade[] | null>(null);
+  protected readonly distribuicaoPeriodos = signal<AdminDistribuicaoPeriodo[] | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly diaSelecionado = signal<string | null>(null);
   protected readonly usuariosDia = signal<AdminUsoUsuariosDia | null>(null);
@@ -258,6 +261,101 @@ export class AdminDashboardComponent implements OnInit {
       y: {
         ticks: { color: '#64748b', font: { size: 11 } },
         grid: { display: false },
+        border: { display: false },
+      },
+    },
+  };
+
+  protected readonly periodoSelecionado = signal<{
+    label: string;
+    total: number;
+    assinantes: number;
+    percent: number;
+  } | null>(null);
+
+  /** Quantos usuários não têm período cadastrado (fora da base do gráfico). */
+  protected readonly semPeriodoTotal = computed(() => {
+    const linhas = this.distribuicaoPeriodos() ?? [];
+    return linhas.find((l) => l.periodo === null)?.total ?? 0;
+  });
+
+  /**
+   * Um item por período de 1 a 12, sempre na ordem do curso (mesmo os zerados) —
+   * o buraco em um período diz tanto quanto o pico no outro. Quem não informou
+   * período fica fora da base do percentual, como no gráfico de cidades.
+   */
+  protected readonly distribuicaoPeriodoItens = computed(() => {
+    const linhas = (this.distribuicaoPeriodos() ?? []).filter((l) => l.periodo !== null);
+    const total = linhas.reduce((acc, l) => acc + l.total, 0);
+    if (total === 0) return [] as { label: string; total: number; assinantes: number; percent: number }[];
+
+    return Array.from({ length: PERIODO_MAX }, (_, i) => {
+      const periodo = i + 1;
+      const linha = linhas.find((l) => l.periodo === periodo);
+      const totalPeriodo = linha?.total ?? 0;
+      return {
+        label: `${periodo}º`,
+        total: totalPeriodo,
+        assinantes: linha?.assinantes ?? 0,
+        percent: Math.round((totalPeriodo / total) * 1000) / 10,
+      };
+    });
+  });
+
+  protected readonly distribuicaoPeriodoData = computed<ChartData<'bar'>>(() => {
+    const itens = this.distribuicaoPeriodoItens();
+    return {
+      labels: itens.map((i) => i.label),
+      datasets: [
+        {
+          label: 'Usuários',
+          data: itens.map((i) => i.percent),
+          backgroundColor: '#8b5cf6',
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 36,
+        },
+      ],
+    };
+  });
+
+  protected readonly distribuicaoPeriodoOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#020617',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          title: (ctx) => `${ctx[0]?.label ?? ''} período`,
+          label: (ctx) => {
+            const item = this.distribuicaoPeriodoItens()[ctx.dataIndex];
+            const percent = this.decimalFormatter.format(Number(ctx.parsed.y));
+            if (!item) return `${percent}%`;
+            const usuarios = item.total === 1 ? 'aluno' : 'alunos';
+            const assinantesPercent =
+              item.total > 0 ? this.decimalFormatter.format(Math.round((item.assinantes / item.total) * 1000) / 10) : '0';
+            return [
+              `${this.formatNumber(item.total)} ${usuarios} (${percent}%)`,
+              `${this.formatNumber(item.assinantes)} assinante${item.assinantes === 1 ? '' : 's'} (${assinantesPercent}%)`,
+            ];
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: '#64748b', font: { size: 11 } },
+        grid: { display: false },
+        border: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#64748b', font: { size: 11 }, callback: (v) => `${v}%` },
+        grid: { color: 'rgba(148, 163, 184, 0.22)' },
         border: { display: false },
       },
     },
@@ -560,6 +658,19 @@ export class AdminDashboardComponent implements OnInit {
     this.cidadeSelecionada.set(null);
   }
 
+  /** Clique numa barra do gráfico de períodos: mostra o total absoluto de alunos. */
+  protected onDistribuicaoPeriodoClick(event: { active?: object[] }): void {
+    const ativo = (event.active ?? [])[0] as { index?: number } | undefined;
+    if (!ativo || typeof ativo.index !== 'number') return;
+    const item = this.distribuicaoPeriodoItens()[ativo.index];
+    if (!item) return;
+    this.periodoSelecionado.set(this.periodoSelecionado()?.label === item.label ? null : item);
+  }
+
+  protected fecharPeriodoSelecionado(): void {
+    this.periodoSelecionado.set(null);
+  }
+
   /** 'YYYY-MM-DD' -> '17/08/2026' sem depender de fuso. */
   protected formatDiaLongo(dia: string): string {
     const [ano, mes, dataDia] = dia.split('-');
@@ -575,11 +686,12 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    const [result, fin, uso, distribuicao] = await Promise.all([
+    const [result, fin, uso, distribuicao, distribuicaoPeriodo] = await Promise.all([
       this.adminService.getStats(),
       this.adminService.getFinanceiro(),
       this.adminService.getUsoPlataforma(),
       this.adminService.getDistribuicaoUnidades(),
+      this.adminService.getDistribuicaoPeriodos(),
     ]);
     if (result.ok) {
       this.stats.set(result.data);
@@ -589,6 +701,7 @@ export class AdminDashboardComponent implements OnInit {
     if (fin.ok) this.fin.set(fin.data);
     if (uso.ok) this.uso.set(uso.data);
     if (distribuicao.ok) this.distribuicaoUnidades.set(distribuicao.data);
+    if (distribuicaoPeriodo.ok) this.distribuicaoPeriodos.set(distribuicaoPeriodo.data);
     this.isLoading.set(false);
   }
 

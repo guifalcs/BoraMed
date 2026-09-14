@@ -194,6 +194,10 @@
   height: 300px;
 }
 
+.chart--periodos {
+  height: 280px;
+}
+
 .insight-card {
   padding: 1rem;
 }
@@ -399,6 +403,10 @@
   .chart--cidades {
     height: 260px;
   }
+
+  .chart--periodos {
+    height: 240px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -445,6 +453,10 @@
 
   .chart--cidades {
     height: 240px;
+  }
+
+  .chart--periodos {
+    height: 220px;
   }
 
   .priority-list {

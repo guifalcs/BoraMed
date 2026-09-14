@@ -31,6 +31,7 @@ import {
   assinaturaStatusLabel,
   faculdadeUnidadeLabel,
   papelLabel,
+  periodoLabel,
   tipoUsuarioLabel,
 } from '../../shared/utils/admin-labels.util';
 
@@ -196,6 +197,7 @@ export class AdminUsuariosComponent implements OnInit {
   protected readonly papelLabel = papelLabel;
   protected readonly assinaturaStatusLabel = assinaturaStatusLabel;
   protected readonly faculdadeUnidadeLabel = faculdadeUnidadeLabel;
+  protected readonly periodoLabel = periodoLabel;
 
   protected get totalPaginas(): number {
     return Math.max(1, Math.ceil(this.total() / this.porPagina));

@@ -23,6 +23,7 @@
           <th>Usuário</th>
           <th>Tipo</th>
           <th>Cidade</th>
+          <th>Período</th>
           <th>Cadastro</th>
           <th>Último login</th>
           <th>Papel</th>
@@ -43,6 +44,7 @@
             </td>
             <td>{{ tipoUsuarioLabel(u.tipo_usuario) }}</td>
             <td>{{ faculdadeUnidadeLabel(u.faculdade_unidade) }}</td>
+            <td>{{ periodoLabel(u.periodo) }}</td>
             <td>{{ u.criado_em | date:'dd/MM/yyyy' }}</td>
             <td>
               @if (u.ultimo_login) {
@@ -597,7 +599,7 @@
     .page-title { font-size: 1.35rem; }
     .search-input { max-width: none; min-height: 2.75rem; }
     .table-wrapper { margin-inline: -0.25rem; border-radius: 8px; }
-    .data-table { min-width: 1120px; }
+    .data-table { min-width: 1200px; }
     .data-table th,
     .data-table td { padding: 0.65rem 0.75rem; }
     .action-cell { align-items: stretch; }

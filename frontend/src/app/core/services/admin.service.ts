@@ -37,6 +37,14 @@ export interface AdminDistribuicaoUnidade {
   assinantes: number;
 }
 
+export interface AdminDistribuicaoPeriodo {
+  /** Período do curso (1–12); null = usuário sem período cadastrado. */
+  periodo: number | null;
+  total: number;
+  /** Quantos desses usuários são assinantes pagantes (cortesia não conta). */
+  assinantes: number;
+}
+
 export interface AdminUsoPonto {
   /** Para a série diária: data ISO 'YYYY-MM-DD'. */
   dia?: string;
@@ -1103,6 +1111,13 @@ export class AdminService {
     const { data, error } = await this.supabase.rpc('admin_get_distribuicao_unidades');
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []) as AdminDistribuicaoUnidade[] };
+  }
+
+  /** Distribuição de usuários por período do curso (para o gráfico do dashboard). */
+  async getDistribuicaoPeriodos(): Promise<ServiceResult<AdminDistribuicaoPeriodo[]>> {
+    const { data, error } = await this.supabase.rpc('admin_get_distribuicao_periodos');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminDistribuicaoPeriodo[] };
   }
 
   async getUsoPlataforma(): Promise<ServiceResult<AdminUsoPlataforma>> {

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-14 | Feature | Período no admin: coluna e relatório de distribuição
+
+**Período do aluno passa a aparecer na lista de usuários e vira gráfico no dashboard**
+
+- **Coluna "Período" em `/admin/usuarios`**, entre Cidade e Cadastro. Sem query nova: `listarUsuarios` já traz `profiles.*`, o campo só não era exibido. Quem não informou aparece como `—` (helper `periodoLabel` em `admin-labels.util.ts`).
+- **Novo card "Distribuição por período" no dashboard admin**, barras verticais com o percentual de alunos em cada período. Os 12 períodos aparecem sempre, mesmo zerados — o buraco em um período informa tanto quanto o pico no outro.
+- **RPC `admin_get_distribuicao_periodos()`** (`security definer`, guardada por `is_admin()`, execute só para `authenticated`), espelhando `admin_get_distribuicao_unidades`: total por período + assinantes pagantes (cortesia fora, como nas métricas financeiras).
+- **Base do percentual exclui quem não informou período** — entraria como bloco dominante e mascararia a distribuição real. O total sem período é exibido no subtítulo do card.
+- Clique numa barra abre o detalhe com total absoluto de alunos, assinantes e percentual, igual ao gráfico de cidades.
+- Verificado: build de produção OK; 856 unitários verdes (as 3 falhas em `admin-campanhas.component.spec.ts` já existiam antes da mudança).
+
 ## 2026-09-14 | Fix | Título da aba parava de acompanhar a página
 
 **A aba do navegador ficava presa em "Entrar | BoraMed" o app inteiro**

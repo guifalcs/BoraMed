@@ -56,6 +56,11 @@ export function faculdadeUnidadeLabel(unidade: FaculdadeUnidade | null): string 
   return unidade ? (FACULDADE_UNIDADE_LABELS[unidade] ?? unidade) : '—';
 }
 
+/** Período do curso (1–12) como "5º"; null vira '—'. */
+export function periodoLabel(periodo: number | null): string {
+  return periodo == null ? '—' : `${periodo}º`;
+}
+
 /** Formata centavos na moeda informada (padrão BRL); null vira '—'. */
 export function formatarCentavos(centavos: number | null, moeda = 'BRL'): string {
   if (centavos == null) return '—';

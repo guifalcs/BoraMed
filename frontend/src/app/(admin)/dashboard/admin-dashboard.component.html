@@ -125,6 +125,54 @@
     }
   </article>
 
+  <article class="panel panel--standalone" aria-label="Distribuição de alunos por período">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Distribuição por período</h2>
+        <p class="panel-subtitle">
+          Percentual de alunos em cada período do curso, entre os que informaram o período.
+          @if (semPeriodoTotal() > 0) {
+            {{ formatNumber(semPeriodoTotal()) }} sem período cadastrado (fora do gráfico).
+          }
+        </p>
+      </div>
+    </div>
+
+    @if (distribuicaoPeriodoItens().length === 0) {
+      <p class="panel-hint">Ainda não há alunos com período cadastrado.</p>
+    } @else {
+      <div class="chart chart--periodos chart--clickable">
+        <canvas
+          baseChart
+          type="bar"
+          [data]="distribuicaoPeriodoData()"
+          [options]="distribuicaoPeriodoOptions"
+          (chartClick)="onDistribuicaoPeriodoClick($event)"
+        ></canvas>
+      </div>
+
+      <p class="panel-hint">Clique em uma barra para ver o total absoluto de alunos.</p>
+
+      @if (periodoSelecionado(); as p) {
+        <div class="dia-detalhe">
+          <div class="dia-detalhe__header">
+            <div>
+              <h3>{{ p.label }} período</h3>
+              <p>
+                {{ formatNumber(p.total) }} aluno{{ p.total !== 1 ? 's' : '' }} ·
+                {{ formatNumber(p.assinantes) }} assinante{{ p.assinantes !== 1 ? 's' : '' }} ·
+                {{ p.percent }}% do total com período informado
+              </p>
+            </div>
+            <button type="button" class="dia-detalhe__close" (click)="fecharPeriodoSelecionado()">
+              Fechar
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </article>
+
   <section class="usage-grid" aria-label="Pico de uso da plataforma">
     <article class="panel">
       <div class="panel-header">
