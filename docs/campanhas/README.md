@@ -8,6 +8,51 @@ HTML completo. Mecânica, segmentos e tokens: `docs/campanhas-email.md`.
 
 ---
 
+## `2026-09-indicacao-50-reais.html`
+
+Programa de indicação: R$ 50 no Pix por cada assinatura do plano **Avançado**
+fechada com o código da pessoa. Objetivo não é converter quem recebe, é recrutar
+divulgador no primeiro período de faculdades **fora de Ipatinga**.
+
+- **Público:** `lista_manual` — é convite fechado, não vai para a base. Colar só
+  os e-mails de fora de Ipatinga. Mandar para a base inteira mata a premissa do
+  texto ("este convite não foi para a base inteira") e queima a escassez.
+- **Nome interno sugerido:** `2026-09 · Indicação · R$ 50 no Pix`
+- **CTA:** WhatsApp `wa.me/5531994422569` com mensagem pré-preenchida. Não tem
+  página nem formulário: o combinado (código, regra, chave Pix) é feito na
+  conversa. Confira que o número está atendendo antes de disparar, o e-mail não
+  tem plano B de contato.
+
+### Assunto
+
+Principal:
+
+```
+{{primeiro_nome}}, R$ 50 no seu Pix por indicação
+```
+
+Alternativas para A/B:
+
+```
+{{primeiro_nome}}, um convite que não foi para a base inteira
+{{primeiro_nome}}, quer abrir a BoraMed na sua turma?
+```
+
+### Antes de disparar
+
+- **Definir a regra do pagamento na sua cabeça antes da primeira resposta**: o
+  que conta como assinatura confirmada (pago e fora do prazo de estorno?), em
+  quanto tempo o Pix sai, e o que acontece se o indicado cancelar. O e-mail
+  promete R$ 50 por assinatura do Avançado, sem limite, sem prazo de validade,
+  e a conversa no WhatsApp vai cobrar isso.
+- **Rastreamento**: sem código de indicação por pessoa não dá para saber de quem
+  veio a venda. Hoje o caminho é cupom de desconto por afiliado (skill
+  `prestacao-contas-cupom`) — criar o cupom da pessoa na hora do combinado.
+- Preço citado: nenhum. A campanha fala de ganho, não de mensalidade, de
+  propósito. Se alguém perguntar, é a tabela de `/planos`.
+
+---
+
 ## `2026-09-n1-semana-que-vem.html`
 
 Reta final: a N1 é na semana seguinte ao disparo. Mesma oferta e mesmo público da
