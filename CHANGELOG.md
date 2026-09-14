@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-14 | Fix | Título da aba parava de acompanhar a página
+
+**A aba do navegador ficava presa em "Entrar | BoraMed" o app inteiro**
+
+- **A causa é do roteador, não das telas.** O Angular só reescreve o `<title>` quando a rota ativada declara `title`, e nenhuma rota do app declarava. Só as páginas públicas mexiam no título, pelo `SeoService` chamado no construtor — como toda sessão começa no `/login`, o "Entrar | BoraMed" que ele setava ficava grudado em todas as telas seguintes.
+- **`BoraMedTitleStrategy` (`core/seo/title.strategy.ts`) passa a reescrever o título em toda navegação:** usa o `title` da rota com o sufixo ` | BoraMed`, ou cai no título institucional se a rota não declarar nada. O fallback é de propósito — rota nova que esqueça o `title` nasce com o título da marca, nunca com o da tela anterior.
+- **Título declarado em todas as rotas** — raiz, dashboard, simulados, materiais, flashcards e admin (`Admin · <seção>`). O sufixo não duplica quando o título já traz a marca.
+- **As 7 páginas públicas com SEO próprio ficam de fora, via `data: { seoTitle: true }`** (landing, login, cadastro, guias, guia por slug, termos, privacidade). Nelas quem manda continua sendo o `SeoService`, que além do título cuida de description, canonical e Open Graph. Sem a exceção, a estratégia sobrescreveria os títulos de SEO — inclusive os dinâmicos dos guias — por um genérico, e o estrago apareceria só no Google.
+- **Por que a exceção não podia ser "não mexer quando a rota não tem título":** é exatamente esse o comportamento padrão que causava o bug. A ordem também importa e não é estável: o `updateTitle` roda depois da ativação do componente nas navegações seguintes, mas antes dele na primeira carga — daí a marcação explícita em vez de depender de quem escreve por último.
+- Verificado: **852 unitários verdes** (+5 em `title.strategy.spec.ts`, cobrindo sufixo, troca ao sair de uma página de SEO, preservação do título de SEO e fallback), build de produção OK e os 17 HTMLs pré-renderizados conferidos um a um — `/login` e os guias mantêm o título de SEO, `/recuperar-senha`, `/erro` e `/sem-permissao` passaram a sair com título próprio.
+- Sem migration, sem RPC e sem mudança de comportamento fora do `<title>`.
 ## 2026-09-13 | Fix | Simulados que não pontuavam XP
 
 **O XP saiu do cliente e passou a ser creditado no servidor, e o cap diário de 500 XP acabou**

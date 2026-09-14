@@ -4,12 +4,14 @@ import { lazyTierAvancadoGuard } from '../core/guards/lazy-route-guards';
 export const dashboardRoutes: Routes = [
   {
     path: '',
+    title: 'Início',
     data: { preload: true },
     loadComponent: () =>
       import('./inicio/inicio.component').then((m) => m.InicioComponent),
   },
   {
     path: 'perfil',
+    title: 'Meu perfil',
     loadComponent: () =>
       import('./perfil/perfil.component').then((m) => m.PerfilComponent),
   },
@@ -22,6 +24,7 @@ export const dashboardRoutes: Routes = [
   },
   {
     path: 'competitivo',
+    title: 'Competitivo',
     loadComponent: () =>
       import('./competir/competir-hub.component').then(
         (m) => m.CompetirHubComponent,
@@ -30,6 +33,7 @@ export const dashboardRoutes: Routes = [
   { path: 'competir', pathMatch: 'full', redirectTo: 'competitivo' },
   {
     path: 'historico',
+    title: 'Histórico',
     loadComponent: () =>
       import('./historico/historico.component').then((m) => m.HistoricoComponent),
   },
@@ -49,11 +53,13 @@ export const dashboardRoutes: Routes = [
   },
   {
     path: 'assinatura',
+    title: 'Minha assinatura',
     loadComponent: () =>
       import('./assinatura/minha-assinatura.component').then((m) => m.MinhaAssinaturaComponent),
   },
   {
     path: '**',
+    title: 'Página não encontrada',
     loadComponent: () =>
       import('../(errors)/nao-encontrado/nao-encontrado.component').then(
         (m) => m.NaoEncontradoComponent,

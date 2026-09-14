@@ -15,6 +15,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
+    data: { seoTitle: true },
     // OAuth tem prioridade para que um `?code=` nunca seja interpretado como
     // uma sessão comum e a landing não apareça durante o callback.
     canActivate: [oauthRedirectGuard, lazyRootRedirectGuard],
@@ -23,18 +24,21 @@ export const routes: Routes = [
   },
   {
     path: 'login',
+    data: { seoTitle: true },
     canActivate: [lazyGuestGuard],
     loadComponent: () =>
       import('./(auth)/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'cadastro',
+    data: { seoTitle: true },
     canActivate: [lazyGuestGuard],
     loadComponent: () =>
       import('./(auth)/cadastro/cadastro.component').then((m) => m.CadastroComponent),
   },
   {
     path: 'recuperar-senha',
+    title: 'Recuperar senha',
     canActivate: [lazyGuestGuard],
     loadComponent: () =>
       import('./(auth)/recuperar-senha/recuperar-senha.component').then(
@@ -43,6 +47,7 @@ export const routes: Routes = [
   },
   {
     path: 'redefinir-senha',
+    title: 'Redefinir senha',
     loadComponent: () =>
       import('./(auth)/redefinir-senha/redefinir-senha.component').then(
         (m) => m.RedefinirSenhaComponent,
@@ -50,6 +55,7 @@ export const routes: Routes = [
   },
   {
     path: 'conta-suspensa',
+    title: 'Conta suspensa',
     canActivate: [lazyBannedAccountGuard],
     loadComponent: () =>
       import('./(auth)/conta-suspensa/conta-suspensa.component').then(
@@ -63,6 +69,7 @@ export const routes: Routes = [
     // e para o `tierAvancadoGuard` nas rotas de materiais, flashcards e montar
     // simulado — ver dashboard.routes.ts.
     path: 'dashboard',
+    title: 'Painel',
     canActivate: [lazyAuthGuard],
     data: { preload: true },
     loadComponent: () =>
@@ -76,12 +83,14 @@ export const routes: Routes = [
     // sessão, vai para a seção de planos da landing, que é pública, em vez de
     // parar no /login e terminar no /dashboard sem ver a oferta.
     path: 'planos',
+    title: 'Planos',
     canActivate: [lazyPlanosPublicoGuard, lazyAuthGuard],
     loadComponent: () =>
       import('./(assinatura)/planos/planos.component').then((m) => m.PlanosComponent),
   },
   {
     path: 'checkout/status/:intencaoId',
+    title: 'Status do pagamento',
     canActivate: [lazyAuthGuard],
     loadComponent: () =>
       import('./(assinatura)/checkout/pagamento-status.component').then(
@@ -90,6 +99,7 @@ export const routes: Routes = [
   },
   {
     path: 'checkout/:plano',
+    title: 'Finalizar assinatura',
     canActivate: [lazyAuthGuard],
     loadComponent: () =>
       import('./(assinatura)/checkout/checkout.component').then((m) => m.CheckoutComponent),
@@ -98,6 +108,7 @@ export const routes: Routes = [
     // Rota LEGADA (redirect do Checkout Pro): permanece durante a janela de
     // observação para checkouts em voo. Remoção prevista na F8.
     path: 'assinatura/retorno',
+    title: 'Retorno do pagamento',
     loadComponent: () =>
       import('./(assinatura)/retorno/assinatura-retorno.component').then(
         (m) => m.AssinaturaRetornoComponent,
@@ -105,11 +116,13 @@ export const routes: Routes = [
   },
   {
     path: 'auth/callback',
+    title: 'Entrando',
     loadComponent: () =>
       import('./(auth)/auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
     path: 'auth/confirmar',
+    title: 'Confirmar e-mail',
     loadComponent: () =>
       import('./(auth)/confirmar/confirmar-email.component').then((m) => m.ConfirmarEmailComponent),
   },
@@ -118,6 +131,7 @@ export const routes: Routes = [
     // — sempre exclusiva do plano Avançado (gerar_simulado_impressao bloqueia
     // essencial incondicionalmente), daí o guard de tier aqui.
     path: 'imprimir/simulado/montado',
+    title: 'Imprimir simulado',
     canActivate: [lazyAuthGuard, lazyTierAvancadoGuard],
     data: { modo: 'efemero' },
     loadComponent: () =>
@@ -129,6 +143,7 @@ export const routes: Routes = [
     // de tier é condicional ao formato da prova, então acontece dentro da RPC
     // `get_simulado_impressao` (P0015), não neste guard estático de rota.
     path: 'imprimir/simulado/:provaId',
+    title: 'Imprimir simulado',
     canActivate: [lazyAuthGuard, lazyNivelPagoGuard],
     loadComponent: () =>
       import('./(impressao)/simulado-impressao.component').then((m) => m.SimuladoImpressaoComponent),
@@ -138,6 +153,7 @@ export const routes: Routes = [
     // Fora do shell do /admin de propósito: o documento tem que sair limpo,
     // sem sidebar nem topbar. O guard de admin continua valendo.
     path: 'imprimir/comissao/:cupomId/:competencia',
+    title: 'Prestação de contas',
     canActivate: [lazyAdminGuard],
     loadComponent: () =>
       import('./(impressao)/comissao-impressao.component').then(
@@ -146,6 +162,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
+    title: 'Admin',
     canActivate: [lazyAdminGuard],
     loadComponent: () =>
       import('./(admin)/admin.component').then((m) => m.AdminComponent),
@@ -154,16 +171,19 @@ export const routes: Routes = [
   },
   {
     path: 'guias',
+    data: { seoTitle: true },
     loadComponent: () =>
       import('./(marketing)/guias/guias-list.component').then((m) => m.GuiasListComponent),
   },
   {
     path: 'guias/:slug',
+    data: { seoTitle: true },
     loadComponent: () =>
       import('./(marketing)/guias/guia-detail.component').then((m) => m.GuiaDetailComponent),
   },
   {
     path: 'politica-de-privacidade',
+    data: { seoTitle: true },
     loadComponent: () =>
       import('./(legal)/politica-de-privacidade/politica-de-privacidade.component').then(
         (m) => m.PoliticaDePrivacidadeComponent,
@@ -172,6 +192,7 @@ export const routes: Routes = [
   {
     // Opt-out das campanhas de e-mail — público, sem sessão (link do rodapé).
     path: 'descadastrar',
+    title: 'Descadastrar e-mails',
     loadComponent: () =>
       import('./(legal)/descadastrar/descadastrar.component').then(
         (m) => m.DescadastrarComponent,
@@ -179,10 +200,11 @@ export const routes: Routes = [
   },
   {
     path: 'termos-de-uso',
+    data: { seoTitle: true },
     loadComponent: () =>
       import('./(legal)/termos-de-uso/termos-de-uso.component').then((m) => m.TermosDeUsoComponent),
   },
-  { path: 'sem-permissao', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
-  { path: 'erro', loadComponent: () => import('./(errors)/erro-servidor/erro-servidor.component').then(m => m.ErroServidorComponent) },
-  { path: '**', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
+  { path: 'sem-permissao', title: 'Sem permissão', loadComponent: () => import('./(errors)/sem-permissao/sem-permissao.component').then(m => m.SemPermissaoComponent) },
+  { path: 'erro', title: 'Erro inesperado', loadComponent: () => import('./(errors)/erro-servidor/erro-servidor.component').then(m => m.ErroServidorComponent) },
+  { path: '**', title: 'Página não encontrada', loadComponent: () => import('./(errors)/nao-encontrado/nao-encontrado.component').then(m => m.NaoEncontradoComponent) },
 ];

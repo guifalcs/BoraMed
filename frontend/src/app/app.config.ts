@@ -1,11 +1,13 @@
 import { ApplicationConfig } from '@angular/core';
 import {
+  TitleStrategy,
   provideRouter,
   withPreloading,
   withViewTransitions,
 } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { routes } from './app.routes';
+import { BoraMedTitleStrategy } from './core/seo/title.strategy';
 import { SelectivePreloadingStrategy } from './core/selective-preloading.strategy';
 
 export const appConfig: ApplicationConfig = {
@@ -20,5 +22,8 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions(),
     ),
     provideClientHydration(withEventReplay()),
+    // Mantém o <title> coerente com a tela atual em toda navegação — sem ela,
+    // o título da primeira rota visitada fica preso na aba. Ver title.strategy.ts.
+    { provide: TitleStrategy, useClass: BoraMedTitleStrategy },
   ],
 };
