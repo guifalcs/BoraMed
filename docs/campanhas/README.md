@@ -8,6 +8,48 @@ HTML completo. Mecânica, segmentos e tokens: `docs/campanhas-email.md`.
 
 ---
 
+## `2026-09-aulao-n1-na-pratica.html`
+
+Convite para o aulão gratuito **N1 na Prática — Resolução Guiada**: uma prova N1
+de SOI I resolvida inteira ao vivo, questão por questão. A CTA **não** é o
+checkout: é entrar no grupo do WhatsApp, porque é lá que o link do Google Meet é
+divulgado pouco antes de começar.
+
+- **Público:** `todos`. É aula gratuita, então assinante também é convidado, e
+  o aulão é o gancho de conversão de quem ainda não assinou.
+- **Nome interno sugerido:** `2026-09 · Aulão N1 na Prática`
+- **Janela de disparo:** 2 a 3 dias antes, com um lembrete na manhã do dia. Se
+  sair na mesma tarde do aulão, trocar o assunto pelo de "hoje" abaixo.
+- **Link do grupo:** `https://chat.whatsapp.com/JriNxPNzlmp3JJLTrL9rFi` — o
+  mesmo usado no dashboard (`dashboard.component.ts`). Se o grupo lotar (1024
+  pessoas) ou o convite for revogado, trocar aqui **e** nos outros dois lugares
+  antes de disparar.
+
+### Assunto
+
+Principal:
+
+```
+{{primeiro_nome}}, vamos resolver uma N1 inteira ao vivo
+```
+
+Alternativas para A/B:
+
+```
+Aula gratuita: N1 de SOI I resolvida questão por questão
+{{primeiro_nome}}, o aulão da N1 é hoje às 19:30
+```
+
+### Antes de disparar
+
+1. Abrir o link do grupo numa aba anônima e confirmar que ainda aceita entrada.
+2. Conferir data, dia da semana e horário no corpo — estão escritos na mão
+   ("Terça, 15 de setembro", "19:30"), não são gerados.
+3. **Enviar teste** e olhar no celular: o bloco de dados do evento é a parte que
+   mais sofre em tela estreita.
+
+---
+
 ## `2026-09-n1-semana-que-vem.html`
 
 Reta final: a N1 é na semana seguinte ao disparo. Mesma oferta e mesmo público da
