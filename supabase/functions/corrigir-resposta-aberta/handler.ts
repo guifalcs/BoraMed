@@ -4,7 +4,9 @@
 //
 // Estados de resposta_correcao:
 //   pendente   → criada pela RPC enviar_resposta_aberta, aguardando correção
-//   corrigindo → claimed por uma chamada em andamento
+//   corrigindo → claimed por uma chamada em andamento; se a chamada morrer
+//                (timeout da edge, deploy, aba fechada) a linha fica travada,
+//                então um claim mais antigo que CLAIM_STALE_MS é retomado
 //   corrigida  → sucesso (pontos/feedback preenchidos)
 //   erro       → tentativas esgotadas; nova chamada re-claima e tenta de novo
 //   sem_ia     → IA não configurada/indisponível em definitivo; a questão
@@ -15,6 +17,12 @@ import { corsHeaders, json } from '../_shared/cors.ts';
 import { GradingError, type GradingResult } from '../_shared/grading-provider.ts';
 
 const MAX_TENTATIVAS_LLM = 3; // 1 chamada + 2 retries
+/**
+ * Idade a partir da qual um claim `corrigindo` é considerado órfão e pode ser
+ * retomado. Mais curto que o timeout de espera do cliente, para que o "tentar
+ * de novo" do aluno caia sempre num claim retomável em vez de 202 eterno.
+ */
+const CLAIM_STALE_MS = 60_000;
 const DEFAULT_DAILY_LIMIT = 200;
 const DEFAULT_MAX_RESPOSTA_ALUNO = 3_000;
 const AGENTE_SLUG = 'aurora';
@@ -144,17 +152,37 @@ export async function handleCorrigirRespostaAberta(req: Request, deps: Deps): Pr
   }
 
   // ---- Claim idempotente (D7) ----
-  const { data: claimed } = await admin
+  const agora = deps.now();
+  const claimPayload = {
+    status: 'corrigindo',
+    num_tentativas: (correcao.num_tentativas ?? 0) + 1,
+    atualizado_em: agora.toISOString(),
+  };
+  let { data: claimed } = await admin
     .from('resposta_correcao')
-    .update({
-      status: 'corrigindo',
-      num_tentativas: (correcao.num_tentativas ?? 0) + 1,
-      atualizado_em: deps.now().toISOString(),
-    })
+    .update(claimPayload)
     .eq('tentativa_resposta_id', trId)
     .in('status', ['pendente', 'erro'])
     .select()
     .maybeSingle();
+
+  if (!claimed) {
+    // Nada a claimar em pendente/erro: ou outra chamada está corrigindo agora,
+    // ou um claim anterior morreu no meio e deixou a linha presa em
+    // `corrigindo` (sem isto o aluno vê o spinner para sempre). Retoma o claim
+    // órfão; o filtro por atualizado_em mantém a operação atômica.
+    const cutoff = new Date(agora.getTime() - CLAIM_STALE_MS).toISOString();
+    const { data: retomado } = await admin
+      .from('resposta_correcao')
+      .update(claimPayload)
+      .eq('tentativa_resposta_id', trId)
+      .eq('status', 'corrigindo')
+      .lt('atualizado_em', cutoff)
+      .select()
+      .maybeSingle();
+    claimed = retomado;
+  }
+
   if (!claimed) {
     // Outra chamada está corrigindo agora; o cliente faz poll.
     return reply({ correcao: { ...correcao, status: 'corrigindo' } }, 202);

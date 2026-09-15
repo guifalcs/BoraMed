@@ -13,6 +13,7 @@ function seedDb(overrides: {
   tentativaUserId?: string;
   enviadaEm?: string | null;
   correcaoStatus?: string;
+  correcaoAtualizadoEm?: string;
   formato?: string;
 } = {}): FakeDb {
   return new FakeDb({
@@ -44,7 +45,7 @@ function seedDb(overrides: {
         tentativa_resposta_id: 'tr-1',
         status: overrides.correcaoStatus ?? 'pendente',
         num_tentativas: 0,
-        atualizado_em: '2026-06-24T11:00:00Z',
+        atualizado_em: overrides.correcaoAtualizadoEm ?? '2026-06-24T11:00:00Z',
       },
     ],
   });
@@ -210,8 +211,9 @@ Deno.test('4xx (não retryable) falha direto, sem retry', async () => {
   assertEquals(db.rows('resposta_correcao')[0].status, 'erro');
 });
 
-Deno.test('claim duplo: status corrigindo devolve 202 sem chamar a IA', async () => {
-  const db = seedDb({ correcaoStatus: 'corrigindo' });
+Deno.test('claim duplo recente: status corrigindo devolve 202 sem chamar a IA', async () => {
+  // `now` do fake é 12:00:00Z — um claim de 30s atrás ainda está em voo.
+  const db = seedDb({ correcaoStatus: 'corrigindo', correcaoAtualizadoEm: '2026-06-24T11:59:30Z' });
   const seq = sequencialFetch([{ content: CORRECAO_OK }]);
   const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
 
@@ -220,6 +222,22 @@ Deno.test('claim duplo: status corrigindo devolve 202 sem chamar a IA', async ()
   assertEquals(seq.chamadas(), 0);
   const { correcao } = await res.json();
   assertEquals(correcao.status, 'corrigindo');
+  assertEquals(db.rows('resposta_correcao')[0].status, 'corrigindo');
+});
+
+Deno.test('claim órfão: corrigindo antigo é retomado e corrigido', async () => {
+  // Chamada anterior morreu (timeout da edge, deploy) e deixou a linha presa
+  // em `corrigindo` — sem a retomada o aluno veria o spinner para sempre.
+  const db = seedDb({ correcaoStatus: 'corrigindo', correcaoAtualizadoEm: '2026-06-24T11:00:00Z' });
+  const seq = sequencialFetch([{ content: CORRECAO_OK }]);
+  const deps = makeDeps({ db, caller: USER, env: OPENAI_ENV, iaConfig: ACTIVE_CONFIG, fetch: seq.fetch });
+
+  const res = await handleCorrigirRespostaAberta(request(), deps);
+  assertEquals(res.status, 200);
+  assertEquals(seq.chamadas(), 1);
+  const rc = db.rows('resposta_correcao')[0];
+  assertEquals(rc.status, 'corrigida');
+  assertEquals(rc.num_tentativas, 1);
 });
 
 Deno.test('status erro pode ser re-claimado e corrigido', async () => {

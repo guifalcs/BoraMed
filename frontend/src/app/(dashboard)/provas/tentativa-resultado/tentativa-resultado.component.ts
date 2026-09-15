@@ -20,6 +20,12 @@ import { UpgradeCardComponent } from '../../../shared/components/upgrade-card/up
 
 const POLL_INTERVAL_MS = 3_000;
 const TIMEOUT_CORRECOES_MS = 90_000;
+/**
+ * Espaçamento entre re-disparos da mesma correção. A edge function faz claim
+ * idempotente e retoma claim órfão, então re-disparar é seguro e é o que
+ * destrava uma correção presa em `corrigindo` por uma chamada que morreu.
+ */
+const REDISPARO_CORRECAO_MS = 30_000;
 
 @Component({
   selector: 'app-tentativa-resultado',
@@ -169,7 +175,8 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
   private async aguardarCorrecoes(): Promise<void> {
     this.corrigindo.set(true);
     const inicio = Date.now();
-    const jaDisparadas = new Set<string>();
+    /** tentativa_resposta_id → instante do último disparo. */
+    const ultimoDisparo = new Map<string, number>();
 
     while (!this.destruido) {
       const status = await this.tentativaService.getStatusCorrecoes(this.tentativaId);
@@ -181,7 +188,7 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
         );
 
         const paradas = status.data.itens.filter(
-          (i) => i.status === 'pendente' || i.status === 'erro',
+          (i) => i.status === 'pendente' || i.status === 'erro' || i.status === 'corrigindo',
         );
 
         if (status.data.pendentes === 0 && status.data.erros === 0) {
@@ -196,13 +203,16 @@ export class TentativaResultadoComponent implements OnInit, OnDestroy {
           }
         }
 
-        // Re-dispara correções paradas (pendente nunca processada ou erro),
-        // uma vez cada — a edge function faz claim idempotente.
+        // Re-dispara correções paradas (pendente nunca processada, erro, ou
+        // claim órfão preso em `corrigindo`), no máximo uma vez a cada
+        // REDISPARO_CORRECAO_MS — a edge function faz claim idempotente e
+        // responde 202 enquanto outra chamada ainda está legitimamente ativa.
+        const agora = Date.now();
         for (const item of paradas) {
-          if (!jaDisparadas.has(item.tentativa_resposta_id)) {
-            jaDisparadas.add(item.tentativa_resposta_id);
-            void this.correcaoIa.corrigir(item.tentativa_resposta_id);
-          }
+          const anterior = ultimoDisparo.get(item.tentativa_resposta_id);
+          if (anterior != null && agora - anterior < REDISPARO_CORRECAO_MS) continue;
+          ultimoDisparo.set(item.tentativa_resposta_id, agora);
+          void this.correcaoIa.corrigir(item.tentativa_resposta_id);
         }
       }
 

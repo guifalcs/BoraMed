@@ -33,6 +33,16 @@ import { QuestaoComentariosComponent } from '../../../shared/components/questao-
 /** Prefixo do rascunho local de alternativas riscadas (uma chave por tentativa). */
 const ELIMINADAS_KEY_PREFIX = 'bm_eliminadas_';
 
+/** Intervalo do poll da correção de IA de uma resposta aberta. */
+const POLL_CORRECAO_MS = 3_000;
+/**
+ * Teto da espera pela correção. A edge function pode devolver 202 (outra
+ * chamada já tem o claim) ou morrer no meio do processamento — sem este teto o
+ * aluno ficaria com "Aurora está corrigindo…" para sempre. No fim, cai em
+ * `erro`, que mostra o botão "tentar de novo".
+ */
+const TIMEOUT_CORRECAO_MS = 45_000;
+
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
@@ -97,6 +107,10 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected readonly fileXIcon = FileX;
 
   private _finalizado = false;
+  private destruido = false;
+
+  /** Questões com poll de correção em andamento (evita loops duplicados). */
+  private readonly aguardandoCorrecao = new Set<string>();
 
   /** Debounce da persistência de rascunho no servidor, isolado por questão. */
   private readonly rascunhoTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -269,11 +283,23 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       );
       if (correcoesResult.ok) {
         const correcoesMap = new Map<string, RespostaCorrecao>();
+        const travadas: { questaoId: string; tentativaRespostaId: string }[] = [];
         for (const c of correcoesResult.data) {
           const questaoId = idPorResposta.get(c.tentativa_resposta_id);
-          if (questaoId) correcoesMap.set(questaoId, c);
+          if (!questaoId) continue;
+          correcoesMap.set(questaoId, c);
+          if (c.status === 'pendente' || c.status === 'corrigindo') {
+            travadas.push({ questaoId, tentativaRespostaId: c.tentativa_resposta_id });
+          }
         }
         this.correcoes.set(correcoesMap);
+
+        // Correção que ficou no meio (F5, aba fechada, claim órfão) não se
+        // resolve sozinha: re-dispara e volta a acompanhar.
+        const silencioso = tentativaAtiva.modo !== 'estudo';
+        for (const t of travadas) {
+          void this.corrigirQuestao(t.questaoId, t.tentativaRespostaId, { silencioso });
+        }
       }
     }
 
@@ -310,6 +336,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
     const segundos = this.timer.seconds();
     this.timer.stop();
     this.focoMode.desativar();
@@ -447,24 +474,21 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     }
 
     this.enviadas.update((s) => new Set(s).add(questao.id));
-    this.correcoes.update((m) => {
-      const next = new Map(m);
-      next.set(questao.id, result.data.correcao);
-      return next;
-    });
+    this.setCorrecao(questao.id, result.data.correcao);
 
-    if (this.modo() === 'estudo') {
-      // Estudo: aguarda a correção para exibir o feedback inline.
-      await this.corrigirQuestao(questao.id, result.data.resposta.id);
-    } else {
-      // Simulado: dispara em background; o resultado re-tenta se falhar.
-      void this.corrigirQuestao(questao.id, result.data.resposta.id, { silencioso: true });
-    }
-
+    // O envio já terminou: destravar aqui, porque a correção roda em segundo
+    // plano com o próprio estado (spinner do feedback da Aurora).
     this.enviandoAberta.update((s) => {
       const next = new Set(s);
       next.delete(questao.id);
       return next;
+    });
+
+    // Estudo: o feedback inline aparece na tela, então o poll leva ao estado
+    // `erro` (com "tentar de novo") se estourar. Simulado: silencioso, a tela
+    // de resultado tem o próprio loop de espera e consolidação.
+    void this.corrigirQuestao(questao.id, result.data.resposta.id, {
+      silencioso: this.modo() !== 'estudo',
     });
   }
 
@@ -487,24 +511,79 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     tentativaRespostaId: string,
     opts: { silencioso?: boolean } = {},
   ): Promise<void> {
-    const result = await this.correcaoIa.corrigir(tentativaRespostaId);
-    if (result.ok) {
-      this.correcoes.update((m) => {
-        const next = new Map(m);
-        next.set(questaoId, result.data);
-        return next;
-      });
-    } else if (!opts.silencioso) {
-      // Marca como erro para exibir o botão "tentar de novo".
-      this.correcoes.update((m) => {
-        const atual = m.get(questaoId);
-        if (!atual) return m;
-        const next = new Map(m);
-        next.set(questaoId, { ...atual, status: 'erro' });
-        return next;
-      });
-      this.notifications.error(result.error);
+    if (this.aguardandoCorrecao.has(questaoId)) return;
+    this.aguardandoCorrecao.add(questaoId);
+    try {
+      const result = await this.correcaoIa.corrigir(tentativaRespostaId);
+      if (!result.ok) {
+        if (!opts.silencioso) {
+          this.marcarCorrecaoComErro(questaoId);
+          this.notifications.error(result.error);
+        }
+        return;
+      }
+
+      this.setCorrecao(questaoId, result.data);
+
+      // A função pode devolver um estado não-terminal (202 de claim
+      // concorrente, ou a correção ainda pendente): daí em diante o cliente
+      // faz poll até fechar, senão o spinner nunca sai da tela.
+      if (result.data.status === 'pendente' || result.data.status === 'corrigindo') {
+        await this.aguardarCorrecao(questaoId, tentativaRespostaId, opts);
+      }
+    } finally {
+      this.aguardandoCorrecao.delete(questaoId);
     }
+  }
+
+  /**
+   * Poll do status da correção até um estado terminal ou até o timeout. No
+   * timeout marca `erro`, que é o único estado com saída para o aluno
+   * ("tentar de novo"); no silencioso (simulado) deixa como está, porque a
+   * tela de resultado tem o próprio loop de espera e consolidação.
+   */
+  private async aguardarCorrecao(
+    questaoId: string,
+    tentativaRespostaId: string,
+    opts: { silencioso?: boolean } = {},
+  ): Promise<void> {
+    const inicio = Date.now();
+
+    while (!this.destruido) {
+      await new Promise((r) => setTimeout(r, POLL_CORRECAO_MS));
+      if (this.destruido) return;
+
+      const result = await this.tentativaService.listarCorrecoes([tentativaRespostaId]);
+      const correcao = result.ok ? result.data[0] : null;
+      if (correcao) {
+        this.setCorrecao(questaoId, correcao);
+        if (correcao.status !== 'pendente' && correcao.status !== 'corrigindo') return;
+      }
+
+      if (Date.now() - inicio > TIMEOUT_CORRECAO_MS) {
+        if (!opts.silencioso) this.marcarCorrecaoComErro(questaoId);
+        return;
+      }
+    }
+  }
+
+  private setCorrecao(questaoId: string, correcao: RespostaCorrecao): void {
+    this.correcoes.update((m) => {
+      const next = new Map(m);
+      next.set(questaoId, correcao);
+      return next;
+    });
+  }
+
+  /** Estado `erro`: exibe o botão "tentar de novo" no feedback da Aurora. */
+  private marcarCorrecaoComErro(questaoId: string): void {
+    this.correcoes.update((m) => {
+      const atual = m.get(questaoId);
+      if (!atual) return m;
+      const next = new Map(m);
+      next.set(questaoId, { ...atual, status: 'erro' });
+      return next;
+    });
   }
 
   /** Anula/desanula a questão atual pelo aluno (otimista, com rollback). */
