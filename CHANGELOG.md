@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-15 | Feature | Módulo de pesquisas in-app
+
+**Formulário de pesquisa na entrada do app, com construtor e resultados no admin**
+
+- **Novo módulo `/admin/pesquisas`**: listagem (com respostas, dispensas e status), construtor de formulário e tela de resultados. Entra em Comunicação, ao lado de Avisos.
+- **Seis tipos de campo**: texto curto, texto longo, escolha única (radio), múltipla escolha (checkbox), escala (1 a 3/4/5/7/10 com rótulos nos extremos) e NPS (0–10). Cada pergunta pode ser marcada como obrigatória e reordenada no construtor.
+- **Entrega igual à dos avisos** (ADR-014): modal no shell do dashboard, verificado uma vez por sessão, recortado por `segmento` (`todos | pagantes | gratuitos | essencial | avancado`) e com `encerra_em` opcional. **A pesquisa nunca é obrigatória** — fechar, Esc ou "Agora não" gravam a dispensa (`dispensar_pesquisa`) e ela não volta.
+- **O modal é o último da fila**: só aparece depois de dados obrigatórios, tour de onboarding e avisos. Dois modais na mesma entrada seriam ruído, e o que pede algo do aluno vai por último.
+- **Resposta grava por RPC** (`responder_pesquisa`, `SECURITY DEFINER`): valida segmento e janela, recusa duplicata, descarta pergunta pulada (não vira linha, para "não respondeu" não virar dado) e aborta se faltar obrigatória. Escolha única com duas marcadas é recusada no servidor, não só na UI.
+- **Estrutura congela na primeira resposta**: `admin_salvar_pesquisa` recusa mudança de perguntas em pesquisa já respondida (`P0026`) e o editor mostra o aviso com o campo travado. Para mudar, o caminho é **Duplicar** — a cópia nasce rascunho e a original fica intacta como registro.
+- **Resultados**: contagem e percentual por alternativa, média e distribuição das escalas, **NPS calculado** (promotores − detratores) e a lista das respostas de texto com autor e data. Taxa de resposta = respondeu ÷ (respondeu + dispensou), o único jeito de saber se a pesquisa foi ignorada ou não chegou.
+- **Migration `20260915120000_modulo_pesquisas`**: 6 tabelas com RLS (leitura do aluno só nas ativas e nas próprias respostas; escrita de estrutura só por admin), índices cobrindo as FKs, `REVOKE` explícito de `anon` em todas e 7 RPCs com `search_path` fixo.
+- **Seed local** com três pesquisas (uma no ar, uma já respondida por 6 alunos sintéticos para a tela de resultados, e uma fora do segmento do usuário de teste) — e `faculdade_unidade`/`periodo` preenchidos no seed, que faltando bloqueavam qualquer modal atrás do de dados obrigatórios.
+- **Correções do review pré-deploy (8 achados):**
+  - **Select do editor mostrava o valor errado ao abrir uma pesquisa salva.** `[value]` num `<select>` cujas `<option>` vêm de um `@for` não pega no primeiro render — o Angular escreve o value antes de as opções existirem e o browser volta para a primeira. Uma pesquisa salva como `pagantes` aparecia como "Todos os alunos"; o admin não mexia no campo e salvava achando que estava certo. Passou a usar `[ngModel]`, como o resto do admin já fazia.
+  - **Nota fora da escala é recusada no servidor** (`P0029`): em `escala`, um valor fora de `min..max` sumia do gráfico (a distribuição só varre a faixa) mas continuava puxando a média — as barras não fechavam com o total e nada na tela explicava.
+  - **A cópia não herda mais `encerra_em`**: duplicar é o caminho para mexer numa pesquisa que já rodou, e essa costuma ter data no passado — a cópia nascia publicada e invisível.
+  - **A prioridade do aviso virou decisão única, no `PesquisaService`**: havendo aviso pendente a fila nem é buscada. Antes a visibilidade reagia ao sinal, então fechar o aviso fazia a pesquisa pular no mesmo instante — os dois modais na mesma entrada que se queria evitar.
+  - **O modal some durante impersonação**: o serviço é root-scoped e trocar de usuário é navegação de SPA, então a fila do admin sobrevivia e "Enviar" gravaria resposta no nome do aluno.
+  - **"Agora não" só fecha se o banco confirmou** — antes, falha de rede fechava o modal sem gravar e a pesquisa voltava na entrada seguinte.
+  - **`admin_resultados_pesquisa` devolve `textos_total`**: a tela prometia "ver todas as N" com o N da amostra de 300, escondendo o resto sem dizer.
+  - **UPDATE de alternativa ganhou guarda `IF NOT FOUND`** (`P0028`), igual ao de pergunta: com duas abas abertas, a que renomeava perdia a alternativa em silêncio e ainda via "Pesquisa salva".
+- Verificado: build de produção OK; 865 unitários verdes (+9 de `pesquisa.service.spec.ts`; as 3 falhas em `admin-campanhas.component.spec.ts` já existiam antes); 5 e2e novos (`pesquisas.spec.ts`, projeto `mocked`); e round-trip real contra o stack local — responder pelo modal grava as 5 linhas certas em `pesquisa_resposta_item`.
+
 ## 2026-09-14 | Feature | Distribuição por período com recorte por cidade
 
 **O gráfico de períodos do dashboard admin passa a aceitar filtro de cidade ("1º período em Ipatinga")**

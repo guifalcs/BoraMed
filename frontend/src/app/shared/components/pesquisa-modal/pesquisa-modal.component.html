@@ -1,0 +1,173 @@
+@if (visivel()) {
+  <div
+    class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Pesquisa rápida"
+  >
+    <div class="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-xl">
+
+      @if (enviado()) {
+        <div class="flex flex-col items-center gap-2 px-6 py-12 text-center">
+          <span class="text-3xl">🎉</span>
+          <h2 class="text-lg font-bold text-[var(--color-text)]">Obrigado!</h2>
+          <p class="text-sm text-[var(--color-text-muted)]">
+            Sua resposta ajuda a decidir o que construímos primeiro.
+          </p>
+        </div>
+      } @else if (pesquisa(); as p) {
+        <!-- Cabeçalho -->
+        <div class="relative shrink-0 border-b border-[var(--color-border)] px-6 pb-4 pt-6">
+          <button
+            type="button"
+            class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]"
+            aria-label="Dispensar pesquisa"
+            (click)="dispensar()"
+          >
+            <app-ui-icon [icon]="iconX" [size]="18" />
+          </button>
+
+          <p class="text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">Pesquisa rápida</p>
+          <h2 class="mt-1 pr-8 text-lg font-bold text-[var(--color-text)]">{{ p.titulo }}</h2>
+          @if (p.descricao) {
+            <p class="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">{{ p.descricao }}</p>
+          }
+        </div>
+
+        <!-- Perguntas -->
+        <div class="flex flex-col gap-6 overflow-y-auto px-6 py-5">
+          @for (pergunta of p.perguntas; track pergunta.id) {
+            <fieldset class="border-0 p-0">
+              <legend
+                class="mb-2 block text-sm font-semibold"
+                [class]="destacada(pergunta.id) ? 'text-[var(--color-danger)]' : 'text-[var(--color-text)]'"
+              >
+                {{ pergunta.enunciado }}
+                @if (pergunta.obrigatoria) {
+                  <span class="text-[var(--color-danger)]">*</span>
+                }
+              </legend>
+              @if (pergunta.ajuda) {
+                <p class="mb-2 text-xs text-[var(--color-text-muted)]">{{ pergunta.ajuda }}</p>
+              }
+
+              @switch (pergunta.tipo) {
+                @case ('texto_curto') {
+                  <input
+                    type="text"
+                    class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-action)] focus:ring-2 focus:ring-[var(--color-action)]/15"
+                    [value]="valor(pergunta.id).texto"
+                    (input)="setTexto(pergunta.id, $event)"
+                  />
+                }
+
+                @case ('texto_longo') {
+                  <textarea
+                    rows="3"
+                    class="w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-action)] focus:ring-2 focus:ring-[var(--color-action)]/15"
+                    [value]="valor(pergunta.id).texto"
+                    (input)="setTexto(pergunta.id, $event)"
+                  ></textarea>
+                }
+
+                @case ('escolha_unica') {
+                  <div class="flex flex-col gap-2">
+                    @for (opcao of pergunta.opcoes; track opcao.id) {
+                      <label
+                        class="flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors"
+                        [class]="marcada(pergunta.id, opcao.id)
+                          ? 'border-[var(--color-action)] bg-[var(--color-action)]/5 text-[var(--color-text)]'
+                          : 'border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-2)]'"
+                      >
+                        <input
+                          type="radio"
+                          class="h-4 w-4 shrink-0 accent-[var(--color-action)]"
+                          [name]="'pergunta-' + pergunta.id"
+                          [checked]="marcada(pergunta.id, opcao.id)"
+                          (click)="setOpcaoUnica(pergunta.id, opcao.id)"
+                        />
+                        <span>{{ opcao.label }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+
+                @case ('multipla_escolha') {
+                  <div class="flex flex-col gap-2">
+                    @for (opcao of pergunta.opcoes; track opcao.id) {
+                      <label
+                        class="flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors"
+                        [class]="marcada(pergunta.id, opcao.id)
+                          ? 'border-[var(--color-action)] bg-[var(--color-action)]/5 text-[var(--color-text)]'
+                          : 'border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-2)]'"
+                      >
+                        <input
+                          type="checkbox"
+                          class="h-4 w-4 shrink-0 rounded accent-[var(--color-action)]"
+                          [checked]="marcada(pergunta.id, opcao.id)"
+                          (change)="toggleOpcao(pergunta.id, opcao.id)"
+                        />
+                        <span>{{ opcao.label }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+
+                @default {
+                  <!-- escala e nps -->
+                  <div class="flex flex-wrap gap-1.5">
+                    @for (n of escalaValores(pergunta); track n) {
+                      <button
+                        type="button"
+                        class="h-9 min-w-9 flex-1 rounded-lg border text-sm font-semibold transition-colors"
+                        [class]="valor(pergunta.id).numero === n
+                          ? 'border-[var(--color-action)] bg-[var(--color-action)] text-white'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-2)]'"
+                        [attr.aria-pressed]="valor(pergunta.id).numero === n"
+                        (click)="setNumero(pergunta.id, n)"
+                      >
+                        {{ n }}
+                      </button>
+                    }
+                  </div>
+                  @if (pergunta.escala_min_label || pergunta.escala_max_label || pergunta.tipo === 'nps') {
+                    <div class="mt-1.5 flex justify-between text-xs text-[var(--color-text-muted)]">
+                      <span>{{ pergunta.escala_min_label ?? (pergunta.tipo === 'nps' ? 'Não recomendaria' : '') }}</span>
+                      <span>{{ pergunta.escala_max_label ?? (pergunta.tipo === 'nps' ? 'Recomendaria com certeza' : '') }}</span>
+                    </div>
+                  }
+                }
+              }
+            </fieldset>
+          }
+        </div>
+
+        <!-- Rodapé -->
+        <div class="shrink-0 border-t border-[var(--color-border)] px-6 py-4">
+          @if (erro()) {
+            <p class="mb-3 text-sm text-[var(--color-danger)]">{{ erro() }}</p>
+          }
+          <div class="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              class="rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)] disabled:opacity-50"
+              [disabled]="enviando()"
+              (click)="dispensar()"
+            >
+              Agora não
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-[var(--color-action)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              [disabled]="enviando()"
+              (click)="enviar()"
+            >
+              {{ enviando() ? 'Enviando…' : 'Enviar respostas' }}
+            </button>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+}

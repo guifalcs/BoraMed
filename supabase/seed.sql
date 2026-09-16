@@ -44,10 +44,19 @@ INSERT INTO auth.users (
 -- ============================================================================
 
 -- Admin + assinatura ativa (paywall exige assinatura para iniciar tentativas)
+-- faculdade_unidade/periodo preenchidos: sem eles o modal de dados
+-- obrigatórios cobre a tela e bloqueia qualquer outro modal (aviso, pesquisa).
 UPDATE public.profiles
    SET papel = 'admin',
-       nome_completo = COALESCE(nome_completo, 'Admin Teste')
+       nome_completo = COALESCE(nome_completo, 'Admin Teste'),
+       faculdade_unidade = COALESCE(faculdade_unidade, 'ipatinga_mg'),
+       periodo = COALESCE(periodo, 5)
  WHERE email = 'teste@boramed.com';
+
+UPDATE public.profiles
+   SET faculdade_unidade = COALESCE(faculdade_unidade, 'ipatinga_mg'),
+       periodo = COALESCE(periodo, 6)
+ WHERE email <> 'teste@boramed.com';
 
 -- ativo=false: existe só para dar plano_id a uma assinatura de teste (abaixo),
 -- nunca para aparecer em listarPlanos(). Ativo, colidia com o Avançado Mensal
@@ -307,3 +316,150 @@ INSERT INTO public.prova_questao (prova_id, questao_id, ordem) VALUES
 ON CONFLICT DO NOTHING;
 
 UPDATE public.prova SET qtd_questoes = 2 WHERE id = 'bbbbbbbb-0003-0000-0000-000000000003';
+
+-- ============================================================================
+-- Dados de teste locais do módulo de Pesquisas.
+-- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção.
+--
+--   Pesquisa A → no ar, sem respostas: é a que aparece no modal ao entrar.
+--   Pesquisa B → despublicada e já respondida por 6 alunos sintéticos: serve
+--                para conferir a tela de resultados com dado de verdade.
+--   Pesquisa C → no ar, mas só para o plano gratuito: prova o recorte por
+--                segmento (o usuário de teste é assinante e NÃO deve vê-la).
+-- ============================================================================
+
+-- ─── Alunos sintéticos (só para popular os resultados da Pesquisa B) ─────────
+DO $$
+DECLARE
+  v_i INT;
+  v_id UUID;
+BEGIN
+  FOR v_i IN 1..6 LOOP
+    v_id := ('a5544444-0000-0000-0000-00000000000' || v_i)::UUID;
+    INSERT INTO auth.users (
+      id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+      confirmation_token, recovery_token, email_change_token_new, email_change,
+      email_change_token_current, phone_change_token, reauthentication_token,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at, is_sso_user, is_anonymous
+    ) VALUES (
+      v_id,
+      '00000000-0000-0000-0000-000000000000',
+      'authenticated', 'authenticated',
+      'aluno-pesquisa-' || v_i || '@boramed.com',
+      crypt('Teste123!', gen_salt('bf')), now(),
+      '', '', '', '', '', '', '',
+      '{"provider":"email","providers":["email"]}',
+      ('{"full_name":"Aluno Pesquisa ' || v_i || '"}')::jsonb,
+      now(), now(), false, false
+    ) ON CONFLICT (id) DO NOTHING;
+  END LOOP;
+END $$;
+
+-- ─── Pesquisa A: no ar, é a que o modal exibe ───────────────────────────────
+INSERT INTO public.pesquisa (id, titulo, descricao, segmento, ativa) VALUES (
+  'a5511111-0000-0000-0000-000000000001',
+  'Como está sendo sua experiência no BoraMed?',
+  'São 5 perguntas rápidas. Só a primeira é obrigatória — suas respostas definem o que a gente constrói no próximo mês.',
+  'todos', true
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.pesquisa_pergunta (id, pesquisa_id, ordem, tipo, enunciado, ajuda, obrigatoria, escala_min, escala_max, escala_min_label, escala_max_label) VALUES
+('a5522222-0000-0000-0000-000000000001','a5511111-0000-0000-0000-000000000001',1,'nps','De 0 a 10, o quanto você recomendaria o BoraMed para um colega de turma?',NULL,true,1,5,NULL,NULL),
+('a5522222-0000-0000-0000-000000000002','a5511111-0000-0000-0000-000000000001',2,'escolha_unica','Qual módulo você mais usa hoje?',NULL,false,1,5,NULL,NULL),
+('a5522222-0000-0000-0000-000000000003','a5511111-0000-0000-0000-000000000001',3,'multipla_escolha','O que você gostaria de ver primeiro na plataforma?','Pode marcar mais de uma.',false,1,5,NULL,NULL),
+('a5522222-0000-0000-0000-000000000004','a5511111-0000-0000-0000-000000000001',4,'escala','O quanto as explicações das questões te ajudam a entender o erro?',NULL,false,1,5,'Pouco','Muito'),
+('a5522222-0000-0000-0000-000000000005','a5511111-0000-0000-0000-000000000001',5,'texto_longo','O que mais faz falta hoje no BoraMed?',NULL,false,1,5,NULL,NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.pesquisa_opcao (id, pergunta_id, ordem, label) VALUES
+('a5533333-0000-0000-0000-000000000001','a5522222-0000-0000-0000-000000000002',1,'Treinos nacionais'),
+('a5533333-0000-0000-0000-000000000002','a5522222-0000-0000-0000-000000000002',2,'Simulados montados por tema'),
+('a5533333-0000-0000-0000-000000000003','a5522222-0000-0000-0000-000000000002',3,'Flashcards'),
+('a5533333-0000-0000-0000-000000000004','a5522222-0000-0000-0000-000000000002',4,'Materiais'),
+('a5533333-0000-0000-0000-000000000005','a5522222-0000-0000-0000-000000000003',1,'Mais questões de laboratório'),
+('a5533333-0000-0000-0000-000000000006','a5522222-0000-0000-0000-000000000003',2,'Correção discursiva mais detalhada'),
+('a5533333-0000-0000-0000-000000000007','a5522222-0000-0000-0000-000000000003',3,'Aplicativo para celular'),
+('a5533333-0000-0000-0000-000000000008','a5522222-0000-0000-0000-000000000003',4,'Ranking entre amigos')
+ON CONFLICT (id) DO NOTHING;
+
+-- ─── Pesquisa B: já rodou e tem respostas (tela de resultados) ───────────────
+INSERT INTO public.pesquisa (id, titulo, descricao, segmento, ativa) VALUES (
+  'a5511111-0000-0000-0000-000000000002',
+  'Sondagem de conteúdo — 2026.1',
+  'Rodou no começo do semestre para decidir a ordem do acervo.',
+  'todos', false
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.pesquisa_pergunta (id, pesquisa_id, ordem, tipo, enunciado, ajuda, obrigatoria, escala_min, escala_max, escala_min_label, escala_max_label) VALUES
+('a5522222-0000-0000-0000-000000000011','a5511111-0000-0000-0000-000000000002',1,'nps','De 0 a 10, o quanto você recomendaria o BoraMed?',NULL,true,1,5,NULL,NULL),
+('a5522222-0000-0000-0000-000000000012','a5511111-0000-0000-0000-000000000002',2,'escolha_unica','Qual disciplina você mais quer no acervo?',NULL,false,1,5,NULL,NULL),
+('a5522222-0000-0000-0000-000000000013','a5511111-0000-0000-0000-000000000002',3,'escala','O quanto o nível das questões está compatível com as provas da sua faculdade?',NULL,false,1,5,'Muito fácil','Muito difícil'),
+('a5522222-0000-0000-0000-000000000014','a5511111-0000-0000-0000-000000000002',4,'texto_longo','Alguma coisa que te irritou usando a plataforma?',NULL,false,1,5,NULL,NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.pesquisa_opcao (id, pergunta_id, ordem, label) VALUES
+('a5533333-0000-0000-0000-000000000011','a5522222-0000-0000-0000-000000000012',1,'Clínica médica'),
+('a5533333-0000-0000-0000-000000000012','a5522222-0000-0000-0000-000000000012',2,'Pediatria'),
+('a5533333-0000-0000-0000-000000000013','a5522222-0000-0000-0000-000000000012',3,'Ginecologia e obstetrícia'),
+('a5533333-0000-0000-0000-000000000014','a5522222-0000-0000-0000-000000000012',4,'Cirurgia')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.pesquisa_resposta (id, pesquisa_id, user_id, criado_em) VALUES
+('a5555555-0000-0000-0000-000000000001','a5511111-0000-0000-0000-000000000002','a5544444-0000-0000-0000-000000000001', now() - interval '9 days'),
+('a5555555-0000-0000-0000-000000000002','a5511111-0000-0000-0000-000000000002','a5544444-0000-0000-0000-000000000002', now() - interval '8 days'),
+('a5555555-0000-0000-0000-000000000003','a5511111-0000-0000-0000-000000000002','a5544444-0000-0000-0000-000000000003', now() - interval '7 days'),
+('a5555555-0000-0000-0000-000000000004','a5511111-0000-0000-0000-000000000002','a5544444-0000-0000-0000-000000000004', now() - interval '6 days'),
+('a5555555-0000-0000-0000-000000000005','a5511111-0000-0000-0000-000000000002','a5544444-0000-0000-0000-000000000005', now() - interval '5 days'),
+('a5555555-0000-0000-0000-000000000006','a5511111-0000-0000-0000-000000000002','a5544444-0000-0000-0000-000000000006', now() - interval '4 days')
+ON CONFLICT (id) DO NOTHING;
+
+-- NPS: 10, 9, 8, 10, 6, 9 → 4 promotores, 1 neutro, 1 detrator = 50
+INSERT INTO public.pesquisa_resposta_item (resposta_id, pergunta_id, valor_numero) VALUES
+('a5555555-0000-0000-0000-000000000001','a5522222-0000-0000-0000-000000000011',10),
+('a5555555-0000-0000-0000-000000000002','a5522222-0000-0000-0000-000000000011',9),
+('a5555555-0000-0000-0000-000000000003','a5522222-0000-0000-0000-000000000011',8),
+('a5555555-0000-0000-0000-000000000004','a5522222-0000-0000-0000-000000000011',10),
+('a5555555-0000-0000-0000-000000000005','a5522222-0000-0000-0000-000000000011',6),
+('a5555555-0000-0000-0000-000000000006','a5522222-0000-0000-0000-000000000011',9)
+ON CONFLICT (resposta_id, pergunta_id) DO NOTHING;
+
+INSERT INTO public.pesquisa_resposta_item (resposta_id, pergunta_id, opcao_ids) VALUES
+('a5555555-0000-0000-0000-000000000001','a5522222-0000-0000-0000-000000000012','{a5533333-0000-0000-0000-000000000011}'),
+('a5555555-0000-0000-0000-000000000002','a5522222-0000-0000-0000-000000000012','{a5533333-0000-0000-0000-000000000012}'),
+('a5555555-0000-0000-0000-000000000003','a5522222-0000-0000-0000-000000000012','{a5533333-0000-0000-0000-000000000011}'),
+('a5555555-0000-0000-0000-000000000004','a5522222-0000-0000-0000-000000000012','{a5533333-0000-0000-0000-000000000014}'),
+('a5555555-0000-0000-0000-000000000005','a5522222-0000-0000-0000-000000000012','{a5533333-0000-0000-0000-000000000011}'),
+('a5555555-0000-0000-0000-000000000006','a5522222-0000-0000-0000-000000000012','{a5533333-0000-0000-0000-000000000013}')
+ON CONFLICT (resposta_id, pergunta_id) DO NOTHING;
+
+INSERT INTO public.pesquisa_resposta_item (resposta_id, pergunta_id, valor_numero) VALUES
+('a5555555-0000-0000-0000-000000000001','a5522222-0000-0000-0000-000000000013',4),
+('a5555555-0000-0000-0000-000000000002','a5522222-0000-0000-0000-000000000013',3),
+('a5555555-0000-0000-0000-000000000003','a5522222-0000-0000-0000-000000000013',5),
+('a5555555-0000-0000-0000-000000000004','a5522222-0000-0000-0000-000000000013',4),
+('a5555555-0000-0000-0000-000000000006','a5522222-0000-0000-0000-000000000013',3)
+ON CONFLICT (resposta_id, pergunta_id) DO NOTHING;
+
+INSERT INTO public.pesquisa_resposta_item (resposta_id, pergunta_id, valor_texto) VALUES
+('a5555555-0000-0000-0000-000000000001','a5522222-0000-0000-0000-000000000014','As imagens das questões de laboratório demoram para carregar no 4G.'),
+('a5555555-0000-0000-0000-000000000003','a5522222-0000-0000-0000-000000000014','Queria poder pausar o simulado e voltar depois sem perder o tempo corrido.'),
+('a5555555-0000-0000-0000-000000000005','a5522222-0000-0000-0000-000000000014','Nada me irritou, só senti falta de mais questões de pediatria mesmo.')
+ON CONFLICT (resposta_id, pergunta_id) DO NOTHING;
+
+-- Dois alunos viram a pesquisa e fecharam: alimenta a taxa de resposta.
+INSERT INTO public.pesquisa_dispensa (pesquisa_id, user_id) VALUES
+('a5511111-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222'),
+('a5511111-0000-0000-0000-000000000002','11111111-1111-1111-1111-111111111111')
+ON CONFLICT DO NOTHING;
+
+-- ─── Pesquisa C: no ar, mas fora do segmento do usuário de teste ────────────
+INSERT INTO public.pesquisa (id, titulo, descricao, segmento, ativa) VALUES (
+  'a5511111-0000-0000-0000-000000000003',
+  'O que te faria assinar o BoraMed?',
+  'Esta só aparece para quem está no plano gratuito — o usuário de teste é assinante e não deve vê-la.',
+  'gratuitos', true
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.pesquisa_pergunta (id, pesquisa_id, ordem, tipo, enunciado, ajuda, obrigatoria, escala_min, escala_max, escala_min_label, escala_max_label) VALUES
+('a5522222-0000-0000-0000-000000000021','a5511111-0000-0000-0000-000000000003',1,'texto_curto','O que falta para você assinar?',NULL,false,1,5,NULL,NULL)
+ON CONFLICT (id) DO NOTHING;

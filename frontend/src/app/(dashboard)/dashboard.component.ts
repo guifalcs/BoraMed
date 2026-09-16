@@ -13,8 +13,10 @@ import { SubscriptionService } from '../core/services/subscription.service';
 import { TentativaService } from '../core/services/tentativa.service';
 import { OnboardingService } from '../core/services/onboarding.service';
 import { AvisoService } from '../core/services/aviso.service';
+import { PesquisaService } from '../core/services/pesquisa.service';
 import { AppNotificacaoService } from '../core/services/app-notification.service';
 import { AvisoModalComponent } from '../shared/components/aviso-modal/aviso-modal.component';
+import { PesquisaModalComponent } from '../shared/components/pesquisa-modal/pesquisa-modal.component';
 import { NotificacoesSinoComponent } from '../shared/components/notificacoes-sino/notificacoes-sino.component';
 import { SuporteWidgetComponent } from '../shared/components/suporte-widget/suporte-widget.component';
 import { ImageViewerComponent } from '../shared/components/image-viewer/image-viewer.component';
@@ -48,7 +50,7 @@ interface NavItemEstado extends NavItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, DadosObrigatoriosModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIconComponent, UiAvatarComponent, OnboardingTourComponent, ImpersonationBannerComponent, AvisoModalComponent, PesquisaModalComponent, NotificacoesSinoComponent, SuporteWidgetComponent, ImageViewerComponent, PaywallModalComponent, DadosObrigatoriosModalComponent, UpgradeBadgeComponent, UpgradeCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +64,7 @@ export class DashboardComponent {
   private readonly router = inject(Router);
   protected readonly onboarding = inject(OnboardingService);
   private readonly avisoService = inject(AvisoService);
+  private readonly pesquisaService = inject(PesquisaService);
   private readonly notifService = inject(AppNotificacaoService);
   protected readonly focoMode = inject(FocoModoService);
   private readonly paywall = inject(PaywallService);
@@ -146,7 +149,11 @@ export class DashboardComponent {
           void this.profileService.loadProfile();
           void this.onboarding.load();
           void this.tentativaService.hidratarTentativaAtiva();
-          void this.avisoService.verificarAvisos();
+          // Encadeado de propósito: a pesquisa só é buscada se não houver
+          // aviso na fila (ver PesquisaService.verificar).
+          void this.avisoService
+            .verificarAvisos()
+            .then(() => this.pesquisaService.verificar());
           void this.notifService.carregar();
           void this.subscriptionService.statusAcessoServidor().then((s) => this.nivel.set(s.nivel));
         } else if (this.auth.user() && this.auth.impersonando()) {

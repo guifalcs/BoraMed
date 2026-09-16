@@ -222,6 +222,10 @@
 
     <app-aviso-modal />
 
+    @if (!onboarding.isVisible()) {
+      <app-pesquisa-modal />
+    }
+
     <app-paywall-modal />
   }
 
