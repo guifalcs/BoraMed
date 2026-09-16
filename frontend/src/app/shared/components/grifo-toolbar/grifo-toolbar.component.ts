@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Eraser, Highlighter, Trash2 } from 'lucide-angular';
 import { FocoModoService } from '../../../core/services/foco-modo.service';
 import { GrifoService } from '../../../core/services/grifo.service';
@@ -8,7 +16,7 @@ import {
   type CorGrifo,
   type FerramentaGrifo,
 } from '../../utils/grifo';
-import { corDoTextoSobre } from '../../utils/grifo-cor';
+import { corDoTextoSobre, gerarEspectroGrifo } from '../../utils/grifo-cor';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 /**
@@ -38,8 +46,20 @@ export class GrifoToolbarComponent {
    * A amostra é a própria cor que pinta o texto: o botão prevê o resultado.
    */
   protected readonly cores = CORES_PADRAO;
-  /** Cores escolhidas no espectro, à mão sem reabrir o seletor do sistema. */
+  /** Cores escolhidas na grade, à mão sem reabrir o painel. */
   protected readonly recentes = this.grifo.recentes;
+
+  /** Grade que cobre o espectro, aberta pelo botão do anel colorido. */
+  protected readonly espectro = gerarEspectroGrifo();
+  protected readonly paletaAberta = signal(false);
+
+  constructor() {
+    // Guardar o marca-texto fecha a grade junto: ela não tem por que ficar
+    // aberta cobrindo a prova depois que a caneta saiu da mão.
+    effect(() => {
+      if (!this.grifo.modoAtivo()) this.paletaAberta.set(false);
+    });
+  }
   protected readonly iconGrifar = Highlighter;
   protected readonly iconBorracha = Eraser;
   protected readonly iconLimpar = Trash2;
@@ -149,10 +169,29 @@ export class GrifoToolbarComponent {
     this.grifo.selecionarFerramenta(ferramenta);
   }
 
-  /** `<input type="color">`: o espectro inteiro, pelo seletor do sistema. */
-  protected escolherDoEspectro(evento: Event): void {
-    const valor = (evento.target as HTMLInputElement | null)?.value;
-    if (valor) this.grifo.selecionarCorLivre(valor);
+  protected alternarPaleta(): void {
+    if (!this.grifo.modoAtivo()) this.grifo.modoAtivo.set(true);
+    this.paletaAberta.update((v) => !v);
+  }
+
+  /** Cor da grade: entra em uso e fecha o painel, que já cumpriu o papel. */
+  protected escolherDoEspectro(cor: CorGrifo): void {
+    this.grifo.selecionarFerramenta(cor);
+    this.paletaAberta.set(false);
+  }
+
+  protected classesCorDoEspectro(cor: CorGrifo): string {
+    const base = 'h-6 w-full rounded-md transition-transform';
+    return this.ferramenta() === cor
+      ? `${base} scale-110 ring-2 ring-[var(--color-text)]`
+      : `${base} ring-1 ring-black/10 hover:scale-110`;
+  }
+
+  protected classesAnelEspectro(): string {
+    const base = 'pointer-events-none block h-6 w-6 rounded-full bm-espectro';
+    return this.paletaAberta()
+      ? `${base} ring-2 ring-[var(--color-text)]`
+      : `${base} ring-1 ring-black/10`;
   }
 
   protected limparQuestao(): void {

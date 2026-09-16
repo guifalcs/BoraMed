@@ -57,6 +57,53 @@ export function corDoTextoSobre(cor: CorGrifo): string {
   return comEscuro >= comClaro ? TEXTO_ESCURO : TEXTO_CLARO;
 }
 
+function hslParaHex(h: number, sPct: number, lPct: number): CorGrifo {
+  const sat = sPct / 100;
+  const luz = lPct / 100;
+  const c = (1 - Math.abs(2 * luz - 1)) * sat;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = luz - c / 2;
+  const faixa = Math.floor(h / 60) % 6;
+  const [r, g, b] = (
+    [
+      [c, x, 0],
+      [x, c, 0],
+      [0, c, x],
+      [0, x, c],
+      [x, 0, c],
+      [c, 0, x],
+    ] as const
+  )[faixa]!;
+  const canal = (v: number): string =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${canal(r)}${canal(g)}${canal(b)}`;
+}
+
+/** Matizes da grade, de 36 em 36 graus: uma volta inteira no círculo de cores. */
+const MATIZES = [0, 36, 72, 108, 144, 180, 216, 252, 288, 324];
+/** Do pastel ao forte. A primeira faixa é a que mais parece marca-texto. */
+const LUMINOSIDADES = [86, 74, 62, 48];
+
+/**
+ * Grade que cobre o espectro, montada em HSL e entregue em hex.
+ *
+ * Substitui o seletor de cor do sistema: o popup dele é UI do navegador,
+ * ancorada no input, e o estojo mora no canto inferior da tela — lá ele abria
+ * cortado, para fora. Esta grade é conteúdo da página, então abre para cima e
+ * cabe na tela por construção.
+ */
+export function gerarEspectroGrifo(): CorGrifo[] {
+  const cores: CorGrifo[] = [];
+  for (const l of LUMINOSIDADES) {
+    for (const h of MATIZES) cores.push(hslParaHex(h, 85, l));
+  }
+  // Fecha com uma faixa neutra: cinza claro ao escuro serve para marcar sem cor.
+  for (const l of [90, 72, 54, 34]) cores.push(hslParaHex(0, 0, l));
+  return cores;
+}
+
 /** Regra `::highlight()` desta cor, injetada em tempo de execução. */
 export function regraHighlight(cor: CorGrifo): string {
   return `::highlight(${nomeHighlight(cor)}){background-color:${cor};color:${corDoTextoSobre(cor)};}`;

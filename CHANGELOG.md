@@ -4,12 +4,13 @@
 
 **A paleta deixou de ser uma lista de quatro e passou a ser um seletor de cor**
 
-- **Qualquer cor do espectro**, pelo seletor nativo do sistema (`<input type="color">`): sem biblioteca, com conta-gotas de brinde no desktop. Os quatro atalhos continuam na paleta para o uso comum, e **as 4 últimas cores escolhidas no espectro viram atalho** — reabrir o seletor do sistema a cada questão seria trabalhoso. A paleta é preferência do aluno (`bm_grifo_paleta`), não da tentativa: sobrevive ao fim da prova.
+- **Grade com 44 cores** (10 matizes × 4 luminosidades + 4 neutros, montada em HSL) cobrindo o círculo de cores, aberta por um botão na paleta. Os quatro atalhos continuam para o uso comum, e **as 4 últimas cores escolhidas viram atalho** — reabrir a grade a cada questão seria trabalhoso. A paleta é preferência do aluno (`bm_grifo_paleta`), não da tentativa: sobrevive ao fim da prova.
+- **A grade é painel da página, não o `<input type="color">` do sistema.** A primeira versão usava o seletor nativo e ele abria **cortado, para fora da tela**: o popup é UI do navegador, ancorada no input, e o estojo mora no canto inferior direito — não existe CSS que reposicione aquilo. O painel próprio abre para cima, dentro do dock, com largura presa a `calc(100vw-1.5rem)`, então cabe na tela por construção (e tem e2e medindo isso contra o viewport).
 - **O que travava em quatro era o motor, não a UI:** `::highlight()` exige uma regra de CSS por nome de highlight, e elas estavam escritas à mão no `styles.css`. Agora são **geradas em tempo de execução**, uma por cor que entra em cena, numa folha `<style data-bm="grifos">`; cor que sai de cena tem o highlight removido do registro. Pelo mesmo motivo o cursor de caneta saiu de classe de CSS para `[style.cursor]`: não existe lista de regras possíveis quando a cor é livre.
 - **A cor do texto passou a ser calculada, não fixada.** Luminância relativa + razão de contraste (WCAG 2.1) escolhem entre texto escuro e branco. Com quatro pastéis dava para cravar `#0f172a`; com o espectro aberto, escolher um roxo forte apagaria justamente o enunciado que o aluno quis destacar. A mesma conta decide o contorno da ponta no cursor (que sumiria em cor escura) e o ícone do botão principal, que assume a cor carregada como fundo.
 - **Formato salvo virou v2** (cor em hex). O v1, com as quatro cores por nome, **continua sendo lido e traduzido** — prova pausada antes da mudança não perde os grifos.
 - **A paleta aberta quebra em duas fileiras no celular**: com atalhos + recentes + espectro + borracha + limpar, uma fileira só passava da largura da tela e vazava pela borda.
-- Verificado: **17 e2e** (cor do espectro pintando, inversão do texto em cor escura, recente virando atalho) e **36 unitários** entre álgebra de intervalos, contraste, cursores e a migração v1→v2. Suíte inteira verde (911).
+- Verificado: **19 e2e** (cor da grade pintando, inversão do texto em cor escura, recente virando atalho, painel cabendo na tela) e **40 unitários** entre álgebra de intervalos, contraste, cursores e a migração v1→v2. Suíte inteira verde (915).
 
 ## 2026-09-16 | Feature | Marca-texto na prova (grifar trechos da questão)
 

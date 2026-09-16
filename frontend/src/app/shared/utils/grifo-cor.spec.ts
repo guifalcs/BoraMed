@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   corDoTextoSobre,
+  gerarEspectroGrifo,
   cursorBorracha,
   cursorCaneta,
   nomeHighlight,
@@ -80,5 +81,28 @@ describe('cursores', () => {
       expect(dados).not.toContain('"');
       expect(dados).not.toContain('#');
     }
+  });
+});
+
+describe('gerarEspectroGrifo', () => {
+  const espectro = gerarEspectroGrifo();
+
+  it('entrega a volta inteira do círculo de cores, sem repetir', () => {
+    expect(espectro.length).toBe(44);
+    expect(new Set(espectro).size).toBe(espectro.length);
+  });
+
+  it('só devolve hex canônico', () => {
+    for (const cor of espectro) expect(cor).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it('vai do pastel ao forte: a grade cobre os dois extremos de contraste', () => {
+    const textos = new Set(espectro.map(corDoTextoSobre));
+    expect(textos).toEqual(new Set(['#0f172a', '#ffffff']));
+  });
+
+  it('inclui os neutros, para marcar sem cor', () => {
+    const neutros = espectro.filter((c) => c[1] === c[3] && c[3] === c[5]);
+    expect(neutros.length).toBeGreaterThanOrEqual(4);
   });
 });

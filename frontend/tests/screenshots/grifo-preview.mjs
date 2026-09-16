@@ -66,19 +66,34 @@ await grifar('dor torácica retroesternal em aperto');
 await page.getByRole('button', { name: 'Grifar em verde' }).click();
 await grifar('supradesnivelamento do segmento ST');
 
-// Duas cores fora dos atalhos, vindas do espectro: uma clara e uma escura —
-// a escura precisa inverter o texto para branco, senão apagaria o enunciado.
-await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+// Duas cores fora dos atalhos, vindas da grade do espectro: uma clara e uma
+// escura — a escura inverte o texto para branco, senão apagaria o enunciado.
+async function escolherNoEspectro(cor) {
+  await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
+  await page.getByRole('button', { name: `Grifar na cor ${cor}` }).click();
+}
+await escolherNoEspectro('#d04cf0');
 await grifar('conduta inicial mais adequada');
-await page.getByLabel('Escolher outra cor para grifar').fill('#1d4ed8');
+await escolherNoEspectro('#1266e2');
 await grifar('irradiação para o membro superior esquerdo');
 await page.waitForTimeout(400);
+
+// Painel aberto: é o que precisa caber na tela.
+await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${SAIDA}/grifo-desktop-espectro.png` });
+await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
 
 await page.screenshot({ path: `${SAIDA}/grifo-desktop.png` });
 
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${SAIDA}/grifo-mobile.png` });
+
+await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${SAIDA}/grifo-mobile-espectro.png` });
+await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
 
 await page.getByRole('button', { name: 'Guardar o marca-texto' }).click();
 await page.waitForTimeout(400);

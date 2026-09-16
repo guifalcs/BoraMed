@@ -274,6 +274,19 @@ async function seletorDoApoio(page: Page): Promise<string> {
 
 const pegarMarcaTexto = (page: Page) => page.getByRole('button', { name: 'Pegar o marca-texto' });
 
+/**
+ * Cor fora dos quatro atalhos, pela grade do espectro. A grade é painel da
+ * página (e não o seletor do sistema) justamente para caber na tela.
+ */
+async function escolherNoEspectro(page: Page, cor: string): Promise<void> {
+  await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
+  await page.getByRole('button', { name: `Grifar na cor ${cor}` }).click();
+}
+
+/** Cores que existem na grade gerada (matiz 288°/216°, faixas clara e forte). */
+const ROXO_DO_ESPECTRO = '#d04cf0';
+const AZUL_ESCURO_DO_ESPECTRO = '#1266e2';
+
 /** Cursor desenhado sobre o texto grifável: é SVG, e a ponta carrega a cor. */
 async function cursorDoTextoGrifavel(
   page: Page,
@@ -465,11 +478,11 @@ test.describe('Marca-texto na execução da prova', () => {
       .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).ponta)
       .toBe(AZUL.slice(1));
 
-    // Cor escolhida no espectro também vai para a ponta da caneta.
-    await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+    // Cor escolhida na grade também vai para a ponta da caneta.
+    await escolherNoEspectro(page, ROXO_DO_ESPECTRO);
     await expect
       .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).ponta)
-      .toBe('c084fc');
+      .toBe(ROXO_DO_ESPECTRO.slice(1));
 
     // A borracha tem desenho próprio: bloco deitado, sem ponta colorida.
     await page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }).click();
@@ -482,40 +495,73 @@ test.describe('Marca-texto na execução da prova', () => {
     await pegarMarcaTexto(page).click();
     const enunciado = await seletorDoEnunciado(page);
 
-    // Cor fora dos quatro atalhos: sai do seletor de espectro do sistema.
-    await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+    await escolherNoEspectro(page, ROXO_DO_ESPECTRO);
     await selecionarTrecho(page, enunciado, 'conduta inicial');
 
-    expect(await grifosNaTela(page)).toEqual({ '#c084fc': ['conduta inicial'] });
+    expect(await grifosNaTela(page)).toEqual({ [ROXO_DO_ESPECTRO]: ['conduta inicial'] });
   });
 
   test('cor escura vira texto branco, para não apagar o enunciado', async ({ page }) => {
     await pegarMarcaTexto(page).click();
     const enunciado = await seletorDoEnunciado(page);
 
-    await page.getByLabel('Escolher outra cor para grifar').fill('#3b0764');
+    await escolherNoEspectro(page, AZUL_ESCURO_DO_ESPECTRO);
     await selecionarTrecho(page, enunciado, 'conduta inicial');
 
     const regra = await page.evaluate(() => {
       const folha = document.querySelector('style[data-bm="grifos"]');
       return folha?.textContent ?? '';
     });
-    expect(regra).toContain('::highlight(bm-grifo-3b0764){background-color:#3b0764;color:#ffffff;}');
+    expect(regra).toContain(
+      '::highlight(bm-grifo-1266e2){background-color:#1266e2;color:#ffffff;}',
+    );
   });
 
   test('a cor do espectro fica à mão como atalho depois de usada', async ({ page }) => {
     await pegarMarcaTexto(page).click();
-    await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+    await escolherNoEspectro(page, ROXO_DO_ESPECTRO);
 
-    await expect(page.getByRole('button', { name: 'Grifar na cor #c084fc' })).toBeVisible();
+    // A grade fecha ao escolher, e a cor fica na barra como atalho.
+    await expect(page.getByRole('group', { name: 'Cores do marca-texto' })).toHaveCount(0);
+    const atalho = page
+      .getByRole('toolbar', { name: 'Marca-texto' })
+      .getByRole('button', { name: `Grifar na cor ${ROXO_DO_ESPECTRO}` });
+    await expect(atalho).toBeVisible();
 
     // Trocar para outro atalho e voltar não perde a cor escolhida.
     await page.getByRole('button', { name: 'Grifar em verde' }).click();
-    await page.getByRole('button', { name: 'Grifar na cor #c084fc' }).click();
+    await atalho.click();
 
     const enunciado = await seletorDoEnunciado(page);
     await selecionarTrecho(page, enunciado, 'conduta inicial');
-    expect(await grifosNaTela(page)).toEqual({ '#c084fc': ['conduta inicial'] });
+    expect(await grifosNaTela(page)).toEqual({ [ROXO_DO_ESPECTRO]: ['conduta inicial'] });
+  });
+
+  test('a grade de cores abre inteira dentro da tela', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
+
+    const painel = page.getByRole('group', { name: 'Cores do marca-texto' });
+    await expect(painel).toBeVisible();
+
+    // O seletor do sistema abria ancorado no canto e saía cortado; este é
+    // conteúdo da página, então tem que caber por construção.
+    const caixa = (await painel.boundingBox())!;
+    const tela = page.viewportSize()!;
+    expect(caixa.x).toBeGreaterThanOrEqual(0);
+    expect(caixa.y).toBeGreaterThanOrEqual(0);
+    expect(caixa.x + caixa.width).toBeLessThanOrEqual(tela.width);
+    expect(caixa.y + caixa.height).toBeLessThanOrEqual(tela.height);
+  });
+
+  test('guardar o marca-texto fecha a grade de cores junto', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByRole('button', { name: 'Escolher outra cor para grifar' }).click();
+    await expect(page.getByRole('group', { name: 'Cores do marca-texto' })).toBeVisible();
+
+    await page.keyboard.press('g');
+
+    await expect(page.getByRole('group', { name: 'Cores do marca-texto' })).toHaveCount(0);
   });
 
   test('atalho G pega e guarda o marca-texto', async ({ page }) => {
