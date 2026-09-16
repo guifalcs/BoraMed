@@ -67,18 +67,24 @@ export class GrifoToolbarComponent {
   });
 
   /**
-   * O dock mora acima da barra de navegação do mobile (64px, `z-index: 50`) —
-   * sem essa folga ele ficaria escondido atrás dela. No modo foco a barra some,
-   * então a folga também. No desktop a barra não existe.
+   * O dock empilha em cima da aba do widget de suporte, no mesmo canto — os
+   * dois são flutuantes e disputariam a mesma faixa lado a lado.
+   *
+   * A altura sai da posição do suporte, que muda de breakpoint sozinho:
+   * `bottom: 2rem` (≈2.75rem de altura) no desktop e `bottom: 5.5rem` até
+   * 480px, onde ele já sobe para escapar da barra de navegação de 64px. Os
+   * 5,5rem do desktop também passam por cima dessa barra na faixa de 481px a
+   * 767px, em que ela existe e o suporte ainda está lá embaixo. No modo foco
+   * suporte e barra somem, e o dock desce para o rodapé.
    */
   protected readonly classesDock = computed(() => {
     // Classes escritas por extenso: o JIT do Tailwind varre o fonte, então
     // classe montada por interpolação não seria gerada no CSS final.
     const base =
-      'pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 px-4';
+      'pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-end gap-2 px-3';
     return this.foco.ativo()
       ? `${base} pb-[calc(1rem+env(safe-area-inset-bottom))]`
-      : `${base} pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-[calc(1rem+env(safe-area-inset-bottom))]`;
+      : `${base} pb-[calc(5.5rem+env(safe-area-inset-bottom))] max-[480px]:pb-[calc(9rem+env(safe-area-inset-bottom))]`;
   });
 
   protected readonly classesToggle = computed(() => {

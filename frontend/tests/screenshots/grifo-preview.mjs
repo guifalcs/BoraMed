@@ -37,6 +37,9 @@ await page.getByRole('button', { name: /iniciar|retomar|continuar/i }).first().c
 await page.waitForURL(/tentativa/, { timeout: 30_000 });
 await page.waitForTimeout(2500);
 
+// Estado de repouso: o estojo fechado, empilhado sobre a bolinha do suporte.
+await page.screenshot({ path: `${SAIDA}/grifo-desktop-fechado.png` });
+
 // Pega o marca-texto e grifa dois trechos do caso clínico, em cores diferentes.
 await page.getByRole('button', { name: 'Pegar o marca-texto' }).click();
 
@@ -70,6 +73,10 @@ await page.screenshot({ path: `${SAIDA}/grifo-desktop.png` });
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${SAIDA}/grifo-mobile.png` });
+
+await page.getByRole('button', { name: 'Guardar o marca-texto' }).click();
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${SAIDA}/grifo-mobile-fechado.png` });
 
 console.log('screenshots em', SAIDA);
 await navegador.close();

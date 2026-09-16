@@ -1,6 +1,5 @@
-<!-- Dock flutuante: preso ao fundo da tela, fora do fluxo da prova.
-     Centralizado nos dois breakpoints de propósito — encostado à direita ele
-     colidiria com a aba do widget de suporte, que mora na mesma faixa. O
+<!-- Dock flutuante: preso ao canto, fora do fluxo da prova, empilhado em
+     cima da aba do widget de suporte (ver `classesDock`). O
      `env(safe-area-inset-bottom)` evita a barra do iPhone comer a paleta. -->
 <div [class]="classesDock()">
   @if (ativo()) {
