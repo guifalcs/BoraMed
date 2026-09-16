@@ -8,6 +8,12 @@ import {
 import type { PapelUsuario, Profile } from '../models/auth.types';
 import type { AssinaturaStatus, SegmentoAcesso } from '../models/subscription.types';
 import type { FaculdadeUnidade } from '../models/faculdade-unidade';
+import type {
+  AdminPesquisa,
+  AdminPesquisaDetalhe,
+  PesquisaResultados,
+  PesquisaSalvarInput,
+} from '../models/pesquisa.types';
 
 export interface AdminDisciplina {
   id: string;
@@ -857,6 +863,16 @@ const DESPESA_COLS =
   'id, descricao, categoria, fornecedor, valor_centavos, competencia, recorrencia, observacao, criado_em';
 
 export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/** Erros do construtor de pesquisas (ver migration 20260915120000). */
+function traduzErroPesquisa(codigo: string, mensagem: string): string {
+  const mapa: Record<string, string> = {
+    P0026: 'Esta pesquisa já tem respostas: a estrutura está congelada. Duplique-a para mudar as perguntas.',
+    P0027: 'Perguntas de escolha precisam de ao menos 2 alternativas.',
+    P0028: 'Uma das perguntas não pertence a esta pesquisa.',
+  };
+  return mapa[codigo] ?? mensagem;
+}
 
 /** Os `raise exception` das RPCs de cupom viram mensagem de UI aqui. */
 function traduzErroCupom(mensagem: string): string {
@@ -2156,6 +2172,57 @@ export class AdminService {
     if (error) return { ok: false, error: error.message };
     const { data } = this.supabase.storage.from('avisos').getPublicUrl(path);
     return { ok: true, data: data.publicUrl };
+  }
+
+  // ---- Pesquisas ----
+
+  async listarPesquisas(): Promise<ServiceResult<AdminPesquisa[]>> {
+    const { data, error } = await this.supabase.rpc('admin_listar_pesquisas');
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? []) as AdminPesquisa[] };
+  }
+
+  async obterPesquisa(id: string): Promise<ServiceResult<AdminPesquisaDetalhe>> {
+    const { data, error } = await this.supabase.rpc('admin_obter_pesquisa', { p_id: id });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as AdminPesquisaDetalhe };
+  }
+
+  /**
+   * Omitir `perguntas` salva só o cabeçalho — é o que o editor faz quando a
+   * pesquisa já tem respostas e a estrutura está congelada (erro P0026).
+   */
+  async salvarPesquisa(input: PesquisaSalvarInput): Promise<ServiceResult<string>> {
+    const { data, error } = await this.supabase.rpc('admin_salvar_pesquisa', { p_payload: input });
+    if (error) return { ok: false, error: traduzErroPesquisa(error.code ?? '', error.message) };
+    return { ok: true, data: data as string };
+  }
+
+  async duplicarPesquisa(id: string): Promise<ServiceResult<string>> {
+    const { data, error } = await this.supabase.rpc('admin_duplicar_pesquisa', { p_id: id });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as string };
+  }
+
+  async toggleAtivaPesquisa(id: string, ativa: boolean): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase
+      .from('pesquisa')
+      .update({ ativa, atualizado_em: new Date().toISOString() })
+      .eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
+  }
+
+  async deletarPesquisa(id: string): Promise<ServiceResult<void>> {
+    const { error } = await this.supabase.from('pesquisa').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: undefined };
+  }
+
+  async resultadosPesquisa(id: string): Promise<ServiceResult<PesquisaResultados>> {
+    const { data, error } = await this.supabase.rpc('admin_resultados_pesquisa', { p_id: id });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: data as PesquisaResultados };
   }
 
   // ---- Notificações in-app ----

@@ -1,0 +1,138 @@
+<div class="mx-auto max-w-6xl px-4 py-6">
+  <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Pesquisas</h1>
+      <p class="text-sm text-gray-500">
+        Formulários exibidos como modal na entrada do app, para o público escolhido em cada
+        pesquisa. Responder nunca é obrigatório — o aluno pode dispensar.
+      </p>
+    </div>
+    <a
+      routerLink="/admin/pesquisas/nova"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+      >Nova pesquisa</a
+    >
+  </header>
+
+  @if (isLoading()) {
+    <p class="py-16 text-center text-gray-500">Carregando…</p>
+  } @else if (pesquisas().length === 0) {
+    <div class="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+      <p class="text-sm font-medium text-gray-700">Nenhuma pesquisa criada ainda.</p>
+      <p class="mt-1 text-sm text-gray-500">
+        Crie uma para descobrir o que os alunos querem antes de construir.
+      </p>
+    </div>
+  } @else {
+    <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+      <table class="w-full min-w-[720px] border-collapse">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <th class="px-3 py-3">Pesquisa</th>
+            <th class="px-3 py-3">Público</th>
+            <th class="px-3 py-3">Status</th>
+            <th class="px-3 py-3 text-right">Perg.</th>
+            <th class="px-3 py-3 text-right">Resp.</th>
+            <th class="px-3 py-3 text-right">Disp.</th>
+            <th class="px-3 py-3">Criada</th>
+            <th class="px-3 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pesquisasPagina(); track p.id) {
+            <tr class="border-b border-gray-100 text-sm last:border-b-0" [class.opacity-60]="!p.ativa">
+              <td class="px-3 py-3">
+                <a
+                  class="font-medium text-gray-900 hover:text-blue-600"
+                  [routerLink]="['/admin/pesquisas', p.id]"
+                  >{{ p.titulo }}</a
+                >
+                @if (p.descricao) {
+                  <p class="mt-0.5 max-w-[16rem] truncate text-xs text-gray-500">{{ p.descricao }}</p>
+                }
+              </td>
+              <td class="px-3 py-3 text-gray-600">{{ segmentoLabel(p.segmento) }}</td>
+              <td class="px-3 py-3">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
+                  [class]="p.ativa ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full" [class]="p.ativa ? 'bg-green-500' : 'bg-gray-400'"></span>
+                  {{ p.ativa ? 'No ar' : 'Rascunho' }}
+                </span>
+              </td>
+              <td class="px-3 py-3 text-right tabular-nums text-gray-600">{{ p.total_perguntas }}</td>
+              <td class="px-3 py-3 text-right tabular-nums font-semibold text-gray-900">{{ p.total_respostas }}</td>
+              <td class="px-3 py-3 text-right tabular-nums text-gray-500">{{ p.total_dispensas }}</td>
+              <td class="whitespace-nowrap px-3 py-3 text-xs text-gray-500">{{ formatarData(p.criado_em) }}</td>
+              <td class="px-3 py-3">
+                <div class="flex items-center justify-end gap-0.5">
+                  <a
+                    class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-blue-600"
+                    title="Ver resultados"
+                    [routerLink]="['/admin/pesquisas', p.id, 'resultados']"
+                  >
+                    <app-ui-icon [icon]="iconResultados" [size]="15" />
+                  </a>
+                  <a
+                    class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-blue-600"
+                    title="Editar"
+                    [routerLink]="['/admin/pesquisas', p.id]"
+                  >
+                    <app-ui-icon [icon]="iconEditar" [size]="15" />
+                  </a>
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 transition-colors hover:bg-gray-100 disabled:opacity-40"
+                    [class]="p.ativa ? 'text-green-600' : 'text-gray-500'"
+                    [title]="p.ativa ? 'Despublicar' : 'Publicar'"
+                    [disabled]="processando() === p.id"
+                    (click)="toggleAtiva(p)"
+                  >
+                    <app-ui-icon [icon]="iconPower" [size]="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40"
+                    title="Duplicar como rascunho"
+                    [disabled]="processando() === p.id"
+                    (click)="duplicar(p)"
+                  >
+                    <app-ui-icon [icon]="iconCopiar" [size]="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    title="Deletar"
+                    [disabled]="!!processando()"
+                    (click)="solicitarDelete(p)"
+                  >
+                    <app-ui-icon [icon]="iconTrash" [size]="15" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-admin-pagination
+      [page]="pagina()"
+      [totalItems]="pesquisas().length"
+      [pageSize]="pageSize"
+      (pageChange)="pagina.set($event)"
+    />
+  }
+</div>
+
+@if (paraDeletar()) {
+  <app-ui-confirm-dialog
+    titulo="Deletar pesquisa"
+    [mensagem]="mensagemDelete()"
+    labelConfirmar="Deletar"
+    variante="danger"
+    (confirmar)="confirmarDelete()"
+    (cancelar)="cancelarDelete()"
+  />
+}

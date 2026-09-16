@@ -370,6 +370,18 @@ dela e mantém o contrato antigo (NULL para quem não paga).
 * **Validade na caixa**: notificação in-app lida deixa de ser exibida 7 dias
   depois da leitura (`notificacoes.lida_em`), para a caixa não acumular
   histórico. Não lida nunca expira, e nada é apagado do banco.
+* **Pesquisas in-app**: formulários exibidos como modal na entrada do app
+  (`/admin/pesquisas`), com os mesmos segmentos dos avisos e uma janela
+  opcional (`pesquisa.encerra_em`). **Responder nunca é obrigatório** — fechar,
+  Esc ou "Agora não" dispensam a pesquisa de vez para aquele usuário; perguntas
+  podem ser marcadas como obrigatórias, mas só valem para quem escolheu
+  responder. Uma resposta por aluno por pesquisa, sem edição depois de enviada.
+  Pergunta deixada em branco não vira linha, então "não respondeu" e "respondeu
+  vazio" não se confundem no resultado. A partir da primeira resposta a
+  estrutura fica congelada: mudar as perguntas exige duplicar a pesquisa.
+* **Prioridade dos modais na entrada**: dados obrigatórios → tour de onboarding
+  → aviso → pesquisa. Nunca dois ao mesmo tempo; a pesquisa é a última da fila
+  porque é a única que pede algo em troca de nada.
 * **Segmentação de comunicação**: avisos (`avisos.segmento`) e notificações
   in-app (`admin_enviar_notificacao(p_segmento)`) filtram por nível
   (`todos | pagantes | gratuitos | essencial | avancado`), para conteúdo de

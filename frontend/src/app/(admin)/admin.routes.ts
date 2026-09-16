@@ -120,6 +120,38 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'pesquisas',
+    title: 'Admin · Pesquisas',
+    loadComponent: () =>
+      import('./pesquisas/admin-pesquisas.component').then(
+        (m) => m.AdminPesquisasComponent,
+      ),
+  },
+  {
+    path: 'pesquisas/nova',
+    title: 'Admin · Nova pesquisa',
+    loadComponent: () =>
+      import('./pesquisas/editor/admin-pesquisa-editor.component').then(
+        (m) => m.AdminPesquisaEditorComponent,
+      ),
+  },
+  {
+    path: 'pesquisas/:id',
+    title: 'Admin · Editar pesquisa',
+    loadComponent: () =>
+      import('./pesquisas/editor/admin-pesquisa-editor.component').then(
+        (m) => m.AdminPesquisaEditorComponent,
+      ),
+  },
+  {
+    path: 'pesquisas/:id/resultados',
+    title: 'Admin · Resultados da pesquisa',
+    loadComponent: () =>
+      import('./pesquisas/resultados/admin-pesquisa-resultados.component').then(
+        (m) => m.AdminPesquisaResultadosComponent,
+      ),
+  },
+  {
     path: 'notificacoes',
     title: 'Admin · Notificações',
     loadComponent: () =>

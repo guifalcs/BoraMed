@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpen,
   ChevronDown,
+  ClipboardList,
   DollarSign,
   Receipt,
   FileText,
@@ -124,6 +125,7 @@ export class AdminComponent {
       icon: MessageSquare,
       children: [
         { label: 'Avisos', icon: Bell, route: '/admin/avisos' },
+        { label: 'Pesquisas', icon: ClipboardList, route: '/admin/pesquisas' },
         { label: 'Notificações', icon: Send, route: '/admin/notificacoes' },
         { label: 'Campanhas', icon: Mail, route: '/admin/campanhas' },
         { label: 'Suporte', icon: Headphones, route: '/admin/suporte' },
