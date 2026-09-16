@@ -91,7 +91,10 @@
         </div>
       } @else {
         @for (q of questoesFiltradas(); track q.id; let i = $index) {
-          <div class="space-y-3">
+          <!-- Marcado para o observador saber qual questão está sendo lida:
+               é o alvo do "limpar" do estojo, já que a revisão lista a prova
+               inteira numa página só. -->
+          <div class="space-y-3" #cartaoQuestao [attr.data-questao-id]="q.id">
             <app-questao-card
               [questao]="q"
               [numero]="i + 1"
@@ -123,3 +126,8 @@
     </div>
   }
 </div>
+
+<!-- Grifos da prova: ficam à vista na revisão, e o estojo só apaga. -->
+@if (mostrarGrifos()) {
+  <app-grifo-toolbar [questaoId]="questaoEmLeitura()" [somenteBorracha]="true" />
+}

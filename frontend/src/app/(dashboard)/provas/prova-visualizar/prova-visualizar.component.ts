@@ -1,16 +1,21 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  OnDestroy,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
+  viewChildren,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChevronLeft, Printer } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { AnotacaoQuestaoService } from '../../../core/services/anotacao-questao.service';
+import { GrifoService } from '../../../core/services/grifo.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import { SubscriptionService } from '../../../core/services/subscription.service';
@@ -23,14 +28,15 @@ import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-ano
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UpgradeBadgeComponent } from '../../../shared/components/upgrade-badge/upgrade-badge.component';
+import { GrifoToolbarComponent } from '../../../shared/components/grifo-toolbar/grifo-toolbar.component';
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent, GrifoToolbarComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProvaVisualizarComponent {
+export class ProvaVisualizarComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly tentativaService = inject(TentativaService);
   private readonly anotacaoService = inject(AnotacaoQuestaoService);
@@ -38,6 +44,8 @@ export class ProvaVisualizarComponent {
   private readonly nav = inject(NavigationProgressService);
   private readonly subscription = inject(SubscriptionService);
   private readonly paywall = inject(PaywallService);
+  private readonly grifos = inject(GrifoService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
    * Impressão é benefício de assinante. `false` enquanto o nível é desconhecido
@@ -73,6 +81,26 @@ export class ProvaVisualizarComponent {
 
   protected readonly mostrarAnotacoes = computed(() => !!this.tentativaId());
 
+  // ---- Grifos da prova ----
+  /**
+   * O que o aluno grifou durante o simulado continua à vista aqui. O estojo só
+   * oferece borracha: grifar na revisão misturaria o que foi marcado sob o
+   * relógio com o que foi marcado depois, já lendo o gabarito.
+   */
+  protected readonly mostrarGrifos = computed(
+    () => !!this.tentativaId() && this.grifos.totalGrifos() > 0,
+  );
+
+  /**
+   * A revisão lista a prova inteira numa página só, então "limpar esta
+   * questão" precisa saber qual está sendo lida — é a questão mais alta ainda
+   * visível na tela.
+   */
+  protected readonly questaoEmLeitura = signal<string | null>(null);
+  private readonly cartoes = viewChildren<ElementRef<HTMLElement>>('cartaoQuestao');
+  private observer: IntersectionObserver | null = null;
+  private readonly visiveis = new Map<string, number>();
+
   protected readonly questoesFiltradas = computed(() => {
     if (this.filtro() !== 'erros') {
       return this.questoes();
@@ -105,7 +133,12 @@ export class ProvaVisualizarComponent {
 
     // Navega instantaneamente; prova + questões são buscadas aqui, sem bloquear
     // a rota (skeleton enquanto carrega).
-    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+    // A tentativa vem da rota, não do estado da navegação: um F5 na revisão
+    // precisa continuar sabendo qual tentativa está sendo revisada.
+    this.tentativaId.set(routeTentativaId);
+
+    if (this.isBrowser) {
+      if (routeTentativaId) this.grifos.iniciar(routeTentativaId);
       void this.nav.track(this.carregar(id, routeTentativaId || null));
       this.hidratarRespostas(id);
       // Fora do caminho crítico: só decide se o botão de imprimir aparece
@@ -113,6 +146,48 @@ export class ProvaVisualizarComponent {
       void this.subscription.statusAcessoServidor();
     }
   }
+
+  ngOnDestroy(): void {
+    this.observer?.disconnect();
+    this.observer = null;
+    this.grifos.encerrar();
+  }
+
+  /** Reobserva os cartões sempre que a lista muda (filtro de erros, carga). */
+  private readonly acompanharCartoes = effect(() => {
+    const cartoes = this.cartoes();
+    if (!this.isBrowser || typeof IntersectionObserver === 'undefined') return;
+
+    this.observer?.disconnect();
+    this.visiveis.clear();
+    if (cartoes.length === 0) {
+      this.questaoEmLeitura.set(null);
+      return;
+    }
+
+    this.observer = new IntersectionObserver(
+      (entradas) => {
+        for (const entrada of entradas) {
+          const id = (entrada.target as HTMLElement).dataset['questaoId'];
+          if (!id) continue;
+          if (entrada.isIntersecting) this.visiveis.set(id, entrada.boundingClientRect.top);
+          else this.visiveis.delete(id);
+        }
+        // A mais alta entre as visíveis é a que o aluno está lendo.
+        let alvo: string | null = null;
+        let menorTopo = Number.POSITIVE_INFINITY;
+        for (const [id, topo] of this.visiveis) {
+          if (topo < menorTopo) {
+            menorTopo = topo;
+            alvo = id;
+          }
+        }
+        this.questaoEmLeitura.set(alvo);
+      },
+      { threshold: 0 },
+    );
+    for (const cartao of cartoes) this.observer.observe(cartao.nativeElement);
+  });
 
   protected abrirPaywallImpressao(): void {
     this.paywall.abrir('impressao');

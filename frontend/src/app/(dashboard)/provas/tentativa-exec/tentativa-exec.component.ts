@@ -919,7 +919,8 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     if (result.ok) {
       this._finalizado = true;
       this.limparEliminadasSalvas();
-      this.grifos.descartar();
+      // Os grifos NÃO são apagados aqui: eles seguem para a revisão, onde o
+      // aluno vê o que marcou durante a prova e pode apagar.
       this.tentativaService.setLastResultado(result.data);
       void this.router.navigate([
         '/dashboard/simulados',

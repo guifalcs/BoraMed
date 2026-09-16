@@ -572,3 +572,98 @@ test.describe('Marca-texto na execução da prova', () => {
     await expect(pegarMarcaTexto(page)).toBeVisible();
   });
 });
+
+/**
+ * Revisão pós-prova: o que o aluno grifou durante o simulado continua à vista,
+ * e o estojo vira só borracha — grifar ali misturaria o que foi marcado sob o
+ * relógio com o que foi marcado depois, já lendo o gabarito.
+ */
+test.describe('Marca-texto na revisão pós-prova', () => {
+  const URL_REVISAO = `${URL_TENTATIVA}/revisao`;
+  const INICIO = ENUNCIADO.indexOf('conduta inicial');
+  const FIM = INICIO + 'conduta inicial'.length;
+
+  /** Estado que a execução deixou no navegador ao finalizar a prova. */
+  const grifosSalvos = JSON.stringify({
+    v: 2,
+    atualizado_em: Date.now(),
+    questoes: {
+      'q-grifo': [{ bloco: 'enunciado', inicio: INICIO, fim: FIM, cor: '#fde68a' }],
+    },
+  });
+
+  const respostaRevisada = {
+    id: 'resp-1',
+    tentativa_id: 'tent-grifo',
+    questao_id: 'q-grifo',
+    alternativa_id: 'alt-b',
+    correta: true,
+    resposta_texto: null,
+    enviada_em: null,
+    pontos: null,
+    correcao: null,
+    anulada_usuario: false,
+    ordem_na_tentativa: 1,
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await setupMocks(page);
+    await page.route(
+      '**/rest/v1/rpc/get_revisao_tentativa',
+      (route: Route) =>
+        void route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ questoes: [questao], respostas: [respostaRevisada] }),
+        }),
+    );
+    await page.addInitScript(
+      (payload) => localStorage.setItem('bm_grifos_tent-grifo', payload),
+      grifosSalvos,
+    );
+
+    await page.goto(URL_REVISAO);
+    await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('o que foi grifado na prova continua pintado na revisão', async ({ page }) => {
+    await expect.poll(() => grifosNaTela(page)).toEqual({ [AMARELO]: ['conduta inicial'] });
+  });
+
+  test('o estojo da revisão não oferece cor, só borracha', async ({ page }) => {
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+
+    await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Grifar em amarelo' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Escolher outra cor para grifar' })).toHaveCount(
+      0,
+    );
+  });
+
+  test('a borracha apaga o grifo na revisão', async ({ page }) => {
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+
+    const enunciado = await seletorDoEnunciado(page);
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({});
+  });
+
+  test('limpar tira todos os grifos da questão em leitura', async ({ page }) => {
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+
+    await page.getByRole('button', { name: 'Limpar todos os grifos desta questão' }).click();
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({});
+  });
+
+  test('sem grifo salvo, a revisão não mostra estojo nenhum', async ({ page }) => {
+    // O `addInitScript` do beforeEach re-semeia o storage a cada carga; um
+    // segundo script, registrado depois, roda em seguida e limpa.
+    await page.addInitScript(() => localStorage.removeItem('bm_grifos_tent-grifo'));
+    await page.reload();
+    await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.getByRole('button', { name: 'Apagar grifos' })).toHaveCount(0);
+  });
+});

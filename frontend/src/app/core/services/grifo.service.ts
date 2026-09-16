@@ -34,6 +34,10 @@ const VALIDADE_MS = 30 * 24 * 60 * 60 * 1000;
  * resultado ou estatística de questão. A diferença é o `localStorage` em vez do
  * `sessionStorage` — a tentativa pode ser pausada e retomada dias depois, e
  * perder a leitura grifada de uma prova inteira ao fechar a aba doeria.
+ *
+ * Finalizar a prova NÃO apaga os grifos: eles seguem para a revisão, onde o
+ * aluno vê o que marcou e pode apagar. Quem recolhe o lixo é a varredura de
+ * 30 dias em `limparExpirados`.
  */
 @Injectable({ providedIn: 'root' })
 export class GrifoService {
@@ -136,21 +140,7 @@ export class GrifoService {
     this.atualizarQuestao(questaoId, () => []);
   }
 
-  /** Finalizou a prova: o rascunho não serve mais para nada. */
-  descartar(): void {
-    const id = this.tentativaId;
-    this._grifos.set(new Map());
-    this.modoAtivo.set(false);
-    this.tentativaId = null;
-    if (!this.isBrowser || !id) return;
-    try {
-      localStorage.removeItem(GRIFOS_KEY_PREFIX + id);
-    } catch {
-      // Sem storage não há o que limpar.
-    }
-  }
-
-  /** Sai da tela mantendo o que foi grifado (tentativa pausada). */
+  /** Sai da tela mantendo o que foi grifado (tentativa pausada ou revisada). */
   encerrar(): void {
     this.modoAtivo.set(false);
     this.tentativaId = null;
@@ -171,7 +161,7 @@ export class GrifoService {
     this.salvar();
   }
 
-  /** Paleta é preferência do aluno: sobrevive à tentativa e ao `descartar`. */
+  /** Paleta é preferência do aluno: sobrevive ao fim da tentativa. */
   private lerPaleta(): void {
     if (!this.isBrowser) return;
     try {

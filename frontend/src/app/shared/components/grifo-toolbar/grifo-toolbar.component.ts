@@ -41,6 +41,13 @@ export class GrifoToolbarComponent {
   questaoId = input<string | null>(null);
 
   /**
+   * Revisão pós-prova: os grifos feitos durante o simulado ficam à vista, mas
+   * o estojo só oferece borracha e limpar. Grifar ali misturaria o que o aluno
+   * marcou sob o relógio com o que marcou depois, lendo o gabarito.
+   */
+  somenteBorracha = input(false);
+
+  /**
    * Atalhos da paleta. O resto do espectro sai do seletor de cor ao lado —
    * quatro botões cobrem o uso comum sem virar um leque de tinta na tela.
    * A amostra é a própria cor que pinta o texto: o botão prevê o resultado.
@@ -72,6 +79,13 @@ export class GrifoToolbarComponent {
       ? 'Selecione o trecho para apagar o grifo'
       : 'Selecione o trecho para grifar',
   );
+
+  protected readonly rotuloToggle = computed(() => {
+    if (this.somenteBorracha()) {
+      return this.ativo() ? 'Guardar a borracha' : 'Apagar grifos';
+    }
+    return this.ativo() ? 'Guardar o marca-texto' : 'Pegar o marca-texto';
+  });
 
   protected readonly temGrifosNaQuestao = computed(() => {
     const id = this.questaoId();
@@ -137,6 +151,11 @@ export class GrifoToolbarComponent {
 
   protected readonly classesToggle = computed(() => {
     const base = 'flex h-9 w-9 items-center justify-center rounded-full transition-colors';
+    if (this.somenteBorracha()) {
+      return this.ativo()
+        ? `${base} bg-[var(--color-surface-2)] text-[var(--color-text)] ring-2 ring-[var(--color-text)]`
+        : `${base} bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]`;
+    }
     return this.ativo()
       ? `${base} shadow-inner`
       : `${base} bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]`;
@@ -157,6 +176,11 @@ export class GrifoToolbarComponent {
   }
 
   protected toggle(): void {
+    // Na revisão a única ferramenta é a borracha: pegar o estojo já a entrega.
+    if (this.somenteBorracha() && !this.grifo.modoAtivo()) {
+      this.grifo.selecionarFerramenta('borracha');
+      return;
+    }
     this.grifo.toggleModo();
   }
 

@@ -41,17 +41,17 @@
     <button
       type="button"
       [class]="classesToggle()"
-      [style.background-color]="ativo() ? corDoBotao() : null"
-      [style.color]="ativo() ? corDoIcone() : null"
+      [style.background-color]="ativo() && !somenteBorracha() ? corDoBotao() : null"
+      [style.color]="ativo() && !somenteBorracha() ? corDoIcone() : null"
       [attr.aria-pressed]="ativo()"
-      [attr.aria-label]="ativo() ? 'Guardar o marca-texto' : 'Pegar o marca-texto'"
-      [title]="ativo() ? 'Guardar o marca-texto (G)' : 'Grifar trechos (G)'"
+      [attr.aria-label]="rotuloToggle()"
+      [title]="rotuloToggle()"
       (click)="toggle()"
     >
-      <app-ui-icon [icon]="iconGrifar" [size]="17" />
+      <app-ui-icon [icon]="somenteBorracha() ? iconBorracha : iconGrifar" [size]="17" />
     </button>
 
-    @if (ativo()) {
+    @if (ativo() && !somenteBorracha()) {
       <div class="mx-0.5 h-6 w-px shrink-0 bg-[var(--color-border)]"></div>
 
       <!-- Atalhos de cor -->
@@ -111,19 +111,21 @@
       >
         <app-ui-icon [icon]="iconBorracha" [size]="17" />
       </button>
+    }
 
-      <!-- Limpar a questão inteira -->
-      @if (temGrifosNaQuestao()) {
-        <button
-          type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700"
-          aria-label="Limpar todos os grifos desta questão"
-          title="Limpar os grifos desta questão"
-          (click)="limparQuestao()"
-        >
-          <app-ui-icon [icon]="iconLimpar" [size]="16" />
-        </button>
-      }
+    <!-- Limpar a questão inteira. Vale nos dois modos: na revisão é o caminho
+         rápido para tirar tudo de uma questão sem passar a borracha trecho a
+         trecho. -->
+    @if (ativo() && temGrifosNaQuestao()) {
+      <button
+        type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700"
+        aria-label="Limpar todos os grifos desta questão"
+        title="Limpar os grifos desta questão"
+        (click)="limparQuestao()"
+      >
+        <app-ui-icon [icon]="iconLimpar" [size]="16" />
+      </button>
     }
   </div>
 </div>

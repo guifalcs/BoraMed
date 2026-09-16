@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 | Feature | Grifos seguem para a revisão pós-prova, com borracha
+
+**O que o aluno grifou durante o simulado continua à vista depois, e pode ser apagado**
+
+- **Finalizar a prova não apaga mais os grifos.** Eles eram descartados no `confirmarFinalizacao`; agora seguem no `localStorage` e a revisão (`/revisao`) os pinta por cima da prova já corrigida. Quem recolhe o lixo continua sendo a varredura de 30 dias.
+- **Na revisão o estojo só apaga**: borracha e "limpar esta questão", sem paleta, sem espectro. Grifar ali misturaria o que foi marcado sob o relógio com o que foi marcado depois, já lendo o gabarito — e essa é justamente a informação que o grifo carrega. O estojo nem aparece se não houver grifo salvo.
+- **"Limpar" age sobre a questão em leitura.** A revisão lista a prova inteira numa página só, então não existe "questão atual" como na execução: um `IntersectionObserver` elege a mais alta ainda visível. Mantém a semântica da execução em vez de inventar um "limpar tudo" destrutivo.
+- **A tentativa da revisão passou a vir da rota**, não do estado da navegação. Ela só era preenchida em quem chegava pela tela de resultado — num F5 ou link direto o componente ficava sem `tentativaId`. Isso é o que os grifos precisavam para carregar, e de quebra conserta as **anotações**, que pelo mesmo motivo sumiam ao recarregar a revisão.
+- Verificado: **24 e2e** (5 novos cobrindo a revisão: grifo pintado, estojo sem cor, borracha apagando, limpar, e a ausência de estojo sem grifo) e 915 unitários. Conferido ponta a ponta contra o stack local: grifar → finalizar → revisão.
+
 ## 2026-09-16 | Feature | Marca-texto aceita o espectro inteiro de cores
 
 **A paleta deixou de ser uma lista de quatro e passou a ser um seletor de cor**
