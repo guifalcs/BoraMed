@@ -189,13 +189,9 @@ export class GrifoToolbarComponent {
       : `${base} ring-1 ring-black/10 hover:scale-105`;
   }
 
+  /** Mesma semântica do atalho `G`: com a borracha na mão, devolve a caneta. */
   protected toggle(): void {
-    // Na revisão a única ferramenta é a borracha: pegar o estojo já a entrega.
-    if (this.somenteBorracha() && !this.grifo.modoAtivo()) {
-      this.grifo.selecionarFerramenta('borracha');
-      return;
-    }
-    this.grifo.toggleModo();
+    this.grifo.alternarCaneta();
   }
 
   protected escolher(ferramenta: FerramentaGrifo): void {

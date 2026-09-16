@@ -637,6 +637,50 @@ test.describe('Marca-texto na execução da prova', () => {
     await expect(pegarMarcaTexto(page)).toBeVisible();
   });
 
+  test('depois do Shift + G, o G devolve a caneta em vez de guardar', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByRole('button', { name: 'Grifar em azul' }).click();
+
+    await page.keyboard.press('Shift+G');
+    await expect(
+      page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    await page.keyboard.press('g');
+
+    // Volta a caneta, na cor que estava antes — sem precisar clicar na paleta.
+    await expect(page.getByRole('button', { name: 'Grifar em azul' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+
+    const enunciado = await seletorDoEnunciado(page);
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+    expect(await grifosNaTela(page)).toEqual({ [AZUL]: ['conduta inicial'] });
+  });
+
+  test('o botão principal também devolve a caneta com a borracha na mão', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }).click();
+
+    await page.getByRole('button', { name: 'Guardar o marca-texto' }).click();
+
+    await expect(page.getByRole('button', { name: 'Grifar em amarelo' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+  });
+
+  test('com a caneta na mão, o G segue guardando o marca-texto', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+
+    await page.keyboard.press('g');
+
+    await expect(pegarMarcaTexto(page)).toBeVisible();
+  });
+
   test('G digitado num campo de texto não vira atalho', async ({ page }) => {
     // A questão discursiva tem textarea; aqui basta um campo qualquer na tela.
     await page.evaluate(() => {

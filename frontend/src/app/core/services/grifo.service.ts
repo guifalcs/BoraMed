@@ -92,8 +92,33 @@ export class GrifoService {
     this.limparExpirados();
   }
 
-  toggleModo(): void {
-    this.modoAtivo.update((v) => !v);
+  /**
+   * "Pegar o marca-texto" — o atalho `G` e o botão principal do estojo.
+   *
+   * Com a borracha na mão, isto **devolve a caneta** na última cor em vez de
+   * guardar tudo: quem pede o marca-texto quer grifar, e obrigá-lo a clicar
+   * numa cor depois seria o passo que o atalho deveria ter economizado.
+   * Na revisão não existe caneta, então vira o liga/desliga da borracha.
+   */
+  alternarCaneta(): void {
+    if (this.escopo() === 'revisao') {
+      this.alternarBorracha();
+      return;
+    }
+    if (this.modoAtivo() && !this.borrachaAtiva()) {
+      this.modoAtivo.set(false);
+      return;
+    }
+    this.selecionarFerramenta(this.corAtual());
+  }
+
+  /** Espelho do anterior para a borracha (`Shift + G`). */
+  alternarBorracha(): void {
+    if (this.modoAtivo() && this.borrachaAtiva()) {
+      this.modoAtivo.set(false);
+      return;
+    }
+    this.selecionarFerramenta('borracha');
   }
 
   selecionarFerramenta(ferramenta: FerramentaGrifo): void {

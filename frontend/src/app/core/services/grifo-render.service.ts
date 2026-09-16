@@ -273,15 +273,8 @@ export class GrifoRenderService {
     if (this.processarSelecao(true, borracha ? 'borracha' : null)) return;
 
     // Sem seleção, o atalho entrega a ferramenta.
-    if (!borracha) {
-      this.grifoService.toggleModo();
-      return;
-    }
-    if (this.grifoService.modoAtivo() && this.grifoService.borrachaAtiva()) {
-      this.grifoService.modoAtivo.set(false);
-    } else {
-      this.grifoService.selecionarFerramenta('borracha');
-    }
+    if (borracha) this.grifoService.alternarBorracha();
+    else this.grifoService.alternarCaneta();
   };
 
   private ouvir(): void {

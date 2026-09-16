@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-16 | Fix | Voltar da borracha para a caneta sem clicar na paleta
+
+**Depois do `Shift + G`, o `G` só ligava e desligava o modo — a borracha continuava na mão**
+
+- **Sintoma:** usou `Shift + G`, quis voltar a grifar e apertou `G`: o modo desligava e religava **ainda com a borracha**, obrigando a clicar numa cor na paleta. O mesmo acontecia pelo botão principal do estojo.
+- **Causa:** `G` e o botão chamavam um `toggleModo()` que mexia só em ligado/desligado e nunca na ferramenta. Quem trocava de ferramenta era só a paleta.
+- **Correção:** os dois passaram a significar "pegar o marca-texto". Com a borracha na mão, **devolvem a caneta na última cor usada**; com a caneta na mão, guardam. `Shift + G` é o espelho disso para a borracha. A regra ficou no `GrifoService` (`alternarCaneta` / `alternarBorracha`), então teclado e botão não podem mais divergir — era exatamente essa divergência que deixava o botão com o mesmo defeito.
+- Verificado: **37 e2e** (3 novos: o ciclo caneta → borracha → caneta pelo teclado, o mesmo pelo botão, e o `G` seguindo guardar quando já está com a caneta). Conferido no stack real: verde → `Shift + G` → `G` volta em verde → `G` guarda.
+
 ## 2026-09-16 | Feature | Shift + G vai direto na borracha
 
 **O outro lado da mesma tecla: `G` pinta, `Shift + G` apaga**
