@@ -196,21 +196,27 @@ async function setupMocks(page: Page): Promise<string[]> {
   return respostasSalvas;
 }
 
-/** Trechos pintados agora, por cor. Lê a CSS Custom Highlight API direto. */
+/**
+ * Trechos pintados agora, indexados pela cor (hex). Lê a CSS Custom Highlight
+ * API direto e varre o registro inteiro: a cor é livre, então não existe lista
+ * fechada de nomes para consultar.
+ */
 async function grifosNaTela(page: Page): Promise<Record<string, string[]>> {
   return page.evaluate(() => {
-    const cores = ['amarelo', 'verde', 'azul', 'rosa'];
     const saida: Record<string, string[]> = {};
-    for (const cor of cores) {
-      const highlight = CSS.highlights.get(`bm-grifo-${cor}`);
-      if (!highlight) continue;
+    for (const [nome, highlight] of CSS.highlights) {
+      if (!nome.startsWith('bm-grifo-')) continue;
       const trechos: string[] = [];
       for (const range of highlight) trechos.push((range as Range).toString());
-      if (trechos.length) saida[cor] = trechos;
+      if (trechos.length) saida[`#${nome.slice('bm-grifo-'.length)}`] = trechos;
     }
     return saida;
   });
 }
+
+const AMARELO = '#fde68a';
+const VERDE = '#a7f3d0';
+const AZUL = '#bfdbfe';
 
 /**
  * Seleciona um trecho exato de um bloco. É o que o navegador monta quando o
@@ -271,18 +277,23 @@ const pegarMarcaTexto = (page: Page) => page.getByRole('button', { name: 'Pegar 
 /** Cursor desenhado sobre o texto grifável: é SVG, e a ponta carrega a cor. */
 async function cursorDoTextoGrifavel(
   page: Page,
+  seletor: string,
 ): Promise<{ temDesenho: boolean; ponta: string | null; fallback: string }> {
-  return page.evaluate(() => {
-    const alvo = document.querySelector('[class*="bm-caneta-"]');
+  return page.evaluate((seletor) => {
+    const alvo = document.querySelector(seletor);
     if (!alvo) throw new Error('nenhum bloco grifável na tela');
     const cursor = getComputedStyle(alvo).cursor;
-    const fills = [...cursor.matchAll(/fill='%23([0-9a-f]{6})'/g)].map((m) => m[1]!);
+    // O SVG chega percent-encoded dentro do `url()`; decodificar é o jeito
+    // estável de ler a cor da ponta sem depender de qual caractere escapou.
+    const fills = [...decodeURIComponent(cursor).matchAll(/fill='#([0-9a-f]{6})'/g)].map(
+      (m) => m[1]!,
+    );
     return {
       temDesenho: cursor.startsWith('url('),
       ponta: fills[fills.length - 1] ?? null,
       fallback: cursor.split(',').pop()!.trim(),
     };
-  });
+  }, seletor);
 }
 
 test.describe('Marca-texto na execução da prova', () => {
@@ -305,7 +316,7 @@ test.describe('Marca-texto na execução da prova', () => {
 
     await selecionarTrecho(page, enunciado, 'conduta inicial');
 
-    expect(await grifosNaTela(page)).toEqual({ amarelo: ['conduta inicial'] });
+    expect(await grifosNaTela(page)).toEqual({ [AMARELO]: ['conduta inicial'] });
   });
 
   test('cada bloco da questão é grifável e as cores convivem', async ({ page }) => {
@@ -319,8 +330,8 @@ test.describe('Marca-texto na execução da prova', () => {
     await selecionarTrecho(page, enunciado, 'conduta inicial');
 
     expect(await grifosNaTela(page)).toEqual({
-      amarelo: ['dor torácica retroesternal'],
-      verde: ['conduta inicial'],
+      [AMARELO]: ['dor torácica retroesternal'],
+      [VERDE]: ['conduta inicial'],
     });
   });
 
@@ -330,7 +341,7 @@ test.describe('Marca-texto na execução da prova', () => {
 
     await selecionarTrecho(page, apoio, 'dor torácica retroesternal em aperto');
     expect(await grifosNaTela(page)).toEqual({
-      amarelo: ['dor torácica retroesternal em aperto'],
+      [AMARELO]: ['dor torácica retroesternal em aperto'],
     });
 
     await page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }).click();
@@ -338,7 +349,7 @@ test.describe('Marca-texto na execução da prova', () => {
 
     // A borracha leva junto o espaço em volta: sem isso sobrariam dois
     // riscos soltos pintando o branco entre as palavras.
-    expect(await grifosNaTela(page)).toEqual({ amarelo: ['dor torácica', 'em aperto'] });
+    expect(await grifosNaTela(page)).toEqual({ [AMARELO]: ['dor torácica', 'em aperto'] });
   });
 
   test('grifo sobrevive ao F5 no meio da prova', async ({ page }) => {
@@ -350,7 +361,7 @@ test.describe('Marca-texto na execução da prova', () => {
     await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
 
     // A pintura volta sozinha; o modo, não — o marca-texto foi guardado.
-    await expect.poll(() => grifosNaTela(page)).toEqual({ amarelo: ['conduta inicial'] });
+    await expect.poll(() => grifosNaTela(page)).toEqual({ [AMARELO]: ['conduta inicial'] });
     await expect(pegarMarcaTexto(page)).toBeVisible();
   });
 
@@ -378,7 +389,7 @@ test.describe('Marca-texto na execução da prova', () => {
     });
     await selecionarTrecho(page, '[data-e2e="bloco-alt-b"]', 'terapia de reperfusao');
 
-    expect(await grifosNaTela(page)).toEqual({ amarelo: ['terapia de reperfusao'] });
+    expect(await grifosNaTela(page)).toEqual({ [AMARELO]: ['terapia de reperfusao'] });
     expect(respostas).toEqual([]);
     await expect(
       page.getByRole('radio', { name: `Alternativa B: ${textosAlternativas['B']}` }),
@@ -429,30 +440,82 @@ test.describe('Marca-texto na execução da prova', () => {
 
     await selecionarTrecho(page, enunciado, 'conduta inicial');
 
-    expect(await grifosNaTela(page)).toEqual({ amarelo: ['conduta inicial'] });
+    expect(await grifosNaTela(page)).toEqual({ [AMARELO]: ['conduta inicial'] });
     await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
   });
 
   test('o cursor vira a ferramenta em cima do texto que aceita pintura', async ({ page }) => {
+    const enunciado = await seletorDoEnunciado(page);
+
     // Guardado: cursor normal, nada de caneta sobrando na tela.
-    expect((await cursorDoTextoGrifavel(page)).temDesenho).toBe(false);
+    expect((await cursorDoTextoGrifavel(page, enunciado)).temDesenho).toBe(false);
 
     await pegarMarcaTexto(page).click();
 
-    // `poll`: a classe da ferramenta chega no ciclo do Angular, não no clique.
+    // `poll`: o estilo chega no ciclo do Angular, não no clique.
     // A ponta desenhada carrega a mesma cor que vai pintar o texto.
-    await expect.poll(() => cursorDoTextoGrifavel(page)).toEqual({
+    await expect.poll(() => cursorDoTextoGrifavel(page, enunciado)).toEqual({
       temDesenho: true,
-      ponta: 'fde68a',
+      ponta: AMARELO.slice(1),
       fallback: 'text',
     });
 
     await page.getByRole('button', { name: 'Grifar em azul' }).click();
-    await expect.poll(async () => (await cursorDoTextoGrifavel(page)).ponta).toBe('bfdbfe');
+    await expect
+      .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).ponta)
+      .toBe(AZUL.slice(1));
+
+    // Cor escolhida no espectro também vai para a ponta da caneta.
+    await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+    await expect
+      .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).ponta)
+      .toBe('c084fc');
 
     // A borracha tem desenho próprio: bloco deitado, sem ponta colorida.
     await page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }).click();
-    await expect.poll(async () => (await cursorDoTextoGrifavel(page)).ponta).toBe('cbd5e1');
+    await expect
+      .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).ponta)
+      .toBe('cbd5e1');
+  });
+
+  test('grifa em qualquer cor escolhida no espectro', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    const enunciado = await seletorDoEnunciado(page);
+
+    // Cor fora dos quatro atalhos: sai do seletor de espectro do sistema.
+    await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+
+    expect(await grifosNaTela(page)).toEqual({ '#c084fc': ['conduta inicial'] });
+  });
+
+  test('cor escura vira texto branco, para não apagar o enunciado', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    const enunciado = await seletorDoEnunciado(page);
+
+    await page.getByLabel('Escolher outra cor para grifar').fill('#3b0764');
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+
+    const regra = await page.evaluate(() => {
+      const folha = document.querySelector('style[data-bm="grifos"]');
+      return folha?.textContent ?? '';
+    });
+    expect(regra).toContain('::highlight(bm-grifo-3b0764){background-color:#3b0764;color:#ffffff;}');
+  });
+
+  test('a cor do espectro fica à mão como atalho depois de usada', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
+
+    await expect(page.getByRole('button', { name: 'Grifar na cor #c084fc' })).toBeVisible();
+
+    // Trocar para outro atalho e voltar não perde a cor escolhida.
+    await page.getByRole('button', { name: 'Grifar em verde' }).click();
+    await page.getByRole('button', { name: 'Grifar na cor #c084fc' }).click();
+
+    const enunciado = await seletorDoEnunciado(page);
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+    expect(await grifosNaTela(page)).toEqual({ '#c084fc': ['conduta inicial'] });
   });
 
   test('atalho G pega e guarda o marca-texto', async ({ page }) => {

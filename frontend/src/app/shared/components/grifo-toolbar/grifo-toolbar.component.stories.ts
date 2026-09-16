@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { applicationConfig } from '@storybook/angular';
 import { GrifoToolbarComponent } from './grifo-toolbar.component';
 import { GrifoService } from '../../../core/services/grifo.service';
-import type { FerramentaGrifo } from '../../utils/grifo';
+import { CORES_PADRAO, type FerramentaGrifo } from '../../utils/grifo';
 
 /**
  * O estojo lê o estado direto do `GrifoService`, então cada story empurra o
@@ -57,12 +57,12 @@ export const Guardado: Story = {
 
 /** Aberto na cor padrão. */
 export const ComMarcaTexto: Story = {
-  decorators: [comEstado({ ativo: true, ferramenta: 'amarelo' })],
+  decorators: [comEstado({ ativo: true, ferramenta: CORES_PADRAO[0] })],
 };
 
 /** Outra cor escolhida: o botão principal assume a cor da ponta. */
 export const CorVerde: Story = {
-  decorators: [comEstado({ ativo: true, ferramenta: 'verde' })],
+  decorators: [comEstado({ ativo: true, ferramenta: CORES_PADRAO[1] })],
 };
 
 /** Borracha na mão: a dica muda junto. */
@@ -70,7 +70,13 @@ export const Borracha: Story = {
   decorators: [comEstado({ ativo: true, ferramenta: 'borracha' })],
 };
 
+/** Cor escolhida no espectro: entra como atalho ao lado dos fixos, e o ícone
+ *  do botão principal inverte para branco por cima de uma cor escura. */
+export const CorDoEspectro: Story = {
+  decorators: [comEstado({ ativo: true, ferramenta: '#1d4ed8' })],
+};
+
 /** Questão já grifada: aparece o botão de limpar tudo. */
 export const QuestaoComGrifos: Story = {
-  decorators: [comEstado({ ativo: true, ferramenta: 'azul', questaoGrifada: true })],
+  decorators: [comEstado({ ativo: true, ferramenta: CORES_PADRAO[2], questaoGrifada: true })],
 };

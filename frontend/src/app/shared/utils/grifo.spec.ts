@@ -7,11 +7,17 @@ import {
   desserializarGrifos,
   normalizarGrifos,
   serializarGrifos,
+  normalizarCor,
   temGrifoNoTrecho,
   type Grifo,
 } from './grifo';
 
-const g = (inicio: number, fim: number, cor: Grifo['cor'] = 'amarelo', bloco: Grifo['bloco'] = 'enunciado'): Grifo => ({
+const AMARELO = '#fde68a';
+const VERDE = '#a7f3d0';
+const AZUL = '#bfdbfe';
+const ROSA = '#fbcfe8';
+
+const g = (inicio: number, fim: number, cor: Grifo['cor'] = AMARELO, bloco: Grifo['bloco'] = 'enunciado'): Grifo => ({
   bloco,
   inicio,
   fim,
@@ -28,12 +34,12 @@ describe('normalizarGrifos', () => {
   });
 
   it('não funde cores diferentes', () => {
-    const saida = normalizarGrifos([g(0, 5, 'amarelo'), g(5, 10, 'verde')]);
+    const saida = normalizarGrifos([g(0, 5, AMARELO), g(5, 10, VERDE)]);
     expect(saida).toHaveLength(2);
   });
 
   it('não funde blocos diferentes', () => {
-    const saida = normalizarGrifos([g(0, 5, 'amarelo', 'enunciado'), g(5, 10, 'amarelo', 'apoio')]);
+    const saida = normalizarGrifos([g(0, 5, AMARELO, 'enunciado'), g(5, 10, AMARELO, 'apoio')]);
     expect(saida).toHaveLength(2);
   });
 
@@ -57,7 +63,7 @@ describe('apagarTrecho', () => {
   });
 
   it('não toca em grifo de outro bloco', () => {
-    const grifos = [g(0, 10, 'amarelo', 'apoio')];
+    const grifos = [g(0, 10, AMARELO, 'apoio')];
     expect(apagarTrecho(grifos, 'enunciado', 0, 10)).toEqual(grifos);
   });
 
@@ -68,8 +74,8 @@ describe('apagarTrecho', () => {
 
 describe('aplicarGrifo', () => {
   it('a última passada manda: cor nova apaga a antiga no trecho coberto', () => {
-    const saida = aplicarGrifo([g(0, 20, 'amarelo')], g(5, 10, 'verde'));
-    expect(saida).toEqual([g(0, 5, 'amarelo'), g(5, 10, 'verde'), g(10, 20, 'amarelo')]);
+    const saida = aplicarGrifo([g(0, 20, AMARELO)], g(5, 10, VERDE));
+    expect(saida).toEqual([g(0, 5, AMARELO), g(5, 10, VERDE), g(10, 20, AMARELO)]);
   });
 
   it('regrifar a mesma cor por cima vira um bloco só', () => {
@@ -106,8 +112,8 @@ describe('serialização', () => {
     // A leitura devolve normalizado (ordenado por bloco/offset), então a
     // comparação é contra o normalizado — não contra a ordem de digitação.
     const mapa = new Map<string, Grifo[]>([
-      ['q1', [g(0, 10, 'amarelo'), g(20, 30, 'azul', 'alt:abc')]],
-      ['q2', [g(5, 9, 'rosa', 'apoio')]],
+      ['q1', [g(0, 10, AMARELO), g(20, 30, AZUL, 'alt:abc')]],
+      ['q2', [g(5, 9, ROSA, 'apoio')]],
     ]);
     const esperado = new Map(
       [...mapa].map(([questaoId, grifos]) => [questaoId, normalizarGrifos(grifos)]),
@@ -137,12 +143,46 @@ describe('serialização', () => {
       questoes: {
         q1: [
           { bloco: 'enunciado', inicio: 0, fim: 5, cor: 'roxo' },
-          { bloco: 'lugar-nenhum', inicio: 0, fim: 5, cor: 'amarelo' },
-          { bloco: 'enunciado', inicio: 10, fim: 4, cor: 'verde' },
-          { bloco: 'enunciado', inicio: 10, fim: 20, cor: 'verde' },
+          { bloco: 'lugar-nenhum', inicio: 0, fim: 5, cor: AMARELO },
+          { bloco: 'enunciado', inicio: 10, fim: 4, cor: VERDE },
+          { bloco: 'enunciado', inicio: 10, fim: 20, cor: VERDE },
         ],
       },
     });
-    expect(desserializarGrifos(salvo).get('q1')).toEqual([g(10, 20, 'verde')]);
+    expect(desserializarGrifos(salvo).get('q1')).toEqual([g(10, 20, VERDE)]);
+  });
+});
+
+describe('normalizarCor', () => {
+  it('aceita hex de 6 dígitos em qualquer caixa', () => {
+    expect(normalizarCor('#AABBCC')).toBe('#aabbcc');
+  });
+
+  it('expande o atalho de 3 dígitos', () => {
+    expect(normalizarCor('#fc0')).toBe('#ffcc00');
+  });
+
+  it('recusa o que não é cor', () => {
+    expect(normalizarCor('amarelo')).toBeNull();
+    expect(normalizarCor('rgb(1,2,3)')).toBeNull();
+    expect(normalizarCor('#12345')).toBeNull();
+  });
+});
+
+describe('migração do formato v1 (cores por nome)', () => {
+  it('traduz os nomes antigos para hex, sem perder grifo de prova pausada', () => {
+    const v1 = JSON.stringify({
+      v: 1,
+      questoes: { q1: [{ bloco: 'enunciado', inicio: 0, fim: 8, cor: 'rosa' }] },
+    });
+    expect(desserializarGrifos(v1).get('q1')).toEqual([g(0, 8, ROSA)]);
+  });
+
+  it('descarta nome que nunca existiu', () => {
+    const v1 = JSON.stringify({
+      v: 1,
+      questoes: { q1: [{ bloco: 'enunciado', inicio: 0, fim: 8, cor: 'roxo' }] },
+    });
+    expect(desserializarGrifos(v1).size).toBe(0);
   });
 });

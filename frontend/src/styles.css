@@ -93,29 +93,13 @@ input {
 
 /* ── Marca-texto da prova (grifos do aluno) ──────────── */
 
-/* Pintura via CSS Custom Highlight API: os trechos grifados são desenhados por
-   cima do texto, sem nenhum nó extra no DOM. É o que permite grifar em cima do
-   Markdown já renderizado sem quebrar a marcação do enunciado.
-   Os nomes casam com `nomeHighlight()` em core/services/grifo-render.service.ts
-   e as cores com a paleta de grifo-toolbar.component.ts.
-   `::highlight()` só aceita cor, fundo, sombra e decoração de texto — por isso
-   o destaque é fundo sólido, sem borda nem arredondamento. */
-::highlight(bm-grifo-amarelo) {
-  background-color: #fde68a;
-  color: #0f172a;
-}
-::highlight(bm-grifo-verde) {
-  background-color: #a7f3d0;
-  color: #0f172a;
-}
-::highlight(bm-grifo-azul) {
-  background-color: #bfdbfe;
-  color: #0f172a;
-}
-::highlight(bm-grifo-rosa) {
-  background-color: #fbcfe8;
-  color: #0f172a;
-}
+/* A pintura usa a CSS Custom Highlight API: os trechos grifados são desenhados
+   por cima do texto, sem nenhum nó extra no DOM. É o que permite grifar em cima
+   do Markdown já renderizado sem quebrar a marcação do enunciado.
+   As regras `::highlight()` NÃO moram aqui: a cor é escolhida pelo aluno no
+   espectro, então elas são escritas em tempo de execução, uma por cor em uso,
+   pelo `GrifoRenderService`. O mesmo vale para o cursor de caneta/borracha, que
+   sai de `[style.cursor]` na `GrifavelDirective`. */
 
 /* Com o marca-texto na mão o texto da prova precisa ser selecionável: a
    alternativa tem `select-none` justamente para o long press que a risca não
@@ -123,30 +107,13 @@ input {
 .bm-grifavel-ativo {
   -webkit-user-select: text;
   user-select: text;
-  cursor: text;
 }
 
-/* O cursor vira a própria ferramenta em cima do que dá para pintar — é o aviso
-   mais direto de "aqui o marca-texto pega", e a ponta mostra a cor carregada.
-   As cinco regras são o mesmo desenho trocando o `fill` da ponta (a borracha
-   tem silhueta oposta de propósito: bloco deitado, sem ponta). Não dá para
-   fatorar com `var()`: o conteúdo de um data URI é string opaca para o CSS.
-   O hotspot fica na ponta que encosta no texto, e o `text` no fim é o fallback
-   de quem não desenhar SVG em cursor. Classes vêm de `GrifavelDirective`. */
-.bm-grifavel-ativo.bm-caneta-amarelo {
-  cursor: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'><g%20transform='rotate%2845%2014%2014%29'><rect%20x='10.25'%20y='2.5'%20width='7.5'%20height='10'%20rx='2'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><rect%20x='8.75'%20y='12'%20width='10.5'%20height='3'%20rx='1'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><path%20d='M10.5%2015h7l-1.25%206.25h-4.5z'%20fill='%23fde68a'%20stroke='%230f172a'%20stroke-width='1.6'%20stroke-linejoin='round'/></g></svg>") 9 20, text;
-}
-.bm-grifavel-ativo.bm-caneta-verde {
-  cursor: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'><g%20transform='rotate%2845%2014%2014%29'><rect%20x='10.25'%20y='2.5'%20width='7.5'%20height='10'%20rx='2'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><rect%20x='8.75'%20y='12'%20width='10.5'%20height='3'%20rx='1'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><path%20d='M10.5%2015h7l-1.25%206.25h-4.5z'%20fill='%23a7f3d0'%20stroke='%230f172a'%20stroke-width='1.6'%20stroke-linejoin='round'/></g></svg>") 9 20, text;
-}
-.bm-grifavel-ativo.bm-caneta-azul {
-  cursor: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'><g%20transform='rotate%2845%2014%2014%29'><rect%20x='10.25'%20y='2.5'%20width='7.5'%20height='10'%20rx='2'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><rect%20x='8.75'%20y='12'%20width='10.5'%20height='3'%20rx='1'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><path%20d='M10.5%2015h7l-1.25%206.25h-4.5z'%20fill='%23bfdbfe'%20stroke='%230f172a'%20stroke-width='1.6'%20stroke-linejoin='round'/></g></svg>") 9 20, text;
-}
-.bm-grifavel-ativo.bm-caneta-rosa {
-  cursor: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'><g%20transform='rotate%2845%2014%2014%29'><rect%20x='10.25'%20y='2.5'%20width='7.5'%20height='10'%20rx='2'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><rect%20x='8.75'%20y='12'%20width='10.5'%20height='3'%20rx='1'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><path%20d='M10.5%2015h7l-1.25%206.25h-4.5z'%20fill='%23fbcfe8'%20stroke='%230f172a'%20stroke-width='1.6'%20stroke-linejoin='round'/></g></svg>") 9 20, text;
-}
-.bm-grifavel-ativo.bm-caneta-borracha {
-  cursor: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'><g%20transform='rotate%28-20%2014%2014%29'><rect%20x='4.5'%20y='9'%20width='19'%20height='10'%20rx='2.5'%20fill='%23ffffff'%20stroke='%230f172a'%20stroke-width='1.6'/><path%20d='M4.5%2014.5h19V16.5a2.5%202.5%200%200%201-2.5%202.5h-14a2.5%202.5%200%200%201-2.5-2.5z'%20fill='%23cbd5e1'%20stroke='%230f172a'%20stroke-width='1.6'%20stroke-linejoin='round'/></g></svg>") 7 20, text;
+/* Anel do seletor de espectro: mostra que dali sai qualquer cor. */
+.bm-espectro {
+  background: conic-gradient(
+    #ef4444, #f59e0b, #fde047, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444
+  );
 }
 
 /* ── Impressão (tela de impressão de simulados) ──────── */

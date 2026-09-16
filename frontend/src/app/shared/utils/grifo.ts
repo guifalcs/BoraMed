@@ -10,13 +10,52 @@
  * `grifo-dom.ts` e o estado em `core/services/grifo.service.ts`.
  */
 
-/** Cores do marca-texto. A ordem é a que aparece na paleta. */
-export const CORES_GRIFO = ['amarelo', 'verde', 'azul', 'rosa'] as const;
+/**
+ * Cor do grifo: hex `#rrggbb` minúsculo. É string livre (o aluno escolhe no
+ * espectro), não um nome de uma lista fechada — quem trava o formato é
+ * `ehCorGrifo`, e quem desenha a regra `::highlight()` correspondente é o
+ * `GrifoRenderService`, em tempo de execução.
+ */
+export type CorGrifo = `#${string}`;
 
-export type CorGrifo = (typeof CORES_GRIFO)[number];
-
-/** Ferramenta ativa na paleta: uma cor ou a borracha. */
+/** Ferramenta ativa: uma cor ou a borracha. O `#` é o que discrimina as duas. */
 export type FerramentaGrifo = CorGrifo | 'borracha';
+
+/** Atalhos da paleta. O resto do espectro sai do seletor de cor. */
+export const CORES_PADRAO = ['#fde68a', '#a7f3d0', '#bfdbfe', '#fbcfe8'] as const satisfies readonly CorGrifo[];
+
+/** Nome dos presets, só para leitor de tela e tooltip. */
+export const NOME_DAS_CORES_PADRAO: Readonly<Record<string, string>> = {
+  '#fde68a': 'amarelo',
+  '#a7f3d0': 'verde',
+  '#bfdbfe': 'azul',
+  '#fbcfe8': 'rosa',
+};
+
+/** Cores do formato antigo (v1), quando a paleta era uma lista de quatro nomes. */
+const CORES_V1: Readonly<Record<string, CorGrifo>> = {
+  amarelo: '#fde68a',
+  verde: '#a7f3d0',
+  azul: '#bfdbfe',
+  rosa: '#fbcfe8',
+};
+
+const HEX = /^#[0-9a-f]{6}$/;
+
+export function ehCorGrifo(valor: unknown): valor is CorGrifo {
+  return typeof valor === 'string' && HEX.test(valor);
+}
+
+/**
+ * Normaliza o que o seletor de cor devolve (`#AABBCC`, 3 dígitos) para o
+ * formato canônico. Devolve `null` para o que não é cor.
+ */
+export function normalizarCor(valor: string): CorGrifo | null {
+  const bruto = valor.trim().toLowerCase();
+  const curto = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(bruto);
+  const hex = curto ? `#${curto[1]}${curto[1]}${curto[2]}${curto[2]}${curto[3]}${curto[3]}` : bruto;
+  return ehCorGrifo(hex) ? hex : null;
+}
 
 /**
  * Identificador do bloco de texto dentro da questão. `alt:<id>` isola cada
@@ -120,8 +159,12 @@ export function temGrifoNoTrecho(
 
 // ---- Serialização (localStorage) ----
 
-/** Versão do formato salvo: um payload de versão diferente é descartado. */
-export const GRIFOS_STORAGE_VERSAO = 1;
+/**
+ * Versão do formato salvo. A 2 guarda a cor em hex; a 1 guardava o nome de uma
+ * das quatro cores fixas e ainda é lida (ver `lerCor`), nunca escrita.
+ */
+export const GRIFOS_STORAGE_VERSAO = 2;
+const VERSOES_LEGIVEIS = [1, 2];
 
 export interface GrifosSalvos {
   readonly v: number;
@@ -130,8 +173,13 @@ export interface GrifosSalvos {
   readonly questoes: Record<string, Grifo[]>;
 }
 
-function corValida(valor: unknown): valor is CorGrifo {
-  return typeof valor === 'string' && (CORES_GRIFO as readonly string[]).includes(valor);
+/**
+ * Aceita a cor do formato atual (hex) e a do v1 (nome), traduzindo a segunda.
+ * Prova pausada antes da paleta virar espectro não pode perder os grifos.
+ */
+function lerCor(valor: unknown): CorGrifo | null {
+  if (typeof valor !== 'string') return null;
+  return CORES_V1[valor] ?? normalizarCor(valor);
 }
 
 function blocoValido(valor: unknown): valor is BlocoGrifo {
@@ -158,7 +206,7 @@ export function desserializarGrifos(raw: string | null): Map<string, Grifo[]> {
 
   if (typeof parsed !== 'object' || parsed === null) return vazio;
   const payload = parsed as Partial<GrifosSalvos>;
-  if (payload.v !== GRIFOS_STORAGE_VERSAO) return vazio;
+  if (typeof payload.v !== 'number' || !VERSOES_LEGIVEIS.includes(payload.v)) return vazio;
   if (typeof payload.questoes !== 'object' || payload.questoes === null) return vazio;
 
   const saida = new Map<string, Grifo[]>();
@@ -168,10 +216,11 @@ export function desserializarGrifos(raw: string | null): Map<string, Grifo[]> {
     for (const item of lista) {
       if (typeof item !== 'object' || item === null) continue;
       const g = item as Partial<Grifo>;
-      if (!blocoValido(g.bloco) || !corValida(g.cor)) continue;
+      const cor = lerCor(g.cor);
+      if (!blocoValido(g.bloco) || cor === null) continue;
       const candidato: Grifo = {
         bloco: g.bloco,
-        cor: g.cor,
+        cor,
         inicio: Number(g.inicio),
         fim: Number(g.fim),
       };

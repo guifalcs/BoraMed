@@ -65,8 +65,14 @@ async function grifar(trecho) {
 await grifar('dor torácica retroesternal em aperto');
 await page.getByRole('button', { name: 'Grifar em verde' }).click();
 await grifar('supradesnivelamento do segmento ST');
-await page.getByRole('button', { name: 'Grifar em rosa' }).click();
+
+// Duas cores fora dos atalhos, vindas do espectro: uma clara e uma escura —
+// a escura precisa inverter o texto para branco, senão apagaria o enunciado.
+await page.getByLabel('Escolher outra cor para grifar').fill('#c084fc');
 await grifar('conduta inicial mais adequada');
+await page.getByLabel('Escolher outra cor para grifar').fill('#1d4ed8');
+await grifar('irradiação para o membro superior esquerdo');
+await page.waitForTimeout(400);
 
 await page.screenshot({ path: `${SAIDA}/grifo-desktop.png` });
 

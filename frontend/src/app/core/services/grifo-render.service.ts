@@ -1,18 +1,14 @@
 import { DOCUMENT, Injectable, PLATFORM_ID, effect, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { GrifoService } from './grifo.service';
-import { CORES_GRIFO, type BlocoGrifo, type CorGrifo } from '../../shared/utils/grifo';
+import type { BlocoGrifo, CorGrifo } from '../../shared/utils/grifo';
+import { nomeHighlight, regraHighlight } from '../../shared/utils/grifo-cor';
 import {
   offsetsDoRange,
   rangeDosOffsets,
   suportaHighlightApi,
   textoDoBloco,
 } from '../../shared/utils/grifo-dom';
-
-/** Nome registrado em `CSS.highlights`; casa com `::highlight()` no styles.css. */
-export function nomeHighlight(cor: CorGrifo): string {
-  return `bm-grifo-${cor}`;
-}
 
 interface BlocoRegistrado {
   readonly el: Element;
@@ -40,6 +36,12 @@ export class GrifoRenderService {
 
   private readonly blocos = new Map<number, BlocoRegistrado>();
   private proximaChave = 0;
+
+  /** Cores com highlight registrado agora — o que precisa ser limpo depois. */
+  private coresPintadas = new Set<CorGrifo>();
+  /** Cores que já ganharam regra `::highlight()`; a regra é escrita uma vez só. */
+  private readonly regrasEscritas = new Set<CorGrifo>();
+  private folha: HTMLStyleElement | null = null;
 
   private frame: number | null = null;
   private ociosoTimer: ReturnType<typeof setTimeout> | null = null;
@@ -97,18 +99,43 @@ export class GrifoRenderService {
     }
 
     const registro = (CSS as unknown as { highlights: HighlightRegistry }).highlights;
-    for (const cor of CORES_GRIFO) {
-      const ranges = porCor.get(cor);
-      if (ranges?.length) registro.set(nomeHighlight(cor), new Highlight(...ranges));
-      else registro.delete(nomeHighlight(cor));
+
+    // Some com o que saiu de cena: cor que não é mais usada por nenhum grifo
+    // continuaria registrada e pintando trecho de questão antiga.
+    for (const cor of this.coresPintadas) {
+      if (!porCor.has(cor)) registro.delete(nomeHighlight(cor));
     }
+    this.coresPintadas = new Set(porCor.keys());
+
+    for (const [cor, ranges] of porCor) {
+      this.garantirRegra(cor);
+      registro.set(nomeHighlight(cor), new Highlight(...ranges));
+    }
+  }
+
+  /**
+   * `::highlight()` exige uma regra de CSS por nome, e a cor agora é livre —
+   * não dá para deixar as regras prontas no styles.css. Cada cor que entra em
+   * cena ganha a sua, uma única vez, numa folha de estilo própria.
+   */
+  private garantirRegra(cor: CorGrifo): void {
+    if (this.regrasEscritas.has(cor)) return;
+    this.regrasEscritas.add(cor);
+
+    if (!this.folha) {
+      this.folha = this.document.createElement('style');
+      this.folha.setAttribute('data-bm', 'grifos');
+      this.document.head.appendChild(this.folha);
+    }
+    this.folha.appendChild(this.document.createTextNode(regraHighlight(cor)));
   }
 
   /** Apaga a pintura da tela sem mexer no que está salvo (saída da prova). */
   limparPintura(): void {
     if (!suportaHighlightApi()) return;
     const registro = (CSS as unknown as { highlights: HighlightRegistry }).highlights;
-    for (const cor of CORES_GRIFO) registro.delete(nomeHighlight(cor));
+    for (const cor of this.coresPintadas) registro.delete(nomeHighlight(cor));
+    this.coresPintadas = new Set();
   }
 
   // ---- Seleção → grifo ----

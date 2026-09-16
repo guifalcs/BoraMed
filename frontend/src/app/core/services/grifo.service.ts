@@ -1,9 +1,12 @@
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
+  CORES_PADRAO,
   aplicarGrifo,
   apagarTrecho,
   desserializarGrifos,
+  ehCorGrifo,
+  normalizarCor,
   serializarGrifos,
   type BlocoGrifo,
   type CorGrifo,
@@ -13,6 +16,12 @@ import {
 
 /** Uma chave por tentativa. */
 const GRIFOS_KEY_PREFIX = 'bm_grifos_';
+
+/** Preferências da paleta: valem para o aluno, não para uma tentativa. */
+const PALETA_KEY = 'bm_grifo_paleta';
+
+/** Quantas cores fora dos atalhos ficam à mão depois de escolhidas. */
+export const MAX_CORES_RECENTES = 4;
 
 /** Payload de tentativa antiga é lixo: some sozinho depois disso. */
 const VALIDADE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -32,13 +41,20 @@ export class GrifoService {
 
   /** Marca-texto na mão: enquanto ativo, selecionar texto grifa. */
   readonly modoAtivo = signal(false);
-  readonly ferramenta = signal<FerramentaGrifo>('amarelo');
+  readonly ferramenta = signal<FerramentaGrifo>(CORES_PADRAO[0]);
 
   private readonly _grifos = signal<ReadonlyMap<string, readonly Grifo[]>>(new Map());
   readonly grifos = this._grifos.asReadonly();
 
   /** Última cor usada: a borracha não substitui a cor, só a empresta. */
-  private ultimaCor: CorGrifo = 'amarelo';
+  private ultimaCor: CorGrifo = CORES_PADRAO[0];
+
+  /**
+   * Cores escolhidas no espectro, da mais recente para a mais antiga. Os
+   * atalhos da paleta não entram: eles já estão sempre na tela.
+   */
+  private readonly _recentes = signal<readonly CorGrifo[]>([]);
+  readonly recentes = this._recentes.asReadonly();
 
   private tentativaId: string | null = null;
 
@@ -58,6 +74,7 @@ export class GrifoService {
     this.tentativaId = tentativaId;
     this.modoAtivo.set(false);
     this._grifos.set(this.ler(tentativaId));
+    this.lerPaleta();
     this.limparExpirados();
   }
 
@@ -66,10 +83,32 @@ export class GrifoService {
   }
 
   selecionarFerramenta(ferramenta: FerramentaGrifo): void {
-    if (ferramenta !== 'borracha') this.ultimaCor = ferramenta;
+    if (ferramenta !== 'borracha') {
+      this.ultimaCor = ferramenta;
+      this.registrarRecente(ferramenta);
+      this.salvarPaleta();
+    }
     this.ferramenta.set(ferramenta);
     // Escolher uma cor é a forma mais natural de pegar o marca-texto.
     this.modoAtivo.set(true);
+  }
+
+  /** Cor vinda do seletor de espectro. Ignora o que não for cor de verdade. */
+  selecionarCorLivre(valor: string): void {
+    const cor = normalizarCor(valor);
+    if (cor) this.selecionarFerramenta(cor);
+  }
+
+  /**
+   * Guarda a cor escolhida no espectro para ela ficar a um clique na próxima
+   * questão — reabrir o seletor do sistema a cada troca seria trabalhoso. Os
+   * atalhos fixos não entram na lista: já estão sempre na tela.
+   */
+  private registrarRecente(cor: CorGrifo): void {
+    if ((CORES_PADRAO as readonly string[]).includes(cor)) return;
+    this._recentes.update((lista) =>
+      [cor, ...lista.filter((c) => c !== cor)].slice(0, MAX_CORES_RECENTES),
+    );
   }
 
   /** Cor que a paleta mostra como "a sua", mesmo com a borracha na mão. */
@@ -130,6 +169,38 @@ export class GrifoService {
       return novo;
     });
     this.salvar();
+  }
+
+  /** Paleta é preferência do aluno: sobrevive à tentativa e ao `descartar`. */
+  private lerPaleta(): void {
+    if (!this.isBrowser) return;
+    try {
+      const raw = localStorage.getItem(PALETA_KEY);
+      if (!raw) return;
+      const payload = JSON.parse(raw) as { recentes?: unknown; ultima?: unknown };
+      const recentes = Array.isArray(payload.recentes)
+        ? payload.recentes.filter(ehCorGrifo).slice(0, MAX_CORES_RECENTES)
+        : [];
+      this._recentes.set(recentes);
+      if (ehCorGrifo(payload.ultima)) {
+        this.ultimaCor = payload.ultima;
+        this.ferramenta.set(payload.ultima);
+      }
+    } catch {
+      // Preferência corrompida: a paleta volta ao padrão, sem drama.
+    }
+  }
+
+  private salvarPaleta(): void {
+    if (!this.isBrowser) return;
+    try {
+      localStorage.setItem(
+        PALETA_KEY,
+        JSON.stringify({ recentes: this._recentes(), ultima: this.ultimaCor }),
+      );
+    } catch {
+      // Storage cheio ou bloqueado: a paleta vale só nesta sessão.
+    }
   }
 
   private ler(tentativaId: string): Map<string, Grifo[]> {

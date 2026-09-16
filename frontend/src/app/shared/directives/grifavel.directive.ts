@@ -4,6 +4,7 @@ import {
   OnDestroy,
   OnInit,
   PLATFORM_ID,
+  computed,
   effect,
   inject,
   input,
@@ -12,6 +13,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { GrifoRenderService } from '../../core/services/grifo-render.service';
 import { GrifoService } from '../../core/services/grifo.service';
 import type { BlocoGrifo } from '../utils/grifo';
+import { cursorBorracha, cursorCaneta } from '../utils/grifo-cor';
 
 /**
  * Marca um pedaço de texto da questão como grifável.
@@ -29,13 +31,10 @@ import type { BlocoGrifo } from '../utils/grifo';
   standalone: true,
   host: {
     '[class.bm-grifavel-ativo]': 'modoAtivo()',
-    // O cursor sai destas classes (ver styles.css): ele vira a ferramenta na
-    // mão, com a cor carregada na ponta, em cima do texto que aceita pintura.
-    '[class.bm-caneta-amarelo]': "ferramenta() === 'amarelo'",
-    '[class.bm-caneta-verde]': "ferramenta() === 'verde'",
-    '[class.bm-caneta-azul]': "ferramenta() === 'azul'",
-    '[class.bm-caneta-rosa]': "ferramenta() === 'rosa'",
-    '[class.bm-caneta-borracha]': "ferramenta() === 'borracha'",
+    // O cursor vira a ferramenta na mão, com a cor carregada na ponta, em cima
+    // do texto que aceita pintura. Desenhado aqui e não em classe de CSS: a
+    // cor é livre, então não existe lista de regras possíveis.
+    '[style.cursor]': 'cursor()',
   },
 })
 export class GrifavelDirective implements OnInit, OnDestroy {
@@ -49,7 +48,12 @@ export class GrifavelDirective implements OnInit, OnDestroy {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly modoAtivo = this.grifo.modoAtivo;
-  protected readonly ferramenta = this.grifo.ferramenta;
+
+  protected readonly cursor = computed(() => {
+    if (!this.grifo.modoAtivo()) return null;
+    const ferramenta = this.grifo.ferramenta();
+    return ferramenta === 'borracha' ? cursorBorracha() : cursorCaneta(ferramenta);
+  });
 
   private chave: number | null = null;
   private observer: MutationObserver | null = null;

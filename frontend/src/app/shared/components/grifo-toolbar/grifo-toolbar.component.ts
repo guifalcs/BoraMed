@@ -2,22 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { Eraser, Highlighter, Trash2 } from 'lucide-angular';
 import { FocoModoService } from '../../../core/services/foco-modo.service';
 import { GrifoService } from '../../../core/services/grifo.service';
-import type { CorGrifo, FerramentaGrifo } from '../../utils/grifo';
+import {
+  CORES_PADRAO,
+  NOME_DAS_CORES_PADRAO,
+  type CorGrifo,
+  type FerramentaGrifo,
+} from '../../utils/grifo';
+import { corDoTextoSobre } from '../../utils/grifo-cor';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
-
-interface OpcaoCor {
-  readonly cor: CorGrifo;
-  readonly rotulo: string;
-  /** Cor sólida do botão da paleta (a pintura do texto vive no styles.css). */
-  readonly amostra: string;
-}
-
-const OPCOES: readonly OpcaoCor[] = [
-  { cor: 'amarelo', rotulo: 'Amarelo', amostra: '#fde047' },
-  { cor: 'verde', rotulo: 'Verde', amostra: '#86efac' },
-  { cor: 'azul', rotulo: 'Azul', amostra: '#93c5fd' },
-  { cor: 'rosa', rotulo: 'Rosa', amostra: '#f9a8d4' },
-];
 
 /**
  * Estojo de marca-texto flutuante da prova.
@@ -40,7 +32,14 @@ export class GrifoToolbarComponent {
   /** Questão na tela, alvo do botão de limpar. */
   questaoId = input<string | null>(null);
 
-  protected readonly opcoes = OPCOES;
+  /**
+   * Atalhos da paleta. O resto do espectro sai do seletor de cor ao lado —
+   * quatro botões cobrem o uso comum sem virar um leque de tinta na tela.
+   * A amostra é a própria cor que pinta o texto: o botão prevê o resultado.
+   */
+  protected readonly cores = CORES_PADRAO;
+  /** Cores escolhidas no espectro, à mão sem reabrir o seletor do sistema. */
+  protected readonly recentes = this.grifo.recentes;
   protected readonly iconGrifar = Highlighter;
   protected readonly iconBorracha = Eraser;
   protected readonly iconLimpar = Trash2;
@@ -61,10 +60,18 @@ export class GrifoToolbarComponent {
   });
 
   /** Fechado, o botão mostra a cor que vai sair — como olhar a ponta da caneta. */
-  protected readonly corDoBotao = computed(() => {
-    const atual = this.grifo.corAtual();
-    return OPCOES.find((o) => o.cor === atual)?.amostra ?? OPCOES[0]!.amostra;
-  });
+  protected readonly corDoBotao = computed(() => this.grifo.corAtual());
+
+  /**
+   * Ícone do botão principal por cima da cor carregada. Com o espectro aberto
+   * a cor pode ser escura, e um ícone escuro sumiria dentro dela — o mesmo
+   * cálculo que decide a cor do texto grifado decide a do ícone.
+   */
+  protected readonly corDoIcone = computed(() => corDoTextoSobre(this.corDoBotao()));
+
+  protected rotuloDaCor(cor: CorGrifo): string {
+    return NOME_DAS_CORES_PADRAO[cor] ?? cor;
+  }
 
   /**
    * O dock empilha em cima da aba do widget de suporte, no mesmo canto — os
@@ -99,15 +106,19 @@ export class GrifoToolbarComponent {
   protected readonly classesBarra = computed(() => {
     const base =
       'pointer-events-auto flex items-center gap-1 border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-lg transition-transform duration-[650ms] ease-[cubic-bezier(0.65,0,0.35,1)]';
+    // Aberta, a paleta tem atalhos + recentes + espectro + borracha + limpar:
+    // no celular isso passa da largura da tela, então ela quebra em duas
+    // fileiras em vez de vazar pela borda. `rounded-3xl` é o mesmo desenho do
+    // `rounded-full` numa fileira e continua inteiro quando são duas.
     return this.ativo()
-      ? `${base} rounded-full`
+      ? `${base} flex-wrap justify-end rounded-3xl max-w-[calc(100vw-1.5rem)]`
       : `${base} rounded-l-full border-r-0 translate-x-[calc(100%-2rem)] hover:translate-x-0 focus-within:translate-x-0`;
   });
 
   protected readonly classesToggle = computed(() => {
     const base = 'flex h-9 w-9 items-center justify-center rounded-full transition-colors';
     return this.ativo()
-      ? `${base} text-[var(--color-text)] shadow-inner`
+      ? `${base} shadow-inner`
       : `${base} bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]`;
   });
 
@@ -136,6 +147,12 @@ export class GrifoToolbarComponent {
       return;
     }
     this.grifo.selecionarFerramenta(ferramenta);
+  }
+
+  /** `<input type="color">`: o espectro inteiro, pelo seletor do sistema. */
+  protected escolherDoEspectro(evento: Event): void {
+    const valor = (evento.target as HTMLInputElement | null)?.value;
+    if (valor) this.grifo.selecionarCorLivre(valor);
   }
 
   protected limparQuestao(): void {
