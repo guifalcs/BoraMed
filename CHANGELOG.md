@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 | Fix | `db reset` e CI quebrados desde 14/09
+
+**A migration que trancou o backup manual do Arthur derrubava todo banco que nasce do zero**
+
+- **Sintoma:** `npx supabase db reset` e o job `DB — invariantes de segurança` do CI morriam em `20260914183834_trancar_backup_tentativa_arthur.sql` com `relation "public.backup_tentativa_arthur_20260910" does not exist (SQLSTATE 42P01)`. Todo PR aberto desde 14/09 nasceu vermelho, e ninguém conseguia resetar o banco local.
+- **Causa:** a tabela foi criada à mão direto em produção, fora do fluxo de migrations. Em prod ela existe e a migration roda; num banco que nasce das migrations (local e CI) ela nunca existiu, e o `revoke` era a primeira linha a estourar.
+- **Correção:** os quatro comandos passaram para dentro de um bloco `do $$` guardado por `to_regclass(...) is null`, que sai com um `raise notice` quando a tabela não existe. **A migration virou re-executável em qualquer banco sem mudar nada em produção** — lá a tabela existe e o bloco roda exatamente como antes.
+- **Por que editar uma migration já aplicada, contrariando a regra:** o `schema_migrations` de produção já registra esta version, então o arquivo nunca mais roda lá — editar não cria divergência, *conserta* a que existia entre o repo e um banco limpo. Confirmado depois do fix: `db push --linked --dry-run` responde `upToDate: true` e a tabela em prod segue com RLS ligada, zero policies e sem `SELECT` para `anon`/`authenticated`.
+- Verificado: `db reset` completo verde pela primeira vez desde 14/09 (201 migrations + seed), e `grants_gabarito_test.sql` — o mesmo arquivo que o CI roda — passando nos 5 invariantes.
+
 ## 2026-09-15 | Feature | Módulo de pesquisas in-app
 
 **Formulário de pesquisa na entrada do app, com construtor e resultados no admin**
