@@ -1,0 +1,131 @@
+<!-- Dock flutuante: preso ao canto, fora do fluxo da prova, empilhado em
+     cima da aba do widget de suporte (ver `classesDock`). O
+     `env(safe-area-inset-bottom)` evita a barra do iPhone comer a paleta. -->
+<div [class]="classesDock()">
+  @if (ativo()) {
+    <!-- Dica curta, some junto com o modo. Não rouba foco nem clique. -->
+    <!-- Mesmo par de cores dos tooltips do app: o modificador de opacidade não
+         vale em cor arbitrária (`/85` sobre `var()` não compila e a pílula some). -->
+    <p
+      class="rounded-full bg-[var(--color-text)] px-3 py-1 text-xs font-medium text-[var(--color-surface)] shadow-md"
+      aria-live="polite"
+    >
+      {{ dica() }}
+    </p>
+  }
+
+  @if (ativo() && paletaAberta()) {
+    <div
+      class="pointer-events-auto w-[min(21rem,calc(100vw-1.5rem))] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-xl"
+      role="group"
+      aria-label="Cores do marca-texto"
+    >
+      <div class="grid grid-cols-10 gap-1.5">
+        @for (cor of espectro; track cor) {
+          <button
+            type="button"
+            [class]="classesCorDoEspectro(cor)"
+            [style.background-color]="cor"
+            [attr.aria-label]="'Grifar na cor ' + cor"
+            [attr.aria-pressed]="ferramenta() === cor"
+            [title]="cor"
+            (click)="escolherDoEspectro(cor)"
+          ></button>
+        }
+      </div>
+    </div>
+  }
+
+  <div [class]="classesBarra()" role="toolbar" aria-label="Marca-texto">
+    <!-- Liga/desliga o marca-texto -->
+    <button
+      type="button"
+      [class]="classesToggle()"
+      [style.background-color]="ativo() && !somenteBorracha() ? corDoBotao() : null"
+      [style.color]="ativo() && !somenteBorracha() ? corDoIcone() : null"
+      [attr.aria-pressed]="ativo()"
+      [attr.aria-label]="rotuloToggle()"
+      [title]="tituloToggle()"
+      (click)="toggle()"
+    >
+      <app-ui-icon [icon]="somenteBorracha() ? iconBorracha : iconGrifar" [size]="17" />
+    </button>
+
+    @if (ativo() && !somenteBorracha()) {
+      <div class="mx-0.5 h-6 w-px shrink-0 bg-[var(--color-border)]"></div>
+
+      <!-- Atalhos de cor -->
+      @for (cor of cores; track cor) {
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full"
+          [attr.aria-pressed]="ferramenta() === cor"
+          [attr.aria-label]="'Grifar em ' + rotuloDaCor(cor)"
+          [title]="rotuloDaCor(cor)"
+          (click)="escolher(cor)"
+        >
+          <span [class]="classesAmostra(cor)" [style.background-color]="cor"></span>
+        </button>
+      }
+
+      <!-- Cores escolhidas no espectro: ficam à mão sem reabrir o seletor -->
+      @for (cor of recentes(); track cor) {
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full"
+          [attr.aria-pressed]="ferramenta() === cor"
+          [attr.aria-label]="'Grifar na cor ' + cor"
+          [title]="cor"
+          (click)="escolher(cor)"
+        >
+          <span [class]="classesAmostra(cor)" [style.background-color]="cor"></span>
+        </button>
+      }
+
+      <!-- Abre a grade de cores. É painel da página, e não o seletor do
+           sistema: o popup nativo é ancorado no input e o estojo mora no
+           canto da tela, então ele abria cortado, para fora. -->
+      <button
+        type="button"
+        class="relative flex h-9 w-9 items-center justify-center rounded-full"
+        aria-label="Escolher outra cor para grifar"
+        [attr.aria-expanded]="paletaAberta()"
+        title="Mais cores"
+        (click)="alternarPaleta()"
+      >
+        <span [class]="classesAnelEspectro()"></span>
+        <span
+          class="pointer-events-none absolute block h-3 w-3 rounded-full border border-black/10"
+          [style.background-color]="corDoBotao()"
+        ></span>
+      </button>
+
+      <!-- Borracha -->
+      <button
+        type="button"
+        [class]="classesFerramenta(ferramenta() === 'borracha')"
+        [attr.aria-pressed]="ferramenta() === 'borracha'"
+        aria-label="Apagar grifos do trecho selecionado"
+        title="Borracha (Shift + G)"
+        (click)="escolher('borracha')"
+      >
+        <app-ui-icon [icon]="iconBorracha" [size]="17" />
+      </button>
+    }
+
+    <!-- Limpar a questão inteira. Vale nos dois modos: na revisão é o caminho
+         rápido para tirar tudo de uma questão sem passar a borracha trecho a
+         trecho. -->
+    @if (ativo() && podeLimpar()) {
+      <button
+        type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700"
+        [attr.aria-label]="rotuloLimpar()"
+        [title]="rotuloLimpar()"
+        (click)="limpar()"
+      >
+        <app-ui-icon [icon]="iconLimpar" [size]="16" />
+      </button>
+    }
+  </div>
+</div>

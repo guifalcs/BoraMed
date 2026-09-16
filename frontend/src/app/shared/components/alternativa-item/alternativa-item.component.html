@@ -22,6 +22,8 @@
         class="flex-1"
         [class.line-through]="riscada()"
         [attr.data-testid]="riscada() ? 'risca' : null"
+        [appGrifavel]="alternativa().questao_id"
+        [grifoBloco]="blocoGrifo()"
         >{{ alternativa().texto }}</span
       >
       @if (estado() === 'correta') {

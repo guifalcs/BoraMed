@@ -91,6 +91,31 @@ input {
   }
 }
 
+/* ── Marca-texto da prova (grifos do aluno) ──────────── */
+
+/* A pintura usa a CSS Custom Highlight API: os trechos grifados são desenhados
+   por cima do texto, sem nenhum nó extra no DOM. É o que permite grifar em cima
+   do Markdown já renderizado sem quebrar a marcação do enunciado.
+   As regras `::highlight()` NÃO moram aqui: a cor é escolhida pelo aluno no
+   espectro, então elas são escritas em tempo de execução, uma por cor em uso,
+   pelo `GrifoRenderService`. O mesmo vale para o cursor de caneta/borracha, que
+   sai de `[style.cursor]` na `GrifavelDirective`. */
+
+/* Com o marca-texto na mão o texto da prova precisa ser selecionável: a
+   alternativa tem `select-none` justamente para o long press que a risca não
+   abrir a alça de seleção do sistema. Aqui a regra se inverte. */
+.bm-grifavel-ativo {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Anel do seletor de espectro: mostra que dali sai qualquer cor. */
+.bm-espectro {
+  background: conic-gradient(
+    #ef4444, #f59e0b, #fde047, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444
+  );
+}
+
 /* ── Impressão (tela de impressão de simulados) ──────── */
 
 @media print {

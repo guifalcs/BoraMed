@@ -123,3 +123,20 @@
     </div>
   }
 </div>
+
+<!-- Grifos da prova: ficam à vista na revisão, e o estojo só apaga. -->
+@if (mostrarGrifos()) {
+  <app-grifo-toolbar (limparTudo)="pedirLimpezaDosGrifos()" />
+}
+
+@if (mostrarConfirmacaoLimpar()) {
+  <app-ui-confirm-dialog
+    titulo="Limpar todos os grifos?"
+    mensagem="Os trechos que você grifou durante a prova serão apagados de todas as questões desta revisão. Não dá para desfazer."
+    labelConfirmar="Limpar tudo"
+    labelCancelar="Cancelar"
+    variante="danger"
+    (confirmar)="confirmarLimpezaDosGrifos()"
+    (cancelar)="cancelarLimpezaDosGrifos()"
+  />
+}

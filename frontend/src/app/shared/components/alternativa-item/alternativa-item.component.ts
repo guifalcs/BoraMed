@@ -5,6 +5,9 @@ import type { Alternativa } from '../../../core/models/alternativa';
 import { ImageViewerService } from '../../../core/services/image-viewer.service';
 import { ImagemProtegidaService } from '../../../core/services/imagem-protegida.service';
 import { ImagemProtegidaPipe } from '../../pipes/imagem-protegida.pipe';
+import { GrifavelDirective } from '../../directives/grifavel.directive';
+import { GrifoService } from '../../../core/services/grifo.service';
+import type { BlocoGrifo } from '../../utils/grifo';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 
 export type EstadoAlternativa = 'idle' | 'selecionada' | 'correta' | 'errada' | 'desabilitada';
@@ -12,13 +15,14 @@ export type EstadoAlternativa = 'idle' | 'selecionada' | 'correta' | 'errada' | 
 @Component({
   selector: 'app-alternativa-item',
   standalone: true,
-  imports: [AsyncPipe, ImagemProtegidaPipe, UiIconComponent],
+  imports: [AsyncPipe, ImagemProtegidaPipe, UiIconComponent, GrifavelDirective],
   templateUrl: './alternativa-item.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlternativaItemComponent {
   private readonly imageViewer = inject(ImageViewerService);
   private readonly imagens = inject(ImagemProtegidaService);
+  private readonly grifo = inject(GrifoService);
 
   alternativa = input.required<Alternativa>();
   estado = input.required<EstadoAlternativa>();
@@ -35,6 +39,16 @@ export class AlternativaItemComponent {
   protected readonly iconEliminar = X;
   protected readonly iconRestaurar = Undo2;
 
+  /** Cada alternativa é um bloco de grifo isolado, endereçado pelo próprio id. */
+  protected readonly blocoGrifo = computed<BlocoGrifo>(() => `alt:${this.alternativa().id}`);
+
+  /**
+   * Com o marca-texto na mão a alternativa vira texto para ler e grifar, não
+   * alvo de gesto: o long press que risca sairia junto com a alça de seleção
+   * do sistema, e as duas coisas brigariam pelo mesmo toque.
+   */
+  protected readonly marcaTextoNaMao = this.grifo.modoAtivo;
+
   /**
    * O risco só vale enquanto a alternativa está em jogo. Com gabarito na tela
    * (correta/errada/desabilitada) ele vira ruído e some sozinho.
@@ -45,9 +59,11 @@ export class AlternativaItemComponent {
 
   protected readonly classes = computed(() => {
     // `select-none`: sem isso o long press no toque abre a alça de seleção de
-    // texto do sistema por cima da alternativa.
-    const base =
-      'group block w-full select-none rounded-lg border p-4 text-left text-sm transition-colors';
+    // texto do sistema por cima da alternativa. Com o marca-texto na mão a
+    // regra se inverte — a seleção é justamente o gesto que grifa.
+    const base = this.marcaTextoNaMao()
+      ? 'group block w-full select-text rounded-lg border p-4 text-left text-sm transition-colors'
+      : 'group block w-full select-none rounded-lg border p-4 text-left text-sm transition-colors';
     if (this.riscada()) {
       return `${base} border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] cursor-default`;
     }
@@ -120,6 +136,8 @@ export class AlternativaItemComponent {
   protected onPointerDown(event: PointerEvent): void {
     // No mouse o botão do canto já resolve — long press ali só atrapalharia.
     if (event.pointerType === 'mouse' || !this.podeEliminar()) return;
+    // Segurar o dedo com o marca-texto ativo é o gesto de selecionar texto.
+    if (this.marcaTextoNaMao()) return;
     this.cancelarLongPress();
     this.longPressDisparado = false;
     this.longPressOrigem = { x: event.clientX, y: event.clientY };
@@ -164,10 +182,21 @@ export class AlternativaItemComponent {
       this.longPressDisparado = false;
       return;
     }
+    // Arrastar para grifar termina em click: sem esta guarda, grifar a
+    // alternativa marcaria ela como resposta por tabela. Clique limpo
+    // (sem texto selecionado) segue respondendo normalmente.
+    if (this.marcaTextoNaMao() && this.temTextoSelecionado()) return;
     if (this.riscada()) return;
     if (this.estado() === 'idle' || this.estado() === 'selecionada') {
       this.selecionar.emit(this.alternativa().id);
     }
+  }
+
+  /** Há texto selecionado na tela agora? */
+  private temTextoSelecionado(): boolean {
+    if (typeof window === 'undefined') return false;
+    const selecao = window.getSelection();
+    return !!selecao && !selecao.isCollapsed && (selecao.toString().trim().length > 0);
   }
 
   protected onToggleEliminar(event: Event): void {

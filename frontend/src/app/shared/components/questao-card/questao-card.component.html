@@ -91,13 +91,21 @@
 
   <!-- Enunciado de apoio -->
   @if (questao().enunciado_apoio) {
-    <div class="bg-slate-50 rounded-lg p-4 border-b border-gray-100 pb-4 mb-4 text-sm text-[var(--color-text)]">
+    <div
+      class="bg-slate-50 rounded-lg p-4 border-b border-gray-100 pb-4 mb-4 text-sm text-[var(--color-text)]"
+      [appGrifavel]="questao().id"
+      [grifoBloco]="'apoio'"
+    >
       <markdown [data]="questao().enunciado_apoio! | formatarEnunciado"></markdown>
     </div>
   }
 
   <!-- Enunciado -->
-  <div class="mb-4 text-base font-medium text-[var(--color-text)] leading-relaxed">
+  <div
+    class="mb-4 text-base font-medium text-[var(--color-text)] leading-relaxed"
+    [appGrifavel]="questao().id"
+    [grifoBloco]="'enunciado'"
+  >
     <markdown [data]="questao().enunciado | formatarEnunciado"></markdown>
   </div>
 

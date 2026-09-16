@@ -1,5 +1,86 @@
 # Changelog
 
+## 2026-09-16 | Fix | Voltar da borracha para a caneta sem clicar na paleta
+
+**Depois do `Shift + G`, o `G` só ligava e desligava o modo — a borracha continuava na mão**
+
+- **Sintoma:** usou `Shift + G`, quis voltar a grifar e apertou `G`: o modo desligava e religava **ainda com a borracha**, obrigando a clicar numa cor na paleta. O mesmo acontecia pelo botão principal do estojo.
+- **Causa:** `G` e o botão chamavam um `toggleModo()` que mexia só em ligado/desligado e nunca na ferramenta. Quem trocava de ferramenta era só a paleta.
+- **Correção:** os dois passaram a significar "pegar o marca-texto". Com a borracha na mão, **devolvem a caneta na última cor usada**; com a caneta na mão, guardam. `Shift + G` é o espelho disso para a borracha. A regra ficou no `GrifoService` (`alternarCaneta` / `alternarBorracha`), então teclado e botão não podem mais divergir — era exatamente essa divergência que deixava o botão com o mesmo defeito.
+- Verificado: **37 e2e** (3 novos: o ciclo caneta → borracha → caneta pelo teclado, o mesmo pelo botão, e o `G` seguindo guardar quando já está com a caneta). Conferido no stack real: verde → `Shift + G` → `G` volta em verde → `G` guarda.
+
+## 2026-09-16 | Feature | Shift + G vai direto na borracha
+
+**O outro lado da mesma tecla: `G` pinta, `Shift + G` apaga**
+
+- **Com trecho selecionado**, `Shift + G` apaga o grifo dali na hora — e **sem trocar a ferramenta que está na mão**: quem estava com a caneta azul continua com ela depois. É uma passada de borracha, não uma troca de ferramenta.
+- **Sem seleção**, entrega a borracha (e, apertado de novo, guarda), do mesmo jeito que `G` faz com o marca-texto.
+- **`B` e `E` ficaram de fora de propósito**: as duas respondem alternativa na execução. `Shift + G` é vizinho do atalho de grifar e estava livre — `Shift` + letra já era o padrão do "outro lado da ação" na tela (Shift + A–E elimina alternativa).
+- A dica do rodapé da execução e o tooltip da borracha passaram a mostrar o atalho.
+- Verificado: **34 e2e** (2 novos: apagar por seleção mantendo a cor na mão, e o liga/desliga sem seleção) e 915 unitários.
+
+## 2026-09-16 | Feature | Atalho G pinta o trecho selecionado, sem pegar a caneta
+
+**Selecionar e apertar `G` grifa na hora — e o atalho passou a valer na revisão**
+
+- **`G` lê o contexto**: com texto selecionado, grifa o trecho na cor em uso (ou apaga, na revisão) **sem exigir que a ferramenta esteja na mão** e sem deixar o modo ligado depois — é uma pincelada, não um estado. Sem seleção, continua ligando e desligando o modo, como antes.
+- **O atalho saiu da tela de execução para o serviço de render.** Ele vivia no `keydown` do `TentativaExecComponent` e por isso não existia na revisão, que é justamente onde o estojo fica escondido na borda. Agora é um só, registrado junto com os outros ouvintes de documento enquanto houver bloco grifável na tela.
+- Ignorado dentro de `input`/`textarea`/`contenteditable` e com diálogo aberto — ali `G` é só uma letra.
+- **E ignorado fora de uma tentativa.** O `questao-card` também renderiza no admin de questões e no gabarito público (`/visualizar`); sem essa trava o atalho ligaria o marca-texto numa tela sem estojo, para pintar algo que não seria salvo em lugar nenhum.
+- **Revertido:** o clique fora volta a guardar a ferramenta também na revisão, igual à execução. A exceção que eu tinha aberto para a revisão foi um erro de leitura do que o Guilherme pediu.
+- Verificado: **32 e2e** (4 novos do atalho: pincelada com o modo guardado, respeito à cor escolhida, `G` dentro de campo de texto não virando atalho, e apagar por `G` na revisão) e 915 unitários. Conferido no stack real com duplo clique numa palavra + `G`.
+
+## 2026-09-16 | Fix | Diálogo de confirmação volta a escurecer a tela inteira
+
+**O escurecido parava na sidebar — em todas as 14 telas que usam o diálogo**
+
+- **Sintoma:** com um diálogo aberto (limpar grifos, finalizar prova, excluir no admin…), o escurecido cobria só a coluna de conteúdo. A sidebar continuava acesa e clicável por cima do modal.
+- **Causa: não era geometria, era pintura.** A div do backdrop tinha `position: fixed; inset: 0` e media a tela inteira (`getBoundingClientRect` confirmou 0,0,1280,900) — mas ela vive dentro do `.main-content`, que tem `isolation: isolate`. Isso cria um contexto de empilhamento, e o `z-50` do backdrop passou a valer só ali dentro; a sidebar, com `z-index: 80` no contexto de fora, pinta por cima.
+- **Correção: `<dialog>` nativo aberto com `showModal()`.** Ele vai para a *top layer* do navegador, acima de qualquer `z-index` ou `isolation` da página, e traz o `::backdrop` junto — que passou a ser o escurecido, no lugar da div. Nenhuma mudança de API: mesmos inputs, mesmos outputs, mesmo visual. De brinde vêm o foco preso no diálogo e o Esc nativos.
+- Como o `@if` do componente pai é quem tira o diálogo da tela, o fechamento nativo do Esc é barrado e vira `cancelar` — senão a caixa sumiria com o pai ainda achando que está aberta.
+- Corrige de uma vez as 14 telas que usam `app-ui-confirm-dialog` (execução de prova, revisão, flashcards e 11 do admin).
+
+## 2026-09-16 | Feature | Grifos seguem para a revisão pós-prova, com borracha
+
+**O que o aluno grifou durante o simulado continua à vista depois, e pode ser apagado**
+
+- **Finalizar a prova não apaga mais os grifos.** Eles eram descartados no `confirmarFinalizacao`; agora seguem no `localStorage` e a revisão (`/revisao`) os pinta por cima da prova já corrigida. Quem recolhe o lixo continua sendo a varredura de 30 dias.
+- **Na revisão o estojo só apaga**: borracha e "limpar esta questão", sem paleta, sem espectro. Grifar ali misturaria o que foi marcado sob o relógio com o que foi marcado depois, já lendo o gabarito — e essa é justamente a informação que o grifo carrega. O estojo nem aparece se não houver grifo salvo.
+- **Na revisão, "limpar" vale para a revisão inteira, com confirmação.** A primeira versão elegia a "questão em leitura" por `IntersectionObserver` — ou seja, uma ação destrutiva cujo alvo o aluno não via e não escolhia. O escopo passou a ser o da página (a prova toda, que é o que está na tela) e o diálogo de confirmação entrou junto. Na execução, com uma questão na tela, o alvo continua sendo ela e sem confirmação.
+- **Sem grifo sobrando, a borracha é guardada sozinha.** Na revisão o estojo só existe enquanto há o que apagar; zerando tudo ele sumia com a ferramenta ainda na mão, e o cursor de borracha ficava preso no texto sem nenhum botão para desligar. Vale para o "limpar tudo" e para apagar o último trecho à mão.
+- **O estojo passou a saber em que escopo está** (`execucao` | `revisao`), e esse dado decide a paleta reduzida e o alvo do limpar.
+- **A tentativa da revisão passou a vir da rota**, não do estado da navegação. Ela só era preenchida em quem chegava pela tela de resultado — num F5 ou link direto o componente ficava sem `tentativaId`. Isso é o que os grifos precisavam para carregar, e de quebra conserta as **anotações**, que pelo mesmo motivo sumiam ao recarregar a revisão.
+- Verificado: **27 e2e** (8 novos cobrindo a revisão: grifo pintado, estojo sem cor, borracha apagando, limpar com confirmação, clique fora não guardando a borracha, cursor voltando ao normal ao zerar os grifos pelos dois caminhos, e a ausência de estojo sem grifo) e 915 unitários. Conferido ponta a ponta contra o stack local: grifar → finalizar → revisão.
+
+## 2026-09-16 | Feature | Marca-texto aceita o espectro inteiro de cores
+
+**A paleta deixou de ser uma lista de quatro e passou a ser um seletor de cor**
+
+- **Grade com 44 cores** (10 matizes × 4 luminosidades + 4 neutros, montada em HSL) cobrindo o círculo de cores, aberta por um botão na paleta. Os quatro atalhos continuam para o uso comum, e **as 4 últimas cores escolhidas viram atalho** — reabrir a grade a cada questão seria trabalhoso. A paleta é preferência do aluno (`bm_grifo_paleta`), não da tentativa: sobrevive ao fim da prova.
+- **A grade é painel da página, não o `<input type="color">` do sistema.** A primeira versão usava o seletor nativo e ele abria **cortado, para fora da tela**: o popup é UI do navegador, ancorada no input, e o estojo mora no canto inferior direito — não existe CSS que reposicione aquilo. O painel próprio abre para cima, dentro do dock, com largura presa a `calc(100vw-1.5rem)`, então cabe na tela por construção (e tem e2e medindo isso contra o viewport).
+- **O que travava em quatro era o motor, não a UI:** `::highlight()` exige uma regra de CSS por nome de highlight, e elas estavam escritas à mão no `styles.css`. Agora são **geradas em tempo de execução**, uma por cor que entra em cena, numa folha `<style data-bm="grifos">`; cor que sai de cena tem o highlight removido do registro. Pelo mesmo motivo o cursor de caneta saiu de classe de CSS para `[style.cursor]`: não existe lista de regras possíveis quando a cor é livre.
+- **A cor do texto passou a ser calculada, não fixada.** Luminância relativa + razão de contraste (WCAG 2.1) escolhem entre texto escuro e branco. Com quatro pastéis dava para cravar `#0f172a`; com o espectro aberto, escolher um roxo forte apagaria justamente o enunciado que o aluno quis destacar. A mesma conta decide o contorno da ponta no cursor (que sumiria em cor escura) e o ícone do botão principal, que assume a cor carregada como fundo.
+- **Formato salvo virou v2** (cor em hex). O v1, com as quatro cores por nome, **continua sendo lido e traduzido** — prova pausada antes da mudança não perde os grifos.
+- **A paleta aberta quebra em duas fileiras no celular**: com atalhos + recentes + espectro + borracha + limpar, uma fileira só passava da largura da tela e vazava pela borda.
+- Verificado: **19 e2e** (cor da grade pintando, inversão do texto em cor escura, recente virando atalho, painel cabendo na tela) e **40 unitários** entre álgebra de intervalos, contraste, cursores e a migração v1→v2. Suíte inteira verde (915).
+
+## 2026-09-16 | Feature | Marca-texto na prova (grifar trechos da questão)
+
+**O aluno grifa enunciado, texto de apoio e alternativas em quatro cores, como faria na prova impressa**
+
+- **Estojo flutuante no rodapé** com liga/desliga, paleta de quatro cores (amarelo, verde, azul, rosa), borracha e "limpar esta questão". Atalho `G` pega e guarda o marca-texto; a dica acima do dock diz o que a ferramenta na mão vai fazer.
+- **O modo é explícito de propósito.** No toque, a seleção de texto disputa o mesmo gesto com o long press que risca alternativa (`select-none` existe justamente para o long press não abrir a alça de seleção do sistema). Com o marca-texto na mão a regra se inverte: quem manda é a seleção, e o long press de riscar fica desligado. Clique limpo na alternativa **continua respondendo** — só o clique que termina uma seleção é ignorado.
+- **Pintura sem tocar no DOM**, via CSS Custom Highlight API (`CSS.highlights` + `::highlight()`). Foi a escolha central: grifar em cima de Markdown já renderizado por inserção de `<mark>` quebraria a marcação do enunciado e brigaria com o re-render do Angular. Navegador sem a API mostra a prova normal, só sem a pintura — o grifo continua sendo gravado. Baseline desde junho/2025 (Chrome 105+, Safari 17.2+, Firefox 140+).
+- **Âncora por offset de caractere dentro do bloco** (`enunciado`, `apoio`, `alt:<id>`), não por nó do DOM. É o que faz o grifo reancorar sozinho ao trocar de questão (o card é reaproveitado), ao re-renderizar o Markdown e depois do F5. Bibliotecas do gênero (rangy, web-highlighter) foram descartadas: as duas mutam o DOM e nenhuma tem release recente.
+- **Regra do marca-texto de verdade: a última passada manda.** Grifar por cima com outra cor substitui a anterior no trecho coberto; a mesma cor funde num bloco só. A borracha parte em dois o grifo atravessado pelo meio e leva junto o espaço em volta — sem isso, apagar uma palavra deixava dois riscos soltos pintando o branco.
+- **Estado local, como as alternativas riscadas**: `localStorage` (`bm_grifos_<tentativa_id>`), teto de 200 trechos por questão, apagado ao finalizar e chaves de tentativa com mais de 30 dias varridas sozinhas. `localStorage` e não `sessionStorage` porque a tentativa pode ser pausada e retomada dias depois — perder a leitura grifada de uma prova inteira ao fechar a aba doeria. **Não vai para o banco, não entra em resultado, revisão, nota nem estatística de questão.**
+- **Posicionamento do dock**: empilhado em cima da aba do widget de suporte, no mesmo canto — os dois são flutuantes e disputariam a faixa lado a lado. A altura sai da posição do suporte, que troca de breakpoint sozinho (`bottom: 2rem` no desktop, `5.5rem` até 480px, onde ele já sobe para escapar da barra de navegação de 64px). No modo foco, onde suporte e barra somem, o dock desce para o rodapé.
+- **O cursor vira a ferramenta em cima do texto grifável**: caneta inclinada com a ponta na cor carregada (a mesma que vai pintar o texto, não a da paleta) e bloco deitado para a borracha — silhueta oposta de propósito, para não se confundirem. Desenhados em SVG por data URI, com `text` como fallback de quem não renderizar cursor em SVG; nada de asset binário e nítido em qualquer DPI. Fora do modo marca-texto, cursor normal.
+- **Guardado, o estojo se esconde na borda**, igual à aba do suporte logo abaixo: encosta na direita, perde o arredondamento desse lado e desliza para fora no hover, deixando à mostra só os 2rem do ícone — que no toque, onde hover não existe, são o alvo do dedo. Aberto, volta inteiro para dentro da tela.
+- **Clique em lugar nenhum guarda o marca-texto**, o gesto de largar a caneta na mesa. Seguram a caneta na mão o próprio estojo, qualquer controle (a alternativa que se marca, navegar, finalizar) e o texto grifável, que é onde ela trabalha. O que decide é **onde o toque começou**, não onde terminou: arrastar do texto para fora é seleção legítima, não clique fora.
+- **Seed local ganhou dois casos clínicos longos** (IAMCSST e TEP) com texto de apoio, Markdown e cinco alternativas extensas, nas duas primeiras posições do *Treino Nacional — Cardiologia*: o seed não tinha nenhuma questão com `enunciado_apoio`, que é justamente o material que se grifa.
+- Verificado: **14 e2e novos** (`grifar-texto.spec.ts`, incluindo grifo sobrevivendo ao F5 e alternativa não sendo marcada ao grifar) e **21 unitários** da álgebra de intervalos e da serialização. Suíte unitária inteira verde (895) e build de produção limpo.
+
 ## 2026-09-16 | Fix | Suíte unitária volta ao verde (campanhas de e-mail)
 
 **Três testes de `admin-campanhas` cobravam uma assinatura de método que a feature de lista manual já tinha mudado**

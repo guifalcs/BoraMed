@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   PLATFORM_ID,
   computed,
   inject,
@@ -11,6 +12,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChevronLeft, Printer } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { AnotacaoQuestaoService } from '../../../core/services/anotacao-questao.service';
+import { GrifoService } from '../../../core/services/grifo.service';
 import { ProvaService } from '../../../core/services/prova.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import { SubscriptionService } from '../../../core/services/subscription.service';
@@ -23,14 +25,16 @@ import { QuestaoAnotacaoComponent } from '../../../shared/components/questao-ano
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UpgradeBadgeComponent } from '../../../shared/components/upgrade-badge/upgrade-badge.component';
+import { GrifoToolbarComponent } from '../../../shared/components/grifo-toolbar/grifo-toolbar.component';
+import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent, GrifoToolbarComponent, UiConfirmDialogComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProvaVisualizarComponent {
+export class ProvaVisualizarComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly tentativaService = inject(TentativaService);
   private readonly anotacaoService = inject(AnotacaoQuestaoService);
@@ -38,6 +42,8 @@ export class ProvaVisualizarComponent {
   private readonly nav = inject(NavigationProgressService);
   private readonly subscription = inject(SubscriptionService);
   private readonly paywall = inject(PaywallService);
+  private readonly grifos = inject(GrifoService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
    * Impressão é benefício de assinante. `false` enquanto o nível é desconhecido
@@ -73,6 +79,23 @@ export class ProvaVisualizarComponent {
 
   protected readonly mostrarAnotacoes = computed(() => !!this.tentativaId());
 
+  // ---- Grifos da prova ----
+  /**
+   * O que o aluno grifou durante o simulado continua à vista aqui. O estojo só
+   * oferece borracha: grifar na revisão misturaria o que foi marcado sob o
+   * relógio com o que foi marcado depois, já lendo o gabarito.
+   */
+  protected readonly mostrarGrifos = computed(
+    () => !!this.tentativaId() && this.grifos.totalGrifos() > 0,
+  );
+
+  /**
+   * Limpar na revisão vale para a prova inteira, que é o que está na página —
+   * "esta questão" seria uma ação destrutiva com alvo invisível, já que o
+   * estojo flutua sobre uma lista com todas elas.
+   */
+  protected readonly mostrarConfirmacaoLimpar = signal(false);
+
   protected readonly questoesFiltradas = computed(() => {
     if (this.filtro() !== 'erros') {
       return this.questoes();
@@ -105,13 +128,35 @@ export class ProvaVisualizarComponent {
 
     // Navega instantaneamente; prova + questões são buscadas aqui, sem bloquear
     // a rota (skeleton enquanto carrega).
-    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+    // A tentativa vem da rota, não do estado da navegação: um F5 na revisão
+    // precisa continuar sabendo qual tentativa está sendo revisada.
+    this.tentativaId.set(routeTentativaId);
+
+    if (this.isBrowser) {
+      if (routeTentativaId) this.grifos.iniciar(routeTentativaId, 'revisao');
       void this.nav.track(this.carregar(id, routeTentativaId || null));
       this.hidratarRespostas(id);
       // Fora do caminho crítico: só decide se o botão de imprimir aparece
       // bloqueado (RPC cacheada em SubscriptionService).
       void this.subscription.statusAcessoServidor();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.grifos.encerrar();
+  }
+
+  protected pedirLimpezaDosGrifos(): void {
+    this.mostrarConfirmacaoLimpar.set(true);
+  }
+
+  protected confirmarLimpezaDosGrifos(): void {
+    this.mostrarConfirmacaoLimpar.set(false);
+    this.grifos.limparTudo();
+  }
+
+  protected cancelarLimpezaDosGrifos(): void {
+    this.mostrarConfirmacaoLimpar.set(false);
   }
 
   protected abrirPaywallImpressao(): void {
