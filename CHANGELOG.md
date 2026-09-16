@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 | Fix | Suíte unitária volta ao verde (campanhas de e-mail)
+
+**Três testes de `admin-campanhas` cobravam uma assinatura de método que a feature de lista manual já tinha mudado**
+
+- **Sintoma:** `Frontend unit (Vitest)` vermelho no CI, com 3 falhas em `admin-campanhas.component.spec.ts` do tipo `expected [ 'sem_assinatura_ativa' ]` mas recebido `[ 'sem_assinatura_ativa', [] ]`.
+- **Causa: os testes estavam desatualizados, não o código.** A campanha por lista manual (`20260911130000_campanha_email_lista_manual`) acrescentou `emailsManuais` em `contarPublicoCampanha` e `destinatariosManual` em `dispararCampanhaEmail`. O componente passa os dois corretamente e o serviço só os envia no segmento `lista_manual` — as assertivas é que continuaram cobrando a assinatura antiga.
+- **As três assertivas passaram a verificar a chamada completa**, incluindo os argumentos novos. Asserção parcial foi exatamente o que deixou o CI vermelho sem ninguém notar.
+- **Teste novo para o caminho `lista_manual`**, que não tinha cobertura neste nível apesar de ser o motivo dos argumentos: contagem e disparo levam a lista já deduplicada e sem os tokens que não são e-mail.
+- Verificado: **874 unitários verdes, zero falhas** — a suíte inteira no verde pela primeira vez desde que a lista manual entrou.
+
 ## 2026-09-16 | Fix | `db reset` e CI quebrados desde 14/09
 
 **A migration que trancou o backup manual do Arthur derrubava todo banco que nasce do zero**
