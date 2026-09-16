@@ -76,6 +76,7 @@ interface CompApi {
   temMaisDestinatarios(): boolean;
   filtroDestinatario(): StatusDestinatarioCampanha | null;
   onEscape(): void;
+  destinatariosTexto: { set(v: string): void };
 }
 
 async function setup(overrides: Record<string, unknown> = {}) {
@@ -160,7 +161,10 @@ describe('AdminCampanhasComponent', () => {
     const { comp, admin } = await setup();
     await comp.ngOnInit();
 
-    expect(admin.contarPublicoCampanha).toHaveBeenCalledWith('sem_assinatura_ativa');
+    // O segundo argumento é a lista manual, que o serviço ignora fora do
+    // segmento 'lista_manual'. Asserção completa de propósito: foi justamente
+    // uma asserção parcial que deixou estes testes vermelhos sem ninguém ver.
+    expect(admin.contarPublicoCampanha).toHaveBeenCalledWith('sem_assinatura_ativa', []);
     expect(comp.totalPublico()).toBe(42);
     expect(comp.historico()).toEqual([CAMPANHA]);
   });
@@ -172,7 +176,7 @@ describe('AdminCampanhasComponent', () => {
     await comp.onSegmentoChange('ex_assinantes');
 
     expect(comp.segmento()).toBe('ex_assinantes');
-    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith('ex_assinantes');
+    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith('ex_assinantes', []);
   });
 
   it('não dispara direto: exige confirmação explícita', async () => {
@@ -224,10 +228,39 @@ describe('AdminCampanhasComponent', () => {
       'Sua conta está te esperando',
       '<p>Oi</p>',
       'sem_assinatura_ativa',
+      undefined, // remetente: usa o default da edge function
+      undefined, // lista manual: só vai no segmento 'lista_manual'
     );
     expect(comp.confirmandoDisparo()).toBe(false);
     expect(admin.listarCampanhasEmail).toHaveBeenCalledTimes(2);
     expect(toast.success).toHaveBeenCalledWith('Campanha enviada para 42 pessoas.');
+  });
+
+  it('no segmento lista_manual, contagem e disparo levam os e-mails digitados', async () => {
+    const { comp, admin } = await setup();
+    await comp.ngOnInit();
+    preencher(comp);
+
+    comp.destinatariosTexto.set('a@x.com\nb@x.com\nnao-e-email\na@x.com');
+    await comp.onSegmentoChange('lista_manual');
+
+    // Sem repetido e sem o token inválido — é essa lista que vai no disparo.
+    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith('lista_manual', [
+      'a@x.com',
+      'b@x.com',
+    ]);
+
+    comp.pedirConfirmacao();
+    await comp.dispararAgora();
+
+    expect(admin.dispararCampanhaEmail).toHaveBeenCalledWith(
+      'Reativação julho',
+      'Sua conta está te esperando',
+      '<p>Oi</p>',
+      'lista_manual',
+      undefined,
+      ['a@x.com', 'b@x.com'],
+    );
   });
 
   it('avisa sobre pendentes quando o disparo volta parcial', async () => {
