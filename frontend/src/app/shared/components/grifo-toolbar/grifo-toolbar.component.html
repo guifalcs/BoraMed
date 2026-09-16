@@ -14,11 +14,7 @@
     </p>
   }
 
-  <div
-    class="pointer-events-auto flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-lg"
-    role="toolbar"
-    aria-label="Marca-texto"
-  >
+  <div [class]="classesBarra()" role="toolbar" aria-label="Marca-texto">
     <!-- Liga/desliga o marca-texto -->
     <button
       type="button"

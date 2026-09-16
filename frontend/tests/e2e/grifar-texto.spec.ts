@@ -377,6 +377,45 @@ test.describe('Marca-texto na execução da prova', () => {
     await expect.poll(() => respostas).toEqual(['alt-c']);
   });
 
+  test('clique no fundo da tela guarda o marca-texto', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+
+    // Canto vazio da tela: nem estojo, nem controle, nem texto da questão.
+    await page.mouse.click(12, 400);
+
+    await expect(pegarMarcaTexto(page)).toBeVisible();
+  });
+
+  test('clicar no texto da questão não guarda o marca-texto', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+
+    // Clique seco no enunciado: não seleciona nada, mas é onde ele trabalha.
+    await page.getByText(ENUNCIADO).click();
+
+    await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+  });
+
+  test('responder a questão não guarda o marca-texto', async ({ page }) => {
+    const respostas = await setupMocks(page);
+    await pegarMarcaTexto(page).click();
+
+    await page.getByRole('radio', { name: `Alternativa A: ${textosAlternativas['A']}` }).click();
+
+    await expect.poll(() => respostas).toEqual(['alt-a']);
+    await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+  });
+
+  test('grifar não guarda o marca-texto (a seleção segura a caneta)', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    const enunciado = await seletorDoEnunciado(page);
+
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+
+    expect(await grifosNaTela(page)).toEqual({ amarelo: ['conduta inicial'] });
+    await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+  });
+
   test('atalho G pega e guarda o marca-texto', async ({ page }) => {
     await page.keyboard.press('g');
     await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();

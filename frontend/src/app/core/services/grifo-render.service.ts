@@ -44,6 +44,8 @@ export class GrifoRenderService {
   private frame: number | null = null;
   private ociosoTimer: ReturnType<typeof setTimeout> | null = null;
   private ponteiroPressionado = false;
+  /** Elemento onde o toque atual começou (decide o clique-fora). */
+  private origemDoToque: Element | null = null;
   private ouvindo = false;
 
   constructor() {
@@ -113,14 +115,48 @@ export class GrifoRenderService {
 
   private readonly aoSoltarPonteiro = (): void => {
     this.ponteiroPressionado = false;
+    // Onde o toque COMEÇOU é o que decide se foi "clique em lugar nenhum":
+    // um arrastar que termina fora do texto ainda é uma seleção legítima.
+    const origem = this.origemDoToque;
+    this.origemDoToque = null;
     // A seleção só fica pronta depois que o navegador processa o soltar.
-    setTimeout(() => this.processarSelecao(), 0);
+    setTimeout(() => {
+      if (!this.processarSelecao()) this.talvezGuardar(origem);
+    }, 0);
   };
 
-  private readonly aoPressionarPonteiro = (): void => {
+  private readonly aoPressionarPonteiro = (event: Event): void => {
     this.ponteiroPressionado = true;
+    this.origemDoToque = event.target instanceof Element ? event.target : null;
     this.cancelarOcioso();
   };
+
+  /**
+   * Clique em lugar nenhum guarda o marca-texto — é o gesto de largar a caneta
+   * na mesa. Seguram a caneta na mão: o próprio estojo, qualquer controle (a
+   * alternativa que se marca, navegar, finalizar) e o texto grifável, que é
+   * justamente onde ela trabalha. Fora disso, é fundo de tela.
+   */
+  private talvezGuardar(alvo: Element | null): void {
+    if (!alvo || !this.grifoService.modoAtivo()) return;
+
+    const selecao = this.document.getSelection();
+    if (selecao && !selecao.isCollapsed) return;
+
+    if (alvo.closest('app-grifo-toolbar')) return;
+    if (
+      alvo.closest(
+        'button, a, input, textarea, select, label, [role="radio"], [role="button"], [role="dialog"]',
+      )
+    ) {
+      return;
+    }
+    for (const registro of this.blocos.values()) {
+      if (registro.el.contains(alvo)) return;
+    }
+
+    this.grifoService.modoAtivo.set(false);
+  }
 
   /**
    * Backstop do toque: ajustar as alças de seleção no celular não gera
@@ -135,10 +171,11 @@ export class GrifoRenderService {
     }, OCIOSO_SELECAO_MS);
   };
 
-  private processarSelecao(): void {
-    if (!this.grifoService.modoAtivo()) return;
+  /** Devolve `true` quando a seleção virou grifo. */
+  private processarSelecao(): boolean {
+    if (!this.grifoService.modoAtivo()) return false;
     const selecao = this.document.getSelection();
-    if (!selecao || selecao.isCollapsed || selecao.rangeCount === 0) return;
+    if (!selecao || selecao.isCollapsed || selecao.rangeCount === 0) return false;
 
     const range = selecao.getRangeAt(0);
     let grifou = false;
@@ -169,6 +206,7 @@ export class GrifoRenderService {
     }
 
     if (grifou) selecao.removeAllRanges();
+    return grifou;
   }
 
   private ouvir(): void {

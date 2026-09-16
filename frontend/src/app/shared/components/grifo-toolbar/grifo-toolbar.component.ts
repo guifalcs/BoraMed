@@ -78,13 +78,30 @@ export class GrifoToolbarComponent {
    * suporte e barra somem, e o dock desce para o rodapé.
    */
   protected readonly classesDock = computed(() => {
+    // Guardado, o estojo encosta na borda (sem padding à direita) para poder
+    // se esconder nela; aberto, a paleta respira longe do canto.
     // Classes escritas por extenso: o JIT do Tailwind varre o fonte, então
     // classe montada por interpolação não seria gerada no CSS final.
-    const base =
-      'pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-end gap-2 px-3';
+    const lado = this.ativo() ? 'px-3' : 'pl-3 pr-0';
+    const base = `pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-end gap-2 ${lado}`;
     return this.foco.ativo()
       ? `${base} pb-[calc(1rem+env(safe-area-inset-bottom))]`
       : `${base} pb-[calc(5.5rem+env(safe-area-inset-bottom))] max-[480px]:pb-[calc(9rem+env(safe-area-inset-bottom))]`;
+  });
+
+  /**
+   * Fechado, o estojo se esconde na borda como a aba do suporte logo abaixo:
+   * encosta na direita, perde o arredondamento desse lado e sai deslizando no
+   * hover. Sobra só o suficiente para o ícone aparecer — no toque, onde hover
+   * não existe, essa sobra é o alvo do dedo. Aberto, ele vem inteiro para
+   * dentro da tela: a paleta não pode ficar meio de fora.
+   */
+  protected readonly classesBarra = computed(() => {
+    const base =
+      'pointer-events-auto flex items-center gap-1 border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-lg transition-transform duration-[650ms] ease-[cubic-bezier(0.65,0,0.35,1)]';
+    return this.ativo()
+      ? `${base} rounded-full`
+      : `${base} rounded-l-full border-r-0 translate-x-[calc(100%-2rem)] hover:translate-x-0 focus-within:translate-x-0`;
   });
 
   protected readonly classesToggle = computed(() => {
