@@ -1,15 +1,19 @@
-<!-- Backdrop -->
-<div
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-  (click)="cancelar.emit()"
-  role="dialog"
-  aria-modal="true"
+<!--
+  `<dialog>` nativo aberto com `showModal()`: vai para a *top layer* do
+  navegador, acima de qualquer `z-index`. É o que faz o escurecido cobrir a
+  tela inteira — com um `position: fixed` comum ele ficava preso no
+  `isolation: isolate` do `.main-content` e a sidebar pintava por cima.
+  O fundo escuro é o `::backdrop` (ver o .css ao lado), não uma div.
+-->
+<dialog
+  #caixa
+  class="bm-confirm-dialog"
   [attr.aria-label]="titulo()"
+  (cancel)="aoCancelarNativo($event)"
+  (click)="aoClicarNoFundo($event)"
 >
-  <!-- Dialog -->
   <div
     class="mx-4 w-full max-w-sm animate-in rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-lg"
-    (click)="$event.stopPropagation()"
   >
     <h2 class="text-lg font-semibold text-[var(--color-text)]">{{ titulo() }}</h2>
     <p class="mt-2 text-sm text-[var(--color-text-muted)]">{{ mensagem() }}</p>
@@ -29,4 +33,4 @@
       />
     </div>
   </div>
-</div>
+</dialog>

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 | Fix | Diálogo de confirmação volta a escurecer a tela inteira
+
+**O escurecido parava na sidebar — em todas as 14 telas que usam o diálogo**
+
+- **Sintoma:** com um diálogo aberto (limpar grifos, finalizar prova, excluir no admin…), o escurecido cobria só a coluna de conteúdo. A sidebar continuava acesa e clicável por cima do modal.
+- **Causa: não era geometria, era pintura.** A div do backdrop tinha `position: fixed; inset: 0` e media a tela inteira (`getBoundingClientRect` confirmou 0,0,1280,900) — mas ela vive dentro do `.main-content`, que tem `isolation: isolate`. Isso cria um contexto de empilhamento, e o `z-50` do backdrop passou a valer só ali dentro; a sidebar, com `z-index: 80` no contexto de fora, pinta por cima.
+- **Correção: `<dialog>` nativo aberto com `showModal()`.** Ele vai para a *top layer* do navegador, acima de qualquer `z-index` ou `isolation` da página, e traz o `::backdrop` junto — que passou a ser o escurecido, no lugar da div. Nenhuma mudança de API: mesmos inputs, mesmos outputs, mesmo visual. De brinde vêm o foco preso no diálogo e o Esc nativos.
+- Como o `@if` do componente pai é quem tira o diálogo da tela, o fechamento nativo do Esc é barrado e vira `cancelar` — senão a caixa sumiria com o pai ainda achando que está aberta.
+- Corrige de uma vez as 14 telas que usam `app-ui-confirm-dialog` (execução de prova, revisão, flashcards e 11 do admin).
+
 ## 2026-09-16 | Feature | Grifos seguem para a revisão pós-prova, com borracha
 
 **O que o aluno grifou durante o simulado continua à vista depois, e pode ser apagado**
