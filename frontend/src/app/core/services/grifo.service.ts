@@ -70,6 +70,14 @@ export class GrifoService {
 
   private tentativaId: string | null = null;
 
+  /**
+   * Existe tentativa aberta? O `questao-card` também renderiza no admin de
+   * questões e no gabarito público (`/visualizar`), onde não há o que grifar:
+   * sem esta trava o atalho ligaria o marca-texto numa tela sem estojo, para
+   * pintar algo que não seria salvo em lugar nenhum.
+   */
+  readonly temTentativa = signal(false);
+
   readonly borrachaAtiva = computed(() => this.ferramenta() === 'borracha');
   readonly totalGrifos = computed(() => {
     let total = 0;
@@ -84,6 +92,7 @@ export class GrifoService {
   /** Abre o marca-texto de uma tentativa e restaura o que já foi grifado. */
   iniciar(tentativaId: string, escopo: 'execucao' | 'revisao' = 'execucao'): void {
     this.tentativaId = tentativaId;
+    this.temTentativa.set(true);
     this.escopo.set(escopo);
     this.modoAtivo.set(false);
     if (escopo === 'revisao') this.ferramenta.set('borracha');
@@ -201,6 +210,7 @@ export class GrifoService {
     this.modoAtivo.set(false);
     this.escopo.set('execucao');
     this.tentativaId = null;
+    this.temTentativa.set(false);
     this._grifos.set(new Map());
   }
 

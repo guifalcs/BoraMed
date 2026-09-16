@@ -205,6 +205,7 @@ export class GrifoRenderService {
    * guardado — é justamente o caminho de pintar sem pegar a caneta antes.
    */
   private processarSelecao(forcar = false, ferramentaForcada: FerramentaGrifo | null = null): boolean {
+    if (!this.grifoService.temTentativa()) return false;
     if (!forcar && !this.grifoService.modoAtivo()) return false;
     const ferramenta = ferramentaForcada ?? this.grifoService.ferramenta();
     const apagando = ferramenta === 'borracha';
@@ -255,6 +256,8 @@ export class GrifoRenderService {
    */
   private readonly aoTeclar = (evento: KeyboardEvent): void => {
     if (evento.key !== 'g' && evento.key !== 'G') return;
+    // Fora de uma tentativa (admin, gabarito público) não existe marca-texto.
+    if (!this.grifoService.temTentativa()) return;
     if (evento.ctrlKey || evento.metaKey || evento.altKey) return;
     // `Shift` é o outro lado da mesma tecla: em vez de pintar, apaga.
     const borracha = evento.shiftKey;

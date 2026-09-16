@@ -26,6 +26,7 @@
 - **`G` lê o contexto**: com texto selecionado, grifa o trecho na cor em uso (ou apaga, na revisão) **sem exigir que a ferramenta esteja na mão** e sem deixar o modo ligado depois — é uma pincelada, não um estado. Sem seleção, continua ligando e desligando o modo, como antes.
 - **O atalho saiu da tela de execução para o serviço de render.** Ele vivia no `keydown` do `TentativaExecComponent` e por isso não existia na revisão, que é justamente onde o estojo fica escondido na borda. Agora é um só, registrado junto com os outros ouvintes de documento enquanto houver bloco grifável na tela.
 - Ignorado dentro de `input`/`textarea`/`contenteditable` e com diálogo aberto — ali `G` é só uma letra.
+- **E ignorado fora de uma tentativa.** O `questao-card` também renderiza no admin de questões e no gabarito público (`/visualizar`); sem essa trava o atalho ligaria o marca-texto numa tela sem estojo, para pintar algo que não seria salvo em lugar nenhum.
 - **Revertido:** o clique fora volta a guardar a ferramenta também na revisão, igual à execução. A exceção que eu tinha aberto para a revisão foi um erro de leitura do que o Guilherme pediu.
 - Verificado: **32 e2e** (4 novos do atalho: pincelada com o modo guardado, respeito à cor escolhida, `G` dentro de campo de texto não virando atalho, e apagar por `G` na revisão) e 915 unitários. Conferido no stack real com duplo clique numa palavra + `G`.
 

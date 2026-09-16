@@ -733,6 +733,15 @@ test.describe('Marca-texto na revisão pós-prova', () => {
   test.beforeEach(async ({ page }) => {
     await setupMocks(page);
     await page.route(
+      '**/rest/v1/rpc/get_revisao_prova',
+      (route: Route) =>
+        void route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ questoes: [questao], respostas: [] }),
+        }),
+    );
+    await page.route(
       '**/rest/v1/rpc/get_revisao_tentativa',
       (route: Route) =>
         void route.fulfill({
@@ -844,6 +853,19 @@ test.describe('Marca-texto na revisão pós-prova', () => {
     await page.getByText(ENUNCIADO).click();
 
     await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
+  });
+
+  test('no gabarito sem tentativa, o atalho não liga marca-texto nenhum', async ({ page }) => {
+    // Mesma tela, rota sem tentativa: aqui não há o que grifar nem onde salvar.
+    await page.goto(`/dashboard/simulados/${questao.prova_id}/visualizar`);
+    await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
+
+    const enunciado = await seletorDoEnunciado(page);
+    await selecionarSemEsperar(page, enunciado, 'conduta inicial');
+    await page.keyboard.press('g');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({});
+    await expect(page.getByRole('button', { name: /marca-texto|Apagar grifos/ })).toHaveCount(0);
   });
 
   test('sem grifo salvo, a revisão não mostra estojo nenhum', async ({ page }) => {
