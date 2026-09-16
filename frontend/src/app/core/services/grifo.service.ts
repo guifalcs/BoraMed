@@ -157,6 +157,7 @@ export class GrifoService {
   limparTudo(): void {
     this._grifos.set(new Map());
     this.salvar();
+    this.guardarSeNaoSobrouNada();
   }
 
   /** Sai da tela mantendo o que foi grifado (tentativa pausada ou revisada). */
@@ -179,6 +180,18 @@ export class GrifoService {
       return novo;
     });
     this.salvar();
+    this.guardarSeNaoSobrouNada();
+  }
+
+  /**
+   * Na revisão o estojo só existe enquanto há grifo — é uma borracha, e sem
+   * nada para apagar ela some da tela. Se a ferramenta continuasse na mão, o
+   * cursor de borracha ficaria preso no texto sem nenhum botão para desligar.
+   * Vale tanto para o "limpar tudo" quanto para apagar o último trecho à mão.
+   */
+  private guardarSeNaoSobrouNada(): void {
+    if (this.escopo() !== 'revisao') return;
+    if (this._grifos().size === 0) this.modoAtivo.set(false);
   }
 
   /** Paleta é preferência do aluno: sobrevive ao fim da tentativa. */

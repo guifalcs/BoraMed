@@ -107,6 +107,11 @@ console.log('confirmação:', await page.getByText('Limpar todos os grifos?').co
 await page.screenshot({ path: `${SAIDA}/grifo-revisao-limpar.png` });
 await page.getByRole('button', { name: 'Limpar tudo' }).click();
 await page.waitForTimeout(800);
+console.log('estojo após limpar:', await page.getByRole('button', { name: 'Guardar a borracha' }).count());
+console.log('cursor após limpar:', await page.evaluate(() => {
+  const alvo = [...document.querySelectorAll('div')].find((e) => e.className.includes('font-medium') && e.querySelector(':scope > markdown'));
+  return alvo ? getComputedStyle(alvo).cursor.slice(0, 30) : 'bloco não achado';
+}));
 console.log('pintados após limpar:', JSON.stringify(await page.evaluate(() => {
   const s = {};
   for (const [n, h] of CSS.highlights) { if (!n.startsWith('bm-grifo-')) continue; const t = []; for (const r of h) t.push(r.toString()); if (t.length) s[n] = t; }

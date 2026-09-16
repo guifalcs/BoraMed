@@ -665,6 +665,36 @@ test.describe('Marca-texto na revisão pós-prova', () => {
     await expect.poll(() => grifosNaTela(page)).toEqual({});
   });
 
+  test('apagar o último grifo devolve o cursor ao normal', async ({ page }) => {
+    const enunciado = await seletorDoEnunciado(page);
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+    await expect
+      .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).temDesenho)
+      .toBe(true);
+
+    await page.getByRole('button', { name: 'Limpar todos os grifos desta revisão' }).click();
+    await page.getByRole('button', { name: 'Limpar tudo' }).click();
+
+    // Sem grifo o estojo some da revisão; se a borracha seguisse na mão, o
+    // cursor ficaria preso no texto sem nenhum botão para desligar.
+    await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toHaveCount(0);
+    await expect
+      .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).temDesenho)
+      .toBe(false);
+  });
+
+  test('apagar o último trecho pela borracha também solta o cursor', async ({ page }) => {
+    const enunciado = await seletorDoEnunciado(page);
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+
+    await selecionarTrecho(page, enunciado, 'conduta inicial');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({});
+    await expect
+      .poll(async () => (await cursorDoTextoGrifavel(page, enunciado)).temDesenho)
+      .toBe(false);
+  });
+
   test('clicar no fundo da tela não guarda a borracha', async ({ page }) => {
     await page.getByRole('button', { name: 'Apagar grifos' }).click();
     await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
