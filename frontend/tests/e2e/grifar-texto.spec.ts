@@ -268,6 +268,23 @@ async function seletorDoApoio(page: Page): Promise<string> {
 
 const pegarMarcaTexto = (page: Page) => page.getByRole('button', { name: 'Pegar o marca-texto' });
 
+/** Cursor desenhado sobre o texto grifável: é SVG, e a ponta carrega a cor. */
+async function cursorDoTextoGrifavel(
+  page: Page,
+): Promise<{ temDesenho: boolean; ponta: string | null; fallback: string }> {
+  return page.evaluate(() => {
+    const alvo = document.querySelector('[class*="bm-caneta-"]');
+    if (!alvo) throw new Error('nenhum bloco grifável na tela');
+    const cursor = getComputedStyle(alvo).cursor;
+    const fills = [...cursor.matchAll(/fill='%23([0-9a-f]{6})'/g)].map((m) => m[1]!);
+    return {
+      temDesenho: cursor.startsWith('url('),
+      ponta: fills[fills.length - 1] ?? null,
+      fallback: cursor.split(',').pop()!.trim(),
+    };
+  });
+}
+
 test.describe('Marca-texto na execução da prova', () => {
   test.beforeEach(async ({ page }) => {
     await setupMocks(page);
@@ -414,6 +431,28 @@ test.describe('Marca-texto na execução da prova', () => {
 
     expect(await grifosNaTela(page)).toEqual({ amarelo: ['conduta inicial'] });
     await expect(page.getByRole('button', { name: 'Guardar o marca-texto' })).toBeVisible();
+  });
+
+  test('o cursor vira a ferramenta em cima do texto que aceita pintura', async ({ page }) => {
+    // Guardado: cursor normal, nada de caneta sobrando na tela.
+    expect((await cursorDoTextoGrifavel(page)).temDesenho).toBe(false);
+
+    await pegarMarcaTexto(page).click();
+
+    // `poll`: a classe da ferramenta chega no ciclo do Angular, não no clique.
+    // A ponta desenhada carrega a mesma cor que vai pintar o texto.
+    await expect.poll(() => cursorDoTextoGrifavel(page)).toEqual({
+      temDesenho: true,
+      ponta: 'fde68a',
+      fallback: 'text',
+    });
+
+    await page.getByRole('button', { name: 'Grifar em azul' }).click();
+    await expect.poll(async () => (await cursorDoTextoGrifavel(page)).ponta).toBe('bfdbfe');
+
+    // A borracha tem desenho próprio: bloco deitado, sem ponta colorida.
+    await page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }).click();
+    await expect.poll(async () => (await cursorDoTextoGrifavel(page)).ponta).toBe('cbd5e1');
   });
 
   test('atalho G pega e guarda o marca-texto', async ({ page }) => {

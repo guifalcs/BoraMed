@@ -29,6 +29,13 @@ import type { BlocoGrifo } from '../utils/grifo';
   standalone: true,
   host: {
     '[class.bm-grifavel-ativo]': 'modoAtivo()',
+    // O cursor sai destas classes (ver styles.css): ele vira a ferramenta na
+    // mão, com a cor carregada na ponta, em cima do texto que aceita pintura.
+    '[class.bm-caneta-amarelo]': "ferramenta() === 'amarelo'",
+    '[class.bm-caneta-verde]': "ferramenta() === 'verde'",
+    '[class.bm-caneta-azul]': "ferramenta() === 'azul'",
+    '[class.bm-caneta-rosa]': "ferramenta() === 'rosa'",
+    '[class.bm-caneta-borracha]': "ferramenta() === 'borracha'",
   },
 })
 export class GrifavelDirective implements OnInit, OnDestroy {
@@ -42,6 +49,7 @@ export class GrifavelDirective implements OnInit, OnDestroy {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly modoAtivo = this.grifo.modoAtivo;
+  protected readonly ferramenta = this.grifo.ferramenta;
 
   private chave: number | null = null;
   private observer: MutationObserver | null = null;
