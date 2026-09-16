@@ -1,0 +1,79 @@
+<!-- Dock flutuante: preso ao fundo da tela, fora do fluxo da prova.
+     Centralizado nos dois breakpoints de propósito — encostado à direita ele
+     colidiria com a aba do widget de suporte, que mora na mesma faixa. O
+     `env(safe-area-inset-bottom)` evita a barra do iPhone comer a paleta. -->
+<div [class]="classesDock()">
+  @if (ativo()) {
+    <!-- Dica curta, some junto com o modo. Não rouba foco nem clique. -->
+    <!-- Mesmo par de cores dos tooltips do app: o modificador de opacidade não
+         vale em cor arbitrária (`/85` sobre `var()` não compila e a pílula some). -->
+    <p
+      class="rounded-full bg-[var(--color-text)] px-3 py-1 text-xs font-medium text-[var(--color-surface)] shadow-md"
+      aria-live="polite"
+    >
+      {{ dica() }}
+    </p>
+  }
+
+  <div
+    class="pointer-events-auto flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-lg"
+    role="toolbar"
+    aria-label="Marca-texto"
+  >
+    <!-- Liga/desliga o marca-texto -->
+    <button
+      type="button"
+      [class]="classesToggle()"
+      [style.background-color]="ativo() ? corDoBotao() : null"
+      [attr.aria-pressed]="ativo()"
+      [attr.aria-label]="ativo() ? 'Guardar o marca-texto' : 'Pegar o marca-texto'"
+      [title]="ativo() ? 'Guardar o marca-texto (G)' : 'Grifar trechos (G)'"
+      (click)="toggle()"
+    >
+      <app-ui-icon [icon]="iconGrifar" [size]="17" />
+    </button>
+
+    @if (ativo()) {
+      <div class="mx-0.5 h-6 w-px shrink-0 bg-[var(--color-border)]"></div>
+
+      <!-- Paleta -->
+      @for (opcao of opcoes; track opcao.cor) {
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full"
+          [attr.aria-pressed]="ferramenta() === opcao.cor"
+          [attr.aria-label]="'Grifar em ' + opcao.rotulo.toLowerCase()"
+          [title]="opcao.rotulo"
+          (click)="escolher(opcao.cor)"
+        >
+          <span [class]="classesAmostra(opcao.cor)" [style.background-color]="opcao.amostra"></span>
+        </button>
+      }
+
+      <!-- Borracha -->
+      <button
+        type="button"
+        [class]="classesFerramenta(ferramenta() === 'borracha')"
+        [attr.aria-pressed]="ferramenta() === 'borracha'"
+        aria-label="Apagar grifos do trecho selecionado"
+        title="Borracha"
+        (click)="escolher('borracha')"
+      >
+        <app-ui-icon [icon]="iconBorracha" [size]="17" />
+      </button>
+
+      <!-- Limpar a questão inteira -->
+      @if (temGrifosNaQuestao()) {
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700"
+          aria-label="Limpar todos os grifos desta questão"
+          title="Limpar os grifos desta questão"
+          (click)="limparQuestao()"
+        >
+          <app-ui-icon [icon]="iconLimpar" [size]="16" />
+        </button>
+      }
+    }
+  </div>
+</div>

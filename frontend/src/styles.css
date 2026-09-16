@@ -91,6 +91,41 @@ input {
   }
 }
 
+/* ── Marca-texto da prova (grifos do aluno) ──────────── */
+
+/* Pintura via CSS Custom Highlight API: os trechos grifados são desenhados por
+   cima do texto, sem nenhum nó extra no DOM. É o que permite grifar em cima do
+   Markdown já renderizado sem quebrar a marcação do enunciado.
+   Os nomes casam com `nomeHighlight()` em core/services/grifo-render.service.ts
+   e as cores com a paleta de grifo-toolbar.component.ts.
+   `::highlight()` só aceita cor, fundo, sombra e decoração de texto — por isso
+   o destaque é fundo sólido, sem borda nem arredondamento. */
+::highlight(bm-grifo-amarelo) {
+  background-color: #fde68a;
+  color: #0f172a;
+}
+::highlight(bm-grifo-verde) {
+  background-color: #a7f3d0;
+  color: #0f172a;
+}
+::highlight(bm-grifo-azul) {
+  background-color: #bfdbfe;
+  color: #0f172a;
+}
+::highlight(bm-grifo-rosa) {
+  background-color: #fbcfe8;
+  color: #0f172a;
+}
+
+/* Com o marca-texto na mão o texto da prova precisa ser selecionável: a
+   alternativa tem `select-none` justamente para o long press que a risca não
+   abrir a alça de seleção do sistema. Aqui a regra se inverte. */
+.bm-grifavel-ativo {
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+
 /* ── Impressão (tela de impressão de simulados) ──────── */
 
 @media print {

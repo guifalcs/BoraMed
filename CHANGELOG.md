@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-16 | Feature | Marca-texto na prova (grifar trechos da questão)
+
+**O aluno grifa enunciado, texto de apoio e alternativas em quatro cores, como faria na prova impressa**
+
+- **Estojo flutuante no rodapé** com liga/desliga, paleta de quatro cores (amarelo, verde, azul, rosa), borracha e "limpar esta questão". Atalho `G` pega e guarda o marca-texto; a dica acima do dock diz o que a ferramenta na mão vai fazer.
+- **O modo é explícito de propósito.** No toque, a seleção de texto disputa o mesmo gesto com o long press que risca alternativa (`select-none` existe justamente para o long press não abrir a alça de seleção do sistema). Com o marca-texto na mão a regra se inverte: quem manda é a seleção, e o long press de riscar fica desligado. Clique limpo na alternativa **continua respondendo** — só o clique que termina uma seleção é ignorado.
+- **Pintura sem tocar no DOM**, via CSS Custom Highlight API (`CSS.highlights` + `::highlight()`). Foi a escolha central: grifar em cima de Markdown já renderizado por inserção de `<mark>` quebraria a marcação do enunciado e brigaria com o re-render do Angular. Navegador sem a API mostra a prova normal, só sem a pintura — o grifo continua sendo gravado. Baseline desde junho/2025 (Chrome 105+, Safari 17.2+, Firefox 140+).
+- **Âncora por offset de caractere dentro do bloco** (`enunciado`, `apoio`, `alt:<id>`), não por nó do DOM. É o que faz o grifo reancorar sozinho ao trocar de questão (o card é reaproveitado), ao re-renderizar o Markdown e depois do F5. Bibliotecas do gênero (rangy, web-highlighter) foram descartadas: as duas mutam o DOM e nenhuma tem release recente.
+- **Regra do marca-texto de verdade: a última passada manda.** Grifar por cima com outra cor substitui a anterior no trecho coberto; a mesma cor funde num bloco só. A borracha parte em dois o grifo atravessado pelo meio e leva junto o espaço em volta — sem isso, apagar uma palavra deixava dois riscos soltos pintando o branco.
+- **Estado local, como as alternativas riscadas**: `localStorage` (`bm_grifos_<tentativa_id>`), teto de 200 trechos por questão, apagado ao finalizar e chaves de tentativa com mais de 30 dias varridas sozinhas. `localStorage` e não `sessionStorage` porque a tentativa pode ser pausada e retomada dias depois — perder a leitura grifada de uma prova inteira ao fechar a aba doeria. **Não vai para o banco, não entra em resultado, revisão, nota nem estatística de questão.**
+- **Posicionamento do dock**: centralizado (encostado à direita colidia com a aba do widget de suporte) e acima da barra de navegação do mobile, que tem 64px e `z-index: 50`. No modo foco, onde a barra some, a folga some junto.
+- **Seed local ganhou dois casos clínicos longos** (IAMCSST e TEP) com texto de apoio, Markdown e cinco alternativas extensas, nas duas primeiras posições do *Treino Nacional — Cardiologia*: o seed não tinha nenhuma questão com `enunciado_apoio`, que é justamente o material que se grifa.
+- Verificado: **9 e2e novos** (`grifar-texto.spec.ts`, incluindo grifo sobrevivendo ao F5 e alternativa não sendo marcada ao grifar) e **21 unitários** da álgebra de intervalos e da serialização. Suíte unitária inteira verde (895) e build de produção limpo.
+
 ## 2026-09-16 | Fix | Suíte unitária volta ao verde (campanhas de e-mail)
 
 **Três testes de `admin-campanhas` cobravam uma assinatura de método que a feature de lista manual já tinha mudado**

@@ -23,6 +23,7 @@ import { RespostaPadraoComponent } from '../resposta-padrao/resposta-padrao.comp
 import { QuestaoRecursoComponent } from '../questao-recurso/questao-recurso.component';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 import { ArrowLeftRight, Ban } from 'lucide-angular';
+import { GrifavelDirective } from '../../directives/grifavel.directive';
 import { FormatarEnunciadoPipe } from '../../pipes/formatar-enunciado.pipe';
 import { ImagemProtegidaPipe } from '../../pipes/imagem-protegida.pipe';
 import { AsyncPipe } from '@angular/common';
@@ -42,6 +43,7 @@ import { AsyncPipe } from '@angular/common';
     UiIconComponent,
     ImagemProtegidaPipe,
     AsyncPipe,
+    GrifavelDirective,
   ],
   templateUrl: './questao-card.component.html',
   providers: [provideMarkdown()],

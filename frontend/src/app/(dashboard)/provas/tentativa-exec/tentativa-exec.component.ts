@@ -17,6 +17,7 @@ import { ProvaService } from '../../../core/services/prova.service';
 import { TimerService } from '../../../core/services/timer.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FocoModoService } from '../../../core/services/foco-modo.service';
+import { GrifoService } from '../../../core/services/grifo.service';
 import { CorrecaoIaService } from '../../../core/services/correcao-ia.service';
 import type { GemeaDisponivel, QuestaoComAlternativas } from '../../../core/models/questao';
 import type { Tentativa, ModoProva } from '../../../core/models/tentativa';
@@ -29,6 +30,7 @@ import { QuestaoCardComponent } from '../../../shared/components/questao-card/qu
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { GradeItemComponent } from '../../../shared/components/grade-item/grade-item.component';
 import { QuestaoComentariosComponent } from '../../../shared/components/questao-comentarios/questao-comentarios.component';
+import { GrifoToolbarComponent } from '../../../shared/components/grifo-toolbar/grifo-toolbar.component';
 
 /** Prefixo do rascunho local de alternativas riscadas (uma chave por tentativa). */
 const ELIMINADAS_KEY_PREFIX = 'bm_eliminadas_';
@@ -46,7 +48,7 @@ const TIMEOUT_CORRECAO_MS = 45_000;
 @Component({
   selector: 'app-tentativa-exec',
   standalone: true,
-  imports: [ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent, GradeItemComponent, QuestaoComentariosComponent],
+  imports: [ProvaHeaderComponent, QuestaoCardComponent, UiIconComponent, UiConfirmDialogComponent, EmptyStateComponent, GradeItemComponent, QuestaoComentariosComponent, GrifoToolbarComponent],
   providers: [TimerService],
   templateUrl: './tentativa-exec.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,6 +62,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   private readonly notifications = inject(NotificationService);
   private readonly correcaoIa = inject(CorrecaoIaService);
   protected readonly focoMode = inject(FocoModoService);
+  protected readonly grifos = inject(GrifoService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly tentativa = signal<Tentativa | null>(null);
@@ -126,6 +129,9 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   });
 
   protected readonly modo = computed<ModoProva>(() => this.tentativa()?.modo ?? 'simulado');
+
+  /** Alvo do botão "limpar grifos" do estojo flutuante. */
+  protected readonly questaoAtualId = computed(() => this.questaoAtual()?.id ?? null);
 
   /** Respondidas = alternativas selecionadas + abertas enviadas. */
   protected readonly totalRespondidas = computed(
@@ -271,6 +277,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     this.enviadas.set(enviadasSet);
     this.anuladas.set(anuladasSet);
     this.eliminadas.set(this.lerEliminadasSalvas(tentativaAtiva.id));
+    this.grifos.iniciar(tentativaAtiva.id);
 
     // Restaura correções das abertas já enviadas (pós-F5)
     if (enviadasSet.size > 0) {
@@ -340,6 +347,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     const segundos = this.timer.seconds();
     this.timer.stop();
     this.focoMode.desativar();
+    this.grifos.encerrar();
     const tentativa = this.tentativa();
 
     // Flush de rascunhos ainda em debounce, para não perder o que foi digitado.
@@ -911,6 +919,7 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
     if (result.ok) {
       this._finalizado = true;
       this.limparEliminadasSalvas();
+      this.grifos.descartar();
       this.tentativaService.setLastResultado(result.data);
       void this.router.navigate([
         '/dashboard/simulados',
@@ -966,6 +975,11 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
       case 'M':
         event.preventDefault();
         this.toggleMarcar();
+        break;
+      case 'g':
+      case 'G':
+        event.preventDefault();
+        this.grifos.toggleModo();
         break;
       default: {
         const alternativas = this.questaoAtual()?.alternativas;

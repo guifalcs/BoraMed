@@ -128,7 +128,7 @@
       <!-- Dica de atalhos de teclado -->
       @if (!focoMode.ativo()) {
         <p class="mt-2 hidden text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:block">
-          ← → para navegar &nbsp;·&nbsp; A–E ou 1–5 para responder &nbsp;·&nbsp; Shift + A–E para eliminar &nbsp;·&nbsp; M para marcar
+          ← → para navegar &nbsp;·&nbsp; A–E ou 1–5 para responder &nbsp;·&nbsp; Shift + A–E para eliminar &nbsp;·&nbsp; M para marcar &nbsp;·&nbsp; G para grifar
         </p>
         <!-- No toque não existe hover: o botão de eliminar não aparece, o gesto é o caminho. -->
         <p class="mt-2 text-center text-xs text-[var(--color-text-muted)] opacity-60 sm:hidden">
@@ -175,6 +175,9 @@
       }
     }
   </div>
+
+  <!-- Marca-texto: estojo flutuante, disponível inclusive no modo foco -->
+  <app-grifo-toolbar [questaoId]="questaoAtualId()" />
 
   <!-- Modal de confirmação de finalização -->
   @if (mostrarConfirmacao()) {

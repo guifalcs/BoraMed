@@ -318,6 +318,73 @@ ON CONFLICT DO NOTHING;
 UPDATE public.prova SET qtd_questoes = 2 WHERE id = 'bbbbbbbb-0003-0000-0000-000000000003';
 
 -- ============================================================================
+-- Casos clínicos longos para testar o marca-texto (grifos) da prova.
+-- O que a feature precisa e o resto do seed não tinha: texto de apoio de
+-- verdade, enunciado com Markdown (negrito, lista) e cinco alternativas
+-- extensas — o material que o aluno grifaria numa prova impressa.
+-- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção.
+-- ============================================================================
+
+INSERT INTO public.questao (id, enunciado_apoio, enunciado, formato, tipo_questao, status, explicacao, referencia, disciplina_id) VALUES
+('cccc0000-0000-0000-0000-000000000003',
+ E'Homem de 58 anos, tabagista de longa data (40 anos-maço) e hipertenso em uso irregular de losartana, procura a emergência com **dor torácica retroesternal em aperto** iniciada há 2 horas, de forte intensidade, com irradiação para o membro superior esquerdo e mandíbula, acompanhada de sudorese fria, náuseas e sensação de morte iminente. Relata episódios semelhantes, porém mais leves e desencadeados por esforço, nas últimas três semanas.
+
+Ao exame: regular estado geral, descorado 1+/4+, sudoreico. PA 158 x 96 mmHg, FC 104 bpm, FR 22 irpm, SatO₂ 95% em ar ambiente. Ausculta cardíaca com ritmo regular em 2 tempos, bulhas hipofonéticas, presença de **B4**, sem sopros. Ausculta pulmonar com estertores crepitantes em bases. Pulsos periféricos simétricos e cheios.
+
+O eletrocardiograma realizado na admissão evidencia supradesnivelamento do segmento ST de 3 mm em V1 a V4, com imagem em espelho na parede inferior.',
+ E'Considerando o quadro clínico, o exame físico e o eletrocardiograma descritos, qual é a **conduta inicial mais adequada** para este paciente?',
+ 'multipla_escolha', 'nacional', 'ativa',
+ E'O quadro é de **infarto agudo do miocárdio com supradesnivelamento de ST (IAMCSST) de parede anterior extensa**. Na presença de supra de ST com menos de 12 horas de evolução, a prioridade absoluta é a **terapia de reperfusão**, preferencialmente angioplastia primária, com meta porta-balão de até 90 minutos. A dupla antiagregação e a anticoagulação acompanham a reperfusão, não a substituem. Solicitar troponina seriada e aguardar o resultado atrasa a reperfusão e piora o prognóstico — com supra de ST, o diagnóstico é eletrocardiográfico.',
+ 'Diretriz da Sociedade Brasileira de Cardiologia sobre Síndromes Coronarianas Agudas.',
+ 'aaaa0000-0000-0000-0000-000000000001'),
+('cccc0000-0000-0000-0000-000000000004',
+ E'Mulher de 34 anos, previamente hígida, chega ao pronto-socorro com **dispneia súbita** e dor torácica ventilatório-dependente iniciadas há 6 horas. Fez viagem aérea de 11 horas há 3 dias e usa anticoncepcional oral combinado há 8 anos. Nega febre, tosse ou trauma.
+
+Ao exame: taquipneica, ansiosa. PA 108 x 70 mmHg, FC 118 bpm, FR 28 irpm, SatO₂ 89% em ar ambiente. Ausculta pulmonar sem ruídos adventícios. Membro inferior direito com **edema assimétrico** e dor à palpação da panturrilha.
+
+Exames iniciais:
+
+- Gasometria arterial: pH 7,49 | pCO₂ 28 mmHg | pO₂ 58 mmHg
+- D-dímero: 3.200 ng/mL
+- Radiografia de tórax: sem alterações significativas
+- ECG: taquicardia sinusal com padrão S1Q3T3',
+ E'Diante da principal hipótese diagnóstica, qual exame deve ser solicitado para **confirmação** e qual conduta deve ser adotada **enquanto se aguarda o resultado**?',
+ 'multipla_escolha', 'nacional', 'ativa',
+ E'O quadro é clássico de **tromboembolismo pulmonar (TEP)**: fatores de risco (viagem prolongada, anticoncepcional), dispneia súbita, hipoxemia com alcalose respiratória, sinais de trombose venosa profunda e S1Q3T3. O exame confirmatório de escolha é a **angiotomografia de tórax**. Como a probabilidade clínica é alta e a paciente está hemodinamicamente estável, a **anticoagulação plena deve ser iniciada empiricamente**, antes mesmo do resultado — o risco de aguardar supera o risco do sangramento. Trombólise só entra no TEP maciço com instabilidade hemodinâmica, o que não é o caso.',
+ 'Diretriz de Tromboembolismo Venoso — Sociedade Brasileira de Angiologia e Cirurgia Vascular.',
+ 'aaaa0000-0000-0000-0000-000000000001')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem) VALUES
+('cccc0000-0000-0000-0000-000000000003','A','Solicitar troponina ultrassensível seriada e aguardar o resultado antes de definir a conduta, mantendo o paciente em observação com monitorização contínua.',false,1),
+('cccc0000-0000-0000-0000-000000000003','B','Acionar imediatamente a terapia de reperfusão, com angioplastia primária como primeira escolha, associada a dupla antiagregação plaquetária e anticoagulação.',true,2),
+('cccc0000-0000-0000-0000-000000000003','C','Administrar nitrato sublingual e morfina, reavaliar o eletrocardiograma em 6 horas e encaminhar para teste ergométrico ambulatorial se houver melhora da dor.',false,3),
+('cccc0000-0000-0000-0000-000000000003','D','Iniciar apenas anticoagulação plena com heparina não fracionada e encaminhar o paciente para cateterismo eletivo em até 72 horas da admissão.',false,4),
+('cccc0000-0000-0000-0000-000000000003','E','Solicitar ecocardiograma transtorácico de urgência para avaliar a contratilidade segmentar antes de indicar qualquer estratégia de reperfusão.',false,5),
+('cccc0000-0000-0000-0000-000000000004','A','Cintilografia de ventilação-perfusão, mantendo apenas oxigenoterapia e analgesia até a definição diagnóstica pelo exame de imagem.',false,1),
+('cccc0000-0000-0000-0000-000000000004','B','Angiotomografia de tórax, iniciando anticoagulação plena empiricamente por se tratar de alta probabilidade clínica com paciente estável.',true,2),
+('cccc0000-0000-0000-0000-000000000004','C','Angiotomografia de tórax, com trombólise sistêmica imediata pela gravidade da hipoxemia apresentada na gasometria arterial.',false,3),
+('cccc0000-0000-0000-0000-000000000004','D','Ecocardiograma transtorácico, aguardando sinais de sobrecarga de ventrículo direito para então iniciar qualquer terapia antitrombótica.',false,4),
+('cccc0000-0000-0000-0000-000000000004','E','Ultrassonografia com Doppler de membros inferiores, postergando a anticoagulação até a confirmação de trombose venosa profunda.',false,5)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.questao_tema (questao_id, tema_id) VALUES
+('cccc0000-0000-0000-0000-000000000003','bbbb0000-0000-0000-0000-000000000002'),
+('cccc0000-0000-0000-0000-000000000004','bbbb0000-0000-0000-0000-000000000002')
+ON CONFLICT DO NOTHING;
+
+-- Entram no treino nacional de Cardiologia, nas duas primeiras posições: o
+-- caso clínico longo é o que exercita o marca-texto logo na abertura da prova.
+INSERT INTO public.prova_questao (prova_id, questao_id, ordem) VALUES
+('bbbbbbbb-0004-0000-0000-000000000004','cccc0000-0000-0000-0000-000000000003',0),
+('bbbbbbbb-0004-0000-0000-000000000004','cccc0000-0000-0000-0000-000000000004',1)
+ON CONFLICT DO NOTHING;
+
+UPDATE public.prova
+   SET qtd_questoes = (SELECT count(*) FROM public.prova_questao pq WHERE pq.prova_id = prova.id)
+ WHERE id = 'bbbbbbbb-0004-0000-0000-000000000004';
+
+-- ============================================================================
 -- Dados de teste locais do módulo de Pesquisas.
 -- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção.
 --
