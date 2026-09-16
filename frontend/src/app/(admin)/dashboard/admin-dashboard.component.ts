@@ -166,24 +166,19 @@ export class AdminDashboardComponent implements OnInit {
     percent: number;
   } | null>(null);
 
-  /** Quantos usuários não têm cidade/unidade cadastrada (fora da base do gráfico). */
-  protected readonly semCidadeTotal = computed(() => {
-    const linhas = this.distribuicaoUnidades() ?? [];
-    return linhas.find((l) => l.faculdade_unidade === null)?.total ?? 0;
-  });
-
   /**
-   * Top N cidades por total, com o restante agregado em "Outras". A base do
-   * percentual é só quem tem cidade cadastrada — quem não informou não é uma
-   * sede e entraria como um bloco dominante, mascarando a distribuição real.
+   * Top N cidades por total, com o restante agregado em "Outras". Quem não
+   * informou cidade entra como a linha "Sem cidade", igual a qualquer outra —
+   * ficar fora do gráfico é o que causava a divergência com o card de
+   * assinaturas ativas.
    */
   protected readonly distribuicaoUnidadeItens = computed(() => {
-    const linhas = (this.distribuicaoUnidades() ?? []).filter((l) => l.faculdade_unidade !== null);
+    const linhas = this.distribuicaoUnidades() ?? [];
     const total = linhas.reduce((acc, l) => acc + l.total, 0);
     if (total === 0) return [] as { label: string; total: number; assinantes: number; percent: number }[];
 
     const rotulo = (u: AdminDistribuicaoUnidade['faculdade_unidade']) =>
-      u ? (FACULDADE_UNIDADE_LABELS[u] ?? u) : '';
+      u ? (FACULDADE_UNIDADE_LABELS[u] ?? u) : 'Sem cidade';
 
     const ordenadas = [...linhas].sort((a, b) => b.total - a.total);
     const principais = ordenadas.slice(0, this.maxCidadesNoGrafico);
