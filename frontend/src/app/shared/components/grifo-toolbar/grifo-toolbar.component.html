@@ -45,7 +45,7 @@
       [style.color]="ativo() && !somenteBorracha() ? corDoIcone() : null"
       [attr.aria-pressed]="ativo()"
       [attr.aria-label]="rotuloToggle()"
-      [title]="rotuloToggle()"
+      [title]="tituloToggle()"
       (click)="toggle()"
     >
       <app-ui-icon [icon]="somenteBorracha() ? iconBorracha : iconGrifar" [size]="17" />
@@ -106,7 +106,7 @@
         [class]="classesFerramenta(ferramenta() === 'borracha')"
         [attr.aria-pressed]="ferramenta() === 'borracha'"
         aria-label="Apagar grifos do trecho selecionado"
-        title="Borracha"
+        title="Borracha (Shift + G)"
         (click)="escolher('borracha')"
       >
         <app-ui-icon [icon]="iconBorracha" [size]="17" />

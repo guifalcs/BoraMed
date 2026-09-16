@@ -94,6 +94,13 @@ export class GrifoToolbarComponent {
     return this.ativo() ? 'Guardar o marca-texto' : 'Pegar o marca-texto';
   });
 
+  /** O título carrega o atalho; o `aria-label` fica só com a ação. */
+  protected readonly tituloToggle = computed(() =>
+    this.somenteBorracha()
+      ? `${this.rotuloToggle()} (Shift + G)`
+      : `${this.rotuloToggle()} (G)`,
+  );
+
   protected readonly temGrifosNaQuestao = computed(() => {
     const id = this.questaoId();
     if (!id) return false;

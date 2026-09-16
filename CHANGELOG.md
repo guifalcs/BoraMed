@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 | Feature | Shift + G vai direto na borracha
+
+**O outro lado da mesma tecla: `G` pinta, `Shift + G` apaga**
+
+- **Com trecho selecionado**, `Shift + G` apaga o grifo dali na hora — e **sem trocar a ferramenta que está na mão**: quem estava com a caneta azul continua com ela depois. É uma passada de borracha, não uma troca de ferramenta.
+- **Sem seleção**, entrega a borracha (e, apertado de novo, guarda), do mesmo jeito que `G` faz com o marca-texto.
+- **`B` e `E` ficaram de fora de propósito**: as duas respondem alternativa na execução. `Shift + G` é vizinho do atalho de grifar e estava livre — `Shift` + letra já era o padrão do "outro lado da ação" na tela (Shift + A–E elimina alternativa).
+- A dica do rodapé da execução e o tooltip da borracha passaram a mostrar o atalho.
+- Verificado: **34 e2e** (2 novos: apagar por seleção mantendo a cor na mão, e o liga/desliga sem seleção) e 915 unitários.
+
 ## 2026-09-16 | Feature | Atalho G pinta o trecho selecionado, sem pegar a caneta
 
 **Selecionar e apertar `G` grifa na hora — e o atalho passou a valer na revisão**

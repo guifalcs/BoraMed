@@ -1,7 +1,7 @@
 import { DOCUMENT, Injectable, PLATFORM_ID, effect, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { GrifoService } from './grifo.service';
-import type { BlocoGrifo, CorGrifo } from '../../shared/utils/grifo';
+import type { BlocoGrifo, CorGrifo, FerramentaGrifo } from '../../shared/utils/grifo';
 import { nomeHighlight, regraHighlight } from '../../shared/utils/grifo-cor';
 import {
   offsetsDoRange,
@@ -204,8 +204,10 @@ export class GrifoRenderService {
    * `forcar` é o atalho de teclado: ali a seleção vale mesmo com o marca-texto
    * guardado — é justamente o caminho de pintar sem pegar a caneta antes.
    */
-  private processarSelecao(forcar = false): boolean {
+  private processarSelecao(forcar = false, ferramentaForcada: FerramentaGrifo | null = null): boolean {
     if (!forcar && !this.grifoService.modoAtivo()) return false;
+    const ferramenta = ferramentaForcada ?? this.grifoService.ferramenta();
+    const apagando = ferramenta === 'borracha';
     const selecao = this.document.getSelection();
     if (!selecao || selecao.isCollapsed || selecao.rangeCount === 0) return false;
 
@@ -228,12 +230,16 @@ export class GrifoRenderService {
       // A borracha faz o caminho inverso: também leva o espaço em volta. Sem
       // isso, apagar uma palavra do meio de um grifo deixaria os dois espaços
       // vizinhos pintados, como dois riscos soltos no branco.
-      if (this.grifoService.borrachaAtiva()) {
+      if (apagando) {
         while (inicio > 0 && /\s/.test(texto[inicio - 1] ?? '')) inicio--;
         while (fim < texto.length && /\s/.test(texto[fim] ?? '')) fim++;
       }
 
-      this.grifoService.grifar(registro.questaoId, registro.bloco, inicio, fim);
+      if (apagando) {
+        this.grifoService.apagar(registro.questaoId, registro.bloco, inicio, fim);
+      } else {
+        this.grifoService.grifar(registro.questaoId, registro.bloco, inicio, fim, ferramenta);
+      }
       grifou = true;
     }
 
@@ -250,6 +256,8 @@ export class GrifoRenderService {
   private readonly aoTeclar = (evento: KeyboardEvent): void => {
     if (evento.key !== 'g' && evento.key !== 'G') return;
     if (evento.ctrlKey || evento.metaKey || evento.altKey) return;
+    // `Shift` é o outro lado da mesma tecla: em vez de pintar, apaga.
+    const borracha = evento.shiftKey;
 
     const alvo = evento.target as HTMLElement | null;
     const tag = alvo?.tagName;
@@ -259,8 +267,21 @@ export class GrifoRenderService {
     if (alvo?.closest?.('dialog[open]')) return;
 
     evento.preventDefault();
-    if (this.processarSelecao(true)) return;
-    this.grifoService.toggleModo();
+
+    // Com trecho selecionado o atalho é uma passada só: pinta (ou apaga) ali e
+    // não mexe na ferramenta que estava na mão.
+    if (this.processarSelecao(true, borracha ? 'borracha' : null)) return;
+
+    // Sem seleção, o atalho entrega a ferramenta.
+    if (!borracha) {
+      this.grifoService.toggleModo();
+      return;
+    }
+    if (this.grifoService.modoAtivo() && this.grifoService.borrachaAtiva()) {
+      this.grifoService.modoAtivo.set(false);
+    } else {
+      this.grifoService.selecionarFerramenta('borracha');
+    }
   };
 
   private ouvir(): void {

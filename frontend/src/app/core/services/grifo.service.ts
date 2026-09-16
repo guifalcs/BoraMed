@@ -131,8 +131,18 @@ export class GrifoService {
     return f === 'borracha' ? this.ultimaCor : f;
   }
 
-  grifar(questaoId: string, bloco: BlocoGrifo, inicio: number, fim: number): void {
-    const cor = this.ferramenta();
+  /**
+   * `corForcada` existe para o atalho de teclado, que pinta um trecho sem
+   * mexer na ferramenta que está na mão.
+   */
+  grifar(
+    questaoId: string,
+    bloco: BlocoGrifo,
+    inicio: number,
+    fim: number,
+    corForcada: FerramentaGrifo | null = null,
+  ): void {
+    const cor = corForcada ?? this.ferramenta();
     if (cor === 'borracha') {
       this.apagar(questaoId, bloco, inicio, fim);
       return;

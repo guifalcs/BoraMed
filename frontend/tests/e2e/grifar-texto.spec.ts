@@ -606,6 +606,37 @@ test.describe('Marca-texto na execução da prova', () => {
     await expect.poll(() => grifosNaTela(page)).toEqual({ [AZUL]: ['conduta inicial'] });
   });
 
+  test('Shift + G apaga o trecho selecionado sem trocar a cor da mão', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByRole('button', { name: 'Grifar em azul' }).click();
+    const enunciado = await seletorDoEnunciado(page);
+
+    await selecionarTrecho(page, enunciado, 'conduta inicial mais adequada');
+    expect(await grifosNaTela(page)).toEqual({ [AZUL]: ['conduta inicial mais adequada'] });
+
+    await selecionarSemEsperar(page, enunciado, 'inicial');
+    await page.keyboard.press('Shift+G');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({ [AZUL]: ['conduta', 'mais adequada'] });
+    // A caneta azul continua na mão: o atalho foi uma passada, não uma troca.
+    await expect(page.getByRole('button', { name: 'Grifar em azul' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  test('Shift + G sem seleção entrega a borracha', async ({ page }) => {
+    await page.keyboard.press('Shift+G');
+
+    await expect(
+      page.getByRole('button', { name: 'Apagar grifos do trecho selecionado' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    // De novo, guarda — é o mesmo liga/desliga do G.
+    await page.keyboard.press('Shift+G');
+    await expect(pegarMarcaTexto(page)).toBeVisible();
+  });
+
   test('G digitado num campo de texto não vira atalho', async ({ page }) => {
     // A questão discursiva tem textarea; aqui basta um campo qualquer na tela.
     await page.evaluate(() => {
