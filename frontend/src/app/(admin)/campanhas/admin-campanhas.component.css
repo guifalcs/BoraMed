@@ -148,7 +148,7 @@
   overflow: auto;
 }
 
-.dest-chip {
+.chip {
   padding: 4px 10px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
@@ -159,7 +159,7 @@
   cursor: pointer;
 }
 
-.dest-chip[aria-pressed='true'] {
+.chip[aria-pressed='true'] {
   background: var(--color-action);
   border-color: var(--color-action);
   color: var(--color-text-inverse);

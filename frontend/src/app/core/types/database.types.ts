@@ -493,6 +493,7 @@ export type Database = {
         Row: {
           assunto: string
           atualizado_em: string
+          cidades: string[] | null
           concluida_em: string | null
           corpo_html: string
           criado_em: string
@@ -500,6 +501,7 @@ export type Database = {
           erro: string | null
           id: string
           nome: string
+          periodos: number[] | null
           remetente: string
           segmento: string
           status: string
@@ -511,6 +513,7 @@ export type Database = {
         Insert: {
           assunto: string
           atualizado_em?: string
+          cidades?: string[] | null
           concluida_em?: string | null
           corpo_html: string
           criado_em?: string
@@ -518,6 +521,7 @@ export type Database = {
           erro?: string | null
           id?: string
           nome: string
+          periodos?: number[] | null
           remetente: string
           segmento: string
           status?: string
@@ -529,6 +533,7 @@ export type Database = {
         Update: {
           assunto?: string
           atualizado_em?: string
+          cidades?: string[] | null
           concluida_em?: string | null
           corpo_html?: string
           criado_em?: string
@@ -536,6 +541,7 @@ export type Database = {
           erro?: string | null
           id?: string
           nome?: string
+          periodos?: number[] | null
           remetente?: string
           segmento?: string
           status?: string
@@ -2415,7 +2421,12 @@ export type Database = {
         }[]
       }
       admin_contar_publico_email: {
-        Args: { p_segmento: string }
+        Args: {
+          p_cidades?: string[]
+          p_emails?: string[]
+          p_periodos?: number[]
+          p_segmento: string
+        }
         Returns: number
       }
       admin_criar_faq: {
@@ -2586,11 +2597,13 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           assunto: string
+          cidades: string[] | null
           criado_em: string
           criado_por_email: string
           erro: string
           id: string
           nome: string
+          periodos: number[] | null
           segmento: string
           status: string
           total_cancelados: number
@@ -2934,7 +2947,12 @@ export type Database = {
         Returns: Json
       }
       email_publico_alvo: {
-        Args: { p_segmento: string }
+        Args: {
+          p_cidades?: string[]
+          p_emails?: string[]
+          p_periodos?: number[]
+          p_segmento: string
+        }
         Returns: {
           criado_em: string
           email: string

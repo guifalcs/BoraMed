@@ -49,6 +49,59 @@ export function normalizarListaEmails(valores: readonly unknown[]): string[] {
   return validos;
 }
 
+/**
+ * 32 unidades Afya com curso de Medicina — mesma lista do CHECK em
+ * `profiles.faculdade_unidade` (migration 20260828200000) e de
+ * `frontend/src/app/core/models/faculdade-unidade.ts`. Repetida aqui (Deno,
+ * sem import cross-projeto) só para validar o filtro antes de ir ao banco;
+ * nova unidade exige atualizar os três lugares.
+ */
+const CIDADES_VALIDAS = new Set([
+  'abaetetuba_pa', 'araguaina_to', 'braganca_pa', 'cabedelo_pb', 'contagem_mg',
+  'cruzeiro_do_sul_ac', 'duque_de_caxias_rj', 'garanhuns_pe', 'guanambi_ba', 'ipatinga_mg',
+  'itabuna_ba', 'itacoatiara_am', 'itajuba_mg', 'itaperuna_rj', 'jaboatao_pe',
+  'ji_parana_ro', 'maceio_al', 'manacapuru_am', 'maraba_pa', 'montes_claros_mg',
+  'palmas_to', 'parnaiba_pi', 'pato_branco_pr', 'porto_nacional_to', 'porto_velho_ro',
+  'redencao_pa', 'rio_de_janeiro_rj', 'salvador_ba', 'santa_ines_ma', 'sao_joao_del_rei_mg',
+  'teresina_pi', 'vitoria_da_conquista_ba',
+]);
+
+/**
+ * Filtro adicional de cidade (`profiles.faculdade_unidade`), combinável com
+ * qualquer segmento. Descarta silenciosamente o que não é uma unidade
+ * conhecida — mesmo tratamento da lista manual de e-mails: o admin não perde
+ * o disparo por causa de um valor de UI fora de sincronia com o banco.
+ */
+export function normalizarCidades(valores: readonly unknown[]): string[] {
+  const vistas = new Set<string>();
+  const validas: string[] = [];
+  for (const valor of valores) {
+    if (typeof valor !== 'string') continue;
+    const limpo = valor.trim().toLowerCase();
+    if (!limpo || !CIDADES_VALIDAS.has(limpo) || vistas.has(limpo)) continue;
+    vistas.add(limpo);
+    validas.push(limpo);
+  }
+  return validas;
+}
+
+/**
+ * Filtro adicional de período do curso (`profiles.periodo`, 1 a 12),
+ * combinável com qualquer segmento — inclusive junto de `normalizarCidades`
+ * ("1º período em Ipatinga").
+ */
+export function normalizarPeriodos(valores: readonly unknown[]): number[] {
+  const vistos = new Set<number>();
+  const validos: number[] = [];
+  for (const valor of valores) {
+    const n = typeof valor === 'number' ? valor : Number(valor);
+    if (!Number.isInteger(n) || n < 1 || n > 12 || vistos.has(n)) continue;
+    vistos.add(n);
+    validos.push(n);
+  }
+  return validos;
+}
+
 export type Destinatario = {
   readonly user_id: string;
   readonly email: string;

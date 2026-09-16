@@ -810,6 +810,9 @@ export interface AdminCampanhaEmail {
   nome: string;
   assunto: string;
   segmento: SegmentoCampanha;
+  /** Filtros adicionais usados no disparo. null/vazio = sem filtro. */
+  cidades: string[] | null;
+  periodos: number[] | null;
   status: 'enviando' | 'enviada' | 'parcial' | 'falhou';
   total_destinatarios: number;
   total_enviados: number;
@@ -2266,10 +2269,14 @@ export class AdminService {
   async contarPublicoCampanha(
     segmento: SegmentoCampanha,
     emailsManuais?: string[],
+    cidades?: string[],
+    periodos?: number[],
   ): Promise<ServiceResult<number>> {
     const { data, error } = await this.supabase.rpc('admin_contar_publico_email', {
       p_segmento: segmento,
       p_emails: segmento === 'lista_manual' ? emailsManuais ?? [] : null,
+      p_cidades: cidades?.length ? cidades : null,
+      p_periodos: periodos?.length ? periodos : null,
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? 0) as number };
@@ -2357,6 +2364,8 @@ export class AdminService {
     segmento: SegmentoCampanha,
     remetente?: string,
     destinatariosManual?: string[],
+    cidades?: string[],
+    periodos?: number[],
   ): Promise<ServiceResult<ResultadoDisparoCampanha>> {
     return this.invocarCampanha({
       modo: 'enviar',
@@ -2366,6 +2375,8 @@ export class AdminService {
       segmento,
       remetente,
       destinatarios_manual: segmento === 'lista_manual' ? destinatariosManual : undefined,
+      cidades: cidades?.length ? cidades : undefined,
+      periodos: periodos?.length ? periodos : undefined,
     });
   }
 

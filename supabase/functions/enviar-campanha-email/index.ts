@@ -31,7 +31,9 @@ import {
   isSegmento,
   MAX_LISTA_MANUAL,
   montarEmail,
+  normalizarCidades,
   normalizarListaEmails,
+  normalizarPeriodos,
   remetenteValido,
   TAMANHO_LOTE,
 } from '../_shared/campanha-email.ts';
@@ -62,6 +64,9 @@ type Body = {
   campanha_id?: string;
   /** Só lido quando segmento === 'lista_manual'. */
   destinatarios_manual?: unknown;
+  /** Filtros adicionais (AND), combináveis com qualquer segmento. */
+  cidades?: unknown;
+  periodos?: unknown;
 };
 
 type LinhaDestinatario = {
@@ -283,11 +288,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Filtros adicionais de cidade/período — combináveis com qualquer
+    // segmento, inclusive 'lista_manual'. Array vazio equivale a "sem filtro"
+    // (a RPC trata os dois casos da mesma forma).
+    const cidades = normalizarCidades(Array.isArray(body.cidades) ? body.cidades : []);
+    const periodos = normalizarPeriodos(Array.isArray(body.periodos) ? body.periodos : []);
+
     let publico: Destinatario[];
     try {
       publico = await buscarTudo<Destinatario>((de, ate) =>
         admin
-          .rpc('email_publico_alvo', { p_segmento: segmento, p_emails: emailsManuais ?? null })
+          .rpc('email_publico_alvo', {
+            p_segmento: segmento,
+            p_emails: emailsManuais ?? null,
+            p_cidades: cidades.length > 0 ? cidades : null,
+            p_periodos: periodos.length > 0 ? periodos : null,
+          })
           .range(de, ate)
       );
     } catch (e) {
@@ -315,6 +331,8 @@ Deno.serve(async (req) => {
         corpo_html: html,
         remetente,
         segmento,
+        cidades: cidades.length > 0 ? cidades : null,
+        periodos: periodos.length > 0 ? periodos : null,
         status: 'enviando',
         total_destinatarios: publico.length,
       })
