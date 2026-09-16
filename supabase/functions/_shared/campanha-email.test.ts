@@ -7,8 +7,10 @@ import {
   isSegmento,
   linkDescadastro,
   montarEmail,
+  normalizarCidades,
   normalizarListaEmails,
   normalizarNome,
+  normalizarPeriodos,
   personalizar,
   primeiroNome,
   remetenteValido,
@@ -163,6 +165,19 @@ Deno.test('normalizarListaEmails: baixa a caixa, dedup e descarta lixo', () => {
     ['maria@exemplo.com', 'joao@exemplo.com'],
   );
   assertEquals(normalizarListaEmails([]), []);
+});
+
+Deno.test('normalizarCidades: baixa a caixa, dedup e descarta unidade desconhecida', () => {
+  assertEquals(
+    normalizarCidades(['Ipatinga_MG', ' salvador_ba ', 'ipatinga_mg', 'cidade_inventada', 42, null]),
+    ['ipatinga_mg', 'salvador_ba'],
+  );
+  assertEquals(normalizarCidades([]), []);
+});
+
+Deno.test('normalizarPeriodos: dedup e descarta fora de 1..12', () => {
+  assertEquals(normalizarPeriodos([3, '3', 1, 0, 13, 'x', null, 7]), [3, 1, 7]);
+  assertEquals(normalizarPeriodos([]), []);
 });
 
 Deno.test('montarEmail: um destinatário por envio, com List-Unsubscribe', () => {

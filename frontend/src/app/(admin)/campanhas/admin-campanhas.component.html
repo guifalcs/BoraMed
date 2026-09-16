@@ -55,6 +55,53 @@
         </div>
       </div>
 
+      <!-- ===== FILTROS ADICIONAIS: cidade (unidade) e período ===== -->
+      <!-- Combináveis com QUALQUER público acima, inclusive "Pessoas específicas". -->
+      <div class="field mt-4">
+        <div class="flex items-center justify-between">
+          <span class="field-label">Filtros (opcional)</span>
+          @if (temFiltrosAtivos()) {
+            <button type="button" class="text-xs font-semibold text-[var(--color-action)]" (click)="limparFiltros()">
+              Limpar filtros
+            </button>
+          }
+        </div>
+
+        <p class="field-hint mb-1">Cidade da unidade</p>
+        <div class="flex flex-wrap gap-1.5">
+          @for (c of cidadesDisponiveis; track c.value) {
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="cidadesSelecionadas().includes(c.value)"
+              (click)="toggleCidade(c.value)"
+            >
+              {{ c.label }}
+            </button>
+          }
+        </div>
+
+        <p class="field-hint mb-1 mt-3">Período do curso</p>
+        <div class="flex flex-wrap gap-1.5">
+          @for (p of periodosDisponiveis; track p) {
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="periodosSelecionados().includes(p)"
+              (click)="togglePeriodo(p)"
+            >
+              {{ p }}º
+            </button>
+          }
+        </div>
+
+        @if (temFiltrosAtivos()) {
+          <span class="field-hint mt-1">
+            {{ rotuloFiltros(cidadesSelecionadas(), periodosSelecionados()) }}
+          </span>
+        }
+      </div>
+
       @if (segmento() === 'lista_manual') {
         <label class="field mt-4">
           <span class="field-label">Destinatários</span>
@@ -255,6 +302,9 @@
             <p class="text-sm font-semibold text-[var(--color-text)]">
               Enviar para {{ totalPublico() }} pessoas — “{{ rotuloSegmento(segmento()) }}”?
             </p>
+            @if (rotuloFiltros(cidadesSelecionadas(), periodosSelecionados()); as filtros) {
+              <p class="mt-1 text-xs text-[var(--color-text-muted)]">Filtro: {{ filtros }}</p>
+            }
             <p class="mt-1 text-xs text-[var(--color-text-muted)]">
               Não dá para cancelar depois. Confira se você já enviou um teste para si.
             </p>
@@ -315,6 +365,9 @@
                   </td>
                   <td class="px-3 py-2 text-[var(--color-text-muted)]">
                     {{ rotuloSegmento(c.segmento) }}
+                    @if (rotuloFiltros(c.cidades, c.periodos); as filtros) {
+                      <div class="text-xs">{{ filtros }}</div>
+                    }
                   </td>
                   <td class="whitespace-nowrap px-3 py-2 text-[var(--color-text-muted)]">
                     {{ c.total_enviados }}/{{ c.total_destinatarios }}
@@ -390,7 +443,11 @@
             Destinatários — {{ campanha.nome }}
           </h2>
           <p class="mt-0.5 text-xs text-[var(--color-text-muted)]">
-            {{ rotuloSegmento(campanha.segmento) }} · {{ formatarData(campanha.criado_em) }} ·
+            {{ rotuloSegmento(campanha.segmento) }}
+            @if (rotuloFiltros(campanha.cidades, campanha.periodos); as filtros) {
+              ({{ filtros }})
+            }
+            · {{ formatarData(campanha.criado_em) }} ·
             {{ campanha.total_enviados }}/{{ campanha.total_destinatarios }} enviados
           </p>
         </div>
@@ -409,7 +466,7 @@
         @for (f of filtrosDestinatario; track f.rotulo) {
           <button
             type="button"
-            class="dest-chip"
+            class="chip"
             [attr.aria-pressed]="filtroDestinatario() === f.valor"
             (click)="filtrarDestinatarios(f.valor)"
           >

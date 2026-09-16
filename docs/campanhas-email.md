@@ -161,6 +161,25 @@ inválido; hard bounce derruba a reputação do domínio). `lista_manual` respei
 mesmas regras — colar o e-mail de um admin, de uma conta banida ou de quem já
 descadastrou simplesmente não entrega nada para aquele endereço.
 
+#### Filtros combináveis: cidade e período
+
+Além do segmento, a tela tem dois filtros adicionais — **cidade** (unidade
+Afya, `profiles.faculdade_unidade`) e **período do curso**
+(`profiles.periodo`, 1º a 12º). São `AND` sobre o segmento escolhido e entre
+si: "criou conta e não assina" + Ipatinga + 1º período manda só para quem bate
+com os três. Multi-seleção em cada um: marcar duas cidades é "Ipatinga OU
+Salvador"; cidade e período juntos é "E".
+
+Funcionam com **qualquer** segmento, inclusive `lista_manual` — marcar uma
+cidade ali reduz ainda mais a lista colada (só entrega para quem, dentre os
+e-mails colados, também bate com o filtro).
+
+Sem seleção em nenhum dos dois = sem filtro, igual ao comportamento antes
+desta funcionalidade. A contagem ao lado do seletor de público já reflete os
+filtros ativos, e o histórico mostra o filtro usado em cada disparo (não muda
+com edição posterior do perfil do aluno — é o filtro no momento do disparo,
+não uma visão ao vivo).
+
 #### `lista_manual` — mandar para pessoas específicas
 
 Antes disto, a única forma de mandar e-mail para alguém específico era o botão

@@ -19,6 +19,8 @@ const CAMPANHA: AdminCampanhaEmail = {
   nome: 'Reativação julho',
   assunto: 'Sua conta está te esperando',
   segmento: 'sem_assinatura_ativa',
+  cidades: null,
+  periodos: null,
   status: 'parcial',
   total_destinatarios: 300,
   total_enviados: 200,
@@ -164,7 +166,7 @@ describe('AdminCampanhasComponent', () => {
     // O segundo argumento é a lista manual, que o serviço ignora fora do
     // segmento 'lista_manual'. Asserção completa de propósito: foi justamente
     // uma asserção parcial que deixou estes testes vermelhos sem ninguém ver.
-    expect(admin.contarPublicoCampanha).toHaveBeenCalledWith('sem_assinatura_ativa', []);
+    expect(admin.contarPublicoCampanha).toHaveBeenCalledWith('sem_assinatura_ativa', [], [], []);
     expect(comp.totalPublico()).toBe(42);
     expect(comp.historico()).toEqual([CAMPANHA]);
   });
@@ -176,7 +178,7 @@ describe('AdminCampanhasComponent', () => {
     await comp.onSegmentoChange('ex_assinantes');
 
     expect(comp.segmento()).toBe('ex_assinantes');
-    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith('ex_assinantes', []);
+    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith('ex_assinantes', [], [], []);
   });
 
   it('não dispara direto: exige confirmação explícita', async () => {
@@ -230,6 +232,8 @@ describe('AdminCampanhasComponent', () => {
       'sem_assinatura_ativa',
       undefined, // remetente: usa o default da edge function
       undefined, // lista manual: só vai no segmento 'lista_manual'
+      [],
+      [],
     );
     expect(comp.confirmandoDisparo()).toBe(false);
     expect(admin.listarCampanhasEmail).toHaveBeenCalledTimes(2);
@@ -245,10 +249,12 @@ describe('AdminCampanhasComponent', () => {
     await comp.onSegmentoChange('lista_manual');
 
     // Sem repetido e sem o token inválido — é essa lista que vai no disparo.
-    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith('lista_manual', [
-      'a@x.com',
-      'b@x.com',
-    ]);
+    expect(admin.contarPublicoCampanha).toHaveBeenLastCalledWith(
+      'lista_manual',
+      ['a@x.com', 'b@x.com'],
+      [],
+      [],
+    );
 
     comp.pedirConfirmacao();
     await comp.dispararAgora();
@@ -260,6 +266,8 @@ describe('AdminCampanhasComponent', () => {
       'lista_manual',
       undefined,
       ['a@x.com', 'b@x.com'],
+      [],
+      [],
     );
   });
 
@@ -513,7 +521,7 @@ describe('AdminCampanhasComponent', () => {
     expect(texto).toContain('Mostrando 2 de 2');
 
     // Um chip por filtro, com o "Todos" marcado.
-    const chips = dialog.querySelectorAll('.dest-chip');
+    const chips = dialog.querySelectorAll('.chip');
     expect(chips.length).toBe(5);
     expect(chips[0].getAttribute('aria-pressed')).toBe('true');
 

@@ -35,6 +35,11 @@ import {
   SelectOption,
   UiSelectComponent,
 } from '../../shared/components/ui/select/ui-select.component';
+import {
+  FaculdadeUnidade,
+  FACULDADE_UNIDADE_ENTRIES,
+  FACULDADE_UNIDADE_LABELS,
+} from '../../core/models/faculdade-unidade';
 
 /** Rótulos dos segmentos. As chaves espelham `SegmentoCampanha`. */
 const ROTULO_SEGMENTO: Record<SegmentoCampanha, string> = {
@@ -53,6 +58,9 @@ const DEBOUNCE_PREVIA_MS = 700;
 
 /** Mesmo espaçamento de debounce para não contar o público a cada tecla. */
 const DEBOUNCE_LISTA_MANUAL_MS = 700;
+
+/** 1º a 12º período — mesmo range do CHECK em `profiles.periodo`. */
+const PERIODOS_DISPONIVEIS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 /** Separa por vírgula, ponto e vírgula, espaço ou quebra de linha — cobre colar de planilha. */
 const SEPARADOR_LISTA_MANUAL = /[\s,;]+/;
@@ -171,6 +179,16 @@ export class AdminCampanhasComponent implements OnInit {
   );
   protected readonly maxListaManual = MAX_LISTA_MANUAL;
 
+  // ---- Filtros adicionais: cidade (unidade) e período ----
+  /** Combináveis com QUALQUER segmento (inclusive lista_manual) — AND lógico. */
+  protected readonly cidadesDisponiveis = FACULDADE_UNIDADE_ENTRIES;
+  protected readonly periodosDisponiveis = PERIODOS_DISPONIVEIS;
+  protected readonly cidadesSelecionadas = signal<string[]>([]);
+  protected readonly periodosSelecionados = signal<number[]>([]);
+  protected readonly temFiltrosAtivos = computed(
+    () => this.cidadesSelecionadas().length > 0 || this.periodosSelecionados().length > 0,
+  );
+
   protected readonly totalPublico = signal<number | null>(null);
   protected readonly contando = signal(false);
   protected readonly enviandoTeste = signal(false);
@@ -256,6 +274,49 @@ export class AdminCampanhasComponent implements OnInit {
       const timer = setTimeout(() => void this.contarPublico(), DEBOUNCE_LISTA_MANUAL_MS);
       onCleanup(() => clearTimeout(timer));
     });
+
+    // Cidade/período recontam com o mesmo debounce — clicar vários chips em
+    // sequência não deve disparar uma chamada por clique.
+    effect((onCleanup) => {
+      this.cidadesSelecionadas();
+      this.periodosSelecionados();
+
+      const timer = setTimeout(() => void this.contarPublico(), DEBOUNCE_LISTA_MANUAL_MS);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
+
+  protected toggleCidade(valor: string): void {
+    this.cidadesSelecionadas.update((atual) =>
+      atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor],
+    );
+    this.confirmandoDisparo.set(false);
+  }
+
+  protected togglePeriodo(valor: number): void {
+    this.periodosSelecionados.update((atual) =>
+      atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor],
+    );
+    this.confirmandoDisparo.set(false);
+  }
+
+  protected limparFiltros(): void {
+    this.cidadesSelecionadas.set([]);
+    this.periodosSelecionados.set([]);
+  }
+
+  /** "Ipatinga (MG), Salvador (BA) · 1º, 3º período" — usado no card e no histórico. */
+  protected rotuloFiltros(cidades: string[] | null, periodos: number[] | null): string | null {
+    const partes: string[] = [];
+    if (cidades?.length) {
+      partes.push(
+        cidades.map((c) => FACULDADE_UNIDADE_LABELS[c as FaculdadeUnidade] ?? c).join(', '),
+      );
+    }
+    if (periodos?.length) {
+      partes.push([...periodos].sort((a, b) => a - b).map((p) => `${p}º período`).join(', '));
+    }
+    return partes.length > 0 ? partes.join(' · ') : null;
   }
 
   protected readonly segmentosDisponiveis: SelectOption[] = (
@@ -312,6 +373,8 @@ export class AdminCampanhasComponent implements OnInit {
     const resultado = await this.adminService.contarPublicoCampanha(
       this.segmento(),
       this.destinatariosLista(),
+      this.cidadesSelecionadas(),
+      this.periodosSelecionados(),
     );
     if (resultado.ok) {
       this.totalPublico.set(resultado.data);
@@ -426,6 +489,8 @@ export class AdminCampanhasComponent implements OnInit {
       this.segmento(),
       undefined,
       this.segmento() === 'lista_manual' ? this.destinatariosLista() : undefined,
+      this.cidadesSelecionadas(),
+      this.periodosSelecionados(),
     );
 
     if (resultado.ok) {
