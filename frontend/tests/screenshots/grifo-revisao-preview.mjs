@@ -94,8 +94,22 @@ console.log('paleta  :', await page.getByRole('button', { name: 'Grifar em verde
 
 await page.getByRole('button', { name: 'Apagar grifos' }).click();
 await page.waitForTimeout(800);
-console.log('cartoes :', await page.locator('[data-questao-id]').count());
-console.log('limpar  :', await page.getByRole('button', { name: 'Limpar todos os grifos desta questão' }).count());
-
 await page.screenshot({ path: `${SAIDA}/grifo-revisao.png` });
+
+// Clique no fundo da tela: na revisão a borracha NÃO pode ser guardada.
+await page.mouse.click(12, 400);
+await page.waitForTimeout(500);
+console.log('borracha na mão após clique fora:', await page.getByRole('button', { name: 'Guardar a borracha' }).count());
+
+await page.getByRole('button', { name: 'Limpar todos os grifos desta revisão' }).click();
+await page.waitForTimeout(600);
+console.log('confirmação:', await page.getByText('Limpar todos os grifos?').count());
+await page.screenshot({ path: `${SAIDA}/grifo-revisao-limpar.png` });
+await page.getByRole('button', { name: 'Limpar tudo' }).click();
+await page.waitForTimeout(800);
+console.log('pintados após limpar:', JSON.stringify(await page.evaluate(() => {
+  const s = {};
+  for (const [n, h] of CSS.highlights) { if (!n.startsWith('bm-grifo-')) continue; const t = []; for (const r of h) t.push(r.toString()); if (t.length) s[n] = t; }
+  return s;
+})));
 await navegador.close();

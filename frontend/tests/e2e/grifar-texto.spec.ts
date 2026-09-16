@@ -649,12 +649,31 @@ test.describe('Marca-texto na revisão pós-prova', () => {
     await expect.poll(() => grifosNaTela(page)).toEqual({});
   });
 
-  test('limpar tira todos os grifos da questão em leitura', async ({ page }) => {
+  test('limpar vale para a revisão inteira e pede confirmação', async ({ page }) => {
     await page.getByRole('button', { name: 'Apagar grifos' }).click();
+    await page.getByRole('button', { name: 'Limpar todos os grifos desta revisão' }).click();
 
-    await page.getByRole('button', { name: 'Limpar todos os grifos desta questão' }).click();
+    // A revisão mostra a prova toda: apagar tudo de uma vez é destrutivo o
+    // bastante para não acontecer num clique só.
+    await expect(page.getByText('Limpar todos os grifos?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancelar' }).click();
+    await expect.poll(() => grifosNaTela(page)).toEqual({ [AMARELO]: ['conduta inicial'] });
+
+    await page.getByRole('button', { name: 'Limpar todos os grifos desta revisão' }).click();
+    await page.getByRole('button', { name: 'Limpar tudo' }).click();
 
     await expect.poll(() => grifosNaTela(page)).toEqual({});
+  });
+
+  test('clicar no fundo da tela não guarda a borracha', async ({ page }) => {
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+    await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
+
+    // Na execução isso guardaria a caneta; aqui a tela inteira é conteúdo
+    // para ler e clicar, e a borracha some só pelo botão.
+    await page.mouse.click(12, 400);
+
+    await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
   });
 
   test('sem grifo salvo, a revisão não mostra estojo nenhum', async ({ page }) => {

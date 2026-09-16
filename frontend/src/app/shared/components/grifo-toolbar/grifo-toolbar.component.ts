@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { Eraser, Highlighter, Trash2 } from 'lucide-angular';
@@ -44,8 +45,14 @@ export class GrifoToolbarComponent {
    * Revisão pós-prova: os grifos feitos durante o simulado ficam à vista, mas
    * o estojo só oferece borracha e limpar. Grifar ali misturaria o que o aluno
    * marcou sob o relógio com o que marcou depois, lendo o gabarito.
+   *
+   * Sai do serviço, e não de um input, porque o `GrifoRenderService` precisa
+   * do mesmo dado para não guardar a borracha a cada clique fora.
    */
-  somenteBorracha = input(false);
+  protected readonly somenteBorracha = computed(() => this.grifo.escopo() === 'revisao');
+
+  /** Pedido de limpar a revisão inteira — quem confirma é a tela. */
+  limparTudo = output<void>();
 
   /**
    * Atalhos da paleta. O resto do espectro sai do seletor de cor ao lado —
@@ -218,8 +225,28 @@ export class GrifoToolbarComponent {
       : `${base} ring-1 ring-black/10`;
   }
 
-  protected limparQuestao(): void {
+  /**
+   * Na execução há uma questão na tela e o alvo é ela. Na revisão a prova
+   * inteira está na página, então o alvo é a revisão toda — e a tela pede
+   * confirmação antes, porque aí é destrutivo de verdade.
+   */
+  protected limpar(): void {
+    if (this.somenteBorracha()) {
+      this.limparTudo.emit();
+      return;
+    }
     const id = this.questaoId();
     if (id) this.grifo.limparQuestao(id);
   }
+
+  protected readonly rotuloLimpar = computed(() =>
+    this.somenteBorracha()
+      ? 'Limpar todos os grifos desta revisão'
+      : 'Limpar todos os grifos desta questão',
+  );
+
+  /** Na revisão o botão vale para a prova toda, então basta existir grifo. */
+  protected readonly podeLimpar = computed(() =>
+    this.somenteBorracha() ? this.grifo.totalGrifos() > 0 : this.temGrifosNaQuestao(),
+  );
 }

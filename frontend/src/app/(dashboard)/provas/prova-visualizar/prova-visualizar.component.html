@@ -91,10 +91,7 @@
         </div>
       } @else {
         @for (q of questoesFiltradas(); track q.id; let i = $index) {
-          <!-- Marcado para o observador saber qual questão está sendo lida:
-               é o alvo do "limpar" do estojo, já que a revisão lista a prova
-               inteira numa página só. -->
-          <div class="space-y-3" #cartaoQuestao [attr.data-questao-id]="q.id">
+          <div class="space-y-3">
             <app-questao-card
               [questao]="q"
               [numero]="i + 1"
@@ -129,5 +126,17 @@
 
 <!-- Grifos da prova: ficam à vista na revisão, e o estojo só apaga. -->
 @if (mostrarGrifos()) {
-  <app-grifo-toolbar [questaoId]="questaoEmLeitura()" [somenteBorracha]="true" />
+  <app-grifo-toolbar (limparTudo)="pedirLimpezaDosGrifos()" />
+}
+
+@if (mostrarConfirmacaoLimpar()) {
+  <app-ui-confirm-dialog
+    titulo="Limpar todos os grifos?"
+    mensagem="Os trechos que você grifou durante a prova serão apagados de todas as questões desta revisão. Não dá para desfazer."
+    labelConfirmar="Limpar tudo"
+    labelCancelar="Cancelar"
+    variante="danger"
+    (confirmar)="confirmarLimpezaDosGrifos()"
+    (cancelar)="cancelarLimpezaDosGrifos()"
+  />
 }

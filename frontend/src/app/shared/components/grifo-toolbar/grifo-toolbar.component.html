@@ -116,13 +116,13 @@
     <!-- Limpar a questão inteira. Vale nos dois modos: na revisão é o caminho
          rápido para tirar tudo de uma questão sem passar a borracha trecho a
          trecho. -->
-    @if (ativo() && temGrifosNaQuestao()) {
+    @if (ativo() && podeLimpar()) {
       <button
         type="button"
         class="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-700"
-        aria-label="Limpar todos os grifos desta questão"
-        title="Limpar os grifos desta questão"
-        (click)="limparQuestao()"
+        [attr.aria-label]="rotuloLimpar()"
+        [title]="rotuloLimpar()"
+        (click)="limpar()"
       >
         <app-ui-icon [icon]="iconLimpar" [size]="16" />
       </button>

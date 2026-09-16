@@ -45,6 +45,13 @@ export class GrifoService {
 
   /** Marca-texto na mão: enquanto ativo, selecionar texto grifa. */
   readonly modoAtivo = signal(false);
+
+  /**
+   * Onde o estojo está sendo usado. Na revisão ele só apaga, e a caneta não
+   * é guardada por clique fora: ali o aluno clica na tela o tempo todo (rola,
+   * lê, abre anotação) e a borracha sumindo a cada clique parece defeito.
+   */
+  readonly escopo = signal<'execucao' | 'revisao'>('execucao');
   readonly ferramenta = signal<FerramentaGrifo>(CORES_PADRAO[0]);
 
   private readonly _grifos = signal<ReadonlyMap<string, readonly Grifo[]>>(new Map());
@@ -74,9 +81,11 @@ export class GrifoService {
   }
 
   /** Abre o marca-texto de uma tentativa e restaura o que já foi grifado. */
-  iniciar(tentativaId: string): void {
+  iniciar(tentativaId: string, escopo: 'execucao' | 'revisao' = 'execucao'): void {
     this.tentativaId = tentativaId;
+    this.escopo.set(escopo);
     this.modoAtivo.set(false);
+    if (escopo === 'revisao') this.ferramenta.set('borracha');
     this._grifos.set(this.ler(tentativaId));
     this.lerPaleta();
     this.limparExpirados();
@@ -140,9 +149,20 @@ export class GrifoService {
     this.atualizarQuestao(questaoId, () => []);
   }
 
+  /**
+   * Apaga os grifos da tentativa inteira. É o escopo da revisão, que mostra a
+   * prova toda numa página só — ali "limpar uma questão" seria uma ação
+   * destrutiva com alvo invisível.
+   */
+  limparTudo(): void {
+    this._grifos.set(new Map());
+    this.salvar();
+  }
+
   /** Sai da tela mantendo o que foi grifado (tentativa pausada ou revisada). */
   encerrar(): void {
     this.modoAtivo.set(false);
+    this.escopo.set('execucao');
     this.tentativaId = null;
     this._grifos.set(new Map());
   }

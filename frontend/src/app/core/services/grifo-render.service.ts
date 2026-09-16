@@ -166,6 +166,10 @@ export class GrifoRenderService {
    */
   private talvezGuardar(alvo: Element | null): void {
     if (!alvo || !this.grifoService.modoAtivo()) return;
+    // Na revisão a ferramenta fica na mão até ser guardada no botão: a tela
+    // inteira é conteúdo para ler e clicar, então "clique em lugar nenhum"
+    // deixaria de ser um gesto e viraria acidente.
+    if (this.grifoService.escopo() === 'revisao') return;
 
     const selecao = this.document.getSelection();
     if (selecao && !selecao.isCollapsed) return;

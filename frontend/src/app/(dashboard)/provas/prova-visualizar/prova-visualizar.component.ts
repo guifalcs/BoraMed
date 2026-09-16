@@ -1,14 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   OnDestroy,
   PLATFORM_ID,
   computed,
-  effect,
   inject,
   signal,
-  viewChildren,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -29,10 +26,11 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { UpgradeBadgeComponent } from '../../../shared/components/upgrade-badge/upgrade-badge.component';
 import { GrifoToolbarComponent } from '../../../shared/components/grifo-toolbar/grifo-toolbar.component';
+import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 @Component({
   selector: 'app-prova-visualizar',
   standalone: true,
-  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent, GrifoToolbarComponent],
+  imports: [RouterLink, QuestaoCardComponent, QuestaoAnotacaoComponent, UiIconComponent, EmptyStateComponent, UpgradeBadgeComponent, GrifoToolbarComponent, UiConfirmDialogComponent],
   templateUrl: './prova-visualizar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -92,14 +90,11 @@ export class ProvaVisualizarComponent implements OnDestroy {
   );
 
   /**
-   * A revisão lista a prova inteira numa página só, então "limpar esta
-   * questão" precisa saber qual está sendo lida — é a questão mais alta ainda
-   * visível na tela.
+   * Limpar na revisão vale para a prova inteira, que é o que está na página —
+   * "esta questão" seria uma ação destrutiva com alvo invisível, já que o
+   * estojo flutua sobre uma lista com todas elas.
    */
-  protected readonly questaoEmLeitura = signal<string | null>(null);
-  private readonly cartoes = viewChildren<ElementRef<HTMLElement>>('cartaoQuestao');
-  private observer: IntersectionObserver | null = null;
-  private readonly visiveis = new Map<string, number>();
+  protected readonly mostrarConfirmacaoLimpar = signal(false);
 
   protected readonly questoesFiltradas = computed(() => {
     if (this.filtro() !== 'erros') {
@@ -138,7 +133,7 @@ export class ProvaVisualizarComponent implements OnDestroy {
     this.tentativaId.set(routeTentativaId);
 
     if (this.isBrowser) {
-      if (routeTentativaId) this.grifos.iniciar(routeTentativaId);
+      if (routeTentativaId) this.grifos.iniciar(routeTentativaId, 'revisao');
       void this.nav.track(this.carregar(id, routeTentativaId || null));
       this.hidratarRespostas(id);
       // Fora do caminho crítico: só decide se o botão de imprimir aparece
@@ -148,46 +143,21 @@ export class ProvaVisualizarComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.observer?.disconnect();
-    this.observer = null;
     this.grifos.encerrar();
   }
 
-  /** Reobserva os cartões sempre que a lista muda (filtro de erros, carga). */
-  private readonly acompanharCartoes = effect(() => {
-    const cartoes = this.cartoes();
-    if (!this.isBrowser || typeof IntersectionObserver === 'undefined') return;
+  protected pedirLimpezaDosGrifos(): void {
+    this.mostrarConfirmacaoLimpar.set(true);
+  }
 
-    this.observer?.disconnect();
-    this.visiveis.clear();
-    if (cartoes.length === 0) {
-      this.questaoEmLeitura.set(null);
-      return;
-    }
+  protected confirmarLimpezaDosGrifos(): void {
+    this.mostrarConfirmacaoLimpar.set(false);
+    this.grifos.limparTudo();
+  }
 
-    this.observer = new IntersectionObserver(
-      (entradas) => {
-        for (const entrada of entradas) {
-          const id = (entrada.target as HTMLElement).dataset['questaoId'];
-          if (!id) continue;
-          if (entrada.isIntersecting) this.visiveis.set(id, entrada.boundingClientRect.top);
-          else this.visiveis.delete(id);
-        }
-        // A mais alta entre as visíveis é a que o aluno está lendo.
-        let alvo: string | null = null;
-        let menorTopo = Number.POSITIVE_INFINITY;
-        for (const [id, topo] of this.visiveis) {
-          if (topo < menorTopo) {
-            menorTopo = topo;
-            alvo = id;
-          }
-        }
-        this.questaoEmLeitura.set(alvo);
-      },
-      { threshold: 0 },
-    );
-    for (const cartao of cartoes) this.observer.observe(cartao.nativeElement);
-  });
+  protected cancelarLimpezaDosGrifos(): void {
+    this.mostrarConfirmacaoLimpar.set(false);
+  }
 
   protected abrirPaywallImpressao(): void {
     this.paywall.abrir('impressao');
