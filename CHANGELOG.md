@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 | Feature | Atalho G pinta o trecho selecionado, sem pegar a caneta
+
+**Selecionar e apertar `G` grifa na hora — e o atalho passou a valer na revisão**
+
+- **`G` lê o contexto**: com texto selecionado, grifa o trecho na cor em uso (ou apaga, na revisão) **sem exigir que a ferramenta esteja na mão** e sem deixar o modo ligado depois — é uma pincelada, não um estado. Sem seleção, continua ligando e desligando o modo, como antes.
+- **O atalho saiu da tela de execução para o serviço de render.** Ele vivia no `keydown` do `TentativaExecComponent` e por isso não existia na revisão, que é justamente onde o estojo fica escondido na borda. Agora é um só, registrado junto com os outros ouvintes de documento enquanto houver bloco grifável na tela.
+- Ignorado dentro de `input`/`textarea`/`contenteditable` e com diálogo aberto — ali `G` é só uma letra.
+- **Revertido:** o clique fora volta a guardar a ferramenta também na revisão, igual à execução. A exceção que eu tinha aberto para a revisão foi um erro de leitura do que o Guilherme pediu.
+- Verificado: **32 e2e** (4 novos do atalho: pincelada com o modo guardado, respeito à cor escolhida, `G` dentro de campo de texto não virando atalho, e apagar por `G` na revisão) e 915 unitários. Conferido no stack real com duplo clique numa palavra + `G`.
+
 ## 2026-09-16 | Fix | Diálogo de confirmação volta a escurecer a tela inteira
 
 **O escurecido parava na sidebar — em todas as 14 telas que usam o diálogo**
@@ -18,7 +28,7 @@
 - **Na revisão o estojo só apaga**: borracha e "limpar esta questão", sem paleta, sem espectro. Grifar ali misturaria o que foi marcado sob o relógio com o que foi marcado depois, já lendo o gabarito — e essa é justamente a informação que o grifo carrega. O estojo nem aparece se não houver grifo salvo.
 - **Na revisão, "limpar" vale para a revisão inteira, com confirmação.** A primeira versão elegia a "questão em leitura" por `IntersectionObserver` — ou seja, uma ação destrutiva cujo alvo o aluno não via e não escolhia. O escopo passou a ser o da página (a prova toda, que é o que está na tela) e o diálogo de confirmação entrou junto. Na execução, com uma questão na tela, o alvo continua sendo ela e sem confirmação.
 - **Sem grifo sobrando, a borracha é guardada sozinha.** Na revisão o estojo só existe enquanto há o que apagar; zerando tudo ele sumia com a ferramenta ainda na mão, e o cursor de borracha ficava preso no texto sem nenhum botão para desligar. Vale para o "limpar tudo" e para apagar o último trecho à mão.
-- **Na revisão o clique fora não guarda mais a borracha.** A regra de "clique em lugar nenhum guarda a ferramenta" faz sentido na execução, onde a tela é uma questão; na revisão, que é uma lista longa para ler, rolar e clicar, ela tirava a borracha da mão a todo instante e parecia defeito. O estojo agora sabe em que escopo está (`execucao` | `revisao`), e esse mesmo dado é o que decide a paleta reduzida.
+- **O estojo passou a saber em que escopo está** (`execucao` | `revisao`), e esse dado decide a paleta reduzida e o alvo do limpar.
 - **A tentativa da revisão passou a vir da rota**, não do estado da navegação. Ela só era preenchida em quem chegava pela tela de resultado — num F5 ou link direto o componente ficava sem `tentativaId`. Isso é o que os grifos precisavam para carregar, e de quebra conserta as **anotações**, que pelo mesmo motivo sumiam ao recarregar a revisão.
 - Verificado: **27 e2e** (8 novos cobrindo a revisão: grifo pintado, estojo sem cor, borracha apagando, limpar com confirmação, clique fora não guardando a borracha, cursor voltando ao normal ao zerar os grifos pelos dois caminhos, e a ausência de estojo sem grifo) e 915 unitários. Conferido ponta a ponta contra o stack local: grifar → finalizar → revisão.
 

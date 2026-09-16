@@ -977,11 +977,6 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
         event.preventDefault();
         this.toggleMarcar();
         break;
-      case 'g':
-      case 'G':
-        event.preventDefault();
-        this.grifos.toggleModo();
-        break;
       default: {
         const alternativas = this.questaoAtual()?.alternativas;
         if (!alternativas?.length) return;

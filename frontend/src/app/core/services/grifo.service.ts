@@ -47,9 +47,10 @@ export class GrifoService {
   readonly modoAtivo = signal(false);
 
   /**
-   * Onde o estojo está sendo usado. Na revisão ele só apaga, e a caneta não
-   * é guardada por clique fora: ali o aluno clica na tela o tempo todo (rola,
-   * lê, abre anotação) e a borracha sumindo a cada clique parece defeito.
+   * Onde o estojo está sendo usado. Na revisão ele só apaga — grifar ali
+   * misturaria o que foi marcado sob o relógio com o que foi marcado depois,
+   * lendo o gabarito — e o "limpar" vale para a prova inteira, que é o que
+   * está na página.
    */
   readonly escopo = signal<'execucao' | 'revisao'>('execucao');
   readonly ferramenta = signal<FerramentaGrifo>(CORES_PADRAO[0]);

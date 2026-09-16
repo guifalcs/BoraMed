@@ -166,10 +166,6 @@ export class GrifoRenderService {
    */
   private talvezGuardar(alvo: Element | null): void {
     if (!alvo || !this.grifoService.modoAtivo()) return;
-    // Na revisão a ferramenta fica na mão até ser guardada no botão: a tela
-    // inteira é conteúdo para ler e clicar, então "clique em lugar nenhum"
-    // deixaria de ser um gesto e viraria acidente.
-    if (this.grifoService.escopo() === 'revisao') return;
 
     const selecao = this.document.getSelection();
     if (selecao && !selecao.isCollapsed) return;
@@ -202,9 +198,14 @@ export class GrifoRenderService {
     }, OCIOSO_SELECAO_MS);
   };
 
-  /** Devolve `true` quando a seleção virou grifo. */
-  private processarSelecao(): boolean {
-    if (!this.grifoService.modoAtivo()) return false;
+  /**
+   * Devolve `true` quando a seleção virou grifo.
+   *
+   * `forcar` é o atalho de teclado: ali a seleção vale mesmo com o marca-texto
+   * guardado — é justamente o caminho de pintar sem pegar a caneta antes.
+   */
+  private processarSelecao(forcar = false): boolean {
+    if (!forcar && !this.grifoService.modoAtivo()) return false;
     const selecao = this.document.getSelection();
     if (!selecao || selecao.isCollapsed || selecao.rangeCount === 0) return false;
 
@@ -240,12 +241,35 @@ export class GrifoRenderService {
     return grifou;
   }
 
+  /**
+   * `G` é o atalho do marca-texto, e ele lê o contexto: com texto selecionado,
+   * pinta (ou apaga) a seleção na hora, sem exigir que a ferramenta já esteja
+   * na mão; sem seleção, liga e desliga o modo. Vive aqui, e não na tela de
+   * execução, porque a revisão precisa do mesmo atalho.
+   */
+  private readonly aoTeclar = (evento: KeyboardEvent): void => {
+    if (evento.key !== 'g' && evento.key !== 'G') return;
+    if (evento.ctrlKey || evento.metaKey || evento.altKey) return;
+
+    const alvo = evento.target as HTMLElement | null;
+    const tag = alvo?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (alvo?.isContentEditable) return;
+    // Diálogo aberto tem a palavra: `G` ali é só uma letra.
+    if (alvo?.closest?.('dialog[open]')) return;
+
+    evento.preventDefault();
+    if (this.processarSelecao(true)) return;
+    this.grifoService.toggleModo();
+  };
+
   private ouvir(): void {
     if (!this.isBrowser || this.ouvindo) return;
     this.ouvindo = true;
     this.document.addEventListener('pointerdown', this.aoPressionarPonteiro, true);
     this.document.addEventListener('pointerup', this.aoSoltarPonteiro, true);
     this.document.addEventListener('selectionchange', this.aoMudarSelecao);
+    this.document.addEventListener('keydown', this.aoTeclar);
   }
 
   private pararDeOuvir(): void {
@@ -255,6 +279,7 @@ export class GrifoRenderService {
     this.document.removeEventListener('pointerdown', this.aoPressionarPonteiro, true);
     this.document.removeEventListener('pointerup', this.aoSoltarPonteiro, true);
     this.document.removeEventListener('selectionchange', this.aoMudarSelecao);
+    this.document.removeEventListener('keydown', this.aoTeclar);
   }
 
   private cancelarOcioso(): void {

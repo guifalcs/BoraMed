@@ -222,7 +222,16 @@ const AZUL = '#bfdbfe';
  * Seleciona um trecho exato de um bloco. É o que o navegador monta quando o
  * aluno arrasta o dedo/mouse — a diferença é a precisão, que o teste precisa.
  */
-async function selecionarTrecho(page: Page, seletor: string, trecho: string): Promise<void> {
+async function selecionarSemEsperar(page: Page, seletor: string, trecho: string): Promise<void> {
+  await selecionarTrecho(page, seletor, trecho, 0);
+}
+
+async function selecionarTrecho(
+  page: Page,
+  seletor: string,
+  trecho: string,
+  espera = 600,
+): Promise<void> {
   await page.evaluate(
     ({ seletor, trecho }) => {
       const raiz = document.querySelector(seletor);
@@ -246,7 +255,7 @@ async function selecionarTrecho(page: Page, seletor: string, trecho: string): Pr
     { seletor, trecho },
   );
   // O backstop de seleção ociosa (toque/alças) espera 400ms antes de grifar.
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(espera);
 }
 
 /** O bloco do enunciado é o div que envolve o <markdown> do enunciado. */
@@ -571,6 +580,46 @@ test.describe('Marca-texto na execução da prova', () => {
     await page.keyboard.press('g');
     await expect(pegarMarcaTexto(page)).toBeVisible();
   });
+
+  test('com texto selecionado, G grifa na hora — sem pegar a caneta antes', async ({ page }) => {
+    const enunciado = await seletorDoEnunciado(page);
+
+    // Marca-texto guardado: selecionar sozinho não pinta nada.
+    await selecionarSemEsperar(page, enunciado, 'conduta inicial');
+    expect(await grifosNaTela(page)).toEqual({});
+
+    await page.keyboard.press('g');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({ [AMARELO]: ['conduta inicial'] });
+    // E o atalho não deixa o modo ligado por tabela: era só uma pincelada.
+    await expect(pegarMarcaTexto(page)).toBeVisible();
+  });
+
+  test('G com seleção respeita a cor escolhida', async ({ page }) => {
+    await pegarMarcaTexto(page).click();
+    await page.getByRole('button', { name: 'Grifar em azul' }).click();
+    const enunciado = await seletorDoEnunciado(page);
+
+    await selecionarSemEsperar(page, enunciado, 'conduta inicial');
+    await page.keyboard.press('g');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({ [AZUL]: ['conduta inicial'] });
+  });
+
+  test('G digitado num campo de texto não vira atalho', async ({ page }) => {
+    // A questão discursiva tem textarea; aqui basta um campo qualquer na tela.
+    await page.evaluate(() => {
+      const campo = document.createElement('textarea');
+      campo.id = 'campo-teste';
+      document.body.appendChild(campo);
+      campo.focus();
+    });
+
+    await page.keyboard.press('g');
+
+    await expect(pegarMarcaTexto(page)).toBeVisible();
+    expect(await page.inputValue('#campo-teste')).toBe('g');
+  });
 });
 
 /**
@@ -695,13 +744,29 @@ test.describe('Marca-texto na revisão pós-prova', () => {
       .toBe(false);
   });
 
-  test('clicar no fundo da tela não guarda a borracha', async ({ page }) => {
+  test('clicar no fundo da tela guarda a borracha, como na execução', async ({ page }) => {
     await page.getByRole('button', { name: 'Apagar grifos' }).click();
     await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
 
-    // Na execução isso guardaria a caneta; aqui a tela inteira é conteúdo
-    // para ler e clicar, e a borracha some só pelo botão.
     await page.mouse.click(12, 400);
+
+    await expect(page.getByRole('button', { name: 'Apagar grifos' })).toBeVisible();
+  });
+
+  test('na revisão, G apaga o trecho selecionado', async ({ page }) => {
+    const enunciado = await seletorDoEnunciado(page);
+    await selecionarSemEsperar(page, enunciado, 'conduta inicial');
+
+    await page.keyboard.press('g');
+
+    await expect.poll(() => grifosNaTela(page)).toEqual({});
+  });
+
+  test('clicar no texto da revisão não guarda a borracha', async ({ page }) => {
+    await page.getByRole('button', { name: 'Apagar grifos' }).click();
+
+    // O texto é onde a borracha trabalha: clique seco ali não a guarda.
+    await page.getByText(ENUNCIADO).click();
 
     await expect(page.getByRole('button', { name: 'Guardar a borracha' })).toBeVisible();
   });
