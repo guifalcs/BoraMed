@@ -70,8 +70,12 @@ const fakeProfile = {
   papel: 'aluno',
   avatar_url: null,
   tipo_usuario: null,
-  periodo: null,
-  faculdade_rede: null,
+  // Preenchidos: `precisaDadosObrigatorios` dispara com `periodo` ou
+  // `faculdade_unidade` em `null`, e aí o modal "Complete seus dados" cobre a
+  // tela e intercepta todo clique do teste.
+  periodo: 5,
+  faculdade_unidade: 'ipatinga_mg',
+  faculdade_rede: 'afya',
   competir_publico: false,
   criado_em: '2024-01-01T00:00:00Z',
   atualizado_em: '2024-01-01T00:00:00Z',

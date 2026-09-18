@@ -22,7 +22,7 @@ export class PerfilPage {
   }
 
   async goto() {
-    await this.page.goto('/perfil');
+    await this.page.goto('/dashboard/perfil');
     await this.page.waitForSelector('.perfil-card:not(.perfil-skeleton)', { timeout: 10_000 });
   }
 
