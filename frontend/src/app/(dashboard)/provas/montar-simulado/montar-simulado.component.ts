@@ -5,12 +5,14 @@ import {
   inject,
   signal,
   computed,
+  effect,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Shuffle, Filter, LoaderCircle } from 'lucide-angular';
 import { TentativaService } from '../../../core/services/tentativa.service';
 import { TemaService } from '../../../core/services/tema.service';
+import { ProfileService } from '../../../core/services/profile.service';
 import { ImpressaoSimuladoService } from '../../../core/services/impressao-simulado.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import { FREE_LIMIT_REACHED, TIER_UPGRADE_REQUIRED } from '../../../core/utils/tier-error.util';
@@ -97,10 +99,14 @@ export class MontarSimuladoComponent {
   private readonly router = inject(Router);
   private readonly tentativaService = inject(TentativaService);
   private readonly temaService = inject(TemaService);
+  private readonly profileService = inject(ProfileService);
   private readonly impressaoService = inject(ImpressaoSimuladoService);
   private readonly subscription = inject(SubscriptionService);
   private readonly nav = inject(NavigationProgressService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /** Evita reaplicar o período do usuário depois que ele mexeu no filtro. */
+  private periodoAutoPreenchido = false;
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -268,6 +274,20 @@ export class MontarSimuladoComponent {
     if (this.isBrowser) {
       void this.nav.track(this.carregarTemasIniciais());
       void this.carregarStatusAcesso();
+
+      // Só filtra pelo período do usuário quando temas e perfil já chegaram
+      // e nada disso já foi decidido: nem escolha manual, nem recomendação
+      // de tema (que pode apontar para um tema de outro período).
+      effect(() => {
+        if (this.periodoAutoPreenchido) return;
+        if (this.periodosSelecionados().size > 0) return;
+        if (this.origemRecomendacao() != null) return;
+        const periodo = this.profileService.profile()?.periodo;
+        if (periodo == null || !this.periodosDisponiveis().includes(periodo)) return;
+
+        this.periodoAutoPreenchido = true;
+        this.periodosSelecionados.set(new Set([periodo]));
+      });
     }
   }
 

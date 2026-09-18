@@ -5,11 +5,13 @@ import {
   inject,
   signal,
   computed,
+  effect,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProvaService } from '../../../core/services/prova.service';
 import { TentativaService } from '../../../core/services/tentativa.service';
+import { ProfileService } from '../../../core/services/profile.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import type { Prova, SubtipoProva } from '../../../core/models/prova';
 import type { Disciplina } from '../../../core/models/disciplina';
@@ -31,9 +33,13 @@ const POR_PAGINA = 15;
 export class ProvasAfyaComponent {
   private readonly provaService = inject(ProvaService);
   private readonly tentativaService = inject(TentativaService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
   private readonly nav = inject(NavigationProgressService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /** Evita que o auto-preenchimento sobrescreva uma escolha manual do usuário. */
+  private periodoAutoPreenchido = false;
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -100,8 +106,26 @@ export class ProvasAfyaComponent {
   constructor() {
     // Navega instantaneamente; os dados são buscados aqui, sem bloquear a rota.
     if (this.isBrowser) {
+      // Perfil já carregado (caso comum): aplica de cara, sem 2ª requisição.
+      const periodoInicial = this.profileService.profile()?.periodo;
+      if (periodoInicial != null) {
+        this.periodosFiltro.set([periodoInicial]);
+        this.periodoAutoPreenchido = true;
+      }
+
       void this.nav.track(this.carregarProvas());
       void this.carregarDisciplinas();
+
+      // Perfil ainda carregando (navegação direta pra cá): preenche quando chegar.
+      effect(() => {
+        const periodo = this.profileService.profile()?.periodo;
+        if (periodo == null || this.periodoAutoPreenchido || this.periodosFiltro().length > 0) {
+          return;
+        }
+        this.periodoAutoPreenchido = true;
+        this.periodosFiltro.set([periodo]);
+        void this.recarregarPrimeiraPagina();
+      });
     }
   }
 
