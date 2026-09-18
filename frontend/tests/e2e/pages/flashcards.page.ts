@@ -1,11 +1,12 @@
 import type { Page, Locator } from '@playwright/test';
+import { clientNavigate } from '../fixtures/tier.fixture';
 
 /** Page object para o módulo de Flashcards (/dashboard/flashcards). */
 export class FlashcardsPage {
   constructor(private readonly page: Page) {}
 
   /**
-   * Navega até /dashboard/flashcards via clique no link da sidebar, a partir
+   * Navega até /dashboard/flashcards client-side, a partir
    * de /dashboard. Necessário porque, no projeto `mocked`, um `page.goto()`
    * direto numa rota protegida aninhada sofre um round-trip SSR (o `getUser()`
    * do lado do servidor não é interceptável por `page.route` e falha com o
@@ -15,7 +16,12 @@ export class FlashcardsPage {
    */
   async goto(): Promise<void> {
     await this.page.goto('/dashboard');
-    await this.page.getByRole('link', { name: 'Flashcards' }).click();
+    // Navegação client-side forçada (pushState + popstate), e não clique no
+    // link: o menu vem renderizado do SSR, então um clique pode acontecer
+    // antes da hidratação e virar navegação de documento — aí a rota protegida
+    // é pedida ao servidor, onde o guard roda sem os mocks e manda o teste
+    // para /planos. Ver `clientNavigate` em fixtures/tier.fixture.ts.
+    await clientNavigate(this.page, '/dashboard/flashcards');
   }
 
   get abaOficiaisBtn(): Locator {

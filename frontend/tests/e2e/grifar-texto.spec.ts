@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
+import { clientNavigate } from './fixtures/tier.fixture';
 
 /**
  * E2E do marca-texto da prova — projeto `mocked`: toda a rede é interceptada,
@@ -281,6 +282,19 @@ async function seletorDoApoio(page: Page): Promise<string> {
   return '[data-e2e="bloco-apoio"]';
 }
 
+/**
+ * Entra pela SPA e navega client-side até a rota protegida.
+ *
+ * `page.goto` direto numa rota `dashboard/**` é navegação fria: o SSR resolve
+ * o guard sem os mocks e a rota pode se perder num bounce por `/login`. Passa
+ * quase sempre, mas falha sob carga — foi o que derrubou este spec ao rodar
+ * junto com os outros.
+ */
+async function abrir(page: Page, url: string): Promise<void> {
+  await page.goto('/dashboard');
+  await clientNavigate(page, url);
+}
+
 const pegarMarcaTexto = (page: Page) => page.getByRole('button', { name: 'Pegar o marca-texto' });
 
 /**
@@ -321,7 +335,7 @@ async function cursorDoTextoGrifavel(
 test.describe('Marca-texto na execução da prova', () => {
   test.beforeEach(async ({ page }) => {
     await setupMocks(page);
-    await page.goto(URL_TENTATIVA);
+    await abrir(page, URL_TENTATIVA);
     await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
   });
 
@@ -755,7 +769,7 @@ test.describe('Marca-texto na revisão pós-prova', () => {
       grifosSalvos,
     );
 
-    await page.goto(URL_REVISAO);
+    await abrir(page, URL_REVISAO);
     await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
   });
 
@@ -857,7 +871,7 @@ test.describe('Marca-texto na revisão pós-prova', () => {
 
   test('no gabarito sem tentativa, o atalho não liga marca-texto nenhum', async ({ page }) => {
     // Mesma tela, rota sem tentativa: aqui não há o que grifar nem onde salvar.
-    await page.goto(`/dashboard/simulados/${questao.prova_id}/visualizar`);
+    await abrir(page, `/dashboard/simulados/${questao.prova_id}/visualizar`);
     await expect(page.getByText(ENUNCIADO)).toBeVisible({ timeout: 10_000 });
 
     const enunciado = await seletorDoEnunciado(page);

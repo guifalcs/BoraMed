@@ -1,4 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
+
+/**
+ * E2E da listagem de treinos nacionais — projeto `mocked`: toda a rede é
+ * interceptada, sem depender do stack local.
+ *
+ * O mock de `/rest/v1/prova` **respeita os filtros da URL** (a tela usa
+ * `.or(...)`, que vira `or=(subtipo.in.(...))` e `or=(periodo.in.(...),
+ * periodo.is.null)`): é o que faz os testes de filtro valerem alguma coisa —
+ * sem isso eles passariam mesmo se a tela não filtrasse nada.
+ */
+
+test.use({ storageState: { cookies: [], origins: [] } });
 
 // ─── Dados de teste ──────────────────────────────────────────────────────────
 
@@ -6,27 +18,33 @@ const provaMocks = [
   {
     id: 'prova-1',
     faculdade_id: 'fac-1',
-    nome: 'Prova N1 2024 — 1º Período',
+    nome: 'Treino N1 2024 — 1º Período',
     periodo: 1,
-    ano: 2024,
-    semestre: 1,
-    tipo: 'nacional',
+    tipo: 'autoral',
+    origem: 'autoral',
+    formato: 'nacional',
+    rede: 'afya',
+    subtipo: 'N1',
     subtipo_nacional: 'N1',
     qtd_questoes: 30,
-    tempo_sugerido_minutos: 60,
+    publicada: true,
+    arquivada: false,
     criado_em: '2024-01-01T00:00:00Z',
   },
   {
     id: 'prova-2',
     faculdade_id: 'fac-1',
-    nome: 'Prova N2 2024 — 4º Período',
+    nome: 'Treino N2 2024 — 4º Período',
     periodo: 4,
-    ano: 2024,
-    semestre: 2,
-    tipo: 'nacional',
+    tipo: 'autoral',
+    origem: 'autoral',
+    formato: 'nacional',
+    rede: 'afya',
+    subtipo: 'N2',
     subtipo_nacional: 'N2',
     qtd_questoes: 40,
-    tempo_sugerido_minutos: 90,
+    publicada: true,
+    arquivada: false,
     criado_em: '2024-07-01T00:00:00Z',
   },
   {
@@ -34,25 +52,31 @@ const provaMocks = [
     faculdade_id: 'fac-1',
     nome: 'Teste de Progresso 2023 — 6º Período',
     periodo: 6,
-    ano: 2023,
-    semestre: 1,
-    tipo: 'nacional',
+    tipo: 'autoral',
+    origem: 'autoral',
+    formato: 'nacional',
+    rede: 'afya',
+    subtipo: 'TPI',
     subtipo_nacional: 'teste_progresso',
     qtd_questoes: 50,
-    tempo_sugerido_minutos: 120,
+    publicada: true,
+    arquivada: false,
     criado_em: '2023-01-01T00:00:00Z',
   },
   {
     id: 'prova-4',
     faculdade_id: 'fac-1',
-    nome: 'Prova N1 2023 — 1º Período',
+    nome: 'Treino N1 2023 — 1º Período',
     periodo: 1,
-    ano: 2023,
-    semestre: 1,
-    tipo: 'nacional',
+    tipo: 'autoral',
+    origem: 'autoral',
+    formato: 'nacional',
+    rede: 'afya',
+    subtipo: 'N1',
     subtipo_nacional: 'N1',
     qtd_questoes: 30,
-    tempo_sugerido_minutos: 60,
+    publicada: true,
+    arquivada: false,
     criado_em: '2023-01-01T00:00:00Z',
   },
 ];
@@ -67,220 +91,252 @@ const fakeUser = {
   created_at: '2024-01-01T00:00:00Z',
 };
 
-// ─── Configuração: sem estado de auth salvo, usamos page.route() ─────────────
-
-// Override storageState so we don't depend on the auth setup fixture.
-test.use({ storageState: { cookies: [], origins: [] } });
-
-/**
- * A fake JWT-format access token (structure only, not cryptographically valid).
- * The Supabase SDK will send this as a Bearer header when making requests.
- * We intercept all auth endpoints so the server never actually validates it.
- */
 const FAKE_ACCESS_TOKEN =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-  btoa(JSON.stringify({ sub: 'user-test-1', email: 'teste@boramed.com', role: 'authenticated', exp: 9999999999 })) +
-    '.fake-signature';
+  btoa(
+    JSON.stringify({
+      sub: 'user-test-1',
+      email: 'teste@boramed.com',
+      role: 'authenticated',
+      exp: 9999999999,
+    }),
+  ) +
+  '.fake-signature';
 
-/**
- * A minimal serialised Supabase session stored under the key the SDK expects.
- * Key format for localhost:54321 is "sb-127-auth-token".
- */
-const SUPABASE_STORAGE_KEY = 'sb-127-auth-token';
+const SUPABASE_COOKIE_NAME = 'sb-127-auth-token';
 
 const fakeSession = {
   access_token: FAKE_ACCESS_TOKEN,
   token_type: 'bearer',
   expires_in: 3600,
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  expires_at: 4070908800,
   refresh_token: 'fake-refresh-token',
   user: fakeUser,
 };
 
+const fakeProfile = {
+  id: 'user-test-1',
+  nome_completo: 'Usuário de Teste',
+  email: 'teste@boramed.com',
+  papel: 'aluno',
+  avatar_url: null,
+  tipo_usuario: null,
+  // Preenchidos: `precisaDadosObrigatorios` dispara com `periodo` ou
+  // `faculdade_unidade` em `null`, e aí o modal "Complete seus dados" cobre a
+  // tela e intercepta todo clique do teste.
+  periodo: 5,
+  faculdade_unidade: 'ipatinga_mg',
+  faculdade_rede: 'afya',
+  competir_publico: false,
+  criado_em: '2024-01-01T00:00:00Z',
+  atualizado_em: '2024-01-01T00:00:00Z',
+};
+
+const URL_TREINOS = '/dashboard/simulados/rede-afya';
+
 /**
- * Intercepts all Supabase network calls needed for an authenticated session
- * and mocks the prova REST endpoint with the provided data.
- *
- * Strategy:
- *  1. Set localStorage with a fake session BEFORE page navigation so the
- *     Supabase SDK finds a stored session on boot.
- *  2. Intercept GET /auth/v1/user so the SDK's getUser() call (from
- *     AuthService.initialize()) returns our fake user.
- *  3. Intercept POST /auth/v1/token to handle any token refresh.
- *  4. Intercept GET /rest/v1/prova to return mock prova data.
+ * A tela filtra com `.or(...)`, então cada filtro chega como um parâmetro
+ * `or=(...)` — e não como `coluna=in.(...)`. Aqui só se extrai a lista de
+ * valores do `or` que menciona a coluna procurada.
  */
-async function setupMocks(
-  page: Parameters<typeof test>[1] extends ({ page: infer P }) ? P : never,
-  provas: typeof provaMocks = provaMocks,
-) {
-  // Auth: GET /auth/v1/user — AuthService.initialize() calls this
-  await page.route('**/auth/v1/user', (route) => {
-    void route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(fakeUser),
-    });
-  });
+function valoresDoFiltro(url: URL, coluna: string): string[] | null {
+  const clausula = url.searchParams.getAll('or').find((o) => o.includes(`${coluna}.in.`));
+  if (!clausula) return null;
+  const lista = new RegExp(`${coluna}\\.in\\.\\(([^)]*)\\)`).exec(clausula);
+  if (!lista) return null;
+  return lista[1]!
+    .split(',')
+    .map((v) => v.replace(/^"|"$/g, '').trim())
+    .filter(Boolean);
+}
 
-  // Auth: POST /auth/v1/token — token refresh calls
-  await page.route('**/auth/v1/token**', (route) => {
-    void route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        access_token: FAKE_ACCESS_TOKEN,
-        token_type: 'bearer',
-        expires_in: 3600,
-        refresh_token: 'fake-refresh-token',
-        user: fakeUser,
-      }),
-    });
-  });
-
-  // Auth: any remaining auth endpoints
-  await page.route('**/auth/v1/**', (route) => {
-    void route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-  });
-
-  // REST: prova table — returns our mock data array
-  await page.route('**/rest/v1/prova**', (route) => {
-    void route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(provas),
-    });
-  });
-
-  // Realtime WebSocket: abort gracefully
-  await page.route('**/realtime/v1/**', (route) => {
-    void route.abort();
-  });
-
-  // Navigate to the app first to get a page context, then inject localStorage
-  // We need to go to the base URL to set localStorage before any redirect
-  await page.goto('/login');
-
-  // Inject the fake session into localStorage so the Supabase SDK picks it up
-  await page.evaluate(
-    ([key, value]) => {
-      localStorage.setItem(key, value);
+/**
+ * Rotas são casadas em ordem INVERSA de registro (a última vence), por isso os
+ * catch-all vêm primeiro e as rotas específicas depois.
+ */
+async function setupMocks(page: Page, provas: typeof provaMocks = provaMocks): Promise<void> {
+  await page.context().addCookies([
+    {
+      name: SUPABASE_COOKIE_NAME,
+      value: `base64-${Buffer.from(JSON.stringify(fakeSession), 'utf8').toString('base64url')}`,
+      domain: 'localhost',
+      path: '/',
+      httpOnly: false,
+      secure: false,
+      sameSite: 'Lax',
     },
-    [SUPABASE_STORAGE_KEY, JSON.stringify(fakeSession)] as [string, string],
+  ]);
+
+  const json = (route: Route, body: unknown, headers?: Record<string, string>) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+  await page.route('**/rest/v1/**', (route: Route) => void json(route, []));
+  await page.route('**/rest/v1/rpc/**', (route: Route) => void json(route, null));
+  await page.route('**/realtime/v1/**', (route: Route) => void route.abort());
+
+  await page.route('**/auth/v1/**', (route: Route) => void json(route, {}));
+  await page.route('**/auth/v1/user', (route: Route) => void json(route, fakeUser));
+  await page.route('**/auth/v1/token**', (route: Route) => void json(route, fakeSession));
+
+  await page.route(
+    '**/rest/v1/user_onboarding_state**',
+    (route: Route) =>
+      void json(route, [
+        {
+          user_id: 'user-test-1',
+          flow_key: 'dashboard_intro',
+          flow_version: 1,
+          status: 'completed',
+          current_step: 'final',
+          started_at: '2024-01-01T00:00:00.000Z',
+          completed_at: '2024-01-01T00:05:00.000Z',
+          skipped_at: null,
+          metadata: {},
+        },
+      ]),
   );
+
+  await page.route('**/rest/v1/profiles**', (route: Route) => void json(route, fakeProfile));
+  await page.route('**/rest/v1/rpc/tem_assinatura_ativa**', (route: Route) => void json(route, true));
+  await page.route('**/rest/v1/rpc/assinatura_tier**', (route: Route) => void json(route, 'avancado'));
+  await page.route(
+    '**/rest/v1/rpc/get_status_acesso**',
+    (route: Route) =>
+      void json(route, {
+        nivel: 'avancado',
+        tentativas_limite: 3,
+        tentativas_restantes: null,
+        tentativas_usadas: null,
+      }),
+  );
+
+  // A tela pagina com `count: 'exact'`, que no PostgREST vem no Content-Range.
+  await page.route('**/rest/v1/prova**', (route: Route) => {
+    const url = new URL(route.request().url());
+    const subtipos = valoresDoFiltro(url, 'subtipo');
+    const periodos = valoresDoFiltro(url, 'periodo');
+
+    // `periodo.is.null` entra junto no `or`: prova sem período (TPI) vale para
+    // todos os períodos e nunca é recortada pelo filtro.
+    const filtradas = provas.filter(
+      (p) =>
+        (!subtipos || subtipos.includes(p.subtipo)) &&
+        (!periodos || p.periodo === null || periodos.includes(String(p.periodo))),
+    );
+
+    void json(route, filtradas, {
+      'content-range': `0-${Math.max(filtradas.length - 1, 0)}/${filtradas.length}`,
+    });
+  });
+}
+
+const cards = (page: Page) => page.locator('app-prova-card');
+
+/** Abre o multiselect e marca uma opção pelo texto. */
+async function filtrarPor(page: Page, filtro: string, opcao: string): Promise<void> {
+  await page.getByRole('button', { name: filtro, exact: true }).click();
+  // `exact`: "1º período" e "11º período" casariam no mesmo prefixo.
+  await page
+    .getByRole('listbox', { name: filtro })
+    .getByRole('option', { name: opcao, exact: true })
+    .click();
+  // O filtro refaz a consulta: espera a lista assentar antes de contar.
+  await page.waitForTimeout(400);
 }
 
 // ─── Testes ──────────────────────────────────────────────────────────────────
 
-test.describe('Módulo de Provas', () => {
-  test.describe('Página inicial de Provas (/dashboard/provas)', () => {
-    test('navegar para /dashboard/provas mostra o card da Rede Afya', async ({ page }) => {
+test.describe('Treinos nacionais', () => {
+  test.describe('Entrada pela home de simulados', () => {
+    test('a home mostra o card de treinos nacionais', async ({ page }) => {
       await setupMocks(page);
-      await page.goto('/dashboard/provas');
+      await page.goto('/dashboard/simulados');
 
-      await expect(page.getByRole('heading', { name: 'Rede Afya' })).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByRole('heading', { name: 'Treinos nacionais' })).toBeVisible({
+        timeout: 10_000,
+      });
     });
 
-    test('clicar no card da Afya navega para /dashboard/provas/afya', async ({ page }) => {
+    test('clicar no card leva para a lista de treinos nacionais', async ({ page }) => {
       await setupMocks(page);
-      await page.goto('/dashboard/provas');
+      await page.goto('/dashboard/simulados');
 
-      await page.getByRole('link', { name: /Rede Afya/ }).click();
+      await page.getByRole('link', { name: /Treinos nacionais/ }).first().click();
 
-      await expect(page).toHaveURL(/\/dashboard\/provas\/afya/, { timeout: 10_000 });
+      await expect(page).toHaveURL(/\/dashboard\/simulados\/rede-afya/, { timeout: 10_000 });
     });
   });
 
-  test.describe('Lista de provas da Afya (/dashboard/provas/afya)', () => {
+  test.describe('Lista de treinos nacionais', () => {
     test.beforeEach(async ({ page }) => {
       await setupMocks(page);
-      await page.goto('/dashboard/provas/afya');
-      // Wait for loading skeleton to disappear (first app-prova-card means loaded)
+      await page.goto(URL_TREINOS);
       await page.waitForSelector('app-prova-card', { timeout: 10_000 });
     });
 
-    test('provas são listadas após carregar', async ({ page }) => {
-      const cards = page.locator('app-prova-card');
-      await expect(cards).toHaveCount(provaMocks.length);
+    test('as provas são listadas após carregar', async ({ page }) => {
+      await expect(cards(page)).toHaveCount(provaMocks.length);
     });
 
     test('exibe o título da página', async ({ page }) => {
-      await expect(page.getByRole('heading', { name: 'Rede Afya — Nacional' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Treinos nacionais' })).toBeVisible();
     });
 
-    test('link de voltar para /dashboard/provas está presente', async ({ page }) => {
-      // There are two "Provas" links on the page (nav sidebar + back link in content).
-      // Assert the back link inside the main content area.
-      await expect(page.getByRole('main').getByRole('link', { name: /Provas/ })).toBeVisible();
+    test('mantém o caminho de volta para simulados', async ({ page }) => {
+      await expect(
+        page.getByRole('main').getByRole('link', { name: 'Simulados', exact: true }),
+      ).toBeVisible();
     });
 
-    test.describe('Filtro por tipo (subtipo_nacional)', () => {
-      test('filtrar por N1 mostra apenas provas N1', async ({ page }) => {
-        // The N1 filter option in the select
-        const tipoSelect = page.locator('[aria-label="Tipo"]');
-        await tipoSelect.click();
+    test.describe('Filtro por subtipo', () => {
+      test('filtrar por N1 mostra apenas as provas N1', async ({ page }) => {
+        await filtrarPor(page, 'Subtipo', 'N1');
 
-        const n1Option = page.getByRole('listbox', { name: 'Tipo' }).getByText('N1', { exact: true });
-        await n1Option.click();
-
-        // Wait for the list to update
-        await page.waitForTimeout(300);
-
-        const cards = page.locator('app-prova-card');
-        const n1Provas = provaMocks.filter((p) => p.subtipo_nacional === 'N1');
-        await expect(cards).toHaveCount(n1Provas.length);
+        const n1 = provaMocks.filter((p) => p.subtipo === 'N1');
+        await expect(cards(page)).toHaveCount(n1.length);
+        for (const prova of n1) {
+          await expect(page.getByText(prova.nome)).toBeVisible();
+        }
       });
 
-      test('filtrar por N1 não exibe provas N2 ou TP', async ({ page }) => {
-        const tipoSelect = page.locator('[aria-label="Tipo"]');
-        await tipoSelect.click();
+      test('filtrar por N1 tira da lista as provas N2 e TPI', async ({ page }) => {
+        await filtrarPor(page, 'Subtipo', 'N1');
 
-        await page.getByRole('listbox', { name: 'Tipo' }).getByText('N1', { exact: true }).click();
-        await page.waitForTimeout(300);
-
-        // Only N1 provas should be visible — check that N2 names are absent
-        await expect(page.getByText('Prova N2 2024')).not.toBeVisible();
-        await expect(page.getByText('Teste de Progresso 2023')).not.toBeVisible();
+        for (const prova of provaMocks.filter((p) => p.subtipo !== 'N1')) {
+          await expect(page.getByText(prova.nome)).toHaveCount(0);
+        }
       });
     });
 
     test.describe('Filtro por período', () => {
-      test('filtrar por período 1 mostra apenas provas do período 1', async ({ page }) => {
-        const periodoSelect = page.locator('[aria-label="Período"]');
-        await periodoSelect.click();
+      test('filtrar pelo 1º período mostra apenas as provas daquele período', async ({ page }) => {
+        await filtrarPor(page, 'Periodo', '1º período');
 
-        await page
-          .getByRole('listbox', { name: 'Período' })
-          .getByText('1º período', { exact: true })
-          .click();
-        await page.waitForTimeout(300);
-
-        const cards = page.locator('app-prova-card');
-        const periodo1Provas = provaMocks.filter((p) => p.periodo === 1);
-        await expect(cards).toHaveCount(periodo1Provas.length);
+        const doPrimeiro = provaMocks.filter((p) => p.periodo === 1);
+        await expect(cards(page)).toHaveCount(doPrimeiro.length);
       });
 
-      test('filtrar por período 4 exibe a prova N2 do 4º período', async ({ page }) => {
-        const periodoSelect = page.locator('[aria-label="Período"]');
-        await periodoSelect.click();
+      test('filtrar pelo 4º período mostra a prova N2 daquele período', async ({ page }) => {
+        await filtrarPor(page, 'Periodo', '4º período');
 
-        await page
-          .getByRole('listbox', { name: 'Período' })
-          .getByText('4º período', { exact: true })
-          .click();
-        await page.waitForTimeout(300);
-
-        await expect(page.getByText('Prova N2 2024 — 4º Período')).toBeVisible();
+        await expect(cards(page)).toHaveCount(1);
+        await expect(page.getByText('Treino N2 2024 — 4º Período')).toBeVisible();
       });
     });
   });
 
   test.describe('Estado vazio', () => {
-    test('exibe empty state quando não há provas disponíveis', async ({ page }) => {
+    test('sem prova disponível, mostra o empty state em vez de lista vazia', async ({ page }) => {
       await setupMocks(page, []);
-      await page.goto('/dashboard/provas/afya');
+      await page.goto(URL_TREINOS);
 
-      await expect(page.locator('app-empty-state')).toBeVisible({ timeout: 10_000 });
-      await expect(page.locator('app-prova-card')).toHaveCount(0);
+      await expect(page.getByText('Nenhum simulado encontrado')).toBeVisible({ timeout: 10_000 });
+      await expect(cards(page)).toHaveCount(0);
     });
   });
 });
