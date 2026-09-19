@@ -279,7 +279,7 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 
 ## Caderno de Erros
 
-* Backend em `20260918120000_caderno_de_erros.sql`. Recurso de assinante: gate `tem_assinatura_ativa()` (gratuito fica de fora); tier essencial só vê questões nacionais (`questao.formato_prova IS NOT NULL`).
+* Backend em `20260918120000_caderno_de_erros.sql`. Recurso de assinante: gate `tem_assinatura_ativa()` (gratuito fica de fora, também bloqueado no frontend via `lazyNivelPagoGuard` na rota `/dashboard/caderno-de-erros` e `NavItem.requerPago` no menu); tier essencial só vê questões nacionais (`questao.tipo_questao = 'nacional'` — ver nota abaixo sobre `formato_prova`).
 * "Errada" usa a mesma convenção de acerto do histórico/desempenho: `coalesce(tr.pontos, tr.correta::int*100) < 70`, olhando só a resposta MAIS RECENTE do aluno por questão, em tentativa `finalizada` e `modo <> 'visualizar'`, excluindo `tr.anulada_usuario`/`questao.anulada`. **Questões discursivas (`resposta_aberta_curta`) ficam fora do Caderno de Erros por enquanto** — `get_caderno_erros`/`get_caderno_erros_resumo` filtram `q.formato <> 'resposta_aberta_curta'` — mesmo que o aluno tenha errado uma; entram no escopo numa fase futura.
 * **"Dominada" expira em 30 dias sem novo movimento** (mesmo prazo do grifo/marca-texto): passado isso, a questão some da aba "Mostrar dominadas" e, se ainda for erro pela resposta mais recente, volta a "pendente" sozinha. Sem cron — é filtro no `LEFT JOIN` de `get_caderno_erros`/`get_caderno_erros_resumo` (`ces.atualizado_em < now() - interval '30 days'`), a linha continua no banco.
 * Estado por aluno/questão vive em `caderno_erro_status` (`pendente`/`dominada` + `ultima_redo_correta`/`ultima_redo_em`). RLS só permite SELECT (dono ou admin); toda escrita é via RPC `SECURITY DEFINER` — a tabela não tem grant de INSERT/UPDATE/DELETE para `authenticated`.
@@ -322,6 +322,7 @@ dela e mantém o contrato antigo (NULL para quem não paga).
 | Impressão em PDF | não | sim | sim |
 | Materiais de estudo | não | não | sim |
 | Flashcards | não | não | sim |
+| Caderno de Erros | não | sim (só nacional) | sim |
 | Histórico e revisão das próprias tentativas | sim | sim | sim |
 | Desafio diário | sim | sim | sim |
 | Competitivo / ranking | sim | sim | sim |

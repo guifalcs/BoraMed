@@ -38,6 +38,8 @@ interface NavItem {
   onboardingTarget?: string;
   /** Exclusivo do plano Avançado: nos demais níveis aparece bloqueado. */
   requerAvancado?: boolean;
+  /** Exclusivo de contas pagas (Essencial ou Avançado): só o gratuito fica bloqueado. */
+  requerPago?: boolean;
   /** Contexto usado pelo paywall quando o item está bloqueado. */
   paywall?: PaywallContexto;
   /**
@@ -119,9 +121,12 @@ export class DashboardComponent {
   protected readonly navItens = computed<NavItemEstado[]>(() => {
     const nivel = this.nivel();
     const bloqueiaAvancado = nivel !== null && nivel !== 'avancado';
+    const bloqueiaPago = nivel === 'gratuito';
     return this.navItems.map((item) => ({
       ...item,
-      bloqueado: item.requerAvancado === true && bloqueiaAvancado,
+      bloqueado:
+        (item.requerAvancado === true && bloqueiaAvancado) ||
+        (item.requerPago === true && bloqueiaPago),
     }));
   });
 
@@ -216,7 +221,7 @@ export class DashboardComponent {
     { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards', requerAvancado: true, paywall: 'flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico', ocultoNaBarraMobile: true },
-    { label: 'Caderno de Erros', icon: BookX, route: '/dashboard/caderno-de-erros', ocultoNaBarraMobile: true },
+    { label: 'Caderno de Erros', icon: BookX, route: '/dashboard/caderno-de-erros', ocultoNaBarraMobile: true, requerPago: true, paywall: 'recurso-pago' },
   ];
 
   // No mobile, módulos com `ocultoNaBarraMobile` saem da barra inferior — ela

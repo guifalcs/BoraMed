@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { lazyTierAvancadoGuard } from '../core/guards/lazy-route-guards';
+import { lazyNivelPagoGuard, lazyTierAvancadoGuard } from '../core/guards/lazy-route-guards';
 
 export const dashboardRoutes: Routes = [
   {
@@ -39,6 +39,8 @@ export const dashboardRoutes: Routes = [
   },
   {
     path: 'caderno-de-erros',
+    canActivate: [lazyNivelPagoGuard],
+    canActivateChild: [lazyNivelPagoGuard],
     loadChildren: () =>
       import('./caderno-erros/caderno-erros.routes').then((m) => m.cadernoErrosRoutes),
   },

@@ -179,6 +179,7 @@ export class LandingComponent implements OnDestroy {
     'Simulados por tema',
     'Questões autorais',
     'Revisão guiada',
+    'Caderno de Erros',
     'Flashcards com imagens',
     'Decks da comunidade',
     'Histórico',
@@ -286,8 +287,8 @@ export class LandingComponent implements OnDestroy {
       label: 'Revisar',
       title: 'Cada erro vira uma rota de revisão',
       description:
-        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção, inclusive nas questões discursivas, corrigidas pela Aurora.',
-      features: ['Nota e resumo na hora', 'Correção das discursivas pela Aurora (IA)', 'Temas mais críticos', 'Revisão de cada erro', 'Refaça em modo estudo'],
+        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção, inclusive nas questões discursivas, corrigidas pela Aurora. Todo erro fica guardado no Caderno de Erros, agrupado por tema, até você dominar de vez.',
+      features: ['Nota e resumo na hora', 'Correção das discursivas pela Aurora (IA)', 'Caderno de Erros por tema', 'Refaça cada erro em modo estudo', 'Monte um simulado só com o que você errou'],
       icon: Route,
     },
     {
@@ -339,6 +340,7 @@ export class LandingComponent implements OnDestroy {
   private static readonly ESSENCIAL_FEATURES: readonly string[] = [
     'Treinos no modelo das avaliações nacionais, até o 8º período',
     'Correção das questões abertas pela Aurora (IA)',
+    'Caderno de Erros: revise por tema e refaça as questões que você errou',
     'Modo competitivo',
     'Histórico e estatísticas de desempenho',
     'Impressão dos treinos em PDF',
@@ -443,6 +445,7 @@ export class LandingComponent implements OnDestroy {
     ] as readonly string[],
     naoInclui: [
       'Simulados sem limite',
+      'Caderno de Erros',
       'Materiais de estudo e flashcards',
       'Impressão em PDF',
     ] as readonly string[],
@@ -505,7 +508,7 @@ export class LandingComponent implements OnDestroy {
     {
       question: 'Como revisar meus erros depois do simulado?',
       answer:
-        'Ao finalizar, você vê sua nota, os temas em que mais errou e a explicação de cada questão, e pode refazer tudo em modo estudo, sem tempo, até dominar o conteúdo.',
+        'Ao finalizar, você vê sua nota, os temas em que mais errou e a explicação de cada questão. Toda questão errada também vai para o seu Caderno de Erros, agrupada por tema, onde você pode refazer avulso ou montar um simulado novo só com o que ainda precisa dominar. Recurso disponível para assinantes Essencial e Avançado.',
     },
     {
       question: 'Existe simulado de laboratório?',

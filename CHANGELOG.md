@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-19 | Feature | Caderno de Erros bloqueado no gratuito + copy na landing
+
+- **Gate explícito pra conta gratuita**: rota `/dashboard/caderno-de-erros` ganhou `lazyNivelPagoGuard` (mesmo guard já usado pela impressão — bloqueia só quem não tem nenhum plano pago, libera Essencial e Avançado) e o item de menu ganhou `requerPago` (aparece bloqueado com paywall em vez de sumir, mesmo padrão de Materiais/Flashcards). O backend já bloqueava via `tem_assinatura_ativa()`; isso fecha o lado da UI, que antes deixava o gratuito clicar e só receber um erro de RPC cru.
+- **Landing page**: Caderno de Erros citado na aba "Revisar" da seção de solução, no FAQ de revisão de erros, na lista de benefícios do Essencial/Avançado e no "não inclui" do plano grátis.
+
 ## 2026-09-18 | Feature | Caderno de Erros
 
 **Aluno revisita questões erradas de qualquer prova/simulado, refaz avulso ou monta um simulado só com os próprios erros**
