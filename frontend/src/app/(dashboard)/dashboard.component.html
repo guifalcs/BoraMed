@@ -131,13 +131,40 @@
       @if (menuAberto()) {
         <div class="mobile-menu-backdrop" (click)="fecharMenu()"></div>
         <div class="mobile-menu" role="menu">
+          <span class="mobile-menu-label">Módulos</span>
+          @for (item of perfilMenuModulos(); track item.route) {
+            @if (item.bloqueado) {
+              <button
+                class="mobile-menu-item mobile-menu-item--bloqueado"
+                type="button"
+                role="menuitem"
+                [attr.aria-label]="item.label + ' (recurso do plano Avançado)'"
+                (click)="abrirPaywall(item)"
+              >
+                <app-ui-icon [icon]="item.icon" [size]="18" />
+                <span>{{ item.label }}</span>
+                <app-upgrade-badge />
+              </button>
+            } @else {
+              <a
+                class="mobile-menu-item"
+                [routerLink]="item.route"
+                (click)="fecharMenu()"
+                role="menuitem"
+                [attr.data-onboarding-target]="item.onboardingTarget ?? null"
+              >
+                <app-ui-icon [icon]="item.icon" [size]="18" />
+                <span>{{ item.label }}</span>
+              </a>
+            }
+          }
+
+          <div class="mobile-menu-divider" role="separator"></div>
+          <span class="mobile-menu-label">Conta</span>
+
           <a class="mobile-menu-item" routerLink="/dashboard/perfil" (click)="fecharMenu()" role="menuitem">
             <app-ui-icon [icon]="userIcon" [size]="18" />
             <span>Perfil</span>
-          </a>
-          <a class="mobile-menu-item" routerLink="/dashboard/historico" (click)="fecharMenu()" role="menuitem" data-onboarding-target="nav-historico">
-            <app-ui-icon [icon]="historyIcon" [size]="18" />
-            <span>Histórico</span>
           </a>
           <a class="mobile-menu-item" routerLink="/dashboard/assinatura" (click)="fecharMenu()" role="menuitem">
             <app-ui-icon [icon]="creditCardIcon" [size]="18" />

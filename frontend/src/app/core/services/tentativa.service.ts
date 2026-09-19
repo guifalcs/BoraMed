@@ -604,6 +604,16 @@ export class TentativaService {
       this.cache.remove(CACHE_KEYS.inicio);
       this.cache.remove(CACHE_KEYS.historico);
 
+      // Fire-and-forget: promove pra "dominada" (ou devolve a "pendente") no
+      // Caderno de Erros qualquer questão desta tentativa que já era um erro
+      // rastreado — não bloqueia a tela de resultado, e é no-op pra quem
+      // nunca tocou no Caderno de Erros (RPC só mexe em questão já rastreada).
+      // .catch() silencioso de propósito: uma falha aqui não pode virar
+      // unhandled rejection reportado pro Sentry a cada tentativa finalizada.
+      this.supabase
+        .rpc('sincronizar_caderno_erro_status_pos_tentativa', { p_tentativa_id: tentativaId })
+        .then(() => undefined, () => undefined);
+
       // Com correções de IA pendentes a nota ainda não fechou — o XP é
       // concedido pela tela de resultado após a consolidação (RPC idempotente).
       if (!resultado.correcoes_pendentes) {

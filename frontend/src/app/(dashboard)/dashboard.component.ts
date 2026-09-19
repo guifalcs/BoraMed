@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, CreditCard, History, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, BookX, CreditCard, History, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -40,6 +40,13 @@ interface NavItem {
   requerAvancado?: boolean;
   /** Contexto usado pelo paywall quando o item está bloqueado. */
   paywall?: PaywallContexto;
+  /**
+   * Módulo que não cabe na barra inferior do mobile (ela já é cheia hoje) —
+   * some da barra e passa a aparecer na seção "Módulos" do menu do perfil.
+   * Novo módulo entra aqui em vez de virar mais uma exceção hardcoded no
+   * template do menu mobile.
+   */
+  ocultoNaBarraMobile?: boolean;
 }
 
 /** NavItem já resolvido contra o nível de acesso do usuário. */
@@ -71,7 +78,6 @@ export class DashboardComponent {
   private readonly acesso = inject(AcessoService);
 
   protected readonly logOutIcon = LogOut;
-  protected readonly historyIcon = History;
   protected readonly userIcon = User;
   protected readonly settingsIcon = Settings;
   protected readonly creditCardIcon = CreditCard;
@@ -209,18 +215,21 @@ export class DashboardComponent {
     { label: 'Materiais', icon: Library, route: '/dashboard/materiais', requerAvancado: true, paywall: 'materiais' },
     { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards', requerAvancado: true, paywall: 'flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
-    { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico' },
+    { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico', ocultoNaBarraMobile: true },
+    { label: 'Caderno de Erros', icon: BookX, route: '/dashboard/caderno-de-erros', ocultoNaBarraMobile: true },
   ];
 
-  // No mobile o Histórico fica no menu do perfil — a barra inferior não
-  // comporta todos os módulos em telas estreitas (ex.: iPhone 15).
-  // Início troca de posição com Materiais para ficar no centro da barra.
+  // No mobile, módulos com `ocultoNaBarraMobile` saem da barra inferior — ela
+  // não comporta todos os módulos em telas estreitas (ex.: iPhone 15) — e
+  // passam a aparecer na seção "Módulos" do menu do perfil (ver
+  // `perfilMenuModulos` e a seção "Módulos" do `.mobile-menu`). Início troca
+  // de posição com Materiais para ficar no centro da barra.
   //
   // Derivado de `navItens` (e não do array cru) porque antes era uma lista
   // estática: o filtro de tier valia só para a sidebar e a barra inferior
   // seguia mostrando os itens pagos como se estivessem liberados.
   protected readonly bottomNavItens = computed<NavItemEstado[]>(() => {
-    const itens = this.navItens().filter((item) => item.route !== '/dashboard/historico');
+    const itens = this.navItens().filter((item) => !item.ocultoNaBarraMobile);
     const inicio = itens.findIndex((item) => item.route === '/dashboard');
     const materiais = itens.findIndex((item) => item.route === '/dashboard/materiais');
     if (inicio !== -1 && materiais !== -1) {
@@ -228,6 +237,11 @@ export class DashboardComponent {
     }
     return itens;
   });
+
+  /** Mesmos módulos escondidos da barra inferior, para a seção "Módulos" do menu do perfil no mobile. */
+  protected readonly perfilMenuModulos = computed<NavItemEstado[]>(() =>
+    this.navItens().filter((item) => item.ocultoNaBarraMobile),
+  );
 
   /** Abre o upsell no contexto do item bloqueado que o usuário tocou. */
   protected abrirPaywall(item: NavItemEstado): void {

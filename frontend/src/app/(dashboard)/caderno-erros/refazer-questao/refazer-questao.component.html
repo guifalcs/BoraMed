@@ -1,0 +1,67 @@
+<div class="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
+
+  <app-page-header
+    titulo="Refazer questão"
+    subtitulo="Responda de novo para reforçar o que já foi corrigido."
+    [breadcrumbs]="breadcrumbs"
+  />
+
+  @if (isLoading()) {
+    <div class="h-64 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
+  } @else if (loadError()) {
+    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
+      <app-empty-state
+        titulo="Não foi possível carregar esta questão"
+        [descricao]="loadError()"
+        labelBotao="Tentar novamente"
+        (acao)="onTentarNovamente()"
+      />
+    </div>
+  } @else if (questao(); as q) {
+    <app-questao-card
+      [questao]="q"
+      [numero]="1"
+      [modo]="modoEstudo"
+      [respostaSelecionada]="respostaSelecionada()"
+      [alternativaCorreta]="alternativaCorretaId()"
+      (responder)="onResponder($event)"
+    />
+
+    @if (erroResposta()) {
+      <p class="mt-3 text-sm font-medium text-red-600">{{ erroResposta() }}</p>
+    }
+
+    @if (respondida()) {
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+          (click)="onProximaErrada()"
+        >
+          {{ temProxima() ? 'Próxima questão errada' : 'Concluir revisão' }}
+          <app-ui-icon [icon]="proximaIcon" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)]"
+          (click)="onVoltar()"
+        >
+          <app-ui-icon [icon]="voltarIcon" [size]="16" />
+          Voltar ao caderno
+        </button>
+      </div>
+    } @else {
+      <div class="mt-4">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)]"
+          (click)="onVoltar()"
+        >
+          <app-ui-icon [icon]="voltarIcon" [size]="16" />
+          Voltar ao caderno
+        </button>
+      </div>
+    }
+  }
+
+</div>

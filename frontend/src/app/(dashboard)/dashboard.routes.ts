@@ -38,6 +38,11 @@ export const dashboardRoutes: Routes = [
       import('./historico/historico.component').then((m) => m.HistoricoComponent),
   },
   {
+    path: 'caderno-de-erros',
+    loadChildren: () =>
+      import('./caderno-erros/caderno-erros.routes').then((m) => m.cadernoErrosRoutes),
+  },
+  {
     path: 'materiais',
     canActivate: [lazyTierAvancadoGuard],
     canActivateChild: [lazyTierAvancadoGuard],

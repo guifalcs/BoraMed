@@ -67,7 +67,7 @@ export class HistoricoService {
         // Prova deletada: usa o snapshot gravado no momento da exclusão
         const prova = provaAtual ?? r.prova_snapshot;
         const tipo = prova?.formato ?? prova?.tipo ?? 'nacional';
-        const nome = prova?.origem === 'personalizado' ? 'Simulado Personalizado' : (prova?.nome ?? 'Prova');
+        const nome = prova?.nome ?? 'Prova';
         return {
           id: r.id,
           prova_id: r.prova_id,

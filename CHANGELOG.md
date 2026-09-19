@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-18 | Feature | Caderno de Erros
+
+**Aluno revisita questões erradas de qualquer prova/simulado, refaz avulso ou monta um simulado só com os próprios erros**
+
+- **Nova tela `/dashboard/caderno-de-erros`**, sem paywall extra: quem é Essencial já só vê erros de questões nacionais (é tudo que já acessa hoje), Avançado vê nacional/processual/laboratório. É recurso de assinante — plano gratuito não entra. Filtros por tipo de questão e tema (dois selects), busca por texto no enunciado (debounce, servidor), paginação (10 por página), KPIs (pendentes, dominadas nos últimos 7 dias, tema mais fraco, tipo com mais erros).
+- **Menu do perfil no mobile ganhou seção "Módulos"** (Histórico + Caderno de Erros por enquanto), separada de "Conta" (Perfil, Assinatura, Comunidade, Sair) por um divisor. `NavItem` ganhou a flag `ocultoNaBarraMobile`: todo módulo que não couber na barra inferior entra ali automaticamente — o próximo módulo não precisa mais de uma exceção hardcoded no template do menu.
+- **"Errada" usa a mesma convenção do histórico**: resposta mais recente do aluno para a questão, em tentativa finalizada, nota abaixo de 70. **Questões discursivas ficam fora por enquanto** — o caderno só lista fechadas (múltipla escolha, verdadeiro/falso, associação).
+- **Refazer avulso não conta como tentativa nova**: responde ali mesmo, servidor corrige na hora, mas nada é gravado em `tentativa`/`tentativa_resposta` — o histórico do aluno fica intocado. Acertar marca a questão como "dominada" e ela sai da lista sozinha; errar de novo desfaz isso. O feedback pós-resposta é o mesmo padrão já usado no resto do app (cor nas alternativas + explicação abaixo), sem caixa/aviso próprio.
+- **"Gerar simulado com esses erros" é diferente**: monta uma tentativa de verdade (conta no histórico normalmente), reaproveitando o mesmo motor de sorteio de `gerar_simulado_personalizado` (novo parâmetro `p_apenas_erros`, sem quebrar as chamadas existentes).
+- Reaproveita a tela de revisão pós-tentativa já existente (`.../revisao?filtro=erros`) para "ver a prova inteira onde errei", em vez de recriar renderização de questão/imagem de lâmina.
+- Tabela nova `caderno_erro_status` (estado por aluno/questão) com RLS e escrita só via RPC `SECURITY DEFINER`, seguindo o mesmo hardening de `tentativa`/`tentativa_resposta`.
+- **Acertar de novo conta como dominado**: gerar um simulado com os erros e acertar marca a questão como "dominada" (conta no KPI e aparece em "Mostrar dominadas"), via `sincronizar_caderno_erro_status_pos_tentativa`, chamada após qualquer tentativa finalizar.
+- **Nome real da prova no Histórico**: "Simulado dos meus erros - N questões" em vez do genérico "Simulado Personalizado" que era forçado pra toda prova personalizada.
+- **"Dominada" expira em 30 dias** sem novo movimento (mesmo prazo do grifo) — some da lista, e volta a "pendente" sozinha se ainda for erro de verdade.
+- **Lista agrupada por tema** (accordion colapsado por padrão) em vez de um card gigante por questão — resolve a poluição visual pra quem tem volume alto de erros. Cascata tema → disciplina → tipo quando falta tema (91% das nacionais em prod não têm — checado via MCP). Buscando por texto, vira lista plana e compacta. Corrigido também um bug real: `temas` vinha como `text[]` do banco mas o service lia como array de objetos (`.nome` sempre `undefined`).
+- **Bug crítico corrigido antes de ir pra prod**: o gate "Essencial só vê nacional" usava `q.formato_prova IS NOT NULL`, mas essa coluna está NULL em 100% das questões reais — deixaria o Caderno de Erros vazio pra todo aluno Essencial. Trocado por `tipo_questao = 'nacional'` e testado com usuário não-admin.
+- Verificado: `db advisors` sem alertas, `ng build` limpo, 923 unitários, e o fluxo completo (gerar → acertar → finalizar → dominada → expiração) testado ponta a ponta no banco local.
+
 ## 2026-09-16 | Fix | Voltar da borracha para a caneta sem clicar na paleta
 
 **Depois do `Shift + G`, o `G` só ligava e desligava o modo — a borracha continuava na mão**
