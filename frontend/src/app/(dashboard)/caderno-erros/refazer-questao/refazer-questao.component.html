@@ -21,57 +21,17 @@
     <app-questao-card
       [questao]="q"
       [numero]="1"
-      [modo]="modoCard()"
+      [modo]="modoEstudo"
       [respostaSelecionada]="respostaSelecionada()"
       [alternativaCorreta]="alternativaCorretaId()"
-      [respostaTexto]="respostaTexto()"
-      [estadoRespostaAberta]="estadoRespostaAberta()"
       (responder)="onResponder($event)"
-      (salvarRascunho)="onSalvarRascunho($event)"
-      (enviarTexto)="onEnviarTexto($event)"
     />
-
-    @if (ehDiscursivaSemSuporte()) {
-      <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        Questões discursivas ainda não podem ser refeitas por aqui. Confira sua resposta anterior na revisão completa da tentativa, ou marque como dominada quando já tiver revisado o conteúdo.
-      </div>
-      <div class="mt-4 flex flex-wrap gap-3">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-          (click)="onProximaErrada()"
-        >
-          {{ temProxima() ? 'Próxima questão errada' : 'Concluir revisão' }}
-          <app-ui-icon [icon]="proximaIcon" [size]="16" />
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)]"
-          (click)="onVoltar()"
-        >
-          <app-ui-icon [icon]="voltarIcon" [size]="16" />
-          Voltar ao caderno
-        </button>
-      </div>
-    } @else {
 
     @if (erroResposta()) {
       <p class="mt-3 text-sm font-medium text-red-600">{{ erroResposta() }}</p>
     }
 
-    @if (resultado(); as r) {
-      <div
-        class="mt-3 rounded-xl border p-4"
-        [class]="r.correta ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'"
-      >
-        <p class="text-sm font-semibold" [class]="r.correta ? 'text-emerald-700' : 'text-red-700'">
-          {{ r.correta ? 'Você acertou!' : 'Você errou.' }}
-        </p>
-        @if (r.explicacao) {
-          <p class="mt-1 text-sm leading-relaxed text-[var(--color-text)]">{{ r.explicacao }}</p>
-        }
-      </div>
-
+    @if (respondida()) {
       <div class="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -101,8 +61,6 @@
           Voltar ao caderno
         </button>
       </div>
-    }
-
     }
   }
 

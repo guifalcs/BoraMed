@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,12 +10,6 @@ import { QuestaoCardComponent } from '../../../shared/components/questao-card/qu
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
-import type { EstadoRespostaAberta } from '../../../shared/components/resposta-aberta-input/resposta-aberta-input.component';
-
-interface ResultadoAvulso {
-  correta: boolean;
-  explicacao?: string;
-}
 
 @Component({
   selector: 'app-refazer-questao',
@@ -54,25 +48,10 @@ export class RefazerQuestaoComponent {
 
   protected readonly respostaSelecionada = signal<string | null>(null);
   protected readonly alternativaCorretaId = signal<string | null>(null);
-  protected readonly respostaTexto = signal('');
-  protected readonly estadoRespostaAberta = signal<EstadoRespostaAberta>('rascunho');
 
-  protected readonly resultado = signal<ResultadoAvulso | null>(null);
+  protected readonly respondida = signal(false);
   protected readonly enviando = signal(false);
   protected readonly erroResposta = signal<string | null>(null);
-
-  /**
-   * `responder_questao_avulsa` recusa formato discursivo com P0011 (a
-   * correção por IA não roda fora de uma tentativa) — a tela nem tenta
-   * enviar, só orienta a voltar ou seguir para a próxima da fila.
-   */
-  protected readonly ehDiscursivaSemSuporte = computed(
-    () => this.questao()?.formato === 'resposta_aberta_curta',
-  );
-
-  protected readonly modoCard = computed<ModoProva>(() =>
-    this.ehDiscursivaSemSuporte() ? 'visualizar' : this.modoEstudo,
-  );
 
   constructor() {
     if (this.isBrowser) {
@@ -102,9 +81,7 @@ export class RefazerQuestaoComponent {
   private resetEstadoResposta(): void {
     this.respostaSelecionada.set(null);
     this.alternativaCorretaId.set(null);
-    this.respostaTexto.set('');
-    this.estadoRespostaAberta.set('rascunho');
-    this.resultado.set(null);
+    this.respondida.set(false);
     this.erroResposta.set(null);
   }
 
@@ -127,32 +104,10 @@ export class RefazerQuestaoComponent {
             : { ...q, alternativas: q.alternativas.map((a) => ({ ...a, correta: a.id === corretaId })) },
         );
       }
-      this.resultado.set({ correta: resposta.correta, explicacao: resposta.explicacao });
+      this.respondida.set(true);
     } catch {
       this.erroResposta.set('Não foi possível registrar sua resposta. Tente novamente.');
       this.respostaSelecionada.set(null);
-    } finally {
-      this.enviando.set(false);
-    }
-  }
-
-  protected onSalvarRascunho(texto: string): void {
-    this.respostaTexto.set(texto);
-  }
-
-  protected async onEnviarTexto(texto: string): Promise<void> {
-    if (this.enviando()) return;
-    this.respostaTexto.set(texto);
-    this.estadoRespostaAberta.set('enviando');
-    this.enviando.set(true);
-    this.erroResposta.set(null);
-    try {
-      const resposta = await this.cadernoErrosService.responderAvulsa(this.questaoId(), undefined, texto);
-      this.estadoRespostaAberta.set('enviada');
-      this.resultado.set({ correta: resposta.correta, explicacao: resposta.explicacao });
-    } catch {
-      this.erroResposta.set('Não foi possível registrar sua resposta. Tente novamente.');
-      this.estadoRespostaAberta.set('rascunho');
     } finally {
       this.enviando.set(false);
     }

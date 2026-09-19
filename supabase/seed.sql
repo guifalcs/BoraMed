@@ -530,3 +530,247 @@ INSERT INTO public.pesquisa (id, titulo, descricao, segmento, ativa) VALUES (
 INSERT INTO public.pesquisa_pergunta (id, pesquisa_id, ordem, tipo, enunciado, ajuda, obrigatoria, escala_min, escala_max, escala_min_label, escala_max_label) VALUES
 ('a5522222-0000-0000-0000-000000000021','a5511111-0000-0000-0000-000000000003',1,'texto_curto','O que falta para você assinar?',NULL,false,1,5,NULL,NULL)
 ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- Caderno de Erros: 1 questão processual + 1 de laboratório (as nacionais já
+-- existem lá em cima: cccc0000...0001/0002), e uma tentativa FINALIZADA do
+-- usuário de teste com 1 acerto e 3 erros propositais (1 por tipo_questao),
+-- para o Caderno de Erros nascer populado em dev.
+-- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção.
+-- ============================================================================
+
+INSERT INTO public.questao (id, enunciado, formato, tipo_questao, status, explicacao, disciplina_id) VALUES
+('caad0000-0000-0000-0000-000000000001','[Processual] Paciente com dor abdominal em fossa ilíaca direita e sinal de Blumberg positivo. Qual a conduta inicial mais apropriada?','multipla_escolha','processual','ativa','Sinais de irritação peritoneal em fossa ilíaca direita sugerem apendicite aguda — a conduta inicial é solicitar exames complementares e indicar avaliação cirúrgica precoce.','aaaa0000-0000-0000-0000-000000000001')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem) VALUES
+('caad0000-0000-0000-0000-000000000001','A','Solicitar avaliação cirúrgica e exames complementares',true,1),
+('caad0000-0000-0000-0000-000000000001','B','Prescrever analgésico e reavaliar em 7 dias',false,2),
+('caad0000-0000-0000-0000-000000000001','C','Alta com orientações gerais',false,3)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.questao (id, enunciado, formato, tipo_questao, status, explicacao, imagem_url, imagem_legenda, disciplina_id) VALUES
+('caad0000-0000-0000-0000-000000000002','Observe a lâmina histológica. Qual tipo de epitélio está representado?','multipla_escolha','laboratorio','ativa','A lâmina mostra epitélio cilíndrico simples com microvilosidades, típico da mucosa intestinal.','/landing-page/modo-laboratorio.webp','Lâmina de mucosa intestinal (HE, 40x)','aaaa0000-0000-0000-0000-000000000001')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem) VALUES
+('caad0000-0000-0000-0000-000000000002','A','Epitélio cilíndrico simples',true,1),
+('caad0000-0000-0000-0000-000000000002','B','Epitélio pavimentoso estratificado',false,2),
+('caad0000-0000-0000-0000-000000000002','C','Epitélio de transição',false,3)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.questao_tema (questao_id, tema_id) VALUES
+('caad0000-0000-0000-0000-000000000001','bbbb0000-0000-0000-0000-000000000002'),
+('caad0000-0000-0000-0000-000000000002','bbbb0000-0000-0000-0000-000000000001')
+ON CONFLICT DO NOTHING;
+
+-- Duas nacionais SEM TEMA, pra reproduzir em dev a cascata de agrupamento
+-- que existe pra prod de verdade (checado via MCP em 18/09: 91% das
+-- nacionais reais não têm tema, 47% nem disciplina):
+--   caad0003...0001: tem disciplina (CARDIO), sem tema -> cai no grupo "CARDIO".
+--   caad0003...0002: sem disciplina E sem tema -> cai no grupo "Nacional".
+INSERT INTO public.questao (id, enunciado, formato, tipo_questao, status, explicacao, disciplina_id) VALUES
+('caad0003-0000-0000-0000-000000000001','[Sem tema] Qual a principal causa de estenose mitral no Brasil?','multipla_escolha','nacional','ativa','A febre reumática (sequela de faringite estreptocócica não tratada) é a principal causa de estenose mitral no Brasil.','aaaa0000-0000-0000-0000-000000000001'),
+('caad0003-0000-0000-0000-000000000002','[Sem tema e sem disciplina] Qual vitamina tem sua síntese estimulada pela exposição solar?','multipla_escolha','nacional','ativa','A vitamina D é sintetizada na pele a partir do 7-dehidrocolesterol sob ação da radiação UVB.',NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem) VALUES
+('caad0003-0000-0000-0000-000000000001','A','Febre reumática',true,1),
+('caad0003-0000-0000-0000-000000000001','B','Endocardite infecciosa',false,2),
+('caad0003-0000-0000-0000-000000000001','C','Calcificação senil',false,3),
+('caad0003-0000-0000-0000-000000000002','A','Vitamina D',true,1),
+('caad0003-0000-0000-0000-000000000002','B','Vitamina C',false,2),
+('caad0003-0000-0000-0000-000000000002','C','Vitamina K',false,3)
+ON CONFLICT DO NOTHING;
+-- Sem INSERT em questao_tema pra nenhuma das duas: é o ponto do exemplo.
+
+INSERT INTO public.prova (id, nome, periodo, tipo, origem, formato, qtd_questoes, publicada, arquivada)
+VALUES ('caad0000-0000-0000-0000-0000000000f0','[DEV] Simulado seed — Caderno de Erros',0,'autoral','personalizado',NULL,6,false,false)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prova_questao (prova_id, questao_id, ordem) VALUES
+('caad0000-0000-0000-0000-0000000000f0','cccc0000-0000-0000-0000-000000000001',1),
+('caad0000-0000-0000-0000-0000000000f0','cccc0000-0000-0000-0000-000000000002',2),
+('caad0000-0000-0000-0000-0000000000f0','caad0000-0000-0000-0000-000000000001',3),
+('caad0000-0000-0000-0000-0000000000f0','caad0000-0000-0000-0000-000000000002',4),
+('caad0000-0000-0000-0000-0000000000f0','caad0003-0000-0000-0000-000000000001',5),
+('caad0000-0000-0000-0000-0000000000f0','caad0003-0000-0000-0000-000000000002',6)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.tentativa (id, user_id, prova_id, modo, status, total_questoes, total_respondidas, acertos, nota, iniciada_em, finalizada_em, criado_em)
+VALUES (
+  'caad0000-0000-0000-0000-0000000000fa','11111111-1111-1111-1111-111111111111','caad0000-0000-0000-0000-0000000000f0',
+  'simulado','finalizada',6,6,1,16.67, now() - interval '2 days', now() - interval '2 days', now() - interval '2 days'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- cccc...0001 (nacional, com tema): acerta, marcando a alternativa A (Sódio).
+-- cccc...0002 (nacional, com tema): ERRA, marcando B (Pancreatite) em vez de A (Colangite).
+-- caad0000...0001 (processual, com tema): ERRA, marcando B em vez de A.
+-- caad0000...0002 (laboratorio, com tema): ERRA, marcando B em vez de A.
+-- caad0003...0001 (nacional, SEM tema, com disciplina): ERRA, marcando B.
+-- caad0003...0002 (nacional, SEM tema e SEM disciplina): ERRA, marcando B.
+-- Nenhuma discursiva aqui de propósito: Caderno de Erros ainda não cobre
+-- questões abertas (fora de escopo por enquanto).
+INSERT INTO public.tentativa_resposta (tentativa_id, questao_id, alternativa_id, correta, ordem_na_tentativa, respondida_em, anulada_usuario)
+SELECT 'caad0000-0000-0000-0000-0000000000fa', q.questao_id, alt.id, alt.correta, q.ordem, now() - interval '2 days', false
+FROM (VALUES
+  ('cccc0000-0000-0000-0000-000000000001'::uuid, 1, 'A'),
+  ('cccc0000-0000-0000-0000-000000000002'::uuid, 2, 'B'),
+  ('caad0000-0000-0000-0000-000000000001'::uuid, 3, 'B'),
+  ('caad0000-0000-0000-0000-000000000002'::uuid, 4, 'B'),
+  ('caad0003-0000-0000-0000-000000000001'::uuid, 5, 'B'),
+  ('caad0003-0000-0000-0000-000000000002'::uuid, 6, 'B')
+) AS q(questao_id, ordem, letra_escolhida)
+JOIN public.alternativa alt ON alt.questao_id = q.questao_id AND alt.letra = q.letra_escolhida
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.tentativa_resposta tr
+  WHERE tr.tentativa_id = 'caad0000-0000-0000-0000-0000000000fa' AND tr.questao_id = q.questao_id
+);
+
+-- Mais 9 questões nacionais erradas (geradas via generate_series), só para o
+-- Caderno de Erros nascer com 12 pendências em dev — o suficiente para
+-- exercitar a paginação (10 por página) manualmente. Sem valor de conteúdo.
+INSERT INTO public.questao (id, enunciado, formato, tipo_questao, status, explicacao, disciplina_id)
+SELECT
+  ('caad0001-0000-0000-0000-' || lpad(gs::text, 12, '0'))::uuid,
+  '[Seed paginação] Questão de teste nº ' || gs || ' — qual das alternativas abaixo está correta?',
+  'multipla_escolha', 'nacional', 'ativa',
+  'Alternativa A é a correta nesta questão de teste (gerada só para popular a paginação em dev).',
+  'aaaa0000-0000-0000-0000-000000000001'
+FROM generate_series(1, 9) AS gs
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem)
+SELECT ('caad0001-0000-0000-0000-' || lpad(gs::text, 12, '0'))::uuid, alt.letra, alt.texto, alt.correta, alt.ordem
+FROM generate_series(1, 9) AS gs
+CROSS JOIN (VALUES ('A','Alternativa correta',true,1), ('B','Alternativa errada',false,2), ('C','Outra alternativa errada',false,3))
+  AS alt(letra, texto, correta, ordem)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.questao_tema (questao_id, tema_id)
+SELECT ('caad0001-0000-0000-0000-' || lpad(gs::text, 12, '0'))::uuid, 'bbbb0000-0000-0000-0000-000000000001'
+FROM generate_series(1, 9) AS gs
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.prova_questao (prova_id, questao_id, ordem)
+SELECT 'caad0000-0000-0000-0000-0000000000f0', ('caad0001-0000-0000-0000-' || lpad(gs::text, 12, '0'))::uuid, gs + 4
+FROM generate_series(1, 9) AS gs
+ON CONFLICT DO NOTHING;
+
+UPDATE public.prova SET qtd_questoes = 13 WHERE id = 'caad0000-0000-0000-0000-0000000000f0';
+UPDATE public.tentativa SET total_questoes = 13, total_respondidas = 13 WHERE id = 'caad0000-0000-0000-0000-0000000000fa';
+
+INSERT INTO public.tentativa_resposta (tentativa_id, questao_id, alternativa_id, correta, ordem_na_tentativa, respondida_em, anulada_usuario)
+SELECT
+  'caad0000-0000-0000-0000-0000000000fa', q.id, alt.id, alt.correta,
+  4 + row_number() over (order by q.id), now() - interval '2 days', false
+FROM public.questao q
+JOIN public.alternativa alt ON alt.questao_id = q.id AND alt.letra = 'B'
+WHERE q.id IN (
+  SELECT ('caad0001-0000-0000-0000-' || lpad(gs::text, 12, '0'))::uuid FROM generate_series(1, 9) AS gs
+)
+AND NOT EXISTS (
+  SELECT 1 FROM public.tentativa_resposta tr
+  WHERE tr.tentativa_id = 'caad0000-0000-0000-0000-0000000000fa' AND tr.questao_id = q.id
+);
+
+-- ============================================================================
+-- Perfil de volume "estilo usuária real" (checado via MCP em 19/09 contra
+-- uma assinante que usa muito a plataforma: 95 erros pendentes reais, 20
+-- grupos de tema — nomes de tema abaixo são os REAIS dela, sem nenhum dado
+-- pessoal/sensível). Amostra proporcional, NÃO os 95 completos (~34 novas
+-- questões em 14 grupos, somando aos 4 grupos já existentes acima = 18
+-- grupos, ~48 pendentes no total) — o bastante pra sentir o accordion com
+-- volume alto sem replicar prod inteiro.
+-- Idempotente; roda a cada `db reset`. NUNCA aplicar em produção.
+-- ============================================================================
+DO $$
+DECLARE
+  v_prova_id uuid := 'caad0000-0000-0000-0000-0000000000f0';
+  v_tentativa_id uuid := 'caad0000-0000-0000-0000-0000000000fa';
+  v_disciplina_id uuid := 'aaaa0000-0000-0000-0000-000000000001';
+  v_ordem int;
+  v_tema_id uuid;
+  v_questao_id uuid;
+  v_alt_errada_id uuid;
+  v_i int;
+  grupo record;
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.questao WHERE enunciado LIKE '[Seed volume]%') THEN
+    RETURN;
+  END IF;
+
+  SELECT coalesce(max(ordem), 0) INTO v_ordem FROM public.prova_questao WHERE prova_id = v_prova_id;
+
+  FOR grupo IN
+    SELECT * FROM (VALUES
+      ('IESC I', 'nacional', 6),
+      ('MCM I', 'nacional', 4),
+      ('HAM I', 'nacional', 3),
+      ('Ciclo Cardíaco, Débito e Adaptações ao Exercício', 'processual', 3),
+      ('Histofisiologia Vascular e Retorno Venoso (Membros Inferiores)', 'processual', 3),
+      ('Embriologia Geral', 'laboratorio', 3),
+      ('Sinais Vitais e Regulação da Pressão Arterial', 'processual', 2),
+      ('Eletrofisiologia Cardíaca e Acoplamento Excitação-Contração', 'processual', 2),
+      ('Hematopoiese e Composição Sanguínea', 'nacional', 2),
+      ('Anatomia, Fisiologia e Histologia do Sistema Linfático', 'processual', 2),
+      ('SOI I', 'nacional', 1),
+      ('Anatomia e Histologia Cardíaca (Sistêmica e Coronária)', 'processual', 1),
+      ('Genética', 'laboratorio', 1),
+      ('Imunidade e Hipersensibilidade', 'nacional', 1)
+    ) AS t(tema_nome, tipo_questao, qtd)
+  LOOP
+    SELECT id INTO v_tema_id FROM public.tema WHERE nome = grupo.tema_nome AND disciplina_id = v_disciplina_id;
+    IF v_tema_id IS NULL THEN
+      INSERT INTO public.tema (id, nome, disciplina_id)
+      VALUES (gen_random_uuid(), grupo.tema_nome, v_disciplina_id)
+      RETURNING id INTO v_tema_id;
+    END IF;
+
+    FOR v_i IN 1..grupo.qtd LOOP
+      v_ordem := v_ordem + 1;
+
+      INSERT INTO public.questao (id, enunciado, formato, tipo_questao, status, explicacao, disciplina_id)
+      VALUES (
+        gen_random_uuid(),
+        '[Seed volume] ' || grupo.tema_nome || ' — questão de exemplo nº ' || v_i,
+        'multipla_escolha', grupo.tipo_questao, 'ativa',
+        'Explicação de exemplo para ' || grupo.tema_nome || '.', v_disciplina_id
+      )
+      RETURNING id INTO v_questao_id;
+
+      INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem)
+      VALUES (v_questao_id, 'A', 'Alternativa correta', true, 1);
+
+      INSERT INTO public.alternativa (id, questao_id, letra, texto, correta, ordem)
+      VALUES (gen_random_uuid(), v_questao_id, 'B', 'Alternativa errada', false, 2)
+      RETURNING id INTO v_alt_errada_id;
+
+      INSERT INTO public.alternativa (questao_id, letra, texto, correta, ordem)
+      VALUES (v_questao_id, 'C', 'Outra alternativa errada', false, 3);
+
+      INSERT INTO public.questao_tema (questao_id, tema_id) VALUES (v_questao_id, v_tema_id);
+      INSERT INTO public.prova_questao (prova_id, questao_id, ordem) VALUES (v_prova_id, v_questao_id, v_ordem);
+
+      INSERT INTO public.tentativa_resposta (
+        tentativa_id, questao_id, alternativa_id, correta, ordem_na_tentativa, respondida_em, anulada_usuario
+      )
+      VALUES (v_tentativa_id, v_questao_id, v_alt_errada_id, false, v_ordem, now() - interval '2 days', false);
+    END LOOP;
+  END LOOP;
+
+  UPDATE public.prova
+     SET qtd_questoes = (SELECT count(*) FROM public.prova_questao WHERE prova_id = v_prova_id)
+   WHERE id = v_prova_id;
+
+  UPDATE public.tentativa t
+     SET total_questoes = (SELECT count(*) FROM public.tentativa_resposta WHERE tentativa_id = v_tentativa_id),
+         total_respondidas = (SELECT count(*) FROM public.tentativa_resposta WHERE tentativa_id = v_tentativa_id),
+         acertos = (SELECT count(*) FILTER (WHERE correta) FROM public.tentativa_resposta WHERE tentativa_id = v_tentativa_id),
+         nota = round(
+           100.0 * (SELECT count(*) FILTER (WHERE correta) FROM public.tentativa_resposta WHERE tentativa_id = v_tentativa_id)
+           / (SELECT count(*) FROM public.tentativa_resposta WHERE tentativa_id = v_tentativa_id), 2
+         )
+   WHERE t.id = v_tentativa_id;
+END $$;

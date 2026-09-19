@@ -8,6 +8,8 @@ export interface QuestaoErroItem {
   formato: string;
   formatoProva: string | null;
   temas: string[];
+  temaPrincipal: string;
+  temaOrigem: 'tema' | 'disciplina' | 'tipo';
   disciplina: string | null;
   provaId: string | null;
   tentativaId: string | null;
@@ -29,4 +31,13 @@ export interface FiltrosCadernoErros {
   disciplinaIds?: string[];
   tipoQuestao?: TipoQuestaoCadernoErros[];
   status?: StatusCadernoErros;
+  busca?: string;
+}
+
+export interface CadernoErrosPagina {
+  itens: QuestaoErroItem[];
+  totalCount: number;
+  pagina: number;
+  porPagina: number;
+  totalPaginas: number;
 }

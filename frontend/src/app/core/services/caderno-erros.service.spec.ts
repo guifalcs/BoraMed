@@ -29,7 +29,9 @@ const itemRaw = {
   tipo_questao: 'nacional',
   formato: 'multipla_escolha',
   formato_prova: 'N1',
-  temas: [{ id: 'tema-1', nome: 'Cardiologia' }],
+  temas: ['Cardiologia'],
+  tema_principal: 'Cardiologia',
+  tema_origem: 'tema',
   disciplina: 'Clínica Médica',
   prova_id: 'prova-1',
   tentativa_id: 'tentativa-1',
@@ -37,6 +39,7 @@ const itemRaw = {
   status: 'pendente',
   ultima_redo_correta: null,
   ultima_redo_em: null,
+  total_count: 1,
 };
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -53,37 +56,57 @@ describe('CadernoErrosService', () => {
 
       const result = await service.getCadernoErros();
 
-      expect(result).toEqual([
-        {
-          questaoId: 'q-1',
-          enunciado: 'Qual a capital...?',
-          tipoQuestao: 'nacional',
-          formato: 'multipla_escolha',
-          formatoProva: 'N1',
-          temas: ['Cardiologia'],
-          disciplina: 'Clínica Médica',
-          provaId: 'prova-1',
-          tentativaId: 'tentativa-1',
-          erroEm: '2026-09-01T10:00:00Z',
-          status: 'pendente',
-          ultimaRedoCorreta: null,
-          ultimaRedoEm: null,
-        },
-      ]);
+      expect(result).toEqual({
+        itens: [
+          {
+            questaoId: 'q-1',
+            enunciado: 'Qual a capital...?',
+            tipoQuestao: 'nacional',
+            formato: 'multipla_escolha',
+            formatoProva: 'N1',
+            temas: ['Cardiologia'],
+            temaPrincipal: 'Cardiologia',
+            temaOrigem: 'tema',
+            disciplina: 'Clínica Médica',
+            provaId: 'prova-1',
+            tentativaId: 'tentativa-1',
+            erroEm: '2026-09-01T10:00:00Z',
+            status: 'pendente',
+            ultimaRedoCorreta: null,
+            ultimaRedoEm: null,
+          },
+        ],
+        totalCount: 1,
+        pagina: 1,
+        porPagina: 20,
+        totalPaginas: 1,
+      });
     });
 
     it('chama a RPC com os filtros convertidos para o formato esperado (arrays vazios viram null)', async () => {
       const client = makeClient({ data: [], error: null });
       const service = configure(client);
 
-      await service.getCadernoErros({ temaIds: [], tipoQuestao: ['nacional'], status: 'dominada' });
+      await service.getCadernoErros({ temaIds: [], tipoQuestao: ['nacional'], status: 'dominada', busca: '  Charcot  ' }, 2, 10);
 
       expect(client.rpc).toHaveBeenCalledWith('get_caderno_erros', {
         p_tema_ids: null,
         p_disciplina_ids: null,
         p_tipo_questao: ['nacional'],
         p_status: 'dominada',
+        p_busca: 'Charcot',
+        p_pagina: 2,
+        p_por_pagina: 10,
       });
+    });
+
+    it('retorna totalCount zero quando a busca não tem resultado', async () => {
+      const client = makeClient({ data: [], error: null });
+      const service = configure(client);
+
+      const result = await service.getCadernoErros({ busca: 'xyzxyz' });
+
+      expect(result).toEqual({ itens: [], totalCount: 0, pagina: 1, porPagina: 20, totalPaginas: 1 });
     });
 
     it('lança erro quando a RPC falha', async () => {

@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import type { QuestaoComAlternativas } from '../models/questao';
 import type { Tentativa } from '../models/tentativa';
 import type {
+  CadernoErrosPagina,
   CadernoErrosResumo,
   FiltrosCadernoErros,
   QuestaoErroItem,
@@ -19,8 +20,9 @@ interface QuestaoErroItemRaw {
   tipo_questao: TipoQuestaoCadernoErros;
   formato: string;
   formato_prova: string | null;
-  /** jsonb: [{ id, nome }] — a RPC não devolve array de strings. */
-  temas: { id: string; nome: string }[] | null;
+  temas: string[] | null;
+  tema_principal: string;
+  tema_origem: 'tema' | 'disciplina' | 'tipo';
   disciplina: string | null;
   prova_id: string | null;
   tentativa_id: string | null;
@@ -28,6 +30,7 @@ interface QuestaoErroItemRaw {
   status: 'pendente' | 'dominada';
   ultima_redo_correta: boolean | null;
   ultima_redo_em: string | null;
+  total_count: number;
 }
 
 /** Formato bruto (snake_case) devolvido pela RPC `get_caderno_erros_resumo`. */
@@ -55,15 +58,30 @@ interface SimuladoGeradoRaw {
 export class CadernoErrosService {
   private readonly supabase = inject(SupabaseService).client;
 
-  async getCadernoErros(filtros: FiltrosCadernoErros = {}): Promise<QuestaoErroItem[]> {
+  async getCadernoErros(
+    filtros: FiltrosCadernoErros = {},
+    pagina = 1,
+    porPagina = 20,
+  ): Promise<CadernoErrosPagina> {
     const { data, error } = await this.supabase.rpc('get_caderno_erros', {
       p_tema_ids: filtros.temaIds?.length ? filtros.temaIds : null,
       p_disciplina_ids: filtros.disciplinaIds?.length ? filtros.disciplinaIds : null,
       p_tipo_questao: filtros.tipoQuestao?.length ? filtros.tipoQuestao : null,
       p_status: filtros.status ?? null,
+      p_busca: filtros.busca?.trim() ? filtros.busca.trim() : null,
+      p_pagina: pagina,
+      p_por_pagina: porPagina,
     });
     if (error) throw error;
-    return ((data ?? []) as QuestaoErroItemRaw[]).map(mapQuestaoErroItem);
+    const rows = (data ?? []) as QuestaoErroItemRaw[];
+    const totalCount = rows[0]?.total_count ?? 0;
+    return {
+      itens: rows.map(mapQuestaoErroItem),
+      totalCount,
+      pagina,
+      porPagina,
+      totalPaginas: Math.max(1, Math.ceil(totalCount / porPagina)),
+    };
   }
 
   async getResumo(): Promise<CadernoErrosResumo> {
@@ -130,7 +148,9 @@ function mapQuestaoErroItem(raw: QuestaoErroItemRaw): QuestaoErroItem {
     tipoQuestao: raw.tipo_questao,
     formato: raw.formato,
     formatoProva: raw.formato_prova,
-    temas: (raw.temas ?? []).map((t) => t.nome),
+    temas: raw.temas ?? [],
+    temaPrincipal: raw.tema_principal,
+    temaOrigem: raw.tema_origem,
     disciplina: raw.disciplina,
     provaId: raw.prova_id ?? null,
     tentativaId: raw.tentativa_id ?? null,
