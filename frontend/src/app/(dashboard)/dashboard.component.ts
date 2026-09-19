@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, CreditCard, History, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, BookX, CreditCard, History, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -210,6 +210,7 @@ export class DashboardComponent {
     { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards', requerAvancado: true, paywall: 'flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico' },
+    { label: 'Caderno de Erros', icon: BookX, route: '/dashboard/caderno-de-erros' },
   ];
 
   // No mobile o Histórico fica no menu do perfil — a barra inferior não
@@ -220,7 +221,9 @@ export class DashboardComponent {
   // estática: o filtro de tier valia só para a sidebar e a barra inferior
   // seguia mostrando os itens pagos como se estivessem liberados.
   protected readonly bottomNavItens = computed<NavItemEstado[]>(() => {
-    const itens = this.navItens().filter((item) => item.route !== '/dashboard/historico');
+    const itens = this.navItens().filter(
+      (item) => item.route !== '/dashboard/historico' && item.route !== '/dashboard/caderno-de-erros',
+    );
     const inicio = itens.findIndex((item) => item.route === '/dashboard');
     const materiais = itens.findIndex((item) => item.route === '/dashboard/materiais');
     if (inicio !== -1 && materiais !== -1) {

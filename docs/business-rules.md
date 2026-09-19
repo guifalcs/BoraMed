@@ -277,6 +277,15 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * Limpeza de imagens órfãs: ao salvar/excluir deck, o frontend compara as URLs antes/depois e remove do bucket (Storage API, best-effort) as imagens que deixaram de ser referenciadas — o Supabase bloqueia DELETE direto em `storage.objects`, então a limpeza é client-side via as policies de DELETE do bucket (dono da pasta/admin). Falha na limpeza não bloqueia a operação principal (órfão eventual é aceitável).
 * Execução do deck: flip frente/verso, aluno marca acerto/erro por card, acompanha contadores de acertos × erros durante a sessão e vê percentual ao final (contagem só em memória — sem persistência de resultado por card no MVP). A tela de conclusão sugere até 3 outros decks (oficiais + comunidade) para continuar estudando.
 
+## Caderno de Erros
+
+* Backend em `20260918120000_caderno_de_erros.sql`. Recurso de assinante: gate `tem_assinatura_ativa()` (gratuito fica de fora); tier essencial só vê questões nacionais (`questao.formato_prova IS NOT NULL`).
+* "Errada" usa a mesma convenção de acerto do histórico/desempenho: `coalesce(tr.pontos, tr.correta::int*100) < 70`, olhando só a resposta MAIS RECENTE do aluno por questão, em tentativa `finalizada` e `modo <> 'visualizar'`, excluindo `tr.anulada_usuario`/`questao.anulada`.
+* Estado por aluno/questão vive em `caderno_erro_status` (`pendente`/`dominada` + `ultima_redo_correta`/`ultima_redo_em`). RLS só permite SELECT (dono ou admin); toda escrita é via RPC `SECURITY DEFINER` — a tabela não tem grant de INSERT/UPDATE/DELETE para `authenticated`.
+* RPCs: `get_caderno_erros` (lista com filtros de tema/disciplina/tipo/status), `get_caderno_erros_resumo` (KPIs: pendentes, por tipo, tema mais fraco — mesmo corte ≥3 de `get_desempenho_por_tema` —, dominadas nos últimos 7 dias), `get_questao_para_refazer` (questão para responder avulso), `responder_questao_avulsa` (corrige server-side só formatos determinísticos — `resposta_aberta_curta` não é suportado — e faz upsert em `caderno_erro_status`, sem gravar `tentativa`/`tentativa_resposta`), `marcar_questao_dominada` (upsert manual de status).
+* `get_questao_para_refazer` mascara `alternativa.correta` (sempre `null`) e toda a narrativa de gabarito (`explicacao`, `referencia`, `resposta_modelo`, etc.) — nada disso é revelado antes do aluno responder. O gabarito só chega na resposta de `responder_questao_avulsa`; a tela de refazer reconstrói o destaque visual localmente a partir de `alternativa_correta_id`.
+* `gerar_simulado_personalizado` ganhou o parâmetro opcional `p_apenas_erros` (default `false`, sem quebrar chamadas existentes): quando `true`, monta o simulado só com o pool de questões erradas pendentes do aluno; exige assinatura ativa mesmo no plano gratuito (o crédito único de "montar simulado" do free tier não cobre esse modo).
+
 ## Público-Alvo
 
 * **Primário** : alunos de medicina do 1º período em instituições da rede Afya

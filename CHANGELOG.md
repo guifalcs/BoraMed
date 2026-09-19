@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-18 | Feature | Caderno de Erros
+
+**Aluno revisita questões erradas de qualquer prova/simulado, refaz avulso ou monta um simulado só com os próprios erros**
+
+- **Nova tela `/dashboard/caderno-de-erros`**, sem paywall extra: quem é Essencial já só vê erros de questões nacionais (é tudo que já acessa hoje), Avançado vê nacional/processual/laboratório. É recurso de assinante — plano gratuito não entra. Filtros por tipo de questão e tema, KPIs (pendentes, dominadas nos últimos 7 dias, tema mais fraco, tipo com mais erros).
+- **"Errada" usa a mesma convenção do histórico**: resposta mais recente do aluno para a questão, em tentativa finalizada, nota abaixo de 70 (fechada errada ou discursiva mal corrigida pela IA).
+- **Refazer avulso não conta como tentativa nova**: responde ali mesmo, servidor corrige na hora, mas nada é gravado em `tentativa`/`tentativa_resposta` — o histórico do aluno fica intocado. Acertar marca a questão como "dominada" e ela sai da lista sozinha; errar de novo desfaz isso. Só cobre correção determinística (múltipla escolha, verdadeiro/falso, associação); discursiva mostra a questão em modo leitura e orienta a ver a revisão completa.
+- **"Gerar simulado com esses erros" é diferente**: monta uma tentativa de verdade (conta no histórico normalmente), reaproveitando o mesmo motor de sorteio de `gerar_simulado_personalizado` (novo parâmetro `p_apenas_erros`, sem quebrar as chamadas existentes).
+- Reaproveita a tela de revisão pós-tentativa já existente (`.../revisao?filtro=erros`) para "ver a prova inteira onde errei", em vez de recriar renderização de questão/imagem de lâmina.
+- Tabela nova `caderno_erro_status` (estado por aluno/questão) com RLS e escrita só via RPC `SECURITY DEFINER`, seguindo o mesmo hardening de `tentativa`/`tentativa_resposta`.
+- Verificado: `db advisors` sem alertas, `ng build` limpo, 922 unitários (7 novos do service).
+
 ## 2026-09-16 | Fix | Voltar da borracha para a caneta sem clicar na paleta
 
 **Depois do `Shift + G`, o `G` só ligava e desligava o modo — a borracha continuava na mão**
