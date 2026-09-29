@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-29 | Fix | Simulado de laboratório repetia as mesmas questões / não gerava + tentativas fantasma com 0%
+
+**Três relatos de aluno: "não consigo gerar alguns simulados", "gera sempre as mesmas questões que já fiz" e "às vezes finalizo duas vezes e na segunda aparece 0%"**
+
+- **Laboratório ignorava questão sem imagem**: `gerar_simulado_personalizado` filtrava `imagem_url IS NOT NULL` em laboratório, mas há questões de laboratório conceituais (sem lâmina) e a contagem por tema nunca aplicou esse filtro. Resultado: Ciclo Cardíaco mostrava 25 questões, o gerador só enxergava as 5 com imagem — pedir 20 devolvia sempre as mesmas 5; Genética mostrava 15, tinha 0 com imagem e dava "Nenhuma questao encontrada". Migration `20260929120000` remove o filtro do gerador (corpo idêntico ao de `20260918120000`; mesma assinatura, grants preservados). Regra "laboratório SEMPRE tem imagem" reescrita em `docs/business-rules.md`. O front já renderiza questão sem imagem e o banco não tem constraint que exija.
+- **Tentativas fantasma**: `iniciar`, `retomar` (detalhe da prova) e `confirmarFinalizacao` (execução) não tinham trava de reentrada; duplo toque disparava duas RPCs antes do `[disabled]` renderizar. Em prod há alunos com 4–5 tentativas da mesma prova criadas em ~20 s, quase todas com 0 respostas e nota 0% que entram no Histórico. Agora o segundo toque é ignorado. Causa do "0%" é provável, não confirmada com a aluna.
+- Testes novos de duplo toque para iniciar e finalizar (falham sem a trava). As tentativas fantasma já gravadas em prod não foram limpas.
+
 ## 2026-09-29 | Fix | Comissão de cupom passa a incidir sobre o valor líquido
 
 **A prestação de contas calculava a comissão sobre o valor bruto pago pelo aluno, antes da taxa do Mercado Pago**

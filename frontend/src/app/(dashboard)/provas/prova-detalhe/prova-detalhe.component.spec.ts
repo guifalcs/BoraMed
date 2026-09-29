@@ -189,6 +189,24 @@ describe('ProvaDetalheComponent', () => {
       expect((fixture.componentInstance as any).modoSelecionado()).toBe('estudo');
       mockActivatedRoute.snapshot.queryParamMap.get = () => null;
     });
+
+    it('ignora segundo toque em iniciar enquanto o primeiro está em andamento', async () => {
+      let resolver: (v: unknown) => void = () => undefined;
+      mockTentativaService.iniciar.mockReturnValue(new Promise((r) => (resolver = r)));
+      const componente = fixture.componentInstance as unknown as {
+        iniciar(): Promise<void>;
+        gratuito: { set(v: boolean): void };
+      };
+      componente.gratuito.set(false);
+
+      const primeiro = componente.iniciar();
+      await componente.iniciar();
+
+      expect(mockTentativaService.iniciar).toHaveBeenCalledTimes(1);
+
+      resolver({ ok: false, error: 'x' });
+      await primeiro;
+    });
   });
 
   // ── Prova sem questões ─────────────────────────────────────────────────────

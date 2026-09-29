@@ -125,6 +125,9 @@ export class ProvaDetalheComponent implements OnInit {
   protected async iniciar(): Promise<void> {
     const prova = this.prova();
     if (!prova || prova.qtd_questoes === 0) return;
+    // Duplo toque no botao dispara duas RPCs antes do [disabled] renderizar e
+    // cria tentativas fantasma (0%) que poluem o historico.
+    if (this.iniciando()) return;
 
     // Sem saldo o botão nem chega a chamar a RPC: abre direto o upsell, que
     // converte melhor do que deixar o servidor recusar e mostrar um erro.
@@ -177,7 +180,7 @@ export class ProvaDetalheComponent implements OnInit {
   protected async retomar(): Promise<void> {
     const tentativa = this.tentativaAtiva();
     const prova = this.prova();
-    if (!tentativa || !prova) return;
+    if (!tentativa || !prova || this.iniciando()) return;
 
     this.iniciando.set(true);
     const result = await this.tentativaService.retomar(tentativa.id);

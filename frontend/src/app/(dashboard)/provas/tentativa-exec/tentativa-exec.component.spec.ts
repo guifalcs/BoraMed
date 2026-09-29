@@ -459,6 +459,20 @@ describe('TentativaExecComponent — navegação por teclado', () => {
       expect(mockTentativaService.finalizar).toHaveBeenCalledWith('tent-1', 0);
     });
 
+    it('ignora segundo toque em finalizar enquanto o primeiro está em andamento', async () => {
+      let resolver: (v: unknown) => void = () => undefined;
+      mockTentativaService.finalizar.mockReturnValue(new Promise((r) => (resolver = r)));
+
+      component['onFinalizar']();
+      const primeiro = component['confirmarFinalizacao']();
+      await component['confirmarFinalizacao']();
+
+      expect(mockTentativaService.finalizar).toHaveBeenCalledTimes(1);
+
+      resolver({ ok: false, error: 'x' });
+      await primeiro;
+    });
+
     it('deve calcular questões não respondidas corretamente', () => {
       expect(component['questoesNaoRespondidas']()).toBe(3);
 

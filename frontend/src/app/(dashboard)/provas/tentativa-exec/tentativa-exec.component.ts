@@ -907,7 +907,8 @@ export class TentativaExecComponent implements OnInit, OnDestroy {
   protected async confirmarFinalizacao(): Promise<void> {
     this.mostrarConfirmacao.set(false);
     const tentativa = this.tentativa();
-    if (!tentativa) return;
+    // Duplo toque em "Finalizar" disparava duas finalizacoes concorrentes.
+    if (!tentativa || this.salvando() || this._finalizado) return;
 
     this.salvando.set(true);
     this.timer.pause();
