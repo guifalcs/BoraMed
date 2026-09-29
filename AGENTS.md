@@ -56,6 +56,6 @@ docs/                # documentação de domínio
 * NUNCA expor service role key no frontend.
 * RLS obrigatório em toda tabela nova.
 * Nunca sugerir parceria, vínculo oficial ou acervo de questões/provas da Afya. Posicionamento correto: plataforma independente, questões autorais no modelo das avaliações.
-* Questões de laboratório exigem `imagem_url`.
+* Questões de laboratório PODEM ter `imagem_url` (lâmina/figura), mas não é obrigatório: há questões conceituais sem imagem e o sorteio as inclui. Nunca filtrar por `imagem_url` no sorteio; contagem por tema e gerador aplicam os mesmos filtros.
 * Sorteio de questões: Supabase RPC ou Edge Function — nunca lógica no cliente.
   Sempre que criar uma funcionalidade, atualizar docs + changelog necessárias do sistema para refletir o estado atual

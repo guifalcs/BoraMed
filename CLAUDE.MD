@@ -60,7 +60,7 @@ projeto-med/
 * NUNCA rodar `supabase db push` contra o project ref de produção diretamente.
 * NUNCA editar migrations já aplicadas — apenas criar novas.
 * Referência à Afya: PERMITIDO uso comparativo/nominativo para SEO e marketing — "no modelo das provas da Afya", "simulado no modelo Afya" — desde que SEMPRE acompanhado de disclaimer de independência ("plataforma independente, sem vínculo com a Afya"). PROIBIDO: afirmar parceria/vínculo/afiliação oficial.
-* Questões de laboratório sempre têm `imagem_url` obrigatório.
+* Questões de laboratório PODEM ter `imagem_url` (lâmina/figura), mas não é obrigatório: há questões conceituais sem imagem e o sorteio as inclui. Nunca filtrar por `imagem_url` no sorteio; contagem por tema e gerador aplicam os mesmos filtros.
 * Auth: login/senha simples (Supabase Auth email/password).
 * Lógica de sorteio de questões: server-side via Supabase (RPC ou Edge Function).
   Sempre que criar uma funcionalidade, atualizar docs + changelog necessárias do sistema para refletir o estado atual
