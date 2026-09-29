@@ -496,9 +496,16 @@ por migration — hoje migration de cupom é exceção, não fluxo.
 * **Aluno sem unidade no perfil entra pela faixa "fora de Ipatinga"** e sai
   marcado na tela e no PDF (`unidade_indefinida`). Conferir antes de fechar o
   repasse — é chute assumido, não fato.
-* **Base de cálculo: valor pago pelo aluno** (`pagamento.valor_centavos`, já com
-  o desconto aplicado), só em pagamentos `approved`. Estorno e cancelamento não
-  geram comissão. Recorte do período por `pagamento.criado_em`.
+* **Base de cálculo: valor LÍQUIDO** (`pagamento.liquido_centavos`: desconto do
+  cupom e taxa do Mercado Pago já descontados; fallback para `valor_centavos`
+  quando o líquido não foi informado, mesma regra do financeiro), só em
+  pagamentos `approved`. A comissão nunca incide sobre o bruto pago pelo aluno —
+  a taxa do gateway não chega ao caixa. Estorno e cancelamento não geram
+  comissão. Recorte do período por `pagamento.criado_em`. Tela e PDF mostram
+  "Valor pago" e "Líquido" lado a lado; a coluna de comissão sai do líquido.
+* **Competências fechadas/pagas antes de 29/09/2026 foram acertadas sobre o
+  bruto** e mantêm o snapshot congelado; aparecem como divergentes até serem
+  recalculadas (refechar atualiza o snapshot para a base líquida).
 * **Venda de plano fora da regra aparece na competência com comissão zero e o
   motivo** (`tier_nao_elegivel`, `comissao_desativada`, `percentual_zero`),
   nunca sumindo da lista — o que não entrou no repasse fica visível.

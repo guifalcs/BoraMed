@@ -16,7 +16,7 @@ Obrigatórios. Pergunte só o que faltar:
 - **Regras de comissão** — percentual por unidade. Ex.: 30% Afya Ipatinga, 40% demais unidades. Se só houver um percentual, aplique a todas.
 - **Nome do afiliado** — para o cabeçalho do PDF.
 
-Opcional: base de cálculo. Padrão = **valor bruto pago** (`valor_centavos`, já com o desconto do cupom). Se o usuário pedir "sobre o líquido", use `liquido_centavos` (descontada a taxa do Mercado Pago) e diga isso no PDF.
+Base de cálculo: **valor líquido** (`liquido_centavos`: desconto do cupom e taxa do Mercado Pago já descontados; se vier nulo, cai para `valor_centavos`, igual ao financeiro). É a mesma base do módulo admin de Comissões. Só use o valor bruto pago (`valor_centavos`) se o usuário pedir explicitamente, e diga isso no PDF.
 
 ## 2. Puxe as vendas
 
@@ -48,7 +48,7 @@ Regras:
 
 ## 3. Calcule
 
-Por venda: `comissao = base × percentual da unidade`. Some. Arredonde só na exibição (2 casas).
+Por venda: `comissao = líquido × percentual da unidade`. Some. Arredonde só na exibição (2 casas).
 
 Confira o total com o usuário antes de gerar o PDF quando houver qualquer ambiguidade (unidade nula, percentual não informado, dúvida sobre base).
 
@@ -71,13 +71,13 @@ Formato do `dados.json`:
   "periodo": "agosto e setembro de 2026",
   "emitido_em": "05/09/2026",
   "regra_resumo": "30% Afya Ipatinga",
-  "base_label": "Valor pago",
+  "base_label": "Líquido",
   "vendas": [
     { "data": "28/08/2026", "assinante": "joicy.p***@gmail.com", "plano": "Essencial mensal",
       "unidade": "Afya Ipatinga", "base": 19.12, "percentual": 30, "comissao": 5.74 }
   ],
   "notas": [
-    "Base: valor efetivamente pago pelo assinante, já com o desconto do cupom aplicado.",
+    "Base: valor líquido da venda (pago pelo assinante, já com o desconto do cupom, menos a taxa do meio de pagamento).",
     "Só entram pagamentos aprovados."
   ]
 }

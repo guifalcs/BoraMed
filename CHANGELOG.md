@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-29 | Fix | Comissão de cupom passa a incidir sobre o valor líquido
+
+**A prestação de contas calculava a comissão sobre o valor bruto pago pelo aluno, antes da taxa do Mercado Pago**
+
+- **Antes:** `comissao_vendas_calculadas` usava `pagamento.valor_centavos` (já com o desconto do cupom, mas sem descontar a taxa do gateway). O responsável recebia percentual de dinheiro que nunca chegou ao caixa.
+- **Agora:** a base é `pagamento.liquido_centavos`, com fallback para `valor_centavos` quando o líquido não foi informado (mesma regra do financeiro). Migration `20260929130000`, só `create or replace` da função (assinatura e colunas de retorno inalteradas, então `admin_comissoes_competencias`, `admin_comissao_detalhe` e `admin_fechar_comissao` herdam a mudança sem alteração). Em prod, os 24 pagamentos aprovados com cupom têm líquido preenchido.
+- **UI:** a tabela de competências mostra "Base (líquido)" com o valor pago em texto secundário; o detalhe e o PDF de repasse ganharam a coluna "Líquido" ao lado de "Valor pago", e o texto "Como foi calculado" descreve a nova base. A skill `prestacao-contas-cupom` passa a usar líquido por padrão.
+- **Competências já fechadas/pagas não mudam sozinhas** (snapshot congelado): ficam como "divergente" até serem recalculadas. Em prod: agosto (MA20, YAS20) e julho (CALOURO20) já foram pagos sobre o bruto; setembro (MA20, YAS20) está fechado e não pago, então precisa refechar para adotar a nova base.
+
 ## 2026-09-19 | Feature | Caderno de Erros bloqueado no gratuito + copy na landing
 
 - **Gate explícito pra conta gratuita**: rota `/dashboard/caderno-de-erros` ganhou `lazyNivelPagoGuard` (mesmo guard já usado pela impressão — bloqueia só quem não tem nenhum plano pago, libera Essencial e Avançado) e o item de menu ganhou `requerPago` (aparece bloqueado com paywall em vez de sumir, mesmo padrão de Materiais/Flashcards). O backend já bloqueava via `tem_assinatura_ativa()`; isso fecha o lado da UI, que antes deixava o gratuito clicar e só receber um erro de RPC cru.

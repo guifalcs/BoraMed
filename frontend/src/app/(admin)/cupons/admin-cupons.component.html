@@ -467,7 +467,7 @@
               <th class="px-4 py-3 font-medium">Cupom</th>
               <th class="px-4 py-3 font-medium">Responsável</th>
               <th class="px-4 py-3 font-medium">Vendas</th>
-              <th class="px-4 py-3 font-medium">Bruto</th>
+              <th class="px-4 py-3 font-medium">Base (líquido)</th>
               <th class="px-4 py-3 font-medium">Comissão</th>
               <th class="px-4 py-3 font-medium">Status</th>
               <th class="px-4 py-3 font-medium">Ações</th>
@@ -485,7 +485,10 @@
                     {{ c.vendas_ipatinga }} Ipatinga · {{ c.vendas_fora }} fora
                   </span>
                 </td>
-                <td class="px-4 py-3 text-gray-700">{{ valor(c.bruto_centavos) }}</td>
+                <td class="px-4 py-3 text-gray-700">
+                  {{ valor(c.liquido_centavos) }}
+                  <span class="block text-xs text-gray-400">pago {{ valor(c.bruto_centavos) }}</span>
+                </td>
                 <td class="px-4 py-3">
                   <span class="font-semibold text-blue-700">{{ valor(valorVigente(c)) }}</span>
                   @if (c.divergente) {
@@ -593,6 +596,7 @@
                             <th class="px-2 py-2 font-medium">Unidade</th>
                             <th class="px-2 py-2 font-medium">Plano</th>
                             <th class="px-2 py-2 font-medium">Pago</th>
+                            <th class="px-2 py-2 font-medium">Líquido</th>
                             <th class="px-2 py-2 font-medium">%</th>
                             <th class="px-2 py-2 font-medium">Comissão</th>
                             <th class="px-2 py-2 font-medium">Obs.</th>
@@ -609,7 +613,8 @@
                                 {{ unidadeLabel(v) }}
                               </td>
                               <td class="px-2 py-2 text-gray-600">{{ v.plano_nome ?? '—' }}</td>
-                              <td class="px-2 py-2 text-gray-900">{{ valor(v.bruto_centavos) }}</td>
+                              <td class="px-2 py-2 text-gray-600">{{ valor(v.bruto_centavos) }}</td>
+                              <td class="px-2 py-2 text-gray-900">{{ valor(v.liquido_centavos) }}</td>
                               <td class="px-2 py-2 text-gray-600">{{ v.pct }}%</td>
                               <td class="px-2 py-2 font-semibold text-blue-700">{{ valor(v.comissao_centavos) }}</td>
                               <td class="px-2 py-2 text-amber-700">{{ motivoLabel(v.motivo) }}</td>

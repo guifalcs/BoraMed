@@ -52,8 +52,13 @@ export class ComissaoImpressaoComponent {
     () => this.detalhe()?.vendas.filter((v) => v.comissao_centavos === 0) ?? [],
   );
 
-  protected readonly totalBase = computed(() =>
+  protected readonly totalPago = computed(() =>
     this.vendasPagaveis().reduce((soma, v) => soma + v.bruto_centavos, 0),
+  );
+
+  /** Base da comissão: valor líquido (após desconto do cupom e taxa do gateway). */
+  protected readonly totalBase = computed(() =>
+    this.vendasPagaveis().reduce((soma, v) => soma + v.liquido_centavos, 0),
   );
 
   private readonly comissaoAoVivo = computed(() =>

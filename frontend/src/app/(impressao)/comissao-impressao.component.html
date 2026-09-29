@@ -48,6 +48,7 @@
               <th>Plano</th>
               <th>Unidade</th>
               <th class="num">Valor pago</th>
+              <th class="num">Líquido</th>
               <th class="num">%</th>
               <th class="num">Comissão</th>
             </tr>
@@ -60,6 +61,7 @@
                 <td>{{ v.plano_nome ?? '—' }}</td>
                 <td>{{ unidade(v.unidade) }}</td>
                 <td class="num">{{ brl(v.bruto_centavos) }}</td>
+                <td class="num">{{ brl(v.liquido_centavos) }}</td>
                 <td class="num">{{ pct(v.pct) }}</td>
                 <td class="num">{{ brl(v.comissao_centavos) }}</td>
               </tr>
@@ -68,6 +70,7 @@
           <tfoot>
             <tr>
               <td colspan="4">Total</td>
+              <td class="num">{{ brl(totalPago()) }}</td>
               <td class="num">{{ brl(totalBase()) }}</td>
               <td class="num"></td>
               <td class="num">{{ brl(totalComissao()) }}</td>
@@ -116,7 +119,10 @@
 
       <h2>Como foi calculado</h2>
       <ul>
-        <li>Base: valor efetivamente pago pelo assinante, já com o desconto do cupom aplicado.</li>
+        <li>
+          Base: valor líquido da venda, isto é, o que o assinante pagou (já com o desconto do
+          cupom) menos a taxa do meio de pagamento. A comissão incide sobre a coluna "Líquido".
+        </li>
         <li>Só entram pagamentos aprovados. Recusas, estornos e cancelamentos ficam fora.</li>
         <li>{{ regraResumo() }}, conforme a unidade do assinante.</li>
         @if (d.totais.unidades_indefinidas > 0) {
@@ -128,7 +134,7 @@
         @if (divergente()) {
           <li>
             Valor fechado em {{ dataBr(d.fechada_em!) }}. As vendas registradas hoje somam
-            {{ brl(totalBase()) }} de base; o repasse segue o valor congelado no fechamento.
+            {{ brl(totalBase()) }} de base líquida; o repasse segue o valor congelado no fechamento.
           </li>
         }
         @if (d.observacao) {
