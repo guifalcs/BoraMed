@@ -14,23 +14,15 @@ import { Router, RouterLink } from '@angular/router';
 import { SeoService } from '../../core/seo/seo.service';
 import { SITE_URL } from '../../core/seo/seo.config';
 import {
-  Activity,
   ArrowRight,
-  BookOpenCheck,
   Check,
-  ChevronDown,
-  ClipboardList,
-  FlaskConical,
-  Layers,
-  LineChart,
+  CreditCard,
+  Maximize2,
   Menu,
   MessageCircle,
-  PenLine,
-  Quote,
-  Route,
+  Plus,
   ShieldCheck,
-  Sparkles,
-  Stethoscope,
+  Timer,
   X,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
@@ -39,6 +31,8 @@ import {
   UiSegmentedToggleComponent,
   type SegmentedToggleOption,
 } from '../../shared/components/ui/segmented-toggle/ui-segmented-toggle.component';
+import { LandingAuroraComponent } from './landing-aurora.component';
+import { LandingCicloComponent } from './landing-ciclo.component';
 import { LandingDemoQuizComponent } from './landing-demo-quiz.component';
 
 interface NavItem {
@@ -46,40 +40,21 @@ interface NavItem {
   readonly href: string;
 }
 
-interface TrainingMode {
-  readonly title: string;
-  readonly description: string;
-  readonly badge: string;
-  readonly icon: LucideIconData;
-  readonly variant: 'national' | 'process' | 'lab' | 'flashcards';
-  readonly image?: {
-    readonly src: string;
-    readonly alt: string;
-    readonly width: number;
-    readonly height: number;
-  };
-}
-
-interface SolutionTab {
-  readonly id: 'treinar' | 'revisar' | 'acompanhar';
+interface ProofItem {
+  readonly value: string;
   readonly label: string;
-  readonly title: string;
-  readonly description: string;
-  readonly features: readonly string[];
-  readonly icon: LucideIconData;
-}
-
-interface TimelineStep {
-  readonly label: string;
-  readonly title: string;
-  readonly points: readonly string[];
-  readonly icon: LucideIconData;
 }
 
 interface Testimonial {
   readonly quote: string;
   readonly name: string;
   readonly context?: string;
+}
+
+interface Assurance {
+  readonly icon: LucideIconData;
+  readonly title: string;
+  readonly text: string;
 }
 
 type PlanTier = 'essencial' | 'avancado';
@@ -110,15 +85,21 @@ interface FaqItem {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, UiIconComponent, UiSegmentedToggleComponent, LandingDemoQuizComponent],
+  imports: [
+    RouterLink,
+    UiIconComponent,
+    UiSegmentedToggleComponent,
+    LandingAuroraComponent,
+    LandingCicloComponent,
+    LandingDemoQuizComponent,
+  ],
   templateUrl: './landing.component.html',
   styleUrls: [
+    './landing-shared.css',
     './landing.component.css',
-    './landing-aurora.component.css',
-    './landing-intelligence.component.css',
-    './landing-pricing.component.css',
     './landing-bento.component.css',
     './landing-social-proof.component.css',
+    './landing-pricing.component.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -132,196 +113,58 @@ export class LandingComponent implements OnDestroy {
 
   protected readonly menuIcon = Menu;
   protected readonly closeIcon = X;
-  protected readonly chevronIcon = ChevronDown;
+  protected readonly plusIcon = Plus;
   protected readonly checkIcon = Check;
   protected readonly xIcon = X;
   protected readonly arrowRightIcon = ArrowRight;
-  protected readonly activityIcon = Activity;
-  protected readonly sparklesIcon = Sparkles;
-  protected readonly penIcon = PenLine;
-  protected readonly shieldIcon = ShieldCheck;
-  protected readonly communityIcon = MessageCircle;
-  protected readonly quoteIcon = Quote;
+  protected readonly timerIcon = Timer;
+  protected readonly zoomIcon = Maximize2;
 
-  protected readonly heroReady = signal(false);
   protected readonly isScrolled = signal(false);
   protected readonly isMenuOpen = signal(false);
-  protected readonly activeTab = signal<SolutionTab['id']>('treinar');
   protected readonly openFaq = signal<number | null>(0);
+  protected readonly flashFlipped = signal(false);
 
   protected readonly navItems: readonly NavItem[] = [
-    { label: 'Início', href: '#inicio' },
     { label: 'Teste grátis', href: '#demo' },
-    { label: 'Correção por IA', href: '#aurora' },
-    { label: 'Treinos', href: '#treinos' },
+    { label: 'Aurora', href: '#aurora' },
+    { label: 'Como funciona', href: '#como-funciona' },
     { label: 'Planos', href: '#planos' },
-    { label: 'FAQ', href: '#faq' },
+    { label: 'Dúvidas', href: '#faq' },
   ];
 
-  protected readonly stats = [
-    { value: '+5k', label: 'questões para treinar' },
-    { value: '4', label: 'modos de treinar' },
-    { value: '100%', label: 'no modelo da prova' },
+  // Faixa logo abaixo da hero: o que tem dentro, em quatro fatos verificáveis
+  // (todos repetidos em detalhe mais abaixo na página ou nos planos).
+  protected readonly proofItems: readonly ProofItem[] = [
+    { value: '5.000+', label: 'questões autorais no modelo das avaliações' },
+    { value: '1º ao 8º', label: 'período cobertos nos treinos nacionais' },
+    { value: '0 a 100', label: 'nota da Aurora em cada questão discursiva' },
+    { value: 'R$ 0', label: 'para começar: 3 simulados, sem cartão' },
+  ];
+
+  // Prévia da hero: diagnóstico por tema, do pior para o melhor aproveitamento.
+  // Só o tema crítico ganha cor; os outros ficam neutros para o olho ir direto
+  // ao que precisa de revisão.
+  protected readonly heroTopics = [
+    { name: 'Anatomia', pct: 43, critical: true },
+    { name: 'Cardiovascular', pct: 58, critical: false },
+    { name: 'Farmacologia', pct: 71, critical: false },
   ] as const;
 
-  // Depoimentos desativados temporariamente — sem prova social real ainda.
-  // Reativar junto com a interface Testimonial, o array testimonials, o
-  // quoteIcon e o import de Quote quando houver depoimentos reais de alunos.
-  // protected readonly statsQuote = {
-  //   quote: 'Micro-depoimento de uma frase sobre resultado na prova.',
-  //   author: 'Nome, período · Medicina',
-  // } as const;
+  // Cartão-resposta do card de Treinos Nacionais: índice da alternativa
+  // marcada em cada questão (0 = A … 4 = E).
+  protected readonly answerSheet = [0, 2, 1, 4, 3, 1, 0, 2] as const;
+  protected readonly answerLetters = ['A', 'B', 'C', 'D', 'E'] as const;
 
-  protected readonly tickerItems = [
-    'Treinos nacionais',
-    'Correção por IA · Aurora',
-    'Questões discursivas',
-    'Simulados por tema',
-    'Questões autorais',
-    'Revisão guiada',
-    'Caderno de Erros',
-    'Flashcards com imagens',
-    'Decks da comunidade',
-    'Histórico',
-    'Laboratório',
-    'Streak de estudo',
-    'Comunidade no WhatsApp',
-  ];
-
-  // Exemplo real (estático) de correção da Aurora exibido na seção #aurora —
-  // "prova > promessa": mostra a nota 0–100, os pontos atendidos/faltantes e o
-  // comentário, exatamente como o aluno vê ao responder uma questão discursiva.
-  protected readonly auroraDemo = {
-    topic: 'Cirurgia · Vias biliares',
-    question: 'Descreva a tríade de Charcot e seu significado clínico na colangite aguda.',
-    answer:
-      'Febre com calafrios, icterícia e dor no hipocôndrio direito. Indica infecção das vias biliares por obstrução, geralmente por cálculo.',
-    score: 90,
-    atendidos: [
-      'Febre com calafrios',
-      'Icterícia',
-      'Dor em hipocôndrio direito',
-      'Associou à obstrução biliar',
-    ],
-    faltantes: ['Pêntade de Reynolds (confusão + hipotensão) como sinal de gravidade'],
-    comentario:
-      'Boa resposta: você acertou os três componentes da tríade e relacionou à obstrução das vias biliares. Para a nota máxima, cite a evolução para a pêntade de Reynolds, que indica colangite grave e muda a conduta.',
-  } as const;
-
-  // Disclaimer da Aurora na landing — mesma expectativa da correção no app
-  // (apoio ao estudo, não a correção oficial; independência em relação à Afya).
-  protected readonly auroraDisclaimer =
-    'A Aurora é um apoio ao seu estudo: aponta a direção da resposta e os pontos esperados, não substitui a correção oficial. O BoraMed é uma plataforma independente, sem vínculo com a Afya.';
-
-  protected readonly auroraBenefits: readonly string[] = [
-    'Nota de 0 a 100 e feedback na hora, sem esperar ninguém corrigir.',
-    'Aponta ponto a ponto: o que você acertou e o que faltou dizer.',
-    'Funciona no modo estudo e no simulado, em toda questão discursiva.',
-  ];
-
-  protected readonly trainingModes: readonly TrainingMode[] = [
-    {
-      title: 'Treinos Nacionais',
-      badge: 'Modelo nacional',
-      description:
-        'Simulados autorais no modelo das avaliações nacionais, com foco inicial em alunos da rede Afya.',
-      icon: Stethoscope,
-      variant: 'national',
-      image: {
-        src: '/landing-page/modo-nacional.webp',
-        alt: 'Interface de treino nacional BoraMed com questões e score',
-        width: 1672,
-        height: 941,
-      },
-    },
-    {
-      title: 'Simulados Processuais',
-      badge: 'Por tema',
-      description:
-        'Escolha temas e quantidade de questões. Hoje com conteúdo do primeiro período.',
-      icon: ClipboardList,
-      variant: 'process',
-      image: {
-        src: '/landing-page/modo-processual.webp',
-        alt: 'Seleção de temas médicos para simulado processual',
-        width: 1672,
-        height: 941,
-      },
-    },
-    {
-      title: 'Laboratório',
-      badge: 'Com imagem',
-      description:
-        'Questões autorais com imagem de lâminas ou peças do primeiro período, para treinar o raciocínio visual.',
-      icon: FlaskConical,
-      variant: 'lab',
-      image: {
-        src: '/landing-page/modo-laboratorio.webp',
-        alt: 'Questão de laboratório com lâmina histológica',
-        width: 1672,
-        height: 941,
-      },
-    },
-    {
-      title: 'Flashcards',
-      badge: 'Novo · Comunidade',
-      description:
-        'Estude com decks oficiais, crie os seus com imagens e destrave os decks da comunidade. Os melhores sobem com as curtidas dos próprios estudantes.',
-      icon: Layers,
-      variant: 'flashcards',
-    },
-  ];
-
-  protected readonly solutionTabs: readonly SolutionTab[] = [
-    {
-      id: 'treinar',
-      label: 'Treinar',
-      title: 'Comece a treinar em segundos',
-      description:
-        'Escolha a prova, os temas ou o laboratório e comece um simulado na hora, com tempo cronometrado, como no dia da prova.',
-      features: ['Questões autorais', 'Tempo cronometrado', 'Progresso em tempo real', 'Modo estudo sem pressão', 'Flashcards seus e da comunidade', 'Retome de onde parou'],
-      icon: BookOpenCheck,
-    },
-    {
-      id: 'revisar',
-      label: 'Revisar',
-      title: 'Cada erro vira uma rota de revisão',
-      description:
-        'Ao fim do simulado, você vê exatamente onde perdeu pontos e volta direto para os temas que precisam de atenção, inclusive nas questões discursivas, corrigidas pela Aurora. Todo erro fica guardado no Caderno de Erros, agrupado por tema, até você dominar de vez.',
-      features: ['Nota e resumo na hora', 'Correção das discursivas pela Aurora (IA)', 'Caderno de Erros por tema', 'Refaça cada erro em modo estudo', 'Monte um simulado só com o que você errou'],
-      icon: Route,
-    },
-    {
-      id: 'acompanhar',
-      label: 'Acompanhar',
-      title: 'Sua evolução, prova após prova',
-      description:
-        'Acompanhe cada tentativa, veja a nota subir e mantenha a constância que aprova, com ranking entre estudantes para te manter no ritmo.',
-      features: ['Histórico completo', 'Evolução da nota', 'Desempenho por tema', 'Sequência de estudo (streak)', 'Ranking entre estudantes'],
-      icon: LineChart,
-    },
-  ];
-
-  protected readonly steps: readonly TimelineStep[] = [
-    {
-      label: 'Hoje',
-      title: 'Crie sua conta',
-      points: ['Cadastro rápido e sem burocracia', 'Defina seu objetivo', 'Acesse a plataforma na hora'],
-      icon: Sparkles,
-    },
-    {
-      label: 'Primeiro treino',
-      title: 'Monte seu simulado',
-      points: ['Escolha prova, tema ou laboratório', 'Defina quantas questões', 'Treine com tempo real'],
-      icon: BookOpenCheck,
-    },
-    {
-      label: 'Depois',
-      title: 'Evolua pelo diagnóstico',
-      points: ['Veja sua nota e pontos fracos', 'Discursivas corrigidas pela Aurora', 'Refaça até dominar'],
-      icon: Activity,
-    },
-  ];
+  // Temas reais do acervo processual do 1º período (nomes encurtados).
+  protected readonly topicChips = [
+    { name: 'Ciclo Cardíaco', selected: true },
+    { name: 'Sinais Vitais', selected: true },
+    { name: 'Embriologia Geral', selected: false },
+    { name: 'Genética', selected: true },
+    { name: 'Hemostasia', selected: false },
+    { name: 'Sistema Linfático', selected: false },
+  ] as const;
 
   protected readonly testimonials: readonly Testimonial[] = [
     {
@@ -455,19 +298,24 @@ export class LandingComponent implements OnDestroy {
     this.pricingPlans.filter((plan) => plan.cycle === this.cicloSelecionado()),
   );
 
-  protected readonly reviewTopics = [
-    { name: 'Cardiovascular', pct: 58 },
-    { name: 'Farmacologia', pct: 71 },
-    { name: 'Anatomia', pct: 43 },
-  ] as const;
-
-  // Temas ordenados do pior para o melhor aproveitamento (rota de revisão).
-  protected readonly sortedReviewTopics = [...this.reviewTopics].sort((a, b) => a.pct - b.pct);
-
-  protected readonly streakDays = [
-    true, true, false, true, true, true, false,
-    true, true, true, false, false, true, true,
-  ] as const;
+  // Garantias abaixo da grade de preços: uma linha só, sem caixas coloridas.
+  protected readonly assurances: readonly Assurance[] = [
+    {
+      icon: ShieldCheck,
+      title: 'Garantia de 7 dias',
+      text: 'Não gostou? Devolvemos 100% do valor, sem perguntas, como prevê o Código de Defesa do Consumidor.',
+    },
+    {
+      icon: MessageCircle,
+      title: 'Comunidade no WhatsApp',
+      text: 'Toda assinatura dá acesso ao grupo do BoraMed: dúvidas, materiais e networking.',
+    },
+    {
+      icon: CreditCard,
+      title: 'Pix, boleto ou cartão em até 6x',
+      text: 'Pagamento sem sair da plataforma, em campos seguros do Mercado Pago.',
+    },
+  ];
 
   protected readonly faqs: readonly FaqItem[] = [
     {
@@ -536,14 +384,13 @@ export class LandingComponent implements OnDestroy {
     this.configureSeo();
     afterNextRender(() => {
       void this.redirectAuthenticatedRoot();
-      requestAnimationFrame(() => this.heroReady.set(true));
 
       this.zone.runOutsideAngular(() => {
         this.scrollListener = () => {
           if (this.scrollFrame) return;
           this.scrollFrame = requestAnimationFrame(() => {
             this.scrollFrame = 0;
-            const scrolled = window.scrollY > 20;
+            const scrolled = window.scrollY > 8;
             if (scrolled !== this.isScrolled()) this.isScrolled.set(scrolled);
           });
         };
@@ -580,23 +427,8 @@ export class LandingComponent implements OnDestroy {
     if (this.scrollFrame) cancelAnimationFrame(this.scrollFrame);
   }
 
-  protected selectedTab(): SolutionTab {
-    return this.solutionTabs.find((tab) => tab.id === this.activeTab()) ?? this.solutionTabs[0];
-  }
-
-  protected setActiveTab(tabId: SolutionTab['id']): void {
-    this.activeTab.set(tabId);
-  }
-
   protected onCicloChange(value: string): void {
     this.cicloSelecionado.set(value === 'mensal' ? 'mensal' : 'semestral');
-  }
-
-  // Faixa de cor da barra por aproveitamento: crítico, atenção ou bom.
-  protected topicTier(pct: number): 'low' | 'mid' | 'high' {
-    if (pct < 50) return 'low';
-    if (pct < 70) return 'mid';
-    return 'high';
   }
 
   protected toggleFaq(index: number): void {

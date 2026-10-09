@@ -494,6 +494,49 @@ Animações (todas removíveis via `prefers-reduced-motion`):
 * `gauge-draw`: desenho do arco do anel (com fallback estático no `stroke-dashoffset`).
 * `bar-grow`: crescimento das barras a partir da base.
 
+## Landing (marketing)
+
+A landing pública (`(marketing)/landing/`) tem tipografia e composição próprias, mais editoriais que as do app, mas as cores são as do app: o foco é o azul/violeta da marca. A regra é mostrar o produto, não ilustrá-lo: toda prévia é montada em HTML com conteúdo real (questões do acervo, rótulos das telas do app), nunca screenshot genérico nem ilustração de IA.
+
+Tokens (no `:host` do `LandingComponent`, herdados pelos filhos). Os de marca apontam para as variáveis globais do app, então mudar a marca em `styles.css` muda a landing junto:
+
+```css
+--lp-blue: var(--color-action);        /* #2554DC: botão primário, seleção, links, barras */
+--lp-blue-deep: var(--color-primary);  /* #1E40AF: texto de botão claro, ícones de destaque */
+--lp-violet: #6427D9;                  /* fim do gradiente institucional */
+--lp-gradient: var(--gradient-brand);  /* 145deg, #1E40AF → #2451D8 → #6427D9 */
+--lp-gradient-glow: ...;               /* luz branca + reflexo verde-água do BrandPanel */
+--lp-accent-line: linear-gradient(180deg, #1E40AF, #7C3AED); /* fio do item ativo, como na sidebar */
+--lp-ink: #0A1033;                     /* navy do "Bora" do logo: títulos e a chamada final */
+--lp-body: #3A4260;                    /* texto corrido */
+--lp-muted: #5F6781;                   /* apoio */
+--lp-mist: #F4F5FA;                    /* seções alternadas */
+--lp-good: #047857;  --lp-bad: #DC2626; /* só desempenho e acerto/erro */
+```
+
+Tipografia:
+
+* **Títulos**: Bricolage Grotesque 700, carregada junto com a Inter no `index.html`. Exceção à regra de tracking do app: na landing os títulos usam letter spacing negativo (`-0.035em` a `-0.045em`) e `line-height` entre `0.98` e `1.05`.
+* **Texto e UI**: Inter, como no app (as prévias do produto ficam idênticas ao que o aluno vê depois do cadastro).
+* Sem rótulo em caixa-alta acima de título.
+* Destaque de cor em título só na hero: o fim do H1 ("antes da prova.") vai no degradê da marca, deitado na horizontal (`100deg`, `#1E40AF → #2451D8 → #6427D9`), com fallback de alto contraste. Nenhum outro título usa destaque, para ele continuar sendo o ponto de entrada da página.
+
+Composição:
+
+* O gradiente institucional (com a luz do BrandPanel) aparece em superfícies de marca, sempre a mesma receita: palco da prévia na hero, faixa da Aurora e card do plano recomendado (igual a `/planos`). Nunca em texto, borda, ícone ou chip.
+* Botão primário igual ao do app: `--color-action` sólido, hover `--color-primary-dark`. Sobre gradiente ou navy, botão branco com texto `--lp-blue-deep`.
+* A chamada final e o rodapé são `--lp-ink`, com luz azul/violeta no fundo. As outras seções alternam branco e `--lp-mist`; o palco de "Como funciona" usa o véu azul→violeta do Perfil.
+* Detalhes de marca: bolha ativa no degradê do avatar do app e fio do item ativo no degradê da sidebar.
+* Verde e vermelho só para desempenho e acerto/erro.
+* A bolha de alternativa (círculo com letra, como no cartão-resposta) é o motivo que se repete: alternativas da hero e da demo, cartão-resposta do treino nacional, numeração das etapas de "Como funciona".
+* Raio por hierarquia: `28px` nos palcos, `20px` nos cards, `14–16px` nas peças internas, `999px` só em botões e chips.
+
+Movimento (as animações CSS respeitam `prefers-reduced-motion`; o spinner usa `animate-spin`):
+
+* Entrada única na hero: palco sobe, card de diagnóstico aparece e as barras crescem.
+* Demo da Aurora: a correção aparece na própria resposta do aluno. Ao entrar na tela, a Aurora "lê" e grifa um a um os trechos que valeram ponto (marca-texto azul→violeta), mostra o que faltou e a nota sobe até 90. A sequência é dirigida por estado, então também roda com "reduzir movimento" (só o pincel do grifo fica instantâneo). O HTML pré-renderizado já vem com a correção pronta.
+* Troca de aba em "Como funciona" e virada do flashcard respondem ao clique. Nada se move sozinho em loop.
+
 ## Imagens
 
 * Formato padrão: **WebP** para todas as imagens estáticas e uploads.

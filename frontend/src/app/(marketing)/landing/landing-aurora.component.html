@@ -1,0 +1,72 @@
+<section class="aurora" id="aurora" aria-labelledby="aurora-title">
+  <div class="container aurora__grid">
+    <div class="aurora__copy">
+      <h2 class="aurora__title" id="aurora-title">Sua discursiva, corrigida na hora.</h2>
+      <p class="aurora__lead">
+        A Aurora, IA corretora do BoraMed, grifa o que valeu ponto na sua resposta, mostra o que
+        faltou e dá a nota de 0 a 100. No modo estudo e no simulado.
+      </p>
+      <a class="btn btn--light btn--lg" routerLink="/cadastro">Criar conta e testar a Aurora</a>
+      <p class="aurora__disclaimer">{{ disclaimer }}</p>
+    </div>
+
+    <div class="aurora__demo">
+      <div class="ac-card" role="group" aria-label="Exemplo de correção da Aurora">
+        <p class="ac-question">{{ pergunta }}</p>
+
+        <!-- Sem espaço entre os nós: os espaços da frase moram nos próprios trechos. -->
+        <p class="ac-answer">
+          @for (trecho of resposta; track $index) {
+            @if (trecho.ponto) {
+              <mark class="ac-hl" [class.is-on]="passo() >= trecho.ponto">{{ trecho.texto }}</mark>
+            } @else {
+              <span>{{ trecho.texto }}</span>
+            }
+          }
+          @if (passo() >= passoFaltou) {
+            &ngsp;<span class="ac-missing">
+              <app-ui-icon [icon]="plusIcon" [size]="13" />
+              faltou a {{ faltou }}
+            </span>
+          }
+        </p>
+
+        <div class="ac-foot" aria-live="polite">
+          @switch (estado()) {
+            @case ('aguardando') {
+              <button type="button" class="btn btn--primary ac-run" (click)="corrigir()">
+                <app-ui-icon [icon]="sparklesIcon" [size]="16" />
+                Corrigir com a Aurora
+              </button>
+            }
+            @case ('corrigindo') {
+              <span class="ac-avatar" aria-hidden="true">
+                <app-ui-icon [icon]="sparklesIcon" [size]="16" />
+              </span>
+              <span class="ac-status">A Aurora está lendo sua resposta…</span>
+              <span class="ac-spinner animate-spin" aria-hidden="true"></span>
+            }
+            @case ('corrigida') {
+              <span class="ac-avatar" aria-hidden="true">
+                <app-ui-icon [icon]="sparklesIcon" [size]="16" />
+              </span>
+              <span class="ac-status">Nota da Aurora</span>
+              <span class="ac-score">
+                <b aria-hidden="true">{{ notaExibida() }}</b>
+                <span aria-hidden="true">/100</span>
+                <span class="sr-only">{{ nota }} de 100</span>
+              </span>
+            }
+          }
+        </div>
+      </div>
+
+      @if (estado() === 'corrigida') {
+        <button type="button" class="aurora__replay" (click)="corrigir()">
+          <app-ui-icon [icon]="replayIcon" [size]="14" />
+          Ver a correção de novo
+        </button>
+      }
+    </div>
+  </div>
+</section>

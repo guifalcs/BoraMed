@@ -1,0 +1,150 @@
+/* Primitivos da landing: container, cabeçalho de seção, botões e a bolha de
+   alternativa. Entra no styleUrls de cada componente da landing porque o
+   encapsulamento emulado não deixa a classe do pai valer dentro do filho.
+   Os tokens (--lp-*) ficam no :host do LandingComponent e chegam aos filhos
+   por herança de custom property. */
+
+.container {
+  width: min(1200px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: clamp(4.5rem, 3rem + 6vw, 8rem);
+}
+
+.section--mist {
+  background: var(--lp-mist);
+}
+
+.section-head {
+  max-width: 46rem;
+  margin-bottom: clamp(2.5rem, 2rem + 2vw, 4rem);
+}
+
+.section-head--center {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.section-title {
+  margin: 0;
+  color: var(--lp-ink);
+  font-family: var(--lp-display);
+  font-size: clamp(2rem, 1.35rem + 2.6vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.section-lead {
+  margin: 1.1rem 0 0;
+  max-width: 56ch;
+  color: var(--lp-body);
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.section-head--center .section-lead {
+  margin-inline: auto;
+}
+
+/* ── Botões ─────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.btn--lg {
+  min-height: 3.25rem;
+  padding: 0 1.6rem;
+  font-size: 1rem;
+}
+
+/* Mesmo botão primário do app: azul de ação, hover no azul escuro. */
+.btn--primary {
+  color: #fff;
+  background: var(--lp-blue);
+  box-shadow: 0 10px 20px rgba(37, 84, 220, 0.18);
+}
+
+.btn--primary:hover {
+  background: var(--lp-blue-dark);
+}
+
+.btn--ghost {
+  border-color: var(--lp-line-strong);
+  color: var(--lp-ink);
+  background: #fff;
+}
+
+.btn--ghost:hover {
+  border-color: var(--lp-blue);
+  color: var(--lp-blue-deep);
+}
+
+/* Sobre o gradiente de marca ou o navy. */
+.btn--light {
+  color: var(--lp-blue-deep);
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(10, 16, 51, 0.18);
+}
+
+.btn--light:hover {
+  background: var(--lp-blue-wash);
+}
+
+.btn--ghost-light {
+  border-color: rgba(255, 255, 255, 0.34);
+  color: #fff;
+}
+
+.btn--ghost-light:hover {
+  border-color: #fff;
+}
+
+.btn:focus-visible,
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--lp-focus);
+  outline-offset: 3px;
+}
+
+/* ── Bolha de alternativa ───────────────────────────────
+   O mesmo círculo com letra do cartão-resposta e da tela de questão do app.
+   É o motivo visual que se repete na página: alternativas, cartão-resposta
+   e numeração das etapas. */
+
+.bubble {
+  display: inline-grid;
+  flex-shrink: 0;
+  width: 1.625rem;
+  height: 1.625rem;
+  place-items: center;
+  border: 1.5px solid var(--lp-line-strong);
+  border-radius: 50%;
+  color: var(--lp-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}

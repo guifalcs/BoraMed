@@ -112,7 +112,7 @@ const DEMO_QUESTIONS: readonly DemoQuizQuestion[] = [
   standalone: true,
   imports: [RouterLink, UiIconComponent],
   templateUrl: './landing-demo-quiz.component.html',
-  styleUrls: ['./landing-demo-quiz.component.css'],
+  styleUrls: ['./landing-shared.css', './landing-demo-quiz.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingDemoQuizComponent {

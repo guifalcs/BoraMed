@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-09 | Design | Landing redesenhada: menos cara de template, mais produto
+
+**A landing tinha gradiente azul→roxo espalhado em texto, selo, ícone e botão, esteira de chips em loop, ilustrações geradas por IA (com rótulos em inglês) e seções repetindo o mesmo molde de selo + título + parágrafo + checklist**
+
+- **Direção nova** documentada em `docs/design-system.md` (seção "Landing"): títulos em Bricolage Grotesque e cores do próprio app. O gradiente institucional azul→violeta (mesma receita do BrandPanel e de `/planos`) fica concentrado em três superfícies: palco da hero, faixa da Aurora e plano recomendado. Botão primário no azul de ação do app, navy do logo para texto e chamada final, sem rótulos em caixa-alta.
+- **Hero**: prévia montada em HTML com uma questão real do acervo e o diagnóstico por tema, no lugar do screenshot genérico e dos 4 cards flutuando em loop. O fim do título ("antes da prova.") vai no degradê da marca. O H1 passa a ser o LCP (antes ficava invisível até o JS hidratar).
+- **Esteira de recursos e faixa de números** viram uma faixa estática de quatro fatos.
+- **Aurora**: faixa no gradiente da marca, título curto e a correção contada num relance, sem lista: a Aurora grifa na própria resposta do aluno os trechos que valeram ponto, mostra o que faltou e dá a nota (dados de uma correção real). A demo roda sozinha quando entra na tela (componente `landing-aurora`) e pode ser repetida; a sequência é dirigida por estado, então também aparece com "reduzir movimento". Disclaimer de independência mantido.
+- **Como funciona**: abas verticais (Treinar, Revisar, Acompanhar) com telas montadas do app usando rótulos reais (modos Simulado/Estudo, Caderno de Erros, sequência, ranking). Componente `landing-ciclo`, navegável por teclado.
+- **Modos de treino**: cartão-resposta, lâmina, seleção de temas reais do 1º período e flashcard que vira no clique, no lugar das imagens geradas. Nova `landing-page/lamina-he.webp` (recorte da lâmina que já existia).
+- **Removidas** as seções "Inteligência de estudo" e "Passo a passo" (repetiam "Como funciona"). Depoimentos e fundador viram uma seção só; garantia, comunidade e pagamento viram uma linha abaixo dos planos.
+- Copy, preços, planos, FAQ, âncoras (`#demo`, `#aurora`, `#treinos`, `#planos`, `#faq`) e o contrato do e2e de planos preservados. `#solucao` virou `#como-funciona`.
+- Verificado: `ng build` sem aviso de budget, e2e "Landing — seção de planos" verde, capturas em 390/820/1440 px e contraste AA nos pares de cor da página.
+
 ## 2026-09-29 | Fix | Simulado de laboratório repetia as mesmas questões / não gerava + tentativas fantasma com 0%
 
 **Três relatos de aluno: "não consigo gerar alguns simulados", "gera sempre as mesmas questões que já fiz" e "às vezes finalizo duas vezes e na segunda aparece 0%"**
