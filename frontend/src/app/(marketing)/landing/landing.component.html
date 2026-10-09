@@ -1,26 +1,27 @@
-<main class="landing-page" id="inicio">
+<div class="landing-page" id="inicio">
   <header class="site-header" [class.is-scrolled]="isScrolled()">
-    <nav class="nav-shell" aria-label="Navegação principal">
-      <a class="brand-link" routerLink="/" aria-label="BoraMed - início">
-        <img src="/brand/logo.webp" alt="BoraMed" class="brand-logo" />
+    <nav class="container nav" aria-label="Navegação principal">
+      <a class="brand" routerLink="/" aria-label="BoraMed, início">
+        <img src="/brand/logo.webp" alt="BoraMed" class="brand__logo" width="400" height="128" />
       </a>
 
-      <div class="desktop-nav">
+      <div class="nav__links">
         @for (item of navItems; track item.href) {
           <a [href]="item.href">{{ item.label }}</a>
         }
       </div>
 
-      <div class="desktop-actions">
-        <a class="link-button" routerLink="/login">Entrar</a>
-        <a class="primary-button" routerLink="/cadastro">Começar grátis</a>
+      <div class="nav__actions">
+        <a class="nav__login" routerLink="/login">Entrar</a>
+        <a class="btn btn--primary" routerLink="/cadastro">Começar grátis</a>
       </div>
 
       <button
-        class="menu-button"
+        class="nav__menu"
         type="button"
-        aria-label="Abrir menu"
+        [attr.aria-label]="isMenuOpen() ? 'Fechar menu' : 'Abrir menu'"
         [attr.aria-expanded]="isMenuOpen()"
+        aria-controls="menu-mobile"
         (click)="toggleMenu()"
       >
         <app-ui-icon [icon]="isMenuOpen() ? closeIcon : menuIcon" [size]="22" />
@@ -28,769 +29,487 @@
     </nav>
 
     @if (isMenuOpen()) {
-      <div class="mobile-nav">
+      <div class="container mobile-nav" id="menu-mobile">
         @for (item of navItems; track item.href) {
           <a [href]="item.href" (click)="closeMenu()">{{ item.label }}</a>
         }
         <a routerLink="/login" (click)="closeMenu()">Entrar</a>
-        <a class="primary-button" routerLink="/cadastro" (click)="closeMenu()">Começar grátis</a>
+        <a class="btn btn--primary btn--lg" routerLink="/cadastro" (click)="closeMenu()">Começar grátis</a>
       </div>
     }
   </header>
 
-  <section class="hero-section" [class.hero-ready]="heroReady()">
-    <div class="hero-shell">
-      <div class="hero-copy">
-        <span class="eyebrow">Simulados no modelo da sua prova</span>
-        <h1>
-          Saiba exatamente onde você perde pontos<br />
-          <span class="hero-highlight">antes da prova.</span>
-        </h1>
-        <p>
-          Mais de 5 mil questões no modelo das avaliações da Afya: treine no formato real,
-          descubra seus temas críticos e chegue no dia da prova sem surpresa.
-        </p>
-
-        <a class="hero-badge-new" href="#aurora">
-          <span class="hero-badge-new-icon"><app-ui-icon [icon]="sparklesIcon" [size]="13" /></span>
-          A Aurora corrige suas questões discursivas por IA
-          <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
-        </a>
-
-        <div class="hero-actions" aria-label="Ações principais">
-          <a class="primary-button" routerLink="/cadastro">Começar grátis, sem cartão</a>
-          <a class="secondary-button" href="#demo">Testar 3 questões agora</a>
-        </div>
-        <p class="cta-microcopy">Leva 1 minuto · 3 simulados grátis · Sem cartão de crédito</p>
-
-        <p class="trust-note">
-          A próxima prova não espera. Plataforma independente · Questões autorais
-        </p>
-      </div>
-
-      <div class="hero-product" aria-label="Prévia da interface BoraMed">
-        <div class="float-card float-card--score" aria-hidden="true">
-          <span class="float-label">Desempenho</span>
-          <strong class="float-value">82%</strong>
-          <div class="float-bar"><i style="--w: 82%"></i></div>
-          <span class="float-sub">acertos nesta tentativa</span>
-        </div>
-
-        <div class="float-card float-card--badge" aria-hidden="true">
-          <span class="float-dot"></span>
-          Questão autoral
-        </div>
-
-        <div class="float-card float-card--aurora" aria-hidden="true">
-          <span class="float-aurora-head">
-            <span class="float-aurora-icon"><app-ui-icon [icon]="sparklesIcon" [size]="13" /></span>
-            Corrigido por Aurora
-          </span>
-          <div class="float-aurora-body">
-            <strong class="float-aurora-score">90<small>/100</small></strong>
-            <span class="float-aurora-sub">resposta discursiva</span>
-          </div>
-        </div>
-
-        <div class="float-card float-card--topics" aria-hidden="true">
-          <span class="float-label">Temas críticos</span>
-          <div class="float-topic">
-            <span>Cardiovascular</span>
-            <div class="float-bar"><i style="--w: 58%"></i></div>
-          </div>
-          <div class="float-topic">
-            <span>Farmacologia</span>
-            <div class="float-bar"><i style="--w: 71%"></i></div>
-          </div>
-        </div>
-
-        <div class="hero-window">
-          <div class="window-top" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <figure class="hero-window-image">
-            <img
-              src="/landing-page/hero-image.webp"
-              alt="Prévia visual da experiência BoraMed para estudo médico"
-              width="1586"
-              height="992"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </figure>
-        </div>
-      </div>
-    </div>
-
-    <div class="ticker" aria-label="Recursos do BoraMed">
-      <div class="ticker-track">
-        @for (item of tickerItems; track item) {
-          <span>{{ item }}</span>
-        }
-        @for (item of tickerItems; track item + '-copy') {
-          <span>{{ item }}</span>
-        }
-      </div>
-    </div>
-  </section>
-
-  <section class="stats-section">
-    <div class="stats-shell">
-      @for (stat of stats; track stat.label; let last = $last) {
-        <div class="stat-item">
-          <strong>{{ stat.value }}</strong>
-          <span>{{ stat.label }}</span>
-        </div>
-        @if (!last) { <div class="stat-divider"></div> }
-      }
-    </div>
-    <!-- Depoimentos desativados temporariamente — sem prova social real ainda.
-         Reativar junto com statsQuote em landing.component.ts.
-    <figure class="stats-quote">
-      <blockquote>"{{ statsQuote.quote }}"</blockquote>
-      <figcaption>{{ statsQuote.author }}</figcaption>
-    </figure>
-    -->
-  </section>
-
-  <section class="section-shell demo-section" id="demo">
-    <div class="section-heading">
-      <span class="eyebrow">Experimente antes de se cadastrar</span>
-      <h2>Você acertaria estas 3 questões na prova?</h2>
-      <p>
-        Questões autorais no estilo da sua prova. Responda sem cadastro e veja o diagnóstico
-        que o BoraMed montaria para você.
-      </p>
-    </div>
-    <app-landing-demo-quiz />
-  </section>
-
-  <section class="aurora-section" id="aurora">
-    <div class="aurora-shell">
-      <div class="aurora-copy">
-        <span class="eyebrow">Correção por IA</span>
-        <h2>
-          Múltipla escolha você confere sozinho.<br class="heading-break" />
-          <span class="aurora-title-accent">As discursivas, a Aurora corrige.</span>
-        </h2>
-        <p class="aurora-lead">
-          As questões abertas valem nota. E, até agora, ninguém te dizia se a sua resposta estava
-          boa. A <strong>Aurora</strong>, nossa IA corretora, lê o que você escreveu, dá uma nota de
-          0 a 100 e mostra, ponto a ponto, o que faltou. Na hora.
-        </p>
-
-        <ul class="aurora-benefits">
-          @for (benefit of auroraBenefits; track benefit) {
-            <li>
-              <span class="aurora-check"><app-ui-icon [icon]="checkIcon" [size]="13" /></span>
-              {{ benefit }}
-            </li>
-          }
-        </ul>
-
-        <a class="primary-button" routerLink="/cadastro">Criar conta e testar a Aurora</a>
-
-        <p class="aurora-disclaimer">
-          <app-ui-icon [icon]="shieldIcon" [size]="14" />
-          {{ auroraDisclaimer }}
-        </p>
-      </div>
-
-      <!-- Prova > promessa: a correção da Aurora renderizada como o aluno vê -->
-      <div class="aurora-demo" aria-label="Exemplo de correção da Aurora">
-        <div class="aurora-window">
-          <div class="aurora-window-bar" aria-hidden="true">
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-          </div>
-
-          <div class="aurora-q">
-            <span class="aurora-q-topic">{{ auroraDemo.topic }}</span>
-            <p class="aurora-q-text">{{ auroraDemo.question }}</p>
-          </div>
-
-          <div class="aurora-answer">
-            <span class="aurora-answer-label">
-              <app-ui-icon [icon]="penIcon" [size]="13" />
-              Sua resposta
-            </span>
-            <p>{{ auroraDemo.answer }}</p>
-          </div>
-
-          <div class="aurora-feedback">
-            <div class="aurora-feedback-head">
-              <span class="aurora-agent">
-                <span class="aurora-agent-icon"><app-ui-icon [icon]="sparklesIcon" [size]="15" /></span>
-                <span class="aurora-agent-name">
-                  Corrigido por Aurora
-                  <small>IA corretora · BoraMed</small>
-                </span>
-              </span>
-              <span class="aurora-score">{{ auroraDemo.score }}<small>/100</small></span>
-            </div>
-
-            <div class="aurora-points">
-              <span class="aurora-points-title aurora-points-title--ok">Você acertou</span>
-              <ul class="aurora-points-list">
-                @for (point of auroraDemo.atendidos; track point) {
-                  <li>
-                    <span class="aurora-mark aurora-mark--ok"><app-ui-icon [icon]="checkIcon" [size]="12" /></span>
-                    {{ point }}
-                  </li>
-                }
-              </ul>
-
-              <span class="aurora-points-title aurora-points-title--miss">Faltou dizer</span>
-              <ul class="aurora-points-list">
-                @for (point of auroraDemo.faltantes; track point) {
-                  <li>
-                    <span class="aurora-mark aurora-mark--miss" aria-hidden="true"></span>
-                    {{ point }}
-                  </li>
-                }
-              </ul>
-            </div>
-
-            <p class="aurora-comment">{{ auroraDemo.comentario }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-shell modules-bento-section" id="treinos">
-    <div class="modules-bento-header">
-      <div class="section-heading left">
-        <span class="eyebrow">Modos de treino</span>
-        <h2>Quatro formas de treinar.<br class="heading-break" /> <span class="heading-break-tail">Nenhum tema deixado para trás.</span></h2>
-        <p>Do simulado completo no modelo da prova à revisão por tema, ao laboratório com imagem real e aos flashcards da comunidade. Escolha como quer estudar hoje.</p>
-      </div>
-      <a routerLink="/cadastro" class="modules-bento-btn">
-        Ver todos os módulos
-        <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
-      </a>
-    </div>
-
-    <div class="modules-bento">
-      <!-- Feature card: Treinos Nacionais -->
-      <article class="bento-feature">
-        <img src="/landing-page/modo-nacional.webp" alt="Interface de treino nacional BoraMed" loading="lazy" decoding="async" />
-        <div class="bento-overlay"></div>
-
-        <div class="bento-feature-content">
-          <span class="bento-badge bento-badge--national">Modelo nacional</span>
-          <h3>Treinos Nacionais</h3>
-          <p>O simulado mais próximo da prova real: questões autorais no modelo das avaliações nacionais, pensadas para quem estuda na rede Afya.</p>
-          <a routerLink="/cadastro" class="bento-link bento-link--light">
-            Explorar módulo
-            <app-ui-icon [icon]="arrowRightIcon" [size]="16" />
-          </a>
-        </div>
-      </article>
-
-      <!-- Compact card: Simulados Processuais -->
-      <article class="bento-compact">
-        <div class="bento-compact-image">
-          <img src="/landing-page/modo-processual.webp" alt="Seleção de temas para simulado processual" loading="lazy" decoding="async" />
-        </div>
-        <div class="bento-compact-content">
-          <div class="bento-compact-meta">
-            <span class="bento-badge bento-badge--process">Por tema</span>
-          </div>
-          <h3>Simulados Processuais</h3>
-          <p>Escolha os temas que precisa dominar e a quantidade de questões. Um simulado novo a cada tentativa, hoje com conteúdo do primeiro período.</p>
-          <a routerLink="/cadastro" class="bento-link bento-link--process">
-            Explorar módulo
-            <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
-          </a>
-        </div>
-      </article>
-
-      <!-- Compact card: Laboratório -->
-      <article class="bento-compact">
-        <div class="bento-compact-image">
-          <img src="/landing-page/modo-laboratorio.webp" alt="Questão de laboratório com lâmina histológica" loading="lazy" decoding="async" />
-        </div>
-        <div class="bento-compact-content">
-          <div class="bento-compact-meta">
-            <span class="bento-badge bento-badge--lab">Com imagem</span>
-          </div>
-          <h3>Laboratório</h3>
-          <p>Lâminas e peças reais para treinar o olhar clínico que a prova prática cobra. Acervo do primeiro período.</p>
-          <a routerLink="/cadastro" class="bento-link bento-link--lab">
-            Explorar módulo
-            <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
-          </a>
-        </div>
-      </article>
-
-      <!-- Wide card: Flashcards (novo) — mock CSS com flip no hover, sem screenshot -->
-      <article class="bento-wide bento-wide--flashcards">
-        <div class="bento-compact-content">
-          <div class="bento-compact-meta">
-            <span class="bento-badge bento-badge--flashcards">Novo · Comunidade</span>
-          </div>
-          <h3>Flashcards</h3>
-          <p>
-            Estude com decks prontos do BoraMed ou crie os seus, com imagens. Publique no feed da
-            comunidade, curta os melhores decks e veja quem curtiu os seus. A memorização que
-            faltava entre um simulado e outro.
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <h1 class="hero__title" id="hero-title">
+            Saiba onde você perde pontos <span class="hero__title-accent">antes da prova.</span>
+          </h1>
+          <p class="hero__lead">
+            Mais de 5 mil questões autorais no modelo das avaliações da Afya. Treine no formato
+            real, descubra seus temas críticos e chegue no dia da prova sem surpresa.
           </p>
-          <a routerLink="/cadastro" class="bento-link bento-link--flashcards">
-            Explorar módulo
-            <app-ui-icon [icon]="arrowRightIcon" [size]="15" />
-          </a>
+          <div class="hero__actions">
+            <a class="btn btn--primary btn--lg" routerLink="/cadastro">Começar grátis</a>
+            <a class="btn btn--ghost btn--lg" href="#demo">Testar 3 questões</a>
+          </div>
+          <p class="hero__note">
+            3 simulados grátis, sem cartão de crédito. Plataforma independente, sem vínculo com a Afya.
+          </p>
         </div>
-        <div class="flash-mock" aria-hidden="true">
-          <div class="flash-mock-inner">
-            <div class="flash-mock-face flash-mock-front">
-              <span class="flash-mock-label">Pergunta</span>
-              <p>Quais são os componentes da tríade de Virchow?</p>
-              <span class="flash-mock-hint">passe o mouse para revelar</span>
-            </div>
-            <div class="flash-mock-face flash-mock-back">
-              <span class="flash-mock-label">Resposta</span>
-              <p>Estase venosa, lesão endotelial e hipercoagulabilidade.</p>
-              <span class="flash-mock-hint">Acertei ✓ &nbsp;·&nbsp; Errei ✗</span>
+
+        <!-- Prévia montada em HTML com conteúdo real do produto (questão do
+             acervo e diagnóstico por tema), no lugar de screenshot genérico. -->
+        <div
+          class="hero__visual"
+          role="img"
+          aria-label="Prévia do BoraMed: questão de um treino nacional em andamento e o diagnóstico dos temas em que você perdeu pontos"
+        >
+          <div class="hero__stage">
+            <div class="exam">
+              <div class="exam__bar">
+                <span class="exam__title">Treino nacional</span>
+                <span class="exam__timer">
+                  <app-ui-icon [icon]="timerIcon" [size]="14" />
+                  12:45
+                </span>
+                <span class="exam__finish">Finalizar</span>
+              </div>
+              <div class="exam__progress"><i></i></div>
+
+              <div class="exam__body">
+                <div class="exam__meta">
+                  <span class="exam__num">8</span>
+                  <span class="exam__topic">Cardiologia</span>
+                  <span class="exam__count">8 de 20</span>
+                </div>
+                <p class="exam__statement">
+                  Um professor de anatomia apresenta aos alunos um esquema da face posterior do coração
+                  e destaca o seio coronário. Quais são as principais veias tributárias do seio
+                  coronário e os territórios que elas drenam?
+                </p>
+                <ol class="exam__options">
+                  <li class="is-selected">
+                    <span class="bubble">A</span>
+                    <span class="exam__option-text">A veia cardíaca magna drena a face anterior do coração; a média, a face inferior…</span>
+                  </li>
+                  <li>
+                    <span class="bubble">B</span>
+                    <span class="exam__option-text">A veia cardíaca magna drena exclusivamente o ventrículo direito…</span>
+                  </li>
+                  <li>
+                    <span class="bubble">C</span>
+                    <span class="exam__option-text">A veia de Tebesio drena a maior parte do miocárdio ventricular esquerdo…</span>
+                  </li>
+                  <li>
+                    <span class="bubble">D</span>
+                    <span class="exam__option-text">O seio coronário é formado pela confluência das veias pulmonares…</span>
+                  </li>
+                </ol>
+              </div>
             </div>
           </div>
+
+          <div class="diag">
+            <p class="diag__title">Onde você perdeu pontos</p>
+            <ul class="diag__list">
+              @for (topic of heroTopics; track topic.name; let i = $index) {
+                <li class="diag__row" [class.is-critical]="topic.critical" [style.--i]="i">
+                  <span class="diag__name">{{ topic.name }}</span>
+                  <span class="diag__pct">{{ topic.pct }}%</span>
+                  <span class="diag__track"><i [style.width.%]="topic.pct"></i></span>
+                </li>
+              }
+            </ul>
+            <p class="diag__next">
+              Revisar Anatomia primeiro
+              <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
+            </p>
+          </div>
         </div>
-      </article>
-    </div>
-  </section>
+      </div>
+    </section>
 
-  <section class="section-shell solution-section" id="solucao">
-    <div class="solution-card">
-      <span class="eyebrow">Como funciona</span>
-      <h2 class="solution-title">Um ciclo completo: simular, revisar e evoluir.</h2>
-      <p class="solution-lead">
-        Cada simulado vira um diagnóstico, e cada diagnóstico, o seu próximo treino. É assim que a nota sobe.
-      </p>
-
-      <div class="tab-pills" role="tablist" aria-label="Fluxos do BoraMed">
-        @for (tab of solutionTabs; track tab.id) {
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeTab() === tab.id"
-            [class.is-active]="activeTab() === tab.id"
-            (click)="setActiveTab(tab.id)"
-          >
-            <app-ui-icon [icon]="tab.icon" [size]="17" />
-            <span>{{ tab.label }}</span>
-          </button>
+    <section class="proof" aria-label="O BoraMed em números">
+      <ul class="container proof__list">
+        @for (item of proofItems; track item.value) {
+          <li class="proof__item">
+            <strong class="proof__value">{{ item.value }}</strong>
+            <span class="proof__label">{{ item.label }}</span>
+          </li>
         }
-      </div>
+      </ul>
+    </section>
 
-      <div class="solution-panel" role="tabpanel">
-        <div class="solution-copy">
-          <h3>{{ selectedTab().title }}</h3>
-          <p>{{ selectedTab().description }}</p>
-          <ul class="feature-list">
-            @for (feature of selectedTab().features; track feature) {
-              <li class="feature-item">
-                <span class="check-chip"><app-ui-icon [icon]="checkIcon" [size]="13" /></span>
-                {{ feature }}
-              </li>
-            }
-          </ul>
+    <section class="section section--mist" id="demo" aria-labelledby="demo-title">
+      <div class="container demo">
+        <div class="demo__intro">
+          <h2 class="section-title" id="demo-title">Você acertaria estas 3 questões na prova?</h2>
+          <p class="section-lead">
+            Três questões reais do acervo, no estilo da sua avaliação. Responda sem cadastro e veja
+            o diagnóstico que o BoraMed montaria para você.
+          </p>
+        </div>
+        <app-landing-demo-quiz class="demo__quiz" />
+      </div>
+    </section>
+
+    <app-landing-aurora />
+
+    <app-landing-ciclo />
+
+    <section class="section section--mist" id="treinos" aria-labelledby="treinos-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title" id="treinos-title">Quatro formas de treinar.</h2>
+          <p class="section-lead">
+            Prova completa, tema por tema, lâmina na tela ou flashcard. Escolha como quer estudar hoje.
+          </p>
         </div>
 
-        <div class="product-window">
-          <div class="window-bar">
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-            <span class="window-url"><span class="url-dot"></span>boramedoficial.com.br</span>
-          </div>
-
-          <div class="window-body">
-            @if (activeTab() === 'treinar') {
-              <div class="preview-block">
-                <div class="preview-timer-row">
-                  <span class="preview-label">Tempo restante</span>
-                  <strong class="preview-timer-value">12:45</strong>
-                </div>
-                <div class="preview-meta-row">
-                  <span>Questão 8 de 20</span>
-                  <span class="preview-pct">40%</span>
-                </div>
-                <div class="preview-bar-track"><i style="--w: 40%"></i></div>
-                <div class="preview-kpis">
-                  <div class="preview-kpi-item">
-                    <strong>20</strong>
-                    <span>questões</span>
-                  </div>
-                  <div class="preview-kpi-item">
-                    <strong>7</strong>
-                    <span>respondidas</span>
-                  </div>
-                  <div class="preview-kpi-item">
-                    <strong>1</strong>
-                    <span>em branco</span>
-                  </div>
-                </div>
+        <div class="modes">
+          <article class="mode mode--nacional">
+            <div class="mode__text">
+              <h3 class="mode__title">Treinos nacionais</h3>
+              <p>
+                O simulado mais próximo da prova real: questões autorais no modelo das avaliações
+                nacionais, do 1º ao 8º período.
+              </p>
+            </div>
+            <div class="mode__visual sheet" aria-hidden="true">
+              <div class="sheet__head">
+                <span class="sheet__label">Cartão-resposta</span>
+                <span>Treino nacional do 4º período</span>
               </div>
-            }
-
-            @if (activeTab() === 'revisar') {
-              <div class="preview-block">
-                <span class="preview-label">Temas com menor acerto</span>
-                @for (topic of sortedReviewTopics; track topic.name) {
-                  <div class="preview-topic-row">
-                    <div class="preview-meta-row">
-                      <span>{{ topic.name }}</span>
-                      <span class="preview-pct">{{ topic.pct }}%</span>
-                    </div>
-                    <div class="preview-bar-track">
-                      <i [class]="'tier-' + topicTier(topic.pct)" [style.--w]="topic.pct + '%'"></i>
-                    </div>
-                  </div>
+              <ol class="sheet__rows">
+                @for (marked of answerSheet; track $index; let i = $index) {
+                  <li class="sheet__row">
+                    <span class="sheet__n">{{ i + 1 }}</span>
+                    @for (letter of answerLetters; track letter; let j = $index) {
+                      <span class="sheet__bubble" [class.is-filled]="marked === j">{{ letter }}</span>
+                    }
+                  </li>
                 }
-                <a class="preview-link" href="#solucao">
-                  Revisar erros desses temas
-                  <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
-                </a>
+              </ol>
+            </div>
+          </article>
+
+          <article class="mode mode--lab">
+            <div class="mode__visual lab" aria-hidden="true">
+              <img
+                src="/landing-page/lamina-he.webp"
+                alt=""
+                width="748"
+                height="500"
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="lab__zoom"><app-ui-icon [icon]="zoomIcon" [size]="14" /></span>
+            </div>
+            <div class="mode__text">
+              <h3 class="mode__title">Laboratório</h3>
+              <p>Lâminas e peças na tela para treinar o olhar que a prova prática cobra. Acervo do 1º período.</p>
+            </div>
+          </article>
+
+          <article class="mode mode--tema">
+            <div class="mode__text">
+              <h3 class="mode__title">Simulados por tema</h3>
+              <p>
+                Escolha os temas e a quantidade de questões. Um simulado novo a cada tentativa, hoje
+                com conteúdo do 1º período.
+              </p>
+            </div>
+            <div class="mode__visual chips" aria-hidden="true">
+              <div class="chips__list">
+                @for (chip of topicChips; track chip.name) {
+                  <span class="chip" [class.is-on]="chip.selected">
+                    @if (chip.selected) {
+                      <app-ui-icon [icon]="checkIcon" [size]="13" />
+                    }
+                    {{ chip.name }}
+                  </span>
+                }
               </div>
-            }
-
-            @if (activeTab() === 'acompanhar') {
-              <div class="preview-block">
-                <span class="preview-label">Constância · últimas 2 semanas</span>
-                <div class="preview-streak">
-                  @for (active of streakDays; track $index) {
-                    <span [class]="active ? 'streak-dot streak-dot--on' : 'streak-dot'"></span>
-                  }
-                </div>
-                <div class="preview-kpis">
-                  <div class="preview-kpi-item">
-                    <strong>82%</strong>
-                    <span>acertos</span>
-                  </div>
-                  <div class="preview-kpi-item">
-                    <strong class="preview-trend-up">↑ 12%</strong>
-                    <span>esta semana</span>
-                  </div>
-                  <div class="preview-kpi-item">
-                    <strong>9</strong>
-                    <span>tentativas</span>
-                  </div>
-                </div>
+              <div class="chips__footer">
+                <span>3 temas</span>
+                <span class="chips__qty">20 questões</span>
               </div>
-            }
-          </div>
+            </div>
+          </article>
+
+          <article class="mode mode--flash">
+            <div class="mode__text">
+              <h3 class="mode__title">Flashcards</h3>
+              <p>
+                Decks prontos do BoraMed ou os seus, com imagens. Publique na comunidade, curta os
+                melhores e veja quem curtiu os seus.
+              </p>
+            </div>
+            <div class="mode__visual flash">
+              <button
+                type="button"
+                class="flash__card"
+                [class.is-flipped]="flashFlipped()"
+                [attr.aria-pressed]="flashFlipped()"
+                aria-label="Flashcard de exemplo: quais são os componentes da tríade de Virchow? Toque para virar."
+                (click)="flashFlipped.set(!flashFlipped())"
+              >
+                <span class="flash__inner" aria-hidden="true">
+                  <span class="flash__face flash__face--front">
+                    <span class="flash__side">Pergunta</span>
+                    <span class="flash__text">Quais são os componentes da tríade de Virchow?</span>
+                    <span class="flash__hint">Toque para virar</span>
+                  </span>
+                  <span class="flash__face flash__face--back">
+                    <span class="flash__side">Resposta</span>
+                    <span class="flash__text">Estase venosa, lesão endotelial e hipercoagulabilidade.</span>
+                    <span class="flash__grade">
+                      <span>Errei</span>
+                      <span class="is-good">Acertei</span>
+                    </span>
+                  </span>
+                </span>
+              </button>
+            </div>
+          </article>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="intelligence-section">
-    <div class="intelligence-shell">
-      <div class="intelligence-copy">
-        <span class="eyebrow inverse">Inteligência de estudo</span>
-        <h2>Pare de adivinhar o que estudar.</h2>
-        <p>
-          Sem diagnóstico, você estuda o que já sabe e descobre o resto na prova. A cada
-          simulado, o BoraMed mostra os temas que mais derrubam sua nota e o que revisar
-          primeiro.
-        </p>
-        <a class="inverse-button" href="#solucao">Ver como funciona</a>
-      </div>
-
-      <div class="insight-stack" aria-label="Resumo de desempenho BoraMed">
-        <div class="insight-card summary">
-          <app-ui-icon [icon]="activityIcon" [size]="22" />
-          <span>Diagnóstico</span>
-          <strong>Foque em cardio e anatomia.</strong>
-        </div>
-        <div class="insight-card topic">
-          <span>Cardiovascular</span>
-          <i style="--bar: 58%"></i>
-        </div>
-        <div class="insight-card topic">
-          <span>Laboratório</span>
-          <i style="--bar: 74%"></i>
-        </div>
-        <img
-          src="/landing-page/ilustracao-performance.webp"
-          alt="Ilustração de desempenho e progresso de estudos BoraMed"
-          width="1448"
-          height="1086"
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-    </div>
-  </section>
-
-  <section class="section-shell steps-section">
-    <div class="section-heading">
-      <span class="eyebrow">Passo a passo</span>
-      <h2>Do cadastro ao primeiro diagnóstico em minutos.</h2>
-    </div>
-
-    <div class="timeline">
-      @for (step of steps; track step.label; let index = $index) {
-        <article class="timeline-card">
-          <div class="timeline-icon-wrap">
-            <app-ui-icon [icon]="step.icon" [size]="20" />
-            <span class="step-number">{{ index + 1 }}</span>
-          </div>
-          <small>{{ step.label }}</small>
-          <h3>{{ step.title }}</h3>
-          <ul>
-            @for (point of step.points; track point) {
-              <li>{{ point }}</li>
-            }
-          </ul>
-        </article>
-      }
-    </div>
-  </section>
-
-  <section class="section-shell testimonials-section" id="depoimentos">
-    <div class="section-heading">
-      <span class="eyebrow">Depoimentos</span>
-      <h2>Quem treina no BoraMed chega diferente na prova</h2>
-    </div>
-
-    <div class="testimonials-grid">
-      @for (testimonial of testimonials; track testimonial.quote) {
-        <figure class="testimonial-card">
-          <app-ui-icon [icon]="quoteIcon" [size]="20" />
-          <blockquote>{{ testimonial.quote }}</blockquote>
+    <section class="section" id="depoimentos" aria-labelledby="founders-title">
+      <div class="container founders">
+        <figure class="founders__photo">
+          <img
+            src="/landing-page/arthur-dameao.webp"
+            alt="Arthur Dameão, cofundador do BoraMed"
+            width="708"
+            height="701"
+            loading="lazy"
+            decoding="async"
+          />
           <figcaption>
-            <strong>{{ testimonial.name }}</strong>
-            @if (testimonial.context) {
-              <span>{{ testimonial.context }}</span>
-            }
+            <strong>Arthur Dameão</strong>
+            <span>Cofundador, estudante da rede Afya</span>
           </figcaption>
         </figure>
-      }
-    </div>
-  </section>
 
-  <section class="section-shell founders-section">
-    <div class="founders-card">
-      <div class="founders-copy">
-        <span class="eyebrow">Quem fez</span>
-        <h2>Feito por quem faz a mesma prova que você</h2>
-        <p>
-          O BoraMed nasceu quando Arthur Dameão, estudante de medicina da rede Afya, procurou
-          onde treinar no formato real das avaliações e não encontrou. Junto com Guilherme,
-          criou a plataforma que ele mesmo usa para estudar: questões autorais no modelo da
-          prova, revisão guiada e diagnóstico por tema.
-        </p>
-        <p class="founders-note">
-          O BoraMed é uma plataforma independente, sem vínculo com a Afya ou qualquer
-          instituição.
-        </p>
+        <div class="founders__copy">
+          <h2 class="section-title" id="founders-title">Feito por quem faz a mesma prova que você.</h2>
+          <p class="section-lead">
+            O BoraMed nasceu quando Arthur, estudante de medicina da rede Afya, procurou onde treinar
+            no formato real das avaliações e não encontrou. Junto com Guilherme, criou a plataforma
+            que ele mesmo usa para estudar.
+          </p>
+          <p class="founders__note">
+            Plataforma independente, sem vínculo com a Afya ou qualquer instituição.
+          </p>
+
+          <div class="quotes">
+            @for (testimonial of testimonials; track testimonial.quote) {
+              <figure class="quote">
+                <blockquote>{{ testimonial.quote }}</blockquote>
+                <figcaption>
+                  {{ testimonial.name }}
+                  @if (testimonial.context) {
+                    <span>{{ testimonial.context }}</span>
+                  }
+                </figcaption>
+              </figure>
+            }
+          </div>
+        </div>
       </div>
-      <div class="founders-panel">
-        <img
-          class="founders-photo"
-          src="/landing-page/arthur-dameao.webp"
-          alt="Arthur Dameão, cofundador do BoraMed"
-          width="320"
-          height="320"
-          loading="lazy"
-          decoding="async"
-        />
-        <strong>Arthur Dameão</strong>
-        <span class="founders-badge">Estudante da rede Afya</span>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="section-shell pricing-section" id="planos">
-    <div class="section-heading">
-      <span class="eyebrow">Planos</span>
-      <!-- &ngsp; e não um espaço solto: o Angular remove whitespace entre
-           elementos no build, e abaixo de 720px o <br> é display:none — sem
-           isto o mobile lê "plano.Risco zero". -->
-      <h2>Comece grátis.<br class="heading-break" />&ngsp;<span class="heading-break-tail">Assine quando fizer sentido.</span></h2>
-      <p>Faça 3 simulados sem pagar nada e sem cartão — 2 treinos nacionais e 1 que você mesmo monta, escolhendo os temas. Essencial para treinar com as provas nacionais até o 8º período. Avançado para acesso completo. Os dois com pagamento único, sem renovação automática.</p>
-    </div>
-
-    <div class="pricing-toggle">
-      <app-ui-segmented-toggle
-        [options]="cicloOptions"
-        [value]="cicloSelecionado()"
-        ariaLabel="Ciclo de pagamento"
-        (valueChange)="onCicloChange($event)"
-      />
-    </div>
-
-    <div class="pricing-grid">
-      <!-- Plano gratuito: fica fora do toggle (não tem ciclo) e ancora a grade
-           por baixo, deixando Essencial e Avançado como a escolha real -->
-      <article class="pricing-card pricing-card--free">
-        <div class="pricing-card-head">
-          <h3>{{ freePlan.name }}</h3>
-          <p class="pricing-tagline">{{ freePlan.tagline }}</p>
+    <section class="section section--mist" id="planos" aria-labelledby="planos-title">
+      <div class="container">
+        <div class="section-head section-head--center">
+          <h2 class="section-title" id="planos-title">Comece grátis. Assine quando fizer sentido.</h2>
+          <p class="section-lead">
+            Faça 3 simulados sem pagar nada e sem cartão. Depois, escolha o Essencial para as provas
+            nacionais até o 8º período ou o Avançado para acesso completo. Os dois com pagamento
+            único, sem renovação automática.
+          </p>
         </div>
 
-        <div class="pricing-price">
-          <strong class="pricing-amount">{{ freePlan.price }}</strong>
+        <div class="pricing-toggle">
+          <app-ui-segmented-toggle
+            [options]="cicloOptions"
+            [value]="cicloSelecionado()"
+            ariaLabel="Ciclo de pagamento"
+            (valueChange)="onCicloChange($event)"
+          />
         </div>
 
-        <p class="pricing-note">{{ freePlan.note }}</p>
+        <div class="pricing-grid">
+          <!-- Plano gratuito: fica fora do toggle (não tem ciclo) e ancora a grade
+               por baixo, deixando Essencial e Avançado como a escolha real -->
+          <article class="pricing-card pricing-card--free">
+            <div class="pricing-card__head">
+              <h3>{{ freePlan.name }}</h3>
+              <p class="pricing-tagline">{{ freePlan.tagline }}</p>
+            </div>
 
-        <ul class="pricing-features">
-          @for (feature of freePlan.features; track feature) {
-            <li>
-              <app-ui-icon [icon]="checkIcon" [size]="16" />
-              <span>{{ feature }}</span>
-            </li>
+            <div class="pricing-price">
+              <strong class="pricing-amount">{{ freePlan.price }}</strong>
+            </div>
+
+            <p class="pricing-note">{{ freePlan.note }}</p>
+
+            <ul class="pricing-features">
+              @for (feature of freePlan.features; track feature) {
+                <li>
+                  <app-ui-icon [icon]="checkIcon" [size]="16" />
+                  <span>{{ feature }}</span>
+                </li>
+              }
+              @for (item of freePlan.naoInclui; track item) {
+                <li class="pricing-feature--off">
+                  <app-ui-icon [icon]="xIcon" [size]="16" />
+                  <span>{{ item }}</span>
+                </li>
+              }
+            </ul>
+
+            <a class="btn btn--ghost btn--lg pricing-cta" routerLink="/cadastro">{{ freePlan.ctaLabel }}</a>
+            <p class="pricing-cta-note">Sem cartão de crédito</p>
+          </article>
+
+          @for (plan of visiblePricingPlans(); track plan.tier) {
+            <article class="pricing-card" [class.is-featured]="plan.featured">
+              <div class="pricing-card__head">
+                <h3>{{ plan.name }}</h3>
+                @if (plan.featured) {
+                  <span class="pricing-flag">Recomendado</span>
+                }
+                <p class="pricing-tagline">{{ plan.tagline }}</p>
+              </div>
+
+              @if (plan.anchorPrice) {
+                <p class="pricing-anchor">
+                  <s [attr.aria-label]="plan.anchorPrice + ', ' + plan.anchorNote">{{ plan.anchorPrice }}</s>
+                  {{ plan.anchorNote }}
+                </p>
+              }
+
+              <div class="pricing-price">
+                <strong class="pricing-amount">{{ plan.price }}</strong>
+                <span class="pricing-period">{{ plan.period }}</span>
+                @if (plan.economy) {
+                  <span class="pricing-economy">Economize {{ plan.economy }}</span>
+                }
+              </div>
+
+              @if (plan.note) {
+                <p class="pricing-note">{{ plan.note }}</p>
+              }
+
+              <ul class="pricing-features">
+                @for (feature of plan.features; track feature) {
+                  <li>
+                    <app-ui-icon [icon]="checkIcon" [size]="16" />
+                    <span>{{ feature }}</span>
+                  </li>
+                }
+              </ul>
+
+              <a
+                class="btn btn--lg pricing-cta"
+                [class.btn--light]="plan.featured"
+                [class.btn--primary]="!plan.featured"
+                routerLink="/cadastro"
+              >
+                {{ plan.ctaLabel }}
+              </a>
+              <p class="pricing-cta-note">Garantia de 7 dias. Cancele quando quiser.</p>
+            </article>
           }
-          @for (item of freePlan.naoInclui; track item) {
-            <li class="pricing-feature--off">
-              <app-ui-icon [icon]="xIcon" [size]="16" />
-              <span>{{ item }}</span>
+        </div>
+
+        <ul class="assurances">
+          @for (item of assurances; track item.title) {
+            <li class="assurance">
+              <app-ui-icon [icon]="item.icon" [size]="20" />
+              <div>
+                <strong>{{ item.title }}</strong>
+                <p>{{ item.text }}</p>
+              </div>
             </li>
           }
         </ul>
+      </div>
+    </section>
 
-        <a class="pricing-cta" routerLink="/cadastro">{{ freePlan.ctaLabel }}</a>
-        <p class="pricing-cta-note">Sem cartão de crédito</p>
-      </article>
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="container faq">
+        <div class="faq__intro">
+          <h2 class="section-title" id="faq-title">Perguntas frequentes</h2>
+          <p class="section-lead">
+            Não achou sua dúvida? Escreva para
+            <a href="mailto:contato@boramed.com.br">contato&#64;boramed.com.br</a>.
+          </p>
+        </div>
 
-      @for (plan of visiblePricingPlans(); track plan.tier) {
-        <article class="pricing-card" [class.is-featured]="plan.featured">
-          @if (plan.featured) {
-            <span class="pricing-flag">Recomendado</span>
+        <div class="faq__list">
+          @for (faq of faqs; track faq.question; let index = $index) {
+            <div class="faq__item" [class.is-open]="openFaq() === index">
+              <h3 class="faq__q">
+                <button
+                  type="button"
+                  [id]="'faq-btn-' + index"
+                  [attr.aria-expanded]="openFaq() === index"
+                  [attr.aria-controls]="'faq-panel-' + index"
+                  (click)="toggleFaq(index)"
+                >
+                  <span>{{ faq.question }}</span>
+                  <app-ui-icon [icon]="plusIcon" [size]="18" />
+                </button>
+              </h3>
+              @if (openFaq() === index) {
+                <div
+                  class="faq__a"
+                  role="region"
+                  [id]="'faq-panel-' + index"
+                  [attr.aria-labelledby]="'faq-btn-' + index"
+                >
+                  <p>{{ faq.answer }}</p>
+                </div>
+              }
+            </div>
           }
-
-          <div class="pricing-card-head">
-            <h3>{{ plan.name }}</h3>
-            <p class="pricing-tagline">{{ plan.tagline }}</p>
-          </div>
-
-          @if (plan.anchorPrice) {
-            <p class="pricing-anchor">
-              <s [attr.aria-label]="plan.anchorPrice + ', ' + plan.anchorNote">{{ plan.anchorPrice }}</s>
-              {{ plan.anchorNote }}
-            </p>
-          }
-
-          <div class="pricing-price">
-            <strong class="pricing-amount">{{ plan.price }}</strong>
-            <span class="pricing-period">{{ plan.period }}</span>
-            @if (plan.economy) {
-              <span class="pricing-economy">
-                <app-ui-icon [icon]="sparklesIcon" [size]="13" />
-                Economize {{ plan.economy }}
-              </span>
-            }
-          </div>
-
-          @if (plan.note) {
-            <p class="pricing-note">{{ plan.note }}</p>
-          }
-
-          <ul class="pricing-features">
-            @for (feature of plan.features; track feature) {
-              <li>
-                <app-ui-icon [icon]="checkIcon" [size]="16" />
-                <span>{{ feature }}</span>
-              </li>
-            }
-          </ul>
-
-          <a
-            class="pricing-cta"
-            [class.pricing-cta--primary]="plan.featured"
-            routerLink="/cadastro"
-          >
-            {{ plan.ctaLabel }}
-          </a>
-          <p class="pricing-cta-note">Garantia de 7 dias · Cancele quando quiser</p>
-        </article>
-      }
-    </div>
-
-    <div class="guarantee-callout">
-      <div class="guarantee-callout-icon" aria-hidden="true">
-        <app-ui-icon [icon]="shieldIcon" [size]="24" />
+        </div>
       </div>
-      <div class="guarantee-callout-copy">
-        <strong>Garantia incondicional de 7 dias</strong>
-        <p>
-          Assinou e não gostou? Devolvemos 100% do valor em até 7 dias após a compra, sem
-          perguntas. Direito garantido pelo Código de Defesa do Consumidor.
-        </p>
+    </section>
+
+    <section class="final" aria-labelledby="final-title">
+      <div class="container final__inner">
+        <h2 class="final__title" id="final-title">
+          <span>A prova já tem data marcada. </span>
+          <span>Seu diagnóstico ainda não.</span>
+        </h2>
+        <div class="final__actions">
+          <a class="btn btn--light btn--lg" routerLink="/cadastro">Começar grátis</a>
+          <a class="btn btn--ghost-light btn--lg" href="#planos">Ver os planos</a>
+        </div>
+        <p class="final__note">3 simulados grátis, sem cartão de crédito.</p>
       </div>
-      <span class="guarantee-callout-badge">Risco zero</span>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <a class="brand brand--light" routerLink="/" aria-label="BoraMed, início">
+        <img src="/brand/logo.webp" alt="BoraMed" class="brand__logo" width="400" height="128" loading="lazy" />
+      </a>
+      <nav class="footer__nav" aria-label="Links do rodapé">
+        <a routerLink="/guias">Guias de estudo</a>
+        <a href="mailto:contato@boramed.com.br">Contato</a>
+        <a routerLink="/politica-de-privacidade">Privacidade</a>
+        <a routerLink="/termos-de-uso">Termos</a>
+      </nav>
+      <p class="footer__legal">BoraMed. Plataforma independente de estudo médico, sem vínculo com a Afya.</p>
     </div>
-
-    <div class="community-callout">
-      <div class="community-callout-icon" aria-hidden="true">
-        <app-ui-icon [icon]="communityIcon" [size]="24" />
-      </div>
-      <div class="community-callout-copy">
-        <strong>Comunidade exclusiva no WhatsApp</strong>
-        <p>Toda assinatura dá acesso ao grupo do BoraMed: troca de dúvidas, materiais e networking entre estudantes.</p>
-      </div>
-      <span class="community-callout-badge">Incluso no plano</span>
-    </div>
-
-    <p class="pricing-disclaimer">
-      <app-ui-icon [icon]="shieldIcon" [size]="15" />
-      Pague sem sair da plataforma: cartão em até 6x, Pix ou boleto, processados pelo Mercado Pago em campos seguros e criptografados.
-    </p>
-  </section>
-
-  <section class="section-shell faq-section" id="faq">
-    <div class="section-heading">
-      <span class="eyebrow">Dúvidas</span>
-      <h2>Perguntas frequentes</h2>
-    </div>
-
-    <div class="faq-list">
-      @for (faq of faqs; track faq.question; let index = $index) {
-        <article class="faq-item">
-          <button
-            type="button"
-            [attr.aria-expanded]="openFaq() === index"
-            [attr.aria-controls]="'faq-panel-' + index"
-            (click)="toggleFaq(index)"
-          >
-            <span>{{ faq.question }}</span>
-            <app-ui-icon [icon]="chevronIcon" [size]="20" />
-          </button>
-          @if (openFaq() === index) {
-            <p [id]="'faq-panel-' + index">{{ faq.answer }}</p>
-          }
-        </article>
-      }
-    </div>
-  </section>
-
-  <section class="final-cta">
-    <div class="final-cta-shell">
-      <span class="eyebrow inverse">Bora começar</span>
-      <h2>A prova já tem data marcada. Seu diagnóstico ainda não.</h2>
-      <p>Crie sua conta, escolha seu plano e comece a treinar no modelo da prova hoje mesmo.</p>
-      <div>
-        <a class="inverse-button" routerLink="/cadastro">Começar grátis, sem cartão</a>
-        <a class="ghost-inverse-button" href="#planos">Ver os planos</a>
-      </div>
-    </div>
-  </section>
-
-  <footer class="landing-footer">
-    <a class="brand-link" routerLink="/">
-      <img src="/brand/logo.webp" alt="BoraMed" class="brand-logo" />
-    </a>
-    <nav aria-label="Links do rodapé">
-      <a routerLink="/guias">Guias de estudo</a>
-      <a href="mailto:contato@boramed.com.br">Contato</a>
-      <a routerLink="/politica-de-privacidade">Privacidade</a>
-      <a routerLink="/termos-de-uso">Termos</a>
-    </nav>
-    <p>BoraMed. Plataforma independente de estudo médico.</p>
   </footer>
-</main>
+</div>

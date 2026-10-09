@@ -1,383 +1,361 @@
-.modules-bento-section {
-  width: min(1440px, calc(100% - 2rem));
-}
+/* Seção "Quatro formas de treinar" (#treinos). Cada card mostra um pedaço
+   montado do produto no lugar de ilustração: cartão-resposta, lâmina, temas
+   e flashcard. Tamanhos diferentes de propósito: o treino nacional é o
+   caminho principal e ocupa mais espaço. */
 
-.modules-bento-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.modules-bento-header .section-heading p {
-  margin-inline: 0;
-}
-
-.modules-bento-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  align-self: flex-start;
-  padding: 0.75rem 1.1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--color-text);
-  background: var(--color-surface);
-  text-decoration: none;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.modules-bento-btn:hover {
-  border-color: #c7d2fe;
-  transform: translateY(-2px);
-}
-
-.modules-bento {
+.modes {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin-top: 2.5rem;
+  gap: 1rem;
 }
 
-.bento-feature {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  background: #0a0e1a;
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 26px 56px -30px rgba(37, 99, 235, 0.5);
-  min-height: 360px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.bento-feature:hover {
-  transform: translateY(-6px);
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 40px 70px -30px rgba(37, 99, 235, 0.6);
-}
-
-.bento-feature > img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.92;
-}
-
-.bento-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(10, 14, 26, 0.12) 0%,
-    rgba(10, 14, 26, 0.35) 48%,
-    rgba(10, 14, 26, 0.92) 100%
-  );
-}
-
-.bento-feature-content {
-  position: absolute;
-  inset: auto 0 0 0;
+.mode {
   display: flex;
   flex-direction: column;
-  padding: 2rem;
+  gap: 1.75rem;
+  overflow: hidden;
+  border-radius: var(--lp-radius-lg);
+  padding: clamp(1.5rem, 1.1rem + 1.2vw, 2rem);
+  background: #fff;
 }
 
-.bento-badge {
-  align-self: flex-start;
-  padding: 0.4rem 0.85rem;
-  border-radius: 999px;
+.mode__title {
+  margin: 0;
+  color: var(--lp-ink);
+  font-family: var(--lp-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.mode__text p {
+  max-width: 42ch;
+  margin: 0.6rem 0 0;
+  color: var(--lp-body);
+  font-size: 0.96875rem;
+  line-height: 1.6;
+}
+
+/* ── Treinos nacionais: cartão-resposta ─────────────── */
+
+.sheet {
+  min-width: 0;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  padding: 1rem 1.1rem 1.15rem;
+  background: #fbfcfe;
+}
+
+.sheet__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--lp-line-strong);
+  padding-bottom: 0.7rem;
+  color: var(--lp-muted);
   font-size: 0.75rem;
+}
+
+.sheet__label {
+  color: var(--lp-ink);
+  font-weight: 600;
+}
+
+.sheet__rows {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheet__row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sheet__n {
+  width: 1.4rem;
+  margin-right: 0.2rem;
+  color: var(--lp-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sheet__bubble {
+  display: inline-grid;
+  width: 1.375rem;
+  height: 1.375rem;
+  place-items: center;
+  border: 1.5px solid var(--lp-line-strong);
+  border-radius: 50%;
+  color: #8f97ac;
+  font-size: 0.625rem;
   font-weight: 700;
 }
 
-.bento-badge--national {
-  color: #fff;
-  background: linear-gradient(120deg, #2563eb, #7c3aed);
-  box-shadow: 0 8px 20px -8px rgba(91, 33, 182, 0.7);
+/* Bolha preenchida a caneta: a letra some, como no cartão de verdade. */
+.sheet__bubble.is-filled {
+  border-color: var(--lp-blue);
+  color: transparent;
+  background: var(--lp-blue);
 }
 
-.bento-badge--process {
-  color: #5b21b6;
-  background: #ede9fe;
+/* ── Laboratório: lâmina ────────────────────────────── */
+
+.lab {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  aspect-ratio: 3 / 2;
+  background: #ead7e6;
 }
 
-.bento-badge--lab {
-  color: #0f766e;
-  background: #ccfbf1;
+.lab img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.bento-badge--flashcards {
-  color: #b45309;
-  background: #fef3c7;
+.lab__zoom {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.65rem;
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--lp-ink);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 10px rgba(10, 16, 51, 0.18);
 }
 
-.bento-feature-content h3 {
-  margin: 1.1rem 0 0;
-  font-size: clamp(1.5rem, 3vw, 1.875rem);
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  color: #fff;
-  line-height: 1.15;
+/* ── Por tema: seleção de temas ─────────────────────── */
+
+.chips {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  padding: 1.1rem;
+  background: #fbfcfe;
 }
 
-.bento-feature-content p {
-  margin: 0.75rem 0 0;
-  max-width: 420px;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.82);
+.chips__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.bento-link {
+.chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.35rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: gap 0.2s ease;
+  gap: 0.35rem;
+  border: 1px solid var(--lp-line-strong);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  color: var(--lp-body);
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
 
-.bento-link:hover {
-  gap: 0.75rem;
+.chip.is-on {
+  border-color: var(--lp-blue);
+  color: #fff;
+  background: var(--lp-blue);
 }
 
-.bento-link--light { color: #fff; }
-.bento-link--process { color: #5b21b6; }
-.bento-link--lab { color: #0f766e; }
-.bento-link--flashcards { color: #b45309; }
-
-.bento-compact {
-  display: flex;
-  overflow: hidden;
-  border: 1px solid #eceff3;
-  border-radius: 24px;
-  background: var(--color-surface);
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 18px 40px -28px rgba(16, 24, 40, 0.2);
-  min-height: 190px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.bento-compact:hover {
-  transform: translateY(-6px);
-}
-
-.bento-compact:nth-of-type(2):hover {
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 34px 60px -28px rgba(124, 58, 237, 0.3);
-}
-
-.bento-compact:nth-of-type(3):hover {
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 34px 60px -28px rgba(13, 148, 136, 0.3);
-}
-
-.bento-compact-image {
-  position: relative;
-  flex: 0 0 42%;
-  overflow: hidden;
-}
-
-.bento-compact-image img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.bento-compact-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  padding: 1.5rem 1.75rem;
-}
-
-.bento-compact-meta {
+.chips__footer {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: space-between;
+  border-top: 1px solid var(--lp-line);
+  padding-top: 0.85rem;
+  color: var(--lp-muted);
+  font-size: 0.8125rem;
 }
 
-.bento-compact-content h3 {
-  margin: 0.875rem 0 0;
-  font-size: 1.2rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-  line-height: 1.25;
+.chips__qty {
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  color: var(--lp-ink);
+  background: var(--lp-mist);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.bento-compact-content p {
-  margin: 0.5rem 0 0;
-  font-size: 0.875rem;
-  line-height: 1.58;
-  color: var(--color-text-muted);
+/* ── Flashcards: card que vira ──────────────────────── */
+
+.flash {
+  display: grid;
+  place-items: center;
+  padding: 0.25rem 1rem 1rem 0;
+  perspective: 1100px;
 }
 
-.bento-compact-content .bento-link {
-  margin-top: auto;
-  padding-top: 1rem;
-}
-
-/* ---- Card largo de Flashcards (novo módulo) ---- */
-
-.bento-wide {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  overflow: hidden;
-  border: 1px solid #eceff3;
-  border-radius: 24px;
-  background: var(--color-surface);
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 18px 40px -28px rgba(16, 24, 40, 0.2);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.bento-wide:hover {
-  transform: translateY(-6px);
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 34px 60px -28px rgba(180, 83, 9, 0.3);
-}
-
-.bento-wide .bento-compact-content {
-  padding-bottom: 0;
-}
-
-/* Mock de flashcard em CSS puro — gira no hover/focus, demonstrando o flip real do app */
-.flash-mock {
-  perspective: 1000px;
-  padding: 0 1.75rem 1.75rem;
-}
-
-.flash-mock-inner {
+.flash__card {
   position: relative;
+  isolation: isolate;
   width: 100%;
-  min-height: 150px;
-  transform-style: preserve-3d;
-  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+  max-width: 22rem;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  background: none;
+  cursor: pointer;
 }
 
-.bento-wide:hover .flash-mock-inner,
-.bento-wide:focus-within .flash-mock-inner {
+/* Cartas de trás: sugerem o deck sem desenhar nada além de duas bordas. */
+.flash__card::before,
+.flash__card::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+  background: #fff;
+  content: '';
+}
+
+.flash__card::before {
+  transform: translate(14px, 12px) rotate(3deg);
+  opacity: 0.6;
+}
+
+.flash__card::after {
+  transform: translate(7px, 6px) rotate(1.5deg);
+}
+
+.flash__inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.flash__card.is-flipped .flash__inner {
   transform: rotateY(180deg);
 }
 
-.flash-mock-face {
+.flash__face {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 1.1rem 1.4rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--lp-line);
   border-radius: 16px;
+  padding: 1.1rem 1.25rem;
+  background: #fff;
+  box-shadow: 0 20px 40px -26px rgba(10, 16, 51, 0.4);
+  text-align: left;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 
-.flash-mock-front {
-  border: 1px solid #fde68a;
-  background: #fffbeb;
-}
-
-.flash-mock-back {
-  border: 1px solid #a7f3d0;
-  background: #ecfdf5;
+.flash__face--back {
   transform: rotateY(180deg);
 }
 
-.flash-mock-label {
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #b45309;
-}
-
-.flash-mock-back .flash-mock-label { color: #047857; }
-
-.flash-mock-face p {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-text);
-  line-height: 1.45;
-}
-
-.flash-mock-hint {
+.flash__side {
+  color: var(--lp-muted);
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  font-weight: 600;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .flash-mock-inner {
-    transition: none;
+.flash__text {
+  color: var(--lp-ink);
+  font-family: var(--lp-display);
+  font-size: clamp(1.125rem, 1rem + 0.4vw, 1.3rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.flash__hint {
+  color: var(--lp-blue);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.flash__grade {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.flash__grade span {
+  border: 1px solid var(--lp-line-strong);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  color: var(--lp-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.flash__grade .is-good {
+  border-color: var(--lp-blue);
+  color: #fff;
+  background: var(--lp-blue);
+}
+
+/* ── Grade ──────────────────────────────────────────── */
+
+/* Tablet: duas colunas. Treino nacional e flashcards ocupam a linha toda,
+   com texto e peça lado a lado; laboratório e por tema dividem a do meio. */
+@media (min-width: 640px) and (max-width: 899.98px) {
+  .modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mode--nacional,
+  .mode--flash {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .mode--lab,
+  .mode--tema {
+    justify-content: space-between;
   }
 }
 
-@media (min-width: 720px) {
-  .modules-bento-header {
-    flex-direction: row;
-    align-items: center;
+@media (min-width: 900px) {
+  .modes {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .mode--nacional {
+    grid-column: span 4;
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+    gap: 2rem;
+  }
+
+  .mode--lab {
+    grid-column: span 2;
     justify-content: space-between;
   }
 
-  .modules-bento-btn {
-    align-self: auto;
-    flex-shrink: 0;
-  }
-
-  .modules-bento {
-    grid-template-columns: 1.18fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    min-height: 560px;
-  }
-
-  .bento-feature {
-    grid-row: span 2;
-    min-height: unset;
-  }
-
-  .bento-compact {
-    min-height: unset;
-  }
-
-  .bento-wide {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    align-items: stretch;
-  }
-
-  .bento-wide .bento-compact-content {
-    flex: 1 1 55%;
-    padding: 1.75rem 1.75rem 1.75rem 2rem;
-  }
-
-  .bento-wide .flash-mock {
-    flex: 1 1 45%;
-    display: flex;
-    align-items: center;
-    padding: 1.75rem 2rem 1.75rem 0;
-  }
-
-  .bento-wide .flash-mock-inner {
-    min-height: 170px;
+  .mode--tema,
+  .mode--flash {
+    grid-column: span 3;
+    justify-content: space-between;
   }
 }

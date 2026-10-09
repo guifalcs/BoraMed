@@ -1,0 +1,193 @@
+<section class="section ciclo-section" id="como-funciona" aria-labelledby="ciclo-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title" id="ciclo-title">Cada simulado vira o seu próximo treino.</h2>
+      <p class="section-lead">
+        Treine no formato da prova, revise o que errou e acompanhe a nota subir. Tudo no mesmo lugar.
+      </p>
+    </div>
+
+    <div class="ciclo">
+      <div class="ciclo__tabs" role="tablist" aria-label="Etapas do ciclo de estudo">
+        @for (etapa of etapas; track etapa.id; let i = $index) {
+          <button
+            type="button"
+            role="tab"
+            class="ciclo-tab"
+            [class.is-active]="ativa() === etapa.id"
+            [id]="'ciclo-tab-' + etapa.id"
+            [attr.aria-selected]="ativa() === etapa.id"
+            aria-controls="ciclo-painel"
+            [attr.tabindex]="ativa() === etapa.id ? 0 : -1"
+            (click)="selecionar(etapa.id)"
+            (keydown)="onKeydown($event, i)"
+          >
+            <span class="bubble ciclo-tab__num">{{ i + 1 }}</span>
+            <span class="ciclo-tab__body">
+              <span class="ciclo-tab__title">{{ etapa.titulo }}</span>
+              <span class="ciclo-tab__resumo">{{ etapa.resumo }}</span>
+            </span>
+          </button>
+        }
+      </div>
+
+      <div
+        class="ciclo__panel"
+        role="tabpanel"
+        id="ciclo-painel"
+        tabindex="0"
+        [attr.aria-labelledby]="'ciclo-tab-' + ativa()"
+      >
+        <p class="ciclo__resumo">{{ etapaAtiva().resumo }}</p>
+
+        @switch (ativa()) {
+          @case ('treinar') {
+            <div class="stage" role="img" aria-label="Tela de novo treino do BoraMed: escolha da prova e do modo Simulado ou Estudo">
+              <div class="shot">
+                <div class="win">
+                  <div class="win__bar">
+                    <span class="win__title">Novo treino</span>
+                    <span class="win__meta">Treinos nacionais</span>
+                  </div>
+                  <div class="win__body">
+                    <span class="field-label">Prova</span>
+                    <span class="select">
+                      Treino nacional do 4º período
+                      <app-ui-icon [icon]="chevronIcon" [size]="16" />
+                    </span>
+
+                    <span class="field-label">Como você quer treinar?</span>
+                    <span class="modos">
+                      <span class="modo is-on">
+                        <strong>Simulado</strong>
+                        <span>Cronometrado. Gabarito somente no fim.</span>
+                      </span>
+                      <span class="modo">
+                        <strong>Estudo</strong>
+                        <span>Questão por questão. Gabarito imediato após cada resposta.</span>
+                      </span>
+                    </span>
+
+                    <span class="win__cta">
+                      <app-ui-icon [icon]="playIcon" [size]="14" />
+                      Começar treino
+                    </span>
+                  </div>
+                </div>
+
+                <div class="float-card">
+                  <span class="field-label">Continuar de onde parou</span>
+                  <strong class="float-card__title">Treino nacional do 3º período</strong>
+                  <span class="float-card__track"><i style="width: 30%"></i></span>
+                  <span class="float-card__meta">Questão 12 de 40</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case ('revisar') {
+            <div class="stage" role="img" aria-label="Tela de resultado do BoraMed: nota, desempenho por tema e questões no Caderno de Erros">
+              <div class="shot">
+                <div class="win">
+                  <div class="win__bar">
+                    <span class="win__title">Resultado</span>
+                    <span class="win__meta">Treino nacional do 4º período</span>
+                  </div>
+                  <div class="win__body">
+                    <div class="kpi">
+                      <span>
+                        <span class="field-label">Você acertou</span>
+                        <strong class="kpi__value">14 de 20</strong>
+                      </span>
+                      <span class="kpi__chip">70%</span>
+                    </div>
+
+                    <span class="field-label">Desempenho por tema</span>
+                    <ul class="bars">
+                      @for (tema of temasRevisao; track tema.nome) {
+                        <li class="bars__row" [class.is-critical]="tema.pct < 50">
+                          <span class="bars__name">{{ tema.nome }}</span>
+                          <span class="bars__pct">{{ tema.pct }}%</span>
+                          <span class="bars__track"><i [style.width.%]="tema.pct"></i></span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="float-card float-card--row">
+                  <span class="float-card__icon"><app-ui-icon [icon]="cadernoIcon" [size]="18" /></span>
+                  <span>
+                    <strong class="float-card__title">6 questões no Caderno de Erros</strong>
+                    <span class="float-card__meta">Agrupadas por tema, prontas para refazer</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case ('acompanhar') {
+            <div class="stage" role="img" aria-label="Tela de evolução do BoraMed: gráfico da nota por tentativa, sequência de estudo e ranking da semana">
+              <div class="shot">
+                <div class="win">
+                  <div class="win__bar">
+                    <span class="win__title">Sua evolução</span>
+                    <span class="win__meta">Últimas {{ notas.length }} tentativas</span>
+                  </div>
+                  <div class="win__body">
+                    <div class="kpi">
+                      <span>
+                        <span class="field-label">Última nota</span>
+                        <strong class="kpi__value">{{ ultimaNota }}%</strong>
+                      </span>
+                      <span class="kpi__trend">
+                        <app-ui-icon [icon]="trendIcon" [size]="14" />
+                        +{{ ganhoTotal }} pontos desde o 1º simulado
+                      </span>
+                    </div>
+
+                    <svg class="chart" viewBox="0 0 320 120" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="evolucao-linha" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0" stop-color="#2554dc" />
+                        <stop offset="1" stop-color="#6427d9" />
+                      </linearGradient>
+                      <linearGradient id="evolucao-area" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stop-color="#6427d9" stop-opacity="0.16" />
+                        <stop offset="1" stop-color="#2554dc" stop-opacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                      <line class="chart__grid" x1="10" x2="310" y1="10" y2="10" />
+                      <line class="chart__grid" x1="10" x2="310" y1="60" y2="60" />
+                      <line class="chart__grid" x1="10" x2="310" y1="110" y2="110" />
+                      <polygon class="chart__area" [attr.points]="areaEvolucao" />
+                      <polyline class="chart__line" [attr.points]="linhaEvolucao" />
+                      <circle class="chart__dot" r="4.5" [attr.cx]="ultimoPonto.x" [attr.cy]="ultimoPonto.y" />
+                    </svg>
+
+                    <div class="stats">
+                      <span class="stat">
+                        <span class="field-label">Sequência atual</span>
+                        <strong class="stat__value">{{ sequenciaAtual }} dias</strong>
+                        <span class="streak">
+                          @for (estudou of diasEstudados; track $index) {
+                            <i [class.is-on]="estudou"></i>
+                          }
+                        </span>
+                      </span>
+                      <span class="stat">
+                        <span class="field-label">Ranking da semana</span>
+                        <strong class="stat__value">12º lugar</strong>
+                        <span class="float-card__meta">1.240 XP</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</section>

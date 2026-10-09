@@ -1,0 +1,589 @@
+/* "Como funciona" (#como-funciona). Desktop: abas em coluna com fio azul na
+   etapa ativa e, ao lado, o palco cinza com a tela do app. Mobile: abas em
+   linha e o resumo da etapa acima do palco. */
+
+:host {
+  display: block;
+}
+
+.ciclo-section {
+  scroll-margin-top: 4.5rem;
+}
+
+.ciclo {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* ── Abas ───────────────────────────────────────────── */
+
+.ciclo__tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ciclo-tab {
+  display: inline-flex;
+  flex: 1 1 0;
+  min-width: max-content;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem 0.55rem 0.55rem;
+  color: var(--lp-body);
+  background: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.ciclo-tab:hover {
+  color: var(--lp-ink);
+}
+
+.ciclo-tab.is-active {
+  border-color: var(--lp-blue);
+  color: var(--lp-blue-deep);
+}
+
+.ciclo-tab__num {
+  width: 1.5rem;
+  height: 1.5rem;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+/* Bolha ativa no degradê do avatar do app. */
+.ciclo-tab.is-active .ciclo-tab__num {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #1e40af 0%, #6427d9 100%);
+}
+
+@media (max-width: 479.98px) {
+  .ciclo-tab {
+    padding-inline: 0.75rem;
+  }
+
+  .ciclo-tab__num {
+    display: none;
+  }
+}
+
+.ciclo-tab__body {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.ciclo-tab__resumo {
+  display: none;
+}
+
+.ciclo__resumo {
+  margin: 0 0 1.25rem;
+  color: var(--lp-body);
+  line-height: 1.6;
+}
+
+.ciclo__panel:focus-visible {
+  outline: 2px solid var(--lp-focus);
+  outline-offset: 6px;
+  border-radius: var(--lp-radius-xl);
+}
+
+/* ── Palco e janela do app ──────────────────────────── */
+
+.stage {
+  position: relative;
+  display: grid;
+  min-height: 27rem;
+  place-items: center;
+  border-radius: var(--lp-radius-xl);
+  padding: clamp(1.25rem, 0.5rem + 3vw, 3rem) clamp(1rem, 0.25rem + 3vw, 3rem);
+  background: var(--lp-brand-wash), var(--lp-mist);
+}
+
+/* Janela + card flutuante andam juntos: o card sai sempre do mesmo canto da
+   janela, qualquer que seja a altura da tela da etapa. */
+.shot {
+  position: relative;
+  width: 100%;
+  max-width: 30rem;
+}
+
+.win {
+  overflow: hidden;
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--lp-shadow-card);
+  animation: ciclo-swap 0.35s ease both;
+}
+
+.win__bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--lp-line);
+  padding: 0.85rem 1.15rem;
+}
+
+.win__title {
+  color: var(--lp-ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.win__meta {
+  overflow: hidden;
+  color: var(--lp-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win__body {
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem 1.15rem 1.35rem;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--lp-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.field-label:not(:first-child) {
+  margin-top: 1.1rem;
+}
+
+.select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--lp-line-strong);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  color: var(--lp-ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.select app-ui-icon {
+  color: var(--lp-muted);
+}
+
+.modos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.modo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.modo strong {
+  color: var(--lp-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.modo span {
+  color: var(--lp-muted);
+}
+
+.modo.is-on {
+  border-color: var(--lp-blue);
+  background: var(--lp-blue-wash);
+  box-shadow: inset 0 0 0 1px var(--lp-blue);
+}
+
+.win__cta {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.25rem;
+  border-radius: 999px;
+  padding: 0.7rem 1.25rem;
+  color: #fff;
+  background: var(--lp-blue);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Resultado */
+.kpi {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kpi .field-label {
+  margin-bottom: 0.25rem;
+}
+
+.kpi__value {
+  display: block;
+  color: var(--lp-ink);
+  font-family: var(--lp-display);
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.kpi__chip {
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  color: var(--lp-good-text);
+  background: var(--lp-good-wash);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.kpi__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--lp-good);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.bars {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bars__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.bars__name {
+  color: var(--lp-body);
+}
+
+.bars__pct {
+  color: var(--lp-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.bars__track {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lp-mist);
+}
+
+.bars__track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lp-blue);
+}
+
+.bars__row.is-critical .bars__pct {
+  color: var(--lp-bad);
+}
+
+.bars__row.is-critical .bars__track i {
+  background: var(--lp-bad);
+}
+
+/* Evolução */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 1rem;
+  overflow: visible;
+}
+
+.chart__grid {
+  stroke: var(--lp-line);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.chart__area {
+  fill: url(#evolucao-area);
+}
+
+.chart__line {
+  fill: none;
+  stroke: url(#evolucao-linha);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart__dot {
+  fill: #fff;
+  stroke: var(--lp-violet);
+  stroke-width: 2.5;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--lp-line);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+}
+
+.stat .field-label {
+  margin: 0 0 0.25rem;
+}
+
+.stat__value {
+  color: var(--lp-ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.streak {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-top: 0.5rem;
+}
+
+.streak i {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--lp-mist);
+}
+
+.streak i.is-on {
+  background: var(--lp-blue);
+}
+
+/* Card que sai pelo canto inferior direito da janela. No mobile fica no
+   fluxo, logo abaixo, encostando só na margem da janela. */
+.float-card {
+  position: relative;
+  display: flex;
+  width: min(17rem, calc(100% - 1rem));
+  margin: -1.1rem -0.35rem 0 auto;
+  flex-direction: column;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(10, 16, 51, 0.06),
+    0 18px 36px -16px rgba(10, 16, 51, 0.3);
+  animation: ciclo-swap 0.4s ease 0.12s both;
+}
+
+.float-card .field-label {
+  margin: 0 0 0.2rem;
+}
+
+/* Uma linha só: baixo o bastante para não cobrir a última barra da janela. */
+.float-card--row {
+  width: auto;
+  max-width: calc(100% - 1rem);
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.float-card--row .float-card__title {
+  white-space: nowrap;
+}
+
+.float-card__icon {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--lp-blue-deep);
+  background: var(--lp-blue-wash);
+}
+
+.float-card__title {
+  display: block;
+  color: var(--lp-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.float-card__track {
+  height: 4px;
+  margin: 0.6rem 0 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lp-mist);
+}
+
+.float-card__track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lp-blue);
+}
+
+.float-card__meta {
+  display: block;
+  color: var(--lp-muted);
+  font-size: 0.75rem;
+}
+
+@keyframes ciclo-swap {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ── Desktop ────────────────────────────────────────── */
+
+@media (min-width: 960px) {
+  .ciclo {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 4.5rem;
+  }
+
+  .ciclo__tabs {
+    flex-direction: column;
+    gap: 0;
+    overflow: visible;
+    border-left: 1px solid var(--lp-line);
+  }
+
+  .ciclo-tab {
+    position: relative;
+    flex: none;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 1rem;
+    border: 0;
+    border-radius: 0;
+    padding: 1.5rem 0 1.5rem 1.75rem;
+    color: var(--lp-muted);
+    background: none;
+  }
+
+  /* Fio azul colado na linha da esquerda marca a etapa ativa. */
+  .ciclo-tab::before {
+    position: absolute;
+    top: 1.25rem;
+    bottom: 1.25rem;
+    left: -1px;
+    width: 2px;
+    background: transparent;
+    content: '';
+    transition: background-color 0.2s ease;
+  }
+
+  .ciclo-tab.is-active {
+    color: var(--lp-ink);
+    background: none;
+  }
+
+  .ciclo-tab.is-active::before {
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+  }
+
+  /* Mesmo fio azul→violeta do item ativo da sidebar do app. */
+  .ciclo-tab.is-active::before {
+    background: var(--lp-accent-line);
+  }
+
+  .ciclo-tab:focus-visible {
+    border-radius: 12px;
+    outline-offset: -2px;
+  }
+
+  .ciclo-tab__num {
+    margin-top: 0.15rem;
+  }
+
+  .ciclo-tab__title {
+    color: inherit;
+    font-family: var(--lp-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+
+  .ciclo-tab__resumo {
+    display: block;
+    max-width: 34ch;
+    margin-top: 0.45rem;
+    color: var(--lp-muted);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .ciclo__resumo {
+    display: none;
+  }
+
+  .stage {
+    min-height: 32rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .float-card {
+    position: absolute;
+    right: -2.25rem;
+    bottom: -3.25rem;
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .win,
+  .float-card {
+    animation: none;
+  }
+}

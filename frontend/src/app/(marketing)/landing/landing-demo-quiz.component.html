@@ -11,6 +11,11 @@
           Questão {{ currentIndex() + 1 }} de {{ questions.length }}
         </span>
       </div>
+      <div class="quiz-steps" aria-hidden="true">
+        @for (question of questions; track question.id; let i = $index) {
+          <i [class.is-done]="i < currentIndex()" [class.is-current]="i === currentIndex()"></i>
+        }
+      </div>
 
       <p class="quiz-statement" [id]="'demo-statement-' + currentQuestion().id">
         {{ currentQuestion().statement }}
@@ -26,7 +31,7 @@
             [disabled]="currentAnswer() !== null"
             (click)="selectOption(i)"
           >
-            <span class="quiz-option-letter">{{ option.letter }}</span>
+            <span class="bubble quiz-option-letter">{{ option.letter }}</span>
             <span class="quiz-option-text">{{ option.text }}</span>
             @if (currentAnswer() !== null && i === currentQuestion().correctIndex) {
               <span class="quiz-option-state quiz-option-state--correct">
@@ -57,7 +62,7 @@
       </div>
 
       @if (currentAnswer() !== null) {
-        <button type="button" class="quiz-next" (click)="next()">
+        <button type="button" class="btn btn--primary quiz-next" (click)="next()">
           {{ isLastQuestion() ? 'Ver meu diagnóstico' : 'Próxima questão' }}
           <app-ui-icon [icon]="arrowRightIcon" [size]="16" />
         </button>
@@ -68,7 +73,7 @@
   <div aria-live="polite">
     @if (finished()) {
       <div class="quiz-result">
-        <span class="quiz-result-eyebrow">Seu mini-diagnóstico</span>
+        <span class="quiz-result-label">Seu mini-diagnóstico</span>
         <h3>Você acertou {{ score() }} de {{ questions.length }}</h3>
 
         @if (missedTopics().length > 0) {
@@ -106,7 +111,7 @@
           </li>
         </ul>
 
-        <a class="quiz-cta" routerLink="/cadastro">
+        <a class="btn btn--primary btn--lg quiz-cta" routerLink="/cadastro">
           Criar minha conta para desbloquear
         </a>
         <p class="quiz-cta-note">
