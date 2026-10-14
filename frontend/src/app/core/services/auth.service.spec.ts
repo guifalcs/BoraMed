@@ -30,6 +30,10 @@ function makeSupabaseMock() {
   };
 }
 
+function tokenFake(payload: Record<string, unknown>): string {
+  return `h.${btoa(JSON.stringify(payload))}.s`;
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let supabaseMock: ReturnType<typeof makeSupabaseMock>;
@@ -154,6 +158,39 @@ describe('AuthService', () => {
       const result = await service.login({ email: 'u@e.com', password: 'abc' });
       expect(result).toEqual({ ok: false, error: 'EMAIL_NOT_CONFIRMED' });
     });
+
+    it('recusa o login e encerra a sessão local quando o relógio está muito adiantado', async () => {
+      vi.spyOn(router, 'navigate').mockResolvedValue(true);
+      const agoraSeg = Math.floor(Date.now() / 1000);
+      // Token emitido pelo servidor "1h atrás" do ponto de vista do aparelho.
+      const access_token = tokenFake({ iat: agoraSeg - 3600, exp: agoraSeg });
+      supabaseMock.client.auth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'u1' }, session: { access_token } },
+        error: null,
+      });
+
+      const result = await service.login({ email: 'u@e.com', password: 'abc' });
+
+      expect(result).toEqual({ ok: false, error: 'CLOCK_SKEW' });
+      expect(supabaseMock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+      expect(service.user()).toBeNull();
+      expect(service.relogioDesajustado()?.critico).toBe(true);
+    });
+
+    it('mantém o login e só registra o aviso quando o desvio é pequeno', async () => {
+      const agoraSeg = Math.floor(Date.now() / 1000);
+      const access_token = tokenFake({ iat: agoraSeg - 600, exp: agoraSeg + 3000 });
+      supabaseMock.client.auth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'u1' }, session: { access_token } },
+        error: null,
+      });
+
+      const result = await service.login({ email: 'u@e.com', password: 'abc' });
+
+      expect(result).toEqual({ ok: true });
+      expect(supabaseMock.client.auth.signOut).not.toHaveBeenCalled();
+      expect(service.relogioDesajustado()?.critico).toBe(false);
+    });
   });
 
   describe('signup()', () => {
@@ -266,6 +303,28 @@ describe('AuthService', () => {
       supabaseMock.triggerAuthState('SIGNED_OUT', null);
 
       expect(navigateSpy).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
+    });
+
+    it('encerra a sessão local quando um TOKEN_REFRESHED revela relógio muito adiantado', async () => {
+      vi.useFakeTimers();
+      try {
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const agoraSeg = Math.floor(Date.now() / 1000);
+        const access_token = tokenFake({ iat: agoraSeg - 3600, exp: agoraSeg });
+
+        supabaseMock.triggerAuthState('TOKEN_REFRESHED', { user: { id: 'u1' }, access_token });
+        expect(service.relogioDesajustado()?.critico).toBe(true);
+        // O signOut não pode rodar dentro do callback (lock do auth-js).
+        expect(supabaseMock.client.auth.signOut).not.toHaveBeenCalled();
+
+        await vi.runAllTimersAsync();
+
+        expect(supabaseMock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+        expect(service.user()).toBeNull();
+        expect(navigateSpy).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

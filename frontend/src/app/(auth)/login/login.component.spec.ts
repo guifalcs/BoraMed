@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
@@ -7,14 +8,16 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PrefetchService } from '../../core/services/prefetch.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import type { AvaliacaoRelogio } from '../../core/utils/relogio-dispositivo.util';
 
 const mockAuth = {
   login: vi.fn(),
   signInWithGoogle: vi.fn(),
   resendConfirmation: vi.fn(),
+  relogioDesajustado: signal<AvaliacaoRelogio | null>(null),
 };
 
-const mockToast = { success: vi.fn(), error: vi.fn() };
+const mockToast = { success: vi.fn(), warning: vi.fn(), error: vi.fn() };
 const mockPrefetch = { prefetchDashboardRoutes: vi.fn() };
 const mockProfile = { loadProfile: vi.fn() };
 const mockSubscription = { temAssinaturaAtivaServidor: vi.fn() };
@@ -30,6 +33,7 @@ describe('LoginComponent', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks();
+    mockAuth.relogioDesajustado.set(null);
     mockAuth.login.mockResolvedValue({ ok: true });
     mockAuth.signInWithGoogle.mockResolvedValue({ ok: true });
     mockAuth.resendConfirmation.mockResolvedValue({ ok: true });
@@ -106,6 +110,34 @@ describe('LoginComponent', () => {
 
       expect(mockAuth.login).toHaveBeenCalledWith({ email: 'user@example.com', password: 'Senha1!' });
       expect(mockToast.success).toHaveBeenCalledWith('Bem-vindo de volta!');
+      expect(mockToast.warning).not.toHaveBeenCalled();
+    });
+
+    it('avisa quando o relógio do aparelho está fora de hora sem derrubar a sessão', async () => {
+      mockAuth.login.mockResolvedValue({ ok: true });
+      mockAuth.relogioDesajustado.set({ desvioMs: 20 * 60_000, critico: false });
+      (component as any).email.set('user@example.com');
+      (component as any).password.set('Senha1!');
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect(mockToast.warning).toHaveBeenCalledWith(expect.stringContaining('20 min adiantado'));
+      expect((component as any).avisoRelogio()).toBeNull();
+    });
+  });
+
+  describe('relógio do aparelho', () => {
+    it('mostra o alerta e nenhum erro de campo quando o login é recusado por CLOCK_SKEW', async () => {
+      mockAuth.login.mockResolvedValue({ ok: false, error: 'CLOCK_SKEW' });
+      mockAuth.relogioDesajustado.set({ desvioMs: 62 * 60_000, critico: true });
+      (component as any).email.set('user@example.com');
+      (component as any).password.set('Senha1!');
+      (component as any).handleSubmit(mockSubmitEvent());
+      await vi.runAllTimersAsync();
+
+      expect((component as any).avisoRelogio()).toBe('1 h 2 min adiantado');
+      expect((component as any).passwordError()).toBeNull();
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
     });
   });
 

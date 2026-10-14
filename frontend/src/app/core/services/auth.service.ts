@@ -7,6 +7,7 @@ import type { AuthErrorCode, AuthResult, ImpersonacaoInfo } from '../models/auth
 import { SupabaseService } from './supabase.service';
 import { CacheService } from './cache.service';
 import { ImagemProtegidaService } from './imagem-protegida.service';
+import { avaliarRelogio, type AvaliacaoRelogio } from '../utils/relogio-dispositivo.util';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements OnDestroy {
@@ -24,6 +25,11 @@ export class AuthService implements OnDestroy {
   readonly isAuthenticated = computed(() => this._user() !== null);
   readonly isRecoverySession = this._isRecovery.asReadonly();
 
+  // Relógio do aparelho fora de hora, medido no último token recém emitido.
+  // Crítico = a sessão não se sustenta (ver relogio-dispositivo.util.ts).
+  private readonly _relogio = signal<AvaliacaoRelogio | null>(null);
+  readonly relogioDesajustado = this._relogio.asReadonly();
+
   private readonly ADMIN_SESSION_KEY = 'boramed_admin_session';
   private readonly _impersonando = signal<ImpersonacaoInfo | null>(null);
   readonly impersonando = this._impersonando.asReadonly();
@@ -32,6 +38,7 @@ export class AuthService implements OnDestroy {
   private authSubscription?: { unsubscribe: () => void };
   private initializePromise: Promise<void> | null = null;
   private isNavigatingToLogin = false;
+  private encerrandoPorRelogio = false;
 
   // Tokens da sessão do admin guardados apenas em memória durante a
   // impersonação (nunca em storage, que é exfiltrável por XSS) para permitir
@@ -60,6 +67,15 @@ export class AuthService implements OnDestroy {
         }
         if (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
           this._isRecovery.set(false);
+        }
+        // TOKEN_REFRESHED sempre traz token recém emitido, então o iat é
+        // confiável para medir o relógio. Cobre login com Google e sessões
+        // já abertas, que não passam por login().
+        if (event === 'TOKEN_REFRESHED') {
+          const relogio = avaliarRelogio(session?.access_token, Date.now());
+          if (relogio) this._relogio.set(relogio);
+          // Chamar o client dentro do callback trava o lock do auth-js.
+          if (relogio?.critico) setTimeout(() => void this.encerrarPorRelogio(), 0);
         }
         if (event === 'SIGNED_OUT') {
           this._isRecovery.set(false);
@@ -115,6 +131,16 @@ export class AuthService implements OnDestroy {
       password: input.password,
     });
     if (error) return { ok: false, error: this.mapError(error.message, error.status) };
+
+    const relogio = avaliarRelogio(data.session?.access_token, Date.now());
+    this._relogio.set(relogio);
+    if (relogio?.critico) {
+      // Sem isso o auth-js entra em loop de refresh, toma 429 e derruba a
+      // sessão segundos depois, já dentro do dashboard.
+      await this.encerrarPorRelogio();
+      return { ok: false, error: 'CLOCK_SKEW' };
+    }
+
     // A sessão recém-emitida já é autoritativa: marca o serviço como pronto
     // para os guards da navegação pós-login não repetirem a verificação.
     this._user.set(data.user);
@@ -262,6 +288,25 @@ export class AuthService implements OnDestroy {
 
     this._user.set(data.session.user);
     await this.router.navigate(['/admin/usuarios']);
+  }
+
+  /**
+   * Encerra só a sessão local: com o relógio adiantado o auth-js refaz o
+   * refresh a cada request e esgota o rate limit do /token por IP, o que
+   * derrubaria também outros alunos na mesma rede.
+   */
+  private async encerrarPorRelogio(): Promise<void> {
+    // Vários TOKEN_REFRESHED chegam em rajada; basta um encerramento.
+    if (this.encerrandoPorRelogio) return;
+    this.encerrandoPorRelogio = true;
+    try {
+      this.clearLocalAuthState();
+      this._user.set(null);
+      await this.supabase.auth.signOut({ scope: 'local' });
+      await this.navigateToLogin();
+    } finally {
+      this.encerrandoPorRelogio = false;
+    }
   }
 
   ngOnDestroy(): void {

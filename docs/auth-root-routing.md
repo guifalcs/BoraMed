@@ -47,3 +47,11 @@ A decisão usa `AuthService.initialize()`, que é idempotente e lê a sessão lo
 com `getSession()`. Não é feita uma consulta extra ao usuário no Supabase e não
 é montada uma tela de loading intermediária. O guard é carregado de forma lazy,
 preservando o bundle inicial da landing para visitantes.
+
+## Relógio do aparelho fora de hora
+
+O supabase-js decide se o access token venceu comparando o `expires_at` do servidor com o relógio local (margem de 90 s). Aparelho adiantado perto da validade do token faz todo token nascer "vencido": cada request força um refresh, o `/token` responde 429 (limite por IP) e o auth-js emite `SIGNED_OUT`.
+
+- `core/utils/relogio-dispositivo.util.ts` mede o desvio pelo `iat` de token recém emitido (`login()` e evento `TOKEN_REFRESHED`; nunca a sessão lida do storage, cujo `iat` é antigo).
+- Desvio crítico (`desvio >= validade - 90 s - 60 s`): `AuthService` encerra só a sessão local (`signOut({ scope: 'local' })`) e vai para `/login`; o login com senha devolve `CLOCK_SKEW`. A tela de login mostra o alerta lendo `auth.relogioDesajustado()`.
+- Desvio de 5 min ou mais, mas não crítico: login segue e mostra um toast de aviso.

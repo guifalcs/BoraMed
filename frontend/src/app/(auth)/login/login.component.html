@@ -16,6 +16,14 @@
       <h2 class="auth-heading">Bem-vindo de volta.</h2>
       <p class="auth-copy">Continue a sua sequência de estudos.</p>
 
+      @if (avisoRelogio(); as desvio) {
+        <div class="clock-alert" role="alert">
+          <strong>O relógio do seu aparelho está {{ desvio }}.</strong>
+          Com a hora errada a sessão cai logo depois de entrar. Ative data e hora
+          automáticas (fuso de Brasília) nos ajustes do aparelho e tente de novo.
+        </div>
+      }
+
       <form class="form" (submit)="handleSubmit($event)">
         <app-ui-input
           label="E-mail"

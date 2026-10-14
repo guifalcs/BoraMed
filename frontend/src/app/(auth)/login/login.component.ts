@@ -11,6 +11,7 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { loginSchema } from '../../core/models/auth.schemas';
 import type { AuthErrorCode } from '../../core/models/auth.types';
 import { SeoService } from '../../core/seo/seo.service';
+import { descreverDesvio } from '../../core/utils/relogio-dispositivo.util';
 
 type LoginState = 'idle' | 'error' | 'loading';
 type ResendState = 'idle' | 'loading' | 'sent' | 'error';
@@ -51,6 +52,16 @@ export class LoginComponent implements OnDestroy {
   protected readonly resendState = signal<ResendState>('idle');
   protected readonly resendCooldown = signal(0);
 
+  /**
+   * Relógio do aparelho tão fora de hora que a sessão não se sustenta. Vem do
+   * AuthService, então aparece também quando a sessão cai dentro do dashboard.
+   */
+  protected readonly avisoRelogio = computed<string | null>(() => {
+    const relogio = this.auth.relogioDesajustado();
+    if (!relogio?.critico) return null;
+    return descreverDesvio(relogio.desvioMs);
+  });
+
   protected readonly showResend = computed(
     () => this.state() === 'error' && this.errorCode() === 'EMAIL_NOT_CONFIRMED',
   );
@@ -68,6 +79,8 @@ export class LoginComponent implements OnDestroy {
     // E-mail não confirmado já é sinalizado no campo de e-mail; não duplicar
     // com um erro genérico (e enganoso) no campo de senha.
     if (code === 'EMAIL_NOT_CONFIRMED') return null;
+    // Explicado no alerta de relógio acima do formulário.
+    if (code === 'CLOCK_SKEW') return null;
     if (code === 'INVALID_CREDENTIALS') return 'E-mail ou senha incorretos.';
     if (code === 'RATE_LIMITED') return 'Muitas tentativas. Aguarde alguns minutos.';
     if (code === 'NETWORK_ERROR') return 'Erro de conexão. Tente novamente.';
@@ -89,6 +102,12 @@ export class LoginComponent implements OnDestroy {
 
     if (result.ok) {
       this.toast.success('Bem-vindo de volta!');
+      const relogio = this.auth.relogioDesajustado();
+      if (relogio) {
+        this.toast.warning(
+          `O relógio do seu aparelho está ${descreverDesvio(relogio.desvioMs)}. Ative data e hora automáticas para não perder a sessão.`,
+        );
+      }
       this.prefetch.prefetchDashboardRoutes();
       // Aquece em paralelo o que os guards do /dashboard vão exigir; os
       // serviços dedupam, então os guards reaproveitam estas requisições em

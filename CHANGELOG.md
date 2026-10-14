@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-14 | Fix | Login caía segundos depois de entrar com o relógio do aparelho adiantado
+
+**Relato de aluno (vídeo): entra, o dashboard abre e alguns segundos depois volta para a tela de login, em qualquer página**
+
+- **Causa:** o supabase-js decide se o token venceu comparando o `expires_at` do servidor com o relógio do aparelho (margem de 90 s). Com o aparelho ~1 h adiantado, todo token novo já nasce "vencido", cada request força um refresh (~32 em 7 s nos logs de auth), o `/token` responde `429 over_request_rate_limit` e o auth-js limpa a sessão (`SIGNED_OUT`). Só uma conta afetada nas últimas 24 h, iPad (app do Google) e Mac Safari. O limite do `/token` é por IP: um aparelho assim também pode derrubar quem está na mesma rede.
+- **Agora:** `core/utils/relogio-dispositivo.util.ts` mede o desvio pelo `iat` de um token recém emitido. No `login()` com desvio crítico (token nasceria vencido) a sessão local é encerrada na hora e o login devolve `CLOCK_SKEW`. Num `TOKEN_REFRESHED` crítico (login com Google, sessão já aberta) a sessão local também é encerrada, sem esperar o 429. A tela de login mostra alerta com o desvio e como corrigir (data e hora automáticas). Desvio acima de 5 min que não derruba a sessão só gera um toast de aviso após o login.
+- Testes novos para o util, `AuthService` e `LoginComponent`.
+
 ## 2026-10-09 | Design | Landing redesenhada: menos cara de template, mais produto
 
 **A landing tinha gradiente azul→roxo espalhado em texto, selo, ícone e botão, esteira de chips em loop, ilustrações geradas por IA (com rótulos em inglês) e seções repetindo o mesmo molde de selo + título + parágrafo + checklist**

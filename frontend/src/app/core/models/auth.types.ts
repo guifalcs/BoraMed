@@ -43,6 +43,7 @@ export type AuthErrorCode =
   | 'SAME_PASSWORD'
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
+  | 'CLOCK_SKEW'
   | 'UNKNOWN';
 
 export interface AdminSessionBackup {
