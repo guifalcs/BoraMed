@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-16 | Fix | Leitura completa de provas no MCP
+
+- Adicionada `obter_prova`, que retorna metadados, questões na ordem vinculada, alternativas e temas para leitura editorial completa.
+- Atualizados o quickstart MCP e a documentação de ferramentas.
+- Verificado: `deno check` e fluxo MCP local com login, descoberta de ferramentas, leitura ordenada de questão da prova, edição/exclusão de conteúdo próprio e recusa de edição de questão preexistente.
+
 ## 2026-10-16 | Feature | MCP editorial remoto com OAuth
 
 - Adicionado o endpoint MCP remoto com OAuth 2.1/PKCE, consentimento em `/oauth/consent` e bloqueio por e-mail + papel admin em cada chamada.

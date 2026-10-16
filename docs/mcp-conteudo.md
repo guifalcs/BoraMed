@@ -5,7 +5,7 @@ O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/func
 ## Acesso e autoria
 
 - O servidor aceita tokens apenas da conta `arthurcoelho3524@gmail.com`, que também precisa manter papel `admin` ou `super_admin` e não estar suspensa.
-- Leitura cobre questões, alternativas, temas, provas, materiais PDF, categorias/tópicos e flashcards do acervo.
+- Leitura cobre questões, alternativas, temas, provas completas com questões na ordem, materiais PDF, categorias/tópicos e flashcards do acervo.
 - Criação cobre questões, provas autorais, PDFs no bucket privado `materiais` e decks de flashcards.
 - Atualização e exclusão verificam `mcp_created_content`, tabela com RLS e sem grants para `anon`/`authenticated`. Só a Edge Function usa a service role para consultar/gravar essa autoria.
 - Provas podem vincular questões existentes, mas excluir a prova não exclui questões. Atualizar ou excluir questões existentes que não foram criadas pelo MCP é recusado.
@@ -14,7 +14,7 @@ O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/func
 
 ## Ferramentas
 
-`boramed_quickstart`, `buscar_questoes`, `obter_questao`, `criar_questao`, `atualizar_questao`, `excluir_questao`, `listar_provas`, `criar_prova`, `atualizar_prova`, `excluir_prova`, `listar_materiais`, `obter_material_pdf`, `criar_material_pdf`, `atualizar_material`, `excluir_material`, `listar_flashcards`, `criar_deck_flashcards`, `atualizar_deck_flashcards`, `excluir_deck_flashcards` e `listar_taxonomia`.
+`boramed_quickstart`, `buscar_questoes`, `obter_questao`, `criar_questao`, `atualizar_questao`, `excluir_questao`, `listar_provas`, `obter_prova`, `criar_prova`, `atualizar_prova`, `excluir_prova`, `listar_materiais`, `obter_material_pdf`, `criar_material_pdf`, `atualizar_material`, `excluir_material`, `listar_flashcards`, `criar_deck_flashcards`, `atualizar_deck_flashcards`, `excluir_deck_flashcards` e `listar_taxonomia`.
 
 ## Conectar uma IA
 

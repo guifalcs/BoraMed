@@ -68,7 +68,7 @@ Deno.serve(pipeline(
         inputSchema: z.object({}), annotations: { readOnlyHint: true },
       }, async () => result({
         acesso: 'leitura do acervo de conteúdo da plataforma; escrita e remoção apenas em registros criados pelo usuário via MCP',
-        ferramentas: ['buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
+        ferramentas: ['buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
       }))
 
       server.registerTool('buscar_questoes', {
@@ -187,6 +187,44 @@ Deno.serve(pipeline(
         const { data, error, count } = await query
         if (error) fail(error.message)
         return result({ total: count, provas: data })
+      })
+
+      server.registerTool('obter_prova', {
+        description: 'Lê uma prova existente com seus metadados e questões na ordem da prova, incluindo alternativas e temas.',
+        inputSchema: z.object({ id: z.string().uuid() }), annotations: { readOnlyHint: true },
+      }, async ({ id }) => {
+        const [{ data: proof, error }, { data: links, error: linksError }] = await Promise.all([
+          db.from('prova').select('*').eq('id', id).maybeSingle(),
+          db.from('prova_questao').select('questao_id,ordem').eq('prova_id', id).order('ordem'),
+        ])
+        if (error || linksError) fail(error?.message ?? linksError?.message ?? 'Falha ao ler prova')
+        if (!proof) fail('Prova não encontrada.')
+        const questionIds = (links ?? []).map((link) => String(link.questao_id))
+        if (questionIds.length === 0) return result({ ...proof, questoes: [] })
+        const [{ data: questions, error: questionsError }, { data: alternatives, error: alternativesError }, { data: topics, error: topicsError }] = await Promise.all([
+          db.from('questao').select('*').in('id', questionIds),
+          db.from('alternativa').select('*').in('questao_id', questionIds).order('ordem'),
+          db.from('questao_tema').select('questao_id,tema_id,principal').in('questao_id', questionIds),
+        ])
+        if (questionsError || alternativesError || topicsError) fail(questionsError?.message ?? alternativesError?.message ?? topicsError?.message ?? 'Falha ao ler questões da prova')
+        const questionRows = (questions ?? []) as Array<Record<string, unknown>>
+        const alternativeRows = (alternatives ?? []) as Array<Record<string, unknown>>
+        const topicRows = (topics ?? []) as Array<Record<string, unknown>>
+        const byId = new Map(questionRows.map((question) => [String(question['id']), question]))
+        return result({
+          ...proof,
+          questoes: (links ?? []).map((link) => {
+            const question = byId.get(String(link.questao_id))
+            return {
+              ordem: link.ordem,
+              questao: question ? {
+                ...question,
+                alternativas: alternativeRows.filter((item) => item['questao_id'] === question['id']),
+                temas: topicRows.filter((item) => item['questao_id'] === question['id']).map((item) => ({ tema_id: item['tema_id'], principal: item['principal'] })),
+              } : null,
+            }
+          }),
+        })
       })
 
       server.registerTool('criar_prova', {
