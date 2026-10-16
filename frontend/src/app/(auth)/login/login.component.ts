@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { BrandPanelComponent } from '../../shared/components/brand-panel/brand-panel.component';
@@ -28,6 +28,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 export class LoginComponent implements OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(NotificationService);
   private readonly prefetch = inject(PrefetchService);
   private readonly profileService = inject(ProfileService);
@@ -114,7 +115,7 @@ export class LoginComponent implements OnDestroy {
       // voo em vez de refazê-las em série durante a navegação.
       void this.profileService.loadProfile();
       void this.subscription.temAssinaturaAtivaServidor();
-      void this.router.navigate(['/dashboard']);
+      void this.router.navigateByUrl(this.returnPath());
     } else {
       this.errorCode.set(result.error);
       this.state.set('error');
@@ -165,10 +166,15 @@ export class LoginComponent implements OnDestroy {
 
   protected async handleGoogleSignIn(): Promise<void> {
     this.state.set('loading');
-    const result = await this.auth.signInWithGoogle();
+    const result = await this.auth.signInWithGoogle(this.returnPath());
     if (!result.ok) {
       this.errorCode.set(result.error);
       this.state.set('error');
     }
+  }
+
+  private returnPath(): string {
+    const next = this.route.snapshot.queryParamMap.get('next');
+    return next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
   }
 }

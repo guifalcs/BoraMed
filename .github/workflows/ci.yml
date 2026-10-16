@@ -29,7 +29,7 @@ jobs:
       - name: Type-check dos entrypoints de produção
         # `--frozen` garante que o deno.lock commitado é respeitado à risca
         # (sem resolver versões novas de dependências em runtime).
-        run: deno check --frozen mp-webhook/index.ts mp-criar-assinatura/index.ts mp-vincular-assinatura/index.ts
+        run: deno check --frozen mp-webhook/index.ts mp-criar-assinatura/index.ts mp-vincular-assinatura/index.ts boramed-mcp/index.ts
       - name: Testes (unitários + integração com fakes)
         run: deno test -A --no-check --frozen
 

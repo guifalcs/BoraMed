@@ -103,7 +103,7 @@ export class AdminComponent {
     afterNextRender(() => { void this.suporteService.carregarContagemTicketsAbertos(); });
   }
 
-  protected readonly navEntries: AdminNavEntry[] = [
+  private readonly baseNavEntries: AdminNavEntry[] = [
     { kind: 'item', label: 'Dashboard', icon: LayoutDashboard, route: '/admin', exact: true },
     {
       kind: 'group',
@@ -145,6 +145,11 @@ export class AdminComponent {
     },
     { kind: 'item', label: 'IA · Aurora', icon: Sparkles, route: '/admin/ia' },
   ];
+
+  protected get navEntries(): AdminNavEntry[] {
+    if (this.user()?.email?.toLowerCase() !== 'arthurcoelho3524@gmail.com') return this.baseNavEntries;
+    return [...this.baseNavEntries, { kind: 'item', label: 'MCP para IAs', icon: Settings, route: '/admin/mcp' }];
+  }
 
   /** Um grupo está ativo quando a rota atual pertence a algum dos seus filhos. */
   protected grupoTemRotaAtiva(group: AdminNavGroup): boolean {

@@ -188,10 +188,11 @@ export class AuthService implements OnDestroy {
     return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
   }
 
-  async signInWithGoogle(): Promise<AuthResult> {
+  async signInWithGoogle(next = '/dashboard'): Promise<AuthResult> {
+    const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` },
     });
     return error ? { ok: false, error: this.mapError(error.message) } : { ok: true };
   }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-16 | Feature | MCP editorial remoto com OAuth
+
+- Adicionado o endpoint MCP remoto com OAuth 2.1/PKCE, consentimento em `/oauth/consent` e bloqueio por e-mail + papel admin em cada chamada.
+- Ferramentas de leitura do acervo e criação/edição/exclusão de questões, provas autorais, PDFs e flashcards. Alterar ou excluir exige autoria registrada pelo MCP.
+- A integração e a URL ficam visíveis no admin somente para `arthurcoelho3524@gmail.com`.
+- Detalhes de conexão e operação em `docs/mcp-conteudo.md`; decisão arquitetural em ADR-042.
+- Verificado: `ng build`, 925 testes unitários, `deno check`, handshake de metadados/401 no Edge Runtime e migration de autoria em produção. Conclusão do OAuth exige login real da conta autorizada.
+
 ## 2026-10-14 | Fix | Login caía segundos depois de entrar com o relógio do aparelho adiantado
 
 **Relato de aluno (vídeo): entra, o dashboard abre e alguns segundos depois volta para a tela de login, em qualquer página**

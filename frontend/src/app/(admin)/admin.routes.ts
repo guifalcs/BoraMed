@@ -80,6 +80,11 @@ export const adminRoutes: Routes = [
       import('./ia/admin-ia.component').then((m) => m.AdminIaComponent),
   },
   {
+    path: 'mcp',
+    title: 'Admin · MCP para IAs',
+    loadComponent: () => import('./mcp/admin-mcp.component').then((m) => m.AdminMcpComponent),
+  },
+  {
     path: 'provas',
     title: 'Admin · Provas',
     loadComponent: () =>

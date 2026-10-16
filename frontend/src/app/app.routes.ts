@@ -121,6 +121,12 @@ export const routes: Routes = [
       import('./(auth)/auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
+    path: 'oauth/consent',
+    title: 'Autorizar conexão MCP',
+    loadComponent: () =>
+      import('./(auth)/oauth-consent/oauth-consent.component').then((m) => m.OauthConsentComponent),
+  },
+  {
     path: 'auth/confirmar',
     title: 'Confirmar e-mail',
     loadComponent: () =>
