@@ -11,6 +11,11 @@ const QUESTION_FORMATS = ['multipla_escolha', 'resposta_aberta_curta', 'verdadei
 const QUESTION_TYPES = ['nacional', 'processual', 'laboratorio'] as const
 const PROOF_FORMATS = ['nacional', 'processual', 'laboratorio', 'multiestacoes'] as const
 
+const IMAGE_TARGETS = {
+  flashcard: { bucket: 'flashcard-imagens', maxBytes: 2 * 1024 * 1024 },
+  questao: { bucket: 'questao-imagens', maxBytes: 5 * 1024 * 1024 },
+} as const
+
 type Db = ReturnType<typeof createClient<Database>>
 type Entity = 'questao' | 'prova' | 'material' | 'flashcard_deck'
 
@@ -20,6 +25,34 @@ function result(data: unknown) {
 
 function fail(message: string): never {
   throw new Error(message)
+}
+
+function imageType(bytes: Uint8Array): { mime: string; ext: string } | null {
+  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.slice(start, end))
+  if (bytes[0] === 0x89 && ascii(1, 4) === 'PNG') return { mime: 'image/png', ext: 'png' }
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return { mime: 'image/jpeg', ext: 'jpg' }
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return { mime: 'image/webp', ext: 'webp' }
+  return null
+}
+
+async function readImageUrl(source: string, maxBytes: number): Promise<Uint8Array> {
+  const url = new URL(source)
+  if (url.protocol !== 'https:') fail('A URL de origem precisa usar https.')
+  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) })
+  if (!res.ok || !res.body) fail(`Não foi possível baixar a imagem (HTTP ${res.status}).`)
+  const declared = Number(res.headers.get('content-length') ?? 0)
+  if (declared > maxBytes) fail(`A imagem passa do limite de ${maxBytes / 1024 / 1024} MiB.`)
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for await (const chunk of res.body) {
+    total += chunk.byteLength
+    if (total > maxBytes) fail(`A imagem passa do limite de ${maxBytes / 1024 / 1024} MiB.`)
+    chunks.push(chunk)
+  }
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+  return bytes
 }
 
 async function owned(db: Db, entity: Entity, id: string, ownerId: string): Promise<void> {
@@ -68,7 +101,7 @@ Deno.serve(pipeline(
         inputSchema: z.object({}), annotations: { readOnlyHint: true },
       }, async () => result({
         acesso: 'leitura do acervo de conteúdo da plataforma; escrita e remoção apenas em registros criados pelo usuário via MCP',
-        ferramentas: ['buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
+        ferramentas: ['buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'enviar_imagem', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
       }))
 
       server.registerTool('buscar_questoes', {
@@ -346,6 +379,29 @@ Deno.serve(pipeline(
         return result({ id, excluido: true })
       })
 
+      server.registerTool('enviar_imagem', {
+        description: 'Envia uma imagem PNG, JPEG ou WEBP para o Storage do BoraMed e devolve a URL para usar em frente_imagem_url/verso_imagem_url de flashcards (destino flashcard, até 2 MiB) ou em imagem_url de questões e alternativas (destino questao, até 5 MiB). Informe conteudo_base64 ou url_origem (https), nunca os dois.',
+        inputSchema: z.object({ destino: z.enum(['flashcard', 'questao']), conteudo_base64: z.string().min(20).max(7_000_000).optional(), url_origem: z.string().url().max(2000).optional() }),
+      }, async ({ destino, conteudo_base64, url_origem }) => {
+        if (!conteudo_base64 === !url_origem) fail('Informe conteudo_base64 ou url_origem, apenas um dos dois.')
+        const target = IMAGE_TARGETS[destino]
+        const bytes = conteudo_base64
+          ? Uint8Array.from(atob(conteudo_base64.replace(/^data:image\/[a-z]+;base64,/, '')), (c) => c.charCodeAt(0))
+          : await readImageUrl(url_origem!, target.maxBytes)
+        if (bytes.byteLength > target.maxBytes) fail(`A imagem passa do limite de ${target.maxBytes / 1024 / 1024} MiB.`)
+        const type = imageType(bytes)
+        if (!type) fail('O arquivo precisa ser uma imagem PNG, JPEG ou WEBP válida.')
+        // Flashcards só aceitam imagens em user/<id>/ (flashcards_imagem_url_valida).
+        const objectPath = destino === 'flashcard'
+          ? `user/${user.id}/mcp/${crypto.randomUUID()}.${type.ext}`
+          : `mcp/${user.id}/${crypto.randomUUID()}.${type.ext}`
+        const { error } = await db.storage.from(target.bucket).upload(objectPath, bytes, { contentType: type.mime, upsert: false })
+        if (error) fail(error.message)
+        // Mesma forma que o painel grava; o frontend assina a URL quando o bucket é privado.
+        const { data } = db.storage.from(target.bucket).getPublicUrl(objectPath)
+        return result({ url: data.publicUrl, destino, mime_type: type.mime, tamanho_bytes: bytes.byteLength })
+      })
+
       server.registerTool('listar_flashcards', {
         description: 'Lista todos os decks de flashcards e os cards correspondentes.',
         inputSchema: z.object({ termo: z.string().max(200).optional(), limite: z.number().int().min(1).max(100).default(30), offset: z.number().int().min(0).default(0) }), annotations: { readOnlyHint: true },
@@ -382,12 +438,19 @@ Deno.serve(pipeline(
       })
 
       server.registerTool('excluir_deck_flashcards', {
-        description: 'Exclui um deck criado por este usuário via MCP.',
+        description: 'Exclui um deck criado por este usuário via MCP e as imagens que ele enviou pelo MCP para esse deck.',
         inputSchema: z.object({ id: z.string().uuid() }), annotations: { destructiveHint: true },
       }, async ({ id }) => {
         await owned(db, 'flashcard_deck', id, user.id)
+        const { data: cards } = await db.from('flashcard_cards').select('frente_imagem_url,verso_imagem_url').eq('deck_id', id)
         const { error } = await db.from('flashcard_decks').delete().eq('id', id)
         if (error) fail(error.message)
+        // Remove só imagens enviadas pelo MCP; imagens reaproveitadas do acervo ficam.
+        const marker = `/flashcard-imagens/user/${user.id}/mcp/`
+        const paths = (cards ?? []).flatMap((c) => [c.frente_imagem_url, c.verso_imagem_url])
+          .filter((u): u is string => typeof u === 'string' && u.includes(marker))
+          .map((u) => u.slice(u.indexOf(marker) + '/flashcard-imagens/'.length).split(/[?#]/)[0])
+        if (paths.length) await db.storage.from('flashcard-imagens').remove(paths)
         await deleteOwned(db, 'flashcard_deck', id, user.id)
         return result({ id, excluido: true })
       })
