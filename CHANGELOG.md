@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-17 | Ajuste | "corno" sai da blocklist
+
+- Migration `blocklist_remove_corno` remove `corno` de `palavra_proibida`. `corna` continua bloqueada.
+
 ## 2026-10-17 | Feature | Envio de imagens pelo MCP
 
 - Nova ferramenta `enviar_imagem`: recebe PNG/JPEG/WEBP em base64 ou URL https e devolve a URL para flashcards (`flashcard-imagens`, 2 MiB) ou questões (`questao-imagens`, 5 MiB). Permite que a IA gere uma imagem por outro conector e a coloque no card.
