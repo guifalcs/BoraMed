@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-17 | Feature | Envio de imagens pelo MCP
+
+- Nova ferramenta `enviar_imagem`: recebe PNG/JPEG/WEBP em base64 ou URL https e devolve a URL para flashcards (`flashcard-imagens`, 2 MiB) ou questões (`questao-imagens`, 5 MiB). Permite que a IA gere uma imagem por outro conector e a coloque no card.
+- `excluir_deck_flashcards` passa a remover as imagens que o MCP enviou para o deck.
+- Verificado: `deno check` e detecção de tipo/recusa de URL sem https.
+
+## 2026-10-17 | Fix | Consentimento OAuth do MCP recusado por origem
+
+- O Auth montava o link de consentimento com o Site URL `https://boramedoficial.com.br`, que a Vercel redireciona para `www`. A tela chamava `/oauth/authorizations` a partir de `www` e o Auth respondia `400 unauthorized request origin`, exibido como "solicitação expirou".
+- Site URL passa a ser `https://www.boramedoficial.com.br` e `www` entra nas URLs de redirecionamento (config local + painel de produção).
+
 ## 2026-10-16 | Fix | Leitura completa de provas no MCP
 
 - Adicionada `obter_prova`, que retorna metadados, questões na ordem vinculada, alternativas e temas para leitura editorial completa.

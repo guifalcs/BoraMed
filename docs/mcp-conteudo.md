@@ -1,6 +1,6 @@
 # MCP de conteúdo BoraMed
 
-O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/functions/v1/boramed-mcp`. Ele usa MCP Streamable HTTP e OAuth 2.1 com PKCE pelo Supabase Auth. A tela de consentimento fica em `https://boramedoficial.com.br/oauth/consent`.
+O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/functions/v1/boramed-mcp`. Ele usa MCP Streamable HTTP e OAuth 2.1 com PKCE pelo Supabase Auth. A tela de consentimento fica em `https://www.boramedoficial.com.br/oauth/consent`.
 
 ## Acesso e autoria
 
@@ -9,12 +9,13 @@ O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/func
 - Criação cobre questões, provas autorais, PDFs no bucket privado `materiais` e decks de flashcards.
 - Atualização e exclusão verificam `mcp_created_content`, tabela com RLS e sem grants para `anon`/`authenticated`. Só a Edge Function usa a service role para consultar/gravar essa autoria.
 - Provas podem vincular questões existentes, mas excluir a prova não exclui questões. Atualizar ou excluir questões existentes que não foram criadas pelo MCP é recusado.
-- O PDF é enviado em base64 pelo cliente MCP e limitado a 12 MiB por chamada. Imagens de questão e flashcard podem usar URLs já disponíveis no sistema.
+- O PDF é enviado em base64 pelo cliente MCP e limitado a 12 MiB por chamada.
+- `enviar_imagem` recebe PNG, JPEG ou WEBP em base64 ou por URL https (o servidor baixa) e devolve a URL para usar no card ou na questão. Flashcard: bucket `flashcard-imagens`, até 2 MiB, em `user/<id>/mcp/` (exigência de `flashcards_imagem_url_valida`). Questão: bucket privado `questao-imagens`, até 5 MiB, em `mcp/<id>/`. O tipo é validado pelos bytes do arquivo. Excluir um deck criado pelo MCP remove as imagens dele enviadas pelo MCP.
 - `obter_material_pdf` gera um link assinado que expira em 15 minutos para o cliente baixar o arquivo privado.
 
 ## Ferramentas
 
-`boramed_quickstart`, `buscar_questoes`, `obter_questao`, `criar_questao`, `atualizar_questao`, `excluir_questao`, `listar_provas`, `obter_prova`, `criar_prova`, `atualizar_prova`, `excluir_prova`, `listar_materiais`, `obter_material_pdf`, `criar_material_pdf`, `atualizar_material`, `excluir_material`, `listar_flashcards`, `criar_deck_flashcards`, `atualizar_deck_flashcards`, `excluir_deck_flashcards` e `listar_taxonomia`.
+`boramed_quickstart`, `buscar_questoes`, `obter_questao`, `criar_questao`, `atualizar_questao`, `excluir_questao`, `listar_provas`, `obter_prova`, `criar_prova`, `atualizar_prova`, `excluir_prova`, `listar_materiais`, `obter_material_pdf`, `criar_material_pdf`, `atualizar_material`, `excluir_material`, `enviar_imagem`, `listar_flashcards`, `criar_deck_flashcards`, `atualizar_deck_flashcards`, `excluir_deck_flashcards` e `listar_taxonomia`.
 
 ## Conectar uma IA
 
@@ -29,7 +30,7 @@ Clientes MCP compatíveis descobrem o servidor OAuth e o registro dinâmico de c
 ## Operação
 
 - A Edge Function fica em `supabase/functions/boramed-mcp` e precisa de `verify_jwt = false` no gateway para publicar o desafio OAuth; a função valida o token no middleware antes de servir as ferramentas.
-- Configuração Auth do projeto: `auth.site_url = https://boramedoficial.com.br`, OAuth server habilitado, autorização em `/oauth/consent` e registro dinâmico habilitado.
+- Configuração Auth do projeto: `auth.site_url = https://www.boramedoficial.com.br`, OAuth server habilitado, autorização em `/oauth/consent` e registro dinâmico habilitado. O Site URL precisa ser o host final servido pela Vercel (o apex redireciona 308 para `www`): o Auth recusa com `400 unauthorized request origin` a leitura da autorização vinda de outra origem.
 - Deploy da função: `npx supabase functions deploy boramed-mcp --project-ref gakvktwtdunljojghpff`.
 - A migration `mcp_content_ownership` cria o registro privado de autoria. Aplicar conforme o fluxo de migration do projeto antes de ativar escrita.
 - O projeto já usa assinatura JWT assimétrica ES256, necessária para validação dos tokens OAuth no middleware MCP.
