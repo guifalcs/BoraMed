@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-17 | Fix | Consentimento OAuth do MCP recusado por origem
+
+- O Auth montava o link de consentimento com o Site URL `https://boramedoficial.com.br`, que a Vercel redireciona para `www`. A tela chamava `/oauth/authorizations` a partir de `www` e o Auth respondia `400 unauthorized request origin`, exibido como "solicitação expirou".
+- Site URL passa a ser `https://www.boramedoficial.com.br` e `www` entra nas URLs de redirecionamento (config local + painel de produção).
+
 ## 2026-10-16 | Fix | Leitura completa de provas no MCP
 
 - Adicionada `obter_prova`, que retorna metadados, questões na ordem vinculada, alternativas e temas para leitura editorial completa.

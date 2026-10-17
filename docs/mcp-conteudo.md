@@ -1,6 +1,6 @@
 # MCP de conteúdo BoraMed
 
-O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/functions/v1/boramed-mcp`. Ele usa MCP Streamable HTTP e OAuth 2.1 com PKCE pelo Supabase Auth. A tela de consentimento fica em `https://boramedoficial.com.br/oauth/consent`.
+O endpoint remoto de conteúdo é `https://gakvktwtdunljojghpff.supabase.co/functions/v1/boramed-mcp`. Ele usa MCP Streamable HTTP e OAuth 2.1 com PKCE pelo Supabase Auth. A tela de consentimento fica em `https://www.boramedoficial.com.br/oauth/consent`.
 
 ## Acesso e autoria
 
@@ -29,7 +29,7 @@ Clientes MCP compatíveis descobrem o servidor OAuth e o registro dinâmico de c
 ## Operação
 
 - A Edge Function fica em `supabase/functions/boramed-mcp` e precisa de `verify_jwt = false` no gateway para publicar o desafio OAuth; a função valida o token no middleware antes de servir as ferramentas.
-- Configuração Auth do projeto: `auth.site_url = https://boramedoficial.com.br`, OAuth server habilitado, autorização em `/oauth/consent` e registro dinâmico habilitado.
+- Configuração Auth do projeto: `auth.site_url = https://www.boramedoficial.com.br`, OAuth server habilitado, autorização em `/oauth/consent` e registro dinâmico habilitado. O Site URL precisa ser o host final servido pela Vercel (o apex redireciona 308 para `www`): o Auth recusa com `400 unauthorized request origin` a leitura da autorização vinda de outra origem.
 - Deploy da função: `npx supabase functions deploy boramed-mcp --project-ref gakvktwtdunljojghpff`.
 - A migration `mcp_content_ownership` cria o registro privado de autoria. Aplicar conforme o fluxo de migration do projeto antes de ativar escrita.
 - O projeto já usa assinatura JWT assimétrica ES256, necessária para validação dos tokens OAuth no middleware MCP.
