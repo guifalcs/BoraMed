@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-01 | Fix | Paginação da impressão de simulados
+
+- Corrigida a divisão de alternativas entre páginas em questões extensas: a proteção que existia somente no artigo não era suficiente quando a questão ultrapassava uma folha. Alternativas, figuras com legenda e linhas de resposta agora também têm proteção de quebra.
+- Questões e explicações usam fluxo de blocos na impressão, com proteção no host do componente da questão e espaçamento preservado. Questões/alternativas maiores que uma folha continuam nas páginas seguintes sem altura fixa ou recorte.
+- Nova suíte de regressão lê PDFs reais: fontes, temas, textos extensos, imagens, discursivas, quatro viewports, cartão-resposta, gabarito comentado e 100 questões. Incluída no CI; PDF.js é usado somente nos testes.
+- Regras e validação documentadas em `docs/impressao-simulados.md`, `docs/business-rules.md` e ADR-022.
+- Verificado: build de produção, 936 testes unitários, 31 E2E (20 de paginação + 11 de pagamento), TypeScript estrito da nova suíte e revisão visual de PDFs; caso extenso também validado no print nativo do Firefox 158.
+
 ## 2026-10-17 | Ajuste | "corno" sai da blocklist
 
 - Migration `blocklist_remove_corno` remove `corno` de `palavra_proibida`. `corna` continua bloqueada.

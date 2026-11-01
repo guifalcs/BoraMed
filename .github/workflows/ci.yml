@@ -82,7 +82,7 @@ jobs:
         env:
           CI: 'true'
 
-  # ── Frontend: E2E de checkout/retorno (Playwright, backend mockado) ──────────
+  # ── Frontend: E2E de checkout e impressão (backend mockado) ────────────────
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
@@ -102,8 +102,8 @@ jobs:
       # Só os testes com rede 100% mockada (projeto "mocked"). Os projetos
       # "setup"/"chromium" fazem login real e exigem um backend Supabase local,
       # então ficam de fora do CI (rodam localmente com `supabase start`).
-      - name: Testes E2E (pagamento, backend mockado)
-        run: npm run test:e2e -- pagamento --project=mocked
+      - name: Testes E2E (pagamento e paginação dos PDFs, backend mockado)
+        run: npm run test:e2e -- pagamento impressao-paginacao --project=mocked
         env:
           CI: 'true'
       - name: Sobe o relatório em caso de falha
@@ -111,5 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: frontend/playwright-report/
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
           retention-days: 7

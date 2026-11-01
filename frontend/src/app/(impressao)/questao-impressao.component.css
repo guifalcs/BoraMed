@@ -1,0 +1,34 @@
+:host {
+  display: block;
+}
+
+@media print {
+  /* A regra precisa alcançar o componente, que é o filho do documento.
+     Questões maiores que a folha ainda podem continuar na próxima página. */
+  :host {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  /* Se a questão exceder uma folha, preserva as unidades que ainda cabem.
+     Uma alternativa maior que a folha pode ser fragmentada normalmente. */
+  li,
+  figure,
+  .linhas-resposta {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  ol {
+    display: block;
+  }
+
+  li + li {
+    margin-top: 0.25rem;
+  }
+
+  header {
+    page-break-after: avoid;
+    break-after: avoid-page;
+  }
+}

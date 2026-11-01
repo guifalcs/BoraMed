@@ -236,7 +236,7 @@
       </header>
 
       <!-- Questões -->
-      <div class="flex flex-col gap-5">
+      <div class="questoes-impressao flex flex-col gap-5">
         @for (q of questoes(); track q.id; let i = $index) {
           <app-questao-impressao
             [questao]="q"
@@ -283,7 +283,7 @@
           </div>
 
           @if (opcoes().explicacoesNoGabarito) {
-            <div class="flex flex-col gap-3">
+            <div class="explicacoes-impressao flex flex-col gap-3">
               @for (item of gabarito(); track item.numero) {
                 @if (item.explicacao || item.respostaModelo) {
                   <div class="break-inside-avoid text-[0.85em] leading-snug">

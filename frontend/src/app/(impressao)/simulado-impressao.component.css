@@ -34,4 +34,19 @@
     border: 0 !important;
     box-shadow: none !important;
   }
+
+  /* Fluxo de blocos permite ao navegador paginar sem depender da
+     fragmentação de flex items (especialmente problemática no Safari). */
+  .questoes-impressao,
+  .explicacoes-impressao {
+    display: block;
+  }
+
+  .questoes-impressao > app-questao-impressao + app-questao-impressao {
+    margin-top: 1.25rem;
+  }
+
+  .explicacoes-impressao > div + div {
+    margin-top: 0.75rem;
+  }
 }

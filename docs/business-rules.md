@@ -121,6 +121,7 @@ Regras de combinação:
 * O sorteio do montado para impressão segue a mesma priorização de questões inéditas da geração normal.
 * Seções opcionais antes de imprimir: espaço de marcação na questão, cartão-resposta (folha de bolhas), gabarito ao final e explicações no gabarito (estas duas só quando o gabarito está liberado), além de mostrar/ocultar imagens e tamanho da fonte.
 * Em midia de impressao, controles e sidebar de configuracao nao podem reservar espaco na folha; o conteudo impresso deve zerar offsets responsivos e ocupar toda a area imprimivel tambem em iPad/Safari.
+* **Paginação:** questões que cabem na área útil de uma folha devem ficar inteiras. Questões maiores continuam nas páginas seguintes sem ocultar texto; nesse caso, alternativas, figuras com legenda e linhas de resposta devem permanecer inteiras quando couberem em uma folha. Uma alternativa maior que a folha também pode continuar na próxima página. O fluxo principal de questões e explicações usa blocos em `@media print`, com proteção de quebra no componente de questão e nos blocos internos, sem altura fixa ou recorte. Validação e comando de regressão em [Impressão de simulados](impressao-simulados.md).
 
 ### Gamificação Competitiva
 

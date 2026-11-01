@@ -16,6 +16,7 @@ import { AsyncPipe } from '@angular/common';
   standalone: true,
   imports: [MarkdownComponent, FormatarEnunciadoPipe, ImagemProtegidaPipe, AsyncPipe],
   templateUrl: './questao-impressao.component.html',
+  styleUrl: './questao-impressao.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuestaoImpressaoComponent {
