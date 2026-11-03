@@ -1,5 +1,10 @@
 import { assertEquals, assertExists } from '@std/assert';
-import { handleProcessarPagamento, sanitizePaymentResponse, toMpDate } from './handler.ts';
+import {
+  ehMetodoSemCartao,
+  handleProcessarPagamento,
+  sanitizePaymentResponse,
+  toMpDate,
+} from './handler.ts';
 import { FakeDb, makeDeps } from '../_shared/test/fake.ts';
 
 const NOW = new Date('2026-06-24T12:00:00.000Z');
@@ -209,6 +214,99 @@ Deno.test('processar-pagamento: rate limit 5/15min → 429', async () => {
   const db = baseDb({ pagamento_intencao: recentes });
   const res = await handleProcessarPagamento(
     request(cardBody()),
+    makeDeps({ db, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 429);
+});
+
+/** N intenções recentes (5min atrás) do user-1 com o método informado. */
+function intencoesRecentes(n: number, metodo: string) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `int-${metodo}-${i}`,
+    user_id: 'user-1',
+    idempotency_key: `00000000-0000-0000-0000-00000000000${i}`,
+    metodo,
+    criado_em: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString(),
+  }));
+}
+
+/** Body do botão "Pagar com Pix" do checkout: só método + e-mail (sem token/CPF). */
+function pixBody() {
+  return {
+    attempt_id: ATTEMPT,
+    plano_slug: 'semestral',
+    form_data: { payment_method_id: 'pix', payer: { email: 'aluno@boramed.com' } },
+  };
+}
+
+function pixPendente() {
+  return approvedPayment({
+    status: 'pending',
+    status_detail: 'pending_waiting_transfer',
+    payment_method_id: 'pix',
+    installments: undefined,
+    date_approved: undefined,
+    date_of_expiration: '2026-06-24T09:30:00.000-03:00',
+    point_of_interaction: { transaction_data: { qr_code: 'PIXCODE', qr_code_base64: 'QkFTRTY0' } },
+  });
+}
+
+Deno.test('processar-pagamento: 5 recusas no CARTÃO não bloqueiam o Pix (rate limit por tipo de meio)', async () => {
+  // Padrão de produção: várias recusas cc_rejected_high_risk em sequência e a
+  // tela recomendando Pix. O teto anti card testing não pode trancar o Pix.
+  const db = baseDb({ pagamento_intencao: intencoesRecentes(5, 'master') });
+  const { fn, calls } = captureFetch({ body: pixPendente() });
+  const res = await handleProcessarPagamento(
+    request(pixBody()),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(calls.length, 1, 'chega ao MP');
+  const sent = JSON.parse(String(calls[0].init?.body));
+  assertEquals(sent.payment_method_id, 'pix');
+  assertEquals(sent.payer.email, 'aluno@boramed.com');
+  assertEquals(sent.transaction_amount, 240, 'preço do banco, nunca do cliente');
+  const out = await res.json();
+  assertEquals(out.pix.qr_code, 'PIXCODE');
+});
+
+Deno.test('processar-pagamento: 5 tentativas no cartão → 6ª no cartão 429 com saída pelo Pix', async () => {
+  const db = baseDb({ pagamento_intencao: intencoesRecentes(5, 'visa') });
+  const { fn, calls } = captureFetch({ body: approvedPayment() });
+  const res = await handleProcessarPagamento(
+    request(cardBody()),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(res.status, 429);
+  assertEquals(calls.length, 0, 'não chama o MP');
+  const out = await res.json();
+  assertEquals(/Pix/.test(out.error), true, 'mensagem aponta o Pix');
+});
+
+Deno.test('processar-pagamento: teto próprio do Pix (5 Pix recentes → 429, cartão segue liberado)', async () => {
+  const db = baseDb({ pagamento_intencao: intencoesRecentes(5, 'pix') });
+  const resPix = await handleProcessarPagamento(
+    request(pixBody()),
+    makeDeps({ db, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(resPix.status, 429);
+
+  const { fn } = captureFetch({ body: approvedPayment({ metadata: undefined }) });
+  const resCartao = await handleProcessarPagamento(
+    request(cardBody({ attempt_id: '22222222-3333-4444-5555-666666666666' })),
+    makeDeps({ db, fetch: fn, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
+  );
+  assertEquals(resCartao.status, 200);
+});
+
+Deno.test('processar-pagamento: boleto conta no teto do Pix/boleto, não no do cartão', async () => {
+  const db = baseDb({
+    pagamento_intencao: [...intencoesRecentes(3, 'pix'), ...intencoesRecentes(2, 'bolbradesco')].map(
+      (r, i) => ({ ...r, id: `int-misto-${i}`, idempotency_key: `00000000-0000-0000-0000-0000000000a${i}` }),
+    ),
+  });
+  const res = await handleProcessarPagamento(
+    request(pixBody()),
     makeDeps({ db, now: NOW, caller: { id: 'user-1', email: 'aluno@boramed.com' } }),
   );
   assertEquals(res.status, 429);
@@ -612,4 +710,11 @@ Deno.test('sanitizePaymentResponse: 3DS challenge exposto', () => {
 
 Deno.test('toMpDate preserva o instante em offset -03:00', () => {
   assertEquals(toMpDate(new Date('2026-06-24T12:30:00.000Z')), '2026-06-24T09:30:00.000-03:00');
+});
+
+Deno.test('ehMetodoSemCartao: Pix e boleto fora do teto do cartão; bandeiras e legado dentro', () => {
+  for (const m of ['pix', 'bolbradesco', 'pec']) assertEquals(ehMetodoSemCartao(m), true, m);
+  for (const m of ['master', 'visa', 'elo', 'amex', 'hipercard', 'credit_card', null, undefined, '']) {
+    assertEquals(ehMetodoSemCartao(m), false, String(m));
+  }
 });
