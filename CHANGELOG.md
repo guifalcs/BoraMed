@@ -19,6 +19,7 @@
 - `/planos?ciclo=mensal` abre direto nos planos mensais.
 - Edge `mp-processar-pagamento`: rate limit separado por tipo de meio (cartão x Pix/boleto, 5/15 min cada). 429 do cartão aponta o Pix.
 - CI passa a rodar também o `checkout.spec.ts` (E2E do checkout embutido; antes só a jornada legada `pagamento.spec.ts` rodava).
+- CI: Supabase CLI fixada em 2.122.1. A 3.0.0 (02/11) não aceita mais `[inbucket]` no `config.toml` e o job "DB — invariantes de segurança" quebrava no `supabase start`, independente do código.
 - Docs: `business-rules.md` (regras de recusa e nota do IPN), ADR-029 e `testes-automatizados-pagamento.md`.
 - Verificado: 31 testes Deno do `mp-processar-pagamento` (5 novos), suíte Deno completa, `deno check`, 951+ testes unitários (2 specs novos), 35 E2E do checkout embutido e jornada legada (9 novos) e `ng build`.
 
