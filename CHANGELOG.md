@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-11-03 | Fix | Recusas de pagamento: motivo claro e saída pelo Pix
+
+**Análise dos logs de produção (`pagamento_intencao`, `mp_webhook_evento`, logs das edges)**
+
+- Padrão das recusas: `cc_rejected_high_risk` é a principal. O aluno repete o mesmo cartão em segundos e a 2ª/3ª tentativa vira recusa do antifraude. Hoje (03/11, 03h22) um aluno teve 2 recusas por limite no semestral em 2x e, na 3ª, o cartão entrou "em análise" e foi recusado 64 s depois, quando ele já tinha saído da tela. Não voltou. O mesmo "em análise → recusa em ~64 s" aconteceu 5 vezes.
+- `cc_amount_rate_limit_exceeded` (visto em produção) caía na mensagem genérica.
+- O rate limit de 5 tentativas/15 min somava Pix e cartão: quem teve 5 recusas no cartão ficava 15 min sem conseguir pagar com o Pix que a própria mensagem recomendava.
+- Cupom se perdia ao voltar da tela de status para o checkout (o aluno pagava o preço cheio ou desistia).
+- O IPN legado do MP chega com `x-signature` que não confere e morre em 401: nenhum IPN foi processado até hoje. Inofensivo agora (o canal moderno entrega em ~1 s), mas a tela não pode depender disso.
+
+**Mudanças**
+
+- `mp-status-detail.map.ts`: códigos que faltavam (`cc_amount_rate_limit_exceeded`, `rejected_insufficient_data`, `rejected_by_regulations`, `rejected_high_risk`, `bank_error`, `cc_rejected_time_out`/`expired_operation`) e copy acionável. Antifraude avisa que repetir o mesmo cartão costuma falhar; limite insuficiente explica que o parcelado consome o limite total.
+- Checkout: banner de recusa rola para a vista (no celular ficava acima do Brick, fora da tela), botão **"Pagar com Pix"** que gera o Pix em 1 clique, atalho para os planos mensais quando falta limite no semestral, aviso de cartão ainda em análise (evita cobrança dupla), cupom guardado na aba e reaplicado.
+- Erros técnicos das edges (401 do gateway, `invalid form_data`, `attempt_id em uso`...) viram mensagens em português (`core/models/checkout-erros.ts`). 401 = sessão expirada.
+- Tela de status: análise pede para manter a página aberta (~1 min), reconsulta ao voltar para a aba e libera o aluno após 2 min. Recusa assíncrona mostra o motivo com "Pagar com Pix agora". Reconsulta ativa do MP (`mp-consultar-pagamento`) a cada ~20 s enquanto pendente. Expirado tem copy por método (Pix, boleto, cartão/3DS, estorno). Falha ao carregar mostra erro com "Tentar de novo" em vez de mandar para `/planos` calado.
+- `/planos?ciclo=mensal` abre direto nos planos mensais.
+- Edge `mp-processar-pagamento`: rate limit separado por tipo de meio (cartão x Pix/boleto, 5/15 min cada). 429 do cartão aponta o Pix.
+- CI passa a rodar também o `checkout.spec.ts` (E2E do checkout embutido; antes só a jornada legada `pagamento.spec.ts` rodava).
+- CI: Supabase CLI fixada em 2.122.1. A 3.0.0 (02/11) não aceita mais `[inbucket]` no `config.toml` e o job "DB — invariantes de segurança" quebrava no `supabase start`, independente do código.
+- Docs: `business-rules.md` (regras de recusa e nota do IPN), ADR-029 e `testes-automatizados-pagamento.md`.
+- Verificado: 31 testes Deno do `mp-processar-pagamento` (5 novos), suíte Deno completa, `deno check`, 951+ testes unitários (2 specs novos), 35 E2E do checkout embutido e jornada legada (9 novos) e `ng build`.
+
 ## 2026-11-01 | Fix | Paginação da impressão de simulados
 
 - Corrigida a divisão de alternativas entre páginas em questões extensas: a proteção que existia somente no artigo não era suficiente quando a questão ultrapassava uma folha. Alternativas, figuras com legenda e linhas de resposta agora também têm proteção de quebra.

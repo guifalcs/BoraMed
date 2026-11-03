@@ -389,6 +389,10 @@ export class PlanosComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.origem.set(this.route.snapshot.queryParamMap.get('origem'));
+    // `?ciclo=mensal`: vindo de uma recusa por falta de limite no semestral,
+    // já abre nos planos mensais (valor menor por vez).
+    const ciclo = this.route.snapshot.queryParamMap.get('ciclo');
+    if (ciclo === 'mensal' || ciclo === 'semestral') this.ciclo.set(ciclo);
     if (!this.profile()) void this.profileService.loadProfile();
     try {
       await this.subscription.carregarAssinatura();

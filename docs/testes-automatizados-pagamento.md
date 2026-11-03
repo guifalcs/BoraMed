@@ -9,8 +9,8 @@ pipeline de CI roda todas em cada push/PR — ver `.github/workflows/ci.yml`).
 | Camada | O que cobre | Onde | Como rodar |
 |--------|-------------|------|------------|
 | **Edge functions (Deno)** | Núcleo financeiro: validação HMAC do webhook, anti-fraude (acesso duplicado, rate limit, anti-replay de idempotência), **preço sempre do banco**, sync compartilhado de payments (incl. legados sem `intencao_id`), estorno/chargeback revoga acesso, contrato legado do gerenciar + `trocar_cartao`, IDOR no vínculo | `supabase/functions/**/*.test.ts` | `deno test -A --no-check` (em `supabase/functions/`) |
-| **Frontend unit (Vitest)** | `SubscriptionService` (vínculo legado, gerência, `temAcesso`) e `subscriptionGuard` (paywall) | `frontend/src/app/**/*.spec.ts` | `npm test` (em `frontend/`) |
-| **E2E (Playwright)** | Checkout **embutido** (Payment Brick stubado): aprovado→dashboard, recusas com mensagem específica, Pix (QR/countdown/polling), boleto, 3DS, SDK fora do ar, acesso ativo → redirect; + jornada legada de retorno | `frontend/tests/e2e/checkout.spec.ts` (novo) e `pagamento.spec.ts` (legado, sai na F8) | `npm run test:e2e -- checkout --project=mocked` (em `frontend/`) |
+| **Frontend unit (Vitest)** | `SubscriptionService` (vínculo legado, gerência, `temAcesso`), `subscriptionGuard` (paywall), mapa de recusas `mp-status-detail.map` (todo `status_detail` visto em produção tem mensagem própria) e tradução de erros das edges `checkout-erros` | `frontend/src/app/**/*.spec.ts` | `npm test` (em `frontend/`) |
+| **E2E (Playwright)** | Checkout **embutido** (Payment Brick stubado): aprovado→dashboard, recusas com mensagem específica, "Pagar com Pix" em 1 clique após recusa (checkout e tela de status), planos mensais quando falta limite, 429/401 traduzidos, cupom que sobrevive ao reload, aviso de cartão em análise, recusa assíncrona após análise, reconsulta ativa do MP sem webhook, Pix (QR/countdown/polling), boleto, 3DS, SDK fora do ar, acesso ativo → redirect; + jornada legada de retorno | `frontend/tests/e2e/checkout.spec.ts` (novo) e `pagamento.spec.ts` (legado, sai na F8) | `npm run test:e2e -- checkout --project=mocked` (em `frontend/`) |
 
 Nenhuma camada toca o Mercado Pago real nem um banco real — tudo é
 determinístico e roda offline (exceto o download único de dependências).
@@ -19,7 +19,8 @@ determinístico e roda offline (exceto o download único de dependências).
 > `setup`/`chromium` fazem **login real** e exigem um Supabase local
 > (`supabase start`) — para rodar a suíte completa na sua máquina. O projeto
 > **`mocked`** roda com a rede 100% interceptada (sem backend), e é o usado no
-> CI. Os testes de pagamento são validados nele.
+> CI. Os testes de pagamento são validados nele: o CI roda `checkout.spec.ts`
+> (checkout embutido) e `pagamento.spec.ts` (jornada legada).
 
 ## Arquitetura testável das edge functions
 
@@ -71,7 +72,8 @@ Lógica pura extraída para testes diretos: `verifyMpSignature`,
   idêntico ao antigo), `cancelled` (Pix/boleto expirado) → intenção `expirada`,
   idempotência (2ª chamada não duplica).
 - **Processar pagamento (checkout embutido, semestral):** 401/400/404, 409 com
-  acesso ativo, 429 rate limit (5/15min), 409 anti-replay de `attempt_id` de
+  acesso ativo, 429 rate limit (5/15min **por tipo de meio**: 5 recusas no
+  cartão não bloqueiam o Pix e vice-versa), 409 anti-replay de `attempt_id` de
   outro usuário, parcelas 1–6, **preço do banco no body ao MP** (inspecionando
   o fetch capturado), `X-Idempotency-Key` = attempt_id, aprovado → acesso na
   resposta síncrona, recusado → sem assinatura + `status_detail`, Pix → QR +

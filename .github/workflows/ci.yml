@@ -45,7 +45,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Versão fixa: a CLI 3.0.0 (02/11/2026) removeu o `[inbucket]` do
+          # config.toml e o `supabase start` passou a falhar antes de subir o
+          # stack. Migrar para `[local_smtp]` junto com a CLI 3.x localmente.
+          version: 2.122.1
       # `supabase start` aplica as migrations em ordem; se alguma quebrar, o
       # job falha aqui — o que também valida migrations escritas à mão.
       - name: Sobe o stack local
@@ -102,8 +105,8 @@ jobs:
       # Só os testes com rede 100% mockada (projeto "mocked"). Os projetos
       # "setup"/"chromium" fazem login real e exigem um backend Supabase local,
       # então ficam de fora do CI (rodam localmente com `supabase start`).
-      - name: Testes E2E (pagamento e paginação dos PDFs, backend mockado)
-        run: npm run test:e2e -- pagamento impressao-paginacao --project=mocked
+      - name: Testes E2E (checkout embutido, pagamento e paginação dos PDFs, backend mockado)
+        run: npm run test:e2e -- checkout pagamento impressao-paginacao --project=mocked
         env:
           CI: 'true'
       - name: Sobe o relatório em caso de falha
