@@ -107,7 +107,8 @@ export interface ValidarCupomResult {
 }
 
 export type CheckoutErro =
-  | { ok: false; error: string };
+  /** `status` = HTTP da edge (undefined em falha de rede) — a UI decide a saída (ex.: Pix após 429). */
+  | { ok: false; error: string; status?: number };
 
 export type ProcessarPagamentoResult =
   | ({ ok: true } & ProcessarPagamentoResponse)

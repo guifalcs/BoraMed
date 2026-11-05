@@ -8,15 +8,21 @@ import type {
   ProcessarPagamentoResult,
   ValidarCupomResult,
 } from '../models/checkout.types';
+import { ERRO_PROCESSAMENTO, traduzirErroEdge } from '../models/checkout-erros';
 
 // Orquestração do checkout embutido: invoca as edges mp-processar-* com um
 // attempt_id novo por tentativa (idempotência server-side) e um lock local
 // contra dupla submissão. O PREÇO nunca sai daqui — a edge lê do banco.
 
-export const ERRO_PROCESSAMENTO =
-  'Não foi possível processar o pagamento agora. Verifique sua conexão e tente novamente.';
-export const ERRO_MUITAS_TENTATIVAS =
-  'Muitas tentativas de pagamento. Aguarde alguns minutos e tente novamente.';
+export { ERRO_MUITAS_TENTATIVAS, ERRO_PROCESSAMENTO } from '../models/checkout-erros';
+
+/**
+ * Cupom aplicado no checkout, guardado na sessão da aba: sobrevive à ida e
+ * volta checkout → tela de status → "Tentar novamente"/"Pagar com Pix". Sem
+ * isto, quem tinha cupom e teve o cartão recusado voltava ao checkout pagando
+ * o preço cheio (ou desistia por não lembrar o código).
+ */
+const CUPOM_STORAGE_KEY = 'boramed_checkout_cupom';
 
 @Injectable({ providedIn: 'root' })
 export class CheckoutService {
@@ -33,18 +39,58 @@ export class CheckoutService {
     return typeof id === 'string' && id.length > 0 ? id : undefined;
   }
 
-  /** Extrai a mensagem de erro (campo `error`) devolvida por uma edge function. */
-  private async mensagemErro(error: unknown, fallback: string): Promise<string> {
+  /**
+   * Status HTTP + mensagem (campo `error`) de uma falha de edge function, já
+   * traduzida para o aluno (erro técnico nunca chega cru à tela).
+   */
+  private async erroEdge(
+    error: unknown,
+    fallback: string,
+    fallbackRequisicao?: string,
+  ): Promise<{ mensagem: string; status?: number }> {
+    const ctx = (error as { context?: Response } | null)?.context;
+    const status = typeof ctx?.status === 'number' ? ctx.status : undefined;
+    let msg: string | null = null;
     try {
-      const ctx = (error as { context?: Response } | null)?.context;
       if (ctx && typeof ctx.json === 'function') {
         const body = await ctx.json();
-        if (body && typeof body.error === 'string' && body.error.trim()) return body.error;
+        if (body && typeof body.error === 'string' && body.error.trim()) msg = body.error;
       }
     } catch {
-      /* corpo não-JSON ou já consumido — usa o fallback */
+      /* corpo não-JSON ou já consumido — decide só pelo status */
     }
-    return fallback;
+    return { mensagem: traduzirErroEdge(status, msg, fallback, fallbackRequisicao), status };
+  }
+
+  /** Só a mensagem traduzida (fluxos fora do pagamento, ex.: troca de cartão). */
+  private async mensagemErro(error: unknown, fallback: string): Promise<string> {
+    return (await this.erroEdge(error, fallback, fallback)).mensagem;
+  }
+
+  /** Cupom guardado na sessão da aba (null se não houver/storage bloqueado). */
+  cupomGuardado(): string | null {
+    try {
+      const v = sessionStorage.getItem(CUPOM_STORAGE_KEY);
+      return v && v.trim() ? v.trim().toUpperCase() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  guardarCupom(codigo: string): void {
+    try {
+      sessionStorage.setItem(CUPOM_STORAGE_KEY, codigo);
+    } catch {
+      /* storage indisponível: só perde a conveniência */
+    }
+  }
+
+  limparCupom(): void {
+    try {
+      sessionStorage.removeItem(CUPOM_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 
   /**
@@ -69,7 +115,10 @@ export class CheckoutService {
           ...(this.deviceId() ? { device_id: this.deviceId() } : {}),
         },
       });
-      if (error) return { ok: false, error: await this.mensagemErro(error, ERRO_PROCESSAMENTO) };
+      if (error) {
+        const { mensagem, status } = await this.erroEdge(error, ERRO_PROCESSAMENTO);
+        return { ok: false, error: mensagem, status };
+      }
       return { ok: true, ...(data as Omit<ProcessarPagamentoResult & { ok: true }, 'ok'>) };
     } catch {
       return { ok: false, error: ERRO_PROCESSAMENTO };
@@ -110,7 +159,10 @@ export class CheckoutService {
           ...(identification ? { payer: { identification } } : {}),
         },
       });
-      if (error) return { ok: false, error: await this.mensagemErro(error, ERRO_PROCESSAMENTO) };
+      if (error) {
+        const { mensagem, status } = await this.erroEdge(error, ERRO_PROCESSAMENTO);
+        return { ok: false, error: mensagem, status };
+      }
       return { ok: true, ...(data as Omit<ProcessarAssinaturaResult & { ok: true }, 'ok'>) };
     } catch {
       return { ok: false, error: ERRO_PROCESSAMENTO };
@@ -140,14 +192,17 @@ export class CheckoutService {
   }
 
   /**
-   * Última intenção RECUSADA do usuário (últimos 7 dias), para o banner do
-   * checkout. Cobre a recusa assíncrona da 1ª cobrança da assinatura (detectada
-   * pela reconciliação horária, quando o usuário já saiu do checkout): sem
-   * isto, ele perde o acesso sem nunca ver o motivo. Só conta se for a
-   * intenção MAIS RECENTE — uma tentativa posterior (aprovada ou pendente)
-   * torna o aviso obsoleto.
+   * Intenção MAIS RECENTE do usuário (últimos 7 dias), para os avisos do
+   * checkout:
+   *  - `recusada`: cobre a recusa ASSÍNCRONA (cartão em análise antifraude que
+   *    vira cc_rejected_high_risk ~1 min depois, ou a 1ª cobrança da
+   *    assinatura legada recusada na reconciliação). Quem fechou a tela antes
+   *    do desfecho só descobre o motivo por aqui.
+   *  - `pendente`: pagamento ainda em andamento (cartão em análise / Pix não
+   *    pago) — evita cobrança dupla por uma 2ª tentativa no escuro.
+   * Uma tentativa posterior torna o aviso da anterior obsoleto.
    */
-  async ultimaIntencaoRecusada(): Promise<PagamentoIntencao | null> {
+  async ultimaIntencaoRecente(): Promise<PagamentoIntencao | null> {
     const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data, error } = await this.supabase
       .from('pagamento_intencao')
@@ -157,8 +212,7 @@ export class CheckoutService {
       .limit(1)
       .maybeSingle();
     if (error || !data) return null;
-    const intencao = data as PagamentoIntencao;
-    return intencao.status === 'recusada' ? intencao : null;
+    return data as PagamentoIntencao;
   }
 
   /** Verifica no servidor se o acesso já foi liberado (pós-aprovação). */

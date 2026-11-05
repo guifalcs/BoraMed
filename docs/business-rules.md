@@ -432,9 +432,33 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   `mp-processar-pagamento` → `POST /v1/payments`. O acesso é concedido por
   `frequency` meses (`proxima_cobranca = now + N meses`). Preço sempre do
   banco (nunca do cliente), idempotência por `attempt_id`/`X-Idempotency-Key`,
-  rate limit de 5 tentativas/15min por usuário, bloqueio 409 com acesso ativo.
+  rate limit de 5 tentativas/15min por usuário **e por tipo de meio** (cartão
+  x Pix/boleto: o teto existe contra card testing, então recusas no cartão
+  nunca bloqueiam o Pix), bloqueio 409 com acesso ativo.
   Cada tentativa vira uma linha em `pagamento_intencao` (o frontend acompanha
   por polling; RLS "select own").
+* **Recusa de pagamento (nov/2026)**: ninguém pode ficar sem saber o motivo
+  nem sem uma saída. Dados de produção mostraram o padrão: o aluno repete o
+  mesmo cartão em segundos e a 2ª/3ª tentativa vira `cc_rejected_high_risk`;
+  e o cartão "em análise" (`in_process`) é recusado pelo antifraude ~1 min
+  depois, quando o aluno muitas vezes já fechou a tela. Regras:
+  - Mensagem por `status_detail` (mapa em `core/models/mp-status-detail.map.ts`,
+    cobre a tabela oficial do MP); a copy diz o que fazer, não só "tente de
+    novo". Erro técnico de edge (401, `invalid form_data`, 429...) nunca chega
+    cru: `core/models/checkout-erros.ts` traduz.
+  - Recusa de **cartão** oferece **"Pagar com Pix"** em 1 clique (gera o Pix
+    pela mesma edge, só com o e-mail da conta), no checkout e na tela de
+    status. Falta de limite num plano de vários meses também aponta os planos
+    mensais (`/planos?ciclo=mensal`).
+  - O banner de recusa rola para a vista (no celular ele fica acima do Brick).
+  - Cupom aplicado fica guardado na aba (`sessionStorage`) e é reaplicado ao
+    voltar ao checkout depois de uma recusa; é limpo na aprovação.
+  - Cartão ainda em análise (intenção `pendente` de cartão com menos de
+    15 min) gera aviso no checkout para não pagar de novo, e nesse caso o Pix
+    não é oferecido (risco de cobrança dupla).
+  - A tela de status em análise pede para manter a página aberta (~1 min),
+    reconsulta ao voltar para a aba e, depois de 2 min, libera o aluno para
+    fechar. A última intenção recusada vira banner no próximo checkout.
 * **Recorrente (LEGADO)**: o mensal foi assinatura recorrente até 07/2026
   (preapproval via `mp-processar-assinatura`; a edge segue deployada mas
   rejeita planos com `recorrente=false`). Assinantes antigos com preapproval
@@ -472,10 +496,17 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   webhook atrasado, pós-3DS).
 * **O webhook aceita os dois canais do MP.** O moderno
   (`?data.id=..&type=..`) vem assinado e é validado por HMAC. O IPN legado
-  (`?id=..&topic=..`) **não é assinado pelo MP** e vale só como *gatilho*: o
-  estado sempre vem de um `GET` no recurso da nossa conta e o sync é
-  idempotente, então nada do corpo dele é confiado. Assinatura **presente e
-  inválida** continua 401 — isso é adulteração, não canal legado.
+  (`?id=..&topic=..`) sem assinatura vale só como *gatilho*: o estado sempre
+  vem de um `GET` no recurso da nossa conta e o sync é idempotente, então
+  nada do corpo dele é confiado. Assinatura **presente e inválida** continua
+  401 — isso é adulteração, não canal legado.
+  > Observado em produção (nov/2026): o MP envia o IPN **com** um
+  > `x-signature` que não confere, então todo IPN morre em 401 e nenhum foi
+  > processado até hoje (`mp_webhook_evento` sem chave `:ipn`). Hoje é
+  > inofensivo: o canal moderno entrega `payment.created`/`payment.updated`
+  > em ~1 s. A rede de segurança não depende do IPN: a tela de status
+  > reconsulta o MP (`mp-consultar-pagamento`) a cada ~20 s enquanto o
+  > pagamento está pendente, e a reconciliação horária cobre o resto.
 * **Nenhuma intenção de acesso único fica `pendente` para sempre.** Além do
   webhook e do "Já paguei", a reconciliação horária varre as intenções
   `pendente` com payment criado nas últimas 72h e reconsulta o MP: concede o

@@ -14,15 +14,27 @@ import { syncAcessoUnicoPayment } from '../_shared/mp-payment-sync.ts';
 //
 // Segurança: idempotência via X-Idempotency-Key = attempt_id (UNIQUE em
 // pagamento_intencao, 409 se de outro usuário), 409 com acesso ativo,
-// rate limit 5 tentativas/15min (mitiga card testing), whitelist estrita do
-// form_data (nada do body do cliente é repassado cru ao MP), resposta
-// sanitizada (nunca o body cru do MP), nenhum log de token/dados de cartão.
+// rate limit 5 tentativas/15min POR TIPO de meio (cartão x Pix/boleto —
+// mitiga card testing sem trancar o Pix de quem teve o cartão recusado),
+// whitelist estrita do form_data (nada do body do cliente é repassado cru ao
+// MP), resposta sanitizada (nunca o body cru do MP), nenhum log de
+// token/dados de cartão.
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const PIX_EXPIRATION_MS = 30 * 60 * 1000;
 const BOLETO_EXPIRATION_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * Pix/boleto (o resto é bandeira de cartão: master, visa, elo...; a
+ * assinatura legada grava 'credit_card'). Usado para separar o rate limit:
+ * card testing só existe com cartão.
+ */
+export function ehMetodoSemCartao(metodo: unknown): boolean {
+  if (typeof metodo !== 'string' || !metodo) return false;
+  return metodo === 'pix' || metodo === 'pec' || metodo.startsWith('bol');
+}
 
 interface FormDataIn {
   token?: string;
@@ -207,17 +219,31 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
     return reply(sanitizePaymentResponse(existente.id, pay));
   }
 
-  // 6. Rate limit: máx. 5 intenções por 15min por usuário (mitiga card testing)
+  const isCard = typeof fd.token === 'string' && fd.token.length > 0;
+  const metodo = fd.payment_method_id;
+
+  // 6. Rate limit: máx. 5 intenções por 15min por usuário e POR TIPO de meio.
+  //    O teto existe contra card testing, que só acontece com cartão. Antes
+  //    ele somava Pix e cartão: quem tinha 5 recusas do antifraude no cartão
+  //    (padrão visto em produção) ficava 15min sem conseguir pagar nem com o
+  //    Pix que a própria tela de recusa recomenda. Pix/boleto têm teto próprio.
   if (!existente) {
     const desde = new Date(deps.now().getTime() - RATE_LIMIT_WINDOW_MS).toISOString();
     const { data: recentes } = await admin
       .from('pagamento_intencao')
-      .select('id')
+      .select('id, metodo')
       .eq('user_id', user.id)
       .gte('criado_em', desde);
-    if ((recentes ?? []).length >= RATE_LIMIT_MAX) {
+    const mesmoTipo = ((recentes ?? []) as Array<{ metodo?: string | null }>).filter(
+      (r) => ehMetodoSemCartao(r.metodo) === !isCard,
+    );
+    if (mesmoTipo.length >= RATE_LIMIT_MAX) {
       return reply(
-        { error: 'Muitas tentativas de pagamento. Aguarde alguns minutos e tente novamente.' },
+        {
+          error: isCard
+            ? 'Muitas tentativas com cartão em pouco tempo. Por segurança, aguarde 15 minutos para tentar de novo com cartão, ou pague com Pix agora: a aprovação é na hora.'
+            : 'Muitas tentativas de pagamento. Aguarde alguns minutos e tente novamente.',
+        },
         429,
       );
     }
@@ -226,8 +252,6 @@ export async function handleProcessarPagamento(req: Request, deps: Deps): Promis
   // 7. Método e parcelas (whitelist estrita — nada além disto vai ao MP).
   //    O teto de parcelas espelha o período de acesso do plano: semestral
   //    (frequency=6) em até 6x; mensal (frequency=1) só à vista.
-  const isCard = typeof fd.token === 'string' && fd.token.length > 0;
-  const metodo = fd.payment_method_id;
   const isPix = metodo === 'pix';
   const maxParcelas = Math.min(6, Math.max(1, Number(plano.frequency) || 1));
   let installments = 1;

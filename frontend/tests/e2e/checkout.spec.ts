@@ -441,9 +441,189 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     await expect(banner).toBeVisible({ timeout: 10_000 });
     await expect(banner).toContainText('Saldo ou limite insuficiente');
     await expect(banner).toContainText(/Pix/);
+    // Saídas: Pix em 1 clique e, por ser falta de limite no semestral, os mensais.
+    await expect(page.getByTestId('pagar-com-pix')).toBeVisible();
+    await expect(page.getByTestId('ver-planos-mensais')).toContainText('R$ 69,90');
     // Permanece no checkout, com o Brick disponível para nova tentativa.
     await expect(page).toHaveURL(/\/checkout\/semestral/);
     await expect(page.getByTestId('stub-pagar')).toBeVisible();
+
+    await page.getByTestId('ver-planos-mensais').click();
+    await expect(page).toHaveURL(/\/planos\?ciclo=mensal/, { timeout: 10_000 });
+  });
+
+  test('antifraude (high_risk) → "Pagar com Pix" gera o Pix em 1 clique, sem token de cartão', async ({ page }) => {
+    const expiraEm = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const corpos: Array<Record<string, unknown>> = [];
+    await setupCheckout(page, '/checkout/semestral', {
+      intencao: () => ({
+        ...intencaoBase,
+        id: 'int-pix-1',
+        metodo: 'pix',
+        parcelas: null,
+        status: 'pendente',
+        status_detail: 'pending_waiting_transfer',
+        expira_em: expiraEm,
+      }),
+      extraRoutes: async (p) => {
+        await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          const body = route.request().postDataJSON() as Record<string, unknown>;
+          corpos.push(body);
+          const formData = body['form_data'] as Record<string, unknown>;
+          const pix = formData['payment_method_id'] === 'pix';
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(
+              pix
+                ? {
+                    intencao_id: 'int-pix-1',
+                    payment_id: '1001',
+                    status: 'pending',
+                    status_detail: 'pending_waiting_transfer',
+                    pix: {
+                      qr_code: 'PIX-1-CLIQUE',
+                      qr_code_base64: Buffer.from('fake-png').toString('base64'),
+                      ticket_url: null,
+                      expira_em: expiraEm,
+                    },
+                  }
+                : {
+                    intencao_id: 'int-card-1',
+                    payment_id: '1000',
+                    status: 'rejected',
+                    status_detail: 'cc_rejected_high_risk',
+                  },
+            ),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('stub-pagar').click();
+
+    const banner = page.getByTestId('checkout-recusa');
+    await expect(banner).toContainText('Recusado pela análise de segurança', { timeout: 10_000 });
+    // Não é falta de limite: não sugere o mensal.
+    await expect(page.getByTestId('ver-planos-mensais')).toHaveCount(0);
+
+    await page.getByTestId('pagar-com-pix').click();
+    await expect(page).toHaveURL(/\/checkout\/status\/int-pix-1/, { timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: /Pague com Pix/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('pix-qr')).toBeVisible();
+
+    expect(corpos).toHaveLength(2);
+    const fdPix = corpos[1]['form_data'] as Record<string, unknown>;
+    expect(fdPix['payment_method_id']).toBe('pix');
+    expect(fdPix['token']).toBeUndefined();
+    expect(corpos[1]['attempt_id']).not.toBe(corpos[0]['attempt_id']);
+  });
+
+  test('429 no cartão (teto anti card testing) → mensagem clara e saída pelo Pix', async ({ page }) => {
+    await setupCheckout(page, '/checkout/semestral', {
+      extraRoutes: async (p) => {
+        await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          void route.fulfill({
+            status: 429,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              error:
+                'Muitas tentativas com cartão em pouco tempo. Por segurança, aguarde 15 minutos para tentar de novo com cartão, ou pague com Pix agora: a aprovação é na hora.',
+            }),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('stub-pagar').click();
+
+    const banner = page.getByTestId('checkout-recusa');
+    await expect(banner).toContainText('Muitas tentativas com cartão', { timeout: 10_000 });
+    await expect(banner).toContainText('15 minutos');
+    await expect(page.getByTestId('pagar-com-pix')).toBeVisible();
+  });
+
+  test('erro técnico da edge nunca aparece cru (401 do gateway → sessão expirada)', async ({ page }) => {
+    await setupCheckout(page, '/checkout/semestral', {
+      extraRoutes: async (p) => {
+        await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          void route.fulfill({
+            status: 401,
+            contentType: 'application/json',
+            body: JSON.stringify({ code: 401, message: 'Invalid JWT' }),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByTestId('stub-pagar')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('stub-pagar').click();
+
+    const banner = page.getByTestId('checkout-recusa');
+    await expect(banner).toContainText(/sessão expirou/i, { timeout: 10_000 });
+    await expect(banner).not.toContainText('Invalid JWT');
+    // Não é recusa do cartão: nada de Pix aqui.
+    await expect(page.getByTestId('pagar-com-pix')).toHaveCount(0);
+  });
+
+  test('cupom aplicado sobrevive ao reload (ida e volta da tela de status)', async ({ page }) => {
+    await setupCheckout(page, '/checkout/semestral', {
+      extraRoutes: async (p) => {
+        await p.route('**/rest/v1/rpc/validar_cupom**', (route) => {
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify([
+              {
+                valido: true,
+                motivo: 'ok',
+                cupom_id: 'cup-calouro',
+                valor_original_centavos: 29940,
+                desconto_centavos: 5988,
+                valor_final_centavos: 23952,
+              },
+            ]),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByRole('heading', { name: 'Plano Semestral' })).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('cupom-input').fill('calouro20');
+    await page.getByTestId('cupom-aplicar').click();
+    await expect(page.getByText('Cupom CALOURO20 aplicado')).toBeVisible({ timeout: 10_000 });
+
+    await page.reload();
+    await expect(page.getByText('Cupom CALOURO20 aplicado')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('R$ 239,52')).toBeVisible();
+    // O Brick já monta com o valor com desconto.
+    const amount = await page.evaluate(
+      () =>
+        (window as unknown as Record<string, Record<string, { initialization?: { amount?: number } }>>)
+          ['__brickSettings']['payment']?.initialization?.amount,
+    );
+    expect(amount).toBeCloseTo(239.52, 2);
+  });
+
+  test('cartão anterior ainda em análise → aviso para não pagar de novo (evita cobrança dupla)', async ({ page }) => {
+    await setupCheckout(page, '/checkout/semestral', {
+      intencao: () => ({
+        ...intencaoBase,
+        id: 'int-analise-1',
+        status: 'pendente',
+        status_detail: 'pending_review_manual',
+        criado_em: new Date(Date.now() - 30 * 1000).toISOString(),
+      }),
+    });
+
+    const aviso = page.getByTestId('checkout-pendente');
+    await expect(aviso).toBeVisible({ timeout: 10_000 });
+    await expect(aviso).toContainText('em análise');
+    await expect(aviso).toContainText('cobrado duas vezes');
+    await page.getByTestId('checkout-pendente-link').click();
+    await expect(page).toHaveURL(/\/checkout\/status\/int-analise-1/, { timeout: 10_000 });
   });
 
   test('falha de rede na edge → mensagem genérica sem sair do checkout', async ({ page }) => {
@@ -730,5 +910,143 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     // Nenhum valor/preço sai do cliente.
     expect(enviado['amount']).toBeUndefined();
     expect(enviado['preco_centavos']).toBeUndefined();
+  });
+});
+
+test.describe('Tela de status (/checkout/status/:id)', () => {
+  test('cartão em análise recusado ~1 min depois → motivo + Pagar com Pix leva ao QR em 1 clique', async ({ page }) => {
+    const expiraEm = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    let leiturasCartao = 0;
+    const corpos: Array<Record<string, unknown>> = [];
+    await setupCheckout(page, '/checkout/status/int-card-2', {
+      extraRoutes: async (p) => {
+        await p.route('**/rest/v1/pagamento_intencao**', (route) => {
+          const url = route.request().url();
+          let intencao: Record<string, unknown> | null;
+          if (url.includes('int-pix-2')) {
+            intencao = {
+              ...intencaoBase,
+              id: 'int-pix-2',
+              metodo: 'pix',
+              parcelas: null,
+              status: 'pendente',
+              status_detail: 'pending_waiting_transfer',
+              expira_em: expiraEm,
+            };
+          } else {
+            // Leitura da tela de status (id=eq.int-card-2) e do aviso do
+            // checkout (criado_em=gte…): o cartão sai de "em análise" para
+            // recusado pelo antifraude, como em produção.
+            if (url.includes('int-card-2')) leiturasCartao += 1;
+            const recusado = leiturasCartao >= 2 || !url.includes('int-card-2');
+            intencao = {
+              ...intencaoBase,
+              id: 'int-card-2',
+              status: recusado ? 'recusada' : 'pendente',
+              status_detail: recusado ? 'cc_rejected_high_risk' : 'pending_review_manual',
+              criado_em: new Date().toISOString(),
+            };
+          }
+          void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(intencao) });
+        });
+        await p.route('**/functions/v1/mp-processar-pagamento**', (route) => {
+          corpos.push(route.request().postDataJSON() as Record<string, unknown>);
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              intencao_id: 'int-pix-2',
+              payment_id: '2002',
+              status: 'pending',
+              status_detail: 'pending_waiting_transfer',
+              pix: {
+                qr_code: 'PIX-POS-RECUSA',
+                qr_code_base64: Buffer.from('fake-png').toString('base64'),
+                ticket_url: null,
+                expira_em: expiraEm,
+              },
+            }),
+          });
+        });
+      },
+    });
+
+    // 1ª leitura: em análise, com a orientação de manter a página aberta.
+    await expect(page.getByTestId('status-pendente')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('status-pendente')).toContainText('página aberta');
+
+    // Polling traz a recusa assíncrona com o motivo e a saída pelo Pix.
+    const recusado = page.getByTestId('status-recusado');
+    await expect(recusado).toBeVisible({ timeout: 15_000 });
+    await expect(recusado).toContainText('Recusado pela análise de segurança');
+    await expect(page.getByTestId('tentar-novamente')).toContainText('outro cartão');
+
+    await page.getByTestId('status-pagar-com-pix').click();
+    // Checkout gera o Pix sozinho e já leva ao QR da nova intenção.
+    await expect(page).toHaveURL(/\/checkout\/status\/int-pix-2/, { timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: /Pague com Pix/i })).toBeVisible({ timeout: 10_000 });
+    expect(corpos).toHaveLength(1);
+    expect((corpos[0]['form_data'] as Record<string, unknown>)['payment_method_id']).toBe('pix');
+    expect((corpos[0]['form_data'] as Record<string, unknown>)['token']).toBeUndefined();
+  });
+
+  test('webhook perdido: a tela reconsulta o MP sozinha e libera o Pix pago', async ({ page }) => {
+    test.setTimeout(60_000);
+    const expiraEm = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    let aprovadoNoMp = false;
+    let consultas = 0;
+    await setupCheckout(page, '/checkout/status/int-pix-3', {
+      // O banco só muda quando a reconsulta ativa roda o sync (webhook nunca chega).
+      intencao: () => ({
+        ...intencaoBase,
+        id: 'int-pix-3',
+        metodo: 'pix',
+        parcelas: null,
+        status: aprovadoNoMp ? 'aprovada' : 'pendente',
+        status_detail: aprovadoNoMp ? 'accredited' : 'pending_waiting_transfer',
+        expira_em: expiraEm,
+      }),
+      extraRoutes: async (p) => {
+        await p.route('**/functions/v1/mp-consultar-pagamento**', (route) => {
+          consultas += 1;
+          aprovadoNoMp = true;
+          void route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ status: 'approved', status_detail: 'accredited' }),
+          });
+        });
+      },
+    });
+
+    await expect(page.getByRole('heading', { name: /Pague com Pix/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('status-aprovado')).toBeVisible({ timeout: 40_000 });
+    expect(consultas).toBeGreaterThanOrEqual(1);
+  });
+
+  test('falha ao carregar a intenção → estado de erro com "Tentar de novo" (não some calado)', async ({ page }) => {
+    await setupCheckout(page, '/checkout/status/int-qualquer', {
+      extraRoutes: async (p) => {
+        // 500 (o postgrest-js já retenta sozinho 503/520 e falha de rede).
+        await p.route('**/rest/v1/pagamento_intencao**', (route) => {
+          void route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"erro interno"}' });
+        });
+      },
+    });
+
+    await expect(page.getByTestId('status-erro')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('status-recarregar')).toBeVisible();
+    await expect(page).toHaveURL(/\/checkout\/status\/int-qualquer/);
+  });
+
+  test('3DS de cartão expirado → copy de cartão (não "código") e saída pelo Pix', async ({ page }) => {
+    await setupCheckout(page, '/checkout/status/int-3ds-1', {
+      intencao: () => ({ ...intencaoBase, id: 'int-3ds-1', status: 'expirada', status_detail: 'expired' }),
+    });
+
+    const expirado = page.getByTestId('status-expirado');
+    await expect(expirado).toBeVisible({ timeout: 10_000 });
+    await expect(expirado).toContainText('A confirmação do banco expirou');
+    await expect(page.getByTestId('status-pagar-com-pix')).toBeVisible();
   });
 });
