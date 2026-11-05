@@ -32,6 +32,21 @@ export const dashboardRoutes: Routes = [
   },
   { path: 'competir', pathMatch: 'full', redirectTo: 'competitivo' },
   {
+    // Gratuito para todo nível de acesso (sem guard de tier).
+    path: 'gabaritos',
+    title: 'Gabaritos',
+    data: { embutido: true },
+    loadComponent: () =>
+      import('../(marketing)/gabaritos/gabaritos-lista.component').then((m) => m.GabaritosListaComponent),
+  },
+  {
+    path: 'gabaritos/:slug',
+    title: 'Gabarito',
+    data: { embutido: true },
+    loadComponent: () =>
+      import('../(marketing)/gabaritos/gabarito-detalhe.component').then((m) => m.GabaritoDetalheComponent),
+  },
+  {
     path: 'historico',
     title: 'Histórico',
     loadComponent: () =>

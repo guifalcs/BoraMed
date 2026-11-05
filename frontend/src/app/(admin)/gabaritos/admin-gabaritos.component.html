@@ -1,0 +1,136 @@
+<div class="gab-admin">
+  <header class="gab-head">
+    <div>
+      <p class="gab-eyebrow">Página pública · abre sem login</p>
+      <h1 class="gab-title">Gabaritos extraoficiais</h1>
+      <p class="gab-sub">
+        Saiu a prova, sai o gabarito. Cadastre, publique e mande o link no grupo antes do oficial.
+      </p>
+    </div>
+    <a class="gab-btn gab-btn--primary" routerLink="/admin/gabaritos/novo">
+      <app-ui-icon [icon]="iconPlus" [size]="18" />
+      <span>Novo gabarito</span>
+    </a>
+  </header>
+
+  <ul class="gab-kpis" aria-label="Resumo">
+    <li><strong>{{ kpis().publicados }}</strong><span>publicados</span></li>
+    <li><strong>{{ kpis().rascunhos }}</strong><span>rascunhos</span></li>
+    <li><strong>{{ kpis().visualizacoes.toLocaleString('pt-BR') }}</strong><span>visualizações</span></li>
+    <li><strong>{{ kpis().conferidos }}</strong><span>conferidos com o oficial</span></li>
+  </ul>
+
+  <div class="gab-filtros" role="tablist" aria-label="Filtrar por status">
+    @for (f of filtros; track f.valor) {
+      <button
+        type="button"
+        role="tab"
+        class="gab-filtro"
+        [class.is-on]="filtro() === f.valor"
+        [attr.aria-selected]="filtro() === f.valor"
+        (click)="filtro.set(f.valor)"
+      >
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (carregando()) {
+    <div class="gab-grid" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="gab-card gab-card--skeleton"></div>
+      }
+    </div>
+  } @else if (filtrados().length === 0) {
+    <div class="gab-empty">
+      <app-ui-icon [icon]="iconVazio" [size]="36" />
+      <h2>{{ gabaritos().length ? 'Nada neste filtro' : 'Nenhum gabarito ainda' }}</h2>
+      <p>Teve prova ontem? Cadastre o gabarito em menos de 2 minutos: é só digitar ou colar as letras.</p>
+      <a class="gab-btn gab-btn--primary" routerLink="/admin/gabaritos/novo">
+        <app-ui-icon [icon]="iconPlus" [size]="18" />
+        <span>Cadastrar o primeiro</span>
+      </a>
+    </div>
+  } @else {
+    <div class="gab-grid">
+      @for (g of filtrados(); track g.id) {
+        <article class="gab-card" [class.is-draft]="g.status === 'rascunho'">
+          <div class="gab-card__top">
+            <span class="gab-tipo">{{ g.tipo_prova }}</span>
+            <div class="gab-card__badges">
+              @if (g.status === 'publicado') {
+                <span class="gab-pill gab-pill--live"><i></i>No ar</span>
+              } @else {
+                <span class="gab-pill">Rascunho</span>
+              }
+              @if (g.conferido_oficial) {
+                <span class="gab-pill gab-pill--ok">
+                  <app-ui-icon [icon]="iconCheck" [size]="12" />
+                  Conferido
+                </span>
+              }
+            </div>
+          </div>
+
+          <a class="gab-card__name" [routerLink]="['/admin/gabaritos', g.slug]">{{ nome(g) }}</a>
+          <p class="gab-card__meta">
+            {{ g.semestre }}
+            @if (g.data_prova) { · prova em {{ formatarData(g.data_prova) }} }
+          </p>
+
+          <div class="gab-progress" [attr.aria-label]="g.total_preenchidas + ' de ' + g.total_questoes + ' preenchidas'">
+            <div class="gab-progress__bar"><i [style.width.%]="progresso(g)"></i></div>
+            <span>{{ g.total_preenchidas }}/{{ g.total_questoes }}</span>
+          </div>
+
+          <div class="gab-card__stats">
+            <span><app-ui-icon [icon]="iconEye" [size]="14" /> {{ g.visualizacoes.toLocaleString('pt-BR') }}</span>
+            @if (g.notificado_em) {
+              <span><app-ui-icon [icon]="iconSend" [size]="14" /> avisados no app</span>
+            }
+            @if (g.email_campanha_id) {
+              <span><app-ui-icon [icon]="iconMail" [size]="14" /> {{ g.email_enviados }} e-mail{{ g.email_enviados === 1 ? '' : 's' }}</span>
+            }
+          </div>
+
+          <div class="gab-card__actions">
+            <a class="gab-btn gab-btn--soft" [routerLink]="['/admin/gabaritos', g.slug]">
+              <app-ui-icon [icon]="iconPencil" [size]="15" /><span>Editar</span>
+            </a>
+            <button
+              type="button"
+              class="gab-btn gab-btn--soft"
+              [disabled]="processando() === g.id"
+              (click)="alternarPublicacao(g)"
+            >
+              <app-ui-icon [icon]="g.status === 'publicado' ? iconUndo : iconSend" [size]="15" />
+              <span>{{ g.status === 'publicado' ? 'Tirar do ar' : 'Publicar' }}</span>
+            </button>
+            @if (g.status === 'publicado') {
+              <button type="button" class="gab-icon-btn" aria-label="Copiar link público" title="Copiar link" (click)="copiarLink(g)">
+                <app-ui-icon [icon]="iconCopy" [size]="16" />
+              </button>
+              <a class="gab-icon-btn" [href]="'/gabaritos/' + g.slug" target="_blank" rel="noopener" aria-label="Abrir página pública" title="Abrir página pública">
+                <app-ui-icon [icon]="iconExternal" [size]="16" />
+              </a>
+            }
+            <button type="button" class="gab-icon-btn gab-icon-btn--danger" aria-label="Excluir gabarito" title="Excluir" (click)="paraExcluir.set(g)">
+              <app-ui-icon [icon]="iconTrash" [size]="16" />
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>
+
+@if (paraExcluir(); as g) {
+  <app-ui-confirm-dialog
+    titulo="Excluir gabarito?"
+    [mensagem]="'“' + nome(g) + '” sai do ar e o link deixa de funcionar. Não dá para desfazer.'"
+    labelConfirmar="Excluir"
+    variante="danger"
+    (confirmar)="confirmarExclusao()"
+    (cancelar)="paraExcluir.set(null)"
+  />
+}

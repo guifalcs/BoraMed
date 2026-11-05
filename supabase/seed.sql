@@ -774,3 +774,64 @@ BEGIN
          )
    WHERE t.id = v_tentativa_id;
 END $$;
+
+-- ============================================================================
+-- Gabaritos extraoficiais (módulo /gabaritos). Idempotente; NUNCA em produção.
+--
+-- 4 publicados (para ver lista, filtro por período, "Novo", "Conferido",
+-- anulada, em análise e comentários) + 1 rascunho do 6º período quase pronto,
+-- para testar o fluxo de publicar avisando os alunos: os alunos do seed são do
+-- 6º período (aluno-pesquisa-N@boramed.com / Teste123!) e recebem a
+-- notificação com link para o gabarito.
+--
+-- Letras determinísticas (md5 do slug + número) para o seed sempre gerar a
+-- mesma folha.
+-- ============================================================================
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT * FROM (VALUES
+      ('9ab00000-0000-0000-0000-000000000001'::uuid, 'n2-3-periodo-2026-2', 'N2', 3, '2026.2', (current_date - 1), 40, 5, 'publicado', false, now() - interval '5 hours', 1240,
+       'Gabarito da versão A. A 17 ainda está em análise pela equipe; atualizamos assim que fecharmos.'),
+      ('9ab00000-0000-0000-0000-000000000002'::uuid, 'integradora-4-periodo-2026-2', 'Integradora', 4, '2026.2', (current_date - 9), 60, 5, 'publicado', false, now() - interval '8 days', 312, NULL),
+      ('9ab00000-0000-0000-0000-000000000003'::uuid, 'n1-1-periodo-2026-2', 'N1', 1, '2026.2', (current_date - 40), 30, 4, 'publicado', true, now() - interval '39 days', 2875, NULL),
+      ('9ab00000-0000-0000-0000-000000000004'::uuid, 'n2-1-periodo-2026-1', 'N2', 1, '2026.1', DATE '2026-05-20', 40, 5, 'publicado', true, TIMESTAMPTZ '2026-05-20 21:00-03', 4102, NULL),
+      ('9ab00000-0000-0000-0000-000000000005'::uuid, 'n2-6-periodo-2026-2', 'N2', 6, '2026.2', current_date, 40, 5, 'rascunho', false, NULL::timestamptz, 0, NULL)
+    ) AS t(id, slug, tipo, periodo, semestre, data_prova, total, qtd_alt, status, conferido, publicado_em, views, obs)
+  LOOP
+    INSERT INTO public.gabarito_prova (
+      id, slug, tipo_prova, periodo, semestre, data_prova, observacao, qtd_alternativas,
+      status, conferido_oficial, publicado_em, visualizacoes, criado_por, atualizado_em
+    ) VALUES (
+      r.id, r.slug, r.tipo, r.periodo, r.semestre, r.data_prova, r.obs, r.qtd_alt,
+      r.status, r.conferido, r.publicado_em, r.views,
+      '11111111-1111-1111-1111-111111111111', COALESCE(r.publicado_em, now())
+    ) ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.gabarito_prova_questao (gabarito_id, numero, resposta, anulada, area, comentario)
+    SELECT r.id, n,
+           CASE
+             WHEN (r.slug = 'n2-3-periodo-2026-2' AND n IN (12, 17))
+               OR (r.slug = 'integradora-4-periodo-2026-2' AND n = 44)
+               OR (r.slug = 'n2-6-periodo-2026-2' AND n > 36) THEN NULL
+             ELSE chr(65 + (('x' || substr(md5(r.slug || n), 1, 2))::bit(8)::int % r.qtd_alt))
+           END,
+           (r.slug = 'n2-3-periodo-2026-2' AND n = 12) OR (r.slug = 'integradora-4-periodo-2026-2' AND n = 44),
+           CASE WHEN r.slug = 'n2-3-periodo-2026-2'
+                THEN (ARRAY['SOI', 'HAM', 'IESC', 'MCM'])[1 + (n - 1) / 10] END,
+           CASE
+             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 5
+               THEN 'Pegadinha clássica: o enunciado pede a EXCEÇÃO. As outras quatro são características do quadro.'
+             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 12
+               THEN 'Duas alternativas corretas (B e D). Cabe recurso; contamos como anulada.'
+             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 28
+               THEN 'Questão de interpretação de gráfico: a curva cai depois da 2ª dose, por isso a C.'
+             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 17
+               THEN 'Dividiu a equipe entre A e C. Ainda conferindo na referência.'
+           END
+    FROM generate_series(1, r.total) AS n
+    ON CONFLICT (gabarito_id, numero) DO NOTHING;
+  END LOOP;
+END $$;

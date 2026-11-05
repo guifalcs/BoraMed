@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, BookX, CreditCard, History, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, BookX, CreditCard, FileCheck2, History, Sparkles, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -22,6 +22,11 @@ import { SuporteWidgetComponent } from '../shared/components/suporte-widget/supo
 import { ImageViewerComponent } from '../shared/components/image-viewer/image-viewer.component';
 import { FocoModoService } from '../core/services/foco-modo.service';
 import { PaywallService } from '../core/services/paywall.service';
+import { GabaritoProvaService } from '../core/services/gabarito-prova.service';
+import { consumirDestinoPosLogin } from '../core/utils/destino-pos-login.util';
+
+/** Gabarito publicado há menos disso acende a bolinha de novidade no menu. */
+const JANELA_NOVIDADE_GABARITO_MS = 24 * 60 * 60 * 1000;
 import { AcessoService } from '../core/services/acesso.service';
 import { PaywallModalComponent } from '../shared/components/paywall-modal/paywall-modal.component';
 import { DadosObrigatoriosModalComponent } from '../shared/components/dados-obrigatorios-modal/dados-obrigatorios-modal.component';
@@ -49,6 +54,11 @@ interface NavItem {
    * template do menu mobile.
    */
   ocultoNaBarraMobile?: boolean;
+  /**
+   * Módulo com selo "Novo" ao lado do rótulo. Hoje só Gabaritos: aparece
+   * quando há gabarito publicado nas últimas 24h.
+   */
+  novidade?: 'gabaritos';
 }
 
 /** NavItem já resolvido contra o nível de acesso do usuário. */
@@ -77,6 +87,25 @@ export class DashboardComponent {
   private readonly notifService = inject(AppNotificacaoService);
   protected readonly focoMode = inject(FocoModoService);
   private readonly paywall = inject(PaywallService);
+  private readonly gabaritoService = inject(GabaritoProvaService);
+
+  /** Publicação mais recente de gabarito (selo de novidade no menu). */
+  private readonly ultimoGabaritoEm = signal<string | null>(null);
+  private readonly gabaritoNovo = computed(() => {
+    const iso = this.ultimoGabaritoEm();
+    return !!iso && Date.now() - new Date(iso).getTime() < JANELA_NOVIDADE_GABARITO_MS;
+  });
+
+  /** Só quando o item de Gabaritos está no menu do perfil (fora da barra inferior). */
+  protected readonly gabaritoNovoMobile = computed(
+    () => this.gabaritoNovo() && this.navItems.some((i) => i.novidade === 'gabaritos' && i.ocultoNaBarraMobile),
+  );
+
+  protected readonly iconNovo = Sparkles;
+
+  protected temNovidade(item: NavItem): boolean {
+    return item.novidade === 'gabaritos' && this.gabaritoNovo();
+  }
   private readonly acesso = inject(AcessoService);
 
   protected readonly logOutIcon = LogOut;
@@ -166,6 +195,13 @@ export class DashboardComponent {
             .verificarAvisos()
             .then(() => this.pesquisaService.verificar());
           void this.notifService.carregar();
+          void this.gabaritoService.ultimoPublicadoEm().then((iso) => this.ultimoGabaritoEm.set(iso));
+          // Veio da vitrine de um gabarito (cadastro + confirmação de e-mail
+          // sempre caem em /dashboard): abre o gabarito que a pessoa foi buscar.
+          const destino = consumirDestinoPosLogin();
+          if (destino && this.router.url.split('?')[0] !== destino) {
+            void this.router.navigateByUrl(destino, { replaceUrl: true });
+          }
           void this.subscriptionService.statusAcessoServidor().then((s) => this.nivel.set(s.nivel));
         } else if (this.auth.user() && this.auth.impersonando()) {
           void this.profileService.loadProfile();
@@ -220,6 +256,7 @@ export class DashboardComponent {
     { label: 'Materiais', icon: Library, route: '/dashboard/materiais', requerAvancado: true, paywall: 'materiais' },
     { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards', requerAvancado: true, paywall: 'flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
+    { label: 'Gabaritos', icon: FileCheck2, route: '/dashboard/gabaritos', ocultoNaBarraMobile: true, novidade: 'gabaritos' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico', ocultoNaBarraMobile: true },
     { label: 'Caderno de Erros', icon: BookX, route: '/dashboard/caderno-de-erros', ocultoNaBarraMobile: true, requerPago: true, paywall: 'recurso-pago' },
   ];

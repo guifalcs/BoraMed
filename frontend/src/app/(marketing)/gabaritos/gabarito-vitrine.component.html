@@ -1,0 +1,141 @@
+<app-gabaritos-topo />
+
+<main class="gb gv">
+  <a class="gb-voltar" routerLink="/gabaritos">← Todos os gabaritos</a>
+
+  @if (carregando()) {
+    <div class="gb-card gb-card--skeleton gb-skel-hero" aria-busy="true"></div>
+  } @else if (naoEncontrado()) {
+    <div class="gb-empty">
+      <h1>Gabarito não encontrado</h1>
+      <p>Ele pode ter saído do ar para correção. Veja os outros gabaritos publicados.</p>
+      <a class="gb-btn gb-btn--primary" routerLink="/gabaritos">Ver gabaritos</a>
+    </div>
+  } @else if (vitrine(); as v) {
+    <div class="gv-grid">
+      <!-- ── Convite ─────────────────────────────────────────────────────── -->
+      <section class="gv-copy" aria-labelledby="gv-title">
+        <p class="gv-eyebrow">
+          @if (v.conferido_oficial) {
+            <span class="gb-pill gb-pill--ok"><app-ui-icon [icon]="iconCheck" [size]="12" />Conferido com o oficial</span>
+          } @else {
+            <span class="gb-pill gb-pill--extra">Extraoficial</span>
+          }
+          <span>{{ v.semestre }} · publicado {{ publicadoHa() }}</span>
+        </p>
+        <h1 id="gv-title" class="gv-title">
+          Saiu o gabarito da <span>{{ nome() }}</span>.
+        </h1>
+        <p class="gv-lead">
+          A equipe BoraMed resolveu as {{ v.total_questoes }} questões antes do gabarito oficial.
+          Entre na sua conta para ver as respostas e calcular sua nota.
+        </p>
+
+        <div class="gv-actions">
+          <a
+            class="gb-btn gb-btn--primary gb-btn--lg"
+            routerLink="/cadastro"
+            [queryParams]="{ next: destino }"
+            (click)="lembrarDestino()"
+          >
+            Criar conta e ver o gabarito
+          </a>
+          <a class="gv-login" routerLink="/login" [queryParams]="{ next: destino }" (click)="lembrarDestino()">
+            Já tenho conta · <strong>Entrar</strong>
+          </a>
+        </div>
+        <p class="gv-note">Leva menos de 1 minuto. Depois de entrar, você cai direto neste gabarito.</p>
+
+        @if (v.visualizacoes >= 20) {
+          <p class="gv-proof">
+            <app-ui-icon [icon]="iconPessoas" [size]="16" />
+            <span><strong>{{ numero(v.visualizacoes) }}</strong> visualizações deste gabarito</span>
+          </p>
+        }
+      </section>
+
+      <!-- ── Cartão bloqueado ────────────────────────────────────────────── -->
+      <section class="gv-card" aria-label="Prévia do gabarito, bloqueada">
+        <div class="gv-card__head">
+          <span class="gb-tipo">{{ v.tipo_prova }}</span>
+          <div>
+            <strong>{{ nome() }}</strong>
+            <small>
+              {{ v.total_questoes }} questões
+              @if (v.total_anuladas) { · {{ v.total_anuladas }} anulada{{ v.total_anuladas === 1 ? '' : 's' }} }
+              @if (v.total_comentadas) { · {{ v.total_comentadas }} comentada{{ v.total_comentadas === 1 ? '' : 's' }} }
+            </small>
+          </div>
+        </div>
+
+        <div class="gv-lockwrap">
+          <!-- Letras de mentira e borradas: decorativas, fora da árvore de acessibilidade. -->
+          <ol class="gv-tiles" aria-hidden="true">
+            @for (c of casas(); track c.numero) {
+              <li [style.--i]="c.numero"><small>{{ c.numero }}</small><b>{{ c.letra }}</b></li>
+            }
+            @if (casasOcultas()) {
+              <li class="gv-tiles__mais">+{{ casasOcultas() }}</li>
+            }
+          </ol>
+
+          <div class="gv-lock">
+            <span class="gv-lock__icon"><app-ui-icon [icon]="iconLock" [size]="22" /></span>
+            <p class="gv-lock__title">Respostas liberadas para alunos com conta</p>
+            <a
+              class="gb-btn gb-btn--primary"
+              routerLink="/cadastro"
+              [queryParams]="{ next: destino }"
+              (click)="lembrarDestino()"
+            >
+              Desbloquear gabarito
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── O que destrava ──────────────────────────────────────────────── -->
+    <section class="gv-beneficios" aria-labelledby="gv-ben-title">
+      <h2 id="gv-ben-title">Com a sua conta você tem</h2>
+      <ul>
+        <li>
+          <span><app-ui-icon [icon]="iconRespostas" [size]="20" /></span>
+          <strong>As {{ v.total_questoes }} respostas</strong>
+          <small>Com anuladas e questões em análise sinalizadas.</small>
+        </li>
+        <li>
+          <span><app-ui-icon [icon]="iconNota" [size]="20" /></span>
+          <strong>Sua nota na hora</strong>
+          <small>Marque o que respondeu e veja a correção questão por questão.</small>
+        </li>
+        <li>
+          <span><app-ui-icon [icon]="iconAviso" [size]="20" /></span>
+          <strong>Aviso do seu período</strong>
+          <small>Notificação quando sair o próximo gabarito do seu período.</small>
+        </li>
+        <li>
+          <span><app-ui-icon [icon]="iconTreino" [size]="20" /></span>
+          <strong>Treino para a próxima</strong>
+          <small>Simulados no modelo das avaliações para revisar o que você errou.</small>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Barra fixa no celular: o convite fica sempre a um toque. -->
+    <div class="gv-sticky">
+      <a
+        class="gb-btn gb-btn--primary gb-btn--lg"
+        routerLink="/cadastro"
+        [queryParams]="{ next: destino }"
+        (click)="lembrarDestino()"
+      >
+        Criar conta e ver o gabarito
+      </a>
+    </div>
+  }
+
+  <div class="gb-aviso">
+    <app-gabaritos-aviso />
+  </div>
+</main>

@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { destinoPermitido, salvarDestinoPosLogin } from '../../core/utils/destino-pos-login.util';
 import { UiButtonComponent } from '../../shared/components/ui/button/ui-button.component';
 import { UiInputComponent } from '../../shared/components/ui/input/ui-input.component';
 import { UiSelectComponent } from '../../shared/components/ui/select/ui-select.component';
@@ -29,9 +31,23 @@ export class CadastroComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
 
+  /**
+   * Veio da vitrine de um gabarito (`?next=/dashboard/gabaritos/<slug>`): mostra
+   * o contexto e guarda o destino. A confirmação de e-mail sempre leva a
+   * /dashboard, e o shell do dashboard consome o destino para abrir o gabarito.
+   */
+  protected readonly vindoDeGabarito = signal(false);
+
   private cooldownTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      const next = inject(ActivatedRoute).snapshot.queryParamMap.get('next');
+      if (destinoPermitido(next)) {
+        salvarDestinoPosLogin(next);
+        this.vindoDeGabarito.set(true);
+      }
+    }
     this.seo.update({
       title: 'Criar conta grátis',
       description:

@@ -8,10 +8,16 @@
   <section class="form-panel">
     <div class="auth-box">
       <nav class="auth-tabs" aria-label="Autenticação">
-        <a class="auth-tab" routerLink="/login">Entrar</a>
+        <a class="auth-tab" routerLink="/login" queryParamsHandling="preserve">Entrar</a>
         <a class="auth-tab active" routerLink="/cadastro">Criar conta</a>
       </nav>
 
+      @if (vindoDeGabarito()) {
+        <p class="auth-gabarito" role="status">
+          <strong>Falta pouco para ver o gabarito.</strong>
+          Crie sua conta e, ao entrar, você vai direto para as respostas.
+        </p>
+      }
       <h2 class="auth-heading">Crie sua conta.</h2>
       <p class="auth-copy">Use seu e-mail para começar.</p>
 
@@ -133,7 +139,7 @@
         Cadastrar com Google
       </button>
 
-      <p class="footer-link">Já tem conta? <a class="link" routerLink="/login">Já tenho conta</a></p>
+      <p class="footer-link">Já tem conta? <a class="link" routerLink="/login" queryParamsHandling="preserve">Já tenho conta</a></p>
     </div>
   </section>
 </main>

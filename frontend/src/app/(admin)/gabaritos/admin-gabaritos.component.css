@@ -1,0 +1,225 @@
+.gab-admin {
+  width: 100%;
+}
+
+.gab-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gab-eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-success);
+}
+
+.gab-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.gab-sub {
+  margin: 0.375rem 0 0;
+  color: var(--color-text-muted);
+}
+
+/* ── Botões ───────────────────────────────────────────── */
+.gab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.gab-btn:active { transform: translateY(1px); }
+.gab-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.gab-btn--primary {
+  background: var(--color-action);
+  color: #fff;
+  box-shadow: 0 6px 16px -8px rgba(37, 84, 220, 0.7);
+}
+.gab-btn--primary:hover:not(:disabled) { background: var(--color-primary); }
+
+.gab-btn--soft {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.gab-btn--soft:hover:not(:disabled) { background: #e2e8f0; }
+
+.gab-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 9px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.gab-icon-btn:hover { color: var(--color-primary); border-color: var(--color-primary-light); }
+.gab-icon-btn--danger:hover { color: var(--color-danger); border-color: #fca5a5; }
+
+/* ── KPIs ─────────────────────────────────────────────── */
+.gab-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.gab-kpis li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.gab-kpis strong { font-size: 1.5rem; font-weight: 800; color: var(--color-text); }
+.gab-kpis span { font-size: 0.8125rem; color: var(--color-text-muted); }
+
+/* ── Filtros ──────────────────────────────────────────── */
+.gab-filtros {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+}
+
+.gab-filtro {
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.gab-filtro.is-on { background: var(--color-surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
+
+/* ── Cards ────────────────────────────────────────────── */
+.gab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.gab-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.gab-card:hover { border-color: #c7d2fe; box-shadow: 0 10px 28px -18px rgba(30, 64, 175, 0.45); }
+.gab-card.is-draft { background: repeating-linear-gradient(135deg, #fff, #fff 12px, #fbfbfc 12px, #fbfbfc 24px); }
+
+.gab-card--skeleton {
+  height: 220px;
+  background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9);
+  background-size: 200% 100%;
+  animation: gab-shimmer 1.2s infinite;
+}
+@keyframes gab-shimmer { to { background-position: -200% 0; } }
+
+.gab-card__top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.gab-card__badges { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
+
+.gab-tipo {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding: 0 0.5rem;
+  border-radius: 12px;
+  background: var(--gradient-brand);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.gab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.gab-pill--live { background: #dcfce7; color: #166534; }
+.gab-pill--live i { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2); }
+.gab-pill--ok { background: #e0e7ff; color: #3730a3; }
+
+.gab-card__name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-decoration: none;
+}
+.gab-card__name:hover { color: var(--color-primary); }
+
+.gab-card__meta { margin: -0.35rem 0 0; font-size: 0.8125rem; color: var(--color-text-muted); }
+
+.gab-progress { display: flex; align-items: center; gap: 0.6rem; font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); }
+.gab-progress__bar { flex: 1; height: 6px; border-radius: 999px; background: var(--color-surface-2); overflow: hidden; }
+.gab-progress__bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3b82f6, #059669); }
+
+.gab-card__stats { display: flex; gap: 0.9rem; font-size: 0.78rem; color: var(--color-text-muted); }
+.gab-card__stats span { display: inline-flex; align-items: center; gap: 0.3rem; }
+
+.gab-card__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: auto; padding-top: 0.4rem; border-top: 1px dashed var(--color-border); }
+.gab-card__actions .gab-btn { padding: 0.4rem 0.6rem; font-size: 0.8125rem; }
+.gab-card__actions .gab-icon-btn { width: 1.95rem; height: 1.95rem; }
+.gab-card__actions .gab-icon-btn--danger { margin-left: auto; }
+
+/* ── Vazio ────────────────────────────────────────────── */
+.gab-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1.5rem;
+  border: 2px dashed var(--color-border);
+  border-radius: 18px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.gab-empty h2 { margin: 0.25rem 0 0; font-size: 1.15rem; color: var(--color-text); }
+.gab-empty p { margin: 0 0 0.75rem; max-width: 26rem; }
+
+@media (max-width: 767px) {
+  .gab-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gab-title { font-size: 1.4rem; }
+}

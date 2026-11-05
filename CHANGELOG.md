@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-11-05 | Feature | Gabaritos extraoficiais (grátis)
+
+- Novo `/admin/gabaritos`: a equipe cadastra o gabarito de uma prova recém-aplicada (tipo, período, semestre, A–D/A–E, nº de questões) num cartão-resposta com digitação rápida (letras em sequência; `X` anula; espaço deixa em análise), colagem de gabarito em vários formatos, área e comentário por questão, progresso e distribuição das letras. Ao publicar: aviso in-app aos alunos do período (uma vez só), copiar link e WhatsApp. Selo "conferido com o oficial" quando o oficial sai.
+- Páginas públicas `/gabaritos` e `/gabaritos/:slug` (sem login, SSR com título/OG por prova) e o mesmo conteúdo em `/dashboard/gabaritos`, com item **Gabaritos · Grátis** no menu. Aba **Conferir minha nota**: o aluno marca ou cola as respostas e vê nota, acertos/erros e a correção linha a linha. Anulada pontua para todos; em análise fica fora da conta.
+- Landing: seção `#gabaritos`, selo "Grátis" no hero, item no menu, no plano Grátis, no FAQ e no rodapé, com o aviso de gabarito extraoficial e de independência da Afya. Sitemap inclui `/gabaritos`.
+- Sino de notificações abre `dados.link` interno.
+- Banco: migration `20261105120000_gabaritos_provas` (RLS admin-only, sem grant para `anon`, leitura pública só por RPC que filtra publicado). Seed local com 4 gabaritos publicados + 1 rascunho do 6º período.
+- Docs: `docs/gabaritos-extraoficiais.md`, `docs/business-rules.md` e ADR-043.
+- Ajustes da revisão: aviso ao período só conta como enviado se alguém recebeu, com botão "Avisar alunos agora"; exclusão por RPC; guard de alterações não salvas no editor; colagem numerada imune a palavras ("da", "e") e limitada a 200; corte de questões avisa sobre área e comentário; detalhe acompanha troca de slug na mesma rota; 404 real no SSR; visualização contada uma vez por sessão.
+- Segunda rodada (pedidos do Guilherme):
+  - "Avisar alunos" também manda **e-mail**: até 50 alunos do período, fora de Ipatinga primeiro, pela tubulação de campanhas (segmento `gabarito`, uma campanha por gabarito, prévia no editor, histórico e Retomar em `/admin/campanhas`).
+  - **MCP** com CRUD completo de gabaritos (`listar/obter/criar/atualizar/publicar/excluir_gabarito`).
+  - Selo "NOVO" em Gabaritos no menu do app, no formato do selo PRO e em azul (publicação nas últimas 24h; no mobile, no item do menu do perfil e com um ponto no avatar).
+  - Sem selo "Grátis" nas telas de gabarito.
+  - Compartilhar usa a folha nativa do celular, com fallback para o WhatsApp.
+  - Ícone novo em "Conferir minha nota".
+  - Espaçamento do gabarito dentro do app igual ao das outras telas.
+  - Admin em largura total, inputs (select, number, date, textarea) no padrão `ui-field` e semestre no `app-ui-select`.
+  - Dica de que o link copiado é público e abre sem login.
+- Terceira rodada: **ver o gabarito exige conta**.
+  - O link público vira uma vitrine com convite ao cadastro: prova, contagens, respostas borradas com cadeado, "Criar conta e ver o gabarito" e "Já tenho conta · Entrar".
+  - As respostas só saem por `get_gabarito_prova` para `authenticated`; a nova `get_gabarito_prova_vitrine` é pública e não tem nenhuma letra.
+  - Depois do cadastro (com confirmação de e-mail) ou do login, o aluno cai direto no gabarito: `?next` no login e destino guardado no navegador, consumido pelo painel.
+  - Cadastro e login mostram o contexto "Falta pouco para ver o gabarito". Logado, as páginas públicas levam ao app.
+  - Textos da landing ajustados ("é só criar sua conta").
+  - Verificado: 6 E2E (vitrine sem respostas, inclusive chamando a API com a anon key; cadastro com contexto; login devolve ao gabarito; destino consumido) e 958 testes unitários.
+- Verificado: `ng build` de produção sem avisos; 954 testes unitários; 4 E2E de gabaritos (stack local); 208 testes Deno (inclui template do e-mail e parser do MCP); `deno check` de `boramed-mcp` e `enviar-campanha-email`; teste SQL `gabaritos_provas_test.sql` com 6 blocos (no CI) e o de grants existente. O fluxo de e-mail foi exercitado localmente com chave falsa do Resend (campanha criada, idempotência, nada entregue) e a prévia renderizada. Revisão visual em 1680/1440/390 px. Não verificado: envio real pelo Resend e as ferramentas do MCP com OAuth (exigem deploy).
+
 ## 2026-11-01 | Fix | Paginação da impressão de simulados
 
 - Corrigida a divisão de alternativas entre páginas em questões extensas: a proteção que existia somente no artigo não era suficiente quando a questão ultrapassava uma folha. Alternativas, figuras com legenda e linhas de resposta agora também têm proteção de quebra.

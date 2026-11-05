@@ -1,0 +1,503 @@
+<div class="ed">
+  <!-- ── Barra superior ─────────────────────────────────────────────── -->
+  <div class="ed-bar">
+    <a class="ed-back" routerLink="/admin/gabaritos">
+      <app-ui-icon [icon]="iconBack" [size]="16" />
+      <span>Gabaritos</span>
+    </a>
+    <div class="ed-bar__title">
+      <h1>{{ id() ? nomeExibido() : 'Novo gabarito' }}</h1>
+      @if (status() === 'publicado') {
+        <span class="gab-pill gab-pill--live"><i></i>No ar</span>
+      } @else {
+        <span class="gab-pill">Rascunho</span>
+      }
+      @if (sujo()) {
+        <span class="ed-dirty" role="status">Alterações não salvas</span>
+      }
+    </div>
+    <div class="ed-bar__actions">
+      @if (slug()) {
+        <a class="gab-icon-btn" [href]="'/gabaritos/' + slug()" target="_blank" rel="noopener" title="Ver como o aluno vê" aria-label="Pré-visualizar página pública">
+          <app-ui-icon [icon]="iconExternal" [size]="16" />
+        </a>
+      }
+      <button type="button" class="gab-btn gab-btn--soft" [disabled]="salvando() || carregando()" (click)="salvarRascunho()">
+        <app-ui-icon [icon]="iconSave" [size]="16" />
+        <span>{{ status() === 'publicado' ? 'Salvar' : 'Salvar rascunho' }}</span>
+      </button>
+      @if (status() === 'publicado') {
+        <button type="button" class="gab-btn gab-btn--soft" [disabled]="salvando()" (click)="despublicar()">
+          <app-ui-icon [icon]="iconUndo" [size]="16" />
+          <span>Tirar do ar</span>
+        </button>
+      } @else {
+        <button type="button" class="gab-btn gab-btn--primary" [disabled]="salvando() || carregando()" (click)="publicar()">
+          <app-ui-icon [icon]="iconSend" [size]="16" />
+          <span>Publicar</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (carregando()) {
+    <div class="ed-loading" aria-busy="true">Carregando gabarito…</div>
+  } @else {
+    <div class="ed-grid">
+      <div class="ed-main">
+        <!-- ── 1. A prova ─────────────────────────────────────────────── -->
+        <section class="ed-card" aria-labelledby="ed-prova">
+          <h2 class="ed-step" id="ed-prova"><span>1</span> Qual prova?</h2>
+
+          <div class="ed-field">
+            <span class="ed-label">Tipo de prova</span>
+            <div class="ed-chips">
+              @for (t of tiposSugeridos; track t) {
+                <button
+                  type="button"
+                  class="ed-chip"
+                  [class.is-on]="!tipoCustom() && tipoProva() === t"
+                  [attr.aria-pressed]="!tipoCustom() && tipoProva() === t"
+                  (click)="escolherTipo(t)"
+                >{{ t }}</button>
+              }
+              <button
+                type="button"
+                class="ed-chip ed-chip--ghost"
+                [class.is-on]="tipoCustom()"
+                [attr.aria-pressed]="tipoCustom()"
+                (click)="escolherTipo(null)"
+              >Outra…</button>
+            </div>
+            @if (tipoCustom()) {
+              <input
+                class="ed-input ed-mt"
+                type="text"
+                maxlength="40"
+                placeholder="Ex.: Prova Prática, OSCE, Substitutiva"
+                aria-label="Nome do tipo de prova"
+                [ngModel]="tipoProva()"
+                (ngModelChange)="setCampo('tipoProva', $event)"
+              />
+            }
+            @if (tentouSalvar() && !tipoProva().trim()) {
+              <span class="ed-erro">Informe o tipo da prova.</span>
+            }
+          </div>
+
+          <div class="ed-field">
+            <span class="ed-label">Período</span>
+            <div class="ed-periodos" role="radiogroup" aria-label="Período">
+              @for (p of periodos; track p) {
+                <button
+                  type="button"
+                  role="radio"
+                  class="ed-periodo"
+                  [class.is-on]="periodo() === p"
+                  [attr.aria-checked]="periodo() === p"
+                  (click)="escolherPeriodo(p)"
+                >{{ p }}º</button>
+              }
+            </div>
+            @if (tentouSalvar() && periodo() === null) {
+              <span class="ed-erro">Escolha o período.</span>
+            }
+          </div>
+
+          <div class="ed-row">
+            <div class="ed-field">
+              <app-ui-select
+                label="Semestre"
+                name="gabarito-semestre"
+                [options]="opcoesSemestre"
+                [value]="semestre()"
+                (valueChange)="setCampo('semestre', '' + $event)"
+              />
+            </div>
+            <label class="ed-field">
+              <span class="ed-label">Data da prova <em>(opcional)</em></span>
+              <input class="ed-input" type="date" [ngModel]="dataProva()" (ngModelChange)="setCampo('dataProva', $event)" />
+            </label>
+          </div>
+
+          <div class="ed-row">
+            <div class="ed-field">
+              <span class="ed-label">Alternativas</span>
+              <div class="ed-seg" role="radiogroup" aria-label="Quantidade de alternativas">
+                @for (n of [4, 5]; track n) {
+                  <button
+                    type="button"
+                    role="radio"
+                    [class.is-on]="qtdAlt() === n"
+                    [attr.aria-checked]="qtdAlt() === n"
+                    (click)="escolherQtdAlt(n)"
+                  >A–{{ n === 4 ? 'D' : 'E' }}</button>
+                }
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-label" for="ed-total">Nº de questões</label>
+              <div class="ed-total">
+                <input
+                  #totalEl
+                  id="ed-total"
+                  class="ed-input"
+                  type="number"
+                  min="1"
+                  max="200"
+                  [value]="folha().length"
+                  (change)="onTotalInput(totalEl)"
+                />
+                <div class="ed-presets">
+                  @for (n of presetsTotal; track n) {
+                    <button type="button" [class.is-on]="folha().length === n" (click)="alterarTotal(n)">{{ n }}</button>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <details class="ed-extra" [open]="!!titulo() || !!observacao()">
+            <summary>Título e observação <em>(opcional)</em></summary>
+            <label class="ed-field">
+              <span class="ed-label">Título próprio</span>
+              <input
+                class="ed-input"
+                type="text"
+                maxlength="120"
+                [placeholder]="'Padrão: ' + nomeExibido()"
+                [ngModel]="titulo()"
+                (ngModelChange)="setCampo('titulo', $event)"
+              />
+            </label>
+            <label class="ed-field">
+              <span class="ed-label">Observação para os alunos</span>
+              <textarea
+                class="ed-input"
+                rows="2"
+                maxlength="600"
+                placeholder="Ex.: Gabarito da versão A. Questões 12 e 31 com recurso em análise."
+                [ngModel]="observacao()"
+                (ngModelChange)="setCampo('observacao', $event)"
+              ></textarea>
+            </label>
+          </details>
+        </section>
+
+        <!-- ── 2. Cartão-resposta ─────────────────────────────────────── -->
+        <section class="ed-card" aria-labelledby="ed-cartao">
+          <div class="ed-card__head">
+            <h2 class="ed-step" id="ed-cartao"><span>2</span> Marque as respostas</h2>
+            <button type="button" class="gab-btn gab-btn--soft" [attr.aria-expanded]="colarAberto()" (click)="colarAberto.set(!colarAberto())">
+              <app-ui-icon [icon]="iconPaste" [size]="16" />
+              <span>Colar gabarito</span>
+            </button>
+          </div>
+
+          @if (colarAberto()) {
+            <div class="ed-colar">
+              <label class="ed-label" for="ed-colar-txt">
+                Cole do jeito que chegou: “ABCDA…”, “1-A 2-B”, uma por linha… <strong>X</strong> = anulada, <strong>?</strong> = em análise.
+              </label>
+              <textarea
+                id="ed-colar-txt"
+                class="ed-input ed-colar__txt"
+                rows="3"
+                placeholder="1-C 2-A 3-D 4-B 5-X…"
+                [ngModel]="textoColado()"
+                (ngModelChange)="textoColado.set($event)"
+              ></textarea>
+              @if (previewColado().length) {
+                <div class="ed-colar__preview" aria-live="polite">
+                  <span class="ed-colar__count">{{ previewColado().length }} respostas encontradas</span>
+                  <div class="ed-colar__seq">
+                    @for (l of previewColado(); track $index) {
+                      <span [class.is-x]="l === 'X'" [class.is-q]="l === '?'"><small>{{ $index + 1 }}</small>{{ l }}</span>
+                    }
+                  </div>
+                </div>
+              }
+              <div class="ed-colar__actions">
+                <button type="button" class="gab-btn gab-btn--soft" (click)="colarAberto.set(false)">Cancelar</button>
+                <button type="button" class="gab-btn gab-btn--primary" [disabled]="!previewColado().length" (click)="aplicarColado()">
+                  Aplicar na folha
+                </button>
+              </div>
+            </div>
+          }
+
+          <p class="ed-hint">
+            <app-ui-icon [icon]="iconKeyboard" [size]="15" />
+            Clique numa questão e digite as letras em sequência: o cursor desce sozinho.
+          </p>
+
+          <div
+            #cartao
+            class="ed-sheet"
+            tabindex="0"
+            role="group"
+            [attr.aria-label]="'Cartão-resposta. Questão ativa: ' + (ativa() + 1) + '. Digite uma letra de A a ' + letras()[letras().length - 1] + ', X para anular, espaço para deixar em análise.'"
+            (keydown)="onTeclaCartao($event)"
+          >
+            @for (coluna of colunas(); track $index) {
+              <div class="ed-sheet__col">
+                @for (q of coluna; track q.numero) {
+                  <div
+                    class="ed-q"
+                    [attr.data-q]="q.numero"
+                    [class.is-active]="ativa() === q.numero - 1"
+                    [class.is-anulada]="q.anulada"
+                    [class.is-pendente]="!q.anulada && !q.resposta"
+                    (click)="focarLinha(q.numero - 1)"
+                  >
+                    <span class="ed-q__n">{{ q.numero < 10 ? '0' + q.numero : q.numero }}</span>
+                    <div class="ed-q__bubbles">
+                      @for (l of letras(); track l) {
+                        <button
+                          type="button"
+                          tabindex="-1"
+                          class="ed-bubble"
+                          [class.is-on]="q.resposta === l"
+                          [attr.aria-label]="'Questão ' + q.numero + ', letra ' + l"
+                          [attr.aria-pressed]="q.resposta === l"
+                          (click)="marcar(q.numero - 1, l); $event.stopPropagation(); focarLinha(q.numero - 1)"
+                        >{{ l }}</button>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      tabindex="-1"
+                      class="ed-q__tool"
+                      [class.is-on]="q.anulada"
+                      [attr.aria-pressed]="q.anulada"
+                      [attr.aria-label]="'Anular questão ' + q.numero"
+                      title="Anulada (X)"
+                      (click)="alternarAnulada(q.numero - 1); $event.stopPropagation(); focarLinha(q.numero - 1)"
+                    >
+                      <app-ui-icon [icon]="iconAnular" [size]="15" />
+                    </button>
+                    <button
+                      type="button"
+                      tabindex="-1"
+                      class="ed-q__tool"
+                      [class.has-note]="!!q.area || !!q.comentario"
+                      [attr.aria-expanded]="expandida() === q.numero - 1"
+                      [attr.aria-label]="'Área e comentário da questão ' + q.numero"
+                      title="Área e comentário"
+                      (click)="alternarExpandida(q.numero - 1); $event.stopPropagation()"
+                    >
+                      <app-ui-icon [icon]="iconComment" [size]="15" />
+                    </button>
+                  </div>
+                  @if (expandida() === q.numero - 1) {
+                    <div class="ed-q__detail" (keydown)="$event.stopPropagation()">
+                      <input
+                        class="ed-input"
+                        type="text"
+                        maxlength="60"
+                        placeholder="Área (ex.: Anatomia)"
+                        [attr.aria-label]="'Área da questão ' + q.numero"
+                        [ngModel]="q.area ?? ''"
+                        (ngModelChange)="setDetalhe(q.numero - 1, 'area', $event)"
+                      />
+                      <textarea
+                        class="ed-input"
+                        rows="2"
+                        maxlength="1000"
+                        placeholder="Comentário da equipe (ex.: por que é a C, ou que cabe recurso)"
+                        [attr.aria-label]="'Comentário da questão ' + q.numero"
+                        [ngModel]="q.comentario ?? ''"
+                        (ngModelChange)="setDetalhe(q.numero - 1, 'comentario', $event)"
+                      ></textarea>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+
+      <!-- ── Lateral ────────────────────────────────────────────────────── -->
+      <aside class="ed-side">
+        <section class="ed-card ed-progress">
+          <div class="ed-ring" [style.--p]="progresso()">
+            <svg viewBox="0 0 36 36" aria-hidden="true">
+              <circle cx="18" cy="18" r="15.9" class="ed-ring__bg" />
+              <circle cx="18" cy="18" r="15.9" class="ed-ring__fg" [attr.stroke-dasharray]="progresso() + ' 100'" />
+            </svg>
+            <strong>{{ progresso() }}%</strong>
+          </div>
+          <div>
+            <p class="ed-progress__main">{{ resumo().preenchidas }} de {{ resumo().total }} prontas</p>
+            <p class="ed-progress__sub">
+              {{ resumo().anuladas }} anulada{{ resumo().anuladas === 1 ? '' : 's' }} ·
+              {{ resumo().emAnalise }} em análise
+            </p>
+          </div>
+        </section>
+
+        <section class="ed-card">
+          <h3 class="ed-side__title">Distribuição das letras</h3>
+          <p class="ed-side__help">Confira se nenhuma letra ficou estranha de tão frequente.</p>
+          <ul class="ed-dist">
+            @for (d of distribuicao(); track d.letra) {
+              <li>
+                <span class="ed-dist__l">{{ d.letra }}</span>
+                <span class="ed-dist__bar"><i [style.width.%]="(d.total / maxDistribuicao()) * 100"></i></span>
+                <span class="ed-dist__n">{{ d.total }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="ed-card ed-pub">
+          <h3 class="ed-side__title">Publicação</h3>
+          <label class="ed-toggle">
+            <input type="checkbox" [checked]="conferido()" (change)="alternarConferido()" />
+            <span>
+              <strong>Conferido com o oficial</strong>
+              <small>Marque quando o gabarito oficial sair e bater com este.</small>
+            </span>
+          </label>
+
+          @if (status() !== 'publicado' && avisoPendente()) {
+            <label class="ed-toggle">
+              <input type="checkbox" [checked]="notificar()" (change)="notificar.set(!notificar())" />
+              <span>
+                <strong>Avisar alunos do {{ periodo() ? periodo() + 'º' : '' }} período</strong>
+                <small>No app, para todos do período. Por e-mail, para até 50, com quem é de fora de Ipatinga primeiro. Sai uma vez só.</small>
+              </span>
+            </label>
+          } @else if (status() === 'publicado') {
+            <ul class="ed-canais" aria-label="Aviso aos alunos">
+              <li [class.is-ok]="!!notificadoEm()">
+                <app-ui-icon [icon]="notificadoEm() ? iconCheck : iconBell" [size]="15" />
+                <span>No app</span>
+                <strong>{{ notificadoEm() ? 'avisados' : 'pendente' }}</strong>
+              </li>
+              <li [class.is-ok]="emailCampanha()?.status === 'enviada'" [class.is-warn]="emailCampanha() && emailCampanha()?.status !== 'enviada'">
+                <app-ui-icon [icon]="emailCampanha() ? iconCheck : iconMail" [size]="15" />
+                <span>Por e-mail</span>
+                <strong>
+                  @if (emailCampanha(); as e) {
+                    {{ e.enviados }} enviado{{ e.enviados === 1 ? '' : 's' }}{{ e.status === 'enviada' ? '' : ' · ' + e.status }}
+                  } @else {
+                    pendente
+                  }
+                </strong>
+              </li>
+            </ul>
+            @if (emailCampanha() && emailCampanha()?.status !== 'enviada' && emailCampanha()?.status !== 'enviando') {
+              <a class="ed-link" routerLink="/admin/campanhas">E-mail não saiu para todos: retome em Campanhas</a>
+            }
+            @if (avisoPendente()) {
+              <button type="button" class="gab-btn gab-btn--soft ed-pub__cta" [disabled]="salvando()" (click)="avisarAgora()">
+                <app-ui-icon [icon]="iconBell" [size]="15" /><span>Avisar alunos agora</span>
+              </button>
+            }
+          }
+          <button type="button" class="ed-link" [disabled]="carregandoPrevia()" (click)="verEmail()">
+            {{ carregandoPrevia() ? 'Montando…' : 'Ver o e-mail que os alunos recebem' }}
+          </button>
+
+          @if (status() === 'publicado' && slug()) {
+            <div class="ed-share">
+              <small class="ed-share__hint">Link público: abre sem login, direto no gabarito.</small>
+              <span class="ed-share__url">{{ linkPublico() }}</span>
+              <div class="ed-share__actions">
+                <button type="button" class="gab-btn gab-btn--soft" (click)="copiarLink()">
+                  <app-ui-icon [icon]="iconCopy" [size]="15" /><span>Copiar</span>
+                </button>
+                <a class="gab-btn ed-wpp" [href]="linkWhatsapp()" target="_blank" rel="noopener">WhatsApp</a>
+              </div>
+            </div>
+          } @else {
+            <button type="button" class="gab-btn gab-btn--primary ed-pub__cta" [disabled]="salvando()" (click)="publicar()">
+              <app-ui-icon [icon]="iconSend" [size]="16" />
+              <span>Publicar agora</span>
+            </button>
+          }
+        </section>
+
+        <section class="ed-card ed-keys">
+          <h3 class="ed-side__title">Atalhos do cartão</h3>
+          <ul>
+            <li><kbd>A</kbd>–<kbd>{{ letras()[letras().length - 1] }}</kbd> marca e desce</li>
+            <li><kbd>X</kbd> anula</li>
+            <li><kbd>Espaço</kbd> em análise</li>
+            <li><kbd>⌫</kbd> apaga</li>
+            <li><kbd>↑</kbd><kbd>↓</kbd> navega</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  }
+</div>
+
+<!-- ── Publicado! ───────────────────────────────────────────────────────── -->
+@if (publicadoAgora(); as pub) {
+  <div class="ed-modal" role="dialog" aria-modal="true" aria-labelledby="ed-modal-title" (click)="publicadoAgora.set(null)">
+    <div class="ed-modal__box" (click)="$event.stopPropagation()">
+      <button type="button" class="ed-modal__close" aria-label="Fechar" (click)="publicadoAgora.set(null)">
+        <app-ui-icon [icon]="iconX" [size]="18" />
+      </button>
+      <div class="ed-modal__burst" aria-hidden="true">
+        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) { <i [style.--i]="i"></i> }
+        <app-ui-icon [icon]="iconCheck" [size]="34" />
+      </div>
+      <h2 id="ed-modal-title">Está no ar!</h2>
+      <p>
+        <strong>{{ nomeExibido() }}</strong> já aparece em /gabaritos.
+      </p>
+      @if (pub.avisou) {
+        <ul class="ed-modal__canais">
+          <li>
+            <strong>App:</strong>
+            @if (pub.app > 0) {
+              {{ pub.app }} aluno{{ pub.app === 1 ? '' : 's' }} do {{ periodo() }}º período avisado{{ pub.app === 1 ? '' : 's' }}.
+            } @else if (notificadoEm()) {
+              alunos já tinham sido avisados.
+            } @else {
+              nenhum aluno do {{ periodo() }}º período para avisar agora.
+            }
+          </li>
+          <li>
+            <strong>E-mail:</strong>
+            @if (pub.emailErro) {
+              não saiu ({{ pub.emailErro }}). Tente de novo em "Avisar alunos agora".
+            } @else if (pub.email?.sem_destinatarios) {
+              nenhum aluno do período apto a receber.
+            } @else if (pub.email?.ja_enviado) {
+              já tinha saído antes.
+            } @else if (pub.email) {
+              {{ pub.email.enviados ?? 0 }} de {{ pub.email.total ?? 0 }} enviado{{ pub.email.enviados === 1 ? '' : 's' }}.
+            }
+          </li>
+        </ul>
+      }
+      <span class="ed-share__url">{{ linkPublico() }}</span>
+      <div class="ed-modal__actions">
+        <button type="button" class="gab-btn gab-btn--soft" (click)="copiarLink()">
+          <app-ui-icon [icon]="iconCopy" [size]="15" /><span>Copiar link</span>
+        </button>
+        <a class="gab-btn ed-wpp" [href]="linkWhatsapp()" target="_blank" rel="noopener">Mandar no WhatsApp</a>
+        <a class="gab-btn gab-btn--primary" [href]="'/gabaritos/' + slug()" target="_blank" rel="noopener">Ver página</a>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Prévia do e-mail ─────────────────────────────────────────────────── -->
+@if (emailPrevia(); as html) {
+  <div class="ed-modal" role="dialog" aria-modal="true" aria-label="Prévia do e-mail aos alunos" (click)="emailPrevia.set(null)">
+    <div class="ed-modal__box ed-modal__box--email" (click)="$event.stopPropagation()">
+      <button type="button" class="ed-modal__close" aria-label="Fechar" (click)="emailPrevia.set(null)">
+        <app-ui-icon [icon]="iconX" [size]="18" />
+      </button>
+      <h2>E-mail aos alunos</h2>
+      <p>Assim chega para quem é avisado por e-mail. O nome é o de cada aluno.</p>
+      <iframe class="ed-email-frame" title="Prévia do e-mail" sandbox="" [srcdoc]="html"></iframe>
+    </div>
+  </div>
+}

@@ -355,6 +355,7 @@ export class AdminCampanhasComponent implements OnInit {
   }
 
   protected rotuloSegmento(valor: string): string {
+    if (valor === 'gabarito') return 'Gabarito publicado (automático)';
     return ROTULO_SEGMENTO[valor as SegmentoCampanha] ?? valor;
   }
 

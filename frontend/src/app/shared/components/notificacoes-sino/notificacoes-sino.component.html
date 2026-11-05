@@ -61,6 +61,9 @@
               @if (n.mensagem) {
                 <span class="item-mensagem">{{ n.mensagem }}</span>
               }
+              @if (temLink(n)) {
+                <span class="item-link">Abrir →</span>
+              }
               <span class="item-data">{{ formatarData(n.criado_em) }}</span>
             </div>
             @if (!n.lida) {

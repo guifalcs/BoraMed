@@ -154,6 +154,7 @@ público e o que conferir antes do disparo.
 | `ex_assinantes` | Já assinou e hoje não tem acesso. |
 | `todos` | Todos os alunos elegíveis. |
 | `lista_manual` | Não é um recorte da base: o público é a lista de e-mails que o admin digitou/colou na tela. |
+| `gabarito` | **Automático, fora da tela de campanhas**: aviso "saiu o gabarito" disparado ao publicar um gabarito extraoficial (modo `gabarito` da função). Público de até 50 alunos do período, fora de Ipatinga primeiro (`email_publico_gabarito`). Uma campanha por gabarito. Aparece no histórico e aceita **Retomar**. Ver `docs/gabaritos-extraoficiais.md`. |
 
 Fora de qualquer segmento, sempre: admins e super_admins, contas banidas, quem
 pediu descadastro e **contas com e-mail não confirmado** (endereço provavelmente

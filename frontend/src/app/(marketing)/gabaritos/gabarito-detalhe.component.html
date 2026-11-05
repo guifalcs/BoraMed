@@ -1,0 +1,283 @@
+@if (!embutido) {
+  <app-gabaritos-topo />
+}
+
+<main class="gb" [class.gb--embutido]="embutido">
+  <a class="gb-voltar" [routerLink]="base">
+    <app-ui-icon [icon]="iconBack" [size]="15" />
+    Todos os gabaritos
+  </a>
+
+  @if (carregando()) {
+    <div class="gb-card gb-card--skeleton gb-skel-hero" aria-busy="true"></div>
+  } @else if (naoEncontrado()) {
+    <div class="gb-empty">
+      <h1>Gabarito não encontrado</h1>
+      <p>Ele pode ter saído do ar para correção. Veja os outros gabaritos publicados.</p>
+      <a class="gb-btn gb-btn--primary" [routerLink]="base">Ver gabaritos</a>
+    </div>
+  } @else if (gabarito(); as g) {
+    @if (g.status !== 'publicado') {
+      <p class="gb-rascunho" role="status">Pré-visualização de rascunho: só a equipe vê esta página.</p>
+    }
+
+    <!-- ── Cabeçalho ──────────────────────────────────────────────────── -->
+    <section class="gb-det-hero" aria-labelledby="gb-det-title">
+      <div class="gb-det-hero__main">
+        <span class="gb-tipo gb-tipo--lg">{{ g.tipo_prova }}</span>
+        <div>
+          <div class="gb-card__badges gb-card__badges--start">
+            @if (g.conferido_oficial) {
+              <span class="gb-pill gb-pill--ok"><app-ui-icon [icon]="iconCheck" [size]="12" />Conferido com o oficial</span>
+            } @else {
+              <span class="gb-pill gb-pill--extra">Extraoficial · pode mudar</span>
+            }
+          </div>
+          <h1 id="gb-det-title" class="gb-det-hero__title">Gabarito {{ nome() }}</h1>
+          <p class="gb-det-hero__meta">
+            {{ g.semestre }}
+            @if (g.data_prova) { · prova de {{ dataLonga(g.data_prova) }} }
+            · {{ g.questoes.length }} questões · atualizado {{ atualizadoEm(g.atualizado_em) }}
+          </p>
+        </div>
+      </div>
+      <div class="gb-det-hero__share">
+        <button type="button" class="gb-btn gb-btn--wpp" (click)="compartilhar()">
+          <app-ui-icon [icon]="iconShare" [size]="15" />
+          Compartilhar
+        </button>
+        <button type="button" class="gb-btn gb-btn--soft" (click)="copiarLink()">
+          <app-ui-icon [icon]="iconCopy" [size]="15" />
+          Copiar link
+        </button>
+      </div>
+      @if (g.observacao) {
+        <p class="gb-obs">{{ g.observacao }}</p>
+      }
+      <ul class="gb-resumo" aria-label="Resumo do gabarito">
+        <li><strong>{{ g.questoes.length - resumo().anuladas - resumo().emAnalise }}</strong> com resposta</li>
+        @if (resumo().anuladas) { <li><strong>{{ resumo().anuladas }}</strong> anulada{{ resumo().anuladas === 1 ? '' : 's' }}</li> }
+        @if (resumo().emAnalise) { <li class="is-warn"><strong>{{ resumo().emAnalise }}</strong> em análise</li> }
+        @if (totalComentarios()) { <li><strong>{{ totalComentarios() }}</strong> comentada{{ totalComentarios() === 1 ? '' : 's' }}</li> }
+      </ul>
+    </section>
+
+    <!-- ── Modo ───────────────────────────────────────────────────────── -->
+    <div class="gb-modos" role="tablist" aria-label="Como ver o gabarito">
+      <button type="button" role="tab" [attr.aria-selected]="modo() === 'gabarito'" [class.is-on]="modo() === 'gabarito'" (click)="modo.set('gabarito')">
+        Ver gabarito
+      </button>
+      <button type="button" role="tab" [attr.aria-selected]="modo() === 'conferir'" [class.is-on]="modo() === 'conferir'" (click)="modo.set('conferir')">
+        <app-ui-icon [icon]="iconTarget" [size]="15" />
+        Conferir minha nota
+      </button>
+    </div>
+
+    @if (modo() === 'gabarito') {
+      <!-- ── Grade do gabarito ─────────────────────────────────────────── -->
+      <section class="gb-painel" aria-label="Respostas">
+        @if (areas().length > 1) {
+          <div class="gb-areas" aria-label="Filtrar por área">
+            <button type="button" [class.is-on]="areaFiltro() === null" (click)="areaFiltro.set(null)">Todas</button>
+            @for (a of areas(); track a) {
+              <button type="button" [class.is-on]="areaFiltro() === a" (click)="areaFiltro.set(a)">{{ a }}</button>
+            }
+          </div>
+        }
+
+        <ol class="gb-tiles">
+          @for (q of questoesVisiveis(); track q.numero) {
+            <li>
+              <button
+                type="button"
+                class="gb-tile"
+                [class.is-anulada]="q.anulada"
+                [class.is-analise]="!q.anulada && !q.resposta"
+                [class.is-sel]="selecionada() === q.numero"
+                [class.has-note]="!!q.comentario"
+                [attr.aria-label]="'Questão ' + q.numero + ': ' + (q.anulada ? 'anulada' : q.resposta ? 'letra ' + q.resposta : 'em análise') + (q.comentario ? ', com comentário' : '')"
+                [style.--i]="q.numero"
+                (click)="selecionar(q)"
+              >
+                <small>{{ q.numero }}</small>
+                @if (q.anulada) {
+                  <app-ui-icon [icon]="iconAnulada" [size]="18" />
+                } @else if (q.resposta) {
+                  <strong>{{ q.resposta }}</strong>
+                } @else {
+                  <app-ui-icon [icon]="iconAnalise" [size]="18" />
+                }
+              </button>
+            </li>
+          }
+        </ol>
+
+        <div class="gb-legenda" aria-hidden="true">
+          <span><i class="is-anulada"></i>Anulada (ponto para todos)</span>
+          <span><i class="is-analise"></i>Em análise</span>
+          <span><i class="has-note"></i>Tem comentário: toque para ler</span>
+        </div>
+
+        @if (questaoSelecionada(); as q) {
+          <div class="gb-detalhe" aria-live="polite">
+            <p class="gb-detalhe__head">
+              Questão {{ q.numero }}
+              @if (q.area) { <span>· {{ q.area }}</span> }
+              <strong>
+                {{ q.anulada ? 'Anulada' : q.resposta ? 'Letra ' + q.resposta : 'Em análise' }}
+              </strong>
+            </p>
+            @if (q.comentario) {
+              <p class="gb-detalhe__txt">
+                <app-ui-icon [icon]="iconComment" [size]="15" />
+                {{ q.comentario }}
+              </p>
+            } @else {
+              <p class="gb-detalhe__txt gb-detalhe__txt--muted">Sem comentário da equipe nesta questão.</p>
+            }
+          </div>
+        }
+
+        <button type="button" class="gb-nudge" (click)="modo.set('conferir')">
+          <app-ui-icon [icon]="iconTarget" [size]="20" />
+          <span>
+            <strong>Quanto você tirou?</strong>
+            Marque suas respostas e veja sua nota na hora.
+          </span>
+        </button>
+      </section>
+    } @else {
+      <!-- ── Conferir minha nota ───────────────────────────────────────── -->
+      <section class="gb-painel gb-conferir" aria-label="Conferir minha nota">
+        @if (corrigido()) {
+          <div class="gb-result {{ faixa().classe }}" aria-live="polite">
+            <div class="gb-result__ring" [style.--p]="resultado().nota">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle cx="18" cy="18" r="15.9" class="bg" />
+                <circle cx="18" cy="18" r="15.9" class="fg" [attr.stroke-dasharray]="resultado().nota + ' 100'" />
+              </svg>
+              <strong>{{ resultado().nota.toLocaleString('pt-BR') }}<small>%</small></strong>
+            </div>
+            <div class="gb-result__copy">
+              <p class="gb-result__label">{{ faixa().rotulo }}</p>
+              <p class="gb-result__score">
+                {{ resultado().acertos + resultado().anuladas }} de {{ resultado().consideradas }} questões
+              </p>
+              <ul class="gb-result__chips">
+                <li class="ok">{{ resultado().acertos }} acerto{{ resultado().acertos === 1 ? '' : 's' }}</li>
+                <li class="err">{{ resultado().erros }} erro{{ resultado().erros === 1 ? '' : 's' }}</li>
+                @if (resultado().anuladas) { <li>{{ resultado().anuladas }} anulada{{ resultado().anuladas === 1 ? '' : 's' }} (+1 cada)</li> }
+                @if (resultado().semResposta) { <li>{{ resultado().semResposta }} em branco</li> }
+                @if (resultado().emAnalise) { <li class="warn">{{ resultado().emAnalise }} em análise, fora da conta</li> }
+              </ul>
+              <div class="gb-result__actions">
+                <button type="button" class="gb-btn gb-btn--wpp" (click)="compartilhar(true)">
+                  <app-ui-icon [icon]="iconShare" [size]="15" />
+                  Compartilhar resultado
+                </button>
+                <button type="button" class="gb-btn gb-btn--soft" (click)="corrigido.set(false)">Editar respostas</button>
+                <button type="button" class="gb-btn gb-btn--ghost" (click)="refazer()">
+                  <app-ui-icon [icon]="iconReset" [size]="15" />
+                  Recomeçar
+                </button>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="gb-conferir__intro">
+            <div>
+              <h2>Marque o que você respondeu na prova</h2>
+              <p>As respostas certas ficam escondidas até você corrigir. Suas marcações ficam salvas só neste aparelho.</p>
+            </div>
+            <button type="button" class="gb-btn gb-btn--soft" [attr.aria-expanded]="colarAberto()" (click)="colarAberto.set(!colarAberto())">
+              <app-ui-icon [icon]="iconPaste" [size]="15" />
+              Colar minhas respostas
+            </button>
+          </div>
+
+          @if (colarAberto()) {
+            <div class="gb-colar">
+              <label for="gb-colar-txt">Cole a sequência que você anotou (ex.: “ABDCE…” ou “1-A 2-C”).</label>
+              <textarea id="gb-colar-txt" rows="2" [ngModel]="textoColado()" (ngModelChange)="textoColado.set($event)"></textarea>
+              @if (previewColado().length) {
+                <div class="gb-colar__seq" aria-live="polite">
+                  @for (l of previewColado(); track $index) {
+                    <span [class.is-vazio]="l === 'X' || l === '?'"><small>{{ $index + 1 }}</small>{{ l === 'X' || l === '?' ? '–' : l }}</span>
+                  }
+                </div>
+              }
+              <div class="gb-colar__foot">
+                <span>{{ previewColado().length }} respostas reconhecidas</span>
+                <button type="button" class="gb-btn gb-btn--primary" [disabled]="!previewColado().length" (click)="aplicarColado()">Aplicar</button>
+              </div>
+            </div>
+          }
+        }
+
+        <ol class="gb-sheet">
+          @for (q of g.questoes; track q.numero) {
+            <li class="gb-sheet__row {{ situacao(q.numero) }}">
+              <span class="gb-sheet__n">{{ q.numero }}</span>
+              <div class="gb-sheet__bubbles" role="group" [attr.aria-label]="'Sua resposta na questão ' + q.numero">
+                @for (l of letras(); track l) {
+                  <button
+                    type="button"
+                    class="gb-bubble"
+                    [class.is-on]="marcadas()[q.numero] === l"
+                    [class.is-certa]="corrigido() && q.resposta === l"
+                    [attr.aria-pressed]="marcadas()[q.numero] === l"
+                    [attr.aria-label]="'Questão ' + q.numero + ', letra ' + l"
+                    (click)="marcar(q.numero, l)"
+                  >{{ l }}</button>
+                }
+              </div>
+              @if (corrigido()) {
+                <span class="gb-sheet__status">
+                  @switch (situacao(q.numero)) {
+                    @case ('acerto') { Acertou }
+                    @case ('erro') { Era {{ q.resposta }} }
+                    @case ('anulada') { Anulada }
+                    @case ('em-analise') { Em análise }
+                    @default { Era {{ q.resposta }} }
+                  }
+                </span>
+              }
+            </li>
+          }
+        </ol>
+
+        @if (!corrigido()) {
+          <div class="gb-corrigir">
+            <span>{{ totalMarcadas() }} de {{ g.questoes.length }} marcadas</span>
+            <button type="button" class="gb-btn gb-btn--primary gb-btn--lg" [disabled]="totalMarcadas() === 0" (click)="corrigir()">
+              Ver minha nota
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ── CTA ────────────────────────────────────────────────────────── -->
+    @if (auth.isAuthenticated()) {
+      <section class="gb-cta" aria-labelledby="gb-cta-title">
+        <div>
+          <h2 id="gb-cta-title">Errou algum tema? Treine antes da próxima.</h2>
+          <p>Simulados no modelo das avaliações, com diagnóstico do que revisar primeiro.</p>
+        </div>
+        <a class="gb-btn gb-btn--light" routerLink="/dashboard/simulados">Treinar agora</a>
+      </section>
+    } @else {
+      <section class="gb-cta" aria-labelledby="gb-cta-title">
+        <div>
+          <h2 id="gb-cta-title">Quer chegar mais preparado na próxima prova?</h2>
+          <p>Questões autorais no modelo das avaliações, correção na hora e seus temas críticos. Comece grátis, sem cartão.</p>
+        </div>
+        <a class="gb-btn gb-btn--light" routerLink="/cadastro">Criar conta grátis</a>
+      </section>
+    }
+  }
+
+  <div class="gb-aviso">
+    <app-gabaritos-aviso />
+  </div>
+</main>

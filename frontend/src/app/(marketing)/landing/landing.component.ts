@@ -34,6 +34,7 @@ import {
 import { LandingAuroraComponent } from './landing-aurora.component';
 import { LandingCicloComponent } from './landing-ciclo.component';
 import { LandingDemoQuizComponent } from './landing-demo-quiz.component';
+import { LandingGabaritosComponent } from './landing-gabaritos.component';
 
 interface NavItem {
   readonly label: string;
@@ -92,6 +93,7 @@ interface FaqItem {
     LandingAuroraComponent,
     LandingCicloComponent,
     LandingDemoQuizComponent,
+    LandingGabaritosComponent,
   ],
   templateUrl: './landing.component.html',
   styleUrls: [
@@ -126,6 +128,7 @@ export class LandingComponent implements OnDestroy {
   protected readonly flashFlipped = signal(false);
 
   protected readonly navItems: readonly NavItem[] = [
+    { label: 'Gabaritos', href: '#gabaritos' },
     { label: 'Teste grátis', href: '#demo' },
     { label: 'Aurora', href: '#aurora' },
     { label: 'Como funciona', href: '#como-funciona' },
@@ -285,6 +288,7 @@ export class LandingComponent implements OnDestroy {
       '1 simulado montado por você, escolhendo os temas',
       'Correção e gabarito comentado ao final',
       'Histórico, modo competitivo e desafio diário',
+      'Gabaritos extraoficiais das provas, sem limite',
     ] as readonly string[],
     naoInclui: [
       'Simulados sem limite',
@@ -337,6 +341,11 @@ export class LandingComponent implements OnDestroy {
       question: 'A nota da Aurora é a correção oficial da prova?',
       answer:
         'Não. A Aurora é um apoio ao seu estudo: mostra a direção da resposta e os pontos esperados para você treinar, mas não reproduz os critérios exatos dos professores nem substitui a correção oficial. O BoraMed é uma plataforma independente, sem vínculo com a Afya.',
+    },
+    {
+      question: 'Os gabaritos das provas são grátis? São oficiais?',
+      answer:
+        'São grátis: basta criar sua conta, sem cartão, e abrir a área de Gabaritos. Logo depois da prova, a equipe BoraMed resolve as questões e publica o gabarito extraoficial do período, e você marca suas respostas para ver a nota na hora. Não é o gabarito oficial e pode ter divergências; o que vale é sempre o divulgado pela sua instituição. O BoraMed não tem vínculo com a Afya.',
     },
     {
       question: 'Preciso cancelar para não ser cobrado de novo?',
