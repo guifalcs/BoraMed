@@ -1,5 +1,6 @@
 import {
   LETRAS_GABARITO,
+  type GabaritoCadernoRef,
   type GabaritoProvaQuestao,
   type LetraGabarito,
 } from '../models/gabarito-prova';
@@ -18,6 +19,45 @@ export function nomeGabarito(g: GabaritoNomeavel): string {
 /** Letras válidas para uma prova com `qtd` alternativas (A–D ou A–E). */
 export function letrasDisponiveis(qtd: number): LetraGabarito[] {
   return LETRAS_GABARITO.slice(0, Math.max(2, Math.min(5, qtd)));
+}
+
+/** Atalhos de nome para o admin cadastrar cadernos com um toque. */
+export const NOMES_CADERNO_SUGERIDOS = ['Azul', 'Verde', 'Amarelo', 'Branco', 'Rosa'] as const;
+
+function chaveNome(nome: string): string {
+  return nome.trim().toLocaleLowerCase('pt-BR');
+}
+
+/** Primeiro "Caderno A", "Caderno B"… que ainda não está em uso (ignora caixa e espaços). */
+export function proximoNomeCaderno(existentes: readonly string[]): string {
+  const usados = new Set(existentes.map(chaveNome));
+  for (const letra of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+    const nome = `Caderno ${letra}`;
+    if (!usados.has(chaveNome(nome))) return nome;
+  }
+  return `Caderno ${existentes.length + 1}`;
+}
+
+/** Nomes que aparecem mais de uma vez (ignora caixa e espaços; vazios não contam). */
+export function nomesRepetidos(nomes: readonly string[]): Set<string> {
+  const vistos = new Set<string>();
+  const repetidos = new Set<string>();
+  for (const nome of nomes) {
+    const k = chaveNome(nome);
+    if (!k) continue;
+    if (vistos.has(k)) repetidos.add(k);
+    vistos.add(k);
+  }
+  return repetidos;
+}
+
+/** O caderno que o link pede (`?caderno=<slug>`); null se não existe (nunca "chuta" outro). */
+export function acharCaderno<T extends GabaritoCadernoRef>(
+  cadernos: readonly T[],
+  slug: string | null | undefined,
+): T | null {
+  if (!slug) return null;
+  return cadernos.find((c) => c.slug === slug) ?? null;
 }
 
 /** Semestre letivo corrente no formato do banco ("2026.2"). */

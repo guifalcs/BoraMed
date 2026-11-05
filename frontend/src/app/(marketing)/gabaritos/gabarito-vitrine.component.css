@@ -23,6 +23,7 @@
 .gv-lead { margin: 1rem 0 0; max-width: 32rem; font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted); }
 
 .gv-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin-top: 1.75rem; }
+.gv-cadernos { margin-top: 1rem; }
 .gv-login { font-size: 0.9375rem; color: var(--color-text-muted); text-decoration: none; }
 .gv-login strong { color: var(--color-action); }
 .gv-login:hover strong { text-decoration: underline; }

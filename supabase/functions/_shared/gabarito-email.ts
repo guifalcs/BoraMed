@@ -17,7 +17,10 @@ export type GabaritoParaEmail = {
   readonly tipo_prova: string;
   readonly periodo: number;
   readonly semestre: string;
+  /** Questões POR caderno. */
   readonly total_questoes: number;
+  /** Nomes dos cadernos, em ordem. Com mais de um, o e-mail avisa que há um gabarito por caderno. */
+  readonly cadernos?: readonly string[];
 };
 
 /** "N2 · 3º período", ou o título próprio. Mesma regra do frontend. */
@@ -37,6 +40,15 @@ export function conteudoEmailGabarito(
   const nomeHtml = escaparHtml(nome);
   const link = escaparHtml(linkGabarito(appUrl, g.slug));
   const questoes = g.total_questoes === 1 ? '1 questão' : `${g.total_questoes} questões`;
+  const cadernos = g.cadernos ?? [];
+  const paragrafoCadernos = cadernos.length > 1
+    ? `
+<p style="margin:0 0 14px;color:#64748b;font-size:15px;line-height:1.65;">
+  A prova teve <strong style="color:#0f172a;">${cadernos.length} cadernos</strong>
+  (${cadernos.map(escaparHtml).join(', ')}). Escolha o da capa da sua prova: cada um tem o seu gabarito.
+</p>
+`
+    : '';
 
   const html = `<!-- Preheader: linha que o Gmail/Outlook mostram na lista, sem aparecer no corpo. -->
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ffffff;">
@@ -52,7 +64,7 @@ export function conteudoEmailGabarito(
   (${escaparHtml(g.semestre)}, ${questoes}) já está no ar, antes do oficial.
 </p>
 
-<p style="margin:0 0 14px;color:#64748b;font-size:15px;line-height:1.65;">
+${paragrafoCadernos}<p style="margin:0 0 14px;color:#64748b;font-size:15px;line-height:1.65;">
   Marque o que você respondeu e veja sua <strong style="color:#0f172a;">nota na hora</strong>,
   com a correção questão por questão.
 </p>

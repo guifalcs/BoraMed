@@ -184,10 +184,114 @@
           </details>
         </section>
 
-        <!-- ── 2. Cartão-resposta ─────────────────────────────────────── -->
+        <!-- ── 2. Cadernos ────────────────────────────────────────────── -->
+        <section class="ed-card" aria-labelledby="ed-cadernos">
+          <div class="ed-card__head">
+            <h2 class="ed-step" id="ed-cadernos"><span>2</span> Cadernos da prova</h2>
+            @if (varios()) {
+              <span class="ed-count">{{ cadernos().length }} cadernos</span>
+            }
+          </div>
+
+          @if (!varios()) {
+            <div class="ed-cad-solo">
+              <span class="ed-cad-solo__icon" aria-hidden="true"><app-ui-icon [icon]="iconCadernos" [size]="22" /></span>
+              <div class="ed-cad-solo__txt">
+                <strong>Esta prova tem um caderno só</strong>
+                <p>
+                  A prova teve versões diferentes (Azul e Verde, caderno A e B…)? Cadastre cada uma: cada caderno tem o
+                  seu gabarito e o aluno escolhe o dele.
+                </p>
+              </div>
+              <button type="button" class="gab-btn gab-btn--soft" (click)="adicionarCaderno(null)">
+                <app-ui-icon [icon]="iconPlus" [size]="16" /><span>Adicionar caderno</span>
+              </button>
+            </div>
+          } @else {
+            <p class="ed-cad-help">
+              Use o nome que está na capa de cada caderno. As questões são as mesmas, só a ordem muda, então
+              <strong>cada caderno tem a sua folha de respostas</strong> (passo 3).
+            </p>
+
+            <ul class="ed-cad-list">
+              @for (c of cadernos(); track c.chave; let i = $index) {
+                <li
+                  class="ed-cad"
+                  [class.is-on]="i === cadernoIdx()"
+                  [class.is-erro]="!c.nome.trim() || nomesDuplicados().has(c.nome.trim().toLocaleLowerCase('pt-BR'))"
+                >
+                  <span class="ed-cad__n">{{ i + 1 }}</span>
+                  <div class="ed-cad__campo">
+                    <input
+                      class="ed-input"
+                      type="text"
+                      maxlength="40"
+                      placeholder="Nome do caderno (ex.: Azul)"
+                      [attr.aria-label]="'Nome do caderno ' + (i + 1)"
+                      [ngModel]="c.nome"
+                      (ngModelChange)="renomearCaderno(i, $event)"
+                      (focus)="selecionarCaderno(i)"
+                    />
+                    @if (!c.nome.trim()) {
+                      <span class="ed-erro">Dê um nome a este caderno.</span>
+                    } @else if (nomesDuplicados().has(c.nome.trim().toLocaleLowerCase('pt-BR'))) {
+                      <span class="ed-erro">Já existe um caderno com esse nome.</span>
+                    }
+                  </div>
+                  <span class="ed-cad__prog" [class.is-done]="progressoCadernos()[i].completo">
+                    @if (progressoCadernos()[i].completo) {
+                      <app-ui-icon [icon]="iconCheck" [size]="14" />
+                    }
+                    {{ progressoCadernos()[i].preenchidas }}/{{ progressoCadernos()[i].total }}
+                  </span>
+                  <button
+                    type="button"
+                    class="gab-icon-btn gab-icon-btn--danger"
+                    [attr.aria-label]="'Excluir caderno ' + (c.nome.trim() || i + 1)"
+                    title="Excluir caderno"
+                    (click)="removerCaderno(i)"
+                  >
+                    <app-ui-icon [icon]="iconTrash" [size]="16" />
+                  </button>
+                </li>
+              }
+            </ul>
+
+            @if (cadernos().length < maxCadernos) {
+              <div class="ed-cad-add">
+                <span class="ed-label">Adicionar outro</span>
+                <div class="ed-chips">
+                  <button type="button" class="ed-chip ed-chip--add" (click)="adicionarCaderno(null)">
+                    <app-ui-icon [icon]="iconPlus" [size]="14" />Próximo caderno
+                  </button>
+                  @for (n of nomesSugeridos(); track n) {
+                    <button type="button" class="ed-chip ed-chip--add" (click)="adicionarCaderno(n)">
+                      <app-ui-icon [icon]="iconPlus" [size]="14" />{{ n }}
+                    </button>
+                  }
+                </div>
+                <form class="ed-cad-add__form" (ngSubmit)="adicionarCadernoDigitado()">
+                  <input
+                    class="ed-input"
+                    name="novo-caderno"
+                    type="text"
+                    maxlength="40"
+                    placeholder="Ou digite outro nome (ex.: Versão 2)"
+                    aria-label="Nome de um novo caderno"
+                    [ngModel]="novoCadernoNome()"
+                    (ngModelChange)="novoCadernoNome.set($event)"
+                  />
+                  <button type="submit" class="gab-btn gab-btn--soft" [disabled]="!novoCadernoNome().trim()">Adicionar</button>
+                </form>
+              </div>
+            }
+          }
+        </section>
+
+        <!-- ── 3. Cartão-resposta ─────────────────────────────────────── -->
         <section class="ed-card" aria-labelledby="ed-cartao">
           <div class="ed-card__head">
-            <h2 class="ed-step" id="ed-cartao"><span>2</span> Marque as respostas</h2>
+            <h2 class="ed-step" id="ed-cartao"><span>3</span> Marque as respostas</h2>
             <button type="button" class="gab-btn gab-btn--soft" [attr.aria-expanded]="colarAberto()" (click)="colarAberto.set(!colarAberto())">
               <app-ui-icon [icon]="iconPaste" [size]="16" />
               <span>Colar gabarito</span>
@@ -226,9 +330,38 @@
             </div>
           }
 
+          @if (varios()) {
+            <div class="ed-tabs" role="tablist" aria-label="Caderno cujo gabarito você está marcando">
+              @for (p of progressoCadernos(); track p.chave; let i = $index) {
+                <button
+                  type="button"
+                  role="tab"
+                  class="ed-tab"
+                  [class.is-on]="i === cadernoIdx()"
+                  [class.is-done]="p.completo"
+                  [attr.aria-selected]="i === cadernoIdx()"
+                  (click)="selecionarCaderno(i)"
+                >
+                  <span class="ed-tab__nome">{{ p.nome.trim() || 'Caderno ' + (i + 1) }}</span>
+                  <span class="ed-tab__prog">
+                    @if (p.completo) {
+                      <app-ui-icon [icon]="iconCheck" [size]="13" />
+                    } @else {
+                      {{ p.pct }}%
+                    }
+                  </span>
+                </button>
+              }
+            </div>
+          }
+
           <p class="ed-hint">
             <app-ui-icon [icon]="iconKeyboard" [size]="15" />
-            Clique numa questão e digite as letras em sequência: o cursor desce sozinho.
+            @if (varios()) {
+              Marcando o caderno <strong>{{ nomeCadernoAtivo() || 'sem nome' }}</strong>. Clique numa questão e digite as letras em sequência.
+            } @else {
+              Clique numa questão e digite as letras em sequência: o cursor desce sozinho.
+            }
           </p>
 
           <div
@@ -337,8 +470,25 @@
           </div>
         </section>
 
+        @if (varios()) {
+          <section class="ed-card">
+            <h3 class="ed-side__title">Cadernos</h3>
+            <ul class="ed-cads-prog">
+              @for (p of progressoCadernos(); track p.chave; let i = $index) {
+                <li>
+                  <button type="button" [class.is-on]="i === cadernoIdx()" (click)="selecionarCaderno(i)">
+                    <span class="ed-cads-prog__nome">{{ p.nome.trim() || 'Caderno ' + (i + 1) }}</span>
+                    <span class="ed-cads-prog__bar"><i [style.width.%]="p.pct" [class.is-done]="p.completo"></i></span>
+                    <span class="ed-cads-prog__n">{{ p.preenchidas }}/{{ p.total }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
         <section class="ed-card">
-          <h3 class="ed-side__title">Distribuição das letras</h3>
+          <h3 class="ed-side__title">Distribuição das letras@if (varios()) { · {{ nomeCadernoAtivo() }} }</h3>
           <p class="ed-side__help">Confira se nenhuma letra ficou estranha de tão frequente.</p>
           <ul class="ed-dist">
             @for (d of distribuicao(); track d.letra) {

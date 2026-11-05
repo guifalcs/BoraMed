@@ -102,9 +102,15 @@
               <h3 class="gb-card__name">{{ nome(g) }}</h3>
               <p class="gb-card__meta">
                 {{ g.total_questoes }} questões
-                @if (g.total_anuladas) { · {{ g.total_anuladas }} anulada{{ g.total_anuladas === 1 ? '' : 's' }} }
+                @if (g.total_anuladas && g.cadernos.length === 1) { · {{ g.total_anuladas }} anulada{{ g.total_anuladas === 1 ? '' : 's' }} }
                 @if (g.data_prova) { · prova em {{ dataCurta(g.data_prova) }} }
               </p>
+              @if (g.cadernos.length > 1) {
+                <ul class="gb-card__cadernos" [attr.aria-label]="g.cadernos.length + ' cadernos'">
+                  <li class="is-rotulo">{{ g.cadernos.length }} cadernos</li>
+                  @for (c of g.cadernos; track c.id) { <li>{{ c.nome }}</li> }
+                </ul>
+              }
               <div class="gb-card__foot">
                 <span class="gb-card__views">
                   <app-ui-icon [icon]="iconEye" [size]="14" />

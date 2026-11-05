@@ -11,6 +11,7 @@ import type {
   GabaritoEmailPrevia,
   GabaritoEmailResultado,
   GabaritoPublicacaoResultado,
+  GabaritoSalvoResultado,
 } from '../models/gabarito-prova';
 
 /** Mensagens amigáveis para os códigos levantados pelas RPCs. */
@@ -21,6 +22,12 @@ const ERROS: Record<string, string> = {
   qtd_alternativas_invalida: 'Quantidade de alternativas inválida.',
   quantidade_questoes_invalida: 'O gabarito precisa ter de 1 a 200 questões.',
   numeracao_invalida: 'Numeração das questões inconsistente.',
+  quantidade_cadernos_invalida: 'Uma prova tem de 1 a 12 cadernos.',
+  nome_caderno_invalido: 'Dê um nome a cada caderno (até 40 caracteres).',
+  nome_caderno_repetido: 'Dois cadernos têm o mesmo nome. Use nomes diferentes.',
+  cadernos_tamanhos_diferentes: 'Todos os cadernos precisam ter o mesmo número de questões.',
+  caderno_invalido: 'Caderno não pertence a este gabarito. Recarregue a página.',
+  cadernos_obrigatorio: 'Este gabarito tem vários cadernos: envie a folha de cada um.',
   resposta_fora_das_alternativas: 'Há letra fora das alternativas da prova.',
   gabarito_vazio: 'Preencha ao menos uma questão antes de publicar.',
   gabarito_nao_encontrado: 'Gabarito não encontrado.',
@@ -109,10 +116,10 @@ export class GabaritoProvaService {
     return { ok: true, data: (data ?? null) as GabaritoProva | null };
   }
 
-  async adminSalvar(payload: GabaritoProvaPayload): Promise<ServiceResult<{ id: string; slug: string }>> {
+  async adminSalvar(payload: GabaritoProvaPayload): Promise<ServiceResult<GabaritoSalvoResultado>> {
     const { data, error } = await this.supabase.rpc('admin_salvar_gabarito_prova', { p_payload: payload });
     if (error) return { ok: false, error: mensagemErro(error.message) };
-    return { ok: true, data: data as { id: string; slug: string } };
+    return { ok: true, data: data as GabaritoSalvoResultado };
   }
 
   async adminPublicar(

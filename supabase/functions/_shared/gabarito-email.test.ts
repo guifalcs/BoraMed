@@ -47,3 +47,14 @@ Deno.test('passa pelo montarEmail das campanhas: tokens resolvidos e descadastro
   assert(!email.html.includes('{{link_descadastro}}'));
   assertStringIncludes(email.html, 'descadastrar?token=tok-1');
 });
+
+Deno.test('com vários cadernos o e-mail lista os nomes (escapados); com um só, nada muda', () => {
+  const um = conteudoEmailGabarito({ ...G, cadernos: ['Caderno único'] }, 'https://x.test');
+  assert(!um.html.includes('cadernos'));
+  const varios = conteudoEmailGabarito({ ...G, cadernos: ['Azul', 'Verde', '<i>Rosa</i>'] }, 'https://x.test');
+  assertStringIncludes(varios.html, '3 cadernos');
+  assertStringIncludes(varios.html, 'Azul, Verde, &lt;i&gt;Rosa&lt;/i&gt;');
+  assertStringIncludes(varios.html, 'cada um tem o seu gabarito');
+  assert(!varios.html.includes('<i>Rosa</i>'));
+  assertStringIncludes(varios.html, '40 questões');
+});

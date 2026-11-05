@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-05 | Feature | Gabaritos: cadernos de prova
+
+Uma mesma prova (ex.: N1 2026.2 do 3º período) costuma ter vários cadernos com as mesmas questões em ordem diferente. Agora é possível cadastrar de 1 a 12 cadernos por prova, cada um com **nome** e **folha de respostas própria**.
+
+- **Editor** (`/admin/gabaritos`): novo passo **Cadernos da prova**, com "Adicionar caderno", atalhos de nome (Próximo caderno, Azul, Verde, Amarelo…) e nome digitado, renomear e excluir (com confirmação se há respostas). O cartão-resposta ganha **abas por caderno** com o progresso de cada um, e a lateral mostra o progresso por caderno e a distribuição de letras do caderno aberto. Nº de questões e A–D/A–E valem para todos os cadernos; colar gabarito aplica no caderno aberto. Publicar com caderno sem nenhuma resposta pede confirmação. O card da lista do admin mostra os cadernos com o progresso de cada um.
+- **Aluno**: com vários cadernos, a tela pergunta **"Qual é o seu caderno?"** e não mostra resposta nenhuma antes da escolha (a ordem das questões muda, então chutar daria nota errada). Depois, a faixa "Seu caderno" troca entre eles, e a grade, a conferência de nota e as marcações são por caderno. O caderno escolhido é lembrado no aparelho. Prova de um caderno só não muda nada (marcações antigas continuam valendo).
+- **Público**: o card da lista e a vitrine mostram os nomes dos cadernos, **sem nenhuma letra**. O e-mail de aviso cita os cadernos quando há mais de um.
+- **MCP**: `criar_gabarito` aceita `cadernos`; `atualizar_gabarito` troca a folha de um caderno (`caderno`) ou redefine a lista (`cadernos`, casando por nome).
+- **Banco**: migration `20261105190000_gabaritos_cadernos` (tabela `gabarito_prova_caderno` com RLS admin-only e sem grant para `anon`; `gabarito_prova_questao` passa a `(caderno_id, numero)`). Gabaritos existentes viram 1 "Caderno único", sem mudar link nem respostas. `admin_salvar_gabarito_prova` recebe `cadernos[]` e continua aceitando o payload antigo; `get_gabarito_prova` mantém `questoes` (= 1º caderno) na raiz só por compatibilidade durante o deploy. Renomear caderno preserva id e slug. **Deploy: `db push` antes do frontend**, e redeploy de `enviar-campanha-email` e `boramed-mcp`.
+- Seed local: `n1-3-periodo-2026-2` (N1 · 3º período 2026.2) com 3 cadernos (Azul, Verde, Amarelo), a questão anulada em posição diferente em cada um e uma em análise no Amarelo.
+- Docs: `docs/gabaritos-extraoficiais.md`, `docs/business-rules.md`, `docs/mcp-conteudo.md` e ADR-043.
+- Verificado: teste SQL `gabaritos_provas_test.sql` com 7 blocos (cadernos: folha própria, renomear preserva slug, remoção, validações, vitrine sem letras, payload legado, cascade); 976 testes unitários; 10 E2E de gabaritos (4 novos: vitrine e lista com cadernos, aluno escolhe e alterna cadernos sem misturar marcações, admin cadastra 2 cadernos, recarrega e exclui); Deno (e-mail com cadernos) e `deno check` de `boramed-mcp` e `enviar-campanha-email`; `ng build` de produção sem avisos; revisão visual em 1360/1100/390 px. Não verificado: envio real do e-mail pelo Resend e as ferramentas de MCP com cadernos via OAuth (exigem deploy).
+
 ## 2026-11-05 | Feature | Gabaritos extraoficiais (grátis)
 
 - Novo `/admin/gabaritos`: a equipe cadastra o gabarito de uma prova recém-aplicada (tipo, período, semestre, A–D/A–E, nº de questões) num cartão-resposta com digitação rápida (letras em sequência; `X` anula; espaço deixa em análise), colagem de gabarito em vários formatos, área e comentário por questão, progresso e distribuição das letras. Ao publicar: aviso in-app aos alunos do período (uma vez só), copiar link e WhatsApp. Selo "conferido com o oficial" quando o oficial sai.

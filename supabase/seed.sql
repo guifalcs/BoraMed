@@ -778,28 +778,35 @@ END $$;
 -- ============================================================================
 -- Gabaritos extraoficiais (módulo /gabaritos). Idempotente; NUNCA em produção.
 --
--- 4 publicados (para ver lista, filtro por período, "Novo", "Conferido",
--- anulada, em análise e comentários) + 1 rascunho do 6º período quase pronto,
--- para testar o fluxo de publicar avisando os alunos: os alunos do seed são do
--- 6º período (aluno-pesquisa-N@boramed.com / Teste123!) e recebem a
+-- 5 publicados (para ver lista, filtro por período, "Novo", "Conferido",
+-- anulada, em análise, comentários e CADERNOS) + 1 rascunho do 6º período quase
+-- pronto, para testar o fluxo de publicar avisando os alunos: os alunos do seed
+-- são do 6º período (aluno-pesquisa-N@boramed.com / Teste123!) e recebem a
 -- notificação com link para o gabarito.
 --
--- Letras determinísticas (md5 do slug + número) para o seed sempre gerar a
--- mesma folha.
+-- A N1 do 3º período (2026.2) tem 3 cadernos (Azul, Verde, Amarelo), cada um com
+-- a sua folha: é a prova para testar o seletor de caderno e a conferência por
+-- caderno. As demais têm um caderno só ("Caderno único"; a UI esconde o nome).
+--
+-- Letras determinísticas (md5 do slug + caderno + número) para o seed sempre
+-- gerar a mesma folha.
 -- ============================================================================
 DO $$
 DECLARE
   r RECORD;
+  c RECORD;
 BEGIN
   FOR r IN
     SELECT * FROM (VALUES
       ('9ab00000-0000-0000-0000-000000000001'::uuid, 'n2-3-periodo-2026-2', 'N2', 3, '2026.2', (current_date - 1), 40, 5, 'publicado', false, now() - interval '5 hours', 1240,
-       'Gabarito da versão A. A 17 ainda está em análise pela equipe; atualizamos assim que fecharmos.'),
-      ('9ab00000-0000-0000-0000-000000000002'::uuid, 'integradora-4-periodo-2026-2', 'Integradora', 4, '2026.2', (current_date - 9), 60, 5, 'publicado', false, now() - interval '8 days', 312, NULL),
-      ('9ab00000-0000-0000-0000-000000000003'::uuid, 'n1-1-periodo-2026-2', 'N1', 1, '2026.2', (current_date - 40), 30, 4, 'publicado', true, now() - interval '39 days', 2875, NULL),
-      ('9ab00000-0000-0000-0000-000000000004'::uuid, 'n2-1-periodo-2026-1', 'N2', 1, '2026.1', DATE '2026-05-20', 40, 5, 'publicado', true, TIMESTAMPTZ '2026-05-20 21:00-03', 4102, NULL),
-      ('9ab00000-0000-0000-0000-000000000005'::uuid, 'n2-6-periodo-2026-2', 'N2', 6, '2026.2', current_date, 40, 5, 'rascunho', false, NULL::timestamptz, 0, NULL)
-    ) AS t(id, slug, tipo, periodo, semestre, data_prova, total, qtd_alt, status, conferido, publicado_em, views, obs)
+       'Gabarito da versão A. A 17 ainda está em análise pela equipe; atualizamos assim que fecharmos.', NULL::text[]),
+      ('9ab00000-0000-0000-0000-000000000002'::uuid, 'integradora-4-periodo-2026-2', 'Integradora', 4, '2026.2', (current_date - 9), 60, 5, 'publicado', false, now() - interval '8 days', 312, NULL, NULL),
+      ('9ab00000-0000-0000-0000-000000000003'::uuid, 'n1-1-periodo-2026-2', 'N1', 1, '2026.2', (current_date - 40), 30, 4, 'publicado', true, now() - interval '39 days', 2875, NULL, NULL),
+      ('9ab00000-0000-0000-0000-000000000004'::uuid, 'n2-1-periodo-2026-1', 'N2', 1, '2026.1', DATE '2026-05-20', 40, 5, 'publicado', true, TIMESTAMPTZ '2026-05-20 21:00-03', 4102, NULL, NULL),
+      ('9ab00000-0000-0000-0000-000000000005'::uuid, 'n2-6-periodo-2026-2', 'N2', 6, '2026.2', current_date, 40, 5, 'rascunho', false, NULL::timestamptz, 0, NULL, NULL),
+      ('9ab00000-0000-0000-0000-000000000006'::uuid, 'n1-3-periodo-2026-2', 'N1', 3, '2026.2', (current_date - 2), 40, 5, 'publicado', false, now() - interval '3 hours', 860,
+       'A prova teve 3 cadernos, e a ordem das questões muda em cada um. Confira o da capa da sua prova.', ARRAY['Azul', 'Verde', 'Amarelo'])
+    ) AS t(id, slug, tipo, periodo, semestre, data_prova, total, qtd_alt, status, conferido, publicado_em, views, obs, cadernos)
   LOOP
     INSERT INTO public.gabarito_prova (
       id, slug, tipo_prova, periodo, semestre, data_prova, observacao, qtd_alternativas,
@@ -810,28 +817,53 @@ BEGIN
       '11111111-1111-1111-1111-111111111111', COALESCE(r.publicado_em, now())
     ) ON CONFLICT (id) DO NOTHING;
 
-    INSERT INTO public.gabarito_prova_questao (gabarito_id, numero, resposta, anulada, area, comentario)
-    SELECT r.id, n,
-           CASE
-             WHEN (r.slug = 'n2-3-periodo-2026-2' AND n IN (12, 17))
+    -- Um caderno por nome; sem lista = "Caderno único" (slug 'unico', como na migration).
+    FOR c IN
+      SELECT n.nome, n.ordem,
+             md5(r.slug || n.nome)::uuid AS id,
+             CASE WHEN r.cadernos IS NULL THEN 'unico'
+                  ELSE regexp_replace(lower(extensions.unaccent(n.nome)), '[^a-z0-9]+', '-', 'g') END AS slug
+        FROM unnest(COALESCE(r.cadernos, ARRAY['Caderno único'])) WITH ORDINALITY AS n(nome, ordem)
+    LOOP
+      INSERT INTO public.gabarito_prova_caderno (id, gabarito_id, slug, nome, ordem)
+      VALUES (c.id, r.id, c.slug, c.nome, c.ordem)
+      ON CONFLICT (id) DO NOTHING;
+
+      INSERT INTO public.gabarito_prova_questao (gabarito_id, caderno_id, numero, resposta, anulada, area, comentario)
+      SELECT r.id, c.id, n,
+             CASE
+               WHEN (r.slug = 'n2-3-periodo-2026-2' AND n IN (12, 17))
+                 OR (r.slug = 'integradora-4-periodo-2026-2' AND n = 44)
+                 OR (r.slug = 'n2-6-periodo-2026-2' AND n > 36)
+                 -- N1 3º período: a anulada (sem letra) e a 7 do Amarelo, ainda em análise.
+                 OR (r.slug = 'n1-3-periodo-2026-2' AND n = CASE c.slug WHEN 'azul' THEN 12 WHEN 'verde' THEN 31 ELSE 22 END)
+                 OR (r.slug = 'n1-3-periodo-2026-2' AND c.slug = 'amarelo' AND n = 7) THEN NULL
+               ELSE chr(65 + (('x' || substr(md5(r.slug || CASE WHEN r.cadernos IS NULL THEN '' ELSE c.slug END || n), 1, 2))::bit(8)::int % r.qtd_alt))
+             END,
+             (r.slug = 'n2-3-periodo-2026-2' AND n = 12)
                OR (r.slug = 'integradora-4-periodo-2026-2' AND n = 44)
-               OR (r.slug = 'n2-6-periodo-2026-2' AND n > 36) THEN NULL
-             ELSE chr(65 + (('x' || substr(md5(r.slug || n), 1, 2))::bit(8)::int % r.qtd_alt))
-           END,
-           (r.slug = 'n2-3-periodo-2026-2' AND n = 12) OR (r.slug = 'integradora-4-periodo-2026-2' AND n = 44),
-           CASE WHEN r.slug = 'n2-3-periodo-2026-2'
-                THEN (ARRAY['SOI', 'HAM', 'IESC', 'MCM'])[1 + (n - 1) / 10] END,
-           CASE
-             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 5
-               THEN 'Pegadinha clássica: o enunciado pede a EXCEÇÃO. As outras quatro são características do quadro.'
-             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 12
-               THEN 'Duas alternativas corretas (B e D). Cabe recurso; contamos como anulada.'
-             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 28
-               THEN 'Questão de interpretação de gráfico: a curva cai depois da 2ª dose, por isso a C.'
-             WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 17
-               THEN 'Dividiu a equipe entre A e C. Ainda conferindo na referência.'
-           END
-    FROM generate_series(1, r.total) AS n
-    ON CONFLICT (gabarito_id, numero) DO NOTHING;
+               -- A mesma questão anulada, que mudou de posição em cada caderno.
+               OR (r.slug = 'n1-3-periodo-2026-2' AND n = CASE c.slug WHEN 'azul' THEN 12 WHEN 'verde' THEN 31 ELSE 22 END),
+             CASE WHEN r.slug IN ('n2-3-periodo-2026-2', 'n1-3-periodo-2026-2')
+                  THEN (ARRAY['SOI', 'HAM', 'IESC', 'MCM'])[1 + (n - 1) / 10] END,
+             CASE
+               WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 5
+                 THEN 'Pegadinha clássica: o enunciado pede a EXCEÇÃO. As outras quatro são características do quadro.'
+               WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 12
+                 THEN 'Duas alternativas corretas (B e D). Cabe recurso; contamos como anulada.'
+               WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 28
+                 THEN 'Questão de interpretação de gráfico: a curva cai depois da 2ª dose, por isso a C.'
+               WHEN r.slug = 'n2-3-periodo-2026-2' AND n = 17
+                 THEN 'Dividiu a equipe entre A e C. Ainda conferindo na referência.'
+               WHEN r.slug = 'n1-3-periodo-2026-2' AND n = CASE c.slug WHEN 'azul' THEN 12 WHEN 'verde' THEN 31 ELSE 22 END
+                 THEN 'Duas alternativas corretas. Cabe recurso; contamos como anulada nos três cadernos.'
+               WHEN r.slug = 'n1-3-periodo-2026-2' AND c.slug = 'azul' AND n = 5
+                 THEN 'Pegadinha: o enunciado pede a EXCEÇÃO. As outras quatro descrevem o quadro clássico.'
+               WHEN r.slug = 'n1-3-periodo-2026-2' AND c.slug = 'amarelo' AND n = 7
+                 THEN 'Dividiu a equipe entre duas letras. Ainda conferindo na referência.'
+             END
+        FROM generate_series(1, r.total) AS n
+      ON CONFLICT (caderno_id, numero) DO NOTHING;
+    END LOOP;
   END LOOP;
 END $$;

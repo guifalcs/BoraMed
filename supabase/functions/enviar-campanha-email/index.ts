@@ -251,10 +251,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (gErro || !g) return reply({ error: 'gabarito não encontrado' }, 404);
 
+    // Todos os cadernos têm o mesmo nº de questões: conta só o primeiro.
+    const { data: cadernos } = await admin
+      .from('gabarito_prova_caderno')
+      .select('id, nome')
+      .eq('gabarito_id', gabaritoId)
+      .order('ordem', { ascending: true });
     const { count } = await admin
       .from('gabarito_prova_questao')
       .select('numero', { count: 'exact', head: true })
-      .eq('gabarito_id', gabaritoId);
+      .eq('caderno_id', cadernos?.[0]?.id ?? gabaritoId);
     const conteudo = conteudoEmailGabarito(
       {
         slug: g.slug as string,
@@ -263,6 +269,7 @@ Deno.serve(async (req) => {
         periodo: g.periodo as number,
         semestre: g.semestre as string,
         total_questoes: count ?? 0,
+        cadernos: (cadernos ?? []).map((c) => c.nome as string),
       },
       appUrl,
     );
