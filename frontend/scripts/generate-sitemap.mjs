@@ -18,6 +18,7 @@ const today = new Date().toISOString().slice(0, 10);
 /** Rotas públicas estáticas. */
 const staticRoutes = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
+  { path: '/gabaritos', changefreq: 'daily', priority: '0.9' },
   { path: '/guias', changefreq: 'weekly', priority: '0.9' },
   { path: '/cadastro', changefreq: 'monthly', priority: '0.8' },
   { path: '/login', changefreq: 'monthly', priority: '0.5' },
