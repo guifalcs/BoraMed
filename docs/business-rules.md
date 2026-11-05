@@ -298,6 +298,7 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
   * O gabarito completo fica em `/dashboard/gabaritos/:slug`, e a RPC com as respostas não executa para anon.
   * Depois do cadastro ou do login, o aluno é levado direto ao gabarito que abriu.
 * Só admin cadastra, edita, publica e exclui. Rascunho nunca é visível para aluno ou visitante (RPCs públicas filtram `status = 'publicado'`; a tabela não tem grant para `anon`).
+* **Cadernos:** uma prova pode ter de 1 a 12 cadernos (versões A/B, Azul/Verde…), cada um com **nome** (o da capa) e **folha de respostas própria**; todos com o mesmo número de questões e de alternativas. Com mais de um, o aluno **escolhe o caderno antes de ver qualquer resposta** (nunca é escolhido por ele), e a conferência de nota e as marcações são por caderno. Nomes são obrigatórios e únicos. Prova de um caderno só não mostra seletor. Renomear um caderno não muda o link dele.
 * Conteúdo publicado: tipo de prova, período, semestre, data, número → letra, anulada, "em análise", área e comentário autoral da equipe. **O enunciado da prova não é publicado.**
 * Todo gabarito é rotulado **extraoficial** até a equipe marcar "conferido com o oficial". Toda tela exibe o aviso de que o oficial é o da instituição e de que o BoraMed não tem vínculo com a Afya.
 * Nota do aluno = (acertos + anuladas) / (total − em análise). Anulada pontua para todos; em análise fica fora da conta. Calculada no cliente, e as marcações ficam só no aparelho.
@@ -307,7 +308,7 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
   * **E-mail:** no máximo **50** por gabarito, com alunos de fora de Ipatinga primeiro e, dentro de cada grupo, o último acesso mais recente primeiro. Excedentes não recebem e-mail. Respeita descadastro, banimento e confirmação de e-mail.
 * As telas de gabarito não exibem selo "Grátis"; a gratuidade é comunicada na landing.
 * O menu do app mostra o selo "Novo" em Gabaritos quando há publicação nas últimas 24h.
-* O MCP editorial tem CRUD completo de gabaritos (exceção à regra de autoria do MCP).
+* O MCP editorial tem CRUD completo de gabaritos, inclusive cadernos (exceção à regra de autoria do MCP).
 
 ## Público-Alvo
 

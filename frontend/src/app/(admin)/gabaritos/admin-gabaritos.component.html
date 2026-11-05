@@ -76,7 +76,19 @@
           <p class="gab-card__meta">
             {{ g.semestre }}
             @if (g.data_prova) { · prova em {{ formatarData(g.data_prova) }} }
+            @if (g.cadernos.length > 1) { · {{ g.cadernos.length }} cadernos }
           </p>
+
+          @if (g.cadernos.length > 1) {
+            <ul class="gab-cads" [attr.aria-label]="g.cadernos.length + ' cadernos'">
+              @for (c of g.cadernos; track c.id) {
+                <li [class.is-done]="c.total_preenchidas === c.total_questoes" [title]="c.nome + ': ' + c.total_preenchidas + ' de ' + c.total_questoes + ' preenchidas'">
+                  <span>{{ c.nome }}</span>
+                  <small>{{ c.total_preenchidas }}/{{ c.total_questoes }}</small>
+                </li>
+              }
+            </ul>
+          }
 
           <div class="gab-progress" [attr.aria-label]="g.total_preenchidas + ' de ' + g.total_questoes + ' preenchidas'">
             <div class="gab-progress__bar"><i [style.width.%]="progresso(g)"></i></div>

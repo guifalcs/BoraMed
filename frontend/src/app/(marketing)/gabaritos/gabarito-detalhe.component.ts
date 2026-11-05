@@ -19,6 +19,7 @@ import {
   ClipboardPaste,
   Copy,
   HelpCircle,
+  Layers,
   MessageSquareText,
   RotateCcw,
   Share2,
@@ -32,17 +33,25 @@ import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.compone
 import { GabaritosTopoComponent } from './gabaritos-topo.component';
 import { GabaritosAvisoComponent } from './gabaritos-aviso.component';
 import {
+  acharCaderno,
   conferirRespostas,
   letrasDisponiveis,
   nomeGabarito,
   parseSequenciaGabarito,
   resumoFolha,
 } from '../../core/utils/gabarito-prova.util';
-import type { GabaritoProva, GabaritoProvaQuestao, LetraGabarito } from '../../core/models/gabarito-prova';
+import type {
+  GabaritoCaderno,
+  GabaritoProva,
+  GabaritoProvaQuestao,
+  LetraGabarito,
+} from '../../core/models/gabarito-prova';
 
 type Modo = 'gabarito' | 'conferir';
 
 const STORAGE_PREFIX = 'bm-gabarito-marcadas:';
+/** Último caderno que o aluno escolheu em cada gabarito. */
+const STORAGE_CADERNO = 'bm-gabarito-caderno:';
 
 @Component({
   selector: 'app-gabarito-detalhe',
@@ -74,6 +83,8 @@ export class GabaritoDetalheComponent {
   protected readonly carregando = signal(true);
   protected readonly naoEncontrado = signal(false);
 
+  /** Slug do caderno escolhido. Com vários cadernos, null = o aluno ainda não escolheu. */
+  protected readonly cadernoSlug = signal<string | null>(null);
   protected readonly modo = signal<Modo>('gabarito');
   protected readonly selecionada = signal<number | null>(null);
   protected readonly areaFiltro = signal<string | null>(null);
@@ -89,27 +100,42 @@ export class GabaritoDetalheComponent {
     return g ? nomeGabarito(g) : '';
   });
   protected readonly letras = computed(() => letrasDisponiveis(this.gabarito()?.qtd_alternativas ?? 5));
-  protected readonly resumo = computed(() => resumoFolha(this.gabarito()?.questoes ?? []));
+
+  protected readonly varios = computed(() => (this.gabarito()?.cadernos.length ?? 0) > 1);
+  /**
+   * Caderno em exibição. Com um só, é ele. Com vários, só o que o aluno escolheu:
+   * nunca "chutamos" um (a ordem das questões muda, e a nota sairia errada).
+   */
+  protected readonly cadernoAtual = computed<GabaritoCaderno | null>(() => {
+    const cadernos = this.gabarito()?.cadernos ?? [];
+    return cadernos.length === 1 ? cadernos[0] : acharCaderno(cadernos, this.cadernoSlug());
+  });
+  protected readonly precisaEscolher = computed(() => this.varios() && !this.cadernoAtual());
+  /** Questões por caderno (todos têm o mesmo número). */
+  protected readonly totalQuestoes = computed(() => this.gabarito()?.cadernos[0]?.questoes.length ?? 0);
+  protected readonly questoes = computed(() => this.cadernoAtual()?.questoes ?? []);
+
+  protected readonly resumo = computed(() => resumoFolha(this.questoes()));
+  /** Caderno publicado, mas a equipe ainda não fechou nenhuma resposta dele. */
+  protected readonly cadernoSemRespostas = computed(
+    () => !!this.cadernoAtual() && this.resumo().preenchidas === 0,
+  );
   protected readonly areas = computed(() => [
-    ...new Set((this.gabarito()?.questoes ?? []).map((q) => q.area).filter((a): a is string => !!a)),
+    ...new Set(this.questoes().map((q) => q.area).filter((a): a is string => !!a)),
   ]);
   protected readonly questoesVisiveis = computed(() => {
     const a = this.areaFiltro();
-    const qs = this.gabarito()?.questoes ?? [];
+    const qs = this.questoes();
     return a ? qs.filter((q) => q.area === a) : qs;
   });
   protected readonly questaoSelecionada = computed<GabaritoProvaQuestao | null>(() => {
     const n = this.selecionada();
-    return n === null ? null : (this.gabarito()?.questoes.find((q) => q.numero === n) ?? null);
+    return n === null ? null : (this.questoes().find((q) => q.numero === n) ?? null);
   });
-  protected readonly totalComentarios = computed(
-    () => (this.gabarito()?.questoes ?? []).filter((q) => q.comentario).length,
-  );
+  protected readonly totalComentarios = computed(() => this.questoes().filter((q) => q.comentario).length);
 
   protected readonly totalMarcadas = computed(() => Object.values(this.marcadas()).filter(Boolean).length);
-  protected readonly resultado = computed(() =>
-    conferirRespostas(this.gabarito()?.questoes ?? [], this.marcadas()),
-  );
+  protected readonly resultado = computed(() => conferirRespostas(this.questoes(), this.marcadas()));
   protected readonly faixa = computed(() => {
     if (this.resultado().consideradas === 0) return { rotulo: 'Nenhuma questão fechada ainda.', classe: 'is-bom' };
     const n = this.resultado().nota;
@@ -127,6 +153,7 @@ export class GabaritoDetalheComponent {
   protected readonly iconAnulada = Ban;
   protected readonly iconPaste = ClipboardPaste;
   protected readonly iconCopy = Copy;
+  protected readonly iconCaderno = Layers;
   protected readonly iconAnalise = HelpCircle;
   protected readonly iconComment = MessageSquareText;
   protected readonly iconReset = RotateCcw;
@@ -154,16 +181,14 @@ export class GabaritoDetalheComponent {
     this.colarAberto.set(false);
     this.textoColado.set('');
     this.marcadas.set({});
+    this.cadernoSlug.set(null);
   }
 
   private async carregar(slug: string): Promise<void> {
     const r = await this.service.obter(slug);
     if (slug !== this.slug) return; // navegou para outro gabarito no meio da chamada
     this.carregando.set(false);
-    if (this.isBrowser) {
-      void this.service.registrarVisualizacao(slug);
-      this.restaurarMarcadas();
-    }
+    if (this.isBrowser) void this.service.registrarVisualizacao(slug);
     if (!r.ok || !r.data) {
       this.naoEncontrado.set(true);
       // 404 de verdade no SSR (não "soft 404" com status 200).
@@ -179,6 +204,14 @@ export class GabaritoDetalheComponent {
       return;
     }
     this.gabarito.set(r.data);
+    if (this.isBrowser) {
+      // Volta no caderno que o aluno escolheu da última vez (se ainda existir).
+      if (r.data.cadernos.length > 1) {
+        const lembrado = acharCaderno(r.data.cadernos, this.lerLocal(STORAGE_CADERNO + slug));
+        this.cadernoSlug.set(lembrado?.slug ?? null);
+      }
+      this.restaurarMarcadas();
+    }
     // Rascunho só chega aqui para admin (pré-visualização): nunca cachear esse
     // HTML em CDN/proxy, ou o próximo visitante receberia o rascunho.
     if (r.data.status !== 'publicado' && this.responseInit) {
@@ -189,12 +222,35 @@ export class GabaritoDetalheComponent {
     if (!this.embutido) {
       const g = r.data;
       const nome = nomeGabarito(g);
+      const cadernos = g.cadernos.length > 1 ? `, ${g.cadernos.length} cadernos (${g.cadernos.map((c) => c.nome).join(', ')})` : '';
       this.seo.update({
         title: `Gabarito ${nome} ${g.semestre} (extraoficial)`,
-        description: `Gabarito extraoficial da ${nome}, ${g.semestre}: ${g.questoes.length} questões. Confira as respostas e calcule sua nota grátis no BoraMed.`,
+        description: `Gabarito extraoficial da ${nome}, ${g.semestre}: ${g.cadernos[0]?.questoes.length ?? 0} questões${cadernos}. Confira as respostas e calcule sua nota grátis no BoraMed.`,
         path: `/gabaritos/${g.slug}`,
         noIndex: g.status !== 'publicado',
       });
+    }
+  }
+
+  // ── Cadernos ───────────────────────────────────────────────────────────
+
+  /** Troca de caderno: cada um tem as suas marcações e a sua correção. */
+  protected escolherCaderno(c: GabaritoCaderno): void {
+    if (c.slug === this.cadernoSlug()) return;
+    this.cadernoSlug.set(c.slug);
+    this.selecionada.set(null);
+    this.areaFiltro.set(null);
+    this.corrigido.set(false);
+    this.colarAberto.set(false);
+    this.textoColado.set('');
+    this.marcadas.set({});
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(STORAGE_CADERNO + this.slug, c.slug);
+      } catch {
+        /* storage bloqueado: só não lembra na próxima visita */
+      }
+      this.restaurarMarcadas();
     }
   }
 
@@ -247,8 +303,9 @@ export class GabaritoDetalheComponent {
 
   private textoCompartilhar(comNota: boolean): string {
     const r = this.resultado();
+    const caderno = this.varios() ? ` (caderno ${this.cadernoAtual()?.nome})` : '';
     return comNota
-      ? `Conferi minha ${this.nome()} no gabarito extraoficial do BoraMed: ${r.acertos + r.anuladas}/${r.consideradas} (${r.nota.toLocaleString('pt-BR')}%). Confere o seu:`
+      ? `Conferi minha ${this.nome()}${caderno} no gabarito extraoficial do BoraMed: ${r.acertos + r.anuladas}/${r.consideradas} (${r.nota.toLocaleString('pt-BR')}%). Confere o seu:`
       : `Saiu o gabarito extraoficial da ${this.nome()} 👀 Confere e calcula sua nota:`;
   }
 
@@ -302,18 +359,37 @@ export class GabaritoDetalheComponent {
 
   // ── Persistência local das marcações ──────────────────────────────────
 
-  private persistirMarcadas(): void {
-    if (!this.isBrowser) return;
+  /**
+   * Gabarito de um caderno só mantém a chave antiga (as marcações já salvas
+   * continuam valendo); com vários, cada caderno tem a sua.
+   */
+  private chaveMarcadas(): string {
+    return this.varios() ? `${STORAGE_PREFIX}${this.slug}:${this.cadernoAtual()?.slug ?? ''}` : STORAGE_PREFIX + this.slug;
+  }
+
+  private lerLocal(chave: string): string | null {
     try {
-      localStorage.setItem(STORAGE_PREFIX + this.slug, JSON.stringify(this.marcadas()));
+      return localStorage.getItem(chave);
+    } catch {
+      return null;
+    }
+  }
+
+  private persistirMarcadas(): void {
+    if (!this.isBrowser || this.precisaEscolher()) return;
+    try {
+      localStorage.setItem(this.chaveMarcadas(), JSON.stringify(this.marcadas()));
     } catch {
       /* storage cheio ou bloqueado: a conferência segue só em memória */
     }
   }
 
   private restaurarMarcadas(): void {
+    if (this.precisaEscolher()) return;
     try {
-      const salvo = localStorage.getItem(STORAGE_PREFIX + this.slug);
+      let salvo = this.lerLocal(this.chaveMarcadas());
+      // O gabarito ganhou cadernos depois de o aluno marcar: o que ele marcou era do 1º.
+      if (!salvo && this.varios() && this.cadernoAtual()?.ordem === 1) salvo = this.lerLocal(STORAGE_PREFIX + this.slug);
       if (!salvo) return;
       const obj = JSON.parse(salvo) as Record<string, unknown>;
       const limpo: Record<number, LetraGabarito | undefined> = {};

@@ -37,7 +37,9 @@
           <p class="gb-det-hero__meta">
             {{ g.semestre }}
             @if (g.data_prova) { · prova de {{ dataLonga(g.data_prova) }} }
-            · {{ g.questoes.length }} questões · atualizado {{ atualizadoEm(g.atualizado_em) }}
+            · {{ totalQuestoes() }} questões
+            @if (varios()) { · {{ g.cadernos.length }} cadernos }
+            · atualizado {{ atualizadoEm(g.atualizado_em) }}
           </p>
         </div>
       </div>
@@ -55,12 +57,62 @@
         <p class="gb-obs">{{ g.observacao }}</p>
       }
       <ul class="gb-resumo" aria-label="Resumo do gabarito">
-        <li><strong>{{ g.questoes.length - resumo().anuladas - resumo().emAnalise }}</strong> com resposta</li>
+        @if (!precisaEscolher()) {
+        <li><strong>{{ questoes().length - resumo().anuladas - resumo().emAnalise }}</strong> com resposta</li>
         @if (resumo().anuladas) { <li><strong>{{ resumo().anuladas }}</strong> anulada{{ resumo().anuladas === 1 ? '' : 's' }}</li> }
         @if (resumo().emAnalise) { <li class="is-warn"><strong>{{ resumo().emAnalise }}</strong> em análise</li> }
         @if (totalComentarios()) { <li><strong>{{ totalComentarios() }}</strong> comentada{{ totalComentarios() === 1 ? '' : 's' }}</li> }
+        } @else {
+          <li><strong>{{ g.cadernos.length }}</strong> cadernos nesta prova</li>
+        }
       </ul>
     </section>
+
+    <!-- ── Cadernos ───────────────────────────────────────────────────── -->
+    @if (varios()) {
+      <section class="gb-cadernos" [class.gb-cadernos--escolher]="precisaEscolher()" aria-labelledby="gb-cad-title">
+        @if (precisaEscolher()) {
+          <h2 id="gb-cad-title" class="gb-cadernos__title">Qual é o seu caderno?</h2>
+          <p class="gb-cadernos__sub">
+            Esta prova teve {{ g.cadernos.length }} cadernos e a ordem das questões muda em cada um.
+            Escolha o que está na capa da sua prova, para a conferência valer.
+          </p>
+          <ul class="gb-cadernos__grid">
+            @for (c of g.cadernos; track c.id) {
+              <li>
+                <button type="button" class="gb-caderno-card" (click)="escolherCaderno(c)">
+                  <span class="gb-caderno-card__icon"><app-ui-icon [icon]="iconCaderno" [size]="20" /></span>
+                  <span class="gb-caderno-card__txt">
+                    <strong>{{ c.nome }}</strong>
+                    <small>{{ c.questoes.length }} questões</small>
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="gb-cadernos__bar" role="tablist" aria-label="Caderno da prova">
+            <span class="gb-cadernos__label"><app-ui-icon [icon]="iconCaderno" [size]="15" />Seu caderno</span>
+            @for (c of g.cadernos; track c.id) {
+              <button
+                type="button"
+                role="tab"
+                [class.is-on]="cadernoAtual()?.id === c.id"
+                [attr.aria-selected]="cadernoAtual()?.id === c.id"
+                (click)="escolherCaderno(c)"
+              >{{ c.nome }}</button>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (!precisaEscolher()) {
+    @if (cadernoSemRespostas()) {
+      <p class="gb-rascunho" role="status">
+        A equipe ainda está fechando as respostas {{ varios() ? 'do caderno ' + cadernoAtual()?.nome : 'deste gabarito' }}. Volte daqui a pouco.
+      </p>
+    }
 
     <!-- ── Modo ───────────────────────────────────────────────────────── -->
     <div class="gb-modos" role="tablist" aria-label="Como ver o gabarito">
@@ -215,7 +267,7 @@
         }
 
         <ol class="gb-sheet">
-          @for (q of g.questoes; track q.numero) {
+          @for (q of questoes(); track q.numero) {
             <li class="gb-sheet__row {{ situacao(q.numero) }}">
               <span class="gb-sheet__n">{{ q.numero }}</span>
               <div class="gb-sheet__bubbles" role="group" [attr.aria-label]="'Sua resposta na questão ' + q.numero">
@@ -248,13 +300,14 @@
 
         @if (!corrigido()) {
           <div class="gb-corrigir">
-            <span>{{ totalMarcadas() }} de {{ g.questoes.length }} marcadas</span>
+            <span>{{ totalMarcadas() }} de {{ questoes().length }} marcadas</span>
             <button type="button" class="gb-btn gb-btn--primary gb-btn--lg" [disabled]="totalMarcadas() === 0" (click)="corrigir()">
               Ver minha nota
             </button>
           </div>
         }
       </section>
+    }
     }
 
     <!-- ── CTA ────────────────────────────────────────────────────────── -->

@@ -7,7 +7,11 @@
 --   3. aluno logado não salva/publica (42501) e não lê a tabela direto;
 --   4. admin salva (slug gerado, colisão com sufixo), valida letra fora das
 --      alternativas e numeração, publica e notifica o período UMA vez;
---   5. o contador de visualização só conta publicado.
+--   5. o contador de visualização só conta publicado;
+--   6. público do e-mail (teto 50, fora de Ipatinga primeiro);
+--   7. cadernos: vários por gabarito, cada um com folha própria; renomear
+--      preserva id/slug, o que sai do payload é excluído, a vitrine mostra os
+--      nomes sem nenhuma letra, e o payload antigo (`questoes` na raiz) segue valendo.
 --
 -- Roda dentro de transação com ROLLBACK: não deixa resíduo no banco.
 --
@@ -24,12 +28,15 @@ begin;
 do $$
 begin
   if has_table_privilege('anon', 'public.gabarito_prova', 'select')
-     or has_table_privilege('anon', 'public.gabarito_prova_questao', 'select') then
+     or has_table_privilege('anon', 'public.gabarito_prova_questao', 'select')
+     or has_table_privilege('anon', 'public.gabarito_prova_caderno', 'select') then
     raise exception 'FALHA: anon tem SELECT direto nas tabelas de gabarito';
   end if;
   if has_table_privilege('authenticated', 'public.gabarito_prova', 'insert')
      or has_table_privilege('authenticated', 'public.gabarito_prova', 'update')
-     or has_table_privilege('authenticated', 'public.gabarito_prova_questao', 'insert') then
+     or has_table_privilege('authenticated', 'public.gabarito_prova_questao', 'insert')
+     or has_table_privilege('authenticated', 'public.gabarito_prova_caderno', 'insert')
+     or has_table_privilege('authenticated', 'public.gabarito_prova_caderno', 'delete') then
     raise exception 'FALHA: authenticated escreve direto nas tabelas de gabarito (deveria ser só RPC)';
   end if;
   if has_function_privilege('anon', 'public.admin_salvar_gabarito_prova(jsonb)', 'execute')
@@ -315,5 +322,198 @@ begin
   end if;
   raise notice 'OK 6: público do e-mail (teto 50, fora de Ipatinga primeiro, sem descadastrado)';
 end $$;
+
+-- ─── 7) Cadernos ───────────────────────────────────────────────────────────
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', (select admin_id from _ctx), 'role', 'authenticated')::text, true);
+
+do $$
+declare
+  v_r jsonb; v_r2 jsonb; v_outro jsonb; v_g uuid; v_slug text;
+  v_azul uuid; v_azul_slug text; v_verde uuid; v_amarelo uuid;
+  v_get jsonb; v_vit jsonb; v_err text;
+  v_folha_a jsonb := jsonb_build_array(
+    jsonb_build_object('numero', 1, 'resposta', 'A'),
+    jsonb_build_object('numero', 2, 'resposta', 'B', 'comentario', 'só no azul'),
+    jsonb_build_object('numero', 3, 'anulada', true));
+  v_folha_b jsonb := jsonb_build_array(
+    jsonb_build_object('numero', 1, 'resposta', 'D'),
+    jsonb_build_object('numero', 2),
+    jsonb_build_object('numero', 3, 'resposta', 'C'));
+begin
+  -- Cria com 3 cadernos; a folha de cada um é independente.
+  v_r := public.admin_salvar_gabarito_prova(jsonb_build_object(
+    'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2', 'qtd_alternativas', 5,
+    'cadernos', jsonb_build_array(
+      jsonb_build_object('nome', 'Azul', 'questoes', v_folha_a),
+      jsonb_build_object('nome', 'Verde ', 'questoes', v_folha_b),
+      jsonb_build_object('nome', 'Amarelo', 'questoes', v_folha_a))));
+  v_g := (v_r->>'id')::uuid;
+  v_slug := v_r->>'slug';
+  if jsonb_array_length(v_r->'cadernos') <> 3 then
+    raise exception 'FALHA: salvar não devolveu os 3 cadernos (%)', v_r->'cadernos';
+  end if;
+  v_azul := (v_r->'cadernos'->0->>'id')::uuid;
+  v_azul_slug := v_r->'cadernos'->0->>'slug';
+  v_verde := (v_r->'cadernos'->1->>'id')::uuid;
+  v_amarelo := (v_r->'cadernos'->2->>'id')::uuid;
+  if v_azul_slug <> 'azul' or v_r->'cadernos'->1->>'slug' <> 'verde' or v_r->'cadernos'->1->>'nome' <> 'Verde' then
+    raise exception 'FALHA: slug/nome do caderno inesperado (%)', v_r->'cadernos';
+  end if;
+  if (select resposta from public.gabarito_prova_questao where caderno_id = v_verde and numero = 1) <> 'D'
+     or (select resposta from public.gabarito_prova_questao where caderno_id = v_azul and numero = 1) <> 'A' then
+    raise exception 'FALHA: folhas dos cadernos se misturaram';
+  end if;
+
+  -- Leitura: cadernos em ordem, cada um com a própria folha; `questoes` na raiz
+  -- (compat do front antigo) é a do 1º caderno.
+  v_get := public.get_gabarito_prova(v_slug);
+  if jsonb_array_length(v_get->'cadernos') <> 3
+     or v_get->'cadernos'->1->>'nome' <> 'Verde'
+     or v_get->'cadernos'->1->'questoes'->0->>'resposta' <> 'D'
+     or v_get->'questoes'->0->>'resposta' <> 'A' then
+    raise exception 'FALHA: get_gabarito_prova não devolve os cadernos corretamente';
+  end if;
+
+  -- Renomear preserva id e slug (o link já circulou); o que sai do payload é
+  -- excluído com a folha; caderno novo entra com slug próprio e vai ao fim.
+  v_r2 := public.admin_salvar_gabarito_prova(jsonb_build_object(
+    'id', v_g, 'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2', 'qtd_alternativas', 5,
+    'cadernos', jsonb_build_array(
+      jsonb_build_object('id', v_verde, 'nome', 'Caderno Verde', 'questoes', v_folha_b),
+      jsonb_build_object('id', v_azul, 'nome', 'Azul', 'questoes', v_folha_a),
+      jsonb_build_object('nome', 'Branco', 'questoes', v_folha_a))));
+  if (v_r2->'cadernos'->0->>'id')::uuid <> v_verde or v_r2->'cadernos'->0->>'slug' <> 'verde'
+     or v_r2->'cadernos'->0->>'nome' <> 'Caderno Verde' or (v_r2->'cadernos'->0->>'ordem')::int <> 1 then
+    raise exception 'FALHA: renomear/reordenar caderno mudou id ou slug (%)', v_r2->'cadernos';
+  end if;
+  if exists (select 1 from public.gabarito_prova_caderno where id = v_amarelo)
+     or exists (select 1 from public.gabarito_prova_questao where caderno_id = v_amarelo) then
+    raise exception 'FALHA: caderno removido do payload continuou no banco';
+  end if;
+  if (select count(*) from public.gabarito_prova_caderno where gabarito_id = v_g) <> 3 then
+    raise exception 'FALHA: esperava 3 cadernos depois do segundo save';
+  end if;
+
+  -- Validações
+  begin
+    perform public.admin_salvar_gabarito_prova(jsonb_build_object(
+      'id', v_g, 'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2',
+      'cadernos', jsonb_build_array(
+        jsonb_build_object('nome', 'Azul', 'questoes', v_folha_a),
+        jsonb_build_object('nome', ' AZUL ', 'questoes', v_folha_a))));
+    raise exception 'FALHA: aceitou nome de caderno repetido';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err <> 'nome_caderno_repetido' then raise; end if;
+  end;
+
+  begin
+    perform public.admin_salvar_gabarito_prova(jsonb_build_object(
+      'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2',
+      'cadernos', jsonb_build_array(jsonb_build_object('nome', '  ', 'questoes', v_folha_a))));
+    raise exception 'FALHA: aceitou caderno sem nome';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err <> 'nome_caderno_invalido' then raise; end if;
+  end;
+
+  begin
+    perform public.admin_salvar_gabarito_prova(jsonb_build_object(
+      'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2',
+      'cadernos', jsonb_build_array(
+        jsonb_build_object('nome', 'A', 'questoes', v_folha_a),
+        jsonb_build_object('nome', 'B', 'questoes', jsonb_build_array(jsonb_build_object('numero', 1))))));
+    raise exception 'FALHA: aceitou cadernos com quantidades de questões diferentes';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err <> 'cadernos_tamanhos_diferentes' then raise; end if;
+  end;
+
+  begin
+    perform public.admin_salvar_gabarito_prova(jsonb_build_object(
+      'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2',
+      'cadernos', '[]'::jsonb));
+    raise exception 'FALHA: aceitou gabarito sem caderno';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err <> 'quantidade_cadernos_invalida' then raise; end if;
+  end;
+
+  -- Caderno de OUTRO gabarito não pode ser "adotado" pelo payload.
+  v_outro := public.admin_salvar_gabarito_prova(jsonb_build_object(
+    'tipo_prova', 'Teste Cad Outro', 'periodo', 7, 'semestre', '2026.2',
+    'cadernos', jsonb_build_array(jsonb_build_object('nome', 'Único', 'questoes', v_folha_a))));
+  begin
+    perform public.admin_salvar_gabarito_prova(jsonb_build_object(
+      'id', v_g, 'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2',
+      'cadernos', jsonb_build_array(jsonb_build_object(
+        'id', v_outro->'cadernos'->0->>'id', 'nome', 'Roubado', 'questoes', v_folha_a))));
+    raise exception 'FALHA: aceitou id de caderno de outro gabarito';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err <> 'caderno_invalido' then raise; end if;
+  end;
+
+  -- Payload antigo (questoes na raiz) só vale com um caderno.
+  begin
+    perform public.admin_salvar_gabarito_prova(jsonb_build_object(
+      'id', v_g, 'tipo_prova', 'Teste Cad', 'periodo', 7, 'semestre', '2026.2',
+      'questoes', v_folha_a));
+    raise exception 'FALHA: payload legado sobrescreveu gabarito com vários cadernos';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err <> 'cadernos_obrigatorio' then raise; end if;
+  end;
+  v_r2 := public.admin_salvar_gabarito_prova(jsonb_build_object(
+    'id', (v_outro->>'id')::uuid, 'tipo_prova', 'Teste Cad Outro', 'periodo', 7, 'semestre', '2026.2',
+    'questoes', v_folha_b));
+  if (v_r2->'cadernos'->0->>'id') <> (v_outro->'cadernos'->0->>'id')
+     or (select resposta from public.gabarito_prova_questao
+          where caderno_id = (v_r2->'cadernos'->0->>'id')::uuid and numero = 1) <> 'D' then
+    raise exception 'FALHA: payload legado não atualizou o caderno único';
+  end if;
+
+  -- Vitrine: nomes dos cadernos, nenhuma letra/comentário em lugar nenhum.
+  perform public.admin_publicar_gabarito_prova(v_g, true, false);
+  v_vit := public.get_gabarito_prova_vitrine(v_slug);
+  if jsonb_array_length(v_vit->'cadernos') <> 3 or v_vit->'cadernos'->0->>'nome' <> 'Caderno Verde'
+     or (v_vit->>'total_questoes')::int <> 3 then
+    raise exception 'FALHA: vitrine sem os cadernos ou com contagem errada (%)', v_vit;
+  end if;
+  if v_vit->'cadernos'->0 ?| array['questoes', 'resposta', 'comentario']
+     or v_vit ?| array['questoes', 'resposta', 'comentario', 'observacao'] then
+    raise exception 'FALHA: vitrine expõe conteúdo do gabarito';
+  end if;
+  if not exists (
+    select 1 from jsonb_array_elements(public.listar_gabaritos_provas(7)) e
+     where e->>'slug' = v_slug and jsonb_array_length(e->'cadernos') = 3 and (e->>'total_questoes')::int = 3
+  ) then
+    raise exception 'FALHA: lista pública sem os cadernos (ou total_questoes somando cadernos)';
+  end if;
+
+  -- Lista do admin: progresso por caderno.
+  if not exists (
+    select 1 from jsonb_array_elements(public.admin_listar_gabaritos_provas()) e
+     where e->>'slug' = v_slug
+       and (e->>'total_questoes')::int = 9
+       and jsonb_array_length(e->'cadernos') = 3
+       and (e->'cadernos'->0->>'total_preenchidas')::int = 2
+  ) then
+    raise exception 'FALHA: lista do admin sem progresso por caderno';
+  end if;
+
+  -- Excluir o gabarito leva os cadernos e as folhas junto.
+  perform public.admin_excluir_gabarito_prova(v_g);
+  if exists (select 1 from public.gabarito_prova_caderno where gabarito_id = v_g)
+     or exists (select 1 from public.gabarito_prova_questao where gabarito_id = v_g) then
+    raise exception 'FALHA: excluir o gabarito deixou caderno/folha órfãos';
+  end if;
+
+  raise notice 'OK 7: cadernos (folha própria, rename preserva slug, remoção, validações, vitrine sem letras, legado, cascade)';
+end $$;
+
+reset role;
 
 rollback;

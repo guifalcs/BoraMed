@@ -482,6 +482,15 @@ Deno.serve(pipeline(
         questoes: z.array(questaoGabaritoSchema).min(1).max(200).optional().describe('Folha detalhada, com área/comentário por questão. Substitui a folha inteira.'),
       }
 
+      const cadernoGabaritoSchema = z.object({
+        nome: z.string().min(1).max(40).describe('O que está na capa do caderno: "Azul", "Caderno B"…'),
+        ...folhaGabarito,
+      })
+      const cadernosGabarito = z.array(cadernoGabaritoSchema).min(1).max(12)
+        .describe('Prova com vários cadernos: um item por caderno, cada um com a sua folha (respostas OU questoes). Todos com o mesmo nº de questões. Em vez de respostas/questoes na raiz.')
+      type CadernoPayload = { id?: string; nome: string; questoes: QuestaoGabarito[] }
+      const chaveNome = (n: string) => n.trim().toLocaleLowerCase('pt-BR')
+
       const montarFolha = (qtd: number, respostas?: string, questoes?: z.infer<typeof questaoGabaritoSchema>[]): QuestaoGabarito[] | null => {
         if (respostas && questoes) fail('Informe respostas OU questoes, não os dois.')
         if (respostas) return parseRespostasGabarito(respostas, qtd)
@@ -497,7 +506,7 @@ Deno.serve(pipeline(
         const { data, error } = await userDb.rpc('get_gabarito_prova', { p_slug: slug })
         if (error) fail(error.message)
         if (!data) fail('Gabarito não encontrado.')
-        return data as Record<string, unknown> & { id: string; slug: string; questoes: QuestaoGabarito[]; qtd_alternativas: number }
+        return data as Record<string, unknown> & { id: string; slug: string; qtd_alternativas: number; cadernos: { id: string; nome: string; questoes: QuestaoGabarito[] }[] }
       }
 
       const avisarAlunos = async (id: string) => {
@@ -525,12 +534,23 @@ Deno.serve(pipeline(
       }, async ({ slug }) => result(await lerGabarito(slug)))
 
       server.registerTool('criar_gabarito', {
-        description: 'Cria um gabarito extraoficial de prova. Por padrão fica em rascunho; com publicar=true vai ao ar, e com avisar_alunos=true avisa os alunos do período (no app, todos; por e-mail, até 50, fora de Ipatinga primeiro). Devolve o slug e o link público.',
-        inputSchema: cabecalhoGabarito.extend({ ...folhaGabarito, publicar: z.boolean().default(false), avisar_alunos: z.boolean().default(false) }),
-      }, async ({ respostas, questoes, publicar, avisar_alunos, ...cabecalho }) => {
-        const folha = montarFolha(cabecalho.qtd_alternativas, respostas, questoes)
-        if (!folha) fail('Informe respostas ou questoes.')
-        const { data, error } = await userDb.rpc('admin_salvar_gabarito_prova', { p_payload: { ...cabecalho, questoes: folha } })
+        description: 'Cria um gabarito extraoficial de prova. Prova com um caderno só: informe respostas ou questoes. Prova com vários cadernos (Azul, Verde, A, B…): informe `cadernos`, cada um com nome e a sua folha. Por padrão fica em rascunho; com publicar=true vai ao ar, e com avisar_alunos=true avisa os alunos do período (no app, todos; por e-mail, até 50, fora de Ipatinga primeiro). Devolve o slug e o link público.',
+        inputSchema: cabecalhoGabarito.extend({ ...folhaGabarito, cadernos: cadernosGabarito.optional(), publicar: z.boolean().default(false), avisar_alunos: z.boolean().default(false) }),
+      }, async ({ respostas, questoes, cadernos, publicar, avisar_alunos, ...cabecalho }) => {
+        let cadernosPayload: CadernoPayload[]
+        if (cadernos) {
+          if (respostas || questoes) fail('Informe cadernos OU respostas/questoes na raiz, não os dois.')
+          cadernosPayload = cadernos.map((c) => {
+            const folha = montarFolha(cabecalho.qtd_alternativas, c.respostas, c.questoes)
+            if (!folha) fail(`Informe respostas ou questoes para o caderno "${c.nome}".`)
+            return { nome: c.nome, questoes: folha }
+          })
+        } else {
+          const folha = montarFolha(cabecalho.qtd_alternativas, respostas, questoes)
+          if (!folha) fail('Informe respostas, questoes ou cadernos.')
+          cadernosPayload = [{ nome: 'Caderno único', questoes: folha }]
+        }
+        const { data, error } = await userDb.rpc('admin_salvar_gabarito_prova', { p_payload: { ...cabecalho, cadernos: cadernosPayload } })
         if (error) fail(error.message)
         const salvo = data as { id: string; slug: string }
         let publicacao: unknown = null
@@ -543,19 +563,48 @@ Deno.serve(pipeline(
       })
 
       server.registerTool('atualizar_gabarito', {
-        description: 'Atualiza qualquer gabarito: cabeçalho e/ou folha (respostas ou questoes substituem a folha inteira). O slug e o link nunca mudam.',
-        inputSchema: z.object({ slug: z.string().min(1).max(80), alteracoes: cabecalhoGabarito.partial().extend(folhaGabarito) }),
+        description: 'Atualiza qualquer gabarito: cabeçalho e/ou folhas. Gabarito de um caderno: respostas ou questoes substituem a folha. Com vários cadernos: use `caderno` (nome) junto de respostas/questoes para trocar a folha de UM caderno, ou `cadernos` para redefinir a lista (casa por nome: quem já existe mantém o link; o que não vier é excluído). O slug e o link nunca mudam.',
+        inputSchema: z.object({
+          slug: z.string().min(1).max(80),
+          alteracoes: cabecalhoGabarito.partial().extend({
+            ...folhaGabarito,
+            caderno: z.string().min(1).max(40).optional().describe('Nome do caderno a que respostas/questoes se aplicam (obrigatório se a prova tem mais de um).'),
+            cadernos: cadernosGabarito.optional(),
+          }),
+        }),
       }, async ({ slug, alteracoes }) => {
         const atual = await lerGabarito(slug)
-        const { respostas, questoes, ...cabecalho } = alteracoes
+        const { respostas, questoes, caderno, cadernos, ...cabecalho } = alteracoes
         const qtd = cabecalho.qtd_alternativas ?? atual.qtd_alternativas
-        const folha = montarFolha(qtd, respostas, questoes) ?? atual.questoes
+        let cadernosPayload: CadernoPayload[]
+        if (cadernos) {
+          if (respostas || questoes || caderno) fail('Informe cadernos OU respostas/questoes (com `caderno`), não os dois.')
+          cadernosPayload = cadernos.map((c) => {
+            const existente = atual.cadernos.find((x) => chaveNome(x.nome) === chaveNome(c.nome))
+            const folha = montarFolha(qtd, c.respostas, c.questoes) ?? existente?.questoes
+            if (!folha) fail(`O caderno "${c.nome}" é novo: informe respostas ou questoes para ele.`)
+            return { id: existente?.id, nome: c.nome, questoes: folha }
+          })
+        } else {
+          cadernosPayload = atual.cadernos.map((c) => ({ id: c.id, nome: c.nome, questoes: c.questoes }))
+          const folha = montarFolha(qtd, respostas, questoes)
+          if (folha) {
+            if (cadernosPayload.length > 1 && !caderno) {
+              fail(`Este gabarito tem ${cadernosPayload.length} cadernos (${cadernosPayload.map((c) => c.nome).join(', ')}): informe \`caderno\` com o nome do que você quer atualizar.`)
+            }
+            const alvo = caderno ? cadernosPayload.find((c) => chaveNome(c.nome) === chaveNome(caderno)) : cadernosPayload[0]
+            if (!alvo) fail(`Caderno "${caderno}" não existe neste gabarito. Use \`cadernos\` para criar.`)
+            alvo.questoes = folha
+          } else if (caderno) {
+            fail('Informe respostas ou questoes junto de `caderno`.')
+          }
+        }
         const payload = {
           id: atual.id,
           tipo_prova: atual['tipo_prova'], periodo: atual['periodo'], semestre: atual['semestre'], data_prova: atual['data_prova'],
           titulo: atual['titulo'], observacao: atual['observacao'], qtd_alternativas: atual.qtd_alternativas, conferido_oficial: atual['conferido_oficial'],
           ...cabecalho,
-          questoes: folha,
+          cadernos: cadernosPayload,
         }
         const { data, error } = await userDb.rpc('admin_salvar_gabarito_prova', { p_payload: payload })
         if (error) fail(error.message)

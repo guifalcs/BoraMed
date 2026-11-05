@@ -30,6 +30,12 @@
           A equipe BoraMed resolveu as {{ v.total_questoes }} questões antes do gabarito oficial.
           Entre na sua conta para ver as respostas e calcular sua nota.
         </p>
+        @if (v.cadernos.length > 1) {
+          <ul class="gb-card__cadernos gv-cadernos" [attr.aria-label]="'Cadernos desta prova'">
+            <li class="is-rotulo">{{ v.cadernos.length }} cadernos:</li>
+            @for (c of v.cadernos; track c.id) { <li>{{ c.nome }}</li> }
+          </ul>
+        }
 
         <div class="gv-actions">
           <a
@@ -62,8 +68,9 @@
             <strong>{{ nome() }}</strong>
             <small>
               {{ v.total_questoes }} questões
-              @if (v.total_anuladas) { · {{ v.total_anuladas }} anulada{{ v.total_anuladas === 1 ? '' : 's' }} }
-              @if (v.total_comentadas) { · {{ v.total_comentadas }} comentada{{ v.total_comentadas === 1 ? '' : 's' }} }
+              @if (v.cadernos.length > 1) { · {{ v.cadernos.length }} cadernos }
+              @if (v.total_anuladas && v.cadernos.length === 1) { · {{ v.total_anuladas }} anulada{{ v.total_anuladas === 1 ? '' : 's' }} }
+              @if (v.total_comentadas && v.cadernos.length === 1) { · {{ v.total_comentadas }} comentada{{ v.total_comentadas === 1 ? '' : 's' }} }
             </small>
           </div>
         </div>
@@ -101,7 +108,7 @@
       <ul>
         <li>
           <span><app-ui-icon [icon]="iconRespostas" [size]="20" /></span>
-          <strong>As {{ v.total_questoes }} respostas</strong>
+          <strong>As {{ v.total_questoes }} respostas{{ v.cadernos.length > 1 ? ' de cada caderno' : '' }}</strong>
           <small>Com anuladas e questões em análise sinalizadas.</small>
         </li>
         <li>

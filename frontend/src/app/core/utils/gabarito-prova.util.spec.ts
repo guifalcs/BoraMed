@@ -1,10 +1,13 @@
 import {
+  acharCaderno,
   aplicarSequencia,
   conferirRespostas,
   distribuicaoLetras,
   folhaEmBranco,
   nomeGabarito,
+  nomesRepetidos,
   parseSequenciaGabarito,
+  proximoNomeCaderno,
   redimensionarFolha,
   resumoFolha,
   semestreAtual,
@@ -112,5 +115,31 @@ describe('gabarito-prova.util', () => {
   it('semestreAtual divide o ano em .1 e .2', () => {
     expect(semestreAtual(new Date(2026, 2, 1))).toBe('2026.1');
     expect(semestreAtual(new Date(2026, 10, 5))).toBe('2026.2');
+  });
+
+  describe('cadernos', () => {
+    it('proximoNomeCaderno pega a primeira letra livre, ignorando caixa e espaços', () => {
+      expect(proximoNomeCaderno([])).toBe('Caderno A');
+      expect(proximoNomeCaderno(['Caderno A'])).toBe('Caderno B');
+      expect(proximoNomeCaderno(['Azul', ' caderno a '])).toBe('Caderno B');
+      expect(proximoNomeCaderno(['Caderno B', 'Caderno A'])).toBe('Caderno C');
+    });
+
+    it('nomesRepetidos acha duplicados sem contar vazios', () => {
+      expect([...nomesRepetidos(['Azul', 'Verde'])]).toEqual([]);
+      expect([...nomesRepetidos(['Azul', ' AZUL ', 'Verde'])]).toEqual(['azul']);
+      expect([...nomesRepetidos(['', '  '])]).toEqual([]);
+    });
+
+    it('acharCaderno só devolve o caderno pedido: nunca chuta outro', () => {
+      const cadernos = [
+        { id: '1', slug: 'azul', nome: 'Azul', ordem: 1 },
+        { id: '2', slug: 'verde', nome: 'Verde', ordem: 2 },
+      ];
+      expect(acharCaderno(cadernos, 'verde')?.id).toBe('2');
+      expect(acharCaderno(cadernos, 'rosa')).toBeNull();
+      expect(acharCaderno(cadernos, null)).toBeNull();
+      expect(acharCaderno(cadernos, '')).toBeNull();
+    });
   });
 });

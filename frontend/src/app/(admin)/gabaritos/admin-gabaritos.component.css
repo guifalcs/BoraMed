@@ -223,3 +223,28 @@
   .gab-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gab-title { font-size: 1.4rem; }
 }
+
+/* Cadernos da prova no card: nome + progresso da folha de cada um */
+.gab-cads { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
+.gab-cads li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.3rem 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #3730a3;
+}
+.gab-cads small {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+.gab-cads li.is-done { background: #dcfce7; color: #166534; }
+.gab-cads li.is-done small { color: #166534; }
