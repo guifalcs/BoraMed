@@ -15,7 +15,7 @@ const OUTPUT = join(ROOT, 'public', 'sitemap.xml');
 
 const today = new Date().toISOString().slice(0, 10);
 
-/** Rotas públicas estáticas. */
+/** Rotas públicas estáticas, incluindo a lista de gabaritos. */
 const staticRoutes = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/gabaritos', changefreq: 'daily', priority: '0.9' },
