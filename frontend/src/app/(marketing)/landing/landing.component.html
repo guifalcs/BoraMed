@@ -43,6 +43,11 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="container hero__grid">
         <div class="hero__copy">
+          <a class="hero__pill" routerLink="/gabaritos">
+            <span>Grátis</span>
+            Gabaritos extraoficiais<span class="hero__pill-extra"> das provas</span>
+            <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
+          </a>
           <h1 class="hero__title" id="hero-title">
             Saiba onde você perde pontos <span class="hero__title-accent">antes da prova.</span>
           </h1>
@@ -141,6 +146,8 @@
         }
       </ul>
     </section>
+
+    <app-landing-gabaritos />
 
     <section class="section section--mist" id="demo" aria-labelledby="demo-title">
       <div class="container demo">
@@ -504,6 +511,7 @@
         <img src="/brand/logo.webp" alt="BoraMed" class="brand__logo" width="400" height="128" loading="lazy" />
       </a>
       <nav class="footer__nav" aria-label="Links do rodapé">
+        <a routerLink="/gabaritos">Gabaritos extraoficiais</a>
         <a routerLink="/guias">Guias de estudo</a>
         <a href="mailto:contato@boramed.com.br">Contato</a>
         <a routerLink="/politica-de-privacidade">Privacidade</a>

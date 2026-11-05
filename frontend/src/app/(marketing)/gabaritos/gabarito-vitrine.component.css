@@ -1,0 +1,127 @@
+.gv { padding-bottom: 6rem; }
+
+.gv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 2.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ── Convite ──────────────────────────────────────────── */
+.gv-eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0 0 1rem; font-size: 0.8125rem; font-weight: 600; color: var(--color-text-muted); }
+
+.gv-title { margin: 0; font-size: clamp(1.9rem, 4.2vw, 2.75rem); font-weight: 800; line-height: 1.08; color: var(--color-text); text-wrap: balance; }
+.gv-title span {
+  background: linear-gradient(100deg, #1e40af 0%, #2451d8 45%, #6427d9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (forced-colors: active) { .gv-title span { background: none; -webkit-text-fill-color: currentColor; } }
+
+.gv-lead { margin: 1rem 0 0; max-width: 32rem; font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted); }
+
+.gv-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin-top: 1.75rem; }
+.gv-login { font-size: 0.9375rem; color: var(--color-text-muted); text-decoration: none; }
+.gv-login strong { color: var(--color-action); }
+.gv-login:hover strong { text-decoration: underline; }
+.gv-note { margin: 0.75rem 0 0; font-size: 0.8125rem; color: var(--color-text-muted); }
+
+.gv-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+}
+
+/* ── Cartão bloqueado ─────────────────────────────────── */
+.gv-card {
+  position: relative;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 30px 60px -35px rgba(30, 64, 175, 0.45);
+}
+.gv-card__head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.gv-card__head strong { display: block; font-size: 1.05rem; color: var(--color-text); }
+.gv-card__head small { font-size: 0.8125rem; color: var(--color-text-muted); }
+
+.gv-lockwrap { position: relative; }
+
+.gv-tiles { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.gv-tiles li {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1.5px solid #dbe3ff;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #fff, #f5f7ff);
+}
+.gv-tiles small { position: absolute; top: 0.2rem; left: 0.35rem; font-size: 0.6rem; font-weight: 800; color: var(--color-text-muted); }
+.gv-tiles b { font-size: 1.1rem; font-weight: 800; color: var(--color-primary); filter: blur(5px); user-select: none; }
+.gv-tiles__mais { font-size: 0.8125rem; font-weight: 800; color: var(--color-text-muted); }
+
+.gv-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.82) 45%, rgba(255, 255, 255, 0.2) 100%);
+  text-align: center;
+}
+.gv-lock__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 10px 24px -10px rgba(37, 84, 220, 0.9);
+}
+.gv-lock__title { margin: 0; max-width: 16rem; font-size: 0.95rem; font-weight: 800; color: var(--color-text); }
+
+/* ── Benefícios ───────────────────────────────────────── */
+.gv-beneficios { margin-top: 3rem; }
+.gv-beneficios h2 { margin: 0 0 1rem; font-size: 1.15rem; font-weight: 800; }
+.gv-beneficios ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.gv-beneficios li { display: flex; flex-direction: column; gap: 0.35rem; padding: 1.1rem; border: 1px solid var(--color-border); border-radius: 16px; background: #fff; }
+.gv-beneficios li span { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; margin-bottom: 0.35rem; border-radius: 12px; background: #eef2ff; color: var(--color-action); }
+.gv-beneficios strong { font-size: 0.95rem; color: var(--color-text); }
+.gv-beneficios small { font-size: 0.8125rem; line-height: 1.45; color: var(--color-text-muted); }
+
+.gv-sticky { display: none; }
+
+@media (max-width: 899px) {
+  .gv-grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .gv-beneficios ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 599px) {
+  .gv-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .gv-beneficios ul { grid-template-columns: minmax(0, 1fr); }
+    .gv-sticky {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 30;
+    display: block;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.94);
+    border-top: 1px solid var(--color-border);
+    backdrop-filter: blur(8px);
+  }
+  .gv-sticky .gb-btn { width: 100%; }
+}

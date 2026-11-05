@@ -9,6 +9,7 @@ import {
   ClipboardList,
   DollarSign,
   Receipt,
+  FileCheck2,
   FileText,
   GraduationCap,
   Headphones,
@@ -112,6 +113,7 @@ export class AdminComponent {
       children: [
         { label: 'Questões', icon: FileText, route: '/admin/questoes' },
         { label: 'Provas', icon: BookOpen, route: '/admin/provas' },
+        { label: 'Gabaritos', icon: FileCheck2, route: '/admin/gabaritos' },
         { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },
         { label: 'Temas', icon: Tag, route: '/admin/temas' },
         { label: 'Materiais', icon: Library, route: '/admin/materiais' },

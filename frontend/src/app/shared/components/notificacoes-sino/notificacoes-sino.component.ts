@@ -18,6 +18,7 @@ import {
   Trophy,
   Zap,
 } from 'lucide-angular';
+import { Router } from '@angular/router';
 import { AppNotificacaoService } from '../../../core/services/app-notification.service';
 import { UiIconComponent } from '../ui/icon/ui-icon.component';
 import type { AppNotificacao, AppNotificacaoTipo } from '../../../core/models/app-notification.types';
@@ -65,6 +66,8 @@ const VIEWPORT_MARGIN = 8;
 export class NotificacoesSinoComponent implements OnInit {
   private readonly notifService = inject(AppNotificacaoService);
   private readonly elRef = inject(ElementRef);
+  // Opcional: o componente também roda em story sem router.
+  private readonly router = inject(Router, { optional: true });
 
   /** Quando true, usa position:fixed calculado para escapar do overflow:hidden do sidebar. */
   sidebar = input(false);
@@ -205,6 +208,19 @@ export class NotificacoesSinoComponent implements OnInit {
     if (!notif.lida) {
       await this.notifService.marcarLida(notif.id);
     }
+    // Notificação com destino (ex.: gabarito recém-publicado) abre a tela.
+    // Só caminho interno: `dados` é gravado por RPC de admin, mas não deixamos
+    // um valor inesperado virar navegação para fora do app.
+    const link = notif.dados?.['link'];
+    if (typeof link === 'string' && link.startsWith('/') && !link.startsWith('//') && this.router) {
+      this.fechar();
+      await this.router.navigateByUrl(link);
+    }
+  }
+
+  protected temLink(notif: AppNotificacao): boolean {
+    const link = notif.dados?.['link'];
+    return typeof link === 'string' && link.startsWith('/');
   }
 
   protected async marcarTodasLidas(): Promise<void> {

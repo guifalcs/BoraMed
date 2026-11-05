@@ -189,6 +189,54 @@
   gap: 3.5rem;
 }
 
+.hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.3rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--lp-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 6px 18px -12px rgba(10, 16, 51, 0.35);
+  transition: border-color 0.15s;
+}
+
+.hero__pill:hover {
+  border-color: var(--lp-blue);
+}
+
+.hero__pill .hero__pill-extra {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 420px) {
+  .hero__pill .hero__pill-extra {
+    display: none;
+  }
+}
+
+.hero__pill span:first-child {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--lp-good-wash);
+  color: var(--lp-good-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .hero__title {
   max-width: 12ch;
   margin: 0;

@@ -1,0 +1,142 @@
+@if (!embutido) {
+  <app-gabaritos-topo />
+}
+
+<main class="gb" [class.gb--embutido]="embutido">
+  <!-- ── Hero ───────────────────────────────────────────────────────────── -->
+  <section class="gb-hero" [class.gb-hero--compacto]="embutido" aria-labelledby="gb-title">
+    <div class="gb-hero__copy">
+      <p class="gb-hero__eyebrow">Atualizado logo depois da prova</p>
+      <h1 id="gb-title" class="gb-hero__title">
+        Saiu da prova?<br />
+        <span>O gabarito sai aqui primeiro.</span>
+      </h1>
+      <p class="gb-hero__lead">
+        Gabaritos extraoficiais da N1, N2 e demais provas, por período, publicados pela equipe BoraMed
+        antes do oficial. Confira as respostas e calcule sua nota em segundos.
+      </p>
+      @if (!carregando() && gabaritos().length) {
+        <p class="gb-hero__stat">
+          <app-ui-icon [icon]="iconEye" [size]="15" />
+          {{ numero(totalVisualizacoes()) }} visualizações até agora
+        </p>
+      }
+    </div>
+
+    @if (!embutido) {
+      <div class="gb-hero__art" aria-hidden="true">
+        <div class="gb-mini">
+          <div class="gb-mini__head"><span>N2</span> Gabarito</div>
+          @for (row of [2, 0, 3, 1, 4, 0]; track $index) {
+            <div class="gb-mini__row" [style.--d]="$index">
+              <small>{{ $index + 1 }}</small>
+              @for (l of ['A', 'B', 'C', 'D', 'E']; track l; let j = $index) {
+                <i [class.is-on]="row === j">{{ l }}</i>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- ── Filtro por período ─────────────────────────────────────────────── -->
+  @if (periodosDisponiveis().length > 1) {
+    <nav class="gb-filtros" aria-label="Filtrar por período">
+      <button type="button" class="gb-filtro" [class.is-on]="periodo() === null" [attr.aria-pressed]="periodo() === null" (click)="filtrar(null)">
+        Todos
+      </button>
+      @for (p of periodosDisponiveis(); track p) {
+        <button
+          type="button"
+          class="gb-filtro"
+          [class.is-on]="periodo() === p"
+          [class.is-meu]="meuPeriodo() === p"
+          [attr.aria-pressed]="periodo() === p"
+          (click)="filtrar(p)"
+        >
+          {{ p }}º período
+          @if (meuPeriodo() === p) { <small>seu</small> }
+        </button>
+      }
+    </nav>
+  }
+
+  <!-- ── Lista ──────────────────────────────────────────────────────────── -->
+  @if (carregando()) {
+    <div class="gb-grid" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) { <div class="gb-card gb-card--skeleton"></div> }
+    </div>
+  } @else if (erro()) {
+    <div class="gb-empty">
+      <h2>Não deu para carregar os gabaritos</h2>
+      <p>Verifique sua conexão e tente de novo.</p>
+      <button type="button" class="gb-btn gb-btn--primary" (click)="carregar()">Tentar de novo</button>
+    </div>
+  } @else if (grupos().length === 0) {
+    <div class="gb-empty">
+      <app-ui-icon [icon]="iconVazio" [size]="36" />
+      <h2>{{ periodo() ? 'Nenhum gabarito do ' + periodo() + 'º período ainda' : 'Nenhum gabarito publicado ainda' }}</h2>
+      <p>Assim que a próxima prova acontecer, o gabarito extraoficial aparece aqui.</p>
+      @if (periodo()) {
+        <button type="button" class="gb-btn gb-btn--soft" (click)="filtrar(null)">Ver todos os períodos</button>
+      }
+    </div>
+  } @else {
+    @for (grupo of grupos(); track grupo.semestre) {
+      <section class="gb-grupo" [attr.aria-label]="'Semestre ' + grupo.semestre">
+        <h2 class="gb-grupo__title">{{ grupo.semestre }}</h2>
+        <div class="gb-grid">
+          @for (g of grupo.itens; track g.id) {
+            <a class="gb-card" [routerLink]="[base, g.slug]">
+              <div class="gb-card__top">
+                <span class="gb-tipo">{{ g.tipo_prova }}</span>
+                <div class="gb-card__badges">
+                  @if (ehNovo(g)) {
+                    <span class="gb-pill gb-pill--novo"><app-ui-icon [icon]="iconNovo" [size]="12" />Novo</span>
+                  }
+                  @if (g.conferido_oficial) {
+                    <span class="gb-pill gb-pill--ok"><app-ui-icon [icon]="iconCheck" [size]="12" />Bate com o oficial</span>
+                  } @else {
+                    <span class="gb-pill gb-pill--extra">Extraoficial</span>
+                  }
+                </div>
+              </div>
+              <h3 class="gb-card__name">{{ nome(g) }}</h3>
+              <p class="gb-card__meta">
+                {{ g.total_questoes }} questões
+                @if (g.total_anuladas) { · {{ g.total_anuladas }} anulada{{ g.total_anuladas === 1 ? '' : 's' }} }
+                @if (g.data_prova) { · prova em {{ dataCurta(g.data_prova) }} }
+              </p>
+              <div class="gb-card__foot">
+                <span class="gb-card__views">
+                  <app-ui-icon [icon]="iconEye" [size]="14" />
+                  {{ numero(g.visualizacoes) }}
+                </span>
+                <span class="gb-card__cta">
+                  @if (!embutido) { <app-ui-icon [icon]="iconLock" [size]="14" /> }
+                  {{ embutido ? 'Conferir' : 'Ver gabarito' }}
+                  <app-ui-icon [icon]="iconArrow" [size]="15" />
+                </span>
+              </div>
+            </a>
+          }
+        </div>
+      </section>
+    }
+  }
+
+  @if (!embutido) {
+    <section class="gb-cta" aria-labelledby="gb-cta-title">
+      <div>
+        <h2 id="gb-cta-title">As respostas ficam na sua conta.</h2>
+        <p>Crie sua conta para ver os gabaritos completos, calcular sua nota e ser avisado quando sair o do seu período.</p>
+      </div>
+      <a class="gb-btn gb-btn--light" routerLink="/cadastro" [queryParams]="{ next: '/dashboard/gabaritos' }" (click)="lembrarDestino()">Criar conta</a>
+    </section>
+  }
+
+  <div class="gb-aviso">
+    <app-gabaritos-aviso />
+  </div>
+</main>

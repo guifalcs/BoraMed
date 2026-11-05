@@ -10,9 +10,15 @@
     <div class="auth-box">
       <nav class="auth-tabs" aria-label="Autenticação">
         <a class="auth-tab active" routerLink="/login">Entrar</a>
-        <a class="auth-tab" routerLink="/cadastro">Criar conta</a>
+        <a class="auth-tab" routerLink="/cadastro" queryParamsHandling="preserve">Criar conta</a>
       </nav>
 
+      @if (vindoDeGabarito()) {
+        <p class="auth-gabarito" role="status">
+          <strong>Entre para ver o gabarito.</strong>
+          Assim que entrar, você vai direto para as respostas.
+        </p>
+      }
       <h2 class="auth-heading">Bem-vindo de volta.</h2>
       <p class="auth-copy">Continue a sua sequência de estudos.</p>
 

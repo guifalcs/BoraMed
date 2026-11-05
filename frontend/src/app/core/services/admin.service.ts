@@ -809,7 +809,8 @@ export interface AdminCampanhaEmail {
   criado_em: string;
   nome: string;
   assunto: string;
-  segmento: SegmentoCampanha;
+  /** 'gabarito' = aviso automático de gabarito publicado (não selecionável na tela). */
+  segmento: SegmentoCampanha | 'gabarito';
   /** Filtros adicionais usados no disparo. null/vazio = sem filtro. */
   cidades: string[] | null;
   periodos: number[] | null;
@@ -899,7 +900,7 @@ function traduzErroCupom(mensagem: string): string {
  * — sem isto, o admin veria sempre o mesmo texto genérico no lugar de
  * "remetente inválido" ou "nenhum destinatário nesse segmento".
  */
-async function lerErroFunction(error: unknown): Promise<string | null> {
+export async function lerErroFunction(error: unknown): Promise<string | null> {
   const contexto = (error as { context?: unknown }).context;
   if (!(contexto instanceof Response)) return null;
   try {

@@ -291,6 +291,24 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * `gerar_simulado_personalizado` ganhou o parâmetro opcional `p_apenas_erros` (default `false`, sem quebrar chamadas existentes): quando `true`, monta o simulado só com o pool de questões erradas pendentes do aluno; exige assinatura ativa mesmo no plano gratuito (o crédito único de "montar simulado" do free tier não cobre esse modo). O nome da prova fica "Simulado dos meus erros - N questões" e aparece assim no Histórico (removida a troca hardcoded por "Simulado Personalizado" que existia em `historico.service.ts` para toda prova `origem='personalizado'`).
 * `sincronizar_caderno_erro_status_pos_tentativa(p_tentativa_id)`: chamada fire-and-forget pelo client logo após `finalizar_tentativa` (`TentativaService.finalizar`), para QUALQUER tentativa. Se uma questão que já era erro rastreado for respondida certa nesta tentativa real, vira `dominada`; se errar de novo, volta a `pendente`. No-op para questão que nunca foi erro (não polui a tabela). `get_caderno_erros` filtra `ur.nota < 70 OR ces.questao_id IS NOT NULL` (não só `ur.nota < 70`) por causa disso — senão uma questão dominada por essa via (nota real já ≥ 70) sumiria de "Mostrar dominadas" mesmo com `status='dominada'`.
 
+## Gabaritos Extraoficiais
+
+* Recurso **gratuito para todos os níveis de acesso**, mas **ver as respostas exige conta**. Guia operacional e técnico em `docs/gabaritos-extraoficiais.md`.
+  * A lista (`/gabaritos`) e o link de cada gabarito (`/gabaritos/:slug`) são públicos. Sem login, o link mostra a vitrine: prova, contagens, respostas borradas e convite para criar conta ou entrar.
+  * O gabarito completo fica em `/dashboard/gabaritos/:slug`, e a RPC com as respostas não executa para anon.
+  * Depois do cadastro ou do login, o aluno é levado direto ao gabarito que abriu.
+* Só admin cadastra, edita, publica e exclui. Rascunho nunca é visível para aluno ou visitante (RPCs públicas filtram `status = 'publicado'`; a tabela não tem grant para `anon`).
+* Conteúdo publicado: tipo de prova, período, semestre, data, número → letra, anulada, "em análise", área e comentário autoral da equipe. **O enunciado da prova não é publicado.**
+* Todo gabarito é rotulado **extraoficial** até a equipe marcar "conferido com o oficial". Toda tela exibe o aviso de que o oficial é o da instituição e de que o BoraMed não tem vínculo com a Afya.
+* Nota do aluno = (acertos + anuladas) / (total − em análise). Anulada pontua para todos; em análise fica fora da conta. Calculada no cliente, e as marcações ficam só no aparelho.
+* O slug (link público) é gerado na criação e nunca muda. Republicar não renova `publicado_em`.
+* O aviso aos alunos do período é opcional na publicação e tem dois canais, cada um **uma única vez** por gabarito. Um canal só conta como enviado se ao menos um aluno recebeu; senão o admin reenvia depois em "Avisar alunos agora".
+  * **App:** notificação para todos os alunos do período (papel `aluno`, não banido, e-mail confirmado).
+  * **E-mail:** no máximo **50** por gabarito, com alunos de fora de Ipatinga primeiro e, dentro de cada grupo, o último acesso mais recente primeiro. Excedentes não recebem e-mail. Respeita descadastro, banimento e confirmação de e-mail.
+* As telas de gabarito não exibem selo "Grátis"; a gratuidade é comunicada na landing.
+* O menu do app mostra o selo "Novo" em Gabaritos quando há publicação nas últimas 24h.
+* O MCP editorial tem CRUD completo de gabaritos (exceção à regra de autoria do MCP).
+
 ## Público-Alvo
 
 * **Primário** : alunos de medicina do 1º período em instituições da rede Afya

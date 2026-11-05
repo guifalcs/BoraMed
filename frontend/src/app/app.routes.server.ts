@@ -10,6 +10,11 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
     getPrerenderParams: async () => getGuiaSlugs().map((slug) => ({ slug })),
   },
+  // Gabaritos: SSR por requisição (não prerender) — um gabarito publicado agora
+  // precisa aparecer sem novo build, e o HTML do servidor já sai com título/OG
+  // da prova para o preview do link no WhatsApp.
+  { path: 'gabaritos', renderMode: RenderMode.Server },
+  { path: 'gabaritos/:slug', renderMode: RenderMode.Server },
   { path: 'login', renderMode: RenderMode.Prerender },
   { path: 'cadastro', renderMode: RenderMode.Prerender },
   { path: 'recuperar-senha', renderMode: RenderMode.Prerender },

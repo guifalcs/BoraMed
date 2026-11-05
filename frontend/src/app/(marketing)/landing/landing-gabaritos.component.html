@@ -1,0 +1,71 @@
+<section class="section lg" id="gabaritos" aria-labelledby="gabaritos-title">
+  <div class="container lg__grid">
+    <div class="lg__copy">
+      <p class="lg__eyebrow"><span>Grátis</span> É só criar sua conta, sem cartão</p>
+      <h2 class="section-title" id="gabaritos-title">Fez a prova hoje? O gabarito sai aqui primeiro.</h2>
+      <p class="section-lead">
+        Logo depois da N1, da N2 e das outras provas, a equipe BoraMed publica o gabarito extraoficial
+        de cada período, antes do oficial. Marque o que você respondeu e veja sua nota na hora.
+      </p>
+
+      <ul class="lg__list">
+        <li><app-ui-icon [icon]="iconCheck" [size]="16" />Do 1º ao 12º período, organizado por semestre</li>
+        <li><app-ui-icon [icon]="iconTarget" [size]="16" />Confira sua nota em segundos, direto no celular</li>
+        <li><app-ui-icon [icon]="iconBell" [size]="16" />Aviso no app quando sair o gabarito do seu período</li>
+      </ul>
+
+      <div class="lg__actions">
+        <a class="btn btn--primary btn--lg" routerLink="/gabaritos">
+          Ver gabaritos
+          <app-ui-icon [icon]="iconArrow" [size]="16" />
+        </a>
+        <a class="btn btn--ghost btn--lg" routerLink="/cadastro" [queryParams]="{ next: '/dashboard/gabaritos' }">Criar conta grátis</a>
+      </div>
+
+      <p class="lg__note">
+        Gabarito extraoficial, elaborado pela equipe BoraMed; o que vale é sempre o oficial da sua
+        instituição. Plataforma independente, sem vínculo com a Afya.
+      </p>
+    </div>
+
+    <div class="lg__visual">
+      <div class="lg-card" aria-hidden="true">
+        <div class="lg-card__head">
+          <span class="lg-card__tipo">N2</span>
+          <div>
+            <strong>Gabarito · 3º período</strong>
+            <small>Extraoficial · publicado há 2 h</small>
+          </div>
+        </div>
+        <ol class="lg-card__tiles">
+          @for (r of exemplo; track $index) {
+            <li [class.is-x]="r === -1" [style.--i]="$index">
+              <small>{{ $index + 1 }}</small>
+              {{ r === -1 ? '—' : letras[r] }}
+            </li>
+          }
+        </ol>
+        <div class="lg-card__score">
+          <span class="lg-card__ring"><b>85%</b></span>
+          <div>
+            <strong>34 de 40</strong>
+            <small>Sua nota, calculada na hora</small>
+          </div>
+        </div>
+      </div>
+
+      @if (recentes().length) {
+        <div class="lg-recentes">
+          <p>Publicados recentemente</p>
+          @for (g of recentes(); track g.id) {
+            <a [routerLink]="['/gabaritos', g.slug]">
+              <span class="lg-recentes__tipo">{{ g.tipo_prova }}</span>
+              <span class="lg-recentes__nome">{{ nome(g) }} <small>{{ g.semestre }}</small></span>
+              <app-ui-icon [icon]="iconArrow" [size]="15" />
+            </a>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>

@@ -5,6 +5,7 @@ import { withOAuthProtectedResource, withSupabase } from 'npm:@supabase/server@1
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { z } from 'npm:zod@^4.3.6'
 import type { Database } from './database.types.ts'
+import { parseRespostasGabarito, type QuestaoGabarito } from './gabarito-respostas.ts'
 
 const ALLOWED_EMAIL = 'arthurcoelho3524@gmail.com'
 const QUESTION_FORMATS = ['multipla_escolha', 'resposta_aberta_curta', 'verdadeiro_falso', 'associacao'] as const
@@ -73,6 +74,8 @@ async function deleteOwned(db: Db, entity: Entity, id: string, ownerId: string):
   if (error) fail(`Falha ao remover autoria MCP: ${error.message}`)
 }
 
+
+
 Deno.serve(pipeline(
   [withOAuthProtectedResource(), withSupabase<Database>({ auth: 'user' })],
   async (req, { supabase }) => {
@@ -100,8 +103,8 @@ Deno.serve(pipeline(
         description: 'Lista os tipos de conteúdo e os limites de autoria do BoraMed MCP.',
         inputSchema: z.object({}), annotations: { readOnlyHint: true },
       }, async () => result({
-        acesso: 'leitura do acervo de conteúdo da plataforma; escrita e remoção apenas em registros criados pelo usuário via MCP',
-        ferramentas: ['buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'enviar_imagem', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
+        acesso: 'leitura do acervo de conteúdo da plataforma; escrita e remoção apenas em registros criados pelo usuário via MCP, exceto gabaritos extraoficiais, que têm CRUD completo',
+        ferramentas: ['listar_gabaritos', 'obter_gabarito', 'criar_gabarito', 'atualizar_gabarito', 'publicar_gabarito', 'excluir_gabarito', 'buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'enviar_imagem', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
       }))
 
       server.registerTool('buscar_questoes', {
@@ -453,6 +456,131 @@ Deno.serve(pipeline(
         if (paths.length) await db.storage.from('flashcard-imagens').remove(paths)
         await deleteOwned(db, 'flashcard_deck', id, user.id)
         return result({ id, excluido: true })
+      })
+
+
+      // ── Gabaritos extraoficiais (CRUD completo) ───────────────────────────
+      const questaoGabaritoSchema = z.object({
+        numero: z.number().int().min(1).max(200),
+        resposta: z.enum(['A', 'B', 'C', 'D', 'E']).nullable().optional(),
+        anulada: z.boolean().default(false),
+        area: z.string().max(60).nullable().optional(),
+        comentario: z.string().max(1000).nullable().optional(),
+      })
+      const cabecalhoGabarito = z.object({
+        tipo_prova: z.string().min(1).max(40).describe('N1, N2, P1, P2, Integradora, TPI, SOI, HAM ou outro nome curto'),
+        periodo: z.number().int().min(1).max(12),
+        semestre: z.string().regex(/^\d{4}\.[12]$/).describe('Ex.: 2026.2'),
+        data_prova: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        titulo: z.string().max(120).nullable().optional().describe('Opcional; sem título vira "N2 · 3º período"'),
+        observacao: z.string().max(600).nullable().optional(),
+        qtd_alternativas: z.number().int().min(2).max(5).default(5),
+        conferido_oficial: z.boolean().default(false),
+      })
+      const folhaGabarito = {
+        respostas: z.string().max(4000).optional().describe('Atalho: sequência como "ABCDXA?E…" ou "1-A 2-B". X = anulada, ? = em análise.'),
+        questoes: z.array(questaoGabaritoSchema).min(1).max(200).optional().describe('Folha detalhada, com área/comentário por questão. Substitui a folha inteira.'),
+      }
+
+      const montarFolha = (qtd: number, respostas?: string, questoes?: z.infer<typeof questaoGabaritoSchema>[]): QuestaoGabarito[] | null => {
+        if (respostas && questoes) fail('Informe respostas OU questoes, não os dois.')
+        if (respostas) return parseRespostasGabarito(respostas, qtd)
+        if (questoes) {
+          return [...questoes].sort((a, b) => a.numero - b.numero).map((q) => ({
+            numero: q.numero, resposta: q.anulada ? null : (q.resposta ?? null), anulada: q.anulada, area: q.area ?? null, comentario: q.comentario ?? null,
+          }))
+        }
+        return null
+      }
+
+      const lerGabarito = async (slug: string) => {
+        const { data, error } = await userDb.rpc('get_gabarito_prova', { p_slug: slug })
+        if (error) fail(error.message)
+        if (!data) fail('Gabarito não encontrado.')
+        return data as Record<string, unknown> & { id: string; slug: string; questoes: QuestaoGabarito[]; qtd_alternativas: number }
+      }
+
+      const avisarAlunos = async (id: string) => {
+        const app = await userDb.rpc('admin_publicar_gabarito_prova', { p_id: id, p_publicar: true, p_notificar: true })
+        if (app.error) fail(app.error.message)
+        const email = await userDb.functions.invoke('enviar-campanha-email', { body: { modo: 'gabarito', gabarito_id: id } })
+        return {
+          notificados_no_app: (app.data as { notificados?: number } | null)?.notificados ?? 0,
+          email: email.error ? { erro: email.error.message } : email.data,
+        }
+      }
+
+      server.registerTool('listar_gabaritos', {
+        description: 'Lista todos os gabaritos extraoficiais (rascunhos e publicados) com progresso, visualizações e estado do aviso por app/e-mail.',
+        inputSchema: z.object({}), annotations: { readOnlyHint: true },
+      }, async () => {
+        const { data, error } = await userDb.rpc('admin_listar_gabaritos_provas')
+        if (error) fail(error.message)
+        return result({ gabaritos: data })
+      })
+
+      server.registerTool('obter_gabarito', {
+        description: 'Lê um gabarito (inclusive rascunho) com a folha de respostas completa.',
+        inputSchema: z.object({ slug: z.string().min(1).max(80) }), annotations: { readOnlyHint: true },
+      }, async ({ slug }) => result(await lerGabarito(slug)))
+
+      server.registerTool('criar_gabarito', {
+        description: 'Cria um gabarito extraoficial de prova. Por padrão fica em rascunho; com publicar=true vai ao ar, e com avisar_alunos=true avisa os alunos do período (no app, todos; por e-mail, até 50, fora de Ipatinga primeiro). Devolve o slug e o link público.',
+        inputSchema: cabecalhoGabarito.extend({ ...folhaGabarito, publicar: z.boolean().default(false), avisar_alunos: z.boolean().default(false) }),
+      }, async ({ respostas, questoes, publicar, avisar_alunos, ...cabecalho }) => {
+        const folha = montarFolha(cabecalho.qtd_alternativas, respostas, questoes)
+        if (!folha) fail('Informe respostas ou questoes.')
+        const { data, error } = await userDb.rpc('admin_salvar_gabarito_prova', { p_payload: { ...cabecalho, questoes: folha } })
+        if (error) fail(error.message)
+        const salvo = data as { id: string; slug: string }
+        let publicacao: unknown = null
+        if (publicar) {
+          const pub = await userDb.rpc('admin_publicar_gabarito_prova', { p_id: salvo.id, p_publicar: true, p_notificar: false })
+          if (pub.error) fail(`Criado como rascunho, mas não publicou: ${pub.error.message}`)
+          publicacao = avisar_alunos ? await avisarAlunos(salvo.id) : pub.data
+        }
+        return result({ ...salvo, link_publico: `https://www.boramedoficial.com.br/gabaritos/${salvo.slug}`, publicado: publicar, publicacao })
+      })
+
+      server.registerTool('atualizar_gabarito', {
+        description: 'Atualiza qualquer gabarito: cabeçalho e/ou folha (respostas ou questoes substituem a folha inteira). O slug e o link nunca mudam.',
+        inputSchema: z.object({ slug: z.string().min(1).max(80), alteracoes: cabecalhoGabarito.partial().extend(folhaGabarito) }),
+      }, async ({ slug, alteracoes }) => {
+        const atual = await lerGabarito(slug)
+        const { respostas, questoes, ...cabecalho } = alteracoes
+        const qtd = cabecalho.qtd_alternativas ?? atual.qtd_alternativas
+        const folha = montarFolha(qtd, respostas, questoes) ?? atual.questoes
+        const payload = {
+          id: atual.id,
+          tipo_prova: atual['tipo_prova'], periodo: atual['periodo'], semestre: atual['semestre'], data_prova: atual['data_prova'],
+          titulo: atual['titulo'], observacao: atual['observacao'], qtd_alternativas: atual.qtd_alternativas, conferido_oficial: atual['conferido_oficial'],
+          ...cabecalho,
+          questoes: folha,
+        }
+        const { data, error } = await userDb.rpc('admin_salvar_gabarito_prova', { p_payload: payload })
+        if (error) fail(error.message)
+        return result({ ...(data as object), atualizado: true })
+      })
+
+      server.registerTool('publicar_gabarito', {
+        description: 'Publica (publicar=true) ou tira do ar (publicar=false) um gabarito. Com avisar_alunos=true, avisa o período: notificação no app para todos e e-mail para até 50 (fora de Ipatinga primeiro). Cada canal sai uma vez só por gabarito.',
+        inputSchema: z.object({ slug: z.string().min(1).max(80), publicar: z.boolean().default(true), avisar_alunos: z.boolean().default(false) }),
+      }, async ({ slug, publicar, avisar_alunos }) => {
+        const atual = await lerGabarito(slug)
+        const { data, error } = await userDb.rpc('admin_publicar_gabarito_prova', { p_id: atual.id, p_publicar: publicar, p_notificar: false })
+        if (error) fail(error.message)
+        const aviso = publicar && avisar_alunos ? await avisarAlunos(atual.id) : null
+        return result({ slug, ...(data as object), aviso, link_publico: `https://www.boramedoficial.com.br/gabaritos/${slug}` })
+      })
+
+      server.registerTool('excluir_gabarito', {
+        description: 'Exclui definitivamente um gabarito (o link público para de funcionar).',
+        inputSchema: z.object({ slug: z.string().min(1).max(80) }), annotations: { destructiveHint: true },
+      }, async ({ slug }) => {
+        const atual = await lerGabarito(slug)
+        const { error } = await userDb.rpc('admin_excluir_gabarito_prova', { p_id: atual.id })
+        if (error) fail(error.message)
+        return result({ slug, excluido: true })
       })
 
       server.registerTool('listar_taxonomia', {

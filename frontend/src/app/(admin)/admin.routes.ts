@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { sairSemSalvarGuard } from '../core/guards/sair-sem-salvar.guard';
 
 export const adminRoutes: Routes = [
   {
@@ -90,6 +91,25 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./provas/admin-provas.component').then(
         (m) => m.AdminProvasComponent,
+      ),
+  },
+  {
+    path: 'gabaritos',
+    title: 'Admin · Gabaritos',
+    loadComponent: () =>
+      import('./gabaritos/admin-gabaritos.component').then(
+        (m) => m.AdminGabaritosComponent,
+      ),
+  },
+  {
+    // "novo" = criação; depois do 1º save a URL troca para o slug nesta mesma
+    // rota, reaproveitando o componente (a folha não pisca nem recarrega).
+    path: 'gabaritos/:slug',
+    title: 'Admin · Editar gabarito',
+    canDeactivate: [sairSemSalvarGuard],
+    loadComponent: () =>
+      import('./gabaritos/editor/admin-gabarito-editor.component').then(
+        (m) => m.AdminGabaritoEditorComponent,
       ),
   },
   {

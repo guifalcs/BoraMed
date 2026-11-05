@@ -10,6 +10,12 @@
 //               vez de um recorte da base — mesmo rastro das demais campanhas;
 //   'previa'  → renderiza o e-mail (mesmo montarEmail() do envio) e devolve o
 //               HTML sem tocar no Resend nem na base — é o preview do admin;
+//   'gabarito'→ e-mail automático "saiu o gabarito": texto fixo
+//               (_shared/gabarito-email.ts), público = até 50 alunos do período
+//               da prova, fora de Ipatinga primeiro (RPC email_publico_gabarito).
+//               Uma campanha por gabarito (índice único em gabarito_id): chamar
+//               de novo devolve a existente em vez de reenviar. Com
+//               `somente_previa: true` só renderiza, como o modo 'previa';
 //   'retomar' → reprocessa os destinatários 'pendente' (nunca tentados) e
 //               'falhou' (o Resend recusou) de uma campanha existente. Nunca
 //               reenvia para quem já está 'enviado' — a UNIQUE (campanha_id,
@@ -37,6 +43,7 @@ import {
   remetenteValido,
   TAMANHO_LOTE,
 } from '../_shared/campanha-email.ts';
+import { conteudoEmailGabarito, MAX_EMAILS_GABARITO } from '../_shared/gabarito-email.ts';
 
 /** Rate limit padrão do Resend: 2 req/s. 600ms deixa folga. */
 const INTERVALO_ENTRE_LOTES_MS = 600;
@@ -51,7 +58,7 @@ const ORCAMENTO_MS = 100_000;
 
 const RESEND_BATCH_URL = 'https://api.resend.com/emails/batch';
 
-type Modo = 'previa' | 'teste' | 'enviar' | 'retomar';
+type Modo = 'previa' | 'teste' | 'enviar' | 'retomar' | 'gabarito';
 
 type Body = {
   modo?: Modo;
@@ -67,6 +74,9 @@ type Body = {
   /** Filtros adicionais (AND), combináveis com qualquer segmento. */
   cidades?: unknown;
   periodos?: unknown;
+  /** Modo 'gabarito'. */
+  gabarito_id?: string;
+  somente_previa?: boolean;
 };
 
 type LinhaDestinatario = {
@@ -187,14 +197,14 @@ Deno.serve(async (req) => {
   }
 
   const modo = body.modo ?? 'teste';
-  if (modo !== 'previa' && modo !== 'teste' && modo !== 'enviar' && modo !== 'retomar') {
+  if (modo !== 'previa' && modo !== 'teste' && modo !== 'enviar' && modo !== 'retomar' && modo !== 'gabarito') {
     return reply({ error: 'modo inválido' }, 400);
   }
 
   const remetente = (body.remetente ?? remetentePadrao).trim();
   // A prévia não envia nada: nem exige remetente válido nem chave do Resend —
   // dá para conferir o layout antes de o domínio estar verificado.
-  if ((modo === 'teste' || modo === 'enviar') && !remetenteValido(remetente)) {
+  if ((modo === 'teste' || modo === 'enviar' || (modo === 'gabarito' && !body.somente_previa)) && !remetenteValido(remetente)) {
     return reply(
       { error: 'remetente inválido — use "Nome <email@dominio>" ou configure RESEND_FROM' },
       400,
@@ -224,6 +234,69 @@ Deno.serve(async (req) => {
       assunto: email.subject,
       html: email.html,
     });
+  }
+
+  // ============================================================
+  // Modo GABARITO — texto fixo, público do período, 1 campanha por gabarito.
+  // ============================================================
+  let gabaritoPronto: { nome: string; assunto: string; html: string; periodo: number; id: string } | null = null;
+  if (modo === 'gabarito') {
+    const gabaritoId = (body.gabarito_id ?? '').trim();
+    if (!gabaritoId) return reply({ error: 'gabarito_id obrigatório' }, 400);
+
+    const { data: g, error: gErro } = await admin
+      .from('gabarito_prova')
+      .select('id, slug, titulo, tipo_prova, periodo, semestre, status')
+      .eq('id', gabaritoId)
+      .maybeSingle();
+    if (gErro || !g) return reply({ error: 'gabarito não encontrado' }, 404);
+
+    const { count } = await admin
+      .from('gabarito_prova_questao')
+      .select('numero', { count: 'exact', head: true })
+      .eq('gabarito_id', gabaritoId);
+    const conteudo = conteudoEmailGabarito(
+      {
+        slug: g.slug as string,
+        titulo: g.titulo as string | null,
+        tipo_prova: g.tipo_prova as string,
+        periodo: g.periodo as number,
+        semestre: g.semestre as string,
+        total_questoes: count ?? 0,
+      },
+      appUrl,
+    );
+
+    if (body.somente_previa) {
+      const email = montarEmail(destinatarioDeAmostra(caller, callerProfile), {
+        remetente,
+        assunto: conteudo.assunto,
+        htmlBase: conteudo.html,
+        appUrl,
+        assetsUrl,
+      });
+      return reply({ modo: 'previa', remetente: email.from, destino: email.to[0], assunto: email.subject, html: email.html });
+    }
+
+    if (g.status !== 'publicado') return reply({ error: 'publique o gabarito antes de avisar por e-mail' }, 400);
+
+    const { data: existente } = await admin
+      .from('email_campanha')
+      .select('id, status, total_destinatarios, total_enviados, total_falhas')
+      .eq('gabarito_id', gabaritoId)
+      .maybeSingle();
+    if (existente) {
+      return reply({
+        campanha_id: existente.id,
+        ja_enviado: true,
+        status: existente.status,
+        total: existente.total_destinatarios,
+        enviados: existente.total_enviados,
+        falhas: existente.total_falhas,
+      });
+    }
+
+    gabaritoPronto = { ...conteudo, periodo: g.periodo as number, id: gabaritoId };
   }
 
   if (!resendKey) return reply({ error: 'RESEND_API_KEY não configurada' }, 500);
@@ -364,6 +437,65 @@ Deno.serve(async (req) => {
           .eq('id', campanhaId);
         return reply({ error: 'falha ao registrar destinatários' }, 500);
       }
+    }
+  } else if (gabaritoPronto) {
+    // --- Modo GABARITO ---
+    const { data: publico, error: publicoErro } = await admin.rpc('email_publico_gabarito', {
+      p_gabarito_id: gabaritoPronto.id,
+      p_limite: MAX_EMAILS_GABARITO,
+    });
+    if (publicoErro) {
+      console.error('email_publico_gabarito:', publicoErro.message);
+      return reply({ error: 'falha ao montar o público' }, 500);
+    }
+    const destinatarios = (publico ?? []) as Destinatario[];
+    if (destinatarios.length === 0) {
+      // Sem ninguém do período apto (ou todos descadastrados): não cria
+      // campanha, para o aviso poder sair quando os alunos chegarem.
+      return reply({ total: 0, enviados: 0, falhas: 0, sem_destinatarios: true });
+    }
+
+    const { data: campanha, error: campanhaError } = await admin
+      .from('email_campanha')
+      .insert({
+        criado_por: caller.id,
+        nome: gabaritoPronto.nome,
+        assunto: gabaritoPronto.assunto,
+        corpo_html: gabaritoPronto.html,
+        remetente,
+        segmento: 'gabarito',
+        gabarito_id: gabaritoPronto.id,
+        periodos: [gabaritoPronto.periodo],
+        status: 'enviando',
+        total_destinatarios: destinatarios.length,
+      })
+      .select('id')
+      .single();
+    if (campanhaError || !campanha) {
+      // 23505 = outro clique/chamada criou a campanha deste gabarito primeiro.
+      if (campanhaError?.code === '23505') return reply({ ja_enviado: true });
+      console.error('insert campanha gabarito:', campanhaError?.message);
+      return reply({ error: 'falha ao registrar a campanha' }, 500);
+    }
+    campanhaId = campanha.id as string;
+
+    const { error: destErro } = await admin.from('email_campanha_destinatario').insert(
+      destinatarios.map((d) => ({
+        campanha_id: campanhaId,
+        user_id: d.user_id,
+        email: d.email,
+        nome_completo: d.nome_completo,
+        email_token: d.email_token,
+        status: 'pendente',
+      })),
+    );
+    if (destErro) {
+      console.error('insert destinatarios gabarito:', destErro.message);
+      await admin
+        .from('email_campanha')
+        .update({ status: 'falhou', erro: 'falha ao registrar destinatários' })
+        .eq('id', campanhaId);
+      return reply({ error: 'falha ao registrar destinatários' }, 500);
     }
   } else {
     // --- Modo RETOMAR ---

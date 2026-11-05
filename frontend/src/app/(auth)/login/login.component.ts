@@ -12,6 +12,7 @@ import { loginSchema } from '../../core/models/auth.schemas';
 import type { AuthErrorCode } from '../../core/models/auth.types';
 import { SeoService } from '../../core/seo/seo.service';
 import { descreverDesvio } from '../../core/utils/relogio-dispositivo.util';
+import { destinoPermitido } from '../../core/utils/destino-pos-login.util';
 
 type LoginState = 'idle' | 'error' | 'loading';
 type ResendState = 'idle' | 'loading' | 'sent' | 'error';
@@ -36,6 +37,9 @@ export class LoginComponent implements OnDestroy {
   private readonly seo = inject(SeoService);
 
   private cooldownTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** Veio da vitrine de um gabarito: o login já devolve para ele via `?next`. */
+  protected readonly vindoDeGabarito = computed(() => destinoPermitido(this.route.snapshot.queryParamMap.get('next')));
 
   constructor() {
     this.seo.update({

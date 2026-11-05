@@ -529,3 +529,38 @@
     background: linear-gradient(90deg, #1e40af, #7c3aed);
   }
 }
+
+/* Selo "Novo" ao lado do item (gabarito publicado nas últimas 24h). Mesmo
+   formato do selo PRO, mas em azul: PRO = bloqueado; Novo = conteúdo novo. */
+.nav-novo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-action);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px -2px rgba(37, 84, 220, 0.6);
+}
+
+.mobile-avatar-btn {
+  position: relative;
+}
+
+.mobile-avatar-novo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ef4444;
+}

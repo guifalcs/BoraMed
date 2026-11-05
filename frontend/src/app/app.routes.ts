@@ -188,6 +188,22 @@ export const routes: Routes = [
       import('./(marketing)/guias/guia-detail.component').then((m) => m.GuiaDetailComponent),
   },
   {
+    // Gabaritos extraoficiais: a lista é pública; ver as respostas exige conta.
+    // Dentro do app as telas vivem em /dashboard/gabaritos (`data.embutido`).
+    path: 'gabaritos',
+    data: { seoTitle: true },
+    loadComponent: () =>
+      import('./(marketing)/gabaritos/gabaritos-lista.component').then((m) => m.GabaritosListaComponent),
+  },
+  {
+    // Link que circula nos grupos. Sem conta, é a vitrine com convite ao
+    // cadastro (as respostas exigem login); logado, leva ao gabarito no app.
+    path: 'gabaritos/:slug',
+    data: { seoTitle: true },
+    loadComponent: () =>
+      import('./(marketing)/gabaritos/gabarito-vitrine.component').then((m) => m.GabaritoVitrineComponent),
+  },
+  {
     path: 'politica-de-privacidade',
     data: { seoTitle: true },
     loadComponent: () =>
