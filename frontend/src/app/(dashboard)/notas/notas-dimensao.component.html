@@ -1,0 +1,64 @@
+@let r = resumo();
+@let l = linha();
+<article class="dim" [attr.data-nivel]="l.nivel" [id]="'dimensao-' + r.id">
+  <header class="dim-head">
+    <h3 class="dim-titulo">{{ titulo() }}</h3>
+    <p class="dim-nota" [attr.aria-label]="fmtPts(r.obtido) + ' de ' + fmtPts(r.total) + ' pontos'">
+      <strong>{{ fmtPts(r.obtido) }}</strong>/{{ fmtPts(r.total) }}
+    </p>
+  </header>
+
+  <div class="barra" role="img" [attr.aria-label]="fmtPts(r.obtido) + ' de ' + fmtPts(r.total) + '; mínimo ' + fmtPts(r.meta)">
+    <i class="barra-fill" [style.width.%]="barra().obtido"></i>
+    <span class="barra-meta" [style.left.%]="barra().meta" title="Mínimo para aprovar"></span>
+  </div>
+
+  <div class="dim-dica" aria-live="polite">
+    <p class="dim-dica-titulo">{{ l.titulo }}</p>
+    @if (l.detalhe) { <p class="dim-dica-detalhe">{{ l.detalhe }}</p> }
+  </div>
+
+  <ul class="itens">
+    @for (g of linhas(); track g.id) {
+      @if (g.folha; as f) {
+        <li><ng-container *ngTemplateOutlet="campo; context: { $implicit: f, nome: g.nome }" /></li>
+      } @else {
+        <li class="grupo">
+          <p class="grupo-nome">{{ g.nome }}</p>
+          @for (f of g.partes; track f.id) {
+            <ng-container *ngTemplateOutlet="campo; context: { $implicit: f, nome: f.nome, parte: true }" />
+          }
+        </li>
+      }
+    }
+  </ul>
+
+  <ng-template #campo let-f let-nome="nome" let-parte="parte">
+    <label class="campo" [class.campo--parte]="parte" [class.is-erro]="erros().has(f.id)">
+      <span class="campo-nome">{{ nome }}</span>
+      <span class="campo-input">
+        <input
+          #inp
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          placeholder="–"
+          [value]="valorCampo(f)"
+          [attr.aria-label]="'Nota em ' + f.rotulo + ', de 0 a ' + fmtPts(f.pontos)"
+          [attr.aria-invalid]="erros().has(f.id)"
+          (blur)="confirmarCampo(f, inp)"
+          (keydown)="teclaCampo($event, f, inp)"
+        />
+        <span class="campo-de">/{{ fmtPts(f.pontos) }}</span>
+        <span class="campo-status" aria-hidden="true">
+          @if (salvando().has(f.id)) {
+            <app-ui-icon class="girando" [icon]="iconLoader" [size]="14" />
+          } @else if (salvos().has(f.id)) {
+            <app-ui-icon class="salvo" [icon]="iconCheck" [size]="14" />
+          }
+        </span>
+      </span>
+    </label>
+    @if (erros().get(f.id); as e) { <p class="campo-erro" role="alert">{{ e }}</p> }
+  </ng-template>
+</article>

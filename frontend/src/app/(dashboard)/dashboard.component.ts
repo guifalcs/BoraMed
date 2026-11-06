@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BookOpen, BookX, CreditCard, FileCheck2, History, Sparkles, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
+import { BookOpen, BookX, Calculator, CreditCard, FileCheck2, History, Sparkles, Home, Layers, Library, LogOut, LucideIconData, MessageCircle, Settings, Trophy, User } from 'lucide-angular';
 import { UiIconComponent } from '../shared/components/ui/icon/ui-icon.component';
 import { UiAvatarComponent } from '../shared/components/ui/avatar/ui-avatar.component';
 import { OnboardingTourComponent } from '../shared/components/onboarding-tour/onboarding-tour.component';
@@ -256,6 +256,7 @@ export class DashboardComponent {
     { label: 'Materiais', icon: Library, route: '/dashboard/materiais', requerAvancado: true, paywall: 'materiais' },
     { label: 'Flashcards', icon: Layers, route: '/dashboard/flashcards', requerAvancado: true, paywall: 'flashcards' },
     { label: 'Competitivo', icon: Trophy, route: '/dashboard/competitivo', onboardingTarget: 'nav-competitivo' },
+    { label: 'Minhas notas', icon: Calculator, route: '/dashboard/notas', ocultoNaBarraMobile: true },
     { label: 'Gabaritos', icon: FileCheck2, route: '/dashboard/gabaritos', ocultoNaBarraMobile: true, novidade: 'gabaritos' },
     { label: 'Histórico', icon: History, route: '/dashboard/historico', onboardingTarget: 'nav-historico', ocultoNaBarraMobile: true },
     { label: 'Caderno de Erros', icon: BookX, route: '/dashboard/caderno-de-erros', ocultoNaBarraMobile: true, requerPago: true, paywall: 'recurso-pago' },

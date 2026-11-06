@@ -63,6 +63,12 @@ jobs:
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 -f supabase/tests/gabaritos_provas_test.sql
+      # Minhas notas: estrutura só por RPC de admin, aluno lança só no próprio
+      # período e dentro do peso do item, ids preservados na edição.
+      - name: Minhas notas (dimensões por período)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -f supabase/tests/notas_dimensoes_test.sql
       - name: Diagnóstico do stack em caso de falha
         if: failure()
         run: supabase status || true

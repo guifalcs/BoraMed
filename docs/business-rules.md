@@ -310,6 +310,18 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 * O menu do app mostra o selo "Novo" em Gabaritos quando há publicação nas últimas 24h.
 * O MCP editorial tem CRUD completo de gabaritos, inclusive cadernos (exceção à regra de autoria do MCP).
 
+## Minhas Notas (dimensões de nota por período)
+
+* Recurso **gratuito para todos os níveis de acesso**. Guia completo em `docs/minhas-notas.md`.
+* O aluno vê só o regulamento **publicado do período do perfil**. Sem período, a tela pede o período ali mesmo; período sem regulamento mostra quais já estão disponíveis.
+* Regulamento = eixos → dimensões (cognitiva + habilidades e atitudes, ou dimensão única) → avaliações com pesos (partes opcionais, como APG 20 + 15). A nota é lançada na menor parte.
+* Aprovação: `nota_minima`% (70) **em cada dimensão, sem compensação**; dimensão única, 70 no total. Exame especial só na cognitiva dos eixos que o preveem, com cognitiva entre `nota_minima_exame`% (40) e 70 e prática ≥ 70. A frequência mínima aparece nas regras, mas não entra na conta.
+* Lançamento: 0 a peso da avaliação, até 2 casas, só no regulamento publicado do próprio período. Vazio apaga. "Apagar minhas notas" zera as do período. As notas são privadas do aluno.
+* Insights: falta uma avaliação → nota exata ("Tire 11,5 na Prova N3"); faltam várias → média exigida no que falta + meta da próxima avaliação + leitura do ritmo; 70 impossível na cognitiva com exame → mira nos 40 do exame. Metas são arredondadas para cima.
+* Só um regulamento publicado por período: publicar outro arquiva o anterior. O aviso no sino sai uma vez por regulamento.
+* Toda tela diz que é uma calculadora independente e que a nota oficial é a do portal da faculdade. Nada sugere vínculo com a Afya.
+* O MCP editorial tem CRUD completo de regulamentos (exceção à regra de autoria do MCP).
+
 ## Público-Alvo
 
 * **Primário** : alunos de medicina do 1º período em instituições da rede Afya

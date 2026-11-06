@@ -1,0 +1,149 @@
+<div class="mn">
+  @if (carregando()) {
+    <div class="mn-skel" aria-busy="true" aria-label="Carregando suas notas">
+      <div class="skel skel--hero"></div>
+      <div class="skel skel--tabs"></div>
+      <div class="mn-dims">
+        <div class="skel skel--card"></div>
+        <div class="skel skel--card"></div>
+      </div>
+    </div>
+  } @else if (erro()) {
+    <section class="mn-vazio">
+      <span class="mn-vazio-icone mn-vazio-icone--alerta"><app-ui-icon [icon]="iconAlerta" [size]="28" /></span>
+      <h1>Não conseguimos carregar suas notas</h1>
+      <p>{{ erro() }}</p>
+      <button type="button" class="mn-btn mn-btn--primary" (click)="carregar()">Tentar de novo</button>
+    </section>
+  } @else if (dados(); as d) {
+    @if (d.periodo === null) {
+      <!-- Sem período: orienta a cadastrar ali mesmo -->
+      <section class="mn-vazio">
+        <span class="mn-vazio-icone"><app-ui-icon [icon]="iconPeriodo" [size]="28" /></span>
+        <h1>Em que período você está?</h1>
+        <p>
+          A composição da nota muda de um período para outro. Diga o seu e a gente monta as dimensões certas,
+          com o peso de cada avaliação.
+        </p>
+        <div class="mn-periodo-form">
+          <app-ui-select
+            label="Seu período"
+            name="periodo"
+            placeholder="Escolha o período"
+            [options]="periodoOptions"
+            [value]="periodoEscolhido()"
+            (valueChange)="escolherPeriodo($event)"
+          />
+          <button
+            type="button"
+            class="mn-btn mn-btn--primary mn-btn--block"
+            [disabled]="periodoEscolhido() === null || salvandoPeriodo()"
+            (click)="salvarPeriodo()"
+          >
+            {{ salvandoPeriodo() ? 'Salvando…' : 'Salvar e ver minhas notas' }}
+          </button>
+        </div>
+        <p class="mn-vazio-nota">Dá para mudar depois em <a routerLink="/dashboard/perfil">Meu perfil</a>.</p>
+      </section>
+    } @else if (!regulamento()) {
+      <!-- Período sem regulamento publicado -->
+      <section class="mn-espera">
+        <img
+          class="mn-espera-img"
+          src="illustrations/periodo-em-breve.webp"
+          alt=""
+          width="600"
+          height="534"
+          decoding="async"
+        />
+        <h1>O {{ d.periodo }}º período ainda não chegou</h1>
+        <p>
+          @if (d.periodos_disponiveis.length) {
+            Por enquanto temos o {{ periodosDisponiveisTexto() }} período. Quando o seu sair, a gente avisa no sino.
+          } @else {
+            Quando o seu período sair, a gente avisa no sino.
+          }
+        </p>
+        <a class="mn-espera-link" routerLink="/dashboard/perfil">Mudou de período? Atualize no perfil</a>
+      </section>
+    } @else {
+      @let reg = regulamento()!;
+      @let r = resumo()!;
+
+      <header class="mn-head">
+        <h1 class="mn-titulo">Minhas notas</h1>
+        <p class="mn-sub">{{ reg.titulo || reg.periodo + 'º período · ' + reg.semestre }}</p>
+      </header>
+
+      <!-- Uma linha, só quando algo pede atenção -->
+      @if (foco(); as f) {
+        <button type="button" class="mn-foco" [attr.data-situacao]="f.resumo.situacao" (click)="irParaDimensao(f.resumo.eixoId, f.resumo.id)">
+          <app-ui-icon [icon]="iconAlerta" [size]="18" />
+          <span><strong>{{ f.rotulo }}:</strong> {{ f.frase }}</span>
+          <app-ui-icon class="mn-foco-ir" [icon]="iconIr" [size]="18" />
+        </button>
+      }
+
+      <div class="mn-tabs" role="tablist" aria-label="Eixos do período">
+        @for (e of r.eixos; track e.eixo.id) {
+          <button
+            type="button"
+            role="tab"
+            class="mn-tab"
+            [class.is-on]="eixoAtivo()?.eixo?.id === e.eixo.id"
+            [attr.aria-selected]="eixoAtivo()?.eixo?.id === e.eixo.id"
+            [attr.data-situacao]="e.situacao"
+            [title]="e.eixo.nome"
+            (click)="selecionarEixo(e.eixo.id)"
+          >
+            <i class="mn-tab-dot" aria-hidden="true"></i>{{ e.eixo.sigla }}
+          </button>
+        }
+      </div>
+
+      @if (eixoAtivo(); as e) {
+        <div class="mn-dims" role="tabpanel" [attr.aria-label]="e.eixo.nome" [class.mn-dims--uma]="e.dimensoes.length === 1">
+          @for (rd of e.dimensoes; track rd.id; let i = $index) {
+            <app-notas-dimensao
+              [dimensao]="e.eixo.dimensoes[i]"
+              [resumo]="rd"
+              [salvando]="salvando()"
+              [salvos]="salvos()"
+              (salvar)="salvarNota($event)"
+            />
+          }
+        </div>
+      }
+
+      <details class="mn-regras">
+        <summary>
+          Como funciona a aprovação
+          <app-ui-icon class="mn-regras-chevron" [icon]="iconChevron" [size]="16" />
+        </summary>
+        <ul>
+          <li>{{ fmtPts(reg.nota_minima) }} em cada parte (teoria e prática), sem compensação entre elas. Nota única: {{ fmtPts(reg.nota_minima) }} no total.</li>
+          <li>Frequência mínima de {{ reg.frequencia_minima }}%.</li>
+          <li>Exame especial só na teoria, com nota entre {{ fmtPts(reg.nota_minima_exame) }} e {{ fmtPts(reg.nota_minima) }} e prática aprovada.</li>
+        </ul>
+      </details>
+
+      <footer class="mn-rodape">
+        <p>Calculadora independente. A nota oficial é a do portal da sua faculdade.</p>
+        @if (r.lancadas > 0) {
+          <button type="button" class="mn-link" (click)="confirmarLimpar.set(true)">Apagar minhas notas</button>
+        }
+      </footer>
+    }
+  }
+</div>
+
+@if (confirmarLimpar()) {
+  <app-ui-confirm-dialog
+    titulo="Apagar todas as notas?"
+    mensagem="As notas lançadas neste período somem da sua conta. Não dá para desfazer."
+    labelConfirmar="Apagar notas"
+    variante="danger"
+    (confirmar)="limparNotas()"
+    (cancelar)="confirmarLimpar.set(false)"
+  />
+}

@@ -15,6 +15,43 @@ Um cupom agora pode valer só para quem você escolher: por e-mail (mesmo de que
 - **Deploy:** `db push` antes do frontend. A edge `mp-processar-pagamento` não muda (já chama `validar_cupom` com o id do JWT).
 - Docs: `docs/business-rules.md` (Cupons de desconto e comissão de indicação).
 
+## 2026-11-06 | Feature | Minhas notas: dimensões de nota por período
+
+O regulamento de avaliação 2026.2 divide a nota de cada eixo em dimensões independentes (Cognitiva × Habilidades e Atitudes, ou Dimensão Única), cada uma com as suas avaliações e pesos, e exige 70 em cada dimensão, sem compensação. O aluno agora tem isso no app, com as próprias notas e o que fazer a seguir.
+
+- **Aluno** (`/dashboard/notas`, grátis, item **Minhas notas** no menu, sem selo de novidade): vê o regulamento publicado do período do perfil. Lança as notas por avaliação, inclusive partes como APG 20 + 15 e Memorial 2,5 + 2,5. Salva ao sair do campo, valida o peso ("Máximo 15") e recalcula na hora.
+  - Por dimensão: placar, barra até o mínimo, uma frase do que fazer e os campos de nota.
+  - Frases: falta uma avaliação → nota exata ("Tire 11,5 na Prova N3"); faltam várias → % exigido no que falta + meta da próxima ("Próxima: TPI, mire em 20,3 de 30"); 70 fora de alcance na teoria → mira nos 40 do exame especial.
+  - Aviso de foco de uma linha quando algo pede atenção, abas por eixo com status, regras recolhidas e "Apagar minhas notas".
+  - Sem período no perfil, a tela pede o período ali mesmo. Período ainda sem regulamento mostra os disponíveis. Rodapé: calculadora independente; a nota oficial é a do portal da faculdade.
+- **Admin** (`/admin/notas`, em Conteúdo → Dimensões de nota): lista por período com status e adesão dos alunos; publicar/tirar do ar (publicar arquiva o anterior do período e avisa os alunos no sino, uma vez); "Avisar alunos" para regulamento no ar ainda sem aviso; duplicar para outro semestre/período; excluir.
+  - Editor da árvore: cabeçalho (período, semestre, 70/40/75%, fonte, observação), eixos com Teoria + prática ou Dimensão única, itens com pontos, detalhe, ordem e "Dividir em partes". Lateral de conferência (somas e problemas). Confirmação ao remover item com notas de alunos. Guard de alterações não salvas.
+- **MCP**: `listar/obter/criar/atualizar/publicar/excluir_dimensoes_nota`. Atualizar com a árvore nova herda os ids por sigla/tipo/nome e preserva as notas lançadas.
+- **Banco**:
+  - `20261106120000_notas_dimensoes_periodo`: 5 tabelas com RLS. A estrutura é admin-only e não tem grant para `anon`; o aluno lê só os próprios lançamentos. RPCs do aluno (`get_minhas_notas`, `salvar_nota_lancamento`, `limpar_minhas_notas`) e do admin.
+  - `20261106120100_notas_regulamentos_1_2_periodo`: 1º e 2º período 2026.2 (SOI, HAM, IESC, MCM, PIEPE), já publicados.
+  - **Deploy:** `db push` antes do frontend e redeploy de `boramed-mcp`. Depois do deploy, usar "Avisar alunos" nos dois regulamentos para notificar os alunos do 1º e 2º período.
+- Seed local: `aluno-notas@boramed.com` (1º período, meio de semestre) , `aluno-notas-2p@boramed.com` (2º, sem notas) e `aluno-notas-9p@boramed.com` (9º, sem regulamento). Senha `Teste123!`.
+- Docs: `docs/minhas-notas.md`, `docs/business-rules.md`, `docs/mcp-conteudo.md` e ADR-044.
+- Tela do aluno simplificada (pedido do Guilherme: estava carregada). Saem o hero com números, os cartões de "Próximos passos", a régua com legenda, o texto de ritmo, as descrições dos itens e o simulador. Fica cabeçalho simples, um aviso de foco de uma linha (só quando algo pede atenção), abas por eixo e, por dimensão, placar, barra até o mínimo, **uma frase** do que fazer e os campos de nota. Regras recolhidas em três linhas.
+- Admin: a lista virou linhas de largura total (antes, um card por período com muito espaço vazio); o resumo de números foi para o subtítulo.
+- Menu do perfil no mobile: fica acima da barra inferior (antes ela cobria os últimos itens em telas baixas) e rola quando não cabe na tela.
+- Ajustes da revisão de código:
+  - Dividir um item com nota, ou reduzir os pontos abaixo de uma nota lançada, agora pede confirmação no editor e entra na contagem de notas removidas. Antes, a nota sumia sem aviso.
+  - Trocar a estrutura do eixo também confirma quando há notas.
+  - O editor fica travado durante o save e reage à troca de `:id` na rota.
+  - "Tirar do ar" pede confirmação, e só dá para excluir o que não está no ar.
+  - A leitura do ritmo não diz mais "dá para virar" quando os 70 já estão fora de alcance.
+  - Nota acima do peso é limitada ao peso no cálculo.
+  - Gravações seguidas no mesmo campo não deixam mais a tela diferente do banco.
+  - MCP: um id não é herdado duas vezes; `exame_especial` omitido mantém o valor atual; escrita por período exige `id` quando há mais de um regulamento vivo.
+- Verificado:
+  - Teste SQL `notas_dimensoes_test.sql`: privilégios, conteúdo, aluno sem período, lançamento validado, isolamento, admin (validações, ids preservados, divisão e redução de pontos contadas, publicar/arquivar/notificar, exclusão bloqueada no ar) e limpar.
+  - Frontend: 993 testes unitários (17 novos no motor de cálculo) e 2 E2E novos (`notas.spec.ts`); E2E de gabaritos sem regressão.
+  - MCP: Deno (herança de ids) e `deno check`, mais integração local reenviando a árvore sem ids (0 notas perdidas).
+  - `ng build` de produção sem avisos, advisors do Supabase sem achados e revisão visual em 1440 e 390 px.
+  - Não verificado: as ferramentas MCP via OAuth, porque exigem deploy.
+
 ## 2026-11-05 | Feature | Gabaritos: cadernos de prova
 
 Uma mesma prova (ex.: N1 2026.2 do 3º período) costuma ter vários cadernos com as mesmas questões em ordem diferente. Agora é possível cadastrar de 1 a 12 cadernos por prova, cada um com **nome** e **folha de respostas própria**.

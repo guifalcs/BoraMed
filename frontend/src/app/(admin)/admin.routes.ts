@@ -113,6 +113,23 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'notas',
+    title: 'Admin · Dimensões de nota',
+    loadComponent: () =>
+      import('./notas/admin-notas.component').then((m) => m.AdminNotasComponent),
+  },
+  {
+    // "novo" = criação (com ?copiar=<id> para duplicar); depois do 1º save a
+    // URL troca para o id nesta mesma rota.
+    path: 'notas/:id',
+    title: 'Admin · Editar dimensões de nota',
+    canDeactivate: [sairSemSalvarGuard],
+    loadComponent: () =>
+      import('./notas/editor/admin-notas-editor.component').then(
+        (m) => m.AdminNotasEditorComponent,
+      ),
+  },
+  {
     path: 'temas',
     title: 'Admin · Temas',
     loadComponent: () =>

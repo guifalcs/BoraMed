@@ -867,3 +867,125 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+
+-- ============================================================================
+-- Minhas notas (dimensões por período): alunos de teste.
+-- Os regulamentos do 1º e 2º período vêm da migration
+-- 20261106120100_notas_regulamentos_1_2_periodo.sql; aqui só entram alunos e
+-- notas lançadas. Idempotente; NUNCA aplicar em produção.
+--   aluno-notas@boramed.com    / Teste123!  → 1º período, meio de semestre
+--   aluno-notas-2p@boramed.com / Teste123!  → 2º período, nenhuma nota ainda
+--   aluno-notas-9p@boramed.com / Teste123!  → 9º período: estado "período sem regulamento"
+-- ============================================================================
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  email_change_token_current, phone_change_token, reauthentication_token,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at, is_sso_user, is_anonymous
+) VALUES
+  ('a1b2c3d4-0000-4000-8000-00000000a0a1', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'aluno-notas@boramed.com',
+   crypt('Teste123!', gen_salt('bf')), now(), '', '', '', '', '', '', '',
+   '{"provider":"email","providers":["email"]}', '{"full_name":"Marina Calouro"}',
+   now(), now(), false, false),
+  ('a1b2c3d4-0000-4000-8000-00000000a0a2', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'aluno-notas-2p@boramed.com',
+   crypt('Teste123!', gen_salt('bf')), now(), '', '', '', '', '', '', '',
+   '{"provider":"email","providers":["email"]}', '{"full_name":"Davi Segundo"}',
+   now(), now(), false, false),
+  ('a1b2c3d4-0000-4000-8000-00000000a0a9', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'aluno-notas-9p@boramed.com',
+   crypt('Teste123!', gen_salt('bf')), now(), '', '', '', '', '', '', '',
+   '{"provider":"email","providers":["email"]}', '{"full_name":"Nina Nono"}',
+   now(), now(), false, false)
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE public.profiles
+   SET nome_completo = 'Marina Calouro', faculdade_unidade = 'ipatinga_mg', periodo = 1
+ WHERE id = 'a1b2c3d4-0000-4000-8000-00000000a0a1';
+UPDATE public.profiles
+   SET nome_completo = 'Davi Segundo', faculdade_unidade = 'ipatinga_mg', periodo = 2
+ WHERE id = 'a1b2c3d4-0000-4000-8000-00000000a0a2';
+UPDATE public.profiles
+   SET nome_completo = 'Nina Nono', faculdade_unidade = 'ipatinga_mg', periodo = 9
+ WHERE id = 'a1b2c3d4-0000-4000-8000-00000000a0a9';
+
+-- Onboarding concluído: o tour não cobre a tela de notas na demonstração.
+INSERT INTO public.user_onboarding_state (user_id, flow_key, flow_version, status, completed_at)
+SELECT v.id, 'dashboard_intro', 1, 'completed', now()
+  FROM (VALUES ('a1b2c3d4-0000-4000-8000-00000000a0a1'::uuid), ('a1b2c3d4-0000-4000-8000-00000000a0a2'::uuid), ('a1b2c3d4-0000-4000-8000-00000000a0a9'::uuid)) v(id)
+ON CONFLICT (user_id, flow_key, flow_version) DO NOTHING;
+
+-- Pesquisas do seed dispensadas: o modal não cobre a tela de notas.
+INSERT INTO public.pesquisa_dispensa (pesquisa_id, user_id)
+SELECT p.id, v.id
+  FROM public.pesquisa p
+ CROSS JOIN (VALUES ('a1b2c3d4-0000-4000-8000-00000000a0a1'::uuid), ('a1b2c3d4-0000-4000-8000-00000000a0a2'::uuid), ('a1b2c3d4-0000-4000-8000-00000000a0a9'::uuid)) v(id)
+ON CONFLICT DO NOTHING;
+
+-- Notas da Marina (1º período, metade do semestre). Cenários:
+--   SOI I   cognitiva no caminho · prática em andamento
+--   HAM I   cognitiva apertada · OSCE pendente
+--   IESC I  cognitiva já garantida antes da N3
+--   MCM I   cognitiva sem chance de 70: rumo ao exame especial
+--   PIEPE I dimensão única, falta só a apresentação final
+DO $$
+DECLARE
+  v_uid UUID := 'a1b2c3d4-0000-4000-8000-00000000a0a1';
+  v_reg UUID;
+  v RECORD;
+BEGIN
+  SELECT id INTO v_reg FROM public.notas_regulamento WHERE periodo = 1 AND status = 'publicado';
+  IF v_reg IS NULL THEN RETURN; END IF;
+
+  FOR v IN
+    SELECT * FROM (VALUES
+      ('SOI I',   'cognitiva',   'Prova N1', NULL, 15.0),
+      ('SOI I',   'cognitiva',   'TPI', NULL, 22.0),
+      ('SOI I',   'habilidades', 'Avaliação Diária na APG', '1ª parcial', 18.0),
+      ('SOI I',   'habilidades', 'Avaliações em Multiestações', '1ª multiestação', 13.0),
+      ('SOI I',   'habilidades', 'Avaliação Diária nos Laboratórios', 'Laboratório 1', 9.0),
+      ('SOI I',   'habilidades', 'Avaliação Diária nos Laboratórios', 'Laboratório 2', 8.5),
+      ('SOI I',   'habilidades', 'Memorial Acadêmico', '1º encontro', 2.5),
+      ('HAM I',   'cognitiva',   'Prova N1', NULL, 11.0),
+      ('HAM I',   'cognitiva',   'TPI', NULL, 17.0),
+      ('HAM I',   'habilidades', 'Avaliação Diária', 'Conhecimento aplicado', 16.0),
+      ('HAM I',   'habilidades', 'Avaliação Diária', 'Rubrica semanal de habilidades e atitudes', 18.0),
+      ('HAM I',   'habilidades', 'Memorial Acadêmico', '1º encontro', 2.5),
+      ('IESC I',  'cognitiva',   'Prova N1', NULL, 18.0),
+      ('IESC I',  'cognitiva',   'TPI', NULL, 26.0),
+      ('IESC I',  'cognitiva',   'Prova N2', NULL, 30.5),
+      ('IESC I',  'habilidades', 'Avaliação Diária', NULL, 26.0),
+      ('IESC I',  'habilidades', 'Diário de Campo Reflexivo', NULL, 22.0),
+      ('IESC I',  'habilidades', 'Memorial Acadêmico', '1º encontro', 2.5),
+      ('MCM I',   'cognitiva',   'Prova N1', NULL, 7.0),
+      ('MCM I',   'cognitiva',   'TPI', NULL, 9.0),
+      ('MCM I',   'cognitiva',   'Prova N2', NULL, 14.0),
+      ('MCM I',   'habilidades', 'Avaliação Individual por Ciclos', NULL, 27.0),
+      ('MCM I',   'habilidades', 'Elaboração do Projeto de Extensão', NULL, 18.0),
+      ('MCM I',   'habilidades', 'Relato de Experiência', NULL, 17.0),
+      ('PIEPE I', 'unica',       'Execução das ações/produtos', NULL, 22.0),
+      ('PIEPE I', 'unica',       'Projeto de Extensão', 'Coletivo', 9.0),
+      ('PIEPE I', 'unica',       'Projeto de Extensão', 'Individual', 8.0),
+      ('PIEPE I', 'unica',       'Trilha DreamShaper', NULL, 13.0),
+      ('PIEPE I', 'unica',       'Produto Científico', NULL, 8.0),
+      ('PIEPE I', 'unica',       'Avaliação do Orientador', '1ª etapa', 4.5),
+      ('PIEPE I', 'unica',       'Avaliação do Orientador', '2ª etapa', 5.0),
+      ('PIEPE I', 'unica',       'Avaliação por Pares', '1ª etapa', 2.5),
+      ('PIEPE I', 'unica',       'Avaliação por Pares', '2ª etapa', 2.0),
+      ('PIEPE I', 'unica',       'Memorial Acadêmico', '1º encontro', 2.5),
+      ('PIEPE I', 'unica',       'Memorial Acadêmico', '2º encontro', 2.5)
+    ) AS t(sigla, tipo, item, sub, nota)
+  LOOP
+    INSERT INTO public.notas_lancamento (user_id, item_id, nota)
+    SELECT v_uid, COALESCE(s.id, i.id), v.nota
+      FROM public.notas_item i
+      JOIN public.notas_dimensao d ON d.id = i.dimensao_id
+      JOIN public.notas_eixo e ON e.id = d.eixo_id
+      LEFT JOIN public.notas_item s ON s.pai_id = i.id AND s.nome = v.sub
+     WHERE e.regulamento_id = v_reg AND e.sigla = v.sigla AND d.tipo = v.tipo
+       AND i.pai_id IS NULL AND i.nome = v.item
+       AND (v.sub IS NULL OR s.id IS NOT NULL)
+    ON CONFLICT (user_id, item_id) DO UPDATE SET nota = EXCLUDED.nota;
+  END LOOP;
+END $$;

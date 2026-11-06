@@ -1,0 +1,137 @@
+:host { display: block; }
+
+.mn { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 2.5rem; }
+@media (min-width: 768px) { .mn { padding: 2rem 2rem 3rem; } }
+
+/* ── Botões ─────────────────────────────────────────── */
+.mn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.mn-btn--primary { background: var(--color-action); color: #fff; }
+.mn-btn--primary:hover:not(:disabled) { background: var(--color-primary); }
+.mn-btn--block { width: 100%; }
+
+/* ── Estados vazios ─────────────────────────────────── */
+.mn-vazio {
+  max-width: 30rem;
+  margin: 2rem auto 0;
+  padding: 2rem 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  text-align: center;
+}
+.mn-vazio h1 { margin: 1rem 0 0.5rem; font-size: 1.3rem; font-weight: 800; line-height: 1.25; color: var(--color-text); }
+.mn-vazio p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--color-text-muted); }
+.mn-vazio .mn-btn { margin-top: 1.25rem; }
+.mn-vazio-icone { display: inline-grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 1rem; background: #eff6ff; color: var(--color-action); }
+.mn-vazio-icone--alerta { background: #fef2f2; color: var(--color-danger); }
+.mn-vazio-nota { margin-top: 1rem !important; font-size: 0.85rem !important; }
+.mn-vazio-nota a { font-weight: 700; color: var(--color-action); }
+.mn-periodo-form { display: grid; gap: 0.75rem; margin-top: 1.5rem; text-align: left; }
+.mn-periodo-form .mn-btn { margin-top: 0; }
+
+/* Período sem regulamento: ilustração, sem card */
+.mn-espera { display: grid; justify-items: center; max-width: 30rem; margin: 1.5rem auto 0; text-align: center; }
+.mn-espera-img { width: min(17rem, 70vw); height: auto; margin-bottom: 0.75rem; }
+@media (min-width: 768px) { .mn-espera { margin-top: 4rem; } }
+.mn-espera h1 { margin: 0; font-size: 1.5rem; font-weight: 800; line-height: 1.2; color: var(--color-text); }
+.mn-espera p { margin: 0.5rem 0 0; font-size: 0.95rem; line-height: 1.55; color: var(--color-text-muted); }
+.mn-espera-link { margin-top: 1.25rem; font-size: 0.9rem; font-weight: 700; color: var(--color-action); text-decoration: none; }
+.mn-espera-link:hover { text-decoration: underline; }
+
+/* ── Cabeçalho ──────────────────────────────────────── */
+.mn-head { margin-bottom: 1.25rem; }
+.mn-titulo { margin: 0; font-size: 1.75rem; font-weight: 800; line-height: 1.15; color: var(--color-text); }
+.mn-sub { margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--color-text-muted); }
+
+/* Aviso de foco (uma linha) */
+.mn-foco {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #fde68a;
+  border-radius: 0.75rem;
+  background: #fffbeb;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  color: #78350f;
+  cursor: pointer;
+}
+.mn-foco[data-situacao='risco'] { border-color: #fecaca; background: #fef2f2; color: #7f1d1d; }
+.mn-foco > app-ui-icon:first-child { flex-shrink: 0; }
+.mn-foco span { flex: 1; min-width: 0; }
+.mn-foco-ir { flex-shrink: 0; opacity: 0.6; }
+.mn-foco:focus-visible { outline: 2px solid var(--color-primary-light); outline-offset: 2px; }
+
+/* Abas de eixo */
+.mn-tabs { display: flex; gap: 0.4rem; margin: 0 -1rem 1rem; padding: 0 1rem 0.25rem; overflow-x: auto; scrollbar-width: none; }
+.mn-tabs::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) { .mn-tabs { margin: 0 0 1rem; padding: 0 0 0.25rem; } }
+.mn-tab {
+  --dot: #cbd5e1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.mn-tab:hover { border-color: #cbd5e1; }
+.mn-tab.is-on { border-color: var(--color-text); background: var(--color-text); color: #fff; }
+.mn-tab-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--dot); }
+.mn-tab[data-situacao='aprovado'] { --dot: #059669; }
+.mn-tab[data-situacao='em_andamento'] { --dot: #3b82f6; }
+.mn-tab[data-situacao='exame'] { --dot: #f59e0b; }
+.mn-tab[data-situacao='reprovado'] { --dot: #ef4444; }
+
+.mn-dims { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
+@media (min-width: 900px) { .mn-dims { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .mn-dims--uma { grid-template-columns: minmax(0, 30rem); } }
+
+/* Regras (recolhidas) */
+.mn-regras { margin-bottom: 1rem; }
+.mn-regras summary { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; list-style: none; }
+.mn-regras summary::-webkit-details-marker { display: none; }
+.mn-regras summary:hover { color: var(--color-text); }
+.mn-regras-chevron { transition: transform 0.2s; }
+.mn-regras[open] .mn-regras-chevron { transform: rotate(180deg); }
+.mn-regras ul { display: grid; gap: 0.4rem; margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.875rem; line-height: 1.5; color: #334155; }
+
+/* Rodapé */
+.mn-rodape { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+.mn-rodape p { margin: 0; font-size: 0.8125rem; color: var(--color-text-muted); }
+.mn-link { padding: 0; border: 0; background: none; font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; }
+.mn-link:hover { color: var(--color-danger); text-decoration: underline; }
+
+/* Skeleton */
+.mn-skel { display: grid; gap: 1.25rem; }
+.skel { border-radius: 1rem; background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 50%, #eef2f7 75%); background-size: 200% 100%; animation: brilho 1.4s ease-in-out infinite; }
+.skel--hero { height: 4rem; max-width: 20rem; }
+.skel--tabs { height: 2.5rem; max-width: 26rem; border-radius: 999px; }
+.skel--card { height: 22rem; }
+@keyframes brilho { to { background-position: -200% 0; } }
