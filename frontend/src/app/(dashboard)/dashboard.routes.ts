@@ -47,6 +47,14 @@ export const dashboardRoutes: Routes = [
       import('../(marketing)/gabaritos/gabarito-detalhe.component').then((m) => m.GabaritoDetalheComponent),
   },
   {
+    // Gratuito para todo nível de acesso: o regulamento publicado do período
+    // do aluno + os lançamentos dele (RPCs get_minhas_notas/salvar_nota_lancamento).
+    path: 'notas',
+    title: 'Minhas notas',
+    loadComponent: () =>
+      import('./notas/minhas-notas.component').then((m) => m.MinhasNotasComponent),
+  },
+  {
     path: 'historico',
     title: 'Histórico',
     loadComponent: () =>

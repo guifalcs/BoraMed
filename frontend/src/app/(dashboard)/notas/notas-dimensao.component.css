@@ -1,0 +1,69 @@
+:host { display: block; }
+
+/* A cor da dimensão vem do nível da dica: barra e frase leem --tom. */
+.dim {
+  --tom: #94a3b8;
+  --tom-texto: #334155;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+  scroll-margin-top: 1.5rem;
+}
+.dim[data-nivel='sucesso'] { --tom: #059669; --tom-texto: #065f46; }
+.dim[data-nivel='info'] { --tom: #2554dc; --tom-texto: #1e3a8a; }
+.dim[data-nivel='atencao'] { --tom: #d97706; --tom-texto: #92400e; }
+.dim[data-nivel='risco'] { --tom: #dc2626; --tom-texto: #991b1b; }
+
+.dim-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.dim-titulo { margin: 0; font-size: 1rem; font-weight: 800; color: var(--color-text); }
+.dim-nota { margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.dim-nota strong { font-size: 1.5rem; font-weight: 800; color: var(--color-text); }
+
+/* Barra: preenchido até a nota, risco no mínimo. */
+.barra { position: relative; height: 0.5rem; border-radius: 999px; background: #e2e8f0; }
+.barra-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--tom); transition: width 0.4s ease; }
+.barra-meta { position: absolute; top: -0.25rem; bottom: -0.25rem; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--color-text); }
+
+.dim-dica-titulo { margin: 0; font-size: 0.95rem; font-weight: 700; line-height: 1.35; color: var(--tom-texto); }
+.dim-dica-detalhe { margin: 0.15rem 0 0; font-size: 0.8125rem; color: var(--color-text-muted); }
+
+/* Campos */
+.itens { margin: 0; padding: 0.25rem 0 0; border-top: 1px solid #f1f5f9; list-style: none; }
+.grupo { padding-top: 0.35rem; }
+.grupo-nome { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--color-text); }
+
+.campo { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2.75rem; cursor: text; }
+.campo-nome { min-width: 0; font-size: 0.875rem; font-weight: 600; color: var(--color-text); }
+.campo--parte { min-height: 2.5rem; padding-left: 0.85rem; }
+.campo--parte .campo-nome { font-weight: 500; color: var(--color-text-muted); }
+.campo-input { display: inline-flex; flex-shrink: 0; align-items: center; gap: 0.3rem; }
+.campo-input input {
+  width: 4rem;
+  height: 2.25rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--color-text);
+}
+.campo-input input::placeholder { color: #cbd5e1; }
+.campo-input input:focus { outline: none; border-color: var(--color-primary-light); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+.campo.is-erro input { border-color: var(--color-danger); }
+.campo-de { min-width: 2rem; font-size: 0.8125rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.campo-status { display: inline-flex; width: 14px; }
+.campo-status .salvo { color: var(--color-success); }
+.campo-status .girando { color: var(--color-text-muted); animation: girar 0.9s linear infinite; }
+.campo-erro { margin: -0.2rem 0 0.2rem; font-size: 0.75rem; font-weight: 600; color: var(--color-danger); text-align: right; }
+
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .barra-fill { transition: none; } }

@@ -5,6 +5,7 @@ import { filter, map, startWith } from 'rxjs';
 import {
   Bell,
   BookOpen,
+  Calculator,
   ChevronDown,
   ClipboardList,
   DollarSign,
@@ -114,6 +115,7 @@ export class AdminComponent {
         { label: 'Questões', icon: FileText, route: '/admin/questoes' },
         { label: 'Provas', icon: BookOpen, route: '/admin/provas' },
         { label: 'Gabaritos', icon: FileCheck2, route: '/admin/gabaritos' },
+        { label: 'Dimensões de nota', icon: Calculator, route: '/admin/notas' },
         { label: 'Disciplinas', icon: GraduationCap, route: '/admin/disciplinas' },
         { label: 'Temas', icon: Tag, route: '/admin/temas' },
         { label: 'Materiais', icon: Library, route: '/admin/materiais' },

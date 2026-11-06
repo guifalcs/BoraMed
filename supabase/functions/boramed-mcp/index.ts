@@ -6,6 +6,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { z } from 'npm:zod@^4.3.6'
 import type { Database } from './database.types.ts'
 import { parseRespostasGabarito, type QuestaoGabarito } from './gabarito-respostas.ts'
+import { conferirSomas, herdarIds, type EixoNota } from './notas-regulamento.ts'
 
 const ALLOWED_EMAIL = 'arthurcoelho3524@gmail.com'
 const QUESTION_FORMATS = ['multipla_escolha', 'resposta_aberta_curta', 'verdadeiro_falso', 'associacao'] as const
@@ -103,8 +104,8 @@ Deno.serve(pipeline(
         description: 'Lista os tipos de conteúdo e os limites de autoria do BoraMed MCP.',
         inputSchema: z.object({}), annotations: { readOnlyHint: true },
       }, async () => result({
-        acesso: 'leitura do acervo de conteúdo da plataforma; escrita e remoção apenas em registros criados pelo usuário via MCP, exceto gabaritos extraoficiais, que têm CRUD completo',
-        ferramentas: ['listar_gabaritos', 'obter_gabarito', 'criar_gabarito', 'atualizar_gabarito', 'publicar_gabarito', 'excluir_gabarito', 'buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'enviar_imagem', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
+        acesso: 'leitura do acervo de conteúdo da plataforma; escrita e remoção apenas em registros criados pelo usuário via MCP, exceto gabaritos extraoficiais e dimensões de nota (Minhas notas), que têm CRUD completo',
+        ferramentas: ['listar_dimensoes_nota', 'obter_dimensoes_nota', 'criar_dimensoes_nota', 'atualizar_dimensoes_nota', 'publicar_dimensoes_nota', 'excluir_dimensoes_nota', 'listar_gabaritos', 'obter_gabarito', 'criar_gabarito', 'atualizar_gabarito', 'publicar_gabarito', 'excluir_gabarito', 'buscar_questoes', 'obter_questao', 'criar_questao', 'atualizar_questao', 'excluir_questao', 'listar_provas', 'obter_prova', 'criar_prova', 'atualizar_prova', 'excluir_prova', 'listar_materiais', 'obter_material_pdf', 'criar_material_pdf', 'atualizar_material', 'excluir_material', 'enviar_imagem', 'listar_flashcards', 'criar_deck_flashcards', 'atualizar_deck_flashcards', 'excluir_deck_flashcards', 'listar_taxonomia'],
       }))
 
       server.registerTool('buscar_questoes', {
@@ -630,6 +631,150 @@ Deno.serve(pipeline(
         const { error } = await userDb.rpc('admin_excluir_gabarito_prova', { p_id: atual.id })
         if (error) fail(error.message)
         return result({ slug, excluido: true })
+      })
+
+      // ── Dimensões de nota por período (Minhas notas; CRUD completo) ──────────
+      const subitemNotaSchema = z.object({
+        nome: z.string().min(1).max(120),
+        pontos: z.number().positive().max(100),
+        descricao: z.string().max(300).nullable().optional(),
+      })
+      const itemNotaSchema = subitemNotaSchema.extend({
+        subitens: z.array(subitemNotaSchema).min(2).max(12).optional()
+          .describe('Partes com nota própria (parciais, encontros, etapas). Precisam somar os pontos do item; a nota do aluno vai em cada parte.'),
+      })
+      const dimensaoNotaSchema = z.object({
+        tipo: z.enum(['cognitiva', 'habilidades', 'unica']).describe('cognitiva = teoria; habilidades = Habilidades e Atitudes (prática); unica = dimensão única (sozinha no eixo)'),
+        nome: z.string().max(80).optional().describe('Opcional; padrão "Dimensão Cognitiva", "Habilidades e Atitudes" ou "Conhecimentos, Habilidades e Atitudes"'),
+        itens: z.array(itemNotaSchema).min(1).max(30).describe('Avaliações da dimensão; normalmente somam 100'),
+      })
+      const eixoNotaSchema = z.object({
+        sigla: z.string().min(1).max(20).describe('Ex.: "SOI III"'),
+        nome: z.string().min(1).max(120).describe('Ex.: "Sistemas Orgânicos Integrados III"'),
+        exame_especial: z.boolean().optional().describe('A cognitiva deste eixo admite exame especial (SOI/HAM/IESC/MCM sim; PIEPE não). Em atualizar, omitido mantém o valor atual; em criar, omitido = false.'),
+        dimensoes: z.array(dimensaoNotaSchema).min(1).max(3),
+      })
+      const cabecalhoNota = z.object({
+        periodo: z.number().int().min(1).max(12),
+        semestre: z.string().regex(/^\d{4}\.[12]$/).describe('Ex.: 2027.1'),
+        titulo: z.string().max(120).nullable().optional().describe('Opcional; sem título vira "3º período · 2027.1"'),
+        fonte: z.string().max(160).nullable().optional().describe('Ex.: "Regulamento do sistema de avaliação 2027.1"'),
+        nota_minima: z.number().positive().max(100).default(70).describe('% mínimo de cada dimensão'),
+        nota_minima_exame: z.number().min(0).max(100).default(40).describe('% mínimo da cognitiva para o exame especial'),
+        frequencia_minima: z.number().int().min(0).max(100).default(75),
+        observacao: z.string().max(1000).nullable().optional(),
+      })
+      type RegulamentoNota = z.infer<typeof cabecalhoNota> & { id: string; status: string; eixos: EixoNota[] }
+
+      const lerRegulamentoNota = async (id: string): Promise<RegulamentoNota> => {
+        const { data, error } = await userDb.rpc('admin_get_notas_regulamento', { p_id: id })
+        if (error) fail(error.message)
+        return data as RegulamentoNota
+      }
+      /**
+       * Resolve o regulamento de um período. Para leitura, prefere o publicado.
+       * Para escrita (`exigirUnico`), se houver mais de um não arquivado (ex.:
+       * o publicado 2026.2 e um rascunho 2027.1), recusa e pede o id: errar o
+       * alvo mexeria no que os alunos estão vendo.
+       */
+      const idPorPeriodo = async (periodo: number, exigirUnico = false): Promise<string> => {
+        const { data, error } = await userDb.rpc('admin_listar_notas_regulamentos')
+        if (error) fail(error.message)
+        const lista = (data ?? []) as { id: string; periodo: number; status: string; semestre: string }[]
+        const doPeriodo = lista.filter((r) => r.periodo === periodo)
+        if (exigirUnico) {
+          const vivos = doPeriodo.filter((r) => r.status !== 'arquivado')
+          if (vivos.length > 1) {
+            fail(`O ${periodo}º período tem ${vivos.length} regulamentos (${vivos.map((r) => `${r.semestre} ${r.status}: ${r.id}`).join('; ')}). Informe o id.`)
+          }
+          if (vivos.length === 1) return vivos[0].id
+        }
+        const alvo = doPeriodo.find((r) => r.status === 'publicado') ?? [...doPeriodo].sort((a, b) => b.semestre.localeCompare(a.semestre))[0]
+        if (!alvo) fail(`Nenhum regulamento cadastrado para o ${periodo}º período.`)
+        return alvo.id
+      }
+      const publicarNota = async (id: string, publicar: boolean, avisar: boolean) => {
+        const { data, error } = await userDb.rpc('admin_publicar_notas_regulamento', { p_id: id, p_publicar: publicar, p_notificar: publicar && avisar })
+        if (error) fail(error.message)
+        return data as { status: string; notificados: number; arquivado_id: string | null }
+      }
+      const idOuPeriodo = z.object({
+        id: z.string().uuid().optional(),
+        periodo: z.number().int().min(1).max(12).optional().describe('Alternativa ao id: pega o publicado do período (ou o rascunho mais recente)'),
+      })
+
+      server.registerTool('listar_dimensoes_nota', {
+        description: 'Lista os regulamentos de dimensões de nota (Minhas notas) por período: status (rascunho/publicado/arquivado), eixos e quantos alunos do período já lançaram notas.',
+        inputSchema: z.object({}), annotations: { readOnlyHint: true },
+      }, async () => {
+        const { data, error } = await userDb.rpc('admin_listar_notas_regulamentos')
+        if (error) fail(error.message)
+        return result({ regulamentos: data })
+      })
+
+      server.registerTool('obter_dimensoes_nota', {
+        description: 'Lê a árvore completa de um regulamento de notas (eixos → dimensões → itens → subitens, com pontos) e quantos alunos lançaram nota em cada item. Informe id ou periodo.',
+        inputSchema: idOuPeriodo, annotations: { readOnlyHint: true },
+      }, async ({ id, periodo }) => {
+        if (!id && !periodo) fail('Informe id ou periodo.')
+        return result(await lerRegulamentoNota(id ?? await idPorPeriodo(periodo!)))
+      })
+
+      server.registerTool('criar_dimensoes_nota', {
+        description: 'Cadastra o regulamento de notas de um período (ex.: a partir do PDF/Word do sistema de avaliação): eixos (SOI, HAM, IESC, MCM, PIEPE…), cada um com dimensões cognitiva + habilidades (independentes, 70 em cada) ou uma dimensão única, e os itens com pontos. Itens divididos (APG 20+15, Memorial 2,5+2,5…) vão em subitens. Nasce rascunho; com publicar=true vai ao ar para os alunos do período (arquivando o publicado anterior do mesmo período) e com avisar_alunos=true eles recebem aviso no sino.',
+        inputSchema: cabecalhoNota.extend({
+          eixos: z.array(eixoNotaSchema).min(1).max(15),
+          publicar: z.boolean().default(false),
+          avisar_alunos: z.boolean().default(true),
+        }),
+      }, async ({ eixos, publicar, avisar_alunos, ...cabecalho }) => {
+        const { data, error } = await userDb.rpc('admin_salvar_notas_regulamento', { p_payload: { ...cabecalho, eixos } })
+        if (error) fail(error.message)
+        const salvo = data as { id: string }
+        const publicacao = publicar ? await publicarNota(salvo.id, true, avisar_alunos) : null
+        return result({ ...salvo, status: publicacao?.status ?? 'rascunho', publicacao, avisos: conferirSomas(eixos), editar_no_admin: `https://www.boramedoficial.com.br/admin/notas/${salvo.id}` })
+      })
+
+      server.registerTool('atualizar_dimensoes_nota', {
+        description: 'Atualiza um regulamento de notas: cabeçalho e/ou a árvore de eixos. Se mandar `eixos`, ela SUBSTITUI a árvore inteira; ids são herdados casando eixo pela sigla, dimensão pelo tipo e item/subitem pelo nome, então as notas já lançadas pelos alunos nos itens que continuam são preservadas (as dos itens removidos são apagadas; a resposta conta quantas).',
+        inputSchema: idOuPeriodo.extend({
+          alteracoes: cabecalhoNota.partial().extend({ eixos: z.array(eixoNotaSchema).min(1).max(15).optional() }),
+        }),
+      }, async ({ id, periodo, alteracoes }) => {
+        if (!id && !periodo) fail('Informe id ou periodo.')
+        const atual = await lerRegulamentoNota(id ?? await idPorPeriodo(periodo!, true))
+        const { eixos, ...cabecalho } = alteracoes
+        const arvore = eixos ? herdarIds(atual.eixos, eixos) : atual.eixos
+        const payload = {
+          id: atual.id,
+          periodo: atual.periodo, semestre: atual.semestre, titulo: atual.titulo, fonte: atual.fonte,
+          nota_minima: atual.nota_minima, nota_minima_exame: atual.nota_minima_exame,
+          frequencia_minima: atual.frequencia_minima, observacao: atual.observacao,
+          ...cabecalho,
+          eixos: arvore,
+        }
+        const { data, error } = await userDb.rpc('admin_salvar_notas_regulamento', { p_payload: payload })
+        if (error) fail(error.message)
+        return result({ ...(data as object), atualizado: true, avisos: conferirSomas(arvore) })
+      })
+
+      server.registerTool('publicar_dimensoes_nota', {
+        description: 'Publica (publicar=true) ou tira do ar (publicar=false) um regulamento de notas. Só um fica no ar por período: publicar arquiva o anterior. Com avisar_alunos=true (padrão), os alunos do período recebem aviso no sino, uma vez só por regulamento.',
+        inputSchema: idOuPeriodo.extend({ publicar: z.boolean().default(true), avisar_alunos: z.boolean().default(true) }),
+      }, async ({ id, periodo, publicar, avisar_alunos }) => {
+        if (!id && !periodo) fail('Informe id ou periodo.')
+        const alvo = id ?? await idPorPeriodo(periodo!, true)
+        const reg = await lerRegulamentoNota(alvo)
+        return result({ id: alvo, periodo: reg.periodo, semestre: reg.semestre, ...(await publicarNota(alvo, publicar, avisar_alunos)) })
+      })
+
+      server.registerTool('excluir_dimensoes_nota', {
+        description: 'Exclui definitivamente um regulamento de notas e as notas que os alunos lançaram nele. Exige o id (obtenha com listar_dimensoes_nota). Regulamento no ar precisa sair do ar antes (publicar_dimensoes_nota com publicar=false).',
+        inputSchema: z.object({ id: z.string().uuid() }), annotations: { destructiveHint: true },
+      }, async ({ id }) => {
+        const { error } = await userDb.rpc('admin_excluir_notas_regulamento', { p_id: id })
+        if (error) fail(error.message)
+        return result({ id, excluido: true })
       })
 
       server.registerTool('listar_taxonomia', {

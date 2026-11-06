@@ -1,0 +1,129 @@
+<div class="an">
+  <header class="an-head">
+    <div>
+      <p class="an-eyebrow">Aluno · Minhas notas</p>
+      <h1 class="an-title">Dimensões de nota</h1>
+      <p class="an-sub">
+        Peso de cada avaliação, por período. O aluno vê o regulamento no ar do período dele.
+        @if (lista().length) {
+          <span class="an-resumo">{{ kpis().periodosNoAr }} no ar · {{ kpis().rascunhos }} rascunho{{ kpis().rascunhos === 1 ? '' : 's' }} · {{ kpis().alunosComNotas }} aluno{{ kpis().alunosComNotas === 1 ? '' : 's' }} lançando notas</span>
+        }
+      </p>
+    </div>
+    <a class="an-btn an-btn--primary" routerLink="/admin/notas/novo">
+      <app-ui-icon [icon]="iconPlus" [size]="18" />
+      <span>Novo regulamento</span>
+    </a>
+  </header>
+
+  @if (carregando()) {
+    <div class="an-lista" aria-busy="true">
+      @for (i of [1, 2]; track i) { <div class="an-linha an-linha--skeleton"></div> }
+    </div>
+  } @else if (lista().length === 0) {
+    <div class="an-empty">
+      <app-ui-icon [icon]="iconVazio" [size]="36" />
+      <h2>Nenhum regulamento ainda</h2>
+      <p>Cadastre a composição de nota de um período para os alunos dele calcularem quanto falta para os 70.</p>
+      <a class="an-btn an-btn--primary" routerLink="/admin/notas/novo">
+        <app-ui-icon [icon]="iconPlus" [size]="18" /><span>Cadastrar o primeiro</span>
+      </a>
+    </div>
+  } @else {
+    <ul class="an-lista">
+      @for (r of ordenados(); track r.id) {
+        <li class="an-linha" [attr.data-status]="r.status">
+          <span class="an-periodo" aria-hidden="true">{{ r.periodo }}º</span>
+
+          <div class="an-linha-info">
+            <a class="an-linha-nome" [routerLink]="['/admin/notas', r.id]">{{ nome(r) }}</a>
+            <span class="an-linha-meta">{{ r.siglas || 'Sem eixos' }}</span>
+          </div>
+
+          @switch (r.status) {
+            @case ('publicado') { <span class="an-pill an-pill--live"><i></i>No ar</span> }
+            @case ('rascunho') { <span class="an-pill">Rascunho</span> }
+            @default { <span class="an-pill an-pill--arq">Arquivado</span> }
+          }
+
+          <div class="an-adesao" [attr.aria-label]="r.alunos_com_notas + ' de ' + r.alunos_no_periodo + ' alunos do período lançaram notas'">
+            <span>{{ r.alunos_com_notas }}/{{ r.alunos_no_periodo }} alunos</span>
+            <div class="an-adesao-bar"><i [style.width.%]="adesao(r)"></i></div>
+          </div>
+
+          <div class="an-linha-acoes">
+            <a class="an-btn an-btn--soft" [routerLink]="['/admin/notas', r.id]">
+              <app-ui-icon [icon]="iconPencil" [size]="15" /><span>Editar</span>
+            </a>
+            <button type="button" class="an-btn an-btn--soft" [disabled]="processando() === r.id" (click)="pedirPublicacao(r)">
+              <app-ui-icon [icon]="r.status === 'publicado' ? iconUndo : iconSend" [size]="15" />
+              <span>{{ r.status === 'publicado' ? 'Tirar do ar' : 'Publicar' }}</span>
+            </button>
+            @if (r.status === 'publicado' && !r.notificado_em) {
+              <button
+                type="button"
+                class="an-icon-btn an-icon-btn--destaque"
+                [disabled]="processando() === r.id"
+                aria-label="Avisar os alunos do período no sino"
+                title="Avisar os alunos do período no sino"
+                (click)="avisarAlunos(r)"
+              >
+                <app-ui-icon [icon]="iconAvisar" [size]="16" />
+              </button>
+            }
+            <a
+              class="an-icon-btn"
+              [routerLink]="['/admin/notas', 'novo']"
+              [queryParams]="{ copiar: r.id }"
+              aria-label="Duplicar (novo semestre ou outro período)"
+              title="Duplicar para outro semestre ou período"
+            >
+              <app-ui-icon [icon]="iconCopy" [size]="16" />
+            </a>
+            <button
+              type="button"
+              class="an-icon-btn an-icon-btn--danger"
+              aria-label="Excluir regulamento"
+              [title]="r.status === 'publicado' ? 'Tire do ar antes de excluir' : 'Excluir'"
+              [disabled]="r.status === 'publicado'"
+              (click)="paraExcluir.set(r)"
+            >
+              <app-ui-icon [icon]="iconTrash" [size]="16" />
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+@if (paraPublicar(); as p) {
+  <app-ui-confirm-dialog
+    [titulo]="'Publicar para o ' + p.alvo.periodo + 'º período?'"
+    [mensagem]="mensagemPublicar(p)"
+    labelConfirmar="Publicar"
+    (confirmar)="confirmarPublicacao()"
+    (cancelar)="paraPublicar.set(null)"
+  />
+}
+
+@if (paraDespublicar(); as r) {
+  <app-ui-confirm-dialog
+    [titulo]="'Tirar ' + nome(r) + ' do ar?'"
+    [mensagem]="'Os alunos do ' + r.periodo + 'º período deixam de ver as dimensões até você publicar de novo. As notas lançadas ficam guardadas.'"
+    labelConfirmar="Tirar do ar"
+    (confirmar)="confirmarDespublicar()"
+    (cancelar)="paraDespublicar.set(null)"
+  />
+}
+
+@if (paraExcluir(); as r) {
+  <app-ui-confirm-dialog
+    [titulo]="'Excluir ' + nome(r) + '?'"
+    [mensagem]="mensagemExcluir(r)"
+    labelConfirmar="Excluir"
+    variante="danger"
+    (confirmar)="confirmarExclusao()"
+    (cancelar)="paraExcluir.set(null)"
+  />
+}

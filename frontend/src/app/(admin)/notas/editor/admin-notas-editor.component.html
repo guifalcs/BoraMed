@@ -1,0 +1,256 @@
+@let r = rascunho();
+<div class="ed">
+  <header class="ed-top">
+    <a class="ed-voltar" routerLink="/admin/notas">
+      <app-ui-icon [icon]="iconVoltar" [size]="16" /> Dimensões de nota
+    </a>
+    <div class="ed-top-linha">
+      <div class="min-w-0">
+        <h1 class="an-title">{{ titulo() }}</h1>
+        <p class="an-sub">
+          @switch (status()) {
+            @case ('publicado') { <span class="an-pill an-pill--live"><i></i>No ar</span> Alunos do {{ r.periodo }}º período estão vendo. }
+            @case ('arquivado') { <span class="an-pill an-pill--arq">Arquivado</span> Substituído por um regulamento mais novo. }
+            @default { <span class="an-pill">Rascunho</span> Só a equipe vê. }
+          }
+          @if (sujo()) { <span class="ed-sujo">· alterações não salvas</span> }
+        </p>
+      </div>
+      <div class="ed-acoes">
+        <button type="button" class="an-btn an-btn--soft" [disabled]="salvando() || (!sujo() && !!r.id)" (click)="salvar()">
+          <app-ui-icon [icon]="iconSalvar" [size]="16" />
+          <span>{{ salvando() ? 'Salvando…' : 'Salvar' }}</span>
+        </button>
+        @if (status() === 'publicado') {
+          <button type="button" class="an-btn an-btn--soft" [disabled]="salvando()" (click)="publicar(false)">
+            <app-ui-icon [icon]="iconDespublicar" [size]="16" /><span>Tirar do ar</span>
+          </button>
+        } @else {
+          <button type="button" class="an-btn an-btn--primary" [disabled]="salvando() || graves().length > 0" (click)="publicar(true)">
+            <app-ui-icon [icon]="iconPublicar" [size]="16" />
+            <span>{{ sujo() ? 'Salvar e publicar' : 'Publicar' }}</span>
+          </button>
+        }
+      </div>
+    </div>
+    @if (copiadoDe(); as origem) {
+      <p class="ed-copia">Cópia de <strong>{{ origem }}</strong>. Ajuste período e semestre e salve: o original não muda.</p>
+    }
+  </header>
+
+  @if (carregando()) {
+    <div class="an-card an-card--skeleton ed-skel"></div>
+  } @else {
+    <div class="ed-layout">
+      <!-- Travado enquanto salva: o save recarrega o rascunho do servidor. -->
+      <fieldset class="ed-main" [disabled]="salvando()">
+        <!-- Cabeçalho -->
+        <section class="ed-card" id="cabecalho">
+          <h2 class="ed-card-titulo">Regulamento</h2>
+          <div class="ed-grid">
+            <label class="ed-campo">
+              <span>Período</span>
+              <select #per (change)="definir(r, 'periodo', numero(per.value))">
+                <option value="" disabled [selected]="r.periodo === null">Escolha</option>
+                @for (o of periodoOptions; track o.value) {
+                  <option [value]="o.value" [selected]="o.value === r.periodo">{{ o.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="ed-campo">
+              <span>Semestre</span>
+              <input type="text" placeholder="2026.2" [value]="r.semestre" (input)="definir(r, 'semestre', sem.value)" #sem />
+            </label>
+            <label class="ed-campo ed-campo--largo">
+              <span>Título <small>opcional</small></span>
+              <input type="text" maxlength="120" [placeholder]="(r.periodo ?? 'N') + 'º período · ' + r.semestre" [value]="r.titulo" (input)="definir(r, 'titulo', tit.value)" #tit />
+            </label>
+            <label class="ed-campo">
+              <span>Nota mínima por dimensão</span>
+              <span class="ed-sufixo">
+                <input type="text" inputmode="decimal" [value]="r.nota_minima ?? ''" (input)="definir(r, 'nota_minima', numero(nm.value))" #nm /><em>%</em>
+              </span>
+            </label>
+            <label class="ed-campo">
+              <span>Piso do exame especial</span>
+              <span class="ed-sufixo">
+                <input type="text" inputmode="decimal" [value]="r.nota_minima_exame ?? ''" (input)="definir(r, 'nota_minima_exame', numero(ne.value))" #ne /><em>%</em>
+              </span>
+            </label>
+            <label class="ed-campo">
+              <span>Frequência mínima</span>
+              <span class="ed-sufixo">
+                <input type="text" inputmode="numeric" [value]="r.frequencia_minima ?? ''" (input)="definir(r, 'frequencia_minima', numero(fq.value))" #fq /><em>%</em>
+              </span>
+            </label>
+            <label class="ed-campo ed-campo--largo">
+              <span>Fonte <small>aparece no rodapé do aluno</small></span>
+              <input type="text" maxlength="160" [value]="r.fonte" (input)="definir(r, 'fonte', fo.value)" #fo />
+            </label>
+            <label class="ed-campo ed-campo--inteiro">
+              <span>Observação <small>aparece nas regras do aluno</small></span>
+              <textarea rows="2" maxlength="1000" [value]="r.observacao" (input)="definir(r, 'observacao', ob.value)" #ob></textarea>
+            </label>
+          </div>
+        </section>
+
+        <!-- Eixos -->
+        <div class="ed-eixos-head" id="eixos">
+          <h2 class="an-grupo-titulo">Eixos ({{ r.eixos.length }})</h2>
+        </div>
+
+        @for (e of r.eixos; track e.k; let ei = $index; let ultimoEixo = $last) {
+          <section class="ed-card ed-eixo" [id]="'eixo-' + e.k">
+            <div class="ed-eixo-head">
+              <label class="ed-campo ed-campo--sigla">
+                <span>Sigla</span>
+                <input type="text" maxlength="20" placeholder="SOI I" [value]="e.sigla" (input)="definir(e, 'sigla', sg.value)" #sg />
+              </label>
+              <label class="ed-campo ed-campo--nome">
+                <span>Nome do eixo</span>
+                <input type="text" maxlength="120" placeholder="Sistemas Orgânicos Integrados I" [value]="e.nome" (input)="definir(e, 'nome', no.value)" #no />
+              </label>
+              <div class="ed-ordem">
+                <button type="button" class="an-icon-btn" aria-label="Subir eixo" [disabled]="ei === 0" (click)="mover(r.eixos, ei, -1)"><app-ui-icon [icon]="iconCima" [size]="15" /></button>
+                <button type="button" class="an-icon-btn" aria-label="Descer eixo" [disabled]="ultimoEixo" (click)="mover(r.eixos, ei, 1)"><app-ui-icon [icon]="iconBaixo" [size]="15" /></button>
+                <button type="button" class="an-icon-btn an-icon-btn--danger" aria-label="Remover eixo" (click)="removerEixo(ei)"><app-ui-icon [icon]="iconLixo" [size]="15" /></button>
+              </div>
+            </div>
+
+            <div class="ed-eixo-opcoes">
+              <div class="ed-seg" role="radiogroup" aria-label="Estrutura do eixo">
+                <button type="button" role="radio" [attr.aria-checked]="modo(e) === 'dupla'" [class.is-on]="modo(e) === 'dupla'" (click)="alternarModo(e, 'dupla')">Teoria + prática</button>
+                <button type="button" role="radio" [attr.aria-checked]="modo(e) === 'unica'" [class.is-on]="modo(e) === 'unica'" (click)="alternarModo(e, 'unica')">Dimensão única</button>
+              </div>
+              <label class="ed-check" [class.is-off]="!temCognitiva(e)">
+                <input type="checkbox" [checked]="e.exame_especial && temCognitiva(e)" [disabled]="!temCognitiva(e)" (change)="definir(e, 'exame_especial', ex.checked)" #ex />
+                <span>Cognitiva tem exame especial</span>
+              </label>
+            </div>
+
+            <div class="ed-dims" [class.ed-dims--uma]="e.dims.length === 1">
+              @for (d of e.dims; track d.k) {
+                @let total = totalDim(d);
+                <div class="ed-dim">
+                  <div class="ed-dim-head">
+                    <p class="ed-dim-tipo">{{ rotuloTipo[d.tipo] }}</p>
+                    <span class="ed-soma" [class.is-ok]="total === 100">
+                      <app-ui-icon [icon]="total === 100 ? iconOk : iconAlerta" [size]="13" />
+                      {{ fmtPts(total) }}/100
+                    </span>
+                  </div>
+
+                  <ul class="ed-itens">
+                    @for (i of d.itens; track i.k; let ii = $index; let ultimoItem = $last) {
+                      <li class="ed-item">
+                        <div class="ed-item-linha">
+                          <input class="ed-item-nome" type="text" maxlength="120" placeholder="Nome da avaliação" [value]="i.nome" (input)="definir(i, 'nome', inome.value)" #inome aria-label="Nome do item" />
+                          <span class="ed-pts">
+                            <input type="text" inputmode="decimal" placeholder="0" [value]="i.pontos ?? ''" (input)="definir(i, 'pontos', numero(ipts.value))" #ipts aria-label="Pontos do item" />
+                            <em>pts</em>
+                          </span>
+                          <span class="ed-item-acoes">
+                            <button type="button" class="ed-mini" aria-label="Subir item" [disabled]="ii === 0" (click)="mover(d.itens, ii, -1)"><app-ui-icon [icon]="iconCima" [size]="13" /></button>
+                            <button type="button" class="ed-mini" aria-label="Descer item" [disabled]="ultimoItem" (click)="mover(d.itens, ii, 1)"><app-ui-icon [icon]="iconBaixo" [size]="13" /></button>
+                            <button type="button" class="ed-mini ed-mini--danger" aria-label="Remover item" (click)="removerItem(d, ii)"><app-ui-icon [icon]="iconLixo" [size]="13" /></button>
+                          </span>
+                        </div>
+                        <input class="ed-item-desc" type="text" maxlength="300" placeholder="Detalhe opcional (ex.: em três momentos)" [value]="i.descricao" (input)="definir(i, 'descricao', idesc.value)" #idesc aria-label="Descrição do item" />
+                        @if (notasNoItem(i) > 0) {
+                          <p class="ed-notas-aviso">{{ notasNoItem(i) === 1 ? "1 aluno já lançou nota aqui" : notasNoItem(i) + " notas de alunos lançadas aqui" }}</p>
+                        }
+
+                        @if (i.partes.length) {
+                          @let soma = somaPartes(i);
+                          <ul class="ed-partes">
+                            @for (p of i.partes; track p.k; let pi = $index) {
+                              <li class="ed-parte">
+                                <input type="text" maxlength="120" placeholder="Nome da parte" [value]="p.nome" (input)="definir(p, 'nome', pnome.value)" #pnome aria-label="Nome da parte" />
+                                <span class="ed-pts ed-pts--sm">
+                                  <input type="text" inputmode="decimal" placeholder="0" [value]="p.pontos ?? ''" (input)="definir(p, 'pontos', numero(ppts.value))" #ppts aria-label="Pontos da parte" />
+                                  <em>pts</em>
+                                </span>
+                                <button type="button" class="ed-mini ed-mini--danger" aria-label="Remover parte" (click)="removerParte(i, pi)"><app-ui-icon [icon]="iconLixo" [size]="13" /></button>
+                              </li>
+                            }
+                          </ul>
+                          <div class="ed-partes-rodape">
+                            <span class="ed-soma" [class.is-ok]="soma === i.pontos">
+                              <app-ui-icon [icon]="soma === i.pontos ? iconOk : iconAlerta" [size]="13" />
+                              partes somam {{ fmtPts(soma) }} de {{ fmtPts(i.pontos ?? 0) }}
+                            </span>
+                            <button type="button" class="ed-link" (click)="adicionarParte(i)">+ parte</button>
+                          </div>
+                        } @else {
+                          <button type="button" class="ed-link ed-link--dividir" (click)="dividir(i)">
+                            <app-ui-icon [icon]="iconDividir" [size]="13" /> Dividir em partes (parciais, encontros, etapas)
+                          </button>
+                        }
+                      </li>
+                    }
+                  </ul>
+                  <button type="button" class="ed-add" (click)="adicionarItem(d)">
+                    <app-ui-icon [icon]="iconMais" [size]="15" /> Adicionar item
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <button type="button" class="ed-add ed-add--eixo" (click)="adicionarEixo()">
+          <app-ui-icon [icon]="iconMais" [size]="16" /> Adicionar eixo
+        </button>
+      </fieldset>
+
+      <!-- Conferência -->
+      <aside class="ed-side">
+        <div class="ed-card ed-check-card">
+          <h2 class="ed-card-titulo">Conferência</h2>
+          @if (problemas().length === 0) {
+            <p class="ed-tudo-ok"><app-ui-icon [icon]="iconOk" [size]="18" /> Tudo certo: todas as dimensões somam 100.</p>
+          } @else {
+            <ul class="ed-problemas">
+              @for (p of problemas(); track $index) {
+                <li [class.is-grave]="p.grave">
+                  <button type="button" (click)="irPara(p.alvo)">
+                    <app-ui-icon [icon]="iconAlerta" [size]="14" />
+                    <span>{{ p.texto }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+            @if (graves().length === 0) {
+              <p class="ed-side-nota">São só avisos: dá para salvar e publicar.</p>
+            }
+          }
+          <ul class="ed-resumo">
+            @for (e of r.eixos; track e.k) {
+              <li>
+                <button type="button" (click)="irPara('eixo-' + e.k)">
+                  <strong>{{ e.sigla || 'Sem sigla' }}</strong>
+                  <span>
+                    @for (d of e.dims; track d.k; let l = $last) {
+                      {{ fmtPts(totalDim(d)) }}{{ l ? '' : ' + ' }}
+                    }
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+      </aside>
+    </div>
+  }
+</div>
+
+@if (remocao(); as rm) {
+  <app-ui-confirm-dialog
+    [titulo]="rm.titulo"
+    [mensagem]="rm.mensagem"
+    labelConfirmar="Continuar"
+    variante="danger"
+    (confirmar)="executarRemocao()"
+    (cancelar)="remocao.set(null)"
+  />
+}
