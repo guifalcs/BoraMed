@@ -15,6 +15,7 @@ import {
   AdminComissaoDetalhe,
   AdminComissaoVenda,
   AdminCupom,
+  AdminCupomDestinatarioInput,
   AdminPlanoOpcao,
   AdminUsuarioBusca,
   ComissaoStatus,
@@ -30,6 +31,7 @@ import {
 import { AdminPaginationComponent } from '../../shared/components/admin-pagination/admin-pagination.component';
 import type { FaculdadeUnidade } from '../../core/models/faculdade-unidade';
 import { faculdadeUnidadeLabel, formatarCentavos } from '../../shared/utils/admin-labels.util';
+import { extrairEmails, normalizarEmail } from '../../core/utils/cupom-destinatarios.util';
 
 const PAGE_SIZE = 20;
 
@@ -37,6 +39,13 @@ const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
 ];
+
+/** Destinatário na lista do formulário: usuário da plataforma OU só e-mail. */
+interface DestinatarioForm {
+  userId: string | null;
+  email: string;
+  nome: string | null;
+}
 
 /** Estado do formulário de cupom (criação e edição usam o mesmo). */
 interface CupomForm {
@@ -59,6 +68,8 @@ interface CupomForm {
   pctFora: number | null;
   planosAvancado: boolean;
   planosEssencial: boolean;
+  restrito: boolean;
+  destinatarios: DestinatarioForm[];
 }
 
 function formVazio(): CupomForm {
@@ -81,6 +92,8 @@ function formVazio(): CupomForm {
     pctFora: null,
     planosAvancado: true,
     planosEssencial: true,
+    restrito: false,
+    destinatarios: [],
   };
 }
 
@@ -148,6 +161,12 @@ export class AdminCuponsComponent implements OnInit {
   protected readonly buscaUsuario = signal('');
   protected readonly sugestoesUsuario = signal<AdminUsuarioBusca[]>([]);
   private buscaTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Destinatários de cupom restrito: busca de usuário + colagem de e-mails.
+  protected readonly buscaDestinatario = signal('');
+  protected readonly sugestoesDestinatario = signal<AdminUsuarioBusca[]>([]);
+  protected readonly emailsColados = signal('');
+  private buscaDestTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ══════════════════════════ Comissões ══════════════════════════
 
@@ -250,6 +269,7 @@ export class AdminCuponsComponent implements OnInit {
     this.form.set(formVazio());
     this.buscaUsuario.set('');
     this.sugestoesUsuario.set([]);
+    this.limparEntradaDestinatarios();
     this.formAberto.set(true);
   }
 
@@ -276,9 +296,16 @@ export class AdminCuponsComponent implements OnInit {
       pctFora: Number(c.comissao_pct_fora),
       planosAvancado: c.comissao_planos_avancado,
       planosEssencial: c.comissao_planos_essencial,
+      restrito: c.restrito,
+      destinatarios: c.destinatarios.map((d) => ({
+        userId: d.user_id,
+        email: d.email,
+        nome: d.nome,
+      })),
     });
     this.buscaUsuario.set('');
     this.sugestoesUsuario.set([]);
+    this.limparEntradaDestinatarios();
     this.formAberto.set(true);
   }
 
@@ -317,12 +344,104 @@ export class AdminCuponsComponent implements OnInit {
     this.form.update((f) => ({ ...f, responsavelUserId: null, responsavelUserLabel: '' }));
   }
 
+  // ── Destinatários (cupom restrito) ──
+
+  private limparEntradaDestinatarios(): void {
+    if (this.buscaDestTimer) clearTimeout(this.buscaDestTimer);
+    this.buscaDestinatario.set('');
+    this.sugestoesDestinatario.set([]);
+    this.emailsColados.set('');
+  }
+
+  protected onBuscaDestinatario(termo: string): void {
+    this.buscaDestinatario.set(termo);
+    if (this.buscaDestTimer) clearTimeout(this.buscaDestTimer);
+    if (termo.trim().length < 2) {
+      this.sugestoesDestinatario.set([]);
+      return;
+    }
+    this.buscaDestTimer = setTimeout(async () => {
+      const result = await this.adminService.buscarUsuariosCupom(termo.trim());
+      this.sugestoesDestinatario.set(result.ok ? result.data : []);
+    }, 300);
+  }
+
+  /** Já está na lista (por conta OU por e-mail — o mesmo e-mail não entra duas vezes). */
+  private destinatarioJaExiste(userId: string | null, email: string): boolean {
+    const alvo = normalizarEmail(email);
+    return this.form().destinatarios.some(
+      (d) => (userId !== null && d.userId === userId) || normalizarEmail(d.email) === alvo,
+    );
+  }
+
+  protected adicionarDestinatarioUsuario(u: AdminUsuarioBusca): void {
+    if (!this.destinatarioJaExiste(u.id, u.email)) {
+      this.form.update((f) => ({
+        ...f,
+        destinatarios: [
+          ...f.destinatarios,
+          { userId: u.id, email: u.email, nome: u.nome_completo },
+        ],
+      }));
+    }
+    this.buscaDestinatario.set('');
+    this.sugestoesDestinatario.set([]);
+  }
+
+  protected adicionarEmailsColados(): void {
+    const { validos, invalidos } = extrairEmails(this.emailsColados());
+    const novos = validos.filter((e) => !this.destinatarioJaExiste(null, e));
+    if (novos.length > 0) {
+      this.form.update((f) => ({
+        ...f,
+        destinatarios: [
+          ...f.destinatarios,
+          ...novos.map((email) => ({ userId: null, email, nome: null })),
+        ],
+      }));
+    }
+    if (invalidos.length > 0) {
+      // Mantém no campo só o que não deu certo, para o admin corrigir.
+      this.emailsColados.set(invalidos.join('\n'));
+      this.toast.error(
+        `${invalidos.length} item(ns) não parecem e-mail e ficaram no campo: ${invalidos.slice(0, 3).join(', ')}${invalidos.length > 3 ? '…' : ''}`,
+      );
+    } else {
+      this.emailsColados.set('');
+    }
+  }
+
+  protected removerDestinatario(indice: number): void {
+    this.form.update((f) => ({
+      ...f,
+      destinatarios: f.destinatarios.filter((_, i) => i !== indice),
+    }));
+  }
+
+  protected limparDestinatarios(): void {
+    this.form.update((f) => ({ ...f, destinatarios: [] }));
+  }
+
   protected async salvar(): Promise<void> {
+    // E-mails colados e ainda não adicionados entram na lista antes de salvar
+    // (senão seriam descartados em silêncio). Se sobrar algo inválido, o aviso
+    // já foi mostrado e o salvamento espera o admin corrigir.
+    if (this.emailsColados().trim()) {
+      this.adicionarEmailsColados();
+      if (this.emailsColados().trim()) return;
+    }
     const f = this.form();
     if (!f.codigo.trim() || !f.valor) {
       this.toast.error('Código e valor do desconto são obrigatórios.');
       return;
     }
+    if (f.restrito && f.destinatarios.length === 0) {
+      this.toast.error('Cupom restrito precisa de ao menos um e-mail ou usuário.');
+      return;
+    }
+    const destinatarios: AdminCupomDestinatarioInput[] = f.destinatarios.map((d) =>
+      d.userId ? { user_id: d.userId } : { email: d.email },
+    );
     this.salvando.set(true);
     const result = await this.adminService.salvarCupom({
       id: f.id,
@@ -344,6 +463,8 @@ export class AdminCuponsComponent implements OnInit {
       comissao_pct_fora: f.pctFora ?? 0,
       comissao_planos_avancado: f.planosAvancado,
       comissao_planos_essencial: f.planosEssencial,
+      restrito: f.restrito,
+      destinatarios,
     });
     this.salvando.set(false);
     if (!result.ok) {
