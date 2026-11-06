@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-06 | Feature | Cupons restritos a e-mails ou usuários específicos
+
+Um cupom agora pode valer só para quem você escolher: por e-mail (mesmo de quem ainda não tem conta) ou por usuário da plataforma.
+
+- **Admin** (`/admin/cupons`, formulário do cupom): caixa **Restringir a e-mails ou usuários específicos**. Ao marcar, aparece a lista de destinatários:
+  - adiciona usuário buscando por nome ou e-mail;
+  - cola e-mails de uma vez (um por linha ou separados por vírgula/ponto e vírgula, serve colar coluna de planilha): normaliza, tira repetidos e devolve ao campo o que não parece e-mail;
+  - remove um a um ou todos. Na listagem, selo **Restrito · N** ao lado do código.
+  - Restrito com lista vazia não salva.
+- **Checkout**: quem não está na lista vê "Cupom inválido", igual a um código que não existe. Quem é destinatário por e-mail só ganha o desconto com o e-mail **confirmado** na conta. Vale só para pagamento único, como os demais cupons.
+- **Segurança**: `validar_cupom` passa a usar sempre o usuário da sessão e ignora `p_user_id` (só a edge, com service_role, informa o usuário). Antes, um autenticado podia passar o id de outra pessoa.
+- **Banco** (`20261106130000_cupons_restritos_destinatarios`): coluna `cupom.restrito`, tabela `cupom_destinatario` (RLS, só admin lê, sem escrita direta, sem grant para `anon`), `validar_cupom`, `admin_listar_cupons` e `admin_salvar_cupom` atualizadas. `admin_salvar_cupom` ganhou `p_restrito` e `p_destinatarios` (omitidos = mantém), e a assinatura antiga foi removida. Teste: `supabase/tests/cupons_restritos_test.sql`.
+- **Deploy:** `db push` antes do frontend. A edge `mp-processar-pagamento` não muda (já chama `validar_cupom` com o id do JWT).
+- Docs: `docs/business-rules.md` (Cupons de desconto e comissão de indicação).
+
 ## 2026-11-05 | Feature | Gabaritos: cadernos de prova
 
 Uma mesma prova (ex.: N1 2026.2 do 3º período) costuma ter vários cadernos com as mesmas questões em ordem diferente. Agora é possível cadastrar de 1 a 12 cadernos por prova, cada um com **nome** e **folha de respostas própria**.

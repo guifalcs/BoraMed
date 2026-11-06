@@ -529,6 +529,28 @@ por migration — hoje migration de cupom é exceção, não fluxo.
   percentual ou fixo, plano específico ou qualquer plano, validade, limite total
   e limite por usuário. A validação do checkout continua sendo `validar_cupom`
   server-side: a tela só administra a linha, nunca o preço.
+* **Cupom pode ser restrito a e-mails ou usuários específicos.** Com
+  `cupom.restrito = true`, só quem está em `cupom_destinatario` consegue usá-lo.
+  Cada destinatário é um usuário (`user_id`) **ou** um e-mail — o e-mail libera
+  quem ainda não tem conta: o cupom passa a valer quando a pessoa se cadastra e
+  **confirma** o e-mail (a checagem usa `auth.users.email` confirmado, nunca o
+  e-mail digitado no checkout). Regras:
+  * `restrito` é flag explícita: esvaziar a lista nunca transforma um cupom
+    exclusivo em público. Restrito com lista vazia é recusado ao salvar
+    (`restrito_sem_destinatarios`); para tornar público, desmarque a restrição.
+  * Quem não é destinatário recebe "Cupom inválido", idêntico a um código
+    inexistente — não dá para descobrir que um código restrito existe. A checagem
+    vem antes de expirado/plano/esgotado, pelo mesmo motivo.
+  * A lista é salva junto com o cupom, numa única chamada (`admin_salvar_cupom`
+    com `p_destinatarios`; omitir mantém a lista, array substitui). Limite de
+    1000 destinatários, e-mails normalizados em minúsculas e sem repetição.
+  * `validar_cupom` usa sempre o `auth.uid()` quando há sessão e ignora
+    `p_user_id`; só a edge (service_role) informa o usuário. Antes, qualquer
+    autenticado podia passar o id de outro.
+  * Escopo: só o checkout de pagamento único (mesmo que o resto dos cupons).
+  * A restrição é avaliada na **criação** da intenção de pagamento. Remover o
+    aluno da lista (ou desativar o cupom) não cancela uma intenção já criada
+    — p.ex. um Pix gerado antes —, que mantém o desconto snapshotado.
 * **Cupom já usado em checkout não é excluído, é desativado.** Apagar quebraria
   o histórico da venda (`pagamento_intencao.cupom_id`). A RPC faz isso sozinha e
   avisa na UI.

@@ -343,6 +343,7 @@ export type Database = {
           max_por_usuario: number | null
           max_usos: number | null
           plano_id: string | null
+          restrito: boolean
           tipo: string
           valor: number
         }
@@ -357,6 +358,7 @@ export type Database = {
           max_por_usuario?: number | null
           max_usos?: number | null
           plano_id?: string | null
+          restrito?: boolean
           tipo?: string
           valor: number
         }
@@ -371,6 +373,7 @@ export type Database = {
           max_por_usuario?: number | null
           max_usos?: number | null
           plano_id?: string | null
+          restrito?: boolean
           tipo?: string
           valor?: number
         }
@@ -380,6 +383,45 @@ export type Database = {
             columns: ["plano_id"]
             isOneToOne: false
             referencedRelation: "plano"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cupom_destinatario: {
+        Row: {
+          criado_em: string
+          cupom_id: string
+          email: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          cupom_id: string
+          email?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          criado_em?: string
+          cupom_id?: string
+          email?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cupom_destinatario_cupom_id_fkey"
+            columns: ["cupom_id"]
+            isOneToOne: false
+            referencedRelation: "cupom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cupom_destinatario_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

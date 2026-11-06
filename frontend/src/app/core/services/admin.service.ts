@@ -219,6 +219,18 @@ export interface AdminFinanceiroPlano {
 
 export type CupomTipo = 'percentual' | 'fixo';
 
+/** Destinatário de cupom restrito: um usuário da plataforma OU só um e-mail. */
+export interface AdminCupomDestinatario {
+  id: string;
+  /** Preenchido quando o destinatário é um usuário; null quando é só e-mail. */
+  user_id: string | null;
+  email: string;
+  nome: string | null;
+}
+
+/** Item enviado ao salvar: exatamente um dos dois campos. */
+export type AdminCupomDestinatarioInput = { user_id: string } | { email: string };
+
 export interface AdminCupom {
   id: string;
   codigo: string;
@@ -249,6 +261,9 @@ export interface AdminCupom {
   usos: number;
   receita_centavos: number;
   expirado: boolean;
+  /** true = só os destinatários podem usar o cupom. */
+  restrito: boolean;
+  destinatarios: AdminCupomDestinatario[];
 }
 
 export interface AdminCupomInput {
@@ -269,6 +284,10 @@ export interface AdminCupomInput {
   comissao_pct_fora: number;
   comissao_planos_avancado: boolean;
   comissao_planos_essencial: boolean;
+  /** Omitido = mantém o valor atual (ex.: alternar "ativo" não mexe na restrição). */
+  restrito?: boolean;
+  /** Omitido = mantém a lista; array = SUBSTITUI a lista inteira. */
+  destinatarios?: AdminCupomDestinatarioInput[];
 }
 
 export interface AdminCupomExclusao {
@@ -887,6 +906,13 @@ function traduzErroCupom(mensagem: string): string {
     valor_invalido: 'O valor do desconto precisa ser maior que zero.',
     percentual_acima_de_100: 'Desconto percentual não pode passar de 100%.',
     cupom_nao_encontrado: 'Cupom não encontrado.',
+    restrito_sem_destinatarios:
+      'Cupom restrito precisa de ao menos um destinatário (e-mail ou usuário).',
+    email_invalido: 'Há um e-mail inválido na lista de destinatários.',
+    usuario_nao_encontrado: 'Um dos usuários da lista de destinatários não existe mais.',
+    destinatario_invalido: 'Destinatário inválido.',
+    destinatarios_invalidos: 'Lista de destinatários inválida.',
+    destinatarios_demais: 'Limite de 1000 destinatários por cupom.',
     permission_denied: 'Sem permissão para essa ação.',
   };
   const chave = Object.keys(mapa).find((k) => mensagem.includes(k));
@@ -1285,6 +1311,9 @@ export class AdminService {
       p_comissao_pct_fora: input.comissao_pct_fora,
       p_comissao_planos_avancado: input.comissao_planos_avancado,
       p_comissao_planos_essencial: input.comissao_planos_essencial,
+      // undefined é omitido pelo supabase-js → a RPC mantém o valor atual.
+      p_restrito: input.restrito,
+      p_destinatarios: input.destinatarios,
     });
     if (error) return { ok: false, error: traduzErroCupom(error.message) };
     return { ok: true, data: data as unknown as string };

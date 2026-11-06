@@ -58,6 +58,64 @@ test.describe('Admin — cupons', () => {
     await expect(page.locator('tr', { hasText: codigo })).toHaveCount(0, { timeout: 15_000 });
   });
 
+  test('restringe o cupom a e-mails específicos e mantém a lista ao reabrir', async ({ page }) => {
+    const codigo = `E2R${Date.now().toString().slice(-6)}`;
+
+    await page.getByRole('button', { name: 'Novo cupom' }).click();
+    await page.getByPlaceholder('EX: YAS20').fill(codigo);
+    await page.locator('input[type="number"]').first().fill('10');
+
+    // A lista só aparece depois de marcar a restrição.
+    await expect(page.getByTestId('cupom-dest-emails')).toHaveCount(0);
+    await page.getByTestId('cupom-restrito').check();
+
+    // Restrito sem ninguém na lista não salva.
+    await expect(page.getByText('Lista vazia')).toBeVisible();
+    await page.getByRole('button', { name: 'Salvar cupom' }).click();
+    await expect(page.getByText('precisa de ao menos um e-mail ou usuário')).toBeVisible();
+
+    // E-mails colados: normaliza, deduplica e devolve ao campo o que não é e-mail.
+    await page.getByTestId('cupom-dest-emails').fill('Ana@Teste.com, ana@teste.com\nbia@teste.com; lixo');
+    await page.getByTestId('cupom-dest-adicionar').click();
+    await expect(page.getByTestId('cupom-dest-total')).toContainText('(2)');
+    await expect(page.getByTestId('cupom-dest-item')).toHaveCount(2);
+    await expect(page.getByTestId('cupom-dest-emails')).toHaveValue('lixo');
+
+    await page.getByTestId('cupom-dest-emails').fill('');
+    await page.getByRole('button', { name: 'Salvar cupom' }).click();
+
+    const linha = page.locator('tr', { hasText: codigo }).first();
+    await expect(linha).toBeVisible({ timeout: 15_000 });
+    await expect(linha.getByTestId('cupom-badge-restrito')).toContainText('Restrito · 2');
+
+    // Reabre: a lista persistiu (e em minúsculas).
+    await linha.getByRole('button', { name: /editar/i }).click();
+    await expect(page.getByTestId('cupom-dest-item')).toHaveCount(2);
+    await expect(page.getByTestId('cupom-dest-item').first()).toContainText('ana@teste.com');
+
+    // Remove um destinatário e salva: contador da listagem acompanha.
+    await page.getByRole('button', { name: 'Remover ana@teste.com' }).click();
+    await page.getByRole('button', { name: 'Salvar cupom' }).click();
+    await expect(
+      page.locator('tr', { hasText: codigo }).first().getByTestId('cupom-badge-restrito'),
+    ).toContainText('Restrito · 1', { timeout: 15_000 });
+
+    // E-mail colado e NÃO adicionado não pode ser descartado ao salvar.
+    await page.locator('tr', { hasText: codigo }).first()
+      .getByRole('button', { name: /editar/i }).click();
+    await page.getByTestId('cupom-dest-emails').fill('pendente@teste.com');
+    await page.getByRole('button', { name: 'Salvar cupom' }).click();
+    await expect(
+      page.locator('tr', { hasText: codigo }).first().getByTestId('cupom-badge-restrito'),
+    ).toContainText('Restrito · 2', { timeout: 15_000 });
+
+    // Limpeza.
+    await page.locator('tr', { hasText: codigo }).first()
+      .getByRole('button', { name: 'Excluir cupom' }).click();
+    await page.getByRole('button', { name: 'Excluir', exact: true }).click();
+    await expect(page.locator('tr', { hasText: codigo })).toHaveCount(0, { timeout: 15_000 });
+  });
+
   test('usa o select do design system, não o nativo do navegador', async ({ page }) => {
     await page.getByRole('button', { name: 'Novo cupom' }).click();
     // Nenhum <select> nativo no formulário: tipo e plano usam app-ui-select.

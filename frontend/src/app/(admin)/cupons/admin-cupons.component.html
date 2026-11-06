@@ -215,6 +215,124 @@
           </div>
         </div>
 
+        <!-- Restrição a destinatários -->
+        <div class="mt-6 border-t border-blue-200 pt-5" data-testid="cupom-restricao">
+          <label class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300"
+              data-testid="cupom-restrito"
+              [ngModel]="form().restrito"
+              (ngModelChange)="atualizarForm('restrito', $event)"
+            />
+            <span class="text-sm font-semibold text-gray-900">Restringir a e-mails ou usuários específicos</span>
+          </label>
+          <p class="mt-1 text-xs text-gray-500">
+            Só quem estiver na lista consegue usar o cupom. Para quem ainda não tem conta, basta o e-mail:
+            o cupom passa a valer quando a pessoa se cadastrar e confirmar o e-mail. Quem não está na lista
+            vê apenas "Cupom inválido".
+          </p>
+
+          @if (form().restrito) {
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <div class="relative flex flex-col gap-1">
+                <span class="text-xs font-medium text-gray-600">Adicionar usuário da plataforma</span>
+                <input
+                  type="text"
+                  class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  placeholder="Buscar por nome ou e-mail…"
+                  data-testid="cupom-dest-busca"
+                  [ngModel]="buscaDestinatario()"
+                  (ngModelChange)="onBuscaDestinatario($event)"
+                />
+                @if (sugestoesDestinatario().length > 0) {
+                  <ul class="absolute top-full z-10 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                    @for (u of sugestoesDestinatario(); track u.id) {
+                      <li>
+                        <button
+                          type="button"
+                          class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                          (click)="adicionarDestinatarioUsuario(u)"
+                        >
+                          <span class="block font-medium text-gray-900">{{ u.nome_completo ?? 'Sem nome' }}</span>
+                          <span class="block text-xs text-gray-500">{{ u.email }}</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-gray-600">Adicionar e-mails (um por linha, ou separados por vírgula)</span>
+                <textarea
+                  rows="3"
+                  class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  placeholder="aluno1@exemplo.com&#10;aluno2@exemplo.com"
+                  data-testid="cupom-dest-emails"
+                  [ngModel]="emailsColados()"
+                  (ngModelChange)="emailsColados.set($event)"
+                ></textarea>
+                <button
+                  type="button"
+                  class="self-start rounded-lg border border-blue-600 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                  data-testid="cupom-dest-adicionar"
+                  [disabled]="!emailsColados().trim()"
+                  (click)="adicionarEmailsColados()"
+                >
+                  Adicionar à lista
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-600" data-testid="cupom-dest-total">
+                  Destinatários ({{ form().destinatarios.length }})
+                </span>
+                @if (form().destinatarios.length > 0) {
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-red-600 hover:underline"
+                    (click)="limparDestinatarios()"
+                  >
+                    remover todos
+                  </button>
+                }
+              </div>
+
+              @if (form().destinatarios.length === 0) {
+                <p class="mt-2 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Lista vazia: adicione ao menos um destinatário para poder salvar.
+                </p>
+              } @else {
+                <ul class="mt-2 max-h-56 divide-y divide-gray-100 overflow-y-auto rounded-lg border border-gray-200 bg-white">
+                  @for (d of form().destinatarios; track d.email; let i = $index) {
+                    <li class="flex items-center justify-between gap-3 px-3 py-2" data-testid="cupom-dest-item">
+                      <span class="min-w-0 text-sm text-gray-900">
+                        @if (d.userId) {
+                          <span class="font-medium">{{ d.nome ?? 'Sem nome' }}</span>
+                          <span class="block truncate text-xs text-gray-500">{{ d.email }} · usuário</span>
+                        } @else {
+                          <span class="block truncate">{{ d.email }}</span>
+                        }
+                      </span>
+                      <button
+                        type="button"
+                        class="shrink-0 text-xs font-medium text-red-600 hover:underline"
+                        [attr.aria-label]="'Remover ' + d.email"
+                        (click)="removerDestinatario(i)"
+                      >
+                        remover
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+
         <!-- Regra de comissão -->
         <div class="mt-6 border-t border-blue-200 pt-5">
           <label class="flex items-center gap-2">
@@ -330,6 +448,15 @@
               <tr>
                 <td class="px-4 py-3">
                   <span class="font-semibold text-gray-900">{{ c.codigo }}</span>
+                  @if (c.restrito) {
+                    <span
+                      class="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-medium text-purple-700"
+                      data-testid="cupom-badge-restrito"
+                      [title]="'Só ' + c.destinatarios.length + ' destinatário(s) podem usar'"
+                    >
+                      Restrito · {{ c.destinatarios.length }}
+                    </span>
+                  }
                   @if (c.descricao) {
                     <span class="block text-xs text-gray-500">{{ c.descricao }}</span>
                   }
