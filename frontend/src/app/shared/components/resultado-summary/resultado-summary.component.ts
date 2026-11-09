@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { ResultadoTentativa } from '../../../core/models/tentativa';
 import { UiButtonComponent } from '../ui/button/ui-button.component';
+
+/** Vírgula decimal: o `number` pipe sai em en-US ("33.3"), o app não registra pt-BR. */
+const NOTA_FMT = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
 interface TemaPrioritario {
   id: string;
@@ -13,7 +15,7 @@ interface TemaPrioritario {
 @Component({
   selector: 'app-resultado-summary',
   standalone: true,
-  imports: [UiButtonComponent, DecimalPipe, RouterLink],
+  imports: [UiButtonComponent, RouterLink],
   templateUrl: './resultado-summary.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,6 +37,10 @@ export class ResultadoSummaryComponent {
   protected readonly provaRemovida = computed(() => this.provaId() === null);
 
   protected readonly nota = computed(() => this.resultado().tentativa.nota ?? 0);
+
+  protected formatarNota(valor: number): string {
+    return NOTA_FMT.format(valor);
+  }
 
   protected readonly deltaNota = computed(() => {
     const anterior = this.notaAnterior();

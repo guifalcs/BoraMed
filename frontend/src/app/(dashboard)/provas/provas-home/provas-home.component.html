@@ -19,7 +19,7 @@
     @if (resumoTentativaAtiva()) {
       <a
         [routerLink]="rotaTentativaAtiva()"
-        class="mb-5 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
+        class="mb-5 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 shadow-sm bm-press [--press-scale:0.985] hover:bg-amber-100"
       >
         <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white text-amber-600">
           <app-ui-icon [icon]="playCircleIcon" [size]="22" />
@@ -39,7 +39,7 @@
       <!-- Treinos Nacionais -->
       <a
         routerLink="/dashboard/simulados/rede-afya"
-        class="group relative flex flex-col items-start gap-4 overflow-hidden rounded-xl p-6 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:p-9"
+        class="group relative flex flex-col items-start gap-4 overflow-hidden rounded-xl p-6 shadow-md bm-press [--press-scale:0.985] hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:p-9"
         style="background: linear-gradient(145deg, #1E40AF 0%, #2451D8 48%, #6427D9 100%);"
       >
         <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 26%), radial-gradient(circle at 20% 85%, rgba(13,148,136,0.22), transparent 28%);"></div>

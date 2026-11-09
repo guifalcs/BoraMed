@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-11-09 | Melhoria | Simulados com toque e movimento no padrão iOS
+
+Primeira rodada de polimento de UI no módulo de simulados, tendo o iOS como referência (a maioria dos alunos usa aparelhos Apple).
+
+- **Cabeçalho da prova não some mais.** Cronômetro, progresso e **Finalizar** saíam da tela ao rolar uma questão longa, no celular e no desktop. O `sticky` nunca funcionou porque `.main-content` era contêiner de rolagem (`overflow-y: auto`); passou a `overflow-x: clip`. No celular a barra encosta abaixo do topo fixo do app (`--bm-topbar`) e é translúcida.
+  - A correção é no shell do dashboard, então vale para qualquer `sticky` de página dentro dele.
+  - A grade de decks de `/dashboard/flashcards` estourava 25px no celular e ganhou `grid-cols-1`.
+- **Cabeçalho no celular:** contador `0 / 6` em uma linha (quebrava em duas), cronômetro com algarismos tabulares e mais espaço para o nome da prova.
+- **Feedback no toque** (`bm-press`): alternativas, grade de questões, Anterior/Próxima, botões do cabeçalho, cards do hub, modo, opções do Montar simulado, próximos passos do resultado e todo `app-ui-button`.
+- **Fim do hover preso no toque:** `hover:` só vale onde existe hover (`future.hoverOnlyWhenSupported`). Vale para o app inteiro.
+- **Alternativas mais largas no celular:** o botão de eliminar, invisível no toque, deixou de reservar largura, e o card da questão tem menos respiro lateral.
+- **Confirmação** (`app-ui-confirm-dialog`, usada no app e no admin): entra em 200ms em vez de aparecer seca (a classe `animate-in` não existia), texto centralizado e dois botões de mesma largura.
+- **Resultado:** nota com vírgula decimal (`33,3%`, era `33.3%`); blocos entram em cascata e a barra da nota se revela. O brilho das barras anima por `transform` (era `left`).
+- **iOS:** campos com fonte mínima de 16px no toque (o Safari dava zoom ao focar busca e resposta discursiva), sem flash cinza no toque, sem atraso de toque duplo em botões e links.
+- Docs: `docs/design-system.md` (Toque E Movimento, SimuladoHeader).
+
 ## 2026-11-06 | Feature | Cupons restritos a e-mails ou usuários específicos
 
 Um cupom agora pode valer só para quem você escolher: por e-mail (mesmo de quem ainda não tem conta) ou por usuário da plataforma.

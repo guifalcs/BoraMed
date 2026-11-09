@@ -37,13 +37,13 @@
   <!-- Oficiais -->
   @if (abaAtiva() === 'oficiais') {
     @if (loadingOficiais()) {
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @for (_ of [1, 2, 3, 4]; track $index) {
           <app-skeleton variant="card" />
         }
       </div>
     } @else if (decksOficiais().length > 0) {
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @for (deck of decksOficiais(); track deck.id) {
           <app-deck-card [deck]="deck" (estudar)="irParaEstudar($event)" />
         }
@@ -64,13 +64,13 @@
     </div>
 
     @if (loadingMeus()) {
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @for (_ of [1, 2, 3, 4]; track $index) {
           <app-skeleton variant="card" />
         }
       </div>
     } @else if (meusDecks().length > 0) {
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @for (deck of meusDecks(); track deck.id) {
           <app-deck-card
             [deck]="deck"
@@ -109,13 +109,13 @@
     </div>
 
     @if (feedLoading() && feed().length === 0) {
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @for (_ of [1, 2, 3, 4]; track $index) {
           <app-skeleton variant="card" />
         }
       </div>
     } @else if (feed().length > 0) {
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @for (deck of feed(); track deck.id) {
           <app-deck-card
             [deck]="deck"

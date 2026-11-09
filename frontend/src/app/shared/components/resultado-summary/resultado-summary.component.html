@@ -1,8 +1,8 @@
 <div class="mx-auto max-w-2xl space-y-6 py-8 px-4">
   <!-- Nota principal — hero card limpo -->
-  <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-sm">
+  <div class="animate-rise-in rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-sm">
     <p class="text-sm font-medium text-[var(--color-text-muted)] mb-1">Sua nota</p>
-    <p class="text-6xl font-extrabold" [class]="notaClass()">{{ nota() | number:'1.0-1' }}%</p>
+    <p class="text-6xl font-extrabold tracking-tight tabular-nums" [class]="notaClass()">{{ formatarNota(nota()) }}%</p>
     @if (deltaNota() !== null) {
       <p class="mt-1 text-sm font-medium"
         [class.text-[var(--color-success)]]="deltaNota()! > 0"
@@ -10,9 +10,9 @@
         [class.text-[var(--color-text-muted)]]="deltaNota()! === 0"
       >
         @if (deltaNota()! > 0) {
-          ↑ {{ deltaNota() | number:'1.0-1' }}%<span class="sm:hidden"> vs. anterior</span><span class="hidden sm:inline"> em relação à tentativa anterior</span>
+          ↑ {{ formatarNota(deltaNota()!) }}%<span class="sm:hidden"> vs. anterior</span><span class="hidden sm:inline"> em relação à tentativa anterior</span>
         } @else if (deltaNota()! < 0) {
-          ↓ {{ -deltaNota()! | number:'1.0-1' }}%<span class="sm:hidden"> vs. anterior</span><span class="hidden sm:inline"> em relação à tentativa anterior</span>
+          ↓ {{ formatarNota(-deltaNota()!) }}%<span class="sm:hidden"> vs. anterior</span><span class="hidden sm:inline"> em relação à tentativa anterior</span>
         } @else {
           = mesma nota<span class="hidden sm:inline"> da tentativa anterior</span>
         }
@@ -23,7 +23,7 @@
     <!-- Barra de progresso -->
     <div class="mt-5 h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
       <div
-        class="animate-shimmer-bar h-full rounded-full transition-all"
+        class="animate-shimmer-bar animate-bar-reveal h-full rounded-full"
         [class.bg-[var(--color-success)]]="nota() >= 70"
         [class.bg-[var(--color-warning)]]="nota() >= 50 && nota() < 70"
         [class.bg-[var(--color-danger)]]="nota() < 50"
@@ -33,7 +33,7 @@
   </div>
 
   <!-- Stats secundários -->
-  <div class="grid grid-cols-3 gap-3">
+  <div class="animate-rise-in grid grid-cols-3 gap-3" style="--i: 1">
     <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-center"
       [class.border-l-4]="true"
       [class.border-l-[var(--color-success)]]="nota() >= 70"
@@ -70,7 +70,7 @@
 
   <!-- Distribuição por tema -->
   @if (resultado().distribuicao_temas.length > 0) {
-    <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+    <div class="animate-rise-in rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6" style="--i: 2">
       <h3 class="mb-4 text-sm font-semibold text-[var(--color-text)]">Desempenho por tema</h3>
       <ul class="space-y-3">
         @for (d of resultado().distribuicao_temas; track d.tema.id) {
@@ -86,7 +86,7 @@
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
               <div
-                class="h-full rounded-full transition-all"
+                class="h-full rounded-full"
                 [class.bg-[var(--color-success)]]="d.total > 0 && (d.acertos / d.total) >= 0.7"
                 [class.bg-[var(--color-warning)]]="d.total > 0 && (d.acertos / d.total) >= 0.5 && (d.acertos / d.total) < 0.7"
                 [class.bg-[var(--color-danger)]]="d.total === 0 || (d.acertos / d.total) < 0.5"
@@ -100,11 +100,11 @@
   }
 
   <!-- Próximos passos -->
-  <div class="space-y-4">
+  <div class="animate-rise-in space-y-4" style="--i: 3">
     <div class="grid grid-cols-1 gap-3 md:grid-flow-col md:auto-cols-fr">
       @if (temQuestoesErradas() && !provaRemovida()) {
         <a
-          class="rounded-xl border border-rose-100 bg-rose-50 p-4 text-left text-rose-800 transition-colors hover:bg-rose-100"
+          class="rounded-xl border border-rose-100 bg-rose-50 p-4 text-left text-rose-800 bm-press [--press-scale:0.985] hover:bg-rose-100"
           [routerLink]="['/dashboard/simulados', provaId(), 'tentativa', resultado().tentativa.id, 'revisao']"
           [queryParams]="{ filtro: 'erros' }"
           [state]="{ fromResultado: true }"
@@ -122,7 +122,7 @@
 
       @if (!provaRemovida()) {
         <a
-          class="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left text-emerald-800 transition-colors hover:bg-emerald-100"
+          class="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left text-emerald-800 bm-press [--press-scale:0.985] hover:bg-emerald-100"
           [routerLink]="rotaRefazerEstudo()"
           [queryParams]="queryParamsRefazerEstudo()"
         >
@@ -139,7 +139,7 @@
 
       @if (temaPrioritarioParaRevisar(); as tema) {
         <a
-          class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-left text-blue-800 transition-colors hover:bg-blue-100"
+          class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-left text-blue-800 bm-press [--press-scale:0.985] hover:bg-blue-100"
           routerLink="/dashboard/simulados/montar"
           [queryParams]="queryParamsTreinoPrioritario()"
         >

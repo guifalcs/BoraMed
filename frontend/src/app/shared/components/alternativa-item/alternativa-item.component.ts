@@ -62,8 +62,8 @@ export class AlternativaItemComponent {
     // texto do sistema por cima da alternativa. Com o marca-texto na mão a
     // regra se inverte — a seleção é justamente o gesto que grifa.
     const base = this.marcaTextoNaMao()
-      ? 'group block w-full select-text rounded-lg border p-4 text-left text-sm transition-colors'
-      : 'group block w-full select-none rounded-lg border p-4 text-left text-sm transition-colors';
+      ? 'bm-press group block w-full select-text rounded-lg border p-4 text-left text-sm [--press-scale:0.985]'
+      : 'bm-press group block w-full select-none rounded-lg border p-4 text-left text-sm [--press-scale:0.985]';
     if (this.riscada()) {
       return `${base} border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] cursor-default`;
     }
@@ -82,7 +82,7 @@ export class AlternativaItemComponent {
   });
 
   protected readonly letraClasses = computed(() => {
-    const base = 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold';
+    const base = 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors';
     if (this.riscada()) {
       return `${base} bg-transparent text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]`;
     }
@@ -105,7 +105,9 @@ export class AlternativaItemComponent {
     const base =
       '-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]';
     if (this.riscada()) return `${base} opacity-100`;
-    return `${base} opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100`;
+    // Sem hover (toque) o botão nunca aparece — o caminho é o long press — e
+    // invisível ele só roubava largura do texto da alternativa.
+    return `${base} opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:hidden`;
   });
 
   protected readonly rotuloEliminar = computed(() =>

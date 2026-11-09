@@ -109,6 +109,19 @@ Autenticação:
 }
 ```
 
+## Toque E Movimento (referência iOS)
+
+A maioria dos alunos usa iPhone, iPad e Mac: o comportamento de referência é o do iOS, no desktop e no mobile.
+
+* **Feedback no toque:** todo controle responde no instante em que o dedo encosta. Usar a classe `bm-press` (em `styles.css`) no lugar de `transition-colors`/`transition-all`: escala `0.97` em `:active`, 160ms, curva `--ease-out`. Em superfície larga (card, alternativa) somar `[--press-scale:0.985]`. Linha de lista não escala: destaca o fundo com `active:bg-[var(--color-surface-2)]`. `app-ui-button` já tem o feedback embutido.
+* **Hover só onde existe hover:** o Tailwind está com `future.hoverOnlyWhenSupported`, então `hover:` e `group-hover:` não valem no toque. Em CSS próprio, envolver `:hover` em `@media (hover: hover) and (pointer: fine)`. Nada pode depender só de hover para ser alcançado no celular.
+* **Curva e duração:** `var(--ease-out)` para entradas e respostas, UI abaixo de 300ms, só `transform` e `opacity`. Nunca `ease-in`, nunca `transition: all`, nunca partir de `scale(0)`.
+* **Não animar o que se repete:** ação de teclado (A–E, setas, atalhos) e troca de questão não têm animação. O orçamento de encanto fica nos momentos raros (resultado do simulado: `animate-rise-in` com `--i` para a cascata, `animate-bar-reveal` na barra da nota).
+* **Modal:** entra com `opacity 0 → 1` e `scale(0.95) → 1` em 200ms, do centro. `app-ui-confirm-dialog` segue o alerta do iOS: texto centralizado e dois botões de mesma largura.
+* **Campos:** no toque a fonte de `input`, `textarea` e `select` é forçada a no mínimo 16px (regra global em `styles.css`), porque o Safari do iOS dá zoom na página em campo menor que isso. Nunca resolver com `maximum-scale=1`.
+* **Números que mudam** (cronômetro, contador, nota): `tabular-nums` na fonte do app, não fonte monoespaçada.
+* **Movimento reduzido:** o reset global zera durações; o que for cascata com atraso declara o atraso dentro de `@media (prefers-reduced-motion: no-preference)`.
+
 ## Padrão De Marca
 
 ### BrandPanel
@@ -304,15 +317,17 @@ Ação de riscar:
 
 ```css
 position: sticky;
-top: 0;
+top: var(--bm-topbar, 0px); /* 60px no mobile (barra fixa do app), 0 no desktop e no modo foco */
 z-index: 10;
-background: var(--color-surface);
+background: rgb(255 255 255 / 0.9);
+backdrop-filter: blur(24px) saturate(1.5);
 border-bottom: 1px solid var(--color-border);
-padding: 0.75rem 1.5rem;
-display: flex;
-align-items: center;
-justify-content: space-between;
+padding: 0.75rem 1rem;
 ```
+
+* Fica sempre visível ao rolar a questão: cronômetro, progresso e `Finalizar` não podem sair da tela.
+* Material translúcido: a questão passa por baixo da barra. Não baixar de 90% de opacidade, porque onde o blur não é aplicado o texto por baixo briga com o cronômetro.
+* O `sticky` depende de `.main-content` não ser contêiner de rolagem (`overflow-x: clip`, nunca `overflow: auto/hidden`).
 
 * Esquerda: progresso, exemplo `8 / 20`.
 * Centro: nome do simulado.

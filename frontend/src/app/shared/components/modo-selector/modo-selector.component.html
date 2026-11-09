@@ -2,7 +2,7 @@
   @for (opcao of opcoes; track opcao.value) {
     <button
       type="button"
-      class="flex flex-1 flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all"
+      class="flex flex-1 flex-col items-start gap-1 rounded-xl border p-4 text-left bm-press [--press-scale:0.985]"
       [class]="btnClass()(opcao)"
       (click)="selecionar(opcao.value)"
     >
