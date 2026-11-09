@@ -56,8 +56,8 @@
             [disabled]="isLoadingTemas()"
             [attr.aria-busy]="isRecarregandoFormato() && formatoSelecionado() === f.value"
             [class]="formatoSelecionado() === f.value
-              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 px-4 py-3 text-left transition-all disabled:cursor-wait disabled:opacity-80'
-              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)] disabled:cursor-wait disabled:opacity-60'"
+              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 px-4 py-3 text-left bm-press [--press-scale:0.985] disabled:cursor-wait disabled:opacity-80'
+              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left bm-press [--press-scale:0.985] hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)] disabled:cursor-wait disabled:opacity-60'"
           >
             <span class="text-sm font-semibold" [class]="formatoSelecionado() === f.value ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'">
               {{ f.label }}
@@ -84,8 +84,8 @@
             [disabled]="isLoadingTemas()"
             (click)="selecionarFormatoQuestao(fq.value)"
             [class]="formatoQuestaoSelecionado() === fq.value
-              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 px-4 py-3 text-left transition-all'
-              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)]'"
+              ? 'flex flex-col gap-1 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5 px-4 py-3 text-left bm-press [--press-scale:0.985]'
+              : 'flex flex-col gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left bm-press [--press-scale:0.985] hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-2)]'"
           >
             <span class="text-sm font-semibold" [class]="formatoQuestaoSelecionado() === fq.value ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'">
               {{ fq.label }}
@@ -105,8 +105,8 @@
             type="button"
             (click)="setQuantidade(qtd)"
             [class]="quantidade() === qtd
-              ? 'rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-sm'
-              : 'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'"
+              ? 'bm-press rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-sm'
+              : 'bm-press rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'"
           >
             {{ qtd }}
           </button>

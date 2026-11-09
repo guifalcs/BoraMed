@@ -50,6 +50,46 @@ markdown li > p {
   --gradient-brand: linear-gradient(145deg, #1e40af 0%, #2451d8 48%, #6427d9 100%);
   --gradient-brand-highlight: radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.18), transparent 26%);
   --gradient-brand-accent: radial-gradient(circle at 20% 85%, rgba(13, 148, 136, 0.22), transparent 28%);
+  /* Curva única de UI: sai rápido e assenta, sem o "mole" do ease-out nativo. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+html {
+  /* O flash cinza do toque no iOS briga com o feedback de `:active` do app. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role='button'] {
+  /* Sem zoom por toque duplo num controle: o Safari dispara o click na hora. */
+  touch-action: manipulation;
+}
+
+/* O Safari do iOS dá zoom na página ao focar um campo com fonte menor que 16px
+   e não volta no blur. `!important` porque os campos usam `text-sm` do Tailwind. */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* ── Feedback de toque ───────────────────────────────── */
+
+/* Todo controle responde no instante em que o dedo encosta, como no iOS.
+   Substitui `transition-colors`/`transition-all` no elemento: a lista de
+   propriedades é explícita para a cor e a escala andarem juntas.
+   Superfícies largas (cards, linhas) passam `[--press-scale:0.985]`. */
+.bm-press {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+}
+
+.bm-press:active:not(:disabled) {
+  transform: scale(var(--press-scale, 0.97));
 }
 
 html,
@@ -168,9 +208,11 @@ input {
 
 /* ── Shimmer sweep (accent bars, progress fills) ─────── */
 
+/* `transform`, não `left`: roda no compositor, sem recalcular layout a cada quadro.
+   A faixa tem 40% da barra, então -100% → 350% dela cobre de -40% a 140%. */
 @keyframes shimmer-sweep {
-  0%   { left: -40%; }
-  100% { left: 140%; }
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
 }
 
 .animate-shimmer-bar {
@@ -190,6 +232,38 @@ input {
     transparent 100%
   );
   animation: shimmer-sweep 2.5s ease-in-out infinite;
+}
+
+/* ── Entrada do resultado do simulado ────────────────── */
+
+/* Momento raro e de emoção alta: os blocos sobem em cascata e a barra da nota
+   se revela da esquerda. `--i` é a posição do bloco na cascata. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes bar-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+}
+
+.animate-rise-in {
+  animation: rise-in 400ms var(--ease-out) backwards;
+}
+
+.animate-bar-reveal {
+  animation: bar-reveal 700ms var(--ease-out) backwards;
+}
+
+/* O atraso da cascata só existe com movimento ligado: no modo reduzido a
+   duração é zerada e um atraso deixaria o bloco invisível à toa. */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-rise-in {
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  .animate-bar-reveal {
+    animation-delay: 250ms;
+  }
 }
 
 /* ── Breathing glow (status badges, featured links) ──── */

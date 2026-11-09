@@ -13,7 +13,7 @@
   (click)="aoClicarNoFundo($event)"
 >
   <div
-    class="mx-4 w-full max-w-sm animate-in rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-lg"
+    class="bm-confirm-dialog__card mx-4 w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-lg"
   >
     <h2 class="text-lg font-semibold text-[var(--color-text)]">{{ titulo() }}</h2>
     <p class="mt-2 text-sm text-[var(--color-text-muted)]">{{ mensagem() }}</p>
@@ -22,13 +22,13 @@
       <app-ui-button
         [label]="labelCancelar()"
         variant="secondary"
-        [fullWidth]="true"
+        class="flex-1"
         (buttonClick)="cancelar.emit()"
       />
       <app-ui-button
         [label]="labelConfirmar()"
         [variant]="variante()"
-        [fullWidth]="true"
+        class="flex-1"
         (buttonClick)="confirmar.emit()"
       />
     </div>

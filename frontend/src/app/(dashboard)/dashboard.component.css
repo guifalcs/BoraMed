@@ -256,9 +256,15 @@
 
 .main-content {
   min-height: 100vh;
-  overflow-y: auto;
+  /* `clip`, não `auto`: com `auto` o main virava contêiner de rolagem sem nunca
+     rolar (quem rola é a página), e todo `position: sticky` aqui dentro grudava
+     nele em vez da viewport — o cabeçalho da prova sumia ao rolar a questão. */
+  overflow-x: clip;
+  min-width: 0;
   /* Isola compositing layers dos cards dentro deste contexto */
   isolation: isolate;
+  /* Altura da barra fixa do topo: é onde um cabeçalho sticky de página encosta. */
+  --bm-topbar: 0px;
 }
 
 /* ── Bottom nav (mobile only) ────────────────────────── */
@@ -302,6 +308,7 @@
   .shell--foco .main-content {
     padding-top: 0;
     padding-bottom: 0;
+    --bm-topbar: 0px;
   }
 }
 
@@ -319,6 +326,7 @@
   .main-content {
     padding-top: 60px;
     padding-bottom: 64px;
+    --bm-topbar: 60px;
   }
 
   .mobile-header {

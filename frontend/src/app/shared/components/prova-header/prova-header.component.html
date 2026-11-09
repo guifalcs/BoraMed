@@ -1,11 +1,13 @@
-<header class="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
-  <div class="mx-auto flex max-w-3xl items-center gap-3">
+<!-- Material translúcido: a questão passa por baixo da barra, como nas barras do iOS.
+     90% e não menos: onde o blur não é aplicado, o texto por baixo não pode brigar com o cronômetro. -->
+<header class="sticky top-[var(--bm-topbar,0px)] z-10 border-b border-[var(--color-border)] bg-white/90 px-4 py-3 backdrop-blur-xl backdrop-saturate-150">
+  <div class="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3">
 
     <!-- Sair -->
     @if (!focoAtivo()) {
       <button
         type="button"
-        class="shrink-0 flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-primary)] transition-colors"
+        class="shrink-0 flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-primary)] bm-press"
         (click)="sair.emit()"
         aria-label="Sair da prova"
       >
@@ -20,27 +22,27 @@
     <div class="flex flex-col gap-1 flex-1 min-w-0">
       <span class="truncate text-sm font-semibold text-[var(--color-text)]">{{ titulo() }}</span>
       <div class="flex items-center gap-2">
-        <div class="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-surface-2)]" role="progressbar" [attr.aria-valuenow]="totalRespondidas()" [attr.aria-valuemin]="0" [attr.aria-valuemax]="totalQuestoes()" [attr.aria-label]="'Progresso: ' + totalRespondidas() + ' de ' + totalQuestoes() + ' questões respondidas'">
+        <div class="h-1.5 w-16 overflow-hidden sm:w-24 rounded-full bg-[var(--color-surface-2)]" role="progressbar" [attr.aria-valuenow]="totalRespondidas()" [attr.aria-valuemin]="0" [attr.aria-valuemax]="totalQuestoes()" [attr.aria-label]="'Progresso: ' + totalRespondidas() + ' de ' + totalQuestoes() + ' questões respondidas'">
           <div
-            class="h-full rounded-full bg-[var(--color-primary)] transition-all"
+            class="h-full rounded-full bg-[var(--color-primary)] transition-[width] duration-300 ease-out"
             [style.width.%]="progressoPercent()"
           ></div>
         </div>
-        <span class="text-xs text-[var(--color-text-muted)]">
+        <span class="whitespace-nowrap text-xs tabular-nums text-[var(--color-text-muted)]">
           {{ totalRespondidas() }} / {{ totalQuestoes() }}
         </span>
       </div>
     </div>
 
     <!-- Timer + Ações -->
-    <div class="flex shrink-0 items-center gap-3">
+    <div class="flex shrink-0 items-center gap-2 sm:gap-3">
       @if (exibirTimer()) {
         <app-timer [seconds]="segundos()" />
       }
       @if (exibirPausar()) {
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] transition-colors sm:px-3"
+          class="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] bm-press sm:px-3"
           [attr.aria-label]="isPaused() ? 'Retomar' : 'Pausar'"
           (click)="togglePausar.emit()"
         >
@@ -56,7 +58,7 @@
       @if (modo() !== 'visualizar') {
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-2 py-1.5 text-xs font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-60 sm:px-3"
+          class="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-2 py-1.5 text-xs font-medium text-white hover:opacity-90 bm-press disabled:opacity-60 sm:px-3"
           [disabled]="salvando()"
           aria-label="Finalizar prova"
           (click)="finalizar.emit()"
@@ -78,7 +80,7 @@
       <!-- Modo foco -->
       <button
         type="button"
-        class="flex items-center justify-center rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)] transition-colors"
+        class="flex items-center justify-center rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)] bm-press"
         [attr.aria-label]="focoAtivo() ? 'Sair do modo foco' : 'Ativar modo foco'"
         [title]="focoAtivo() ? 'Sair do modo foco' : 'Modo foco'"
         (click)="toggleFoco.emit()"

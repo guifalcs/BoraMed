@@ -19,4 +19,23 @@
 .bm-confirm-dialog::backdrop {
   background-color: rgb(0 0 0 / 0.4);
   backdrop-filter: blur(4px);
+  transition: opacity 200ms ease-out;
+}
+
+/* Entrada: o card assenta vindo de um pouco menor enquanto o fundo escurece.
+   Modal nasce do centro (não tem gatilho de origem). Não há saída animada
+   porque quem tira o diálogo da tela é o `@if` do pai. */
+.bm-confirm-dialog__card {
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+@starting-style {
+  .bm-confirm-dialog__card {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  .bm-confirm-dialog::backdrop {
+    opacity: 0;
+  }
 }

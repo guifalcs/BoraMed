@@ -9,6 +9,11 @@
   padding: 0.75rem 1rem;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), opacity 160ms var(--ease-out);
+}
+
+.ui-button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .ui-button--full {
@@ -21,8 +26,10 @@
   box-shadow: 0 10px 20px rgba(37, 84, 220, 0.18);
 }
 
-.ui-button--primary:hover {
-  background: var(--color-primary-dark);
+@media (hover: hover) and (pointer: fine) {
+  .ui-button--primary:hover {
+    background: var(--color-primary-dark);
+  }
 }
 
 .ui-button--secondary {
@@ -31,8 +38,10 @@
   background: var(--color-surface);
 }
 
-.ui-button--secondary:hover {
-  background: var(--color-surface-2);
+@media (hover: hover) and (pointer: fine) {
+  .ui-button--secondary:hover {
+    background: var(--color-surface-2);
+  }
 }
 
 .ui-button--danger {
@@ -40,8 +49,10 @@
   background: var(--color-danger);
 }
 
-.ui-button--danger:hover {
-  filter: brightness(0.94);
+@media (hover: hover) and (pointer: fine) {
+  .ui-button--danger:hover {
+    filter: brightness(0.94);
+  }
 }
 
 /* Recurso pago: apagado como os itens bloqueados do menu, mas ainda clicável
@@ -50,8 +61,10 @@
   opacity: 0.7;
 }
 
-.ui-button--bloqueado:hover {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .ui-button--bloqueado:hover {
+    opacity: 1;
+  }
 }
 
 .ui-button:disabled {
