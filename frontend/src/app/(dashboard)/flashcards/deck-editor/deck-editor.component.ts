@@ -1,15 +1,34 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Plus, Trash2, ChevronLeft, ChevronRight, MoveLeft, MoveRight, LucideIconData } from 'lucide-angular';
+import {
+  Plus,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  MoveLeft,
+  MoveRight,
+  LucideIconData,
+} from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import type { FlashcardCardPayload } from '../../../core/models/flashcard';
 import { ImageUploadComponent } from '../../../shared/components/image-upload/image-upload.component';
-import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
+import {
+  PageHeaderComponent,
+  type Breadcrumb,
+} from '../../../shared/components/page-header/page-header.component';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
 import { UiCheckboxComponent } from '../../../shared/components/ui/checkbox/ui-checkbox.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
+import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 
 const MAX_CARDS = 200;
 const MIN_CARDS = 1;
@@ -46,8 +65,16 @@ function cardValido(c: CardForm): boolean {
 @Component({
   selector: 'app-deck-editor',
   standalone: true,
-  imports: [ImageUploadComponent, PageHeaderComponent, UiButtonComponent, UiCheckboxComponent, UiIconComponent],
+  imports: [
+    ImageUploadComponent,
+    PageHeaderComponent,
+    UiButtonComponent,
+    UiCheckboxComponent,
+    UiIconComponent,
+    UiConfirmDialogComponent,
+  ],
   templateUrl: './deck-editor.component.html',
+  styleUrl: './deck-editor.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeckEditorComponent {
@@ -75,10 +102,22 @@ export class DeckEditorComponent {
   protected readonly publico = signal(false);
   protected readonly cards = signal<CardForm[]>([cardVazio()]);
   protected readonly erro = signal<string | null>(null);
+  protected readonly erroCarga = signal<string | null>(null);
+  protected readonly erroCampo = signal<'titulo' | 'frente' | 'verso' | null>(null);
+  protected readonly uploads = signal<ReadonlySet<string>>(new Set());
+  protected readonly maxImagemBytes = 2 * 1024 * 1024;
+  protected readonly confirmarRemover = signal<number | null>(null);
+  protected readonly confirmarSaida = signal(false);
+  private resolverSaida: ((valor: boolean) => void) | null = null;
+  private readonly estadoInicial = signal('');
+  protected readonly completos = computed(() => this.cards().filter(cardValido).length);
+  protected readonly sujo = computed(() => this.estadoAtual() !== this.estadoInicial());
 
   // Carrossel: apenas um card é editado por vez.
   protected readonly indiceCardAtivo = signal(0);
-  protected readonly cardAtivo = computed<CardForm | null>(() => this.cards()[this.indiceCardAtivo()] ?? null);
+  protected readonly cardAtivo = computed<CardForm | null>(
+    () => this.cards()[this.indiceCardAtivo()] ?? null,
+  );
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -92,6 +131,7 @@ export class DeckEditorComponent {
   }
 
   constructor() {
+    this.estadoInicial.set(this.estadoAtual());
     const deckId = this.route.snapshot.paramMap.get('deckId');
     if (deckId) {
       this.deckId.set(deckId);
@@ -100,8 +140,9 @@ export class DeckEditorComponent {
     }
   }
 
-  private async carregarDeck(deckId: string): Promise<void> {
+  protected async carregarDeck(deckId: string): Promise<void> {
     this.carregando.set(true);
+    this.erroCarga.set(null);
     const result = await this.flashcardService.obterDeckComCards(deckId);
     if (result.ok) {
       this.titulo.set(result.data.titulo);
@@ -118,8 +159,9 @@ export class DeckEditorComponent {
           : [cardVazio()],
       );
       this.indiceCardAtivo.set(0);
+      this.estadoInicial.set(this.estadoAtual());
     } else {
-      this.toast.error(result.error);
+      this.erroCarga.set(result.error);
     }
     this.carregando.set(false);
   }
@@ -164,17 +206,18 @@ export class DeckEditorComponent {
   }
 
   protected atualizarCard(index: number, campo: keyof CardForm, valor: string | null): void {
-    this.cards.update((prev) =>
-      prev.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)),
-    );
+    this.cards.update((prev) => prev.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)));
   }
 
   protected async salvar(): Promise<void> {
+    if (this.salvando() || this.uploads().size) return;
     this.erro.set(null);
+    this.erroCampo.set(null);
 
     const titulo = this.titulo().trim();
     if (titulo.length < 3 || titulo.length > 120) {
       this.erro.set('O título deve ter entre 3 e 120 caracteres.');
+      this.focarErro('titulo');
       return;
     }
 
@@ -183,14 +226,19 @@ export class DeckEditorComponent {
     const cards = this.cards();
     const incompleto = cards.findIndex((c) => cardTemConteudo(c) && !cardValido(c));
     if (incompleto !== -1) {
-      this.erro.set(`O card ${incompleto + 1} está incompleto: preencha frente e verso com texto ou imagem.`);
+      this.erro.set(
+        `O card ${incompleto + 1} está incompleto: preencha frente e verso com texto ou imagem.`,
+      );
       this.irParaCard(incompleto);
+      this.focarErro(frentePreenchida(cards[incompleto]) ? 'verso' : 'frente');
       return;
     }
 
     const cardsValidos = cards.filter(cardValido);
     if (cardsValidos.length < MIN_CARDS) {
       this.erro.set('Adicione ao menos 1 card com frente e verso preenchidos (texto ou imagem).');
+      this.irParaCard(0);
+      this.focarErro('frente');
       return;
     }
     if (cardsValidos.length > MAX_CARDS) {
@@ -221,14 +269,76 @@ export class DeckEditorComponent {
     this.salvando.set(false);
 
     if (result.ok) {
+      this.estadoInicial.set(this.estadoAtual());
       this.toast.success(this.modoEdicao() ? 'Deck atualizado.' : 'Deck criado.');
       void this.router.navigate(['/dashboard/flashcards'], { queryParams: { aba: 'meus' } });
     } else {
+      this.erro.set(result.error);
       this.toast.error(result.error);
     }
   }
 
   protected cancelar(): void {
     void this.router.navigate(['/dashboard/flashcards'], { queryParams: { aba: 'meus' } });
+  }
+
+  private estadoAtual(): string {
+    return JSON.stringify({
+      titulo: this.titulo(),
+      descricao: this.descricao(),
+      publico: this.publico(),
+      cards: this.cards(),
+    });
+  }
+
+  private focarErro(campo: 'titulo' | 'frente' | 'verso'): void {
+    this.erroCampo.set(campo);
+    requestAnimationFrame(() => document.getElementById(`deck-${campo}`)?.focus());
+  }
+
+  protected atualizarUpload(lado: string, ativo: boolean): void {
+    this.uploads.update((antes) => {
+      const atual = new Set(antes);
+      if (ativo) atual.add(lado);
+      else atual.delete(lado);
+      return atual;
+    });
+  }
+
+  protected pedirRemocao(): void {
+    if (cardTemConteudo(this.cards()[this.indiceCardAtivo()]))
+      this.confirmarRemover.set(this.indiceCardAtivo());
+    else this.removerCard(this.indiceCardAtivo());
+  }
+
+  protected removerConfirmado(): void {
+    const indice = this.confirmarRemover();
+    if (indice !== null) this.removerCard(indice);
+    this.confirmarRemover.set(null);
+  }
+
+  podeSair(): boolean | Promise<boolean> {
+    if (this.salvando() || this.uploads().size) {
+      this.toast.error('Aguarde o envio ou salvamento terminar para sair.');
+      return false;
+    }
+    if (!this.sujo()) return true;
+    this.confirmarSaida.set(true);
+    return new Promise<boolean>((resolve) => {
+      this.resolverSaida = resolve;
+    });
+  }
+
+  protected responderSaida(sair: boolean): void {
+    this.confirmarSaida.set(false);
+    this.resolverSaida?.(sair);
+    this.resolverSaida = null;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protected aoFecharPagina(evento: BeforeUnloadEvent): void {
+    if (!this.sujo() && !this.salvando() && !this.uploads().size) return;
+    evento.preventDefault();
+    evento.returnValue = '';
   }
 }

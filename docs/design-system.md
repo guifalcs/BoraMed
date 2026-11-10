@@ -590,3 +590,12 @@ Os cards do histórico mantêm o formato compacto e ícones na posição superio
 Os filtros ficam em painel com rótulos e controles nativos de pelo menos 44px. O escopo é explícito: evolução e tentativas acompanham os filtros; indicadores e temas mostram todo o período. A lista usa links reais para o resultado e botão separado de favorito, título completo e nota/acertos visíveis sem rolagem horizontal.
 
 Apenas feedback de pressão discreto nos controles; respeitar movimento reduzido e hover com ponteiro. O gráfico de evolução atualiza sem animação e tem nome acessível. Temas mostram cinco itens e expansão explícita, sem cortar o último item num painel com altura fixa. Detalhes e comparação: [revisão do histórico](ui/historico.md).
+
+## Flashcards: biblioteca, edição e estudo (10/11/2026)
+
+- Decks usam título completo, privacidade/origem e ação explícita de estudo. Descrição é prévia de duas linhas; autor quebra linha. Estudar e ações de gerenciamento/curtida são botões nativos independentes, sem controles interativos aninhados.
+- Biblioteca com seleção de origem azul sublinhada, uma parada de Tab entre abas, setas/Home/End e painel associado. Criar deck é visível sem entrar em Meus decks.
+- Estudo mantém o card com gradiente de marca; a virada é curta (220ms, `--ease-out`), sem entrada por card ou dica pulsante. Navegação, avaliação e progresso têm funções distintas; controles se reorganizam com largura/texto ampliado.
+- Editor com labels associados, um card por vez, ferramentas de pelo menos 44px e imagens em área opcional. Campos e navegação ficam indisponíveis durante operações que poderiam produzir conteúdo inconsistente.
+- Erros permanecem no conteúdo com retry. Modal de curtidas usa dialog nativo, Escape, ciclo de foco e retorno ao acionador.
+- Auditoria, skills, limites e comparações: [Flashcards — revisão de UI](ui/flashcards.md).

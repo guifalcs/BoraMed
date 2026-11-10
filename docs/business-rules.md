@@ -271,6 +271,9 @@ Uso interno como refer?ncia de produto. N?o apresentar como calend?rio oficial, 
 
 ## Flashcards
 
+* **UI (10/11/2026):** biblioteca com títulos completos, origem/privacidade, ação de estudar e criação visível; abas acessíveis e falhas com retry. Estudo separa revelar/avaliar da navegação; o progresso conta avaliações, não cards visitados. Embaralhar pede confirmação quando há respostas. Reforço usa somente os erros da rodada; **Refazer deck completo** restaura a coleção original. O resultado é explicitamente local à rodada.
+* **Editor:** campos associados a labels, imagens opcionais e seleção limitada a 2 MB; upload impede salvar/trocar de card, gravação bloqueia o formulário, falha mantém conteúdo e sair com alterações pede confirmação. Detalhes e antes/depois: `docs/ui/flashcards.md`.
+
 * Três origens de deck: **oficiais** (criados pelo admin, `user_id IS NULL` + `oficial=true`), **da comunidade** (decks de usuários com `publico=true`) e **meus decks** (privados ou públicos do próprio usuário).
 * Escrita de usuário SOMENTE via RPCs `SECURITY DEFINER` (`flashcards_criar_deck`, `flashcards_atualizar_deck`, `flashcards_excluir_deck`, `flashcards_toggle_like`); admin cria/atualiza deck oficial via RPC atômico `flashcards_admin_salvar_deck_oficial` (exclusão direta por policy). Leitura exige assinatura ativa (exceto decks próprios).
 * Deck oficial tem estado de **rascunho**: só fica visível para alunos quando `publico=true` (admin publica explicitamente no editor). Vale para decks e cards (policy de SELECT exige `publico`).

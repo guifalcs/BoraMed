@@ -1,103 +1,84 @@
-<div
-  role="button"
-  tabindex="0"
-  class="group flex h-full w-full cursor-pointer flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-left shadow-sm transition-all hover:shadow-md hover:border-[var(--color-primary-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-  (click)="estudar.emit(deck().id)"
-  (keydown.enter)="estudar.emit(deck().id)"
-  (keydown.space)="estudar.emit(deck().id)"
->
-  <div class="flex items-start justify-between gap-3">
-    <div class="flex min-w-0 flex-col gap-1">
-      <span class="truncate text-base font-semibold text-[var(--color-text)]">{{ deck().titulo }}</span>
-      <!-- Sempre renderizada (mesmo vazia) para todos os cards terem a mesma altura -->
-      <span class="line-clamp-2 min-h-8 text-xs text-[var(--color-text-muted)]">{{ deck().descricao }}</span>
-    </div>
-    <div class="flex shrink-0 flex-col items-end gap-1">
+<article class="deck" [attr.aria-label]="deck().titulo" [attr.aria-busy]="ocupado()">
+  <button
+    type="button"
+    class="deck-study"
+    [disabled]="ocupado() || deck().cards_count === 0"
+    [attr.aria-label]="'Estudar deck: ' + deck().titulo"
+    (click)="estudar.emit(deck().id)"
+  >
+    <span class="deck-top">
+      <span class="deck-icon"><app-ui-icon [icon]="layersIcon" [size]="21" /></span>
       @if (isOficial()) {
-        <span class="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">Oficial</span>
-      }
-      @if (isPublico()) {
-        <span class="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
-          <app-ui-icon [icon]="usersIcon" [size]="11" />
-          Público
-        </span>
-      }
-    </div>
-  </div>
-
-  @if (mostrarAutor()) {
-    <p class="mt-2 truncate text-xs text-[var(--color-text-muted)]">
-      @if (autorNome(); as autor) {
-        por {{ autor }} · {{ deck().criado_em | timeAgo }}
+        <span class="deck-badge deck-badge--oficial">Oficial</span>
+      } @else if (isPublico() || isFeed()) {
+        <span class="deck-badge"><app-ui-icon [icon]="usersIcon" [size]="12" />Público</span>
       } @else {
-        deck oficial · {{ deck().criado_em | timeAgo }}
+        <span class="deck-badge deck-badge--privado"
+          ><app-ui-icon [icon]="lockIcon" [size]="12" />Privado</span
+        >
       }
-    </p>
-  }
-
-  <div class="mt-auto flex items-center justify-between gap-3 pt-3">
-    <div class="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-      <span class="inline-flex items-center gap-1">
-        <app-ui-icon [icon]="layersIcon" [size]="13" />
-        {{ deck().cards_count }} card{{ deck().cards_count === 1 ? '' : 's' }}
-      </span>
-
-      @if (isFeed()) {
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-surface-2)]"
-          [class.text-red-500]="curtidoPorMim()"
-          [attr.aria-pressed]="curtidoPorMim()"
-          [attr.aria-label]="curtidoPorMim() ? 'Descurtir deck' : 'Curtir deck'"
-          (click)="handleToggleLike($event)"
-        >
-          <app-ui-icon [icon]="heartIcon" [size]="13" />
-          {{ deck().likes_count }}
-        </button>
-      } @else if (podeCurtir()) {
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-surface-2)]"
-          [class.text-red-500]="curtidoPorMim()"
-          [attr.aria-pressed]="curtidoPorMim()"
-          [attr.aria-label]="curtidoPorMim() ? 'Descurtir deck' : 'Curtir deck'"
-          (click)="handleToggleLike($event)"
-        >
-          <app-ui-icon [icon]="heartIcon" [size]="13" />
-          {{ deck().likes_count }}
-        </button>
-        <button
-          type="button"
-          class="rounded px-1 py-0.5 underline transition-colors hover:bg-[var(--color-surface-2)]"
-          (click)="handleVerCurtidas($event)"
-        >
-          ver curtidas
-        </button>
-      } @else if (!isOficial()) {
-        <span class="inline-flex items-center gap-1">
-          <app-ui-icon [icon]="heartIcon" [size]="13" />
-          {{ deck().likes_count }}
-        </span>
-      }
-    </div>
-
-    @if (mostrarAcoes()) {
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)]"
-          (click)="handleEditar($event)"
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          class="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
-          (click)="handleExcluir($event)"
-        >
-          Excluir
-        </button>
-      </div>
+    </span>
+    <h3 class="deck-title">{{ deck().titulo }}</h3>
+    @if (deck().descricao) {
+      <span class="deck-description" [title]="deck().descricao ?? ''">{{ deck().descricao }}</span>
     }
-  </div>
-</div>
+    @if (mostrarAutor()) {
+      <span class="deck-author"
+        >{{ autorNome() ? 'Por ' + autorNome() : 'Equipe BoraMed' }}
+        <span aria-hidden="true">·</span> {{ deck().criado_em | timeAgo }}</span
+      >
+    }
+    <span class="deck-study-bottom"
+      ><span
+        >{{ fmtNumero(deck().cards_count) }} {{ deck().cards_count === 1 ? 'card' : 'cards' }}</span
+      ><span class="deck-cta">{{ deck().cards_count ? 'Estudar →' : 'Sem cards' }}</span></span
+    >
+  </button>
+  @if (isFeed() || podeCurtir() || mostrarAcoes() || (!isOficial() && deck().likes_count > 0)) {
+    <footer class="deck-actions">
+      <div class="deck-social">
+        @if (isFeed() || podeCurtir()) {
+          <button
+            type="button"
+            class="deck-like bm-press"
+            [class.is-liked]="curtidoPorMim()"
+            [disabled]="ocupado()"
+            [attr.aria-pressed]="curtidoPorMim()"
+            [attr.aria-label]="curtidoPorMim() ? 'Descurtir deck' : 'Curtir deck'"
+            (click)="handleToggleLike($event)"
+          >
+            <app-ui-icon [icon]="heartIcon" [size]="17" />{{ fmtNumero(deck().likes_count) }}
+          </button>
+        } @else if (!isOficial()) {
+          <span class="deck-like"
+            ><app-ui-icon [icon]="heartIcon" [size]="16" />{{ fmtNumero(deck().likes_count) }}</span
+          >
+        }
+        @if (podeCurtir()) {
+          <button type="button" class="deck-action" (click)="handleVerCurtidas($event)">
+            ver curtidas
+          </button>
+        }
+      </div>
+      @if (mostrarAcoes()) {
+        <div class="deck-manage">
+          <button
+            type="button"
+            class="deck-action"
+            [disabled]="ocupado()"
+            (click)="handleEditar($event)"
+          >
+            Editar</button
+          ><button
+            type="button"
+            class="deck-action deck-action--danger"
+            [disabled]="ocupado()"
+            (click)="handleExcluir($event)"
+          >
+            Excluir
+          </button>
+        </div>
+      }
+    </footer>
+  }
+</article>

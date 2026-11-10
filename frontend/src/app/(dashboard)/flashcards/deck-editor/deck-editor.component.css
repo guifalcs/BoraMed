@@ -1,0 +1,275 @@
+:host {
+  display: block;
+}
+.editor {
+  max-width: 64rem;
+  margin: auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.editor-form {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.editor h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.editor-details {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+.editor-details h2 {
+  margin-bottom: 0.35rem;
+}
+.editor label {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.editor input,
+.editor textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+.editor input:focus,
+.editor textarea:focus {
+  outline: 2px solid var(--color-action);
+  outline-offset: 2px;
+}
+.editor [aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+.editor textarea {
+  resize: vertical;
+}
+.editor-public-label {
+  display: inline-block;
+  white-space: normal;
+  font-size: 0.875rem;
+  font-weight: 550;
+}
+.editor-privacy {
+  margin: 0 0 0 1.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.editor-cards {
+  margin-top: 1.5rem;
+}
+.editor-cards-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.editor-cards-head p {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.editor-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.625rem;
+  background: #eff6ff;
+  color: var(--color-action);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.editor-card-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.editor-card-nav,
+.editor-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.editor-card-nav > span {
+  padding: 0 0.4rem;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.editor-icon {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: #475569;
+  cursor: pointer;
+}
+.editor-icon--danger {
+  color: var(--color-danger);
+}
+.editor button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.editor-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+.editor-side {
+  min-width: 0;
+}
+.editor-side > p {
+  margin: 0.3rem 0 0.6rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.editor-char {
+  display: block;
+  margin-top: 0.35rem;
+  text-align: right;
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+.editor-side details {
+  margin-top: 0.5rem;
+}
+.editor-side summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--color-action);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.editor-side details[open] summary {
+  margin-bottom: 0.5rem;
+}
+.editor-error {
+  padding: 0.9rem 1rem;
+  margin: 1rem 0 0;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1.25rem;
+}
+.editor-footer > div:first-child {
+  flex: 1 1 15rem;
+  min-width: 0;
+}
+.editor-footer p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #475569;
+}
+.editor-footer .editor-hint {
+  margin-top: 0.3rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+.editor-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.editor-state {
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+.editor-state p {
+  margin: 0.5rem 0 1rem;
+}
+.editor button:focus-visible,
+.editor summary:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 2px;
+}
+@media (min-width: 768px) {
+  .editor {
+    padding: 2rem 2rem 3rem;
+  }
+  .editor-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editor-add:active {
+    transform: none;
+  }
+}
+.editor app-page-header {
+  overflow-wrap: anywhere;
+}
+.editor-card-nav {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  max-width: 100%;
+}
+.editor-card-nav > span {
+  overflow-wrap: anywhere;
+}
+.editor-card-tools {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
