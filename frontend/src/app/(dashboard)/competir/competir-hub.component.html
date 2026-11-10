@@ -1,314 +1,457 @@
-<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
-  <section class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-    <div class="border-b border-[var(--color-border)] px-5 py-5 md:px-6">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div class="min-w-0">
-          <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <app-ui-icon [icon]="trophyIcon" [size]="22" />
-          </div>
-          <h1 class="text-2xl font-extrabold tracking-normal text-[var(--color-text)] md:text-3xl">
-            Competitivo
-          </h1>
-        </div>
-
-        <a
-          routerLink="/dashboard/simulados"
-          class="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--color-action)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-        >
-          Fazer simulado
-        </a>
-      </div>
+<div class="competitivo-page">
+  <header class="page-header">
+    <div class="page-title">
+      <span class="title-icon"><app-ui-icon [icon]="trophyIcon" [size]="22" /></span>
+      <h1>Competitivo</h1>
     </div>
+    <a routerLink="/dashboard/simulados" class="secondary-action">
+      Fazer simulado <app-ui-icon [icon]="arrowIcon" [size]="16" />
+    </a>
+  </header>
 
-    <div class="grid gap-3 p-5 md:grid-cols-3 md:p-6">
-      @if (isLoadingStats()) {
-        @for (_ of [1, 2, 3]; track $index) {
-          <div class="h-32 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
-        }
-      } @else {
-        @for (metric of metrics(); track metric.label) {
-          <article class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-4">
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="text-xs font-medium text-[var(--color-text-muted)]">{{ metric.label }}</p>
-                <p class="mt-2 text-2xl font-extrabold leading-none text-[var(--color-text)]">{{ metric.value }}</p>
-              </div>
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" [class]="metricToneClass(metric.tone)">
-                <app-ui-icon [icon]="metric.icon" [size]="17" />
-              </div>
-            </div>
-            <p class="mt-3 text-xs leading-5 text-[var(--color-text-muted)]">{{ metric.detail }}</p>
-          </article>
-        }
+  <section
+    class="stats-panel"
+    aria-label="Seu progresso de estudo"
+    [attr.aria-busy]="isLoadingStats()"
+  >
+    @if (isLoadingStats()) {
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="stat-skeleton animate-pulse"></div>
       }
-    </div>
+      <span class="sr-only" role="status">Carregando seu progresso…</span>
+    } @else if (statsError()) {
+      <div class="inline-error stats-error" role="alert">
+        <p>{{ statsError() }}</p>
+        <button class="text-action" (click)="loadStats()">Tentar novamente</button>
+      </div>
+    } @else {
+      @for (metric of metrics(); track metric.label) {
+        <article class="stat">
+          <span class="stat-icon" [class]="metricToneClass(metric.tone)"
+            ><app-ui-icon [icon]="metric.icon" [size]="18"
+          /></span>
+          <div class="stat-label">
+            <h2>{{ metric.label }}</h2>
+            <p>{{ metric.detail }}</p>
+          </div>
+          <p class="stat-value">{{ metric.value }}</p>
+        </article>
+      }
+    }
   </section>
 
-  <!-- Desafio Diário -->
-  <section class="mt-6 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-    <div class="border-b border-[var(--color-border)] px-5 py-4 md:px-6">
-      <div class="flex items-center gap-3">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-          <app-ui-icon [icon]="calendarIcon" [size]="18" />
+  <div class="competition-grid">
+    <section
+      class="panel challenge-panel"
+      aria-labelledby="desafio-titulo"
+      [attr.aria-busy]="isLoadingDesafio() || isSubmittingDesafio()"
+    >
+      <header class="panel-header">
+        <div class="section-title">
+          <span class="section-icon"><app-ui-icon [icon]="calendarIcon" [size]="19" /></span>
+          <h2 id="desafio-titulo">Desafio de hoje</h2>
         </div>
-        <div>
-          <h2 class="text-sm font-semibold text-[var(--color-text)]">Desafio de hoje</h2>
-          <p class="mt-0.5 hidden text-xs text-[var(--color-text-muted)] sm:block">Uma questão por dia, compartilhada com todos os usuários.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="p-5 md:p-6">
-      @switch (desafioEstado()) {
-        @case ('loading') {
-          <div class="space-y-3">
-            <div class="h-4 w-3/4 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-            <div class="h-4 w-full animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-            <div class="h-4 w-2/3 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-            <div class="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+        @if (desafioEstado() === 'answered') {
+          <span class="status-badge"
+            ><app-ui-icon [icon]="checkCircleIcon" [size]="14" /> Concluído</span
+          >
+        } @else if (desafioEstado() === 'pending' || desafioEstado() === 'submitting') {
+          <span class="section-meta">1 questão</span>
+        }
+      </header>
+      <div class="panel-body">
+        @switch (desafioEstado()) {
+          @case ('loading') {
+            <div class="challenge-skeleton" role="status">
+              <span class="sr-only">Carregando desafio…</span>
               @for (_ of [1, 2, 3, 4]; track $index) {
                 <div class="h-12 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
               }
             </div>
-          </div>
-        }
-        @case ('unavailable') {
-          <div class="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-8 text-center">
-            <p class="text-sm font-semibold text-[var(--color-text)]">Sem desafio disponível hoje</p>
-            <p class="mt-1 text-xs text-[var(--color-text-muted)]">Volte amanhã para uma nova questão.</p>
-          </div>
-        }
-        @default {
-          @if (desafio(); as d) {
-            <!-- Enunciado -->
-            <div class="mb-5">
-              @if (d.questao?.disciplina) {
-                <span class="mb-3 inline-block rounded-full bg-[var(--color-bg-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
-                  {{ d.questao!.disciplina }}
-                </span>
-              }
-              @if (d.questao?.imagem_url) {
-                <figure class="mb-6 flex flex-col items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-3">
-                  <img
-                    [src]="d.questao!.imagem_url! | imagemProtegida | async"
-                    [alt]="d.questao!.imagem_legenda ?? 'Imagem da questão do desafio diário'"
-                    class="max-h-[60vh] w-full max-w-2xl rounded-lg object-contain"
-                    width="768"
-                    height="432"
-                    decoding="async"
-                  />
-                  @if (d.questao?.imagem_legenda) {
-                    <figcaption class="text-center text-xs text-[var(--color-text-muted)]">
-                      {{ d.questao!.imagem_legenda }}
-                    </figcaption>
-                  }
-                </figure>
-              }
-              @if (d.questao?.enunciado_apoio) {
-                <div class="mb-4 rounded-lg bg-[var(--color-bg-soft)] p-4 text-sm leading-6 text-[var(--color-text)]">
-                  <markdown [data]="d.questao!.enunciado_apoio! | formatarEnunciado"></markdown>
-                </div>
-              }
-              <div class="text-sm leading-6 text-[var(--color-text)]">
-                <markdown [data]="(d.questao?.enunciado ?? '') | formatarEnunciado"></markdown>
-              </div>
+          }
+          @case ('error') {
+            <div class="empty-state" role="alert">
+              <p class="state-title">Não foi possível carregar o desafio</p>
+              <p>Tente novamente para ver a questão de hoje.</p>
+              <button class="secondary-action" (click)="loadDesafio()">Tentar novamente</button>
             </div>
-
-            <!-- Alternativas -->
-            <div class="grid grid-cols-1 gap-2">
-              @for (alt of d.alternativas; track alt.id) {
-                <button
-                  type="button"
-                  class="flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-all"
-                  [class]="alternativaClass(alt)"
-                  [disabled]="desafioEstado() === 'answered' || desafioEstado() === 'submitting'"
-                  (click)="handleResponder(alt.id)"
-                >
-                  <span class="mt-0.5 shrink-0 text-xs font-extrabold">{{ alt.letra }}.</span>
-                  <span class="flex min-w-0 flex-1 flex-col gap-2">
-                    <span class="leading-5">{{ alt.texto }}</span>
-                    @if (alt.imagem_url) {
+          }
+          @case ('unavailable') {
+            <div class="empty-state">
+              <span class="empty-icon"><app-ui-icon [icon]="calendarIcon" [size]="24" /></span>
+              <p class="state-title">Sem desafio disponível hoje</p>
+              <p>Volte amanhã para uma nova questão ou continue estudando com um simulado.</p>
+              <a routerLink="/dashboard/simulados" class="secondary-action">Fazer simulado</a>
+            </div>
+          }
+          @default {
+            @if (desafio(); as d) {
+              <div class="question-content">
+                @if (d.questao?.disciplina) {
+                  <span class="discipline">{{ d.questao!.disciplina }}</span>
+                }
+                @if (d.questao?.imagem_url) {
+                  <figure class="question-figure">
+                    <button
+                      type="button"
+                      class="image-zoom"
+                      aria-label="Ampliar imagem da questão"
+                      (click)="ampliarImagemAlternativa($event, d.questao!.imagem_url)"
+                    >
                       <img
-                        [src]="alt.imagem_url | imagemProtegida | async"
-                        [alt]="'Imagem da alternativa ' + alt.letra"
-                        loading="lazy"
+                        [src]="d.questao!.imagem_url! | imagemProtegida | async"
+                        [alt]="d.questao!.imagem_legenda ?? 'Imagem da questão do desafio diário'"
+                        width="768"
+                        height="432"
                         decoding="async"
-                        class="max-h-56 w-auto max-w-full cursor-zoom-in self-start rounded-lg border border-black/10 bg-white object-contain"
-                        (click)="ampliarImagemAlternativa($event, alt.imagem_url)"
                       />
+                      <span><app-ui-icon [icon]="zoomIcon" [size]="16" /> Ampliar</span>
+                    </button>
+                    @if (d.questao?.imagem_legenda) {
+                      <figcaption>{{ d.questao!.imagem_legenda }}</figcaption>
                     }
-                  </span>
-                  @if (desafioEstado() === 'answered') {
-                    @if (alt.correta === true) {
-                      <app-ui-icon class="ml-auto mt-0.5 shrink-0 text-emerald-600" [icon]="checkCircleIcon" [size]="16" />
-                    } @else if (alt.id === d.minha_resposta?.alternativa_id && !d.minha_resposta?.correta) {
-                      <app-ui-icon class="ml-auto mt-0.5 shrink-0 text-red-500" [icon]="xCircleIcon" [size]="16" />
-                    }
-                  }
-                </button>
-              }
-            </div>
-
-            <!-- Resultado após resposta -->
-            @if (desafioEstado() === 'answered' && d.minha_resposta) {
-              <div class="mt-4 space-y-3">
-                <!-- Badge XP + resultado -->
-                <div class="flex flex-wrap items-center gap-2">
-                  @if (d.minha_resposta.correta) {
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      <app-ui-icon [icon]="checkCircleIcon" [size]="13" />
-                      Resposta correta!
-                    </span>
-                  } @else {
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
-                      <app-ui-icon [icon]="xCircleIcon" [size]="13" />
-                      Resposta incorreta
-                    </span>
-                  }
-                  <span class="rounded-full bg-[var(--color-bg-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
-                    +{{ d.minha_resposta.xp_ganho }} XP
-                  </span>
+                  </figure>
+                }
+                @if (d.questao?.enunciado_apoio) {
+                  <div class="question-support">
+                    <markdown [data]="d.questao!.enunciado_apoio! | formatarEnunciado" />
+                  </div>
+                }
+                <div class="question-stem">
+                  <markdown [data]="d.questao?.enunciado ?? '' | formatarEnunciado" />
                 </div>
+              </div>
 
-                <!-- Estatísticas -->
-                @if (d.estatistica.total_responderam > 0) {
-                  <p class="text-xs text-[var(--color-text-muted)]">
-                    {{ d.estatistica.percentual_acerto }}% dos participantes acertaram
+              @if (desafioEstado() === 'answered' && minhaResposta(); as resposta) {
+                <div class="answer-result" [class.result-wrong]="!resposta.correta" role="status">
+                  <app-ui-icon
+                    [icon]="resposta.correta ? checkCircleIcon : xCircleIcon"
+                    [size]="21"
+                  />
+                  <div>
+                    <p class="result-title">
+                      {{ resposta.correta ? 'Resposta correta!' : 'Resposta incorreta' }}
+                    </p>
+                    <p>
+                      {{
+                        resposta.correta
+                          ? 'Desafio de hoje concluído.'
+                          : 'Confira a correção e continue aprendendo.'
+                      }}
+                    </p>
+                  </div>
+                  <span class="xp-badge">+{{ formatNumber(resposta.xp_ganho) }} XP</span>
+                </div>
+              }
+
+              <fieldset class="alternatives">
+                <legend>
+                  {{
+                    desafioEstado() === 'answered'
+                      ? 'Alternativas e correção'
+                      : 'Escolha uma alternativa'
+                  }}
+                </legend>
+                @for (alt of d.alternativas; track alt.id) {
+                  <div
+                    class="alternative"
+                    [class]="alternativaClass(alt)"
+                    [class.is-selected]="
+                      alt.id === alternativaSelecionada() && desafioEstado() !== 'answered'
+                    "
+                  >
+                    <label class="alternative-label">
+                      <input
+                        type="radio"
+                        name="desafio-alternativa"
+                        [disabled]="desafioEstado() !== 'pending'"
+                        class="sr-only"
+                        [value]="alt.id"
+                        [checked]="
+                          alt.id ===
+                          (minhaResposta()?.alternativa_id ??
+                            (desafioEstado() === 'answered' ? null : alternativaSelecionada()))
+                        "
+                        (change)="selecionarAlternativa(alt.id)"
+                      />
+                      <span
+                        class="alternative-letter"
+                        [class.letter-correct]="
+                          desafioEstado() === 'answered' && alt.correta === true
+                        "
+                        [class.letter-wrong]="
+                          desafioEstado() === 'answered' &&
+                          alt.id === minhaResposta()?.alternativa_id &&
+                          !minhaResposta()?.correta
+                        "
+                        aria-hidden="true"
+                        >{{ alt.letra }}</span
+                      >
+                      <span class="alternative-content"
+                        ><span class="sr-only">{{ alt.letra }}. </span>{{ alt.texto }}
+                        @if (desafioEstado() === 'answered') {
+                          @if (alt.correta === true) {
+                            <span class="alternative-verdict"
+                              ><app-ui-icon [icon]="checkCircleIcon" [size]="14" /> Correta{{
+                                alt.id === minhaResposta()?.alternativa_id ? ' · sua resposta' : ''
+                              }}</span
+                            >
+                          } @else if (alt.id === minhaResposta()?.alternativa_id) {
+                            <span class="alternative-verdict"
+                              >Sua resposta{{
+                                minhaResposta()?.correta ? '' : ' · incorreta'
+                              }}</span
+                            >
+                          }
+                        }
+                      </span>
+                    </label>
+                    @if (alt.imagem_url) {
+                      <figure class="alternative-figure">
+                        <figcaption>Imagem da alternativa {{ alt.letra }}</figcaption>
+                        <button
+                          type="button"
+                          class="image-zoom"
+                          [attr.aria-label]="'Ampliar imagem da alternativa ' + alt.letra"
+                          (click)="ampliarImagemAlternativa($event, alt.imagem_url)"
+                        >
+                          <img
+                            [src]="alt.imagem_url | imagemProtegida | async"
+                            [alt]="'Imagem da alternativa ' + alt.letra"
+                            loading="lazy"
+                            decoding="async"
+                          /><span><app-ui-icon [icon]="zoomIcon" [size]="16" /> Ampliar</span>
+                        </button>
+                      </figure>
+                    }
+                  </div>
+                }
+              </fieldset>
+
+              @if (desafioEstado() === 'pending' || desafioEstado() === 'submitting') {
+                <div class="submit-area">
+                  @if (respostaError()) {
+                    <p class="submit-error" role="alert">
+                      {{ respostaError() }} Sua alternativa continua selecionada. Tente confirmar
+                      novamente.
+                    </p>
+                  }
+                  <button
+                    type="button"
+                    class="primary-action"
+                    [disabled]="!alternativaSelecionada() || isSubmittingDesafio()"
+                    (click)="handleResponder()"
+                  >
+                    {{ isSubmittingDesafio() ? 'Registrando resposta…' : 'Confirmar resposta' }}
+                  </button>
+                  <p role="status">
+                    {{
+                      isSubmittingDesafio()
+                        ? 'Aguarde o registro da sua resposta.'
+                        : 'Você pode trocar a alternativa antes de confirmar.'
+                    }}
+                  </p>
+                </div>
+              }
+              @if (desafioEstado() === 'answered') {
+                @if (correcaoPendente()) {
+                  <div class="correction-pending" role="status">
+                    <p>
+                      Sua resposta já está registrada. Atualize para carregar a correção completa.
+                    </p>
+                    <button
+                      class="text-action"
+                      [disabled]="isLoadingDesafio()"
+                      (click)="loadDesafio()"
+                    >
+                      {{ isLoadingDesafio() ? 'Atualizando…' : 'Atualizar correção' }}
+                    </button>
+                    @if (desafioError()) {
+                      <p role="alert">{{ desafioError() }}</p>
+                    }
+                  </div>
+                }
+                @if (d.minha_resposta && d.estatistica.total_responderam > 0) {
+                  <p class="challenge-stat">
+                    {{ formatNumber(d.estatistica.percentual_acerto) }}% de acerto entre
+                    {{ formatNumber(d.estatistica.total_responderam) }}
+                    {{ d.estatistica.total_responderam === 1 ? 'participante' : 'participantes' }}.
                   </p>
                 }
-
-                @if (d.questao?.explicacao) {
+                @if (d.minha_resposta && d.questao?.explicacao) {
                   <app-questao-explicacao
                     [explicacao]="d.questao!.explicacao!"
                     [letrasCorretas]="letrasCorretas(d.alternativas)"
                   />
                 }
-              </div>
-            }
-
-            <!-- Loading overlay durante submit -->
-            @if (desafioEstado() === 'submitting') {
-              <p class="mt-3 text-xs text-[var(--color-text-muted)]">Registrando resposta…</p>
+                @if (!correcaoPendente()) {
+                  <p class="next-challenge">Volte amanhã para o próximo desafio.</p>
+                }
+              }
             }
           }
         }
-      }
-    </div>
-  </section>
-
-  <!-- Ranking -->
-  <section class="mt-6 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-    <div class="border-b border-[var(--color-border)] px-5 py-4 md:px-6">
-      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 class="text-sm font-semibold text-[var(--color-text)]">Ranking</h2>
-          <p class="mt-1 hidden text-xs leading-5 text-[var(--color-text-muted)] sm:block">
-            Classificação por XP de estudo, com opção de aparecer como anônimo no perfil.
-          </p>
-        </div>
-
-        <div class="inline-flex rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-1">
-          <button
-            type="button"
-            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-            [class.bg-white]="rankingTab() === 'global'"
-            [class.text-[var(--color-text)]]="rankingTab() === 'global'"
-            [class.text-[var(--color-text-muted)]]="rankingTab() !== 'global'"
-            (click)="setRankingTab('global')"
-          >
-            Global
-          </button>
-          <button
-            type="button"
-            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-            [class.bg-white]="rankingTab() === 'semana'"
-            [class.text-[var(--color-text)]]="rankingTab() === 'semana'"
-            [class.text-[var(--color-text-muted)]]="rankingTab() !== 'semana'"
-            (click)="setRankingTab('semana')"
-          >
-            Semana
-          </button>
-        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="p-5 md:p-6">
-      @if (isLoadingRanking()) {
-        <div class="space-y-2">
-          @for (_ of [1, 2, 3, 4, 5]; track $index) {
-            <div class="h-14 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
-          }
+    <section class="panel ranking-panel" aria-labelledby="ranking-titulo">
+      <header class="panel-header ranking-heading">
+        <div>
+          <h2 id="ranking-titulo">Ranking de estudo</h2>
+          <p>Classificação por XP de atividade.</p>
         </div>
-      } @else if (rankingAtual().length > 0) {
-        <div class="divide-y divide-[var(--color-border)] overflow-hidden rounded-lg border border-[var(--color-border)]">
-          @for (row of rankingComGap(); track row.item.posicao) {
-            @if (row.showGap) {
-              <div class="px-4 py-1.5 text-xs text-center text-[var(--color-text-muted)] select-none tracking-widest">···</div>
-            }
-            <div class="flex items-center gap-3 px-4 transition-colors" [class]="linhaClass(row.item)">
-              <!-- Posição -->
-              <span class="w-6 shrink-0 text-right text-xs font-bold" [class]="posicaoClass(row.item.posicao)">
-                #{{ row.item.posicao }}
-              </span>
-
-              <!-- Avatar (com coroa de pódio nos três primeiros e manto no 1º) -->
-              <div class="relative h-8 w-8 shrink-0">
-                @if (row.item.posicao === 1) {
-                  <app-ui-manto-rei
-                    class="pointer-events-none absolute left-[calc(50%-22px)] top-[calc(50%-19px)] z-0"
-                  />
-                }
-                @if (isPodio(row.item.posicao)) {
-                  <app-ui-coroa-podio
-                    class="pointer-events-none absolute -top-2.5 left-1/2 z-20 -translate-x-1/2"
-                    [posicao]="row.item.posicao"
-                    [size]="18"
-                  />
-                }
-                <div class="relative z-10 h-8 w-8 overflow-hidden rounded-full" [class]="avatarRingClass(row.item.posicao)">
-                  @if (row.item.avatar_url) {
-                    <img
-                      [src]="row.item.avatar_url"
-                      [alt]="row.item.nome_display"
-                      class="h-full w-full object-cover"
-                      width="32"
-                      height="32"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  } @else {
-                    <div
-                      class="flex h-full w-full items-center justify-center text-xs font-bold"
-                      [class]="avatarBgClass(row.item.nome_display)"
-                    >
-                      {{ row.item.nome_display.charAt(0).toUpperCase() }}
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <!-- Nome + nível -->
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-[var(--color-text)]">
-                  {{ row.item.nome_display }}
-                  @if (row.item.is_me) {
-                    <span class="ml-1 text-xs font-normal text-[var(--color-primary)]">(você)</span>
-                  }
-                </p>
-                <p class="text-xs text-[var(--color-text-muted)]">Nível {{ row.item.nivel }}</p>
-              </div>
-
-              <span class="shrink-0 text-sm font-extrabold text-[var(--color-primary)]">{{ rankingXp(row.item) }}</span>
+        <app-ui-icon class="ranking-trophy" [icon]="trophyIcon" [size]="21" />
+      </header>
+      <div class="ranking-tabs" role="tablist" aria-label="Período do ranking">
+        @for (tab of rankingTabs; track tab) {
+          <button
+            type="button"
+            role="tab"
+            [id]="'ranking-tab-' + tab"
+            aria-controls="ranking-painel"
+            [attr.aria-selected]="rankingTab() === tab"
+            [tabIndex]="rankingTab() === tab ? 0 : -1"
+            (click)="setRankingTab(tab)"
+            (keydown)="rankingKeydown($event)"
+          >
+            {{ tab === 'global' ? 'Global' : 'Semana' }}
+          </button>
+        }
+      </div>
+      <div
+        id="ranking-painel"
+        role="tabpanel"
+        [attr.aria-labelledby]="'ranking-tab-' + rankingTab()"
+        tabindex="0"
+        [attr.aria-busy]="isLoadingRanking()"
+      >
+        <p class="ranking-period">
+          {{ rankingTab() === 'global' ? 'XP acumulado em todos os períodos' : semanaAtual }}
+        </p>
+        @if (posicaoError()) {
+          <div class="position-error" role="alert">
+            <p>{{ posicaoError() }}</p>
+            <button class="text-action" (click)="loadPosicao()">Atualizar minha posição</button>
+          </div>
+        } @else if (minhaPosicao()) {
+          <div class="my-position">
+            <div>
+              <p>Sua posição</p>
+              <strong>{{
+                minhaPosicaoAtual() ? '#' + formatNumber(minhaPosicaoAtual()!) : 'Ainda sem posição'
+              }}</strong>
             </div>
-          }
-        </div>
-      } @else {
-        <div class="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-8 text-center">
-          <p class="text-sm font-semibold text-[var(--color-text)]">Ranking sem participantes ainda</p>
-          <p class="mt-1 text-xs text-[var(--color-text-muted)]">Finalize um simulado para entrar na classificação.</p>
-        </div>
-      }
-    </div>
-  </section>
-
+            <span>{{
+              minhaPosicaoAtual()
+                ? 'de ' +
+                  formatNumber(totalParticipantes() ?? 0) +
+                  ' ' +
+                  (totalParticipantes() === 1 ? 'participante' : 'participantes')
+                : 'Conclua um simulado para participar'
+            }}</span>
+          </div>
+        }
+        @if (isLoadingRanking()) {
+          <div class="ranking-loading" role="status">
+            <span class="sr-only">Carregando ranking…</span>
+            @for (_ of [1, 2, 3, 4, 5]; track $index) {
+              <div class="h-14 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+            }
+          </div>
+        } @else if (rankingError()) {
+          <div class="empty-state" role="alert">
+            <p class="state-title">{{ rankingError() }}</p>
+            <p>Seus pontos continuam salvos.</p>
+            <button class="secondary-action" (click)="loadRanking()">Tentar novamente</button>
+          </div>
+        } @else if (rankingAtual().length > 0) {
+          <ol class="ranking-list" aria-label="Classificação por XP">
+            @for (row of rankingComGap(); track row.item.posicao) {
+              @if (row.showGap) {
+                <li class="ranking-gap" role="presentation">
+                  <span aria-hidden="true">···</span
+                  ><span class="sr-only">Outras posições omitidas</span>
+                </li>
+              }
+              <li
+                class="ranking-row"
+                [class]="linhaClass(row.item)"
+                [class.my-row]="row.item.is_me"
+              >
+                <span class="ranking-position" [class]="posicaoClass(row.item.posicao)"
+                  ><span class="sr-only">Posição </span>#{{ formatNumber(row.item.posicao) }}</span
+                >
+                <div class="rank-avatar" aria-hidden="true">
+                  @if (row.item.posicao === 1) {
+                    <app-ui-manto-rei
+                      class="pointer-events-none absolute left-[calc(50%-22px)] top-[calc(50%-19px)] z-0"
+                    />
+                  }
+                  @if (isPodio(row.item.posicao)) {
+                    <app-ui-coroa-podio
+                      class="pointer-events-none absolute -top-2.5 left-1/2 z-20 -translate-x-1/2"
+                      [posicao]="row.item.posicao"
+                      [size]="18"
+                    />
+                  }
+                  <div class="avatar-circle" [class]="avatarRingClass(row.item.posicao)">
+                    @if (row.item.avatar_url && !avataresInvalidos().has(row.item.posicao)) {
+                      <img
+                        [src]="row.item.avatar_url"
+                        alt=""
+                        width="32"
+                        height="32"
+                        loading="lazy"
+                        decoding="async"
+                        (error)="avatarFalhou(row.item.posicao)"
+                      />
+                    } @else {
+                      <span [class]="avatarBgClass(row.item.nome_display)">{{
+                        inicial(row.item.nome_display)
+                      }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="rank-person">
+                  <p>
+                    {{ row.item.nome_display }}
+                    @if (row.item.is_me) {
+                      <span class="you-badge">Você</span>
+                    }
+                  </p>
+                  <span>Nível {{ formatNumber(row.item.nivel) }}</span>
+                </div>
+                <strong class="rank-xp">{{ rankingXp(row.item) }}</strong>
+              </li>
+            }
+          </ol>
+        } @else {
+          <div class="empty-state">
+            <p class="state-title">Ranking sem participantes ainda</p>
+            <p>
+              {{
+                rankingTab() === 'semana'
+                  ? 'Comece a semana com um simulado e some XP.'
+                  : 'Finalize um simulado para entrar na classificação.'
+              }}
+            </p>
+            <a routerLink="/dashboard/simulados" class="secondary-action">Fazer simulado</a>
+          </div>
+        }
+      </div>
+      <footer class="ranking-footer">
+        <app-ui-icon [icon]="privacyIcon" [size]="17" />
+        <p>
+          {{
+            !statsError() && !isLoadingStats()
+              ? stats().competir_publico
+                ? 'Seu nome está visível no ranking.'
+                : 'Você aparece como Anônimo no ranking.'
+              : 'Você pode aparecer como Anônimo no ranking.'
+          }}
+          <a routerLink="/dashboard/perfil">Gerenciar no perfil</a>
+        </p>
+      </footer>
+    </section>
+  </div>
 </div>

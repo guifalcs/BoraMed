@@ -117,8 +117,8 @@ jobs:
       # Só os testes com rede 100% mockada (projeto "mocked"). Os projetos
       # "setup"/"chromium" fazem login real e exigem um backend Supabase local,
       # então ficam de fora do CI (rodam localmente com `supabase start`).
-      - name: Testes E2E (checkout embutido, pagamento e paginação dos PDFs, backend mockado)
-        run: npm run test:e2e -- checkout pagamento impressao-paginacao --project=mocked
+      - name: Testes E2E (checkout, pagamento, impressão e competitivo, backend mockado)
+        run: npm run test:e2e -- checkout pagamento impressao-paginacao competitivo-ui --project=mocked
         env:
           CI: 'true'
       - name: Sobe o relatório em caso de falha

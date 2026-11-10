@@ -599,3 +599,14 @@ Apenas feedback de pressão discreto nos controles; respeitar movimento reduzido
 - Editor com labels associados, um card por vez, ferramentas de pelo menos 44px e imagens em área opcional. Campos e navegação ficam indisponíveis durante operações que poderiam produzir conteúdo inconsistente.
 - Erros permanecem no conteúdo com retry. Modal de curtidas usa dialog nativo, Escape, ciclo de foco e retorno ao acionador.
 - Auditoria, skills, limites e comparações: [Flashcards — revisão de UI](ui/flashcards.md).
+
+
+## Competitivo: desafio e ranking (10/11/2026)
+
+- Cabeçalho compacto sem parágrafo introdutório; resumo em linhas no celular e colunas no desktop, com ícone, rótulo/contexto e valor alinhados horizontalmente em cada indicador, sem altura reservada vazia. Desafio e ranking ficam lado a lado a partir de 1180px e mantêm a ordem de leitura no celular.
+- Alternativas usam radios nativos e confirmação explícita. Letras seguem o padrão do simulado: círculo de 24px neutro, azul ao selecionar, verde/vermelho na correção. A correção identifica a alternativa correta e a própria escolha por texto, ícone e cor; zoom fica em botão separado.
+- Ranking com abas de 44px, setas/Home/End e painel associado; posição pessoal com total e período. Coroas e manto preservados. Nomes completos quebram linha e avatar indisponível usa inicial por grafema.
+- XP e posições têm formatação `pt-BR` e algarismos tabulares. Container queries em `rem` dão uma linha inteira aos números quando a largura ou ampliação de texto exigem. Não truncar valores numéricos. Em espaços extremos, o sufixo XP pode passar para outra linha e o espaçamento lateral se reduz. Com dois indicadores na primeira linha, o terceiro ocupa toda a segunda linha.
+- Erros locais têm recuperação e não substituem dados por zero/vazio. Estado de anonimato e link para Perfil aparecem também no celular.
+- Sem animação de entrada, contagem ou reordenação. Transições apenas de cores/bordas, hover com ponteiro fino e preferência de movimento reduzido respeitada.
+- Auditoria e comparação: [Competitivo — revisão de UI](ui/competitivo.md).
