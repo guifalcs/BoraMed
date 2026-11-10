@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-11-10 | Correção | Restaura o resumo do Caderno de Erros
+
+- Restaurados os cards compartilhados `app-kpi-card` usados antes do commit `3aba334` (09/11). O nome extenso do tema prioritário volta a usar reticências, com texto completo no `title`, impedindo que um único tema estique os quatro cards.
+- Subtítulo inicial e grid dos indicadores recuperam a apresentação anterior; removidos os estilos específicos do resumo introduzidos ontem. Mantidos filtros, revisão e demais correções do fluxo.
+- Regressão reproduzida com os dados da captura de produção: 574 pendências, zero dominadas e “Imunidade Adaptativa (Celular e Humoral)”. Testes e capturas em 390 e 1440px.
+
+## 2026-11-10 | Ajuste visual | Cores dos indicadores do histórico
+
+- Restauradas as cores semânticas nos valores e ícones dos cards iniciais: verde para progresso, âmbar para atenção e vermelho para prioridade de revisão, com os limites anteriores de aproveitamento.
+- Acerto geral com fundo azul institucional preenchido e valor/ícone brancos; demais cards com fundo branco e valores/ícones nas cores semânticas. Mantidos o formato compacto, espaçamentos e posição dos ícones, sem faixa superior.
+- Documentação e comparação visual do histórico atualizadas.
+
+## 2026-11-09 | Melhoria | Histórico com contexto e revisão acessível no celular
+
+- Indicadores com contexto visível no celular, acerto geral em destaque e tema prioritário legível; recomendação de treino próxima do resumo.
+- Filtros com rótulos, busca e favoritos em controles de 44px. A interface explicita o escopo: evolução e lista filtradas; KPIs e temas acumulados.
+- Tabela substituída por lista responsiva com títulos completos, data, modo, nota, acertos e link de resultado acessível por teclado. Mantidas ordenação, paginação de 10 itens e consulta das últimas 50 tentativas.
+- Evolução com comparação explícita entre primeira e última nota; gráfico sem animação de atualização, com descrição acessível e cores da marca. Temas ordenados por aproveitamento e expansíveis após os cinco primeiros.
+- Estado vazio único, falhas parciais preservando indicadores, retry sem reload e favoritos com rollback, mensagem e invalidação de cache.
+- Fixtures e Playwright para filtros, paginação, favoritos, navegação e textos extensos; galeria antes/depois mobile/desktop com seis estados. Sem dependências ou migrations novas.
+- Documentação: `docs/ui/historico.md`, `docs/design-system.md` e `docs/business-rules.md`.
+
 ## 2026-11-09 | Melhoria | Minhas notas com metas e preenchimento mais claros
 
 - **Contexto:** período/semestre identificados, nome completo do eixo visível e contagem de avaliações lançadas. Abas com seleção azul sublinhada e indicadores de status preservados.

@@ -103,6 +103,9 @@ Regras de combinação:
 * Exibe gabarito com alternativa correta destacada
 * Histórico visível apenas para o próprio aluno
 * Histórico deve deixar explícito quando ainda não há tentativas concluídas, quando filtros zeram os resultados e quando houve falha de carregamento
+* No histórico, período, tipo, favoritos e busca afetam a evolução e a lista das últimas 50 tentativas; indicadores e desempenho por tema representam o acumulado e devem indicar esse escopo. A lista pagina 10 itens e informa quando o total acumulado excede os registros carregados.
+* A comparação da evolução usa a primeira e a última nota do recorte, em pontos percentuais; não deve ser apresentada como previsão ou tendência estatística. Tentativa finalizada sem nota aparece como “Sem nota”.
+* Falha parcial no histórico preserva os indicadores disponíveis. Tentar novamente busca dados sem sair da página. Falha ao favoritar reverte a escolha e informa o aluno; sucesso invalida o cache do histórico.
 * Quando houver distribuição por tema, o sistema sugere um próximo treino focado no tema de menor aproveitamento
 * Quando múltiplos temas tiverem o mesmo menor aproveitamento, o resultado deve comunicar o conjunto de temas críticos sem eleger arbitrariamente um único pior tema
 * Treinos recomendados abrem a montagem de simulado com o tema pré-selecionado e modo estudo quando o objetivo for revisão

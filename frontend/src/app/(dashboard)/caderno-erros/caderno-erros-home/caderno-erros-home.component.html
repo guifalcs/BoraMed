@@ -1,7 +1,7 @@
 <div class="caderno-page">
   <app-page-header
     titulo="Caderno de Erros"
-    subtitulo="Encontre o que precisa de atenção e transforme cada revisão em aprendizado."
+    subtitulo="Revise as questões que você errou e acompanhe o quanto já domina."
     [breadcrumbs]="breadcrumbs"
   />
 
@@ -24,16 +24,14 @@
       </div>
     } @else {
       @for (kpi of kpis(); track kpi.label) {
-        <article class="resumo-item" [attr.data-variante]="kpi.variante">
-          <div class="resumo-label">
-            <app-ui-icon [icon]="kpi.icone" [size]="15" aria-hidden="true" />
-            <span>{{ kpi.label }}</span>
-          </div>
-          <p class="resumo-valor">{{ kpi.valor }}</p>
-          @if (kpi.sublabel) {
-            <p class="resumo-legenda">{{ kpi.sublabel }}</p>
-          }
-        </article>
+        <app-kpi-card
+          [label]="kpi.label"
+          [valor]="kpi.valor"
+          [sublabel]="kpi.sublabel"
+          [icone]="kpi.icone"
+          [variante]="kpi.variante"
+          [title]="kpi.valor"
+        />
       }
     }
   </section>

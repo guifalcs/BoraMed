@@ -42,6 +42,7 @@ import { TemaService } from '../../../core/services/tema.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { NavigationProgressService } from '../../../core/services/navigation-progress.service';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
 import {
   PageHeaderComponent,
   type Breadcrumb,
@@ -103,6 +104,7 @@ const ROTULO_SECAO: Record<'tipo' | 'disciplina' | 'tema', string> = {
   imports: [
     RouterLink,
     NgTemplateOutlet,
+    KpiCardComponent,
     EmptyStateComponent,
     PageHeaderComponent,
     UiIconComponent,

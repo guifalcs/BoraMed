@@ -1,6 +1,8 @@
 @if (temDados()) {
   <div class="h-[240px]">
     <canvas
+      role="img"
+      [attr.aria-label]="'Evolução de ' + pontos().length + ' notas de simulados, em porcentagem de acertos.'"
       baseChart
       type="line"
       [data]="chartData()"

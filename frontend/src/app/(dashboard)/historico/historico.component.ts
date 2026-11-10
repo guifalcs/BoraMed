@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import {
   TrendingUp,
@@ -14,18 +14,27 @@ import {
   AlertTriangle,
   Award,
   Star,
+  ArrowUpRight,
+  ArrowRight,
+  Plus,
+  Search,
+  Target,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-angular';
-import type { HistoricoKpis, DesempenhoTema, TentativaHistoricoItem } from '../../core/models/historico';
-import type { KpiVariante } from '../../shared/components/kpi-card/kpi-card.component';
+import type {
+  HistoricoKpis,
+  DesempenhoTema,
+  TentativaHistoricoItem,
+} from '../../core/models/historico';
 import type { LucideIconData } from 'lucide-angular';
 import type { PontoEvolucao } from '../../shared/components/evolucao-nota-chart/evolucao-nota-chart.component';
-import { KpiCardComponent } from '../../shared/components/kpi-card/kpi-card.component';
-import { DesempenhoTemaChartComponent } from '../../shared/components/desempenho-tema-chart/desempenho-tema-chart.component';
 import { EvolucaoNotaChartComponent } from '../../shared/components/evolucao-nota-chart/evolucao-nota-chart.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { DataTableComponent, type DataTableColumn } from '../../shared/components/data-table/data-table.component';
-import { DataTableColumnDirective } from '../../shared/components/data-table/data-table-column.directive';
-import { PageHeaderComponent, type Breadcrumb } from '../../shared/components/page-header/page-header.component';
+import {
+  PageHeaderComponent,
+  type Breadcrumb,
+} from '../../shared/components/page-header/page-header.component';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { HistoricoService } from '../../core/services/historico.service';
 import { CacheService, CACHE_KEYS } from '../../core/services/cache.service';
@@ -44,20 +53,30 @@ const HISTORICO_CACHE_KEY = CACHE_KEYS.historico;
 type FiltroPeriodo = 'todos' | 'semana' | 'mes' | 'semestre';
 type FiltroTipo = 'todos' | 'nacional' | 'processual' | 'laboratorio';
 type FiltroFavorito = 'todos' | 'favoritas';
+type Ordenacao = 'recentes' | 'antigas' | 'maior-nota' | 'menor-nota' | 'nome' | 'modo';
+type KpiTone = 'neutral' | 'success' | 'warning' | 'danger';
 
 interface KpiData {
   label: string;
   valor: string;
   sublabel: string | null;
   icone: LucideIconData;
-  variante: KpiVariante;
+  tone: KpiTone;
 }
 
 @Component({
   selector: 'app-historico',
   standalone: true,
-  imports: [RouterLink, KpiCardComponent, DesempenhoTemaChartComponent, EvolucaoNotaChartComponent, EmptyStateComponent, DataTableComponent, DataTableColumnDirective, PageHeaderComponent, UiIconComponent],
+  imports: [
+    RouterLink,
+    DatePipe,
+    EvolucaoNotaChartComponent,
+    EmptyStateComponent,
+    PageHeaderComponent,
+    UiIconComponent,
+  ],
   templateUrl: './historico.component.html',
+  styleUrl: './historico.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoricoComponent {
@@ -88,6 +107,24 @@ export class HistoricoComponent {
   protected readonly filtroFavorito = signal<FiltroFavorito>('todos');
 
   protected readonly starIcon = Star;
+  protected readonly icons = {
+    ArrowUpRight,
+    ArrowRight,
+    Plus,
+    Search,
+    Target,
+    ChevronLeft,
+    ChevronRight,
+  };
+  protected readonly busca = signal('');
+  protected readonly mostrarTodosTemas = signal(false);
+  protected readonly ordenacao = signal<Ordenacao>('recentes');
+  protected readonly pagina = signal(1);
+  protected readonly favoritosPendentes = signal<ReadonlySet<string>>(new Set());
+  protected readonly favoritoError = signal<string | null>(null);
+  protected readonly totalFinalizadas = signal(0);
+  protected readonly pageSize = 10;
+  protected readonly isLoading = computed(() => this.isLoadingKpis() || this.isLoadingTentativas());
 
   protected readonly tentativasFiltradas = computed(() => {
     let items = this.tentativas();
@@ -105,13 +142,72 @@ export class HistoricoComponent {
     if (this.filtroFavorito() === 'favoritas') {
       items = items.filter((t) => t.favorito);
     }
+    const busca = this.busca().trim().toLocaleLowerCase('pt-BR');
+    if (busca)
+      items = items.filter((t) =>
+        `${t.prova_nome} ${this.getModoLabel(t.modo)}`.toLocaleLowerCase('pt-BR').includes(busca),
+      );
     return items;
   });
 
+  protected readonly tentativasOrdenadas = computed(() =>
+    [...this.tentativasFiltradas()].sort((a, b) => {
+      switch (this.ordenacao()) {
+        case 'antigas':
+          return (a.finalizada_em ?? '').localeCompare(b.finalizada_em ?? '');
+        case 'maior-nota':
+          return (b.nota ?? -1) - (a.nota ?? -1);
+        case 'menor-nota':
+          return (a.nota ?? Infinity) - (b.nota ?? Infinity);
+        case 'nome':
+          return a.prova_nome.localeCompare(b.prova_nome, 'pt-BR');
+        case 'modo':
+          return a.modo.localeCompare(b.modo, 'pt-BR');
+        default:
+          return (b.finalizada_em ?? '').localeCompare(a.finalizada_em ?? '');
+      }
+    }),
+  );
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.tentativasOrdenadas().length / this.pageSize)),
+  );
+  protected readonly paginaAtual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly inicioPagina = computed(() => (this.paginaAtual() - 1) * this.pageSize);
+  protected readonly fimPagina = computed(() =>
+    Math.min(this.inicioPagina() + this.pageSize, this.tentativasOrdenadas().length),
+  );
+  protected readonly tentativasPaginadas = computed(() =>
+    this.tentativasOrdenadas().slice(this.inicioPagina(), this.fimPagina()),
+  );
+  protected readonly resumoEvolucao = computed(() => {
+    const notas = [...this.pontosEvolucao()].sort((a, b) => a.data.localeCompare(b.data));
+    if (notas.length < 2) return null;
+    const diferenca = Math.round((notas[notas.length - 1].nota - notas[0].nota) * 10) / 10;
+    return {
+      diferenca,
+      texto:
+        diferenca === 0
+          ? 'Mesma nota do início do recorte'
+          : `${diferenca > 0 ? '+' : ''}${diferenca.toLocaleString('pt-BR')} p.p. entre a primeira e a última nota`,
+    };
+  });
+  protected readonly temasOrdenados = computed(() =>
+    [...this.temas()]
+      .filter((t) => t.total > 0)
+      .sort((a, b) => a.taxa - b.taxa || b.total - a.total),
+  );
+
+  protected readonly temasVisiveis = computed(() =>
+    this.mostrarTodosTemas() ? this.temasOrdenados() : this.temasOrdenados().slice(0, 5),
+  );
+
   protected readonly pontosEvolucao = computed<PontoEvolucao[]>(() =>
     this.tentativasFiltradas()
-      .filter((t): t is TentativaHistoricoItem & { nota: number; finalizada_em: string } => t.nota !== null && t.finalizada_em !== null)
-      .map((t) => ({ data: t.finalizada_em, nota: t.nota }))
+      .filter(
+        (t): t is TentativaHistoricoItem & { nota: number; finalizada_em: string } =>
+          t.nota !== null && t.finalizada_em !== null,
+      )
+      .map((t) => ({ data: t.finalizada_em, nota: t.nota })),
   );
 
   protected readonly temaPrioritario = computed<DesempenhoTema | null>(() => {
@@ -120,11 +216,16 @@ export class HistoricoComponent {
     return [...temas].sort((a, b) => a.taxa - b.taxa || b.total - a.total)[0];
   });
 
-  protected readonly temFiltroAtivo = computed(() => this.filtroPeriodo() !== 'todos' || this.filtroTipo() !== 'todos' || this.filtroFavorito() !== 'todos');
+  protected readonly temFiltroAtivo = computed(
+    () =>
+      this.filtroPeriodo() !== 'todos' ||
+      this.filtroTipo() !== 'todos' ||
+      this.filtroFavorito() !== 'todos' ||
+      this.busca().trim().length > 0,
+  );
   protected readonly temHistorico = computed(() => this.tentativas().length > 0);
   protected readonly temEvolucao = computed(() => this.pontosEvolucao().length > 0);
   protected readonly temTemas = computed(() => this.temas().some((tema) => tema.total > 0));
-  protected readonly mostrarInsights = computed(() => this.temHistorico() || this.temFiltroAtivo());
 
   protected readonly periodosDisponiveis: { valor: FiltroPeriodo; label: string }[] = [
     { valor: 'todos', label: 'Todos' },
@@ -138,14 +239,6 @@ export class HistoricoComponent {
     { valor: 'nacional', label: 'Nacional' },
     { valor: 'processual', label: 'Processual' },
     { valor: 'laboratorio', label: 'Laboratório' },
-  ];
-
-  protected readonly tentativasColumns: DataTableColumn[] = [
-    { key: 'favorito', header: '', sortable: false },
-    { key: 'prova_nome', header: 'Prova', sortable: true },
-    { key: 'finalizada_em', header: 'Data', sortable: true },
-    { key: 'modo', header: 'Modo', sortable: true },
-    { key: 'nota', header: 'Nota', sortable: true },
   ];
 
   constructor() {
@@ -185,6 +278,7 @@ export class HistoricoComponent {
   private aplicar(resolved: HistoricoData): void {
     if (resolved.kpisResult.ok) {
       this.kpis.set(this.buildKpis(resolved.kpisResult.data));
+      this.totalFinalizadas.set(resolved.kpisResult.data.total_finalizadas);
     } else {
       this.kpisError.set(resolved.kpisResult.error);
     }
@@ -206,49 +300,42 @@ export class HistoricoComponent {
   }
 
   private buildKpis(k: HistoricoKpis): KpiData[] {
-    const taxaVariante = (): KpiVariante => {
-      if (k.taxa_acerto === null) return 'default';
-      if (k.taxa_acerto >= 70) return 'success';
-      if (k.taxa_acerto >= 50) return 'warning';
-      return 'danger';
-    };
-    const ultimaVariante = (): KpiVariante => {
-      if (k.ultima_nota === null) return 'default';
-      if (k.ultima_nota >= 70) return 'success';
-      if (k.ultima_nota >= 50) return 'warning';
-      return 'danger';
-    };
-
     return [
       {
-        label: '% Acerto Geral',
-        valor: k.taxa_acerto !== null ? `${k.taxa_acerto}%` : '—',
-        sublabel: 'todas as tentativas',
+        label: 'Acerto geral',
+        valor: k.taxa_acerto !== null ? `${k.taxa_acerto.toLocaleString('pt-BR')}%` : '—',
+        sublabel: `${k.total_questoes_respondidas.toLocaleString('pt-BR')} ${k.total_questoes_respondidas === 1 ? 'questão respondida' : 'questões respondidas'}`,
         icone: TrendingUp,
-        variante: taxaVariante(),
+        tone: this.getKpiTone(k.taxa_acerto),
       },
       {
-        label: 'Simulados Concluídos',
-        valor: String(k.total_finalizadas),
-        sublabel: k.total_finalizadas > 0 ? 'total finalizado' : 'nenhum ainda',
+        label: 'Simulados concluídos',
+        valor: k.total_finalizadas.toLocaleString('pt-BR'),
+        sublabel: k.total_finalizadas > 0 ? 'ao longo dos seus estudos' : 'nenhum ainda',
         icone: CheckCircle2,
-        variante: k.total_finalizadas > 0 ? 'success' : 'default',
+        tone: k.total_finalizadas > 0 ? 'success' : 'neutral',
       },
       {
-        label: 'Tema Mais Fraco',
-        valor: k.taxa_tema_fraco !== null ? `${k.taxa_tema_fraco}%` : '—',
+        label: 'Prioridade de revisão',
+        valor: k.taxa_tema_fraco !== null ? `${k.taxa_tema_fraco.toLocaleString('pt-BR')}%` : '—',
         sublabel: k.tema_mais_fraco ?? 'dados insuficientes',
         icone: AlertTriangle,
-        variante: k.tema_mais_fraco ? 'danger' : 'default',
+        tone: k.tema_mais_fraco ? 'danger' : 'neutral',
       },
       {
-        label: 'Última Nota',
-        valor: k.ultima_nota !== null ? `${k.ultima_nota}%` : '—',
+        label: 'Última nota',
+        valor: k.ultima_nota !== null ? `${k.ultima_nota.toLocaleString('pt-BR')}%` : '—',
         sublabel: k.ultima_nota_data ? this.dataRelativa(k.ultima_nota_data) : null,
         icone: Award,
-        variante: ultimaVariante(),
+        tone: this.getKpiTone(k.ultima_nota),
       },
     ];
+  }
+
+  private getKpiTone(nota: number | null): KpiTone {
+    if (nota === null) return 'neutral';
+    if (nota >= 70) return 'success';
+    return nota >= 50 ? 'warning' : 'danger';
   }
 
   private dataRelativa(isoDate: string): string {
@@ -271,44 +358,95 @@ export class HistoricoComponent {
     this.filtroPeriodo.set('todos');
     this.filtroTipo.set('todos');
     this.filtroFavorito.set('todos');
+    this.busca.set('');
+    this.pagina.set(1);
   }
 
-  protected onToggleFavorito(tentativa: TentativaHistoricoItem, event: MouseEvent): void {
-    event.stopPropagation();
+  protected async onToggleFavorito(tentativa: TentativaHistoricoItem): Promise<void> {
+    if (this.favoritosPendentes().has(tentativa.id)) return;
     const novoValor = !tentativa.favorito;
+    this.favoritoError.set(null);
+    this.favoritosPendentes.update((ids) => new Set([...ids, tentativa.id]));
     this.tentativas.update((list) =>
-      list.map((t) => (t.id === tentativa.id ? { ...t, favorito: novoValor } : t))
+      list.map((t) => (t.id === tentativa.id ? { ...t, favorito: novoValor } : t)),
     );
-    void this.historicoService.toggleFavorito(tentativa.id, novoValor).catch(() => {
+    try {
+      await this.historicoService.toggleFavorito(tentativa.id, novoValor);
+      this.cache.remove(HISTORICO_CACHE_KEY);
+    } catch {
       this.tentativas.update((list) =>
-        list.map((t) => (t.id === tentativa.id ? { ...t, favorito: !novoValor } : t))
+        list.map((t) => (t.id === tentativa.id ? { ...t, favorito: tentativa.favorito } : t)),
       );
-    });
+      this.favoritoError.set('Não foi possível salvar o favorito. Tente novamente.');
+    } finally {
+      this.favoritosPendentes.update((ids) => {
+        const next = new Set(ids);
+        next.delete(tentativa.id);
+        return next;
+      });
+    }
+  }
+
+  protected onPeriodoChange(value: string): void {
+    if (this.periodosDisponiveis.some((p) => p.valor === value))
+      this.filtroPeriodo.set(value as FiltroPeriodo);
+    this.pagina.set(1);
+  }
+
+  protected onTipoChange(value: string): void {
+    if (this.tiposDisponiveis.some((t) => t.valor === value))
+      this.filtroTipo.set(value as FiltroTipo);
+    this.pagina.set(1);
+  }
+
+  protected onOrdenacaoChange(value: string): void {
+    const valores: Ordenacao[] = [
+      'recentes',
+      'antigas',
+      'maior-nota',
+      'menor-nota',
+      'nome',
+      'modo',
+    ];
+    if (valores.includes(value as Ordenacao)) this.ordenacao.set(value as Ordenacao);
+    this.pagina.set(1);
+  }
+
+  protected getTipoLabel(tipo: string): string {
+    switch (tipo) {
+      case 'nacional':
+        return 'Nacional';
+      case 'processual':
+        return 'Processual';
+      case 'laboratorio':
+        return 'Laboratório';
+      case 'multiestacoes':
+        return 'Multiestações';
+      default:
+        return 'Simulado';
+    }
   }
 
   protected onTentarNovamente(): void {
     if (this.isBrowser) {
-      window.location.reload();
+      this.cache.remove(HISTORICO_CACHE_KEY);
+      this.kpisError.set(null);
+      this.temasError.set(null);
+      this.tentativasError.set(null);
+      this.isLoadingKpis.set(true);
+      this.isLoadingTentativas.set(true);
+      void this.carregar();
     }
-  }
-
-  protected onTentativaClick(tentativa: TentativaHistoricoItem): void {
-    void this.router.navigate(
-      ['/dashboard/simulados', tentativa.prova_id ?? 'removida', 'tentativa', tentativa.id, 'resultado'],
-      { state: { fromHistorico: true } }
-    );
-  }
-
-  protected formatDataRelativa(isoDate: string | null): string {
-    if (!isoDate) return '—';
-    return this.dataRelativa(isoDate);
   }
 
   protected getModoLabel(modo: string): string {
     switch (modo) {
-      case 'estudo': return 'Estudo';
-      case 'simulado': return 'Simulado';
-      default: return modo;
+      case 'estudo':
+        return 'Estudo';
+      case 'simulado':
+        return 'Simulado';
+      default:
+        return modo;
     }
   }
 
@@ -319,7 +457,11 @@ export class HistoricoComponent {
     return 'bg-red-50 text-red-700';
   }
 
+  protected formatNumero(valor: number): string {
+    return valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  }
+
   protected getNotaLabel(nota: number | null): string {
-    return nota === null ? 'Em andamento' : `${nota}%`;
+    return nota === null ? 'Sem nota' : `${nota.toLocaleString('pt-BR')}%`;
   }
 }

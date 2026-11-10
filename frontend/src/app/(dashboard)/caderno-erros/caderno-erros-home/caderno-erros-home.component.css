@@ -11,74 +11,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
-.resumo-item {
-  --resumo-cor: var(--color-primary);
-  --resumo-acento: var(--color-primary-light);
-  --resumo-icone-bg: #eff6ff;
-  position: relative;
-  min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 12px 14px;
-  background: var(--color-surface);
-}
-.resumo-item[data-variante='danger'] {
-  --resumo-cor: #dc2626;
-  --resumo-acento: #f87171;
-  --resumo-icone-bg: #fef2f2;
-}
-.resumo-item[data-variante='success'] {
-  --resumo-cor: #059669;
-  --resumo-acento: #34d399;
-  --resumo-icone-bg: #ecfdf5;
-}
-.resumo-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 16px;
-  right: 16px;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: var(--resumo-acento);
-}
-.resumo-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.resumo-label app-ui-icon {
-  flex-shrink: 0;
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 6px;
-  color: var(--resumo-cor);
-  background: var(--resumo-icone-bg);
-}
-.resumo-label span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.resumo-valor {
-  color: var(--resumo-cor);
-  margin-top: 6px;
-  font-size: 1.5rem;
-  font-weight: 750;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
-}
-.resumo-legenda {
-  display: none;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  margin-top: 4px;
-}
 .resumo-skeleton {
-  height: 88px;
+  height: 112px;
   border-radius: 14px;
   background: var(--color-surface-2);
 }
@@ -567,16 +501,9 @@ a:focus-visible {
   .caderno-page {
     padding: 32px 24px 40px;
   }
-  .resumo-legenda,
   .revisao-convite p,
   .simulado-trigger__descricao {
     display: block;
-  }
-  .resumo-item {
-    padding: 14px 16px;
-  }
-  .resumo-valor {
-    font-size: 1.75rem;
   }
   .revisao-convite__icone {
     display: flex;
@@ -598,12 +525,15 @@ a:focus-visible {
     display: inline;
   }
 }
+@media (min-width: 768px) {
+  .resumo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
 @media (min-width: 1024px) {
   .caderno-page {
     padding: 40px 32px;
-  }
-  .resumo-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .filtros-grid {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
