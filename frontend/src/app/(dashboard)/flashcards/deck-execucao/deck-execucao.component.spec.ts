@@ -78,7 +78,10 @@ describe('DeckExecucaoComponent', () => {
       imports: [DeckExecucaoComponent],
       providers: [
         { provide: FlashcardService, useValue: flashcardServiceMock },
-        { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } },
+        {
+          provide: NotificationService,
+          useValue: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+        },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap }, paramMap: of(paramMap) },
@@ -125,8 +128,8 @@ describe('DeckExecucaoComponent', () => {
 
     expect(component['finalizado']()).toBe(true);
     expect(el.textContent).toContain('Sessão concluída');
-    expect(el.textContent).toContain('1 acertos');
-    expect(el.textContent).toContain('1 erros');
+    expect(el.textContent).toContain('1 acerto');
+    expect(el.textContent).toContain('1 erro');
     expect(el.textContent).toContain('50%');
     expect(el.textContent).toContain('Pergunta 2');
   });
@@ -148,7 +151,6 @@ describe('DeckExecucaoComponent', () => {
 
     expect(contadorAcertos()).toContain('1');
     expect(contadorErros()).toContain('0');
-    expect(component['popAcerto']()).toBe(true);
   });
 
   it('ao finalizar, sugere outros decks (excluindo o deck atual)', async () => {

@@ -1,16 +1,36 @@
-import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArrowLeft, CircleCheck, CircleX, LucideIconData, PartyPopper, Shuffle } from 'lucide-angular';
+import {
+  ArrowLeft,
+  CircleCheck,
+  CircleX,
+  LucideIconData,
+  PartyPopper,
+  Shuffle,
+} from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import type { Flashcard } from '../../../core/models/flashcard';
-import { DeckCardComponent, type DeckCardItem } from '../../../shared/components/deck-card/deck-card.component';
+import {
+  DeckCardComponent,
+  type DeckCardItem,
+} from '../../../shared/components/deck-card/deck-card.component';
 import { FlashcardFlipComponent } from '../../../shared/components/flashcard-flip/flashcard-flip.component';
-import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
+import {
+  PageHeaderComponent,
+  type Breadcrumb,
+} from '../../../shared/components/page-header/page-header.component';
 import { UiButtonComponent } from '../../../shared/components/ui/button/ui-button.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
+import { UiConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/ui-confirm-dialog.component';
 
 type EstadoResposta = 'acertou' | 'errou';
 
@@ -23,8 +43,16 @@ const JANELA_PRELOAD = 3;
 @Component({
   selector: 'app-deck-execucao',
   standalone: true,
-  imports: [NgClass, DeckCardComponent, FlashcardFlipComponent, PageHeaderComponent, UiButtonComponent, UiIconComponent],
+  imports: [
+    DeckCardComponent,
+    FlashcardFlipComponent,
+    PageHeaderComponent,
+    UiButtonComponent,
+    UiIconComponent,
+    UiConfirmDialogComponent,
+  ],
   templateUrl: './deck-execucao.component.html',
+  styleUrl: './deck-execucao.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeckExecucaoComponent {
@@ -47,12 +75,12 @@ export class DeckExecucaoComponent {
   protected readonly cards = signal<Flashcard[]>([]);
   protected readonly indiceAtual = signal(0);
   protected readonly virado = signal(false);
+  protected readonly animarVirada = signal(true);
   protected readonly respostas = signal<Record<string, EstadoResposta>>({});
   protected readonly finalizado = signal(false);
-
-  // Dispara a animação de "pop" nos contadores quando o valor muda.
-  protected readonly popAcerto = signal(false);
-  protected readonly popErro = signal(false);
+  protected readonly confirmarEmbaralhar = signal(false);
+  protected readonly reforco = signal(false);
+  private cardsOriginais: Flashcard[] = [];
 
   // Card com imagem vertical (qualquer face): recebe mais altura para valorizar a
   // imagem. Emitido pelo flashcard-flip; é por-card, então não muda ao virar.
@@ -67,9 +95,13 @@ export class DeckExecucaoComponent {
     { label: 'Estudar' },
   ];
 
-  protected readonly cardAtual = computed<Flashcard | null>(() => this.cards()[this.indiceAtual()] ?? null);
+  protected readonly cardAtual = computed<Flashcard | null>(
+    () => this.cards()[this.indiceAtual()] ?? null,
+  );
 
-  protected readonly progresso = computed(() => `Card ${this.indiceAtual() + 1} de ${this.cards().length}`);
+  protected readonly progresso = computed(
+    () => `Card ${this.indiceAtual() + 1} de ${this.cards().length}`,
+  );
 
   protected readonly acertos = computed(
     () => Object.values(this.respostas()).filter((r) => r === 'acertou').length,
@@ -123,13 +155,16 @@ export class DeckExecucaoComponent {
     }
   }
 
-  private async carregarDeck(deckId: string): Promise<void> {
+  protected async carregarDeck(deckId: string): Promise<void> {
     this.carregando.set(true);
     this.erro.set(null);
     const result = await this.flashcardService.obterDeckComCards(deckId);
+    if (this.deckId() !== deckId) return;
     if (result.ok) {
       this.deckTitulo.set(result.data.titulo);
       this.cards.set(result.data.cards);
+      this.cardsOriginais = result.data.cards;
+      this.reforco.set(false);
     } else {
       this.erro.set(result.error);
     }
@@ -137,16 +172,20 @@ export class DeckExecucaoComponent {
   }
 
   protected flip(virado: boolean): void {
+    this.animarVirada.set(true);
     this.virado.set(virado);
+  }
+
+  protected mostrarResposta(evento: MouseEvent): void {
+    this.animarVirada.set(evento.detail !== 0);
+    this.virado.set(true);
   }
 
   protected responder(estado: EstadoResposta): void {
     const card = this.cardAtual();
-    if (!card) return;
+    if (!card || !this.virado()) return;
 
     this.respostas.update((prev) => ({ ...prev, [card.id]: estado }));
-    if (estado === 'acertou') this.popAcerto.set(true);
-    else this.popErro.set(true);
 
     // A sessão só termina quando TODOS os cards foram respondidos — navegar
     // com "Próximo" pula cards sem respondê-los, então avança para o próximo
@@ -155,6 +194,7 @@ export class DeckExecucaoComponent {
     const respostas = this.respostas();
     if (Object.keys(respostas).length >= cards.length) {
       this.finalizado.set(true);
+      requestAnimationFrame(() => document.getElementById('flashcards-resultado')?.focus());
       void this.carregarSugestoes();
       return;
     }
@@ -164,6 +204,11 @@ export class DeckExecucaoComponent {
       if (!respostas[cards[idx].id]) {
         this.indiceAtual.set(idx);
         this.virado.set(false);
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLButtonElement>('app-flashcard-flip button.flip-card')
+            ?.focus({ preventScroll: true }),
+        );
         return;
       }
     }
@@ -176,6 +221,7 @@ export class DeckExecucaoComponent {
   }
 
   protected embaralhar(): void {
+    this.confirmarEmbaralhar.set(false);
     const copia = [...this.cards()];
     for (let i = copia.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -186,6 +232,8 @@ export class DeckExecucaoComponent {
   }
 
   protected refazer(): void {
+    this.cards.set(this.cardsOriginais);
+    this.reforco.set(false);
     this.reiniciarSessao();
   }
 
@@ -194,16 +242,19 @@ export class DeckExecucaoComponent {
     this.virado.set(false);
     this.finalizado.set(false);
     this.respostas.set({});
+    this.confirmarEmbaralhar.set(false);
   }
 
   /** Carrega até 3 outros decks (oficiais + comunidade) para sugerir na conclusão. */
   private async carregarSugestoes(): Promise<void> {
     if (this.sugestoes().length > 0) return;
 
+    const deckId = this.deckId();
     const [oficiais, feed] = await Promise.all([
       this.flashcardService.listarDecksOficiais(),
       this.flashcardService.carregarFeed('recentes', 0),
     ]);
+    if (this.deckId() !== deckId || !this.finalizado()) return;
 
     const candidatos: DeckCardItem[] = [
       ...(oficiais.ok ? oficiais.data : []),
@@ -247,10 +298,16 @@ export class DeckExecucaoComponent {
       return;
     }
     this.cards.set(errados);
+    this.reforco.set(true);
     this.reiniciarSessao();
   }
 
   protected voltar(): void {
     void this.router.navigate(['/dashboard/flashcards']);
+  }
+
+  protected pedirEmbaralhar(): void {
+    if (Object.keys(this.respostas()).length) this.confirmarEmbaralhar.set(true);
+    else this.embaralhar();
   }
 }

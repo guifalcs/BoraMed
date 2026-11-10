@@ -1,133 +1,105 @@
-<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
-  <app-page-header titulo="Flashcards" subtitulo="Estude com cards de pergunta e resposta." [breadcrumbs]="breadcrumbs" />
-
-  <div class="mb-6 inline-flex rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-1">
-    <button
-      type="button"
-      class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-      [class.bg-white]="abaAtiva() === 'oficiais'"
-      [class.text-[var(--color-text)]]="abaAtiva() === 'oficiais'"
-      [class.text-[var(--color-text-muted)]]="abaAtiva() !== 'oficiais'"
-      (click)="mudarAba('oficiais')"
-    >
-      Oficiais
-    </button>
-    <button
-      type="button"
-      class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-      [class.bg-white]="abaAtiva() === 'meus'"
-      [class.text-[var(--color-text)]]="abaAtiva() === 'meus'"
-      [class.text-[var(--color-text-muted)]]="abaAtiva() !== 'meus'"
-      (click)="mudarAba('meus')"
-    >
-      Meus decks
-    </button>
-    <button
-      type="button"
-      class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-      [class.bg-white]="abaAtiva() === 'comunidade'"
-      [class.text-[var(--color-text)]]="abaAtiva() === 'comunidade'"
-      [class.text-[var(--color-text-muted)]]="abaAtiva() !== 'comunidade'"
-      (click)="mudarAba('comunidade')"
-    >
-      Comunidade
-    </button>
-  </div>
-
-  <!-- Oficiais -->
-  @if (abaAtiva() === 'oficiais') {
-    @if (loadingOficiais()) {
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        @for (_ of [1, 2, 3, 4]; track $index) {
-          <app-skeleton variant="card" />
-        }
-      </div>
-    } @else if (decksOficiais().length > 0) {
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        @for (deck of decksOficiais(); track deck.id) {
-          <app-deck-card [deck]="deck" (estudar)="irParaEstudar($event)" />
-        }
-      </div>
-    } @else {
-      <app-empty-state
-        titulo="Nenhum deck oficial ainda"
-        descricao="Em breve novos decks oficiais estarão disponíveis."
-        [icone]="layersIcon"
-      />
-    }
-  }
-
-  <!-- Meus decks -->
-  @if (abaAtiva() === 'meus') {
-    <div class="mb-4 flex justify-end">
-      <app-ui-button label="Criar deck" [fullWidth]="false" (buttonClick)="irParaNovo()" />
+<div class="fc">
+  <header class="fc-head">
+    <div>
+      <h1>Flashcards</h1>
+      <p>Uma pergunta de cada vez. Revise, confira e descubra o que precisa reforçar.</p>
     </div>
-
-    @if (loadingMeus()) {
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <button type="button" class="fc-create bm-press" (click)="irParaNovo()">
+      <app-ui-icon [icon]="plusIcon" [size]="18" />Criar deck
+    </button>
+  </header>
+  <div class="fc-tabs" role="tablist" aria-label="Origem dos decks">
+    @for (aba of abas; track aba.id; let i = $index) {
+      <button
+        type="button"
+        role="tab"
+        [id]="'flashcards-aba-' + aba.id"
+        [attr.aria-selected]="abaAtiva() === aba.id"
+        [attr.aria-controls]="'flashcards-painel-' + aba.id"
+        [attr.tabindex]="abaAtiva() === aba.id ? 0 : -1"
+        (click)="mudarAba(aba.id)"
+        (keydown)="navegarAbas($event, i)"
+      >
+        {{ aba.titulo }}
+      </button>
+    }
+  </div>
+  <section
+    role="tabpanel"
+    [id]="'flashcards-painel-' + abaAtiva()"
+    [attr.aria-labelledby]="'flashcards-aba-' + abaAtiva()"
+    tabindex="0"
+  >
+    <div class="fc-contexto">
+      <div>
+        <h2>
+          {{
+            abaAtiva() === 'oficiais'
+              ? 'Para começar sua revisão'
+              : abaAtiva() === 'meus'
+                ? 'Seu jeito de estudar'
+                : 'Aprenda com a comunidade'
+          }}
+        </h2>
+        <p>
+          {{
+            abaAtiva() === 'oficiais'
+              ? 'Decks preparados pela equipe BoraMed.'
+              : abaAtiva() === 'meus'
+                ? 'Seus decks privados e os que você compartilhou.'
+                : 'Decks públicos criados por outros estudantes.'
+          }}
+        </p>
+      </div>
+      @if (abaAtiva() === 'comunidade') {
+        <div class="fc-order">
+          <app-ui-select
+            label="Ordenar por"
+            name="ordenacao-feed"
+            [options]="ordenacaoOptions"
+            [value]="feedOrdenacao()"
+            [disabled]="feedLoading()"
+            (valueChange)="mudarOrdenacaoFeed($event)"
+          />
+        </div>
+      } @else if (!carregando() && !erroAtual()) {
+        <span class="fc-count"
+          >{{ lista().length }} {{ lista().length === 1 ? 'deck' : 'decks' }}</span
+        >
+      }
+    </div>
+    @if (erroAtual(); as erro) {
+      <div class="fc-error" role="alert">
+        <p>{{ erro }}</p>
+        <button type="button" (click)="recarregar()" [disabled]="carregando()">
+          Tentar novamente
+        </button>
+      </div>
+    }
+    @if (carregando() && lista().length === 0) {
+      <div class="fc-grid" aria-busy="true" aria-label="Carregando decks">
         @for (_ of [1, 2, 3, 4]; track $index) {
           <app-skeleton variant="card" />
         }
       </div>
-    } @else if (meusDecks().length > 0) {
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        @for (deck of meusDecks(); track deck.id) {
+    } @else if (lista().length > 0) {
+      <div class="fc-grid">
+        @for (deck of lista(); track deck.id) {
           <app-deck-card
             [deck]="deck"
-            [mostrarAcoes]="true"
+            [mostrarAcoes]="abaAtiva() === 'meus'"
+            [mostrarAutor]="abaAtiva() === 'comunidade'"
+            [ocupado]="excluindo() === deck.id || curtindo().has(deck.id)"
             (estudar)="irParaEstudar($event)"
             (editar)="irParaEditar($event)"
             (excluir)="pedirExclusao($event)"
-            (toggleLike)="handleToggleLikeMeus($event)"
+            (toggleLike)="handleToggleLike($event)"
             (verCurtidas)="abrirVerCurtidas($event)"
           />
         }
       </div>
-    } @else {
-      <app-empty-state
-        titulo="Você ainda não criou nenhum deck"
-        descricao="Crie seu primeiro deck de flashcards para estudar."
-        [icone]="layersIcon"
-        labelBotao="Criar deck"
-        (acao)="irParaNovo()"
-      />
-    }
-  }
-
-  <!-- Comunidade -->
-  @if (abaAtiva() === 'comunidade') {
-    <div class="mb-4 flex justify-end">
-      <div class="w-48">
-        <app-ui-select
-          label="Ordenar por"
-          name="ordenacao-feed"
-          [options]="ordenacaoOptions"
-          [value]="feedOrdenacao()"
-          (valueChange)="mudarOrdenacaoFeed($event)"
-        />
-      </div>
-    </div>
-
-    @if (feedLoading() && feed().length === 0) {
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        @for (_ of [1, 2, 3, 4]; track $index) {
-          <app-skeleton variant="card" />
-        }
-      </div>
-    } @else if (feed().length > 0) {
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        @for (deck of feed(); track deck.id) {
-          <app-deck-card
-            [deck]="deck"
-            [mostrarAutor]="true"
-            (estudar)="irParaEstudar($event)"
-            (toggleLike)="handleToggleLike($event)"
-          />
-        }
-      </div>
-
-      @if (feedTemMais()) {
-        <div class="mt-4 flex justify-center">
+      @if (abaAtiva() === 'comunidade' && feedTemMais()) {
+        <div class="fc-more">
           <app-ui-button
             label="Carregar mais"
             variant="secondary"
@@ -137,27 +109,41 @@
           />
         </div>
       }
-    } @else {
-      <app-empty-state
-        titulo="Nenhum deck público ainda"
-        descricao="Torne um dos seus decks público para ele aparecer aqui."
-        [icone]="layersIcon"
-      />
+    } @else if (!erroAtual()) {
+      @if (abaAtiva() === 'oficiais') {
+        <app-empty-state
+          titulo="Nenhum deck oficial ainda"
+          descricao="Você pode explorar os decks da comunidade ou criar o seu."
+          [icone]="layersIcon"
+          labelBotao="Explorar a Comunidade"
+          (acao)="mudarAba('comunidade')"
+        />
+      } @else if (abaAtiva() === 'meus') {
+        <app-empty-state
+          titulo="Você ainda não criou nenhum deck"
+          descricao="Use Criar deck para transformar suas anotações em perguntas e respostas."
+          [icone]="layersIcon"
+        />
+      } @else {
+        <app-empty-state
+          titulo="Nenhum deck público ainda"
+          descricao="Crie um deck e marque Tornar este deck público para compartilhar com a comunidade."
+          [icone]="layersIcon"
+        />
+      }
     }
-  }
+  </section>
 </div>
-
 @if (deckParaExcluir()) {
   <app-ui-confirm-dialog
     titulo="Excluir deck"
-    mensagem="Tem certeza que deseja excluir este deck? Essa ação não pode ser desfeita."
+    mensagem="O deck e seus cards serão excluídos. Essa ação não pode ser desfeita."
     labelConfirmar="Excluir"
     variante="danger"
     (confirmar)="confirmarExclusao()"
     (cancelar)="cancelarExclusao()"
   />
 }
-
 @if (deckParaVerCurtidas(); as deckId) {
   <app-deck-likes-modal [deckId]="deckId" (fechar)="fecharVerCurtidas()" />
 }

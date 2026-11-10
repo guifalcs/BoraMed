@@ -68,7 +68,7 @@ const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
           } @else {
             <span class="img-dropzone__icon"><app-ui-icon [icon]="iconImage" [size]="24" /></span>
             <span class="img-dropzone__label">Clique para adicionar imagem</span>
-            <span class="img-dropzone__hint">PNG, JPG ou WebP · máx 5 MB</span>
+            <span class="img-dropzone__hint">PNG, JPG ou WebP · máx {{ maxBytes() / 1024 / 1024 }} MB</span>
           }
         </button>
       }
@@ -111,6 +111,7 @@ const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
       .img-preview__actions { display: flex; gap: 0.5rem; justify-content: center; }
 
       .img-btn {
+        min-height: 2.75rem;
         padding: 0.375rem 0.875rem; border-radius: 6px; font-size: 0.8125rem; font-weight: 500;
         cursor: pointer; border: 1px solid transparent; font-family: inherit;
         transition: background 0.15s, border-color 0.15s;
@@ -136,6 +137,7 @@ export class ImageUploadComponent implements OnDestroy {
   readonly currentUrl = input<string | null>(null);
   readonly bucket = input<string>('questao-imagens');
   readonly pathPrefix = input<string>('questoes');
+  readonly maxBytes = input(MAX_BYTES);
   readonly urlChange = output<string | null>();
   /** Emite enquanto um upload está em andamento — o pai usa para bloquear o salvar. */
   readonly uploadingChange = output<boolean>();
@@ -194,8 +196,8 @@ export class ImageUploadComponent implements OnDestroy {
       this.erroUpload.set('Formato não suportado. Use PNG, JPG ou WebP.');
       return;
     }
-    if (file.size > MAX_BYTES) {
-      this.erroUpload.set('Arquivo muito grande. Máximo 5 MB.');
+    if (file.size > this.maxBytes()) {
+      this.erroUpload.set(`Arquivo muito grande. Máximo ${this.maxBytes() / 1024 / 1024} MB.`);
       return;
     }
 

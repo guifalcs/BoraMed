@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, input, output, signal, type OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  PLATFORM_ID,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+  type OnInit,
+  type AfterViewInit,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { X } from 'lucide-angular';
 import { FlashcardService } from '../../../core/services/flashcard.service';
 import type { DeckLikeUsuario } from '../../../core/models/flashcard';
@@ -15,7 +28,7 @@ const PAGE_SIZE = 20;
   styleUrl: './deck-likes-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DeckLikesModalComponent implements OnInit {
+export class DeckLikesModalComponent implements OnInit, AfterViewInit {
   private readonly flashcardService = inject(FlashcardService);
 
   deckId = input.required<string>();
@@ -26,6 +39,12 @@ export class DeckLikesModalComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly temMais = signal(true);
   protected readonly erro = signal<string | null>(null);
+  private readonly caixa = viewChild.required<ElementRef<HTMLDialogElement>>('caixa');
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  ngAfterViewInit(): void {
+    if (this.isBrowser) this.caixa().nativeElement.showModal();
+  }
 
   // No construtor o input required ainda não está disponível (NG0950): a promise
   // rejeitava e o modal ficava em "Carregando…" para sempre.
@@ -35,6 +54,7 @@ export class DeckLikesModalComponent implements OnInit {
 
   private async carregar(offset: number): Promise<void> {
     this.loading.set(true);
+    this.erro.set(null);
     const result = await this.flashcardService.listarLikesDeck(this.deckId(), PAGE_SIZE, offset);
     if (result.ok) {
       this.likes.update((prev) => (offset === 0 ? result.data : [...prev, ...result.data]));
@@ -46,15 +66,37 @@ export class DeckLikesModalComponent implements OnInit {
   }
 
   protected async carregarMais(): Promise<void> {
+    if (this.loading()) return;
     await this.carregar(this.likes().length);
   }
 
   protected handleFechar(): void {
+    this.caixa().nativeElement.close();
     this.fechar.emit();
   }
 
-  @HostListener('document:keydown.escape')
-  protected onEscape(): void {
+  protected onEscape(evento: Event): void {
+    evento.preventDefault();
     this.handleFechar();
+  }
+
+  protected clicarFundo(evento: MouseEvent): void {
+    if (evento.target === this.caixa().nativeElement) this.handleFechar();
+  }
+
+  protected conterFoco(evento: KeyboardEvent): void {
+    if (evento.key !== 'Tab') return;
+    const botoes = [
+      ...this.caixa().nativeElement.querySelectorAll<HTMLButtonElement>('button:not([disabled])'),
+    ];
+    const primeiro = botoes[0];
+    const ultimo = botoes[botoes.length - 1];
+    if (
+      (!evento.shiftKey && document.activeElement === ultimo) ||
+      (evento.shiftKey && document.activeElement === primeiro)
+    ) {
+      evento.preventDefault();
+      (evento.shiftKey ? ultimo : primeiro)?.focus();
+    }
   }
 }

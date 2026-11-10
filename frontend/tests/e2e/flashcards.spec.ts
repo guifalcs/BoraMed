@@ -149,7 +149,11 @@ async function setupMocksAndGoto(
 
   // Auth
   await page.route('**/auth/v1/user', (route) => {
-    void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser) });
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fakeUser),
+    });
   });
 
   await page.route('**/auth/v1/token**', (route) => {
@@ -173,11 +177,19 @@ async function setupMocksAndGoto(
 
   // Perfil (subscriptionGuard) e paywall (RPC tem_assinatura_ativa)
   await page.route('**/rest/v1/profiles**', (route) => {
-    void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeProfile) });
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fakeProfile),
+    });
   });
 
   await page.route('**/rest/v1/rpc/tem_assinatura_ativa**', (route) => {
-    void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(true) });
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(true),
+    });
   });
 
   // RPC de gating desde o free tier — é quem o tierAvancadoGuard consulta.
@@ -210,7 +222,11 @@ async function setupMocksAndGoto(
 
     // listarDecksOficiais
     if (url.includes('oficial=eq.true')) {
-      void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([deckOficial]) });
+      void route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([deckOficial]),
+      });
       return;
     }
 
@@ -220,7 +236,11 @@ async function setupMocksAndGoto(
 
   // RPC: feed da comunidade
   await page.route('**/rest/v1/rpc/flashcards_feed**', (route) => {
-    void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(feed) });
+    void route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(feed),
+    });
   });
 
   // RPC: toggle like
@@ -252,7 +272,9 @@ test.describe('Módulo de Flashcards', () => {
     await expect(flashcards.deckCardByTitulo(deckOficial.titulo)).toBeVisible({ timeout: 10_000 });
   });
 
-  test('estudar deck oficial: flip revela resposta, 1 acerto + 1 erro resulta em 50%', async ({ page }) => {
+  test('estudar deck oficial: flip revela resposta, 1 acerto + 1 erro resulta em 50%', async ({
+    page,
+  }) => {
     await setupMocksAndGoto(page, '/dashboard');
     const flashcards = new FlashcardsPage(page);
     await flashcards.goto();
@@ -280,12 +302,14 @@ test.describe('Módulo de Flashcards', () => {
     await flashcards.botaoErrei.click();
 
     await expect(flashcards.resumoTitulo).toBeVisible();
-    await expect(flashcards.resumoTexto).toContainText('1 acertos');
-    await expect(flashcards.resumoTexto).toContainText('1 erros');
+    await expect(flashcards.resumoTexto).toContainText('1 acerto');
+    await expect(flashcards.resumoTexto).toContainText('1 erro');
     await expect(flashcards.resumoTexto).toContainText('50% de aproveitamento');
   });
 
-  test('aba comunidade: curtir deck atualiza a contagem de likes de forma otimista', async ({ page }) => {
+  test('aba comunidade: curtir deck atualiza a contagem de likes de forma otimista', async ({
+    page,
+  }) => {
     await setupMocksAndGoto(page, '/dashboard');
     const flashcards = new FlashcardsPage(page);
     await flashcards.goto();

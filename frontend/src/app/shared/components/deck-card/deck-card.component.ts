@@ -16,6 +16,7 @@ export function isFeedDeck(deck: DeckCardItem): deck is FeedDeck {
   standalone: true,
   imports: [UiIconComponent, TimeAgoPipe],
   templateUrl: './deck-card.component.html',
+  styleUrl: './deck-card.component.css',
   // Preenche a célula do grid para que todos os cards tenham a mesma altura.
   host: { class: 'block h-full' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +25,7 @@ export class DeckCardComponent {
   deck = input.required<DeckCardItem>();
   mostrarAutor = input(false);
   mostrarAcoes = input(false);
+  ocupado = input(false);
 
   estudar = output<string>();
   editar = output<string>();
@@ -61,6 +63,8 @@ export class DeckCardComponent {
     const d = this.deck();
     return isFeedDeck(d) ? d.autor_nome : null;
   });
+
+  protected readonly fmtNumero = (valor: number): string => valor.toLocaleString('pt-BR');
 
   protected handleToggleLike(event: Event): void {
     event.stopPropagation();

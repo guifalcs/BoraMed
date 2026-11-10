@@ -21,19 +21,20 @@ export class FlashcardsPage {
     // antes da hidratação e virar navegação de documento — aí a rota protegida
     // é pedida ao servidor, onde o guard roda sem os mocks e manda o teste
     // para /planos. Ver `clientNavigate` em fixtures/tier.fixture.ts.
+    await this.page.waitForLoadState('networkidle');
     await clientNavigate(this.page, '/dashboard/flashcards');
   }
 
   get abaOficiaisBtn(): Locator {
-    return this.page.getByRole('button', { name: 'Oficiais' });
+    return this.page.getByRole('tab', { name: 'Oficiais' });
   }
 
   get abaMeusBtn(): Locator {
-    return this.page.getByRole('button', { name: 'Meus decks' });
+    return this.page.getByRole('tab', { name: 'Meus decks' });
   }
 
   get abaComunidadeBtn(): Locator {
-    return this.page.getByRole('button', { name: 'Comunidade' });
+    return this.page.getByRole('tab', { name: 'Comunidade' });
   }
 
   get deckCards(): Locator {
@@ -51,7 +52,9 @@ export class FlashcardsPage {
   }
 
   async estudarDeck(titulo: string): Promise<void> {
-    await this.deckCardByTitulo(titulo).click();
+    await this.deckCardByTitulo(titulo)
+      .getByRole('button', { name: /^Estudar deck:/ })
+      .click();
   }
 
   // ─── Execução (estudo) ─────────────────────────────────────────────────
@@ -87,7 +90,9 @@ export class FlashcardsPage {
   // ─── Comunidade / likes ────────────────────────────────────────────────
 
   likeButtonByTitulo(titulo: string): Locator {
-    return this.deckCardByTitulo(titulo).locator('button[aria-label="Curtir deck"], button[aria-label="Descurtir deck"]');
+    return this.deckCardByTitulo(titulo).locator(
+      'button[aria-label="Curtir deck"], button[aria-label="Descurtir deck"]',
+    );
   }
 
   async curtirDeck(titulo: string): Promise<void> {

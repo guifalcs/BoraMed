@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-10 | Melhoria | Flashcards com biblioteca, editor e estudo mais claros
+
+- **Biblioteca:** criar deck visível, títulos completos, privacidade/origem e ação Estudar; abas com teclado/ARIA, controles de 44px, falhas persistentes com retry e curtidas protegidas contra envio duplicado.
+- **Estudo:** revelar e avaliar separados da navegação, corrigindo o Próximo fora da tela no celular. Zoom separado do botão de virar; face oculta fora da leitura acessível; falha de imagem com mensagem. Virada curta, sem contadores ou dicas animadas em loop.
+- **Rodadas:** progresso por cards avaliados, confirmação antes de embaralhar respostas existentes e restauração do deck original após reforço. Resultado com singular/plural correto e revisão dos erros em destaque; autoavaliação local informada.
+- **Editor:** rótulos associados, privacidade explicada, contagem de cards completos e imagens opcionais recolhidas. Proteção de saída sem salvar, confirmação ao remover conteúdo, bloqueio durante gravação/upload e recuperação de falha. Limite de imagem configurado em 2 MB para o módulo.
+- **Curtidas:** diálogo nativo com Escape, ciclo de Tab, restauração de foco e recuperação de falhas.
+- **Evidências:** fixtures, Playwright e galeria reproduzível com antes/depois de 13 etapas/estados, em mobile/desktop. Sem dependências ou migrations novas.
+- Docs: `docs/ui/flashcards.md`, `docs/business-rules.md` e `docs/design-system.md`.
+
 ## 2026-11-10 | Correção | Restaura o resumo do Caderno de Erros
 
 - Restaurados os cards compartilhados `app-kpi-card` usados antes do commit `3aba334` (09/11). O nome extenso do tema prioritário volta a usar reticências, com texto completo no `title`, impedindo que um único tema estique os quatro cards.

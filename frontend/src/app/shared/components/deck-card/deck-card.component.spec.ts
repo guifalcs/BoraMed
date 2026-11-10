@@ -41,8 +41,10 @@ async function createComponent(
   await TestBed.configureTestingModule({ imports: [DeckCardComponent] }).compileComponents();
   const fixture = TestBed.createComponent(DeckCardComponent);
   fixture.componentRef.setInput('deck', deck);
-  if (extras.mostrarAutor !== undefined) fixture.componentRef.setInput('mostrarAutor', extras.mostrarAutor);
-  if (extras.mostrarAcoes !== undefined) fixture.componentRef.setInput('mostrarAcoes', extras.mostrarAcoes);
+  if (extras.mostrarAutor !== undefined)
+    fixture.componentRef.setInput('mostrarAutor', extras.mostrarAutor);
+  if (extras.mostrarAcoes !== undefined)
+    fixture.componentRef.setInput('mostrarAcoes', extras.mostrarAcoes);
   fixture.detectChanges();
   return fixture;
 }
@@ -77,7 +79,9 @@ describe('DeckCardComponent', () => {
   it('emite estudar ao clicar no card', async () => {
     const fixture = await createComponent(deckFactory({ id: 'deck-x' }));
     const spy = vi.spyOn(fixture.componentInstance.estudar, 'emit');
-    (fixture.nativeElement as HTMLElement).querySelector('[role="button"]')?.dispatchEvent(new Event('click', { bubbles: true }));
+    (fixture.nativeElement as HTMLElement)
+      .querySelector('button.deck-study')
+      ?.dispatchEvent(new Event('click', { bubbles: true }));
     expect(spy).toHaveBeenCalledWith('deck-x');
   });
 
@@ -110,7 +114,9 @@ describe('DeckCardComponent', () => {
 
   describe('feed da comunidade', () => {
     it('exibe autor e curtidas quando mostrarAutor=true', async () => {
-      const fixture = await createComponent(feedDeckFactory({ autor_nome: 'João' }), { mostrarAutor: true });
+      const fixture = await createComponent(feedDeckFactory({ autor_nome: 'João' }), {
+        mostrarAutor: true,
+      });
       const el = fixture.nativeElement as HTMLElement;
       expect(el.textContent).toContain('João');
     });
@@ -119,7 +125,9 @@ describe('DeckCardComponent', () => {
       const fixture = await createComponent(feedDeckFactory({ id: 'deck-feed' }));
       const spy = vi.spyOn(fixture.componentInstance.toggleLike, 'emit');
       const el = fixture.nativeElement as HTMLElement;
-      const likeBtn = Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('8'));
+      const likeBtn = Array.from(el.querySelectorAll('button')).find((b) =>
+        b.textContent?.includes('8'),
+      );
       likeBtn?.click();
       expect(spy).toHaveBeenCalledWith('deck-feed');
     });
@@ -127,10 +135,14 @@ describe('DeckCardComponent', () => {
 
   describe('ver curtidas (dono do deck)', () => {
     it('emite verCurtidas ao clicar quando deck é público', async () => {
-      const fixture = await createComponent(deckFactory({ id: 'deck-pub', oficial: false, publico: true }));
+      const fixture = await createComponent(
+        deckFactory({ id: 'deck-pub', oficial: false, publico: true }),
+      );
       const spy = vi.spyOn(fixture.componentInstance.verCurtidas, 'emit');
       const el = fixture.nativeElement as HTMLElement;
-      const btn = Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('ver curtidas'));
+      const btn = Array.from(el.querySelectorAll('button')).find((b) =>
+        b.textContent?.includes('ver curtidas'),
+      );
       btn?.click();
       expect(spy).toHaveBeenCalledWith('deck-pub');
     });
@@ -158,11 +170,15 @@ describe('DeckCardComponent', () => {
     });
 
     it('deck oficial público não mostra coração nem botão de curtir', async () => {
-      const fixture = await createComponent(deckFactory({ oficial: true, publico: true, likes_count: 5 }));
+      const fixture = await createComponent(
+        deckFactory({ oficial: true, publico: true, likes_count: 5 }),
+      );
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('button[aria-label="Curtir deck"]')).toBeNull();
       expect(
-        Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('ver curtidas')),
+        Array.from(el.querySelectorAll('button')).find((b) =>
+          b.textContent?.includes('ver curtidas'),
+        ),
       ).toBeUndefined();
       // Sem coração: o único número visível é a contagem de cards, não o likes_count.
       expect(el.textContent).not.toContain('5');

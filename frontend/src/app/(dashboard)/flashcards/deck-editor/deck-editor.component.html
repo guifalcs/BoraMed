@@ -1,183 +1,255 @@
-<div class="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
+<div class="editor">
   <app-page-header
     [titulo]="modoEdicao() ? 'Editar deck' : 'Novo deck'"
-    subtitulo="Crie cards de pergunta e resposta para estudar depois."
+    subtitulo="Transforme suas anotações em perguntas e respostas."
     [breadcrumbs]="breadcrumbs"
   />
-
   @if (carregando()) {
-    <p class="text-sm text-[var(--color-text-muted)]">Carregando…</p>
+    <p class="editor-state" role="status">Carregando seu deck…</p>
+  } @else if (erroCarga()) {
+    <section class="editor-state" role="alert">
+      <h2>Não foi possível abrir o editor</h2>
+      <p>{{ erroCarga() }}</p>
+      <app-ui-button
+        label="Tentar novamente"
+        [fullWidth]="false"
+        (buttonClick)="carregarDeck(deckId()!)"
+      /><app-ui-button
+        label="Voltar"
+        variant="secondary"
+        [fullWidth]="false"
+        (buttonClick)="cancelar()"
+      />
+    </section>
   } @else {
-    <section class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-      <div class="flex flex-col gap-4">
-        <label class="flex flex-col gap-1">
-          <span class="text-sm font-semibold text-[var(--color-text)]">Título</span>
-          <input
-            type="text"
-            class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-            [value]="titulo()"
-            (input)="titulo.set($any($event.target).value)"
-            maxlength="120"
-          />
-        </label>
-
-        <label class="flex flex-col gap-1">
-          <span class="text-sm font-semibold text-[var(--color-text)]">Descrição (opcional)</span>
-          <textarea
-            class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-            rows="2"
-            [value]="descricao()"
-            (input)="descricao.set($any($event.target).value)"
-            maxlength="500"
-          ></textarea>
-        </label>
-
-        <app-ui-checkbox
+    <fieldset class="editor-form" [disabled]="salvando()">
+      <section class="editor-details">
+        <h2>Sobre o deck</h2>
+        <label for="deck-titulo">Título</label
+        ><input
+          #tituloInput
+          id="deck-titulo"
+          type="text"
+          placeholder="Ex.: Farmacologia para a próxima prova"
+          [value]="titulo()"
+          (input)="titulo.set(tituloInput.value)"
+          maxlength="120"
+          [attr.aria-invalid]="erroCampo() === 'titulo'"
+          [attr.aria-describedby]="erroCampo() === 'titulo' ? 'deck-form-erro' : null"
+        /><label for="deck-descricao">Descrição (opcional)</label
+        ><textarea
+          #descricaoInput
+          id="deck-descricao"
+          rows="2"
+          placeholder="O que este deck ajuda a revisar?"
+          [value]="descricao()"
+          (input)="descricao.set(descricaoInput.value)"
+          maxlength="500"
+        ></textarea
+        ><app-ui-checkbox
           [checked]="publico()"
           (checkedChange)="publico.set($event)"
-          ariaLabel="Tornar público"
+          ariaLabel="Tornar este deck público"
+          ><span class="editor-public-label">Tornar este deck público</span></app-ui-checkbox
         >
-          <span class="whitespace-nowrap text-sm text-[var(--color-text)]">
-            Tornar este deck público
-            <span class="text-xs text-[var(--color-text-muted)]">(aparece na Comunidade)</span>
-          </span>
-        </app-ui-checkbox>
-      </div>
-    </section>
-
-    <section class="mt-6">
-      <div class="mb-3 flex items-center justify-between">
-        <div class="flex items-center gap-1.5">
-          <button
-            type="button"
-            class="rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
-            [disabled]="indiceCardAtivo() === 0"
-            title="Card anterior"
-            aria-label="Card anterior"
-            (click)="irParaCard(indiceCardAtivo() - 1)"
-          >
-            <app-ui-icon [icon]="navAnteriorIcon" [size]="16" />
-          </button>
-          <span class="min-w-24 text-center text-sm font-semibold text-[var(--color-text)]">
-            Card {{ indiceCardAtivo() + 1 }} de {{ cards().length }}
-          </span>
-          <button
-            type="button"
-            class="rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
-            [disabled]="indiceCardAtivo() === cards().length - 1"
-            title="Próximo card"
-            aria-label="Próximo card"
-            (click)="irParaCard(indiceCardAtivo() + 1)"
-          >
-            <app-ui-icon [icon]="navProximoIcon" [size]="16" />
-          </button>
-        </div>
-
-        <div class="flex items-center gap-1">
-          <button
-            type="button"
-            class="rounded p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
-            [disabled]="indiceCardAtivo() === 0"
-            title="Trocar com o card anterior"
-            aria-label="Trocar com o card anterior"
-            (click)="moverCard(indiceCardAtivo(), -1)"
-          >
-            <app-ui-icon [icon]="moverTrasIcon" [size]="16" />
-          </button>
-          <button
-            type="button"
-            class="rounded p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-30"
-            [disabled]="indiceCardAtivo() === cards().length - 1"
-            title="Trocar com o próximo card"
-            aria-label="Trocar com o próximo card"
-            (click)="moverCard(indiceCardAtivo(), 1)"
-          >
-            <app-ui-icon [icon]="moverFrenteIcon" [size]="16" />
-          </button>
-          <button
-            type="button"
-            class="rounded p-1.5 text-red-600 transition-colors hover:bg-red-50"
-            title="Remover card"
-            aria-label="Remover card"
-            (click)="removerCard(indiceCardAtivo())"
-          >
-            <app-ui-icon [icon]="trashIcon" [size]="16" />
-          </button>
-        </div>
-      </div>
-
-      @if (cardAtivo(); as card) {
-        <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="flex flex-col gap-2">
-              <span class="text-xs font-semibold text-[var(--color-text-muted)]">Frente</span>
-              <textarea
-                class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                rows="4"
-                [value]="card.frente"
-                (input)="atualizarCard(indiceCardAtivo(), 'frente', $any($event.target).value)"
-                maxlength="2000"
-              ></textarea>
-              <app-image-upload
-                [currentUrl]="card.frenteImagemUrl"
-                [bucket]="bucket"
-                [pathPrefix]="pathPrefix"
-                (urlChange)="atualizarCard(indiceCardAtivo(), 'frenteImagemUrl', $event)"
-              />
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <span class="text-xs font-semibold text-[var(--color-text-muted)]">Verso</span>
-              <textarea
-                class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                rows="4"
-                [value]="card.verso"
-                (input)="atualizarCard(indiceCardAtivo(), 'verso', $any($event.target).value)"
-                maxlength="2000"
-              ></textarea>
-              <app-image-upload
-                [currentUrl]="card.versoImagemUrl"
-                [bucket]="bucket"
-                [pathPrefix]="pathPrefix"
-                (urlChange)="atualizarCard(indiceCardAtivo(), 'versoImagemUrl', $event)"
-              />
-            </div>
+        <p class="editor-privacy">
+          {{
+            publico()
+              ? 'Público: aparece na Comunidade para outros estudantes.'
+              : 'Privado: só você tem acesso a este deck.'
+          }}
+        </p>
+      </section>
+      <section class="editor-cards">
+        <div class="editor-cards-head">
+          <div>
+            <h2>Cards do deck</h2>
+            <p>
+              {{ completos() }} {{ completos() === 1 ? 'completo' : 'completos' }} de
+              {{ cards().length }} <span aria-hidden="true">·</span> máximo 200
+            </p>
           </div>
-        </article>
+          <button
+            type="button"
+            class="editor-add bm-press"
+            [disabled]="cards().length >= 200 || uploads().size > 0"
+            (click)="adicionarCard()"
+          >
+            <app-ui-icon [icon]="plusIcon" [size]="18" />Adicionar card
+          </button>
+        </div>
+        <div class="editor-card-toolbar">
+          <div class="editor-card-nav">
+            <button
+              type="button"
+              class="editor-icon"
+              [disabled]="indiceCardAtivo() === 0 || uploads().size > 0"
+              aria-label="Card anterior"
+              (click)="irParaCard(indiceCardAtivo() - 1)"
+            >
+              <app-ui-icon [icon]="navAnteriorIcon" [size]="18" /></button
+            ><span role="status">Card {{ indiceCardAtivo() + 1 }} de {{ cards().length }}</span
+            ><button
+              type="button"
+              class="editor-icon"
+              [disabled]="indiceCardAtivo() === cards().length - 1 || uploads().size > 0"
+              aria-label="Próximo card"
+              (click)="irParaCard(indiceCardAtivo() + 1)"
+            >
+              <app-ui-icon [icon]="navProximoIcon" [size]="18" />
+            </button>
+          </div>
+          <div class="editor-card-tools">
+            <button
+              type="button"
+              class="editor-icon"
+              [disabled]="indiceCardAtivo() === 0 || uploads().size > 0"
+              title="Trocar com o card anterior"
+              aria-label="Trocar com o card anterior"
+              (click)="moverCard(indiceCardAtivo(), -1)"
+            >
+              <app-ui-icon [icon]="moverTrasIcon" [size]="18" /></button
+            ><button
+              type="button"
+              class="editor-icon"
+              [disabled]="indiceCardAtivo() === cards().length - 1 || uploads().size > 0"
+              title="Trocar com o próximo card"
+              aria-label="Trocar com o próximo card"
+              (click)="moverCard(indiceCardAtivo(), 1)"
+            >
+              <app-ui-icon [icon]="moverFrenteIcon" [size]="18" /></button
+            ><button
+              type="button"
+              class="editor-icon editor-icon--danger"
+              [disabled]="cards().length <= 1 || uploads().size > 0"
+              title="Remover card"
+              aria-label="Remover card"
+              (click)="pedirRemocao()"
+            >
+              <app-ui-icon [icon]="trashIcon" [size]="18" />
+            </button>
+          </div>
+        </div>
+        @if (cardAtivo(); as card) {
+          <article class="editor-card">
+            <div class="editor-side">
+              <label for="deck-frente">Frente · Pergunta</label>
+              <p id="deck-frente-ajuda">O que você quer lembrar?</p>
+              <textarea
+                #frenteInput
+                id="deck-frente"
+                rows="5"
+                [value]="card.frente"
+                (input)="atualizarCard(indiceCardAtivo(), 'frente', frenteInput.value)"
+                maxlength="2000"
+                placeholder="Escreva uma pergunta objetiva"
+                [attr.aria-invalid]="erroCampo() === 'frente'"
+                [attr.aria-describedby]="
+                  erroCampo() === 'frente' ? 'deck-form-erro' : 'deck-frente-ajuda'
+                "
+              ></textarea
+              ><span class="editor-char">{{ card.frente.length }} / 2.000</span>
+              <details [open]="!!card.frenteImagemUrl">
+                <summary>Imagem da pergunta (opcional)</summary>
+                <app-image-upload
+                  [currentUrl]="card.frenteImagemUrl"
+                  [bucket]="bucket"
+                  [pathPrefix]="pathPrefix"
+                  [maxBytes]="maxImagemBytes"
+                  (uploadingChange)="atualizarUpload('frente', $event)"
+                  (urlChange)="atualizarCard(indiceCardAtivo(), 'frenteImagemUrl', $event)"
+                />
+              </details>
+            </div>
+            <div class="editor-side">
+              <label for="deck-verso">Verso · Resposta</label>
+              <p id="deck-verso-ajuda">A resposta para conferir depois de pensar.</p>
+              <textarea
+                #versoInput
+                id="deck-verso"
+                rows="5"
+                [value]="card.verso"
+                (input)="atualizarCard(indiceCardAtivo(), 'verso', versoInput.value)"
+                maxlength="2000"
+                placeholder="Escreva a resposta e os pontos essenciais"
+                [attr.aria-invalid]="erroCampo() === 'verso'"
+                [attr.aria-describedby]="
+                  erroCampo() === 'verso' ? 'deck-form-erro' : 'deck-verso-ajuda'
+                "
+              ></textarea
+              ><span class="editor-char">{{ card.verso.length }} / 2.000</span>
+              <details [open]="!!card.versoImagemUrl">
+                <summary>Imagem da resposta (opcional)</summary>
+                <app-image-upload
+                  [currentUrl]="card.versoImagemUrl"
+                  [bucket]="bucket"
+                  [pathPrefix]="pathPrefix"
+                  [maxBytes]="maxImagemBytes"
+                  (uploadingChange)="atualizarUpload('verso', $event)"
+                  (urlChange)="atualizarCard(indiceCardAtivo(), 'versoImagemUrl', $event)"
+                />
+              </details>
+            </div>
+          </article>
+        }
+      </section>
+      @if (erro()) {
+        <p id="deck-form-erro" class="editor-error" role="alert">{{ erro() }}</p>
       }
-    </section>
-
-    @if (erro()) {
-      <p class="mt-4 text-sm font-semibold text-red-600">{{ erro() }}</p>
-    }
-
-    <div class="mt-6 flex items-center justify-between gap-3">
-      <button
-        type="button"
-        class="inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-lg shadow-blue-600/30 transition-transform hover:scale-110 active:scale-95"
-        style="background: var(--gradient-brand)"
-        title="Adicionar card"
-        aria-label="Adicionar card"
-        (click)="adicionarCard()"
-      >
-        <app-ui-icon [icon]="plusIcon" [size]="20" />
-      </button>
-
-      <div class="flex items-center gap-3">
-        <app-ui-button
-          [label]="modoEdicao() ? 'Salvar alterações' : 'Criar deck'"
-          [fullWidth]="false"
-          [loading]="salvando()"
-          (buttonClick)="salvar()"
-        />
-        <app-ui-button
-          label="Cancelar"
-          variant="secondary"
-          [fullWidth]="false"
-          [disabled]="salvando()"
-          (buttonClick)="cancelar()"
-        />
-      </div>
-    </div>
+      <footer class="editor-footer">
+        <div>
+          <p>
+            {{
+              uploads().size
+                ? 'Enviando imagem…'
+                : salvando()
+                  ? 'Salvando seu deck…'
+                  : sujo()
+                    ? 'Alterações ainda não salvas'
+                    : 'Tudo pronto para editar'
+            }}
+          </p>
+          <p class="editor-hint">
+            Frente e verso aceitam texto ou imagem. Cards em branco não entram no deck.
+          </p>
+        </div>
+        <div class="editor-save">
+          <app-ui-button
+            label="Cancelar"
+            variant="secondary"
+            [fullWidth]="false"
+            [disabled]="salvando() || uploads().size > 0"
+            (buttonClick)="cancelar()"
+          /><app-ui-button
+            [label]="modoEdicao() ? 'Salvar alterações' : 'Criar deck'"
+            [fullWidth]="false"
+            [loading]="salvando()"
+            [disabled]="uploads().size > 0"
+            (buttonClick)="salvar()"
+          />
+        </div>
+      </footer>
+    </fieldset>
   }
 </div>
+@if (confirmarRemover() !== null) {
+  <app-ui-confirm-dialog
+    titulo="Remover este card?"
+    mensagem="O conteúdo deste card sairá do deck. Essa alteração só é salva ao salvar o deck."
+    labelConfirmar="Remover card"
+    variante="danger"
+    (confirmar)="removerConfirmado()"
+    (cancelar)="confirmarRemover.set(null)"
+  />
+}
+@if (confirmarSaida()) {
+  <app-ui-confirm-dialog
+    titulo="Sair sem salvar?"
+    mensagem="As alterações feitas neste deck serão perdidas."
+    labelConfirmar="Sair sem salvar"
+    labelCancelar="Continuar editando"
+    variante="danger"
+    (confirmar)="responderSaida(true)"
+    (cancelar)="responderSaida(false)"
+  />
+}

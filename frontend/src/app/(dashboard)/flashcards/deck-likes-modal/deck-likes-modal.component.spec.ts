@@ -14,6 +14,13 @@ describe('DeckLikesModalComponent', () => {
   let flashcardServiceMock: { listarLikesDeck: ReturnType<typeof vi.fn> };
 
   async function setup(likes: DeckLikeUsuario[]): Promise<void> {
+    // JSDOM não implementa a API modal nativa; foco e Escape são verificados no E2E.
+    HTMLDialogElement.prototype.showModal = function (): void {
+      this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close = function (): void {
+      this.removeAttribute('open');
+    };
     flashcardServiceMock = {
       listarLikesDeck: vi.fn().mockResolvedValue({ ok: true, data: likes }),
     };
