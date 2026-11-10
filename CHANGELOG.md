@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-09 | Melhoria | Caderno de Erros com revisão guiada e UI mais clara
+
+- **Próxima ação:** botão “Começar revisão” abre a fila de questões pendentes da página atual. Geração de simulado passa a painel secundário expansível.
+- **Consistência do resumo:** valores com o mesmo tamanho e peso nos quatro cards e larguras iguais no desktop; removida a redução de tipografia dos dois últimos indicadores. Cards mais compactos: sem altura mínima nos rótulos, menos padding vertical e 6px entre rótulo e valor.
+- **Cores do resumo:** restauradas as cores anteriores na faixa superior, nos valores e nos ícones com fundo suave, preservando o formato compacto dos novos cards.
+- **Lista:** resumo mais compacto, nomes de tema com quebra de linha, contagem em pt-BR, seleção explícita Pendentes/Dominadas e filtros organizados para celular. Limpar filtros mantém o status selecionado.
+- **Leitura e toque:** prévia do enunciado em duas linhas, Refazer com texto, botões de pelo menos 44px, foco visível, estado dos accordions acessível e feedback `bm-press`. “Errou de novo” passa a “Precisa de mais uma revisão”.
+- **Refazer:** posição real na fila, progresso e feedback de acerto/erro. A explicação retornada pela RPC agora é exibida após responder; antes não era aplicada ao card. Acesso direto aparece como questão avulsa.
+- **Consistência:** descarta respostas antigas de filtros; impede revisão durante carregamento e debounce; atualização de domínio informa processamento, trata falha e recarrega a lista/contagem.
+- **Simulado:** a UI explica os filtros efetivamente aceitos e impede geração com busca por enunciado ou múltiplos tipos selecionados, que a RPC atual não recebe. Sorteio e correção continuam server-side.
+- **Responsividade:** versão aprovada validada em 320, 390, 768, 1024 e 1280px, com texto ampliado a 200%, nomes longos e checagem de recorte interno dos cards.
+- **Evidências:** fixtures, testes Playwright e gerador de galeria antes/depois para mobile/desktop com demo, pior caso, vazio, uma questão e falha. Sem novas dependências ou migrations.
+- Docs: `docs/ui/caderno-erros.md`, `docs/design-system.md` e `docs/business-rules.md`.
+
 ## 2026-11-09 | Melhoria | Simulados com toque e movimento no padrão iOS
 
 Primeira rodada de polimento de UI no módulo de simulados, tendo o iOS como referência (a maioria dos alunos usa aparelhos Apple).

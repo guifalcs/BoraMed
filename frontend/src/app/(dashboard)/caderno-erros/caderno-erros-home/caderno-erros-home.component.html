@@ -1,19 +1,20 @@
-<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
-
+<div class="caderno-page">
   <app-page-header
     titulo="Caderno de Erros"
-    subtitulo="Revise as questões que você errou e acompanhe o quanto já domina."
+    subtitulo="Encontre o que precisa de atenção e transforme cada revisão em aprendizado."
     [breadcrumbs]="breadcrumbs"
   />
 
-  <!-- KPIs -->
-  <div class="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+  <section class="resumo-grid" aria-label="Resumo do caderno" [attr.aria-busy]="isLoadingResumo()">
     @if (isLoadingResumo()) {
       @for (_ of [1, 2, 3, 4]; track $index) {
-        <div class="h-28 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
+        <div class="resumo-skeleton animate-pulse" aria-hidden="true"></div>
       }
+      <span class="sr-only" role="status">Carregando indicadores…</span>
     } @else if (resumoError()) {
-      <div class="col-span-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+      <div
+        class="col-span-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+      >
         <app-empty-state
           titulo="Não foi possível carregar seus indicadores"
           [descricao]="resumoError()"
@@ -23,273 +24,412 @@
       </div>
     } @else {
       @for (kpi of kpis(); track kpi.label) {
-        <app-kpi-card
-          [label]="kpi.label"
-          [valor]="kpi.valor"
-          [sublabel]="kpi.sublabel"
-          [icone]="kpi.icone"
-          [variante]="kpi.variante"
-        />
+        <article class="resumo-item" [attr.data-variante]="kpi.variante">
+          <div class="resumo-label">
+            <app-ui-icon [icon]="kpi.icone" [size]="15" aria-hidden="true" />
+            <span>{{ kpi.label }}</span>
+          </div>
+          <p class="resumo-valor">{{ kpi.valor }}</p>
+          @if (kpi.sublabel) {
+            <p class="resumo-legenda">{{ kpi.sublabel }}</p>
+          }
+        </article>
       }
     }
-  </div>
+  </section>
 
-  <!-- Filtros -->
-  <div class="mt-6 flex flex-wrap items-end gap-3">
-    <div class="relative min-w-[14rem] flex-1 sm:flex-none sm:w-64">
-      <label for="busca-caderno-erros" class="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">Buscar</label>
-      <app-ui-icon [icon]="searchIcon" [size]="16" class="pointer-events-none absolute left-3 top-[2.15rem] text-[var(--color-text-muted)]" />
-      <input
-        id="busca-caderno-erros"
-        type="search"
-        placeholder="Buscar por enunciado…"
-        class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-9 pr-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
-        [value]="buscaInput()"
-        (input)="onBuscaInput($event)"
-      />
-    </div>
-
-    <div class="w-48">
-      <app-ui-multiselect
-        label="Tipo"
-        name="tipo-questao"
-        placeholder="Todos"
-        [options]="tipoOpcoes()"
-        [values]="tipoSelecionadoValues()"
-        (valuesChange)="onTipoQuestaoChange($event)"
-      />
-    </div>
-
-    <div class="w-48">
-      <app-ui-multiselect
-        label="Temas"
-        name="temas"
-        placeholder="Todos"
-        [options]="temaOpcoes()"
-        [values]="temasSelecionadosValues()"
-        (valuesChange)="onTemasChange($event)"
-      />
-    </div>
-
-    <button
-      type="button"
-      class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
-      [class]="mostrarDominadas()
-        ? 'bg-emerald-500 text-white'
-        : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
-      (click)="toggleMostrarDominadas()"
-    >
-      Mostrar dominadas
-    </button>
-
-    @if (temFiltroAtivo()) {
-      <button
-        type="button"
-        class="text-xs font-medium text-[var(--color-primary)] hover:underline"
-        (click)="limparFiltros()"
-      >Limpar filtros</button>
-    }
-  </div>
-
-  <!-- Gerar simulado com os erros -->
   @if (!mostrarDominadas()) {
-    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
-      <div class="min-w-0">
-        <p class="text-sm font-semibold text-[var(--color-text)]">Gerar simulado com esses erros</p>
-        <p class="text-xs text-[var(--color-text-muted)]">Monta uma tentativa nova só com as questões pendentes do filtro atual.</p>
-        @if (erroGerar()) {
-          <p class="mt-1 text-xs font-medium text-red-600">{{ erroGerar() }}</p>
+    <section class="revisao-convite" aria-labelledby="revisao-titulo">
+      <div class="revisao-convite__icone" aria-hidden="true">
+        <app-ui-icon [icon]="bookIcon" [size]="23" />
+      </div>
+      <div class="revisao-convite__texto">
+        <h2 id="revisao-titulo">Seu próximo acerto começa aqui</h2>
+        <p>Uma questão por vez, com feedback após responder.</p>
+      </div>
+      @if (podeRevisar()) {
+        <a
+          class="caderno-btn caderno-btn--primary bm-press"
+          [routerLink]="['/dashboard/caderno-de-erros/refazer', idsPendentes()[0]]"
+          [state]="{ filaIds: idsPendentes() }"
+        >
+          Começar revisão <app-ui-icon [icon]="proximaIcon" [size]="17" aria-hidden="true" />
+        </a>
+      } @else {
+        <button type="button" class="caderno-btn caderno-btn--primary" disabled>
+          Começar revisão <app-ui-icon [icon]="proximaIcon" [size]="17" aria-hidden="true" />
+        </button>
+      }
+    </section>
+  }
+
+  <section class="questoes-section" aria-labelledby="questoes-titulo">
+    <div class="questoes-heading">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <h2 id="questoes-titulo">Suas questões</h2>
+        @if (!isLoadingItens() && !itensError()) {
+          <span class="contagem" role="status"
+            >{{ formatNumero(totalCount()) }}
+            {{ totalCount() === 1 ? 'questão' : 'questões' }}</span
+          >
         }
       </div>
-      <div class="flex shrink-0 items-center gap-3">
-        <div class="flex items-center gap-1">
-          @for (qtd of opcoesQtd; track qtd) {
-            <button
-              type="button"
-              class="rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
-              [class]="quantidadeSimulado() === qtd
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
-              (click)="setQuantidadeSimulado(qtd)"
-            >{{ qtd }}</button>
-          }
-        </div>
+      <div class="status-switch" role="group" aria-label="Status das questões">
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
-          [disabled]="gerando() || idsPendentes().length === 0"
-          (click)="onGerarSimulado()"
+          class="bm-press"
+          [class.is-selected]="!mostrarDominadas()"
+          [attr.aria-pressed]="!mostrarDominadas()"
+          (click)="selecionarStatus(false)"
         >
-          @if (gerando()) {
-            <app-ui-icon [icon]="loaderIcon" [size]="16" class="animate-spin" />
-            Gerando...
-          } @else {
-            <app-ui-icon [icon]="shuffleIcon" [size]="16" />
-            Gerar simulado
-          }
+          <app-ui-icon [icon]="bookIcon" [size]="15" aria-hidden="true" /> Pendentes
+        </button>
+        <button
+          type="button"
+          class="bm-press"
+          [class.is-selected]="mostrarDominadas()"
+          [attr.aria-pressed]="mostrarDominadas()"
+          (click)="selecionarStatus(true)"
+        >
+          <app-ui-icon [icon]="checkCircleIcon" [size]="15" aria-hidden="true" /> Dominadas
         </button>
       </div>
     </div>
-  }
 
-  <!-- Lista de questões -->
-  <div class="mt-8">
-    @if (isLoadingItens()) {
-      <div class="flex flex-col gap-3">
-        @for (_ of [1, 2, 3]; track $index) {
-          <div class="h-32 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
-        }
-      </div>
-    } @else if (itensError()) {
-      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-        <app-empty-state
-          titulo="Não foi possível carregar seu caderno de erros"
-          [descricao]="itensError()"
-          labelBotao="Tentar novamente"
-          (acao)="onTentarNovamente()"
+    <div class="filtros-panel">
+      <div class="filtros-grid">
+        <div class="busca-field">
+          <label for="busca-caderno-erros">Buscar questão</label>
+          <div class="busca-input">
+            <app-ui-icon [icon]="searchIcon" [size]="18" aria-hidden="true" />
+            <input
+              id="busca-caderno-erros"
+              type="search"
+              placeholder="Digite parte do enunciado…"
+              [value]="buscaInput()"
+              (input)="onBuscaInput($event)"
+            />
+          </div>
+        </div>
+        <app-ui-multiselect
+          label="Tipo"
+          name="tipo-questao"
+          placeholder="Todos"
+          [options]="tipoOpcoes()"
+          [values]="tipoSelecionadoValues()"
+          (valuesChange)="onTipoQuestaoChange($event)"
+        />
+        <app-ui-multiselect
+          label="Temas"
+          name="temas"
+          placeholder="Todos"
+          [options]="temaOpcoes()"
+          [values]="temasSelecionadosValues()"
+          (valuesChange)="onTemasChange($event)"
         />
       </div>
-    } @else if (itens().length === 0) {
-      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-        @if (mostrarDominadas()) {
-          <app-empty-state
-            [icone]="bookXIcon"
-            titulo="Nenhuma questão dominada ainda"
-            descricao="Quando você marcar questões como dominadas, elas aparecem aqui."
-          />
-        } @else if (temFiltroAtivo()) {
-          <app-empty-state
-            [icone]="bookXIcon"
-            titulo="Nenhum erro para este filtro"
-            descricao="Tente remover os filtros para ver todo o seu caderno de erros."
-            labelBotao="Limpar filtros"
-            (acao)="limparFiltros()"
-          />
-        } @else {
-          <app-empty-state
-            [icone]="bookXIcon"
-            titulo="Seu caderno de erros está limpo!"
-            descricao="Assim que você errar uma questão em algum simulado, ela aparece aqui para revisão."
-          />
-        }
-      </div>
-    } @else {
-      @if (agruparPorTema()) {
-        <div class="flex flex-col gap-2">
-          @for (grupo of grupos(); track grupo.chave) {
-            @if (grupo.rotuloSecao) {
-              <p class="px-1 text-xs font-medium text-[var(--color-text-muted)]">{{ grupo.rotuloSecao }}</p>
-            }
-            <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-              <button
-                type="button"
-                class="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-2)]"
-                (click)="toggleGrupo(grupo.chave)"
-              >
-                <app-ui-icon
-                  [icon]="chevronDownIcon"
-                  [size]="16"
-                  class="shrink-0 text-[var(--color-text-muted)] transition-transform"
-                  [class.-rotate-90]="!gruposExpandidos().has(grupo.chave)"
-                />
-                <span class="flex-1 truncate text-sm font-semibold text-[var(--color-text)]">{{ grupo.tema }}</span>
-                <span class="shrink-0 rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
-                  {{ grupo.itens.length }}
-                </span>
-              </button>
+      @if (temFiltroAtivo()) {
+        <div class="filtros-resumo">
+          <span
+            ><app-ui-icon [icon]="filtrosIcon" [size]="14" aria-hidden="true" /> Filtros aplicados à
+            lista</span
+          >
+          <button type="button" class="caderno-text-btn bm-press" (click)="limparFiltros()">
+            Limpar filtros
+          </button>
+        </div>
+      }
+    </div>
 
-              @if (gruposExpandidos().has(grupo.chave)) {
-                <div class="divide-y divide-[var(--color-border)] border-t border-[var(--color-border)]">
-                  @for (item of grupo.itens; track item.questaoId) {
-                    <ng-container [ngTemplateOutlet]="linhaQuestao" [ngTemplateOutletContext]="{ $implicit: item }" />
-                  }
-                </div>
-              }
-            </div>
+    @if (mostrarDominadas()) {
+      <p class="dominadas-nota">
+        <app-ui-icon [icon]="checkCircleIcon" [size]="16" aria-hidden="true" /> Questões que você já
+        revisou. Após 30 dias sem atividade, questões ainda erradas podem voltar para pendentes.
+      </p>
+    }
+
+    <div class="questoes-lista" [attr.aria-busy]="isLoadingItens()">
+      @if (isLoadingItens()) {
+        <span class="sr-only" role="status">Carregando questões…</span>
+        @for (_ of [1, 2, 3]; track $index) {
+          <div
+            class="h-16 animate-pulse rounded-xl bg-[var(--color-surface-2)]"
+            aria-hidden="true"
+          ></div>
+        }
+      } @else if (itensError()) {
+        <div class="estado-card" role="alert">
+          <app-empty-state
+            titulo="Não foi possível carregar seu caderno de erros"
+            [descricao]="itensError()"
+            labelBotao="Tentar novamente"
+            (acao)="onTentarNovamente()"
+          />
+        </div>
+      } @else if (itens().length === 0) {
+        <div class="estado-card">
+          @if (temFiltroAtivo()) {
+            <app-empty-state
+              [icone]="searchIcon"
+              titulo="Nenhuma questão para estes filtros"
+              descricao="Tente outro termo ou limpe os filtros para ver suas questões."
+              labelBotao="Limpar filtros"
+              (acao)="limparFiltros()"
+            />
+          } @else if (mostrarDominadas()) {
+            <app-empty-state
+              [icone]="checkCircleIcon"
+              titulo="Seu progresso vai aparecer aqui"
+              descricao="Ao acertar uma questão na revisão ou marcá-la como dominada, você a encontra nesta lista."
+              labelBotao="Revisar pendentes"
+              (acao)="selecionarStatus(false)"
+            />
+          } @else {
+            <app-empty-state
+              [icone]="checkCircleIcon"
+              titulo="Seu caderno de erros está limpo!"
+              descricao="As questões que você errar nos simulados ficam aqui para revisar. Que tal continuar praticando?"
+              labelBotao="Explorar simulados"
+              (acao)="irParaSimulados()"
+            />
           }
         </div>
       } @else {
-        <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-          <div class="divide-y divide-[var(--color-border)]">
-            @for (item of itens(); track item.questaoId) {
-              <ng-container [ngTemplateOutlet]="linhaQuestao" [ngTemplateOutletContext]="{ $implicit: item }" />
+        @if (agruparPorTema()) {
+          @for (grupo of grupos(); track grupo.chave; let i = $index) {
+            @if (grupo.rotuloSecao) {
+              <p class="grupo-secao">{{ grupo.rotuloSecao }}</p>
             }
-          </div>
-        </div>
-      }
-
-      <ng-template #linhaQuestao let-item>
-        <div class="flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm">
-          <span class="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-            {{ tipoLabel(item.tipoQuestao) }}
-          </span>
-
-          <span class="min-w-0 flex-1 truncate text-[var(--color-text)]" [title]="item.enunciado">{{ item.enunciado }}</span>
-
-          @if (estadoRedoBadge(item); as badge) {
-            <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" [class]="badge.classe">{{ badge.label }}</span>
+            <div class="tema-card" [class.tema-card--aberto]="gruposExpandidos().has(grupo.chave)">
+              <button
+                type="button"
+                class="tema-trigger"
+                [attr.aria-expanded]="gruposExpandidos().has(grupo.chave)"
+                [attr.aria-controls]="'tema-conteudo-' + i"
+                (click)="toggleGrupo(grupo.chave)"
+              >
+                <span class="tema-icon" aria-hidden="true"
+                  ><app-ui-icon [icon]="bookIcon" [size]="17"
+                /></span>
+                <span class="tema-nome">{{ grupo.tema }}</span>
+                <span class="tema-count"
+                  >{{ formatNumero(grupo.itens.length)
+                  }}<span class="sr-only">
+                    {{
+                      grupo.itens.length === 1 ? 'questão nesta página' : 'questões nesta página'
+                    }}</span
+                  ></span
+                >
+                <app-ui-icon
+                  [icon]="chevronDownIcon"
+                  [size]="17"
+                  class="tema-chevron"
+                  [class.tema-chevron--aberto]="gruposExpandidos().has(grupo.chave)"
+                  aria-hidden="true"
+                />
+              </button>
+              <div [id]="'tema-conteudo-' + i" [hidden]="!gruposExpandidos().has(grupo.chave)">
+                @if (gruposExpandidos().has(grupo.chave)) {
+                  @for (item of grupo.itens; track item.questaoId) {
+                    <ng-container
+                      [ngTemplateOutlet]="linhaQuestao"
+                      [ngTemplateOutletContext]="{ $implicit: item }"
+                    />
+                  }
+                }
+              </div>
+            </div>
           }
-
-          <span class="shrink-0 text-xs text-[var(--color-text-muted)]">{{ formatDataRelativa(item.erroEm) }}</span>
-
-          <div class="flex shrink-0 items-center gap-1">
-            <a
-              [routerLink]="['/dashboard/caderno-de-erros/refazer', item.questaoId]"
-              [state]="{ filaIds: idsPendentes() }"
-              class="flex items-center rounded-lg bg-[var(--color-primary)] p-1.5 text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              title="Refazer"
-              aria-label="Refazer"
-            ><app-ui-icon [icon]="refazerIcon" [size]="15" /></a>
-
-            @if (item.provaId && item.tentativaId) {
-              <a
-                [routerLink]="['/dashboard/simulados', item.provaId, 'tentativa', item.tentativaId, 'revisao']"
-                [queryParams]="{ filtro: 'erros' }"
-                class="flex items-center rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)]"
-                title="Ver revisão completa"
-                aria-label="Ver revisão completa"
-              ><app-ui-icon [icon]="revisaoIcon" [size]="15" /></a>
+        } @else {
+          <div class="tema-card">
+            @for (item of itens(); track item.questaoId) {
+              <ng-container
+                [ngTemplateOutlet]="linhaQuestao"
+                [ngTemplateOutletContext]="{ $implicit: item }"
+              />
             }
-
-            <button
-              type="button"
-              class="flex items-center rounded-lg p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)]"
-              [title]="item.status === 'pendente' ? 'Marcar como dominada' : 'Reabrir como pendente'"
-              [attr.aria-label]="item.status === 'pendente' ? 'Marcar como dominada' : 'Reabrir como pendente'"
-              (click)="onMarcarDominada(item)"
-            ><app-ui-icon [icon]="item.status === 'pendente' ? domineiIcon : reabrirIcon" [size]="15" /></button>
           </div>
-        </div>
-      </ng-template>
+        }
 
-      @if (totalPaginas() > 1) {
-        <div class="mt-4 flex items-center justify-between gap-3">
-          <p class="text-xs text-[var(--color-text-muted)]">
-            {{ totalCount() }} {{ totalCount() === 1 ? 'questão' : 'questões' }} · página {{ pagina() }} de {{ totalPaginas() }}
-          </p>
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
-              [disabled]="pagina() <= 1 || isLoadingItens()"
-              (click)="irParaPagina(pagina() - 1)"
-            >
-              <app-ui-icon [icon]="chevronLeftIcon" [size]="14" />
-              Anterior
-            </button>
-            <button
-              type="button"
-              class="flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
-              [disabled]="pagina() >= totalPaginas() || isLoadingItens()"
-              (click)="irParaPagina(pagina() + 1)"
-            >
-              Próxima
-              <app-ui-icon [icon]="chevronRightIcon" [size]="14" />
-            </button>
-          </div>
-        </div>
+        <ng-template #linhaQuestao let-item>
+          <article class="questao-linha">
+            <div class="questao-texto">
+              <div class="questao-meta">
+                <span class="tipo-badge">{{ tipoLabel(item.tipoQuestao) }}</span>
+                @if (estadoRedoBadge(item); as badge) {
+                  <span class="redo-badge" [class]="badge.classe">{{ badge.label }}</span>
+                }
+                <span class="questao-data">Erro {{ formatDataRelativa(item.erroEm) }}</span>
+              </div>
+              <p
+                class="questao-enunciado"
+                [id]="'enunciado-' + item.questaoId"
+                [title]="item.enunciado"
+              >
+                {{ item.enunciado }}
+              </p>
+            </div>
+            <div class="questao-acoes">
+              <a
+                [routerLink]="['/dashboard/caderno-de-erros/refazer', item.questaoId]"
+                [state]="{ filaIds: mostrarDominadas() ? [] : idsPendentes() }"
+                class="questao-refazer bm-press"
+                aria-label="Refazer"
+                [attr.aria-describedby]="'enunciado-' + item.questaoId"
+              >
+                <app-ui-icon [icon]="refazerIcon" [size]="15" aria-hidden="true" /> Refazer
+              </a>
+              @if (item.provaId && item.tentativaId) {
+                <a
+                  [routerLink]="[
+                    '/dashboard/simulados',
+                    item.provaId,
+                    'tentativa',
+                    item.tentativaId,
+                    'revisao',
+                  ]"
+                  [queryParams]="{ filtro: 'erros' }"
+                  class="questao-icon-btn bm-press"
+                  title="Ver revisão completa"
+                  aria-label="Ver revisão completa"
+                  ><app-ui-icon [icon]="revisaoIcon" [size]="17" aria-hidden="true"
+                /></a>
+              }
+              <button
+                type="button"
+                class="questao-icon-btn bm-press"
+                [disabled]="atualizandoIds().has(item.questaoId)"
+                [title]="
+                  item.status === 'pendente' ? 'Marcar como dominada' : 'Reabrir como pendente'
+                "
+                [attr.aria-label]="
+                  item.status === 'pendente' ? 'Marcar como dominada' : 'Reabrir como pendente'
+                "
+                (click)="onMarcarDominada(item)"
+              >
+                <app-ui-icon
+                  [icon]="
+                    atualizandoIds().has(item.questaoId)
+                      ? loaderIcon
+                      : item.status === 'pendente'
+                        ? domineiIcon
+                        : reabrirIcon
+                  "
+                  [size]="17"
+                  [class.animate-spin]="atualizandoIds().has(item.questaoId)"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          </article>
+        </ng-template>
+
+        @if (totalPaginas() > 1) {
+          <nav class="paginacao" aria-label="Paginação das questões">
+            <p>
+              Página {{ pagina() }} de {{ formatNumero(totalPaginas()) }}
+              <span>· {{ formatNumero(totalCount()) }} questões</span>
+            </p>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="questao-icon-btn bm-press"
+                aria-label="Página anterior"
+                [disabled]="pagina() <= 1"
+                (click)="irParaPagina(pagina() - 1)"
+              >
+                <app-ui-icon [icon]="chevronLeftIcon" [size]="17" />
+              </button>
+              <button
+                type="button"
+                class="questao-icon-btn bm-press"
+                aria-label="Próxima página"
+                [disabled]="pagina() >= totalPaginas()"
+                (click)="irParaPagina(pagina() + 1)"
+              >
+                <app-ui-icon [icon]="chevronRightIcon" [size]="17" />
+              </button>
+            </div>
+          </nav>
+        }
       }
-    }
-  </div>
+    </div>
+  </section>
 
+  @if (!mostrarDominadas()) {
+    <section class="simulado-panel" aria-label="Simulado com seus erros">
+      <button
+        type="button"
+        class="simulado-trigger"
+        [attr.aria-expanded]="simuladoAberto()"
+        aria-controls="configurar-simulado"
+        (click)="simuladoAberto.set(!simuladoAberto())"
+      >
+        <span class="simulado-trigger__icone" aria-hidden="true"
+          ><app-ui-icon [icon]="shuffleIcon" [size]="19"
+        /></span>
+        <span class="min-w-0 flex-1"
+          ><strong>Prefere treinar em simulado?</strong
+          ><span class="simulado-trigger__descricao"
+            >Monte um treino com suas questões pendentes.</span
+          ></span
+        >
+        <app-ui-icon
+          [icon]="chevronDownIcon"
+          [size]="18"
+          class="tema-chevron"
+          [class.tema-chevron--aberto]="simuladoAberto()"
+          aria-hidden="true"
+        />
+      </button>
+      <div id="configurar-simulado" [hidden]="!simuladoAberto()">
+        @if (simuladoAberto()) {
+          <div class="simulado-config">
+            <div>
+              <fieldset>
+                <legend>Quantidade de questões</legend>
+                <div class="quantidade-switch">
+                  @for (qtd of opcoesQtd; track qtd) {
+                    <button
+                      type="button"
+                      class="bm-press"
+                      [class.is-selected]="quantidadeSimulado() === qtd"
+                      [attr.aria-pressed]="quantidadeSimulado() === qtd"
+                      (click)="setQuantidadeSimulado(qtd)"
+                    >
+                      {{ qtd }}
+                    </button>
+                  }
+                </div>
+              </fieldset>
+              <p class="simulado-ajuda" id="simulado-ajuda">
+                {{
+                  restricaoSimulado() ??
+                    'Usa os temas e o tipo selecionados acima. Se houver menos questões, usa as disponíveis.'
+                }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="caderno-btn caderno-btn--primary bm-press"
+              aria-describedby="simulado-ajuda"
+              [disabled]="gerando() || !podeRevisar() || !!restricaoSimulado()"
+              (click)="onGerarSimulado()"
+            >
+              <app-ui-icon
+                [icon]="gerando() ? loaderIcon : shuffleIcon"
+                [size]="16"
+                [class.animate-spin]="gerando()"
+                aria-hidden="true"
+              />
+              {{ gerando() ? 'Gerando…' : 'Gerar simulado' }}
+            </button>
+            @if (erroGerar()) {
+              <p class="simulado-erro" role="alert">{{ erroGerar() }}</p>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
 </div>

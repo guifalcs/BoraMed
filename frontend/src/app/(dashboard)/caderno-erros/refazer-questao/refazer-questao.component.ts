@@ -1,14 +1,25 @@
-import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  PLATFORM_ID,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArrowRight, Undo2 } from 'lucide-angular';
+import { ArrowRight, Undo2, CheckCircle2, BookOpen, LoaderCircle } from 'lucide-angular';
 import type { QuestaoComAlternativas } from '../../../core/models/questao';
 import type { ModoProva } from '../../../core/models/tentativa';
 import { CadernoErrosService } from '../../../core/services/caderno-erros.service';
 import { QuestaoCardComponent } from '../../../shared/components/questao-card/questao-card.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent, type Breadcrumb } from '../../../shared/components/page-header/page-header.component';
+import {
+  PageHeaderComponent,
+  type Breadcrumb,
+} from '../../../shared/components/page-header/page-header.component';
 import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.component';
 
 @Component({
@@ -16,6 +27,7 @@ import { UiIconComponent } from '../../../shared/components/ui/icon/ui-icon.comp
   standalone: true,
   imports: [QuestaoCardComponent, EmptyStateComponent, PageHeaderComponent, UiIconComponent],
   templateUrl: './refazer-questao.component.html',
+  styleUrl: './refazer-questao.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefazerQuestaoComponent {
@@ -25,7 +37,7 @@ export class RefazerQuestaoComponent {
   private readonly cadernoErrosService = inject(CadernoErrosService);
 
   /** Fila de questões pendentes vinda do Caderno de Erros (navegação [state]); vazia quando acessado direto. */
-  private filaIds: string[] = [];
+  private readonly filaIds = signal<string[]>([]);
 
   protected readonly breadcrumbs: Breadcrumb[] = [
     { label: 'Início', route: '/dashboard' },
@@ -35,6 +47,9 @@ export class RefazerQuestaoComponent {
 
   protected readonly proximaIcon = ArrowRight;
   protected readonly voltarIcon = Undo2;
+  protected readonly checkIcon = CheckCircle2;
+  protected readonly bookIcon = BookOpen;
+  protected readonly loaderIcon = LoaderCircle;
   protected readonly modoEstudo: ModoProva = 'estudo';
 
   private readonly _paramMap = toSignal(this.route.paramMap, {
@@ -52,13 +67,29 @@ export class RefazerQuestaoComponent {
   protected readonly respondida = signal(false);
   protected readonly enviando = signal(false);
   protected readonly erroResposta = signal<string | null>(null);
+  protected readonly acertou = signal<boolean | null>(null);
+  protected readonly numeroQuestao = computed(
+    () => Math.max(0, this.filaIds().indexOf(this.questaoId())) + 1,
+  );
+  protected readonly totalFila = computed(() =>
+    this.filaIds().includes(this.questaoId()) ? this.filaIds().length : 0,
+  );
+  protected readonly revisadas = computed(
+    () => this.numeroQuestao() - 1 + (this.respondida() ? 1 : 0),
+  );
+  protected readonly progresso = computed(() =>
+    this.totalFila() > 0 ? (this.revisadas() / this.totalFila()) * 100 : 0,
+  );
 
   constructor() {
     if (this.isBrowser) {
       effect(() => {
         const id = this.questaoId();
         if (!id) return;
-        this.filaIds = (history.state as { filaIds?: string[] } | null)?.filaIds ?? [];
+        const fila = (history.state as { filaIds?: unknown } | null)?.filaIds;
+        this.filaIds.set(
+          Array.isArray(fila) ? fila.filter((id): id is string => typeof id === 'string') : [],
+        );
         void this.carregarQuestao(id);
       });
     }
@@ -82,6 +113,7 @@ export class RefazerQuestaoComponent {
     this.respostaSelecionada.set(null);
     this.alternativaCorretaId.set(null);
     this.respondida.set(false);
+    this.acertou.set(null);
     this.erroResposta.set(null);
   }
 
@@ -91,9 +123,13 @@ export class RefazerQuestaoComponent {
     this.enviando.set(true);
     this.erroResposta.set(null);
     try {
-      const resposta = await this.cadernoErrosService.responderAvulsa(this.questaoId(), alternativaId);
+      const resposta = await this.cadernoErrosService.responderAvulsa(
+        this.questaoId(),
+        alternativaId,
+      );
       const corretaId = resposta.alternativaCorretaId ?? (resposta.correta ? alternativaId : null);
       this.alternativaCorretaId.set(corretaId);
+      this.acertou.set(resposta.correta);
       // `get_questao_para_refazer` mascara `correta` em todas as alternativas
       // (sem gabarito antes de responder) — o card só pinta a certa se o dado
       // já vier marcado, então aplica aqui o gabarito revelado pela resposta.
@@ -101,7 +137,11 @@ export class RefazerQuestaoComponent {
         this.questao.update((q) =>
           q === null
             ? q
-            : { ...q, alternativas: q.alternativas.map((a) => ({ ...a, correta: a.id === corretaId })) },
+            : {
+                ...q,
+                explicacao: resposta.explicacao ?? null,
+                alternativas: q.alternativas.map((a) => ({ ...a, correta: a.id === corretaId })),
+              },
         );
       }
       this.respondida.set(true);
@@ -114,19 +154,19 @@ export class RefazerQuestaoComponent {
   }
 
   protected temProxima(): boolean {
-    const atual = this.filaIds.indexOf(this.questaoId());
-    return atual !== -1 && atual < this.filaIds.length - 1;
+    const atual = this.filaIds().indexOf(this.questaoId());
+    return atual !== -1 && atual < this.filaIds().length - 1;
   }
 
   protected onProximaErrada(): void {
-    const atual = this.filaIds.indexOf(this.questaoId());
-    const proximoId = atual !== -1 ? this.filaIds[atual + 1] : undefined;
+    const atual = this.filaIds().indexOf(this.questaoId());
+    const proximoId = atual !== -1 ? this.filaIds()[atual + 1] : undefined;
     if (!proximoId) {
       void this.router.navigate(['/dashboard/caderno-de-erros']);
       return;
     }
     void this.router.navigate(['/dashboard/caderno-de-erros/refazer', proximoId], {
-      state: { filaIds: this.filaIds },
+      state: { filaIds: this.filaIds() },
     });
   }
 
