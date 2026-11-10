@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-09 | Melhoria | Minhas notas com metas e preenchimento mais claros
+
+- **Contexto:** período/semestre identificados, nome completo do eixo visível e contagem de avaliações lançadas. Abas com seleção azul sublinhada e indicadores de status preservados.
+- **Leitura:** status por texto, legenda do mínimo na barra e distinção entre ausência de nota e zero. Teoria e prática continuam independentes, com os cálculos existentes.
+- **Preenchimento:** campos de pelo menos 44px, cabeçalhos Avaliação/Sua nota, agrupamento de partes com peso total e orientação de salvamento automático. Estados de gravação/exclusão informados; limpeza bloqueada durante gravações e campos bloqueados durante a exclusão.
+- **Acessibilidade:** setas/Home/End nas abas, associação ao painel, foco visível, erros ligados ao campo e aviso que também move o foco. Movimento reduzido respeitado; dados e barra sem animação decorativa.
+- **Evidências:** fixture com composição do 2º período, Playwright com cenários de falha e casos extremos, capturas antes/depois em mobile/desktop e galeria interativa local. Sem dependências ou migrations novas.
+- Docs: `docs/minhas-notas.md`, `docs/ui/minhas-notas.md` e `docs/design-system.md`.
+
 ## 2026-11-09 | Melhoria | Caderno de Erros com revisão guiada e UI mais clara
 
 - **Próxima ação:** botão “Começar revisão” abre a fila de questões pendentes da página atual. Geração de simulado passa a painel secundário expansível.

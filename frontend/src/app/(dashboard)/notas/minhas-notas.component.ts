@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { AlertTriangle, ChevronDown, ChevronRight, GraduationCap } from 'lucide-angular';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, CloudUpload, GraduationCap, Loader2 } from 'lucide-angular';
 import { NotasService } from '../../core/services/notas.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -12,6 +12,7 @@ import {
   fmtPts,
   linhaDimensao,
   type ResumoEixo,
+  type SituacaoEixo,
 } from '../../core/utils/notas-calculo.util';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
 import { UiSelectComponent } from '../../shared/components/ui/select/ui-select.component';
@@ -19,6 +20,13 @@ import { UiConfirmDialogComponent } from '../../shared/components/ui/confirm-dia
 import { NotasDimensaoComponent, type SalvarNotaEvento } from './notas-dimensao.component';
 
 const TITULO_DIM = { cognitiva: 'Teoria', habilidades: 'Prática', unica: 'Nota única' } as const;
+const STATUS_EIXO: Record<SituacaoEixo, string> = {
+  sem_notas: 'Sem notas',
+  aprovado: 'Meta atingida em todas as partes',
+  em_andamento: 'Em andamento',
+  exame: 'Exame especial na teoria',
+  reprovado: 'Há uma parte abaixo da meta',
+};
 
 @Component({
   selector: 'app-minhas-notas',
@@ -42,6 +50,7 @@ export class MinhasNotasComponent implements OnInit {
   protected readonly salvando = signal<ReadonlySet<string>>(new Set());
   protected readonly salvos = signal<ReadonlySet<string>>(new Set());
   protected readonly confirmarLimpar = signal(false);
+  protected readonly limpando = signal(false);
 
   // Sem período cadastrado
   protected readonly periodoEscolhido = signal<number | null>(null);
@@ -61,6 +70,13 @@ export class MinhasNotasComponent implements OnInit {
     return r.eixos.find((e) => e.eixo.id === this.eixoAtivoId()) ?? r.eixos[0] ?? null;
   });
 
+  protected readonly lancadasNoEixo = computed(() =>
+    this.eixoAtivo()?.dimensoes.reduce((soma, d) => soma + d.lancadas, 0) ?? 0,
+  );
+  protected readonly totalNoEixo = computed(() =>
+    this.eixoAtivo()?.dimensoes.reduce((soma, d) => soma + d.folhas.length, 0) ?? 0,
+  );
+
   /** Aviso de uma linha, só quando algo pede atenção (atenção, risco ou exame). */
   protected readonly foco = computed(() => {
     const f = this.resumo()?.foco;
@@ -76,11 +92,15 @@ export class MinhasNotasComponent implements OnInit {
   });
 
   protected readonly fmtPts = fmtPts;
+  protected readonly statusEixo = STATUS_EIXO;
 
   protected readonly iconAlerta = AlertTriangle;
   protected readonly iconChevron = ChevronDown;
   protected readonly iconIr = ChevronRight;
   protected readonly iconPeriodo = GraduationCap;
+  protected readonly iconNuvem = CloudUpload;
+  protected readonly iconCheck = Check;
+  protected readonly iconLoader = Loader2;
 
   async ngOnInit(): Promise<void> {
     if (!this.isBrowser) return;
@@ -115,11 +135,27 @@ export class MinhasNotasComponent implements OnInit {
     this.eixoAtivoId.set(id);
   }
 
+  protected navegarEixos(ev: KeyboardEvent, indice: number): void {
+    const eixos = this.resumo()?.eixos ?? [];
+    if (!eixos.length || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key)) return;
+    ev.preventDefault();
+    const destino = ev.key === 'Home' ? 0 : ev.key === 'End' ? eixos.length - 1
+      : (indice + (ev.key === 'ArrowRight' ? 1 : -1) + eixos.length) % eixos.length;
+    const id = eixos[destino].eixo.id;
+    this.selecionarEixo(id);
+    document.getElementById(`aba-${id}`)?.focus();
+  }
+
   protected irParaDimensao(eixoId: string, dimensaoId: string): void {
     this.eixoAtivoId.set(eixoId);
     // Espera o @for re-renderizar o eixo escolhido antes de rolar.
     requestAnimationFrame(() => {
-      document.getElementById(`dimensao-${dimensaoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const alvo = document.getElementById(`dimensao-${dimensaoId}`);
+      alvo?.focus({ preventScroll: true });
+      alvo?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        block: 'start',
+      });
     });
   }
 
@@ -170,13 +206,17 @@ export class MinhasNotasComponent implements OnInit {
   }
 
   protected async limparNotas(): Promise<void> {
+    if (this.limpando() || this.salvando().size) return;
     this.confirmarLimpar.set(false);
     const reg = this.regulamento();
     if (!reg) return;
+    this.limpando.set(true);
     const r = await this.service.limparMinhasNotas(reg.id);
+    this.limpando.set(false);
     if (r.ok) {
       this.lancamentos.set([]);
       this.confirmados.clear();
+      this.salvos.set(new Set());
       this.toast.success('Notas apagadas. Bora de novo!');
     } else {
       this.toast.error(r.error);

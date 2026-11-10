@@ -20,12 +20,14 @@ O aluno vê **só o regulamento publicado do período cadastrado no perfil** (`p
 
 Enxuta de propósito (06/11: a primeira versão foi considerada carregada demais).
 
-1. **Cabeçalho**: "Minhas notas" e o período/semestre.
+1. **Cabeçalho**: "Minhas notas", período/semestre e título opcional do regulamento. Texto de apoio apenas a partir de 640px.
 2. **Aviso de foco** (uma linha, só quando algo pede atenção, risco ou exame): "HAM I · Teoria: Precisa de 84% no que falta". Clicar abre o eixo e rola até a dimensão.
-3. **Abas por eixo**: sigla com um ponto de status (garantido, em andamento, exame, abaixo). Abre no eixo que mais pede atenção. O nome completo fica no `title`.
-4. **Um cartão por dimensão** ("Teoria", "Prática" ou "Nota única"): placar, barra com o risco do mínimo, **uma frase** do que fazer (`linhaDimensao`) com no máximo um detalhe, e os campos de nota. Itens divididos mostram o nome do item e uma linha por parte. Aceita vírgula ou ponto; salva ao sair do campo ou com Enter; Esc desfaz; vazio apaga; acima do peso mostra "Máximo N" e não salva.
+3. **Abas por eixo**: sigla com um ponto de status (garantido, em andamento, exame, abaixo), seleção azul sublinhada e descrição acessível. Abre no eixo que mais pede atenção. Setas, Home e End selecionam/focam a aba; painel associado por ARIA. Abaixo, **nome completo do eixo**, quantidade de avaliações lançadas e indicação de salvamento automático.
+4. **Um cartão por dimensão** ("Teoria", "Prática" ou "Nota única"): placar, status escrito, barra com legenda **Mínimo: N**, **uma frase** do que fazer (`linhaDimensao`) com no máximo um detalhe, e os campos de nota de pelo menos 44px. Ausência de lançamento usa travessão; nota zero continua aparecendo como zero. Itens divididos mostram nome, peso total e uma linha por parte, separados visualmente. Aceita vírgula ou ponto; salva ao sair do campo ou com Enter; Esc desfaz; vazio apaga; acima do peso mostra "Máximo N" e não salva. Erros são associados ao campo por `aria-describedby`. O aviso de foco também leva o foco à dimensão e respeita movimento reduzido.
 5. **Como funciona a aprovação**, recolhido, em três linhas.
-6. Rodapé: "Calculadora independente. A nota oficial é a do portal da sua faculdade." e o link **Apagar minhas notas** (com confirmação).
+6. Rodapé: "Calculadora independente. A nota oficial é a do portal da sua faculdade." e o link **Apagar minhas notas** (com confirmação). Indisponível enquanto há gravação pendente; durante a exclusão, campos ficam bloqueados e o estado é informado. Falha preserva as notas para nova tentativa.
+
+Revisão visual de 09/11/2026: [decisões, skills e evidências antes/depois](ui/minhas-notas.md). Mantidos um eixo por vez, regras recolhidas e cálculos existentes, sem adicionar painéis de KPIs ou simuladores.
 
 Frases da dimensão (`linhaDimensao`):
 
