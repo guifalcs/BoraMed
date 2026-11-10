@@ -1,272 +1,381 @@
-<div class="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
-
-  <app-page-header
-    titulo="Histórico"
-    subtitulo="Acompanhe sua evolução e desempenho nos simulados."
-    [breadcrumbs]="breadcrumbs"
-  />
-
-  <!-- KPIs -->
-  <div class="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-    @if (isLoadingKpis()) {
-      @for (_ of [1, 2, 3, 4]; track $index) {
-        <div class="h-28 animate-pulse rounded-xl bg-[var(--color-surface-2)]"></div>
-      }
-    } @else if (kpisError()) {
-      <div class="col-span-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-        <app-empty-state
-          titulo="Não foi possível carregar seus indicadores"
-          [descricao]="kpisError()"
-          labelBotao="Tentar novamente"
-          (acao)="onTentarNovamente()"
-        />
-      </div>
-    } @else if (!temHistorico()) {
-      <div class="col-span-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-        <app-empty-state
-          titulo="Seu histórico começa no primeiro simulado"
-          descricao="Assim que você concluir uma tentativa, seus indicadores e evolução aparecem aqui."
-          labelBotao="Começar agora"
-          (acao)="onComecarSimulado()"
-        />
-      </div>
-    } @else {
-      @for (kpi of kpis(); track kpi.label) {
-        <app-kpi-card
-          [label]="kpi.label"
-          [valor]="kpi.valor"
-          [sublabel]="kpi.sublabel"
-          [icone]="kpi.icone"
-          [variante]="kpi.variante"
-        />
-      }
-    }
-  </div>
-
-  <!-- Filtros -->
-  @if (mostrarInsights()) {
-  <div class="mt-6 flex flex-wrap items-center gap-3">
-    <div class="flex items-center gap-1.5">
-      <span class="text-xs font-medium text-[var(--color-text-muted)]">Período:</span>
-      @for (p of periodosDisponiveis; track p.valor) {
-        <button
-          type="button"
-          class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
-          [class]="filtroPeriodo() === p.valor
-            ? 'bg-[var(--color-primary)] text-white'
-            : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
-          (click)="filtroPeriodo.set(p.valor)"
-        >{{ p.label }}</button>
-      }
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="text-xs font-medium text-[var(--color-text-muted)]">Tipo:</span>
-      @for (t of tiposDisponiveis; track t.valor) {
-        <button
-          type="button"
-          class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
-          [class]="filtroTipo() === t.valor
-            ? 'bg-[var(--color-primary)] text-white'
-            : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
-          (click)="filtroTipo.set(t.valor)"
-        >{{ t.label }}</button>
-      }
-    </div>
-    <button
-      type="button"
-      class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
-      [class]="filtroFavorito() === 'favoritas'
-        ? 'bg-amber-400 text-white'
-        : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'"
-      (click)="filtroFavorito.set(filtroFavorito() === 'favoritas' ? 'todos' : 'favoritas')"
+<div class="history-page">
+  <header class="history-header">
+    <app-page-header
+      titulo="Histórico"
+      subtitulo="Veja sua evolução e encontre seu próximo foco de estudo."
+      [breadcrumbs]="breadcrumbs"
+    />
+    <a routerLink="/dashboard/simulados" class="history-primary"
+      ><app-ui-icon [icon]="icons.Plus" [size]="16" />Novo simulado</a
     >
-      <app-ui-icon [icon]="starIcon" [size]="12" />
-      Favoritas
-    </button>
-  </div>
-  }
-
-  <!-- Evolução de Notas -->
-  @if (mostrarInsights()) {
-  <div class="mt-8">
-    <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Evolução de Notas</h2>
-    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
-      @if (tentativasError()) {
-        <app-empty-state
-          titulo="Não foi possível montar sua evolução"
-          [descricao]="tentativasError()"
-          labelBotao="Tentar novamente"
-          (acao)="onTentarNovamente()"
-        />
-      } @else if (!temEvolucao()) {
-        <app-empty-state
-          titulo="Sem notas para este recorte"
-          [descricao]="temFiltroAtivo()
-            ? 'Tente remover os filtros para ver sua evolução completa.'
-            : 'Conclua simulados para acompanhar sua curva de desempenho.'"
-          [labelBotao]="temFiltroAtivo() ? 'Limpar filtros' : 'Começar agora'"
-          (acao)="temFiltroAtivo() ? onLimparFiltros() : onComecarSimulado()"
-        />
-      } @else {
-        @defer (on viewport) {
-          <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
-        } @placeholder {
-          <div class="h-64 w-full animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
-        }
+  </header>
+  @if (isLoading()) {
+    <div class="metrics" role="status" aria-label="Carregando seu histórico">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="metric-skeleton animate-pulse"></div>
       }
     </div>
-  </div>
-  }
-
-  <!-- Desempenho por Tema -->
-  @if (mostrarInsights()) {
-  <div class="mt-8">
-    <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Desempenho por Tema</h2>
-    <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
-      @if (isLoadingTemas()) {
-        <div class="flex flex-col gap-5 py-1">
-          @for (_ of [1, 2, 3]; track $index) {
-            <div>
-              <div class="mb-1.5 h-4 w-1/3 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-              <div class="h-2 animate-pulse rounded-full bg-[var(--color-surface-2)]"></div>
-            </div>
-          }
-        </div>
-      } @else if (temasError()) {
-        <app-empty-state
-          titulo="Não foi possível carregar o desempenho por tema"
-          [descricao]="temasError()"
-          labelBotao="Tentar novamente"
-          (acao)="onTentarNovamente()"
-        />
-      } @else if (!temTemas()) {
-        <app-empty-state
-          titulo="Sem desempenho por tema ainda"
-          [descricao]="temFiltroAtivo()
-            ? 'Tente remover os filtros para revisar o desempenho acumulado.'
-            : 'Quando você responder simulados, esta área mostra onde vale revisar mais.'"
-          [labelBotao]="temFiltroAtivo() ? 'Limpar filtros' : 'Começar agora'"
-          (acao)="temFiltroAtivo() ? onLimparFiltros() : onComecarSimulado()"
-        />
-      } @else {
-        <app-desempenho-tema-chart [temas]="temas()" />
-      }
+  } @else if (!temHistorico() && !tentativasError() && !kpisError()) {
+    <div class="history-panel">
+      <app-empty-state
+        titulo="Seu histórico começa no primeiro simulado"
+        descricao="Conclua um simulado para descobrir seus pontos fortes, acompanhar suas notas e saber o que revisar."
+        labelBotao="Escolher um simulado"
+        (acao)="onComecarSimulado()"
+      />
     </div>
-
-    @if (temaPrioritario(); as tema) {
-      <a
-        routerLink="/dashboard/simulados/montar"
-        [queryParams]="{ tema: tema.tema_nome, qtd: 10, modo: 'estudo' }"
-        class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-700 transition-colors hover:bg-blue-100"
-      >
-        <div class="min-w-0">
-          <p class="truncate text-sm font-semibold">Treinar {{ tema.tema_nome }}</p>
-          <p class="text-xs text-blue-600">{{ tema.taxa }}% de aproveitamento em {{ tema.total }} questões</p>
-        </div>
-        <span class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">Começar</span>
-      </a>
-    }
-  </div>
-  }
-
-  <!-- Tentativas Anteriores -->
-  <div class="mt-8">
-    <h2 class="mb-3 text-sm font-semibold text-[var(--color-text)]">Tentativas Anteriores</h2>
-    @if (isLoadingTentativas()) {
-      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-        <div class="flex flex-col divide-y divide-[var(--color-border)]">
-          @for (_ of [1, 2, 3]; track $index) {
-            <div class="flex items-center justify-between gap-3 py-3">
-              <div class="flex flex-1 flex-col gap-1.5">
-                <div class="h-4 w-2/3 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-                <div class="h-3 w-1/4 animate-pulse rounded bg-[var(--color-surface-2)]"></div>
-              </div>
-              <div class="h-6 w-12 animate-pulse rounded-full bg-[var(--color-surface-2)]"></div>
-            </div>
-          }
-        </div>
+  } @else {
+    <section aria-labelledby="overview-title">
+      <div class="section-heading">
+        <h2 id="overview-title">Visão geral</h2>
+        <span class="scope-label">Todo o período</span>
       </div>
-    } @else if (tentativasError()) {
-      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-        <app-empty-state
-          titulo="Não foi possível carregar seu histórico"
-          [descricao]="tentativasError()"
-          labelBotao="Tentar novamente"
-          (acao)="onTentarNovamente()"
-        />
-      </div>
-    } @else if (tentativasFiltradas().length === 0) {
-      <div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 shadow-sm">
-        @if (temFiltroAtivo()) {
+      @if (kpisError()) {
+        <div class="history-panel">
           <app-empty-state
-            titulo="Nenhum resultado para o filtro"
-            [descricao]="filtroFavorito() === 'favoritas' ? 'Você ainda não favoritou nenhum simulado.' : 'Tente mudar o período ou tipo de prova.'"
+            titulo="Não foi possível carregar seus indicadores"
+            [descricao]="kpisError()"
+            labelBotao="Tentar novamente"
+            (acao)="onTentarNovamente()"
+          />
+        </div>
+      } @else {
+        <div class="metrics">
+          @for (kpi of kpis(); track kpi.label; let first = $first) {
+            <article class="metric" [class]="'metric-' + kpi.tone" [class.metric-primary]="first">
+              <div class="metric-label">
+                <h3>{{ kpi.label }}</h3>
+                <app-ui-icon [icon]="kpi.icone" [size]="16" />
+              </div>
+              <p class="metric-value">{{ kpi.valor }}</p>
+              @if (kpi.sublabel) {
+                <p class="metric-context">{{ kpi.sublabel }}</p>
+              }
+            </article>
+          }
+        </div>
+      }
+      @if (!temasError() && temaPrioritario(); as tema) {
+        <div class="review-suggestion">
+          <span class="review-icon"><app-ui-icon [icon]="icons.Target" [size]="20" /></span>
+          <div class="review-copy">
+            <p class="eyebrow">Seu próximo foco</p>
+            <h3>Reforce {{ tema.tema_nome }}</h3>
+            <p>
+              {{ formatNumero(tema.taxa) }}% de acerto em {{ formatNumero(tema.total) }}
+              {{ tema.total === 1 ? 'questão respondida' : 'questões respondidas' }}.
+            </p>
+          </div>
+          <a
+            routerLink="/dashboard/simulados/montar"
+            [queryParams]="{ tema: tema.tema_nome, qtd: 10, modo: 'estudo' }"
+            class="review-link"
+            >Treinar tema<app-ui-icon [icon]="icons.ArrowRight" [size]="16"
+          /></a>
+        </div>
+      }
+    </section>
+    @if (temHistorico()) {
+      <section class="history-filters history-panel" aria-labelledby="filters-title">
+        <div class="filters-intro">
+          <h2 id="filters-title">Explore seu histórico</h2>
+          <p id="filter-scope">
+            Os filtros se aplicam à evolução de notas e à lista de tentativas.
+          </p>
+        </div>
+        <div class="filters-controls" aria-describedby="filter-scope">
+          <label class="filter-field"
+            >Período<select
+              #periodo
+              [value]="filtroPeriodo()"
+              (change)="onPeriodoChange(periodo.value)"
+            >
+              @for (p of periodosDisponiveis; track p.valor) {
+                <option [value]="p.valor">
+                  {{ p.valor === 'todos' ? 'Todo o período' : p.label }}
+                </option>
+              }
+            </select></label
+          >
+          <label class="filter-field"
+            >Tipo de simulado<select
+              #tipo
+              [value]="filtroTipo()"
+              (change)="onTipoChange(tipo.value)"
+            >
+              @for (t of tiposDisponiveis; track t.valor) {
+                <option [value]="t.valor">
+                  {{ t.valor === 'todos' ? 'Todos os tipos' : t.label }}
+                </option>
+              }
+            </select></label
+          >
+          <label class="filter-field search-field"
+            >Buscar simulado<span class="search-input"
+              ><app-ui-icon [icon]="icons.Search" [size]="16" /><input
+                #search
+                type="search"
+                placeholder="Nome ou modo de estudo"
+                [value]="busca()"
+                (input)="busca.set(search.value); pagina.set(1)" /></span
+          ></label>
+          <button
+            type="button"
+            class="favorite-filter"
+            [class.selected]="filtroFavorito() === 'favoritas'"
+            [attr.aria-pressed]="filtroFavorito() === 'favoritas'"
+            (click)="
+              filtroFavorito.set(filtroFavorito() === 'favoritas' ? 'todos' : 'favoritas');
+              pagina.set(1)
+            "
+          >
+            <app-ui-icon [icon]="starIcon" [size]="16" />Favoritas
+          </button>
+        </div>
+        @if (temFiltroAtivo()) {
+          <div class="filter-feedback">
+            <span role="status"
+              >{{ tentativasFiltradas().length }}
+              {{
+                tentativasFiltradas().length === 1
+                  ? 'tentativa encontrada'
+                  : 'tentativas encontradas'
+              }}</span
+            ><button type="button" class="text-button" (click)="onLimparFiltros()">
+              Limpar filtros
+            </button>
+          </div>
+        }
+      </section>
+    }
+    @if (temHistorico() || temTemas()) {
+      <div class="insights-grid">
+        <section class="history-panel chart-panel" aria-labelledby="evolution-title">
+          <div class="section-heading">
+            <h2 id="evolution-title">Evolução de notas</h2>
+            <span class="scope-label">{{
+              temFiltroAtivo() ? 'Recorte selecionado' : 'Últimas 50 tentativas'
+            }}</span>
+          </div>
+          @if (tentativasError()) {
+            <p class="panel-note">
+              Não foi possível carregar as notas. Tente carregar o histórico novamente.
+            </p>
+          } @else if (!temEvolucao()) {
+            <p class="panel-note">
+              Sem notas neste recorte. Ajuste os filtros para ver sua evolução.
+            </p>
+          } @else {
+            @if (resumoEvolucao(); as resumo) {
+              <p class="evolution-summary" [class.positive]="resumo.diferenca > 0">
+                {{ resumo.texto }}
+              </p>
+            } @else {
+              <p class="evolution-summary">
+                Sua primeira nota. Continue praticando para acompanhar a evolução.
+              </p>
+            }
+            @defer (on viewport) {
+              <app-evolucao-nota-chart [pontos]="pontosEvolucao()" />
+            } @placeholder {
+              <div class="h-60 animate-pulse rounded-lg bg-[var(--color-surface-2)]"></div>
+            }
+          }
+        </section>
+        <section class="history-panel themes-panel" aria-labelledby="themes-title">
+          <div class="section-heading">
+            <h2 id="themes-title">Desempenho por tema</h2>
+            <span class="scope-label">Todo o período</span>
+          </div>
+          <p class="panel-description">Do menor para o maior aproveitamento.</p>
+          @if (temasError()) {
+            <app-empty-state
+              titulo="Não foi possível carregar os temas"
+              labelBotao="Tentar novamente"
+              (acao)="onTentarNovamente()"
+            />
+          } @else if (!temTemas()) {
+            <p class="panel-note">
+              Os temas aparecem conforme você responde questões nos simulados.
+            </p>
+          } @else {
+            <ul class="theme-list">
+              @for (tema of temasVisiveis(); track tema.tema_nome) {
+                <li>
+                  <div class="theme-heading">
+                    <span>{{ tema.tema_nome }}</span
+                    ><strong>{{ formatNumero(tema.taxa) }}%</strong>
+                  </div>
+                  <div class="theme-track" aria-hidden="true">
+                    <span
+                      [style.width.%]="tema.taxa"
+                      [class]="
+                        tema.taxa >= 70
+                          ? 'theme-good'
+                          : tema.taxa >= 50
+                            ? 'theme-medium'
+                            : 'theme-low'
+                      "
+                    ></span>
+                  </div>
+                  <p>
+                    {{ formatNumero(tema.acertos) }} de {{ formatNumero(tema.total) }}
+                    {{ tema.total === 1 ? 'questão correta' : 'questões corretas' }}
+                  </p>
+                </li>
+              }
+            </ul>
+            @if (temasOrdenados().length > 5) {
+              <button
+                type="button"
+                class="text-button theme-toggle"
+                [attr.aria-expanded]="mostrarTodosTemas()"
+                (click)="mostrarTodosTemas.set(!mostrarTodosTemas())"
+              >
+                {{
+                  mostrarTodosTemas()
+                    ? 'Mostrar menos temas'
+                    : 'Ver todos os ' + temasOrdenados().length + ' temas'
+                }}
+              </button>
+            }
+          }
+        </section>
+      </div>
+    }
+    <section class="attempts-section" aria-labelledby="attempts-title">
+      <div class="section-heading attempts-heading">
+        <div>
+          <h2 id="attempts-title">Tentativas anteriores</h2>
+          <p class="panel-description">
+            {{
+              tentativas().length === 50 && totalFinalizadas() > tentativas().length
+                ? 'Exibindo as últimas 50 tentativas concluídas.'
+                : 'Seus simulados concluídos, prontos para revisar.'
+            }}
+          </p>
+        </div>
+        @if (temHistorico()) {
+          <label class="sort-field"
+            ><span class="sr-only">Ordenar tentativas</span
+            ><select #ordem [value]="ordenacao()" (change)="onOrdenacaoChange(ordem.value)">
+              <option value="recentes">Mais recentes</option>
+              <option value="antigas">Mais antigas</option>
+              <option value="maior-nota">Maior nota</option>
+              <option value="menor-nota">Menor nota</option>
+              <option value="nome">Nome da prova</option>
+              <option value="modo">Modo de estudo</option>
+            </select></label
+          >
+        }
+      </div>
+      @if (favoritoError()) {
+        <p class="favorite-error" role="alert">{{ favoritoError() }}</p>
+      }
+      <div class="history-panel attempts-panel">
+        @if (tentativasError()) {
+          <app-empty-state
+            titulo="Não foi possível carregar seu histórico"
+            [descricao]="tentativasError()"
+            labelBotao="Tentar novamente"
+            (acao)="onTentarNovamente()"
+          />
+        } @else if (tentativasFiltradas().length === 0) {
+          <app-empty-state
+            titulo="Nenhum resultado para estes filtros"
+            descricao="Experimente outro nome, período ou tipo de simulado."
             labelBotao="Limpar filtros"
             (acao)="onLimparFiltros()"
           />
         } @else {
-          <app-empty-state
-            titulo="Nenhum simulado concluído"
-            descricao="Conclua o primeiro simulado para liberar histórico, evolução de notas e desempenho por tema."
-            labelBotao="Começar agora"
-            (acao)="onComecarSimulado()"
-          />
+          <div class="attempts-labels" aria-hidden="true">
+            <span>Simulado</span><span>Nota e acertos</span><span>Favorito</span>
+          </div>
+          <ul class="attempt-list">
+            @for (tentativa of tentativasPaginadas(); track tentativa.id) {
+              <li class="attempt-row">
+                <a
+                  class="attempt-link"
+                  [routerLink]="[
+                    '/dashboard/simulados',
+                    tentativa.prova_id ?? 'removida',
+                    'tentativa',
+                    tentativa.id,
+                    'resultado',
+                  ]"
+                  [state]="{ fromHistorico: true }"
+                >
+                  <div class="attempt-copy">
+                    <div class="attempt-meta">
+                      <span>{{ getTipoLabel(tentativa.tipo_prova) }}</span
+                      ><span>·</span
+                      ><time
+                        [attr.datetime]="tentativa.finalizada_em"
+                        [title]="(tentativa.finalizada_em | date: 'dd/MM/yyyy HH:mm') ?? ''"
+                        >{{ tentativa.finalizada_em | date: 'dd/MM/yyyy' }}</time
+                      ><span>·</span><span>{{ getModoLabel(tentativa.modo) }}</span>
+                    </div>
+                    <h3>{{ tentativa.prova_nome }}</h3>
+                    @if (tentativa.prova_removida) {
+                      <p class="removed-note">Prova removida do catálogo · resultado preservado</p>
+                    }
+                  </div>
+                  <div class="attempt-result">
+                    <strong class="score" [class]="getNotaBadgeClass(tentativa.nota)">{{
+                      getNotaLabel(tentativa.nota)
+                    }}</strong
+                    ><span class="correct-count"
+                      >{{ tentativa.acertos }}/{{ tentativa.total_questoes }} acertos</span
+                    ><span class="result-link"
+                      >Ver resultado<app-ui-icon [icon]="icons.ArrowUpRight" [size]="14"
+                    /></span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="favorite-button"
+                  [class.is-favorite]="tentativa.favorito"
+                  [attr.aria-label]="
+                    (tentativa.favorito ? 'Remover dos favoritos: ' : 'Adicionar aos favoritos: ') +
+                    tentativa.prova_nome
+                  "
+                  [attr.aria-pressed]="tentativa.favorito"
+                  [disabled]="favoritosPendentes().has(tentativa.id)"
+                  (click)="onToggleFavorito(tentativa)"
+                >
+                  <app-ui-icon [icon]="starIcon" [size]="18" />
+                </button>
+              </li>
+            }
+          </ul>
+          <nav class="pagination" aria-label="Paginação das tentativas">
+            <span role="status"
+              >{{ inicioPagina() + 1 }}–{{ fimPagina() }} de {{ tentativasFiltradas().length }}
+              {{ tentativasFiltradas().length === 1 ? 'tentativa' : 'tentativas' }}</span
+            >
+            @if (totalPaginas() > 1) {
+              <div>
+                <button
+                  type="button"
+                  aria-label="Página anterior"
+                  [disabled]="paginaAtual() === 1"
+                  (click)="pagina.set(paginaAtual() - 1)"
+                >
+                  <app-ui-icon [icon]="icons.ChevronLeft" [size]="18" /></button
+                ><span>{{ paginaAtual() }} / {{ totalPaginas() }}</span
+                ><button
+                  type="button"
+                  aria-label="Próxima página"
+                  [disabled]="paginaAtual() === totalPaginas()"
+                  (click)="pagina.set(paginaAtual() + 1)"
+                >
+                  <app-ui-icon [icon]="icons.ChevronRight" [size]="18" />
+                </button>
+              </div>
+            }
+          </nav>
         }
       </div>
-    } @else {
-      <app-data-table
-        [data]="tentativasFiltradas()"
-        [columns]="tentativasColumns"
-        [filterable]="true"
-        [filterPlaceholder]="'Buscar prova...'"
-        [filterKeys]="['prova_nome', 'modo']"
-        [paginated]="true"
-        [pageSize]="10"
-        [clickable]="true"
-        (rowClick)="onTentativaClick($event)"
-      >
-        <ng-template appDataTableColumn="favorito" header="" let-row="row">
-          <button
-            type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-[var(--color-surface-2)]"
-            (click)="onToggleFavorito(row, $event)"
-            [title]="row.favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
-          >
-            <app-ui-icon
-              [icon]="starIcon"
-              [size]="16"
-              [class]="row.favorito ? 'text-amber-400' : 'text-[var(--color-text-muted)] opacity-40'"
-            />
-          </button>
-        </ng-template>
-
-        <ng-template appDataTableColumn="prova_nome" header="Prova" [sortable]="true" let-value let-row="row">
-          <span class="flex max-w-[200px] items-center gap-1.5 md:max-w-[300px]">
-            <span class="truncate font-medium text-[var(--color-text)]" [title]="value">{{ value }}</span>
-            @if (row.prova_removida) {
-              <span class="shrink-0 rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-muted)]" title="Esta prova não está mais no catálogo, mas seu resultado foi preservado.">prova removida</span>
-            }
-          </span>
-        </ng-template>
-
-        <ng-template appDataTableColumn="finalizada_em" header="Data" [sortable]="true" let-value>
-          <span class="text-[var(--color-text-muted)]">{{ formatDataRelativa(value) }}</span>
-        </ng-template>
-
-        <ng-template appDataTableColumn="modo" header="Modo" [sortable]="true" let-value>
-          <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-            [class]="value === 'estudo' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'">
-            {{ getModoLabel(value) }}
-          </span>
-        </ng-template>
-
-        <ng-template appDataTableColumn="nota" header="Nota" [sortable]="true" let-value let-row="row">
-          <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" [class]="getNotaBadgeClass(row.nota)">
-            {{ getNotaLabel(row.nota) }}
-          </span>
-        </ng-template>
-      </app-data-table>
-    }
-  </div>
-
+    </section>
+  }
 </div>

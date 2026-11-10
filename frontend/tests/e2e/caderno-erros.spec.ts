@@ -7,6 +7,31 @@ test.beforeEach(({}, testInfo) => {
   test.skip(testInfo.project.name !== 'mocked', 'Fluxo com rede interceptada.');
 });
 
+for (const width of [390, 1440]) {
+  test(`resumo com o tema longo de produção mantém os cards compactos em ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await abrirCaderno(page, 'resumo-longo');
+    const resumo = page.getByRole('region', { name: 'Resumo do caderno' });
+    await expect(resumo).toContainText('574');
+    await expect(resumo).toContainText('Imunidade Adaptativa (Celular e Humoral)');
+    await page.evaluate(() => document.fonts.ready);
+    const alturas = await resumo
+      .locator(':scope > *')
+      .evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().height));
+    expect(alturas).toHaveLength(4);
+    expect(Math.max(...alturas)).toBeLessThan(180);
+    await expect(resumo.locator('[title="Imunidade Adaptativa (Celular e Humoral)"]')).toHaveCount(
+      1,
+    );
+    await resumo.screenshot({
+      path: `tests/screenshots/out/caderno-erros/resumo-restaurado-${width}.png`,
+      animations: 'disabled',
+    });
+  });
+}
+
 test('revisão revela explicação, atualiza progresso e avança sem revelar o próximo gabarito', async ({
   page,
 }) => {

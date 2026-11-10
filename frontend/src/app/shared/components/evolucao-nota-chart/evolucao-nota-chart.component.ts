@@ -42,8 +42,8 @@ export class EvolucaoNotaChartComponent {
           label: 'Nota',
           fill: true,
           tension: 0.35,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.08)',
+          borderColor: '#2554dc',
+          backgroundColor: 'rgba(37, 84, 220, 0.06)',
           pointBackgroundColor: cores,
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
@@ -55,6 +55,7 @@ export class EvolucaoNotaChartComponent {
   });
 
   protected readonly chartOptions: ChartOptions<'line'> = {
+    animation: false,
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -79,7 +80,7 @@ export class EvolucaoNotaChartComponent {
         ticks: {
           stepSize: 25,
           callback: (v) => `${v}%`,
-          color: '#9ca3af',
+          color: '#64748b',
           font: { size: 11 },
         },
         grid: {
@@ -89,7 +90,7 @@ export class EvolucaoNotaChartComponent {
       },
       x: {
         ticks: {
-          color: '#9ca3af',
+          color: '#64748b',
           font: { size: 11 },
           maxRotation: 0,
         },

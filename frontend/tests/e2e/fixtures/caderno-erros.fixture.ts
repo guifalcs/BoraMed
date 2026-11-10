@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { clientNavigate, setupTierMocks } from './tier.fixture';
 
-export type CadernoScenario = 'demo' | 'worst' | 'empty' | 'one' | 'error';
+export type CadernoScenario = 'demo' | 'worst' | 'empty' | 'one' | 'error' | 'resumo-longo';
 
 interface FiltrosRpc {
   p_status: string;
@@ -70,10 +70,19 @@ export async function abrirCaderno(page: Page, scenario: CadernoScenario = 'demo
         route.fulfill({
           json: {
             total_pendentes:
-              scenario === 'worst' ? 1284 : itens.filter((i) => i.status === 'pendente').length,
+              scenario === 'resumo-longo'
+                ? 574
+                : scenario === 'worst'
+                  ? 1284
+                  : itens.filter((i) => i.status === 'pendente').length,
             por_tipo_questao: { nacional: 4, processual: 3, laboratorio: 2 },
-            tema_mais_fraco: itens.length ? itens[0].tema_principal : null,
-            dominadas_ultimos_7_dias: scenario === 'empty' ? 0 : 6,
+            tema_mais_fraco:
+              scenario === 'resumo-longo'
+                ? 'Imunidade Adaptativa (Celular e Humoral)'
+                : itens.length
+                  ? itens[0].tema_principal
+                  : null,
+            dominadas_ultimos_7_dias: scenario === 'empty' || scenario === 'resumo-longo' ? 0 : 6,
           },
         }),
       );

@@ -572,8 +572,8 @@ Movimento (as animações CSS respeitam `prefers-reduced-motion`; o spinner usa 
 - Revisão mostra posição e progresso sem animar dados ou atrasar a navegação. Acerto/erro têm texto além de cor. Texto sem tom punitivo.
 - Reutilizar `bm-press` e `--ease-out`; sem cascata decorativa. Movimento reduzido remove transformações de toque e rotação animada. Tipografia em rem permite ampliação.
 - Auditoria, escolha de skills, casos extremos e reprodução das capturas: [docs/ui/caderno-erros.md](ui/caderno-erros.md).
-- Cards do resumo preservam as cores originais por estado: vermelho para pendências e foco sugerido, verde para progresso e azul para o tipo. Aplicar à faixa superior, ao valor e ao ícone com fundo suave; manter o formato compacto e nomes com quebra de linha.
-- Os quatro valores do resumo têm o mesmo destaque: `1.5rem` no celular e `1.75rem` a partir de 640px, peso 750. Rótulos permitem quebra de palavras com texto ampliado e têm altura definida pelo conteúdo e os quatro cards têm larguras iguais no desktop; nomes longos continuam quebrando linha. O padding é 12px vertical no celular e 14px a partir de 640px, com 6px entre rótulo e valor; evitar reservar linhas vazias para os rótulos.
+- O resumo do Caderno de Erros reutiliza `app-kpi-card`, como antes de 09/11/2026: faixa superior, ícone à direita e valores com reticências quando extensos. O nome completo fica no `title` do card. Cores por estado: vermelho para pendências/foco, verde para progresso e azul para o tipo.
+- Não aplicar tamanho de número com quebra livre ao nome do tema prioritário: esse texto não deve esticar a linha inteira de indicadores. Grid em duas colunas no celular e quatro a partir de 768px, como na apresentação anterior.
 
 ### Minhas notas: contexto e preenchimento (09/11/2026)
 
@@ -582,3 +582,11 @@ Movimento (as animações CSS respeitam `prefers-reduced-motion`; o spinner usa 
 - Inputs com pelo menos 44px de altura e teclado decimal. Partes são agrupadas sob nome/peso total da avaliação. Nomes podem quebrar linha e os campos podem passar à linha seguinte com texto ampliado.
 - Salvamento automático é explicado e informa processamento/sucesso. Dados e barra atualizam sem animação de largura; feedback de toque reutiliza `bm-press`. Regras continuam recolhidas.
 - Auditoria e evidências: [Minhas notas — revisão de UI](ui/minhas-notas.md).
+
+## Histórico: resumo, recortes e revisão
+
+Os cards do histórico mantêm o formato compacto e ícones na posição superior direita. O acerto geral tem fundo azul institucional preenchido, valor e ícone brancos e textos auxiliares claros. Os demais cards têm fundo branco e cores semânticas nos valores e ícones: verde para progresso/acerto a partir de 70%, âmbar entre 50% e 69%, vermelho abaixo de 50% e no tema prioritário; azul quando não há dados. Não usar faixa superior nem reposicionar os ícones. Os valores são tabulares e o contexto permanece visível também no celular. Nomes de temas quebram linha. A recomendação fica junto do resumo.
+
+Os filtros ficam em painel com rótulos e controles nativos de pelo menos 44px. O escopo é explícito: evolução e tentativas acompanham os filtros; indicadores e temas mostram todo o período. A lista usa links reais para o resultado e botão separado de favorito, título completo e nota/acertos visíveis sem rolagem horizontal.
+
+Apenas feedback de pressão discreto nos controles; respeitar movimento reduzido e hover com ponteiro. O gráfico de evolução atualiza sem animação e tem nome acessível. Temas mostram cinco itens e expansão explícita, sem cortar o último item num painel com altura fixa. Detalhes e comparação: [revisão do histórico](ui/historico.md).

@@ -1,6 +1,6 @@
 # Caderno de Erros — revisão de UI
 
-Rodada de 09/11/2026. Escopo: `/dashboard/caderno-de-erros` e `/dashboard/caderno-de-erros/refazer/:questaoId`.
+Rodada de 09/11/2026, com restauração dos indicadores em 10/11/2026. Escopo: `/dashboard/caderno-de-erros` e `/dashboard/caderno-de-erros/refazer/:questaoId`.
 
 ## Skills escolhidas
 
@@ -20,7 +20,7 @@ Referências locais: `~/.agents/skills/revenue-centric-design/references/dashboa
 
 | Antes | Depois | Por quê |
 | --- | --- | --- |
-| Quatro KPIs igualmente chamativos; nomes de tema truncados em tamanho grande | Resumo compacto com as cores originais (vermelho, verde e azul), números tabulares em pt-BR e nomes com quebra de linha | Separar o contexto da ação e permitir identificar temas extensos. |
+| Tema longo esticava os quatro indicadores após o commit de 09/11 | Restaurado `app-kpi-card` anterior, com reticências e nome completo no `title` | Recuperar o resumo anterior sem esticar os cards. |
 | Simulado era a ação principal; refazer uma questão dependia de achar o ícone na lista | **Começar revisão** abre a fila de pendentes da página atual; simulado em painel secundário expansível | Reduzir o esforço para iniciar uma revisão. |
 | “Mostrar dominadas” substituía a lista, sugerindo uma opção aditiva | Seletor explícito **Pendentes / Dominadas**, com `aria-pressed` | Tornar o estado inequívoco. Limpar filtros preserva o status selecionado. |
 | Enunciado em uma linha e ações de cerca de 28px; no celular sobravam poucos caracteres | Prévia de duas linhas, Refazer com texto e ações de no mínimo 44px | Reconhecer a questão e facilitar toque. O texto completo permanece no refazer e na descrição acessível do link. |
@@ -31,7 +31,7 @@ Referências locais: `~/.agents/skills/revenue-centric-design/references/dashboa
 | Atualização otimista de domínio podia reinserir uma questão num filtro diferente em caso de falha | Botão informa processamento, persiste primeiro, confirma por toast e recarrega a lista atual | Preservar consistência e permitir recuperação de falhas. |
 | Respostas lentas de filtros anteriores podiam sobrescrever a lista atual | Identificador de requisição descarta resultados antigos; revisão indisponível durante busca/carregamento | Evitar abrir uma fila desatualizada. |
 
-Ajuste após revisão visual: foram recuperadas as cores dos cards anteriores na faixa superior, no valor e no ícone com fundo suave. O formato compacto e a quebra de linha da nova UI foram mantidos. Após novo feedback, os quatro valores passaram a ter a mesma tipografia (24px no celular, 28px a partir de 640px, peso 750), rótulos e colunas de mesma largura no desktop. Os cards foram compactados novamente: removida a altura mínima dos rótulos, padding vertical reduzido para 12px no celular e 14px a partir de 640px, e distância entre rótulo e valor reduzida para 6px. Assim, a altura acompanha o conteúdo sem reservar linhas vazias. Foi removida a diferenciação que deixava os dois últimos valores menores e os cards desequilibrados. Variantes seguem os mesmos estados anteriores: pendências em vermelho (verde quando zeradas), dominadas em verde quando há progresso, foco sugerido em vermelho quando disponível e tipo em azul.
+Estado atual (10/11/2026): por solicitação do usuário após a regressão em produção, os indicadores e o subtítulo inicial voltaram à apresentação anterior a `3aba334` (base `f619af8`). O resumo reutiliza `app-kpi-card`, em duas colunas no celular e quatro a partir de 768px. Temas extensos usam reticências, com nome completo disponível no `title`; os estilos específicos `.resumo-item`, `.resumo-valor` e semelhantes foram removidos. As melhorias na revisão, filtros, estados e gravação permanecem. As capturas e a aprovação de 09/11 abaixo registram a rodada anterior; a evidência da restauração está na seção final.
 
 ## Casos extremos e decisões
 
@@ -96,3 +96,11 @@ Layout aprovado pelo usuário após os ajustes de cor, tipografia e compactaçã
 - Atalho de revisão do tema sugerido, condicionado à disponibilidade de temas no acervo; muitos itens nacionais usam fallback por disciplina/tipo.
 
 Esses pontos não integram esta implementação.
+
+## Restauração do resumo — 10/11/2026
+
+A captura de produção mostrou o tema “Imunidade Adaptativa (Celular e Humoral)” quebrando em quatro linhas grandes, esticando os quatro cards. O teste com os mesmos dados (574 pendências, zero dominadas, Nacional) reproduziu 215px de altura no desktop antes da restauração, acima do limite de regressão de 180px.
+
+A restauração reaplica os cards usados antes de `3aba334`, sem reverter o commit inteiro nem alterar as melhorias do histórico. Testes de regressão em `frontend/tests/e2e/caderno-erros.spec.ts`; cenário `resumo-longo` na fixture. Capturas locais: `frontend/tests/screenshots/out/caderno-erros/resumo-restaurado-390.png` e `resumo-restaurado-1440.png`.
+
+Verificação da restauração: os 14 testes E2E do Caderno de Erros passaram, incluindo as duas regressões com o tema da captura em 390/1440px, revisão de questões e filtros.
