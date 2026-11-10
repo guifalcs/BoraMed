@@ -32,6 +32,17 @@ const TITULO: Record<TipoDimensao, string> = {
   unica: 'Nota única',
 };
 
+const STATUS: Record<ResumoDimensao['situacao'], string> = {
+  sem_notas: 'Sem notas',
+  garantida: 'Meta atingida',
+  confortavel: 'No caminho',
+  no_caminho: 'No caminho',
+  atencao: 'Atenção',
+  risco: 'Atenção',
+  exame: 'Exame especial',
+  abaixo: 'Abaixo da meta',
+};
+
 /**
  * Cartão de uma dimensão: placar, barra até a meta, uma frase do que fazer e
  * os campos de nota. De propósito, nada além disso.
@@ -49,12 +60,14 @@ export class NotasDimensaoComponent {
   readonly resumo = input.required<ResumoDimensao>();
   readonly salvando = input<ReadonlySet<string>>(new Set());
   readonly salvos = input<ReadonlySet<string>>(new Set());
+  readonly bloqueado = input(false);
   readonly salvar = output<SalvarNotaEvento>();
 
   protected readonly erros = signal<ReadonlyMap<string, string>>(new Map());
 
   protected readonly linha = computed(() => linhaDimensao(this.resumo()));
   protected readonly titulo = computed(() => TITULO[this.dimensao().tipo]);
+  protected readonly status = computed(() => STATUS[this.resumo().situacao]);
 
   protected readonly linhas = computed<LinhaGrupo[]>(() => {
     const porId = new Map(this.resumo().folhas.map((f) => [f.id, f]));

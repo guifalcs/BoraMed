@@ -574,3 +574,11 @@ Movimento (as animações CSS respeitam `prefers-reduced-motion`; o spinner usa 
 - Auditoria, escolha de skills, casos extremos e reprodução das capturas: [docs/ui/caderno-erros.md](ui/caderno-erros.md).
 - Cards do resumo preservam as cores originais por estado: vermelho para pendências e foco sugerido, verde para progresso e azul para o tipo. Aplicar à faixa superior, ao valor e ao ícone com fundo suave; manter o formato compacto e nomes com quebra de linha.
 - Os quatro valores do resumo têm o mesmo destaque: `1.5rem` no celular e `1.75rem` a partir de 640px, peso 750. Rótulos permitem quebra de palavras com texto ampliado e têm altura definida pelo conteúdo e os quatro cards têm larguras iguais no desktop; nomes longos continuam quebrando linha. O padding é 12px vertical no celular e 14px a partir de 640px, com 6px entre rótulo e valor; evitar reservar linhas vazias para os rótulos.
+
+### Minhas notas: contexto e preenchimento (09/11/2026)
+
+- Abas de eixos usam seleção azul com sublinhado e mantêm indicadores de status; o nome completo do eixo aparece no conteúdo, além do `title`. Setas/Home/End e relação ARIA com o painel completam a navegação.
+- Dimensões mantêm uma frase de orientação. Placar com números tabulares, status escrito e mínimo identificado na barra; ausência de nota usa travessão, zero permanece válido.
+- Inputs com pelo menos 44px de altura e teclado decimal. Partes são agrupadas sob nome/peso total da avaliação. Nomes podem quebrar linha e os campos podem passar à linha seguinte com texto ampliado.
+- Salvamento automático é explicado e informa processamento/sucesso. Dados e barra atualizam sem animação de largura; feedback de toque reutiliza `bm-press`. Regras continuam recolhidas.
+- Auditoria e evidências: [Minhas notas — revisão de UI](ui/minhas-notas.md).

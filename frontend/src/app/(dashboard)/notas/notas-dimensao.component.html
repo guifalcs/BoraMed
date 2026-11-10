@@ -1,10 +1,13 @@
 @let r = resumo();
 @let l = linha();
-<article class="dim" [attr.data-nivel]="l.nivel" [id]="'dimensao-' + r.id">
+<article class="dim" [attr.data-nivel]="l.nivel" [id]="'dimensao-' + r.id" [attr.aria-labelledby]="'titulo-' + r.id" tabindex="-1">
   <header class="dim-head">
-    <h3 class="dim-titulo">{{ titulo() }}</h3>
-    <p class="dim-nota" [attr.aria-label]="fmtPts(r.obtido) + ' de ' + fmtPts(r.total) + ' pontos'">
-      <strong>{{ fmtPts(r.obtido) }}</strong>/{{ fmtPts(r.total) }}
+    <div class="dim-identidade">
+      <h3 class="dim-titulo" [id]="'titulo-' + r.id">{{ titulo() }}</h3>
+      <span class="dim-status"><i aria-hidden="true"></i>{{ status() }}</span>
+    </div>
+    <p class="dim-nota" [attr.aria-label]="r.lancadas ? fmtPts(r.obtido) + ' de ' + fmtPts(r.total) + ' pontos acumulados' : 'Nenhuma nota lançada'">
+      <strong>{{ r.lancadas ? fmtPts(r.obtido) : '—' }}</strong><span>/ {{ fmtPts(r.total) }} pts</span>
     </p>
   </header>
 
@@ -12,19 +15,21 @@
     <i class="barra-fill" [style.width.%]="barra().obtido"></i>
     <span class="barra-meta" [style.left.%]="barra().meta" title="Mínimo para aprovar"></span>
   </div>
+  <div class="barra-legenda" aria-hidden="true"><span>Pontos acumulados</span><span>Mínimo: <strong>{{ fmtPts(r.meta) }}</strong></span></div>
 
   <div class="dim-dica" aria-live="polite">
     <p class="dim-dica-titulo">{{ l.titulo }}</p>
     @if (l.detalhe) { <p class="dim-dica-detalhe">{{ l.detalhe }}</p> }
   </div>
 
+  <div class="itens-head" aria-hidden="true"><span>Avaliação</span><span>Sua nota</span></div>
   <ul class="itens">
     @for (g of linhas(); track g.id) {
       @if (g.folha; as f) {
         <li><ng-container *ngTemplateOutlet="campo; context: { $implicit: f, nome: g.nome }" /></li>
       } @else {
         <li class="grupo">
-          <p class="grupo-nome">{{ g.nome }}</p>
+          <p class="grupo-nome"><span>{{ g.nome }}</span><span class="grupo-peso">{{ fmtPts(g.pontos) }} pts</span></p>
           @for (f of g.partes; track f.id) {
             <ng-container *ngTemplateOutlet="campo; context: { $implicit: f, nome: f.nome, parte: true }" />
           }
@@ -42,10 +47,12 @@
           type="text"
           inputmode="decimal"
           autocomplete="off"
+          [disabled]="bloqueado()"
           placeholder="–"
           [value]="valorCampo(f)"
           [attr.aria-label]="'Nota em ' + f.rotulo + ', de 0 a ' + fmtPts(f.pontos)"
           [attr.aria-invalid]="erros().has(f.id)"
+          [attr.aria-describedby]="erros().has(f.id) ? 'erro-' + f.id : null"
           (blur)="confirmarCampo(f, inp)"
           (keydown)="teclaCampo($event, f, inp)"
         />
@@ -59,6 +66,6 @@
         </span>
       </span>
     </label>
-    @if (erros().get(f.id); as e) { <p class="campo-erro" role="alert">{{ e }}</p> }
+    @if (erros().get(f.id); as e) { <p class="campo-erro" [id]="'erro-' + f.id" role="alert">{{ e }}</p> }
   </ng-template>
 </article>

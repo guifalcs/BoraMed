@@ -13,7 +13,7 @@
       <span class="mn-vazio-icone mn-vazio-icone--alerta"><app-ui-icon [icon]="iconAlerta" [size]="28" /></span>
       <h1>Não conseguimos carregar suas notas</h1>
       <p>{{ erro() }}</p>
-      <button type="button" class="mn-btn mn-btn--primary" (click)="carregar()">Tentar de novo</button>
+      <button type="button" class="mn-btn mn-btn--primary bm-press" (click)="carregar()">Tentar de novo</button>
     </section>
   } @else if (dados(); as d) {
     @if (d.periodo === null) {
@@ -36,7 +36,7 @@
           />
           <button
             type="button"
-            class="mn-btn mn-btn--primary mn-btn--block"
+            class="mn-btn mn-btn--primary mn-btn--block bm-press"
             [disabled]="periodoEscolhido() === null || salvandoPeriodo()"
             (click)="salvarPeriodo()"
           >
@@ -71,13 +71,17 @@
       @let r = resumo()!;
 
       <header class="mn-head">
-        <h1 class="mn-titulo">Minhas notas</h1>
-        <p class="mn-sub">{{ reg.titulo || reg.periodo + 'º período · ' + reg.semestre }}</p>
+        <div>
+          <h1 class="mn-titulo">Minhas notas</h1>
+          <p class="mn-sub">Acompanhe o que já conquistou e quanto falta para passar.</p>
+          @if (reg.titulo) { <p class="mn-reg-titulo">{{ reg.titulo }}</p> }
+        </div>
+        <span class="mn-periodo"><app-ui-icon [icon]="iconPeriodo" [size]="16" />{{ reg.periodo }}º período <span aria-hidden="true">·</span> {{ reg.semestre }}</span>
       </header>
 
       <!-- Uma linha, só quando algo pede atenção -->
       @if (foco(); as f) {
-        <button type="button" class="mn-foco" [attr.data-situacao]="f.resumo.situacao" (click)="irParaDimensao(f.resumo.eixoId, f.resumo.id)">
+        <button type="button" class="mn-foco bm-press" [attr.data-situacao]="f.resumo.situacao" (click)="irParaDimensao(f.resumo.eixoId, f.resumo.id)">
           <app-ui-icon [icon]="iconAlerta" [size]="18" />
           <span><strong>{{ f.rotulo }}:</strong> {{ f.frase }}</span>
           <app-ui-icon class="mn-foco-ir" [icon]="iconIr" [size]="18" />
@@ -85,34 +89,55 @@
       }
 
       <div class="mn-tabs" role="tablist" aria-label="Eixos do período">
-        @for (e of r.eixos; track e.eixo.id) {
+        @for (e of r.eixos; track e.eixo.id; let i = $index) {
           <button
             type="button"
             role="tab"
-            class="mn-tab"
+            class="mn-tab bm-press"
+            [id]="'aba-' + e.eixo.id"
+            [attr.aria-controls]="'painel-' + e.eixo.id"
+            [attr.aria-label]="e.eixo.sigla"
+            [attr.aria-describedby]="'status-eixo-' + e.eixo.id"
+            [attr.tabindex]="eixoAtivo()?.eixo?.id === e.eixo.id ? 0 : -1"
             [class.is-on]="eixoAtivo()?.eixo?.id === e.eixo.id"
             [attr.aria-selected]="eixoAtivo()?.eixo?.id === e.eixo.id"
             [attr.data-situacao]="e.situacao"
             [title]="e.eixo.nome"
             (click)="selecionarEixo(e.eixo.id)"
+            (keydown)="navegarEixos($event, i)"
           >
             <i class="mn-tab-dot" aria-hidden="true"></i>{{ e.eixo.sigla }}
+            <span class="sr-only" [id]="'status-eixo-' + e.eixo.id">{{ statusEixo[e.situacao] }}</span>
           </button>
         }
       </div>
 
       @if (eixoAtivo(); as e) {
-        <div class="mn-dims" role="tabpanel" [attr.aria-label]="e.eixo.nome" [class.mn-dims--uma]="e.dimensoes.length === 1">
-          @for (rd of e.dimensoes; track rd.id; let i = $index) {
-            <app-notas-dimensao
-              [dimensao]="e.eixo.dimensoes[i]"
-              [resumo]="rd"
-              [salvando]="salvando()"
-              [salvos]="salvos()"
-              (salvar)="salvarNota($event)"
-            />
-          }
-        </div>
+        <section role="tabpanel" [id]="'painel-' + e.eixo.id" [attr.aria-labelledby]="'aba-' + e.eixo.id" tabindex="0">
+          <div class="mn-eixo-head">
+            <div class="mn-eixo-contexto">
+              <h2>{{ e.eixo.nome }}</h2>
+              <p>{{ lancadasNoEixo() }} de {{ totalNoEixo() }} {{ totalNoEixo() === 1 ? 'avaliação lançada' : 'avaliações lançadas' }}</p>
+            </div>
+            <span class="mn-save" role="status">
+              <app-ui-icon [icon]="salvando().size ? iconLoader : salvos().size ? iconCheck : iconNuvem" [class.animate-spin]="salvando().size > 0" [size]="15" />
+              {{ limpando() ? 'Apagando notas…' : salvando().size ? 'Salvando…' : salvos().size ? 'Alterações salvas' : 'Salva ao sair do campo' }}
+            </span>
+          </div>
+          <div class="mn-dims" [class.mn-dims--uma]="e.dimensoes.length === 1">
+            @for (rd of e.dimensoes; track rd.id; let i = $index) {
+              <app-notas-dimensao
+                [dimensao]="e.eixo.dimensoes[i]"
+                [resumo]="rd"
+                [salvando]="salvando()"
+                [salvos]="salvos()"
+                [bloqueado]="limpando()"
+                (salvar)="salvarNota($event)"
+              />
+            }
+          </div>
+          <p class="mn-teclado">Enter para salvar <span aria-hidden="true">·</span> Esc para desfazer a edição <span aria-hidden="true">·</span> Deixe em branco para apagar uma nota</p>
+        </section>
       }
 
       <details class="mn-regras">
@@ -130,7 +155,7 @@
       <footer class="mn-rodape">
         <p>Calculadora independente. A nota oficial é a do portal da sua faculdade.</p>
         @if (r.lancadas > 0) {
-          <button type="button" class="mn-link" (click)="confirmarLimpar.set(true)">Apagar minhas notas</button>
+          <button type="button" class="mn-link" [disabled]="salvando().size > 0 || limpando()" (click)="confirmarLimpar.set(true)">{{ limpando() ? 'Apagando notas…' : 'Apagar minhas notas' }}</button>
         }
       </footer>
     }

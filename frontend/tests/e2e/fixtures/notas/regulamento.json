@@ -1,0 +1,591 @@
+{
+  "periodo": 2,
+  "semestre": "2026.2",
+  "fonte": "Regulamento do sistema de avaliação 2026.2",
+  "observacao": "Composição divulgada aos alunos no regulamento do sistema de avaliação 2026.2 (unidade Ipatinga). Frequência mínima de 75% em todos os eixos.",
+  "eixos": [
+    {
+      "sigla": "SOI II",
+      "nome": "Sistemas Orgânicos Integrados II",
+      "exame_especial": true,
+      "dimensoes": [
+        {
+          "tipo": "cognitiva",
+          "itens": [
+            {
+              "nome": "Prova N1",
+              "pontos": 20,
+              "id": "item-0-0-0",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "TPI",
+              "pontos": 30,
+              "descricao": "Teste de Progresso Institucional",
+              "id": "item-0-0-1",
+              "subitens": []
+            },
+            {
+              "nome": "Prova N2",
+              "pontos": 35,
+              "id": "item-0-0-2",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "Prova N3",
+              "pontos": 15,
+              "id": "item-0-0-3",
+              "descricao": null,
+              "subitens": []
+            }
+          ],
+          "id": "dim-0-0",
+          "nome": "Dimensão Cognitiva",
+          "pontos_total": 100
+        },
+        {
+          "tipo": "habilidades",
+          "itens": [
+            {
+              "nome": "Avaliação Diária na APG",
+              "pontos": 35,
+              "subitens": [
+                {
+                  "nome": "1ª parcial",
+                  "pontos": 20,
+                  "id": "sub-0-1-0-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2ª parcial",
+                  "pontos": 15,
+                  "id": "sub-0-1-0-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-0-1-0",
+              "descricao": null
+            },
+            {
+              "nome": "Avaliações em Multiestações",
+              "pontos": 30,
+              "subitens": [
+                {
+                  "nome": "1ª multiestação",
+                  "pontos": 15,
+                  "id": "sub-0-1-1-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2ª multiestação",
+                  "pontos": 15,
+                  "id": "sub-0-1-1-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-0-1-1",
+              "descricao": null
+            },
+            {
+              "nome": "Avaliação Diária nos Laboratórios",
+              "pontos": 30,
+              "descricao": "Avaliações práticas contínuas",
+              "subitens": [
+                {
+                  "nome": "Laboratório 1",
+                  "pontos": 10,
+                  "id": "sub-0-1-2-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "Laboratório 2",
+                  "pontos": 10,
+                  "id": "sub-0-1-2-1",
+                  "descricao": null
+                },
+                {
+                  "nome": "Laboratório 3",
+                  "pontos": 10,
+                  "id": "sub-0-1-2-2",
+                  "descricao": null
+                }
+              ],
+              "id": "item-0-1-2"
+            },
+            {
+              "nome": "Memorial Acadêmico",
+              "pontos": 5,
+              "descricao": "Dois encontros individuais com o professor",
+              "subitens": [
+                {
+                  "nome": "1º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-0-1-3-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-0-1-3-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-0-1-3"
+            }
+          ],
+          "id": "dim-0-1",
+          "nome": "Habilidades e Atitudes",
+          "pontos_total": 100
+        }
+      ],
+      "id": "eixo-0"
+    },
+    {
+      "sigla": "HAM II",
+      "nome": "Habilidades e Atitudes Médicas II",
+      "exame_especial": true,
+      "dimensoes": [
+        {
+          "tipo": "cognitiva",
+          "itens": [
+            {
+              "nome": "Prova N1",
+              "pontos": 20,
+              "id": "item-1-0-0",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "TPI",
+              "pontos": 30,
+              "descricao": "Teste de Progresso Institucional",
+              "id": "item-1-0-1",
+              "subitens": []
+            },
+            {
+              "nome": "Prova N2",
+              "pontos": 35,
+              "id": "item-1-0-2",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "Prova N3",
+              "pontos": 15,
+              "id": "item-1-0-3",
+              "descricao": null,
+              "subitens": []
+            }
+          ],
+          "id": "dim-1-0",
+          "nome": "Dimensão Cognitiva",
+          "pontos_total": 100
+        },
+        {
+          "tipo": "habilidades",
+          "itens": [
+            {
+              "nome": "OSCE",
+              "pontos": 55,
+              "descricao": "Avaliação prática padronizada",
+              "id": "item-1-1-0",
+              "subitens": []
+            },
+            {
+              "nome": "Avaliação Diária",
+              "pontos": 40,
+              "subitens": [
+                {
+                  "nome": "Conhecimento aplicado",
+                  "pontos": 20,
+                  "descricao": "Fóruns, vídeos, OSCE virtual ou de baixa aposta",
+                  "id": "sub-1-1-1-0"
+                },
+                {
+                  "nome": "Rubrica semanal de habilidades e atitudes",
+                  "pontos": 20,
+                  "id": "sub-1-1-1-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-1-1-1",
+              "descricao": null
+            },
+            {
+              "nome": "Memorial Acadêmico",
+              "pontos": 5,
+              "descricao": "Dois encontros individuais com o professor",
+              "subitens": [
+                {
+                  "nome": "1º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-1-1-2-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-1-1-2-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-1-1-2"
+            }
+          ],
+          "id": "dim-1-1",
+          "nome": "Habilidades e Atitudes",
+          "pontos_total": 100
+        }
+      ],
+      "id": "eixo-1"
+    },
+    {
+      "sigla": "IESC II",
+      "nome": "Integração Ensino-Serviço e Comunidade II",
+      "exame_especial": true,
+      "dimensoes": [
+        {
+          "tipo": "cognitiva",
+          "itens": [
+            {
+              "nome": "Prova N1",
+              "pontos": 20,
+              "id": "item-2-0-0",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "TPI",
+              "pontos": 30,
+              "descricao": "Teste de Progresso Institucional",
+              "id": "item-2-0-1",
+              "subitens": []
+            },
+            {
+              "nome": "Prova N2",
+              "pontos": 35,
+              "id": "item-2-0-2",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "Prova N3",
+              "pontos": 15,
+              "id": "item-2-0-3",
+              "descricao": null,
+              "subitens": []
+            }
+          ],
+          "id": "dim-2-0",
+          "nome": "Dimensão Cognitiva",
+          "pontos_total": 100
+        },
+        {
+          "tipo": "habilidades",
+          "itens": [
+            {
+              "nome": "Mostra Científica Interdisciplinar",
+              "pontos": 30,
+              "subitens": [
+                {
+                  "nome": "Resumo do relato de experiência",
+                  "pontos": 15,
+                  "id": "sub-2-1-0-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "Habilidade de comunicação na apresentação",
+                  "pontos": 15,
+                  "id": "sub-2-1-0-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-2-1-0",
+              "descricao": null
+            },
+            {
+              "nome": "Avaliação Diária",
+              "pontos": 30,
+              "descricao": "Rubrica por competências",
+              "id": "item-2-1-1",
+              "subitens": []
+            },
+            {
+              "nome": "Diário de Campo Reflexivo",
+              "pontos": 25,
+              "descricao": "Acompanhamento semanal",
+              "id": "item-2-1-2",
+              "subitens": []
+            },
+            {
+              "nome": "e-portfólio Dreamshaper",
+              "pontos": 10,
+              "descricao": "Relatório final do módulo",
+              "id": "item-2-1-3",
+              "subitens": []
+            },
+            {
+              "nome": "Memorial Acadêmico",
+              "pontos": 5,
+              "descricao": "Dois encontros individuais com o professor",
+              "subitens": [
+                {
+                  "nome": "1º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-2-1-4-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-2-1-4-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-2-1-4"
+            }
+          ],
+          "id": "dim-2-1",
+          "nome": "Habilidades e Atitudes",
+          "pontos_total": 100
+        }
+      ],
+      "id": "eixo-2"
+    },
+    {
+      "sigla": "MCM II",
+      "nome": "Métodos Científicos em Medicina II",
+      "exame_especial": true,
+      "dimensoes": [
+        {
+          "tipo": "cognitiva",
+          "itens": [
+            {
+              "nome": "Prova N1",
+              "pontos": 20,
+              "id": "item-3-0-0",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "TPI",
+              "pontos": 30,
+              "descricao": "Teste de Progresso Institucional",
+              "id": "item-3-0-1",
+              "subitens": []
+            },
+            {
+              "nome": "Prova N2",
+              "pontos": 35,
+              "id": "item-3-0-2",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "Prova N3",
+              "pontos": 15,
+              "id": "item-3-0-3",
+              "descricao": null,
+              "subitens": []
+            }
+          ],
+          "id": "dim-3-0",
+          "nome": "Dimensão Cognitiva",
+          "pontos_total": 100
+        },
+        {
+          "tipo": "habilidades",
+          "itens": [
+            {
+              "nome": "Resumo da Pesquisa",
+              "pontos": 30,
+              "descricao": "Apresentado na semana 19, elaborado com o IESC",
+              "id": "item-3-1-0",
+              "subitens": []
+            },
+            {
+              "nome": "Avaliação Individual por Ciclos",
+              "pontos": 30,
+              "descricao": "Em três momentos do semestre",
+              "id": "item-3-1-1",
+              "subitens": []
+            },
+            {
+              "nome": "Leitura e discussão de artigos em aula",
+              "pontos": 20,
+              "id": "item-3-1-2",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "Podcast ou vídeo",
+              "pontos": 15,
+              "descricao": "Sobre os tipos de pesquisa do semestre",
+              "id": "item-3-1-3",
+              "subitens": []
+            },
+            {
+              "nome": "Memorial Acadêmico",
+              "pontos": 5,
+              "descricao": "Dois encontros individuais com o professor",
+              "subitens": [
+                {
+                  "nome": "1º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-3-1-4-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-3-1-4-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-3-1-4"
+            }
+          ],
+          "id": "dim-3-1",
+          "nome": "Habilidades e Atitudes",
+          "pontos_total": 100
+        }
+      ],
+      "id": "eixo-3"
+    },
+    {
+      "sigla": "PIEPE II",
+      "nome": "Práticas Interdisciplinares de Extensão, Pesquisa e Ensino II",
+      "exame_especial": false,
+      "dimensoes": [
+        {
+          "tipo": "unica",
+          "itens": [
+            {
+              "nome": "Execução das ações/produtos",
+              "pontos": 25,
+              "descricao": "Avaliação individual",
+              "id": "item-4-0-0",
+              "subitens": []
+            },
+            {
+              "nome": "Projeto de Extensão",
+              "pontos": 20,
+              "subitens": [
+                {
+                  "nome": "Construção individual",
+                  "pontos": 10,
+                  "id": "sub-4-0-1-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "Banca da construção coletiva",
+                  "pontos": 10,
+                  "id": "sub-4-0-1-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-4-0-1",
+              "descricao": null
+            },
+            {
+              "nome": "Trilha DreamShaper",
+              "pontos": 15,
+              "descricao": "Projeto único do grupo, com participação individual",
+              "id": "item-4-0-2",
+              "subitens": []
+            },
+            {
+              "nome": "Produto Científico",
+              "pontos": 10,
+              "descricao": "Resumo expandido",
+              "id": "item-4-0-3",
+              "subitens": []
+            },
+            {
+              "nome": "Apresentação Final",
+              "pontos": 10,
+              "id": "item-4-0-4",
+              "descricao": null,
+              "subitens": []
+            },
+            {
+              "nome": "Avaliação do Orientador",
+              "pontos": 10,
+              "descricao": "No Canvas",
+              "subitens": [
+                {
+                  "nome": "1ª etapa",
+                  "pontos": 5,
+                  "id": "sub-4-0-5-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2ª etapa",
+                  "pontos": 5,
+                  "id": "sub-4-0-5-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-4-0-5"
+            },
+            {
+              "nome": "Avaliação por Pares",
+              "pontos": 5,
+              "descricao": "No Canvas",
+              "subitens": [
+                {
+                  "nome": "1ª etapa",
+                  "pontos": 2.5,
+                  "id": "sub-4-0-6-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2ª etapa",
+                  "pontos": 2.5,
+                  "id": "sub-4-0-6-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-4-0-6"
+            },
+            {
+              "nome": "Memorial Acadêmico",
+              "pontos": 5,
+              "descricao": "Dois encontros individuais com o professor",
+              "subitens": [
+                {
+                  "nome": "1º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-4-0-7-0",
+                  "descricao": null
+                },
+                {
+                  "nome": "2º encontro",
+                  "pontos": 2.5,
+                  "id": "sub-4-0-7-1",
+                  "descricao": null
+                }
+              ],
+              "id": "item-4-0-7"
+            }
+          ],
+          "id": "dim-4-0",
+          "nome": "Conhecimentos, Habilidades e Atitudes",
+          "pontos_total": 100
+        }
+      ],
+      "id": "eixo-4"
+    }
+  ],
+  "id": "reg-2",
+  "titulo": null,
+  "nota_minima": 70,
+  "nota_minima_exame": 40,
+  "frequencia_minima": 75,
+  "status": "publicado",
+  "publicado_em": "2026-11-06T12:00:00Z",
+  "notificado_em": null,
+  "atualizado_em": "2026-11-06T12:00:00Z"
+}
