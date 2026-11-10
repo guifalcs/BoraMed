@@ -561,3 +561,16 @@ Movimento (as animações CSS respeitam `prefers-reduced-motion`; o spinner usa 
 * Logo para email: PNG separado (`brand/logo-branca-email.png`) por compatibilidade.
 * Uploads do usuário/admin: comprimidos automaticamente no cliente para WebP (max 1200px, qualidade 82%) via `core/utils/image-compress.util.ts`.
 * Avatares: max 512px, WebP, qualidade 80%.
+
+
+## Caderno de Erros (09/11/2026)
+
+- Resumo compacto separa números e nomes de tema: nomes quebram linha; números usam pt-BR e algarismos tabulares. A ação principal é **Começar revisão**.
+- Status exclusivos usam controle segmentado Pendentes/Dominadas com `aria-pressed`; os filtros ficam em painel próprio e sua limpeza preserva o status.
+- Linha de questão: metadados, prévia de duas linhas e ações. No celular, ações ocupam linha própria. Alvos de toque de pelo menos 44px, foco visível e texto completo na revisão.
+- Simulado é alternativa expansível com `aria-expanded`/`aria-controls`. Instruções necessárias para compreender limites da geração continuam visíveis no celular.
+- Revisão mostra posição e progresso sem animar dados ou atrasar a navegação. Acerto/erro têm texto além de cor. Texto sem tom punitivo.
+- Reutilizar `bm-press` e `--ease-out`; sem cascata decorativa. Movimento reduzido remove transformações de toque e rotação animada. Tipografia em rem permite ampliação.
+- Auditoria, escolha de skills, casos extremos e reprodução das capturas: [docs/ui/caderno-erros.md](ui/caderno-erros.md).
+- Cards do resumo preservam as cores originais por estado: vermelho para pendências e foco sugerido, verde para progresso e azul para o tipo. Aplicar à faixa superior, ao valor e ao ícone com fundo suave; manter o formato compacto e nomes com quebra de linha.
+- Os quatro valores do resumo têm o mesmo destaque: `1.5rem` no celular e `1.75rem` a partir de 640px, peso 750. Rótulos permitem quebra de palavras com texto ampliado e têm altura definida pelo conteúdo e os quatro cards têm larguras iguais no desktop; nomes longos continuam quebrando linha. O padding é 12px vertical no celular e 14px a partir de 640px, com 6px entre rótulo e valor; evitar reservar linhas vazias para os rótulos.
