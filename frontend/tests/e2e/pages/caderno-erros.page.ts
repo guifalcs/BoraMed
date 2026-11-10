@@ -47,6 +47,7 @@ export class CadernoErrosPage {
   }
 
   async semOverflow(): Promise<void> {
+    await this.page.evaluate(() => document.fonts.ready.then(() => undefined));
     const medidas = await this.page.evaluate(() => ({
       conteudo: document.documentElement.scrollWidth,
       viewport: window.innerWidth,
@@ -55,17 +56,22 @@ export class CadernoErrosPage {
     const cardsCortados = await this.page
       .getByRole('main')
       .getByRole('article')
-      .evaluateAll(
-        (cards) =>
-          cards.filter((card) => {
+      .evaluateAll((cards) =>
+        cards
+          .filter((card) => {
             const rect = card.getBoundingClientRect();
             return (
               rect.left < -1 ||
               rect.right > window.innerWidth + 1 ||
               card.scrollWidth > card.clientWidth + 1
             );
-          }).length,
+          })
+          .map((card) => ({
+            texto: card.textContent?.trim().slice(0, 120),
+            largura: card.clientWidth,
+            conteudo: card.scrollWidth,
+          })),
       );
-    expect(cardsCortados).toBe(0);
+    expect(cardsCortados).toEqual([]);
   }
 }

@@ -87,7 +87,7 @@ Validação: build de produção; testes E2E com rede interceptada para resposta
 
 ## Aprovação
 
-Layout aprovado pelo usuário após os ajustes de cor, tipografia e compactação. A versão aprovada passou novamente pelos testes em 320, 390, 768, 1024 e 1280px, com nomes longos, texto a 200% e movimento reduzido, verificando rolagem horizontal e recorte interno dos cards no Chromium.
+Layout aprovado pelo usuário após os ajustes de cor, tipografia e compactação. A versão aprovada passou novamente pelos testes em 320, 390, 768, 1024 e 1280px, com nomes longos, texto a 200% e movimento reduzido, verificando rolagem horizontal e recorte interno dos cards no Chromium. Rótulos também permitem quebra de palavras quando necessário com texto ampliado; a verificação aguarda o carregamento das fontes para medir o layout final.
 
 ## Próximas oportunidades para avaliar com uso real
 

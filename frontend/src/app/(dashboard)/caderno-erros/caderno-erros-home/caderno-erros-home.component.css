@@ -58,6 +58,10 @@
   color: var(--resumo-cor);
   background: var(--resumo-icone-bg);
 }
+.resumo-label span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .resumo-valor {
   color: var(--resumo-cor);
   margin-top: 6px;
