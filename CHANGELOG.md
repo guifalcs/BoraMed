@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-10 | Melhoria | Competitivo com desafio confirmado e ranking contextualizado
+
+- Indicadores compactos, com ícone, contexto e valor na mesma linha e sem altura vazia reservada; desafio e ranking lado a lado no desktop, mantendo coroas e manto do pódio.
+- Alternativas com letra em círculo no padrão visual do simulado, seleção por radio e confirmação explícita; resultado, XP e correção textual próximos da questão. Zoom independente para imagens opcionais.
+- Posição pessoal por período, abas acessíveis por teclado, nomes completos, fallback de avatar e estado de anonimato com acesso ao perfil.
+- Falhas de carregamento separadas de estados vazios, com nova tentativa. Resposta já salva permanece bloqueada mesmo se a correção falhar ao carregar.
+- Validação responsiva em 98 larguras de 280 a 3.840px, texto a 200%, nove estados e rotação por toque: 546 combinações e 32 testes E2E incluídos no CI. Comparação reproduzível em celular/desktop. Sem mudanças de RPC, regras de XP ou migrations.
+- Docs: `docs/ui/competitivo.md`, `docs/business-rules.md` e `docs/design-system.md`.
+
 ## 2026-11-10 | Melhoria | Flashcards com biblioteca, editor e estudo mais claros
 
 - **Biblioteca:** criar deck visível, títulos completos, privacidade/origem e ação Estudar; abas com teclado/ARIA, controles de 44px, falhas persistentes com retry e curtidas protegidas contra envio duplicado.

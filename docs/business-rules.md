@@ -146,6 +146,9 @@ Regras de combinação:
 * Ranking não expõe e-mail; usa nome completo quando público ou `Anônimo` quando privado
 * Desafio diário deve renderizar `imagem_url` e `imagem_legenda` quando a questão possuir imagem, incluindo questões de laboratório.
 * Desafio diário deve exibir explicação pedagógica após a resposta quando a questão possuir `explicacao`
+* No desafio diário, selecionar uma alternativa não registra a resposta. O estudante pode trocar a escolha antes de **Confirmar resposta**; durante o envio, troca e novo envio ficam bloqueados.
+* Se a RPC confirmar a resposta e a recarga da correção falhar, o desafio permanece respondido e oferece **Atualizar correção**, sem reenviar a resposta. Uma resposta prévia em outra aba não é atribuída à alternativa recém-tentada.
+* Ranking mostra posição pessoal e total do período selecionado; falhas de carregamento não são apresentadas como ranking vazio ou XP zero. Privacidade permanece gerenciável no Perfil.
 * Desafio diário não deve depender de `questao.dificuldade`, pois a classificação de dificuldade foi removida do schema de questões.
 
 ### Comentários Públicos por Questão

@@ -7,7 +7,12 @@ import { GamificacaoService } from '../../core/services/gamificacao.service';
 import { RankingService } from '../../core/services/ranking.service';
 import { DesafioService } from '../../core/services/desafio.service';
 import { NotificationService } from '../../core/services/notification.service';
-import type { GamificacaoStats, RankingItem, DesafioDiario, MinhaPosicaoRanking } from '../../core/models/gamificacao';
+import type {
+  GamificacaoStats,
+  RankingItem,
+  DesafioDiario,
+  MinhaPosicaoRanking,
+} from '../../core/models/gamificacao';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -92,16 +97,16 @@ describe('CompetirHubComponent', () => {
 
   const mockGamificacaoService = {
     stats: statsSignal.asReadonly(),
-    getMeuXp: vi.fn().mockResolvedValue(undefined),
+    getMeuXp: vi.fn().mockResolvedValue({ ok: true }),
   };
 
   const mockRankingService = {
     rankingGlobal: rankingGlobalSignal.asReadonly(),
     rankingSemana: rankingSemanaSignal.asReadonly(),
     minhaPosicao: minhaPosicaoSignal.asReadonly(),
-    carregarRankingGlobal: vi.fn().mockResolvedValue(undefined),
-    carregarRankingSemana: vi.fn().mockResolvedValue(undefined),
-    carregarMinhaPosicao: vi.fn().mockResolvedValue(undefined),
+    carregarRankingGlobal: vi.fn().mockResolvedValue({ ok: true }),
+    carregarRankingSemana: vi.fn().mockResolvedValue({ ok: true }),
+    carregarMinhaPosicao: vi.fn().mockResolvedValue({ ok: true }),
   };
 
   const mockDesafioService = {
@@ -120,10 +125,10 @@ describe('CompetirHubComponent', () => {
     minhaPosicaoSignal.set(null);
     desafioSignal.set(null);
 
-    mockGamificacaoService.getMeuXp.mockResolvedValue(undefined);
-    mockRankingService.carregarRankingGlobal.mockResolvedValue(undefined);
-    mockRankingService.carregarRankingSemana.mockResolvedValue(undefined);
-    mockRankingService.carregarMinhaPosicao.mockResolvedValue(undefined);
+    mockGamificacaoService.getMeuXp.mockResolvedValue({ ok: true });
+    mockRankingService.carregarRankingGlobal.mockResolvedValue({ ok: true });
+    mockRankingService.carregarRankingSemana.mockResolvedValue({ ok: true });
+    mockRankingService.carregarMinhaPosicao.mockResolvedValue({ ok: true });
     mockDesafioService.carregarDesafio.mockResolvedValue({ ok: true });
 
     await TestBed.configureTestingModule({
@@ -158,28 +163,36 @@ describe('CompetirHubComponent', () => {
     it('posições consecutivas não geram gap', () => {
       rankingGlobalSignal.set([makeRankingItem(1), makeRankingItem(2), makeRankingItem(3)]);
       fixture.detectChanges();
-      const rows = (component as unknown as { rankingComGap: () => { showGap: boolean }[] }).rankingComGap();
+      const rows = (
+        component as unknown as { rankingComGap: () => { showGap: boolean }[] }
+      ).rankingComGap();
       expect(rows.every((r) => !r.showGap)).toBe(true);
     });
 
     it('primeiro item nunca gera gap', () => {
       rankingGlobalSignal.set([makeRankingItem(5)]);
       fixture.detectChanges();
-      const rows = (component as unknown as { rankingComGap: () => { showGap: boolean }[] }).rankingComGap();
+      const rows = (
+        component as unknown as { rankingComGap: () => { showGap: boolean }[] }
+      ).rankingComGap();
       expect(rows[0].showGap).toBe(false);
     });
 
     it('posição não-consecutiva gera gap', () => {
       rankingGlobalSignal.set([makeRankingItem(1), makeRankingItem(2), makeRankingItem(10)]);
       fixture.detectChanges();
-      const rows = (component as unknown as { rankingComGap: () => { showGap: boolean }[] }).rankingComGap();
+      const rows = (
+        component as unknown as { rankingComGap: () => { showGap: boolean }[] }
+      ).rankingComGap();
       expect(rows[2].showGap).toBe(true);
     });
 
     it('posição imediatamente seguinte não gera gap', () => {
       rankingGlobalSignal.set([makeRankingItem(7), makeRankingItem(8)]);
       fixture.detectChanges();
-      const rows = (component as unknown as { rankingComGap: () => { showGap: boolean }[] }).rankingComGap();
+      const rows = (
+        component as unknown as { rankingComGap: () => { showGap: boolean }[] }
+      ).rankingComGap();
       expect(rows[1].showGap).toBe(false);
     });
 
@@ -222,7 +235,14 @@ describe('CompetirHubComponent', () => {
     });
 
     it('unavailable quando desafio.disponivel=false', async () => {
-      desafioSignal.set({ disponivel: false, data: null, questao: null, alternativas: [], estatistica: { total_responderam: 0, percentual_acerto: 0 }, minha_resposta: null });
+      desafioSignal.set({
+        disponivel: false,
+        data: null,
+        questao: null,
+        alternativas: [],
+        estatistica: { total_responderam: 0, percentual_acerto: 0 },
+        minha_resposta: null,
+      });
       await fixture.whenStable();
       fixture.detectChanges();
       expect(estado()).toBe('unavailable');
@@ -267,7 +287,7 @@ describe('CompetirHubComponent', () => {
       expect(cls).toContain('red');
     });
 
-    it('retorna opacidade reduzida para alternativas não selecionadas no estado answered', async () => {
+    it('mantém contraste legível para alternativas não selecionadas no estado answered', async () => {
       desafioSignal.set(makeDesafioRespondido(false));
       await fixture.whenStable();
       fixture.detectChanges();
@@ -275,7 +295,7 @@ describe('CompetirHubComponent', () => {
       // Não existe terceira alternativa neste mock, mas podemos verificar a lógica
       // com uma alternativa que não é correta e não foi selecionada:
       const cls = altClass({ id: 'a3', correta: false }); // não selecionada
-      expect(cls).toContain('opacity');
+      expect(cls).toContain('text-[var(--color-text-muted)]');
     });
 
     it('retorna neutro quando pending e alternativa não selecionada', async () => {
@@ -330,7 +350,8 @@ describe('CompetirHubComponent', () => {
         questao: {
           ...makeDesafioPendente().questao!,
           enunciado: 'É correto o que se afirma em',
-          enunciado_apoio: 'Paciente de 32 anos com febre alta.\n\nI. Primeira afirmativa.\n\nII. Segunda afirmativa.',
+          enunciado_apoio:
+            'Paciente de 32 anos com febre alta.\n\nI. Primeira afirmativa.\n\nII. Segunda afirmativa.',
         },
       });
       await fixture.whenStable();
@@ -366,7 +387,10 @@ describe('CompetirHubComponent', () => {
     });
 
     it('retorna xp_semana_atual no tab semana', () => {
-      const comp = component as unknown as { setRankingTab: (t: string) => void; rankingXp: (i: RankingItem) => string };
+      const comp = component as unknown as {
+        setRankingTab: (t: string) => void;
+        rankingXp: (i: RankingItem) => string;
+      };
       comp.setRankingTab('semana');
       fixture.detectChanges();
       const result = comp.rankingXp({ ...item, xp_total: 1500, xp_semana_atual: 200 });

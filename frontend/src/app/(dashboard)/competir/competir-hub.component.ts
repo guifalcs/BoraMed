@@ -5,6 +5,9 @@ import {
   CalendarCheck2,
   CircleCheck,
   CircleX,
+  ArrowUpRight,
+  EyeOff,
+  ZoomIn,
   LucideIconData,
   Medal,
   Shield,
@@ -23,7 +26,11 @@ import { ImageViewerService } from '../../core/services/image-viewer.service';
 import { ImagemProtegidaService } from '../../core/services/imagem-protegida.service';
 import { ImagemProtegidaPipe } from '../../shared/pipes/imagem-protegida.pipe';
 import { AsyncPipe } from '@angular/common';
-import type { DesafioAlternativa, RankingItem } from '../../core/models/gamificacao';
+import type {
+  DesafioAlternativa,
+  RankingItem,
+  ResponderDesafioResult,
+} from '../../core/models/gamificacao';
 import { currentWeekRange } from '../../shared/utils/current-week-range';
 
 interface CompetirMetric {
@@ -51,6 +58,7 @@ type RankingTab = 'global' | 'semana';
     AsyncPipe,
   ],
   templateUrl: './competir-hub.component.html',
+  styleUrl: './competir-hub.component.css',
   providers: [provideMarkdown()],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -66,6 +74,9 @@ export class CompetirHubComponent {
   protected readonly calendarIcon = CalendarCheck2;
   protected readonly checkCircleIcon = CircleCheck;
   protected readonly xCircleIcon = CircleX;
+  protected readonly arrowIcon = ArrowUpRight;
+  protected readonly privacyIcon = EyeOff;
+  protected readonly zoomIcon = ZoomIn;
 
   protected readonly isLoadingStats = signal(true);
   protected readonly isLoadingRanking = signal(true);
@@ -73,10 +84,45 @@ export class CompetirHubComponent {
   protected readonly isSubmittingDesafio = signal(false);
   protected readonly alternativaSelecionada = signal<string | null>(null);
   protected readonly rankingTab = signal<RankingTab>('global');
+  protected readonly rankingTabs: readonly RankingTab[] = ['global', 'semana'];
+  protected readonly statsError = signal<string | null>(null);
+  protected readonly rankingErrors = signal<Record<RankingTab, string | null>>({
+    global: null,
+    semana: null,
+  });
+  protected readonly posicaoError = signal<string | null>(null);
+  protected readonly desafioError = signal<string | null>(null);
+  protected readonly respostaError = signal<string | null>(null);
+  private readonly respostaRegistrada = signal<ResponderDesafioResult | null>(null);
+  protected readonly avataresInvalidos = signal<Set<number>>(new Set());
+  protected readonly semanaAtual = currentWeekRange();
 
-  protected readonly stats = this.gamificacaoService.stats;
+  protected readonly stats = computed(
+    () => this.respostaRegistrada()?.stats ?? this.gamificacaoService.stats(),
+  );
   protected readonly minhaPosicao = this.rankingService.minhaPosicao;
   protected readonly desafio = this.desafioService.desafio;
+  protected readonly rankingError = computed(() => this.rankingErrors()[this.rankingTab()]);
+  protected readonly totalParticipantes = computed(() => {
+    const posicao = this.minhaPosicao();
+    return this.rankingTab() === 'global' ? posicao?.total_global : posicao?.total_semana;
+  });
+  protected readonly minhaResposta = computed(() => {
+    const resposta = this.desafio()?.minha_resposta;
+    if (resposta) return resposta;
+    const registrada = this.respostaRegistrada();
+    const alternativa = this.alternativaSelecionada();
+    // Em outra aba, a resposta já registrada pode ter sido uma alternativa diferente.
+    if (!registrada || registrada.ja_respondeu || !alternativa) return null;
+    return {
+      alternativa_id: alternativa,
+      correta: registrada.correta,
+      xp_ganho: registrada.xp_ganho,
+    };
+  });
+  protected readonly correcaoPendente = computed(
+    () => !!this.respostaRegistrada() && !this.desafio()?.minha_resposta,
+  );
 
   protected readonly rankingAtual = computed<RankingItem[]>(() =>
     this.rankingTab() === 'global'
@@ -99,12 +145,14 @@ export class CompetirHubComponent {
   });
 
   protected readonly desafioEstado = computed<
-    'loading' | 'unavailable' | 'pending' | 'submitting' | 'answered'
+    'loading' | 'error' | 'unavailable' | 'pending' | 'submitting' | 'answered'
   >(() => {
+    if (this.respostaRegistrada()) return 'answered';
     if (this.isLoadingDesafio()) return 'loading';
+    if (this.desafioError()) return 'error';
     const d = this.desafio();
     if (!d || !d.disponivel) return 'unavailable';
-    if (d.minha_resposta !== null) return 'answered';
+    if (d.minha_resposta) return 'answered';
     if (this.isSubmittingDesafio()) return 'submitting';
     return 'pending';
   });
@@ -139,30 +187,76 @@ export class CompetirHubComponent {
   constructor() {
     void this.loadStats();
     void this.loadRanking();
+    void this.loadPosicao();
     void this.loadDesafio();
   }
 
-  private async loadStats(): Promise<void> {
-    await this.gamificacaoService.getMeuXp();
+  protected async loadStats(): Promise<void> {
+    this.isLoadingStats.set(true);
+    this.statsError.set(null);
+    const result = await this.gamificacaoService.getMeuXp();
+    if (!result.ok) this.statsError.set(result.error);
     this.isLoadingStats.set(false);
   }
 
-  private async loadRanking(): Promise<void> {
-    await Promise.all([
+  protected async loadRanking(): Promise<void> {
+    this.isLoadingRanking.set(true);
+    const [global, semana] = await Promise.all([
       this.rankingService.carregarRankingGlobal(10),
       this.rankingService.carregarRankingSemana(10),
-      this.rankingService.carregarMinhaPosicao(),
     ]);
+    this.rankingErrors.set({
+      global: global.ok ? null : global.error,
+      semana: semana.ok ? null : semana.error,
+    });
     this.isLoadingRanking.set(false);
   }
 
-  private async loadDesafio(): Promise<void> {
-    await this.desafioService.carregarDesafio();
+  protected async loadPosicao(): Promise<void> {
+    this.posicaoError.set(null);
+    const result = await this.rankingService.carregarMinhaPosicao();
+    if (!result.ok) this.posicaoError.set(result.error);
+  }
+
+  protected async loadDesafio(): Promise<void> {
+    this.isLoadingDesafio.set(true);
+    this.desafioError.set(null);
+    const result = await this.desafioService.carregarDesafio();
+    if (!result.ok) this.desafioError.set(result.error);
     this.isLoadingDesafio.set(false);
   }
 
   protected setRankingTab(tab: RankingTab): void {
     this.rankingTab.set(tab);
+  }
+
+  protected rankingKeydown(event: KeyboardEvent): void {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const tab: RankingTab =
+      event.key === 'Home'
+        ? 'global'
+        : event.key === 'End'
+          ? 'semana'
+          : this.rankingTab() === 'global'
+            ? 'semana'
+            : 'global';
+    this.setRankingTab(tab);
+    const list = (event.currentTarget as HTMLElement).closest('[role="tablist"]');
+    list?.querySelector<HTMLButtonElement>(`#ranking-tab-${tab}`)?.focus();
+  }
+
+  protected formatNumber = formatNumber;
+
+  protected avatarFalhou(posicao: number): void {
+    this.avataresInvalidos.update((anteriores) => new Set([...anteriores, posicao]));
+  }
+
+  protected inicial(nome: string): string {
+    return (
+      [...new Intl.Segmenter('pt-BR', { granularity: 'grapheme' }).segment(nome.trim())][0]
+        ?.segment ?? '?'
+    );
   }
 
   protected rankingXp(item: RankingItem): string {
@@ -196,7 +290,9 @@ export class CompetirHubComponent {
       case 3:
         return 'py-3 bg-orange-50/60' + eu;
       default:
-        return item.is_me ? 'py-3 bg-blue-50 border-l-2 border-[var(--color-primary)]' : 'py-3 bg-white';
+        return item.is_me
+          ? 'py-3 bg-blue-50 border-l-2 border-[var(--color-primary)]'
+          : 'py-3 bg-white';
     }
   }
 
@@ -251,21 +347,32 @@ export class CompetirHubComponent {
     if (assinada) this.imageViewer.abrir(assinada);
   }
 
-  protected async handleResponder(alternativaId: string): Promise<void> {
-    if (this.desafioEstado() !== 'pending' || this.isSubmittingDesafio()) return;
+  protected selecionarAlternativa(alternativaId: string): void {
+    if (this.desafioEstado() !== 'pending') return;
     this.alternativaSelecionada.set(alternativaId);
+    this.respostaError.set(null);
+  }
+
+  protected async handleResponder(): Promise<void> {
+    const alternativaId = this.alternativaSelecionada();
+    if (!alternativaId) return;
+    if (this.desafioEstado() !== 'pending' || this.isSubmittingDesafio()) return;
     this.isSubmittingDesafio.set(true);
+    this.respostaError.set(null);
     const result = await this.desafioService.responderDesafio(alternativaId);
     this.isSubmittingDesafio.set(false);
     if (result.ok) {
+      this.respostaRegistrada.set(result.data);
+      this.statsError.set(null);
+      void this.loadRanking();
+      void this.loadPosicao();
       const xp = result.data.xp_ganho;
       if (xp > 0) this.toast.success(`+${xp} XP pelo desafio diário!`);
       for (const c of result.data.novas_conquistas) {
         this.toast.success(`Conquista desbloqueada: ${c.nome}!`);
       }
     } else {
-      this.toast.error(result.error);
-      this.alternativaSelecionada.set(null);
+      this.respostaError.set(result.error);
     }
   }
 
@@ -277,7 +384,7 @@ export class CompetirHubComponent {
   protected alternativaClass(alt: DesafioAlternativa): string {
     const estado = this.desafioEstado();
     const selecionada = this.alternativaSelecionada();
-    const resposta = this.desafio()?.minha_resposta;
+    const resposta = this.minhaResposta();
 
     if (estado === 'answered' && resposta) {
       if (alt.correta === true) {
@@ -286,14 +393,14 @@ export class CompetirHubComponent {
       if (alt.id === resposta.alternativa_id && !resposta.correta) {
         return 'border-red-400 bg-red-50 text-red-600';
       }
-      return 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] opacity-60';
+      return 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)]';
     }
 
     if (estado === 'pending' || estado === 'submitting') {
       if (alt.id === selecionada) {
         return 'border-blue-400 bg-blue-50 text-blue-700';
       }
-      return 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-soft)]';
+      return 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]';
     }
 
     return 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]';
