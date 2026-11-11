@@ -70,20 +70,25 @@ export class ImpressaoSimuladoService {
     qtd: number,
     tipoQuestao: 'nacional' | 'processual' | 'laboratorio' | null,
     formato: string | null,
+    formatoQuestao: 'fechadas' | 'discursivas' | 'misto',
   ): Promise<ProvaResult<SimuladoImpressao>> {
     try {
+      // O gabarito vem junto (o montado é só do Avançado, que já vê o gabarito
+      // no modo estudo); a tela de impressão decide se ele entra no papel.
       const { data, error } = await this.supabase.rpc('gerar_simulado_impressao', {
         p_tema_ids: temaIds && temaIds.length > 0 ? temaIds : null,
         p_qtd: qtd,
         p_tipo_questao: tipoQuestao,
         p_formato: formato,
+        p_formato_questao: formatoQuestao,
+        p_com_gabarito: true,
       });
       if (error) {
         if (isTierUpgradeError(error)) return { ok: false, error: TIER_UPGRADE_REQUIRED };
         return { ok: false, error: error.message || 'Não foi possível gerar o simulado.' };
       }
 
-      const payload = data as { nome?: string; questoes?: unknown } | null;
+      const payload = data as { nome?: string; questoes?: unknown; gabarito_liberado?: boolean } | null;
       const questoes = (payload?.questoes ?? []) as QuestaoComAlternativas[];
       const simulado: SimuladoImpressao = {
         nome: payload?.nome ?? 'Simulado personalizado',
@@ -91,7 +96,7 @@ export class ImpressaoSimuladoService {
         periodo: null,
         formato,
         questoes,
-        gabaritoLiberado: false,
+        gabaritoLiberado: payload?.gabarito_liberado ?? false,
       };
 
       this.setEfemero(simulado);
