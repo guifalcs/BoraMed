@@ -44,14 +44,15 @@
 
 /* ── Visual ───────────────────────────────────────────── */
 .lg__visual { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-.lg__visual::before {
+/* Painel de marca atrás do card: plano próprio, mais lento que o card na
+   rolagem (`data-sc-parallax` escreve `translate`; o giro fica no `transform`). */
+.lg__panel {
   position: absolute;
   inset: 8% -6% 18%;
   z-index: 0;
   border-radius: var(--lp-radius-xl);
   background: var(--lp-gradient);
   transform: rotate(-4deg);
-  content: '';
 }
 
 .lg-card {
@@ -89,11 +90,20 @@
   color: var(--lp-blue-deep);
   font-size: 1.15rem;
   font-weight: 800;
-  animation: lg-in 0.35s ease-out both;
-  animation-delay: calc(var(--i) * 45ms);
+}
+/* As respostas entram uma a uma quando o card aparece (`sc-in` vem do
+   runtime de rolagem; sem ele a grade já chega preenchida). */
+.lg-card.sc-in .lg-card__tiles li {
+  --d: 0.35s;
+  animation: lg-in var(--d) cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation-delay: calc(0.25s + var(--i) * 45ms);
+}
+.lg-card.sc-in .lg-card__score {
+  --d: 0.5s;
+  animation: lg-in var(--d) cubic-bezier(0.23, 1, 0.32, 1) 1.05s backwards;
 }
 .lg-card__tiles li small { position: absolute; top: 0.2rem; left: 0.35rem; color: var(--lp-muted); font-size: 0.6rem; font-weight: 700; }
-.lg-card__tiles li.is-x { border-style: dashed; border-color: #cbd5e1; background: #f8fafc; color: #94a3b8; }
+.lg-card__tiles li.is-x { border-style: dashed; border-color: #cbd5e1; background: #f8fafc; color: #64748b; font-size: 0.7rem; }
 @keyframes lg-in { from { opacity: 0; transform: translateY(6px) scale(0.96); } }
 
 .lg-card__score {

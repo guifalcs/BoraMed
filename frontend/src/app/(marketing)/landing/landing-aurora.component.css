@@ -1,7 +1,9 @@
 /* Seção "Aurora" (#aurora): o momento de cor da página, no gradiente
    institucional do app (mesma receita do BrandPanel e de /planos). À direita,
    a correção contada num relance: a própria resposta do aluno, grifada onde
-   valeu ponto, o que faltou e a nota. */
+   valeu ponto, o que faltou e a nota. O gradiente mora em `.aurora__ground`,
+   que abre em círculo sobre o navy conforme a seção entra (ato `flow` do
+   LandingScroll); sem o runtime ele já vem aberto. */
 
 :host {
   display: block;
@@ -11,8 +13,18 @@
   --lp-focus: #fff;
   scroll-margin-top: 4.5rem;
   padding-block: clamp(4.5rem, 3rem + 6vw, 8rem);
+  position: relative;
+  isolation: isolate;
   color: #fff;
+  background: var(--lp-ink);
+}
+
+.aurora__ground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: var(--lp-gradient-glow), var(--lp-gradient);
+  will-change: clip-path;
 }
 
 .aurora__grid {
@@ -103,7 +115,8 @@
   background-size: 0% 46%;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  transition: background-size 0.5s cubic-bezier(0.3, 0.7, 0.2, 1);
+  --t: 0.5s;
+  transition: background-size var(--t) cubic-bezier(0.3, 0.7, 0.2, 1);
 }
 
 .ac-hl.is-on {
@@ -124,7 +137,8 @@
   line-height: 1.5;
   white-space: nowrap;
   vertical-align: 0.1em;
-  animation: ac-fade 0.35s ease both;
+  --d: 0.35s;
+  animation: ac-fade var(--d) ease both;
 }
 
 .ac-foot {
@@ -177,7 +191,8 @@
   font-size: 1rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  animation: ac-fade 0.3s ease both;
+  --d: 0.3s;
+  animation: ac-fade var(--d) ease both;
 }
 
 .ac-score b {

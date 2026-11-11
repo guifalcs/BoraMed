@@ -1,6 +1,6 @@
-<section class="section lg" id="gabaritos" aria-labelledby="gabaritos-title">
+<section class="section lg" id="gabaritos" aria-labelledby="gabaritos-title" data-sc-act="flow">
   <div class="container lg__grid">
-    <div class="lg__copy">
+    <div class="lg__copy" data-sc-in data-sc-stagger="60">
       <p class="lg__eyebrow"><span>Grátis</span> É só criar sua conta, sem cartão</p>
       <h2 class="section-title" id="gabaritos-title">Fez a prova hoje? O gabarito sai aqui primeiro.</h2>
       <p class="section-lead">
@@ -29,7 +29,8 @@
     </div>
 
     <div class="lg__visual">
-      <div class="lg-card" aria-hidden="true">
+      <div class="lg__panel" aria-hidden="true" data-sc-parallax="0.9"></div>
+      <div class="lg-card" aria-hidden="true" data-sc-in data-sc-parallax="-0.4">
         <div class="lg-card__head">
           <span class="lg-card__tipo">N2</span>
           <div>
@@ -41,7 +42,7 @@
           @for (r of exemplo; track $index) {
             <li [class.is-x]="r === -1" [style.--i]="$index">
               <small>{{ $index + 1 }}</small>
-              {{ r === -1 ? '—' : letras[r] }}
+              {{ r === -1 ? 'Anul.' : letras[r] }}
             </li>
           }
         </ol>

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   EnvironmentInjector,
   NgZone,
   OnDestroy,
@@ -8,6 +9,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
@@ -34,7 +36,9 @@ import {
 import { LandingAuroraComponent } from './landing-aurora.component';
 import { LandingCicloComponent } from './landing-ciclo.component';
 import { LandingDemoQuizComponent } from './landing-demo-quiz.component';
+import { LandingDemoResult } from './landing-demo-result';
 import { LandingGabaritosComponent } from './landing-gabaritos.component';
+import { LandingScroll } from './landing-scroll.service';
 
 interface NavItem {
   readonly label: string;
@@ -44,6 +48,8 @@ interface NavItem {
 interface ProofItem {
   readonly value: string;
   readonly label: string;
+  /** Parte numérica de `value` que sobe ao entrar na tela; `null` fica parado. */
+  readonly count: number | null;
 }
 
 interface Testimonial {
@@ -103,9 +109,15 @@ interface FaqItem {
     './landing-social-proof.component.css',
     './landing-pricing.component.css',
   ],
+  // Estado da página, compartilhado com os componentes filhos da landing.
+  providers: [LandingScroll, LandingDemoResult],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingComponent implements OnDestroy {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly pagina = viewChild.required<ElementRef<HTMLElement>>('pagina');
+  private readonly scroll = inject(LandingScroll);
+  protected readonly demo = inject(LandingDemoResult);
   private readonly seo = inject(SeoService);
   private readonly zone = inject(NgZone);
   private readonly injector = inject(EnvironmentInjector);
@@ -130,8 +142,8 @@ export class LandingComponent implements OnDestroy {
   protected readonly navItems: readonly NavItem[] = [
     { label: 'Gabaritos', href: '#gabaritos' },
     { label: 'Teste grátis', href: '#demo' },
-    { label: 'Aurora', href: '#aurora' },
     { label: 'Como funciona', href: '#como-funciona' },
+    { label: 'Aurora', href: '#aurora' },
     { label: 'Planos', href: '#planos' },
     { label: 'Dúvidas', href: '#faq' },
   ];
@@ -139,19 +151,20 @@ export class LandingComponent implements OnDestroy {
   // Faixa logo abaixo da hero: o que tem dentro, em quatro fatos verificáveis
   // (todos repetidos em detalhe mais abaixo na página ou nos planos).
   protected readonly proofItems: readonly ProofItem[] = [
-    { value: '5.000+', label: 'questões autorais no modelo das avaliações' },
-    { value: '1º ao 8º', label: 'período cobertos nos treinos nacionais' },
-    { value: '0 a 100', label: 'nota da Aurora em cada questão discursiva' },
-    { value: 'R$ 0', label: 'para começar: 3 simulados, sem cartão' },
+    { value: '5.000+', label: 'questões autorais no modelo das avaliações', count: 5000 },
+    { value: '1º ao 8º', label: 'período cobertos nos treinos nacionais', count: 8 },
+    { value: '0 a 100', label: 'nota da Aurora em cada questão discursiva', count: 100 },
+    { value: 'R$ 0', label: 'para começar: 3 simulados, sem cartão', count: null },
   ];
 
   // Prévia da hero: diagnóstico por tema, do pior para o melhor aproveitamento.
   // Só o tema crítico ganha cor; os outros ficam neutros para o olho ir direto
-  // ao que precisa de revisão.
+  // ao que precisa de revisão. São os números do treino de exemplo que a cena
+  // de "Como funciona" (LandingCicloComponent) conta por inteiro.
   protected readonly heroTopics = [
     { name: 'Anatomia', pct: 43, critical: true },
-    { name: 'Cardiovascular', pct: 58, critical: false },
-    { name: 'Farmacologia', pct: 71, critical: false },
+    { name: 'Cardiovascular', pct: 83, critical: false },
+    { name: 'Farmacologia', pct: 86, critical: false },
   ] as const;
 
   // Cartão-resposta do card de Treinos Nacionais: índice da alternativa
@@ -393,6 +406,7 @@ export class LandingComponent implements OnDestroy {
     this.configureSeo();
     afterNextRender(() => {
       void this.redirectAuthenticatedRoot();
+      this.scroll.mount(this.pagina().nativeElement, this.host.nativeElement);
 
       this.zone.runOutsideAngular(() => {
         this.scrollListener = () => {
@@ -432,6 +446,7 @@ export class LandingComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.scroll.destroy();
     if (this.scrollListener) window.removeEventListener('scroll', this.scrollListener);
     if (this.scrollFrame) cancelAnimationFrame(this.scrollFrame);
   }

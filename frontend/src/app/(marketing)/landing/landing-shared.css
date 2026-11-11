@@ -148,3 +148,25 @@ button:focus-visible {
   font-weight: 700;
   line-height: 1;
 }
+
+/* ── Rolagem (LandingScroll) ────────────────────────────
+   `sc-wait` e `sc-in` são postos pelo runtime, só com movimento completo:
+   o que está abaixo da dobra espera escondido e entra uma vez, ao aparecer.
+   Sem JS ou com movimento reduzido essas classes nunca existem. A duração
+   mora em `--d` para o modo de revisão `?motion=full` conseguir devolvê-la. */
+
+.sc-wait {
+  opacity: 0;
+}
+
+.sc-in {
+  --d: 620ms;
+  animation: sc-rise var(--d) cubic-bezier(0.23, 1, 0.32, 1) backwards;
+}
+
+@keyframes sc-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}

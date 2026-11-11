@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ArrowRight, Check, Lock, RotateCcw, X } from 'lucide-angular';
 import { UiIconComponent } from '../../shared/components/ui/icon/ui-icon.component';
+import { LandingDemoResult } from './landing-demo-result';
 
 interface DemoQuizOption {
   readonly letter: 'A' | 'B' | 'C' | 'D';
@@ -116,6 +117,8 @@ const DEMO_QUESTIONS: readonly DemoQuizQuestion[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingDemoQuizComponent {
+  private readonly resultado = inject(LandingDemoResult);
+
   protected readonly checkIcon = Check;
   protected readonly xIcon = X;
   protected readonly lockIcon = Lock;
@@ -145,6 +148,10 @@ export class LandingDemoQuizComponent {
       .map((question) => question.topic),
   );
 
+  constructor() {
+    this.publicar();
+  }
+
   protected selectOption(index: number): void {
     if (this.currentAnswer() !== null) return;
     this.currentAnswer.set(index);
@@ -156,6 +163,7 @@ export class LandingDemoQuizComponent {
 
     this.answers.update((answers) => [...answers, answer]);
     this.currentAnswer.set(null);
+    this.publicar();
 
     if (this.isLastQuestion()) {
       this.finished.set(true);
@@ -169,5 +177,17 @@ export class LandingDemoQuizComponent {
     this.answers.set([]);
     this.currentAnswer.set(null);
     this.finished.set(false);
+    this.publicar();
+  }
+
+  /** Leva o andamento da demo para a chamada final da landing. */
+  private publicar(): void {
+    const answers = this.answers();
+    this.resultado.questoes.set(
+      this.questions.map((question, i) => ({
+        tema: question.topic,
+        certa: i < answers.length ? answers[i] === question.correctIndex : null,
+      })),
+    );
   }
 }

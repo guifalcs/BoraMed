@@ -1,4 +1,4 @@
-<div class="landing-page" id="inicio">
+<div #pagina class="landing-page" id="inicio">
   <header class="site-header" [class.is-scrolled]="isScrolled()">
     <nav class="container nav" aria-label="Navegação principal">
       <a class="brand" routerLink="/" aria-label="BoraMed, início">
@@ -40,7 +40,10 @@
   </header>
 
   <main>
-    <section class="hero" aria-labelledby="hero-title">
+    <!-- Hero em planos: fundo (trama e luzes), palco, questão e diagnóstico
+         andam em ritmos diferentes na rolagem e respondem ao ponteiro. -->
+    <section class="hero" aria-labelledby="hero-title" data-sc-act="flow">
+      <div class="hero__far" aria-hidden="true" data-sc-parallax="1.3"></div>
       <div class="container hero__grid">
         <div class="hero__copy">
           <a class="hero__pill" routerLink="/gabaritos">
@@ -49,7 +52,7 @@
             <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
           </a>
           <h1 class="hero__title" id="hero-title">
-            Saiba onde você perde pontos <span class="hero__title-accent">antes da prova.</span>
+            Saiba onde você perde pontos <span class="hero__mark">antes da prova.</span>
           </h1>
           <p class="hero__lead">
             Mais de 5 mil questões autorais no modelo das avaliações da Afya. Treine no formato
@@ -68,11 +71,12 @@
              acervo e diagnóstico por tema), no lugar de screenshot genérico. -->
         <div
           class="hero__visual"
+          data-sc-spotlight
           role="img"
           aria-label="Prévia do BoraMed: questão de um treino nacional em andamento e o diagnóstico dos temas em que você perdeu pontos"
         >
           <div class="hero__stage">
-            <div class="exam">
+            <div class="exam" data-sc-parallax="-0.5">
               <div class="exam__bar">
                 <span class="exam__title">Treino nacional</span>
                 <span class="exam__timer">
@@ -116,7 +120,7 @@
             </div>
           </div>
 
-          <div class="diag">
+          <div class="diag" data-sc-parallax="-1.5">
             <p class="diag__title">Onde você perdeu pontos</p>
             <ul class="diag__list">
               @for (topic of heroTopics; track topic.name; let i = $index) {
@@ -136,11 +140,11 @@
       </div>
     </section>
 
-    <section class="proof" aria-label="O BoraMed em números">
+    <section class="proof" aria-label="O BoraMed em números" data-sc-in>
       <ul class="container proof__list">
         @for (item of proofItems; track item.value) {
           <li class="proof__item">
-            <strong class="proof__value">{{ item.value }}</strong>
+            <strong class="proof__value" [attr.data-sc-count]="item.count">{{ item.value }}</strong>
             <span class="proof__label">{{ item.label }}</span>
           </li>
         }
@@ -151,31 +155,31 @@
 
     <section class="section section--mist" id="demo" aria-labelledby="demo-title">
       <div class="container demo">
-        <div class="demo__intro">
+        <div class="demo__intro" data-sc-in data-sc-stagger="70">
           <h2 class="section-title" id="demo-title">Você acertaria estas 3 questões na prova?</h2>
           <p class="section-lead">
             Três questões reais do acervo, no estilo da sua avaliação. Responda sem cadastro e veja
             o diagnóstico que o BoraMed montaria para você.
           </p>
         </div>
-        <app-landing-demo-quiz class="demo__quiz" />
+        <app-landing-demo-quiz class="demo__quiz" data-sc-in />
       </div>
     </section>
 
-    <app-landing-aurora />
-
     <app-landing-ciclo />
+
+    <app-landing-aurora />
 
     <section class="section section--mist" id="treinos" aria-labelledby="treinos-title">
       <div class="container">
-        <div class="section-head">
+        <div class="section-head" data-sc-in data-sc-stagger="70">
           <h2 class="section-title" id="treinos-title">Quatro formas de treinar.</h2>
           <p class="section-lead">
             Prova completa, tema por tema, lâmina na tela ou flashcard. Escolha como quer estudar hoje.
           </p>
         </div>
 
-        <div class="modes">
+        <div class="modes" data-sc-in data-sc-stagger="90">
           <article class="mode mode--nacional">
             <div class="mode__text">
               <h3 class="mode__title">Treinos nacionais</h3>
@@ -287,7 +291,7 @@
 
     <section class="section" id="depoimentos" aria-labelledby="founders-title">
       <div class="container founders">
-        <figure class="founders__photo">
+        <figure class="founders__photo" data-sc-in>
           <img
             src="/landing-page/arthur-dameao.webp"
             alt="Arthur Dameão, cofundador do BoraMed"
@@ -302,7 +306,7 @@
           </figcaption>
         </figure>
 
-        <div class="founders__copy">
+        <div class="founders__copy" data-sc-in data-sc-stagger="70">
           <h2 class="section-title" id="founders-title">Feito por quem faz a mesma prova que você.</h2>
           <p class="section-lead">
             O BoraMed nasceu quando Arthur, estudante de medicina da rede Afya, procurou onde treinar
@@ -332,7 +336,7 @@
 
     <section class="section section--mist" id="planos" aria-labelledby="planos-title">
       <div class="container">
-        <div class="section-head section-head--center">
+        <div class="section-head section-head--center" data-sc-in data-sc-stagger="60">
           <h2 class="section-title" id="planos-title">Comece grátis. Assine quando fizer sentido.</h2>
           <p class="section-lead">
             Faça 3 simulados sem pagar nada e sem cartão. Depois, escolha o Essencial para as provas
@@ -350,7 +354,7 @@
           />
         </div>
 
-        <div class="pricing-grid">
+        <div class="pricing-grid" data-sc-in data-sc-stagger="70">
           <!-- Plano gratuito: fica fora do toggle (não tem ciclo) e ancora a grade
                por baixo, deixando Essencial e Avançado como a escolha real -->
           <article class="pricing-card pricing-card--free">
@@ -435,7 +439,7 @@
           }
         </div>
 
-        <ul class="assurances">
+        <ul class="assurances" data-sc-in data-sc-stagger="60">
           @for (item of assurances; track item.title) {
             <li class="assurance">
               <app-ui-icon [icon]="item.icon" [size]="20" />
@@ -451,7 +455,7 @@
 
     <section class="section" id="faq" aria-labelledby="faq-title">
       <div class="container faq">
-        <div class="faq__intro">
+        <div class="faq__intro" data-sc-in data-sc-stagger="60">
           <h2 class="section-title" id="faq-title">Perguntas frequentes</h2>
           <p class="section-lead">
             Não achou sua dúvida? Escreva para
@@ -459,7 +463,7 @@
           </p>
         </div>
 
-        <div class="faq__list">
+        <div class="faq__list" data-sc-in>
           @for (faq of faqs; track faq.question; let index = $index) {
             <div class="faq__item" [class.is-open]="openFaq() === index">
               <h3 class="faq__q">
@@ -490,17 +494,68 @@
       </div>
     </section>
 
+    <!-- Fechamento: o que o visitante respondeu na demo volta aqui como o
+         começo do diagnóstico dele, em vez de a página recomeçar do zero. -->
     <section class="final" aria-labelledby="final-title">
       <div class="container final__inner">
-        <h2 class="final__title" id="final-title">
-          <span>A prova já tem data marcada. </span>
-          <span>Seu diagnóstico ainda não.</span>
-        </h2>
-        <div class="final__actions">
-          <a class="btn btn--light btn--lg" routerLink="/cadastro">Começar grátis</a>
-          <a class="btn btn--ghost-light btn--lg" href="#planos">Ver os planos</a>
+        <div class="final__copy" data-sc-in data-sc-stagger="80">
+          <h2 class="final__title" id="final-title">
+            <span>A prova já tem data marcada. </span>
+            <span>{{ demo.concluido() ? 'Seu diagnóstico já começou.' : 'Seu diagnóstico ainda não.' }}</span>
+          </h2>
+          <div class="final__actions">
+            <a class="btn btn--light btn--lg" routerLink="/cadastro">Começar grátis</a>
+            <a class="btn btn--ghost-light btn--lg" href="#planos">Ver os planos</a>
+          </div>
+          <p class="final__note">3 simulados grátis, sem cartão de crédito.</p>
         </div>
-        <p class="final__note">3 simulados grátis, sem cartão de crédito.</p>
+
+        <aside class="verdict" aria-labelledby="verdict-title" data-sc-in>
+          <p class="verdict__label" id="verdict-title">Seu mini-diagnóstico</p>
+          <ol class="verdict__rows">
+            @for (questao of demo.questoes(); track $index; let i = $index) {
+              <li
+                class="verdict__row"
+                [class.is-right]="questao.certa === true"
+                [class.is-wrong]="questao.certa === false"
+              >
+                <span class="bubble">{{ i + 1 }}</span>
+                <span class="verdict__tema">{{ questao.tema }}</span>
+                <span class="verdict__estado">
+                  @if (questao.certa !== null) {
+                    <app-ui-icon [icon]="questao.certa ? checkIcon : xIcon" [size]="14" />
+                  }
+                  {{ questao.certa === null ? 'Sem resposta' : questao.certa ? 'Acertou' : 'Errou' }}
+                </span>
+              </li>
+            }
+          </ol>
+
+          <div aria-live="polite">
+            @if (demo.concluido()) {
+              <p class="verdict__resumo">
+                Você acertou {{ demo.acertos() }} de {{ demo.questoes().length }}.
+                @if (demo.temasParaRevisar().length) {
+                  Para revisar: {{ demo.temasParaRevisar().join(' e ') }}.
+                } @else {
+                  Falta ver se o nível se mantém numa prova inteira.
+                }
+              </p>
+            } @else {
+              <p class="verdict__resumo">
+                @if (demo.respondidas() === 0) {
+                  Responda as 3 questões da demonstração e o resultado aparece aqui.
+                } @else {
+                  Você respondeu {{ demo.respondidas() }} de {{ demo.questoes().length }}. Termine para ver o resultado.
+                }
+              </p>
+              <a class="verdict__link" href="#demo">
+                {{ demo.respondidas() === 0 ? 'Responder as 3 questões' : 'Continuar as questões' }}
+                <app-ui-icon [icon]="arrowRightIcon" [size]="14" />
+              </a>
+            }
+          </div>
+        </aside>
       </div>
     </section>
   </main>

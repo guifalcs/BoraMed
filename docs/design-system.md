@@ -534,23 +534,29 @@ Tipografia:
 * **Títulos**: Bricolage Grotesque 700, carregada junto com a Inter no `index.html`. Exceção à regra de tracking do app: na landing os títulos usam letter spacing negativo (`-0.035em` a `-0.045em`) e `line-height` entre `0.98` e `1.05`.
 * **Texto e UI**: Inter, como no app (as prévias do produto ficam idênticas ao que o aluno vê depois do cadastro).
 * Sem rótulo em caixa-alta acima de título.
-* Destaque de cor em título só na hero: o fim do H1 ("antes da prova.") vai no degradê da marca, deitado na horizontal (`100deg`, `#1E40AF → #2451D8 → #6427D9`), com fallback de alto contraste. Nenhum outro título usa destaque, para ele continuar sendo o ponto de entrada da página.
+* Destaque de cor em título só na hero: o fim do H1 ("antes da prova.") vai no azul da marca (`--lp-blue-deep`), com um grifo de marca-texto azul→violeta por baixo, o mesmo gesto do grifo da prova e da Aurora. Sem texto em degradê. Nenhum outro título usa destaque, para ele continuar sendo o ponto de entrada da página.
 
 Composição:
 
 * O gradiente institucional (com a luz do BrandPanel) aparece em superfícies de marca, sempre a mesma receita: palco da prévia na hero, faixa da Aurora e card do plano recomendado (igual a `/planos`). Nunca em texto, borda, ícone ou chip.
 * Botão primário igual ao do app: `--color-action` sólido, hover `--color-primary-dark`. Sobre gradiente ou navy, botão branco com texto `--lp-blue-deep`.
-* A chamada final e o rodapé são `--lp-ink`, com luz azul/violeta no fundo. As outras seções alternam branco e `--lp-mist`; o palco de "Como funciona" usa o véu azul→violeta do Perfil.
+* "Como funciona", a chamada final e o rodapé são `--lp-ink`, com luz azul/violeta no alto e grão. As outras seções alternam branco e `--lp-mist`. Sobre o navy, superfícies em vidro (branco a 4–10%, fio de luz no topo) e versões claras das cores: azul `#7AA2FF`, violeta `#B79BFF`, acerto `#0E9F6E`, erro `#E5484D`.
+* Ordem das seções: hero, fatos, gabaritos, demo, como funciona, Aurora, quatro formas, quem fez, planos, dúvidas, fechamento. O navy de "Como funciona" emenda na Aurora, cujo gradiente abre em círculo.
 * Detalhes de marca: bolha ativa no degradê do avatar do app e fio do item ativo no degradê da sidebar.
 * Verde e vermelho só para desempenho e acerto/erro.
 * A bolha de alternativa (círculo com letra, como no cartão-resposta) é o motivo que se repete: alternativas da hero e da demo, cartão-resposta do treino nacional, numeração das etapas de "Como funciona".
 * Raio por hierarquia: `28px` nos palcos, `20px` nos cards, `14–16px` nas peças internas, `999px` só em botões e chips.
 
-Movimento (as animações CSS respeitam `prefers-reduced-motion`; o spinner usa `animate-spin`):
+Movimento (método, curva de sensação e evidência em [docs/ui/landing.md](ui/landing.md)):
 
-* Entrada única na hero: palco sobe, card de diagnóstico aparece e as barras crescem.
-* Demo da Aurora: a correção aparece na própria resposta do aluno. Ao entrar na tela, a Aurora "lê" e grifa um a um os trechos que valeram ponto (marca-texto azul→violeta), mostra o que faltou e a nota sobe até 90. A sequência é dirigida por estado, então também roda com "reduzir movimento" (só o pincel do grifo fica instantâneo). O HTML pré-renderizado já vem com a correção pronta.
-* Troca de aba em "Como funciona" e virada do flashcard respondem ao clique. Nada se move sozinho em loop.
+* A rolagem é dirigida por `LandingScroll` (`landing-scroll.service.ts`), que lê atributos `data-sc-*` do template: `data-sc-act` (ato, publica `--sc-p`), `data-sc-parallax` (plano), `data-sc-reveal` (íris), `data-sc-in`/`data-sc-stagger` (entrada única), `data-sc-count` (número que sobe) e `data-sc-spotlight` (ponteiro). Movimento novo na landing entra por esses atributos, não por listener próprio.
+* Hero em planos: fundo, palco, questão e diagnóstico andam em ritmos diferentes na rolagem e, com mouse, questão e diagnóstico se afastam. Na chegada a alternativa é marcada, o grifo passa no H1, o diagnóstico sobe e as barras crescem. O texto chega parado.
+* "Como funciona" é o único ato preso (3,6 viewports) e o pico da página: as 20 células de um treino de exemplo são marcadas, corrigidas, viram os segmentos das barras por tema e convergem no ponto final da curva de evolução. Os números do exemplo fecham entre si e com a hero; ao mudar um, mudar todos (`QUESTOES` em `landing-ciclo.component.ts` e `heroTopics`).
+* Aurora: o gradiente abre em círculo a partir do card. A correção continua dirigida por estado (grifos um a um, o que faltou, nota até 90).
+* Seções comuns entram uma vez ao aparecer (620ms, 14px, escalonadas em 60–90ms). Planos e dúvidas usam a entrada mais curta. Nada se move sozinho em loop.
+* Fechamento: o mini-diagnóstico mostra o que o visitante respondeu na demo e a segunda linha do título muda para "Seu diagnóstico já começou." quando ele termina as três questões.
+* Movimento reduzido: o runtime não monta. Nada fica preso, a hero chega pronta e "Como funciona" vira abas com troca imediata (também em viewport com menos de 620px de altura). Sem JS a página fica completa: o estado escondido das entradas só é aplicado pelo runtime.
+* Durações do movimento novo ficam em `--d` (animation) e `--t` (transition) no próprio elemento. É o que permite ao modo de revisão `?motion=full` (só em dev) devolver o movimento em máquina que reporta "reduzir movimento".
 
 ## Imagens
 
