@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-11 | Correção | "Apenas imprimir" respeita Discursivas/Objetivas e traz gabarito
+
+- **Formato da questão ignorado:** no Montar simulado, "Apenas imprimir" não repassava a escolha Objetivas/Discursivas/Misto, e `gerar_simulado_impressao` sorteava do acervo inteiro. Quem pedia só discursivas recebia fechadas misturadas, e a fechada podia sair junto com a sua gêmea discursiva, porque o sorteio também não deduplicava por `grupo_equivalencia_id`. A RPC passa a aplicar os mesmos filtros de `gerar_simulado_personalizado`. Também deixa de exigir imagem em laboratório, o que alinha o sorteio com a contagem por tema.
+- **Gabarito sempre desabilitado:** no montado só-impressão a opção "Gabarito ao final" ficava cinza com a dica "Disponível após finalizar a prova", mas esse conjunto nunca vira prova. Decisão de produto: como imprimir montado é exclusivo do Avançado, que já vê o gabarito no modo estudo, a RPC devolve o gabarito (letra, explicação e resposta padrão) e a opção fica habilitada, desmarcada por padrão. Sorteio feito antes da mudança e guardado na sessão mostra "Gere o simulado novamente para incluir o gabarito".
+- **Banco:** migration `20261111120000_impressao_montado_formato_e_gabarito`. A assinatura muda para `(uuid[], int, text, text, text, boolean)` e a de 4 argumentos sai. EXECUTE só para `authenticated`/`service_role`. Com os defaults, um cliente antigo recebe objetivas sem gabarito. **Publicar o banco antes do frontend.**
+- **Verificação:** reproduzido e validado em navegador (Playwright headless, banco local com 66 gêmeas discursivas). Antes: Discursivas × 30 vinha com 11 a 16 fechadas, 2 a 5 pares de gêmeas e gabarito desabilitado. Depois: 30/30 discursivas, zero gêmeas e gabarito com resposta padrão; Objetivas com 30/30 fechadas e letras; Misto sem gêmeas. Matriz SQL tipo × formato (9 combinações × 5 sorteios) sem nenhum vazamento de formato, tipo ou gêmea; `anon` sem EXECUTE. Spec novo `impressao-simulado.service.spec.ts`.
+- Docs: `docs/business-rules.md` e `docs/architecture.md`.
+
 ## 2026-11-11 | Melhoria | Landing com rolagem dirigida, hero em planos e pico em "Como funciona"
 
 - **Pico:** "Como funciona" passa a ser um ato preso, no navy da marca. As 20 células de um treino de exemplo são marcadas, corrigidas, viram os segmentos das barras por tema e convergem no ponto final da curva de evolução, conforme a rolagem. A seção sobe para logo depois da demo e emenda na Aurora, cujo gradiente abre em círculo.

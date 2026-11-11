@@ -434,6 +434,7 @@ export class MontarSimuladoComponent {
       this.quantidade(),
       this.formatoAtual().tipoQuestao,
       this.formatoSelecionado() === 'todos' ? null : this.formatoSelecionado(),
+      this.formatoQuestaoSelecionado(),
     );
 
     this.imprimindo.set(false);

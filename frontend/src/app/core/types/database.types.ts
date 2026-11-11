@@ -3090,7 +3090,9 @@ export type Database = {
       }
       gerar_simulado_impressao: {
         Args: {
+          p_com_gabarito?: boolean
           p_formato?: string
+          p_formato_questao?: string
           p_qtd?: number
           p_tema_ids?: string[]
           p_tipo_questao?: string

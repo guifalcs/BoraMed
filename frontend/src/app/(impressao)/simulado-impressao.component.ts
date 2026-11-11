@@ -108,6 +108,20 @@ export class SimuladoImpressaoComponent {
 
   protected readonly podeIncluirGabarito = computed(() => this.simulado()?.gabaritoLiberado ?? false);
 
+  private readonly modoEfemero = this.route.snapshot.data['modo'] === 'efemero';
+
+  /**
+   * Prova pronta/montado já existente: o gabarito libera ao finalizar. Montado
+   * só-impressão já nasce com gabarito; sem ele, é um sorteio guardado na
+   * sessão antes dessa mudança, e a saída é sortear de novo.
+   */
+  protected readonly motivoGabaritoIndisponivel = computed(() => {
+    if (this.podeIncluirGabarito()) return '';
+    return this.modoEfemero
+      ? 'Gere o simulado novamente para incluir o gabarito'
+      : 'Disponível após finalizar a prova';
+  });
+
   protected readonly gabarito = computed<GabaritoItem[]>(() => {
     if (!this.opcoes().gabaritoAoFinal || !this.podeIncluirGabarito()) return [];
     return this.questoes().map((q, i) => ({

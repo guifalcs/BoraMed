@@ -70,7 +70,7 @@
             class="flex items-center gap-2.5"
             [class.cursor-pointer]="podeIncluirGabarito()"
             [class.opacity-40]="!podeIncluirGabarito()"
-            [title]="podeIncluirGabarito() ? '' : 'Disponível após finalizar a prova'"
+            [title]="motivoGabaritoIndisponivel()"
           >
             <input type="checkbox" class="accent-[var(--color-primary)]"
               [checked]="opcoes().gabaritoAoFinal"
@@ -163,7 +163,7 @@
         class="flex items-center gap-1.5"
         [class.cursor-pointer]="podeIncluirGabarito()"
         [class.opacity-40]="!podeIncluirGabarito()"
-        [title]="podeIncluirGabarito() ? '' : 'Disponível após finalizar a prova'"
+        [title]="motivoGabaritoIndisponivel()"
       >
         <input type="checkbox" class="accent-[var(--color-primary)]"
           [checked]="opcoes().gabaritoAoFinal"
