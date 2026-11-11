@@ -157,29 +157,38 @@
 
 /* ── Hero ───────────────────────────────────────────── */
 
-/* Fundo com charme: luzes azul e violeta da marca + uma trama de pontos que
-   some para as bordas. Fica atrás do conteúdo (z-index). */
+/* A hero é uma cena em planos. De trás para a frente: o fundo (luzes da
+   marca e a trama de pontos), o palco em gradiente, a tela da questão e o
+   card de diagnóstico. Na rolagem cada plano anda num ritmo (`data-sc-parallax`
+   escreve `translate`); com mouse, questão e diagnóstico se afastam um do
+   outro (`--sc-mx`/`--sc-my`, via `transform`). */
 .hero {
   position: relative;
   overflow: hidden;
   isolation: isolate;
   padding: clamp(2.5rem, 1.5rem + 4vw, 5rem) 0 clamp(4.5rem, 3rem + 5vw, 7rem);
-  background:
-    radial-gradient(42% 46% at 92% 8%, rgba(100, 39, 217, 0.16), transparent 70%),
-    radial-gradient(40% 44% at 4% 96%, rgba(37, 84, 220, 0.14), transparent 70%),
-    linear-gradient(180deg, #ffffff 0%, #f7f8fd 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fd 100%);
 }
 
-.hero::before {
+/* Plano do fundo: maior que a seção, para a borda nunca aparecer ao deslizar. */
+.hero__far {
+  position: absolute;
+  inset: -5rem 0;
+  z-index: -1;
+  background:
+    radial-gradient(42% 46% at 92% 14%, rgba(100, 39, 217, 0.16), transparent 70%),
+    radial-gradient(40% 44% at 4% 88%, rgba(37, 84, 220, 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.hero__far::before {
   position: absolute;
   inset: 0;
-  z-index: -1;
   background-image: radial-gradient(rgba(30, 64, 175, 0.16) 1px, transparent 1.2px);
   background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse 70% 70% at 60% 40%, #000 20%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 60% 40%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(ellipse 70% 70% at 60% 45%, #000 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 60% 45%, #000 20%, transparent 80%);
   content: '';
-  pointer-events: none;
 }
 
 .hero__grid {
@@ -249,25 +258,20 @@
   text-wrap: balance;
 }
 
-/* Destaque no degradê da marca (mesmas cores do --gradient-brand), deitado
-   na horizontal para a passagem azul→violeta acompanhar a leitura. `clone`
-   repete o degradê inteiro em cada linha se o trecho quebrar no mobile. */
-.hero__title-accent {
+/* Destaque do H1: texto no azul da marca e, por baixo, o grifo de marca-texto
+   (o mesmo gesto do grifo da prova e da Aurora) passando da esquerda para a
+   direita logo depois que a página chega. `clone` repete o grifo em cada
+   linha se o trecho quebrar. */
+.hero__mark {
+  --d: 0.7s;
   color: var(--lp-blue-deep);
-  background: linear-gradient(100deg, #1e40af 0%, #2451d8 45%, #6427d9 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(90deg, rgba(37, 84, 220, 0.2), rgba(100, 39, 217, 0.24));
+  background-position: 0 88%;
+  background-repeat: no-repeat;
+  background-size: 100% 38%;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-}
-
-/* Alto contraste do Windows ignora o fundo e deixaria o texto invisível. */
-@media (forced-colors: active) {
-  .hero__title-accent {
-    background: none;
-    -webkit-text-fill-color: currentColor;
-  }
+  animation: lp-mark var(--d) cubic-bezier(0.3, 0.7, 0.2, 1) 0.45s backwards;
 }
 
 .hero__lead {
@@ -306,8 +310,9 @@
   overflow: hidden;
   border-radius: var(--lp-radius-xl);
   padding: clamp(1.25rem, 0.75rem + 2vw, 2.5rem) clamp(1rem, 0.5rem + 2.5vw, 2.5rem) 0;
+  --d: 0.7s;
   background: var(--lp-gradient-glow), var(--lp-gradient);
-  animation: lp-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.05s both;
+  animation: lp-rise var(--d) cubic-bezier(0.2, 0.7, 0.2, 1) 0.05s backwards;
 }
 
 .exam {
@@ -359,11 +364,15 @@
   background: var(--lp-line);
 }
 
+/* A barra avança um passo quando a alternativa é marcada. */
 .exam__progress i {
+  --d: 0.5s;
   display: block;
   width: 40%;
   height: 100%;
   background: var(--lp-blue);
+  transform-origin: left center;
+  animation: lp-step var(--d) cubic-bezier(0.2, 0.7, 0.2, 1) 0.85s backwards;
 }
 
 .exam__body {
@@ -439,16 +448,22 @@
   white-space: nowrap;
 }
 
+/* A alternativa é marcada diante do visitante: é a resposta que dá origem
+   ao diagnóstico que aparece em seguida. */
 .exam__options li.is-selected {
+  --d: 0.4s;
   border-color: var(--lp-blue);
   color: var(--lp-ink);
   background: var(--lp-blue-wash);
+  animation: lp-pick var(--d) cubic-bezier(0.2, 0.7, 0.2, 1) 0.7s backwards;
 }
 
 .exam__options li.is-selected .bubble {
+  --d: 0.4s;
   border-color: var(--lp-blue);
   color: #fff;
   background: var(--lp-blue);
+  animation: lp-pick-bubble var(--d) cubic-bezier(0.2, 0.7, 0.2, 1) 0.7s backwards;
 }
 
 .diag {
@@ -464,7 +479,8 @@
   box-shadow:
     0 1px 2px rgba(10, 16, 51, 0.06),
     0 22px 44px -18px rgba(10, 16, 51, 0.32);
-  animation: lp-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s both;
+  --d: 0.7s;
+  animation: lp-rise var(--d) cubic-bezier(0.2, 0.7, 0.2, 1) 1.05s backwards;
 }
 
 .diag__title {
@@ -512,8 +528,9 @@
   height: 100%;
   border-radius: inherit;
   background: var(--lp-blue);
+  --d: 0.9s;
   transform-origin: left center;
-  animation: lp-grow 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) calc(0.65s + var(--i, 0) * 0.12s) both;
+  animation: lp-grow var(--d) cubic-bezier(0.2, 0.7, 0.2, 1) calc(1.35s + var(--i, 0) * 0.12s) backwards;
 }
 
 .diag__row.is-critical .diag__pct {
@@ -546,6 +563,54 @@
 @keyframes lp-grow {
   from {
     transform: scaleX(0);
+  }
+}
+
+@keyframes lp-mark {
+  from {
+    background-size: 0% 38%;
+  }
+}
+
+@keyframes lp-pick {
+  from {
+    border-color: var(--lp-line);
+    color: var(--lp-body);
+    background: #fff;
+  }
+}
+
+@keyframes lp-pick-bubble {
+  from {
+    border-color: var(--lp-line-strong);
+    color: var(--lp-body);
+    background: transparent;
+  }
+}
+
+@keyframes lp-step {
+  from {
+    transform: scaleX(0.875);
+  }
+}
+
+/* Ponteiro como profundidade: a questão recua e o diagnóstico avança em
+   sentidos opostos. Só com mouse; no toque os planos ficam onde estão. */
+@media (hover: hover) and (pointer: fine) {
+  .exam {
+    transform: translate3d(
+      calc((var(--sc-mx, 0.5) - 0.5) * -14px),
+      calc((var(--sc-my, 0.5) - 0.5) * -10px),
+      0
+    );
+  }
+
+  .diag {
+    transform: translate3d(
+      calc((var(--sc-mx, 0.5) - 0.5) * 22px),
+      calc((var(--sc-my, 0.5) - 0.5) * 16px),
+      0
+    );
   }
 }
 
@@ -683,9 +748,112 @@
 }
 
 .final__inner {
+  display: grid;
+  gap: 3rem;
+}
+
+.final__copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+
+/* Mini-diagnóstico: as três questões da demo, no estado em que o visitante
+   deixou. Vidro sobre o navy, com fio de luz no topo. */
+.verdict {
+  width: min(100%, 24rem);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--lp-radius-lg);
+  padding: 1.25rem 1.25rem 1.35rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 30px 60px -36px rgba(2, 6, 30, 0.9);
+}
+
+.verdict__label {
+  margin: 0 0 0.9rem;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.verdict__rows {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.verdict__row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.verdict__row .bubble {
+  border-color: rgba(255, 255, 255, 0.34);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.verdict__tema {
+  flex: 1;
+  min-width: 0;
+  color: #fff;
+  font-weight: 600;
+}
+
+.verdict__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.verdict__row.is-right .bubble {
+  border-color: transparent;
+  color: #fff;
+  background: #0e9f6e;
+}
+
+.verdict__row.is-right .verdict__estado {
+  color: #6ee7b7;
+}
+
+.verdict__row.is-wrong .bubble {
+  border-color: transparent;
+  color: #fff;
+  background: #e5484d;
+}
+
+.verdict__row.is-wrong .verdict__estado {
+  color: #fca5a5;
+}
+
+.verdict__resumo {
+  margin: 1rem 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.verdict__link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-underline-offset: 3px;
 }
 
 .final__title {
@@ -845,12 +1013,36 @@
     position: sticky;
     top: 6.5rem;
   }
+
+  .final__inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4rem;
+  }
+
+  /* Ao lado do mini-diagnóstico o título desce um degrau para caber em
+     duas linhas. */
+  .final__title {
+    font-size: clamp(2.4rem, 0.9rem + 2.9vw, 3.2rem);
+  }
+
+  .verdict {
+    width: 22rem;
+  }
+
 }
 
+/* Movimento reduzido: a hero chega pronta. O reset global zera a duração,
+   mas não o atraso, então a animação sai por inteiro. A exceção é o modo de
+   revisão `?motion=full` (só em dev), que marca o host. */
 @media (prefers-reduced-motion: reduce) {
-  .hero__stage,
-  .diag,
-  .diag__track i {
+  :host(:not(.sc-force-motion)) .hero__mark,
+  :host(:not(.sc-force-motion)) .hero__stage,
+  :host(:not(.sc-force-motion)) .exam__progress i,
+  :host(:not(.sc-force-motion)) .exam__options li.is-selected,
+  :host(:not(.sc-force-motion)) .exam__options li.is-selected .bubble,
+  :host(:not(.sc-force-motion)) .diag,
+  :host(:not(.sc-force-motion)) .diag__track i {
     animation: none;
   }
 }

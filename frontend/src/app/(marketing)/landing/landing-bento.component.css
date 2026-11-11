@@ -122,6 +122,18 @@
   object-fit: cover;
 }
 
+/* A lâmina se aproxima sob o cursor, como no zoom da questão de laboratório. */
+@media (hover: hover) and (pointer: fine) {
+  .lab img {
+    --t: 0.6s;
+    transition: transform var(--t) cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .mode--lab:hover .lab img {
+    transform: scale(1.07);
+  }
+}
+
 .lab__zoom {
   position: absolute;
   right: 0.65rem;

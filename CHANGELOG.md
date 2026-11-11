@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-11 | Melhoria | Landing com rolagem dirigida, hero em planos e pico em "Como funciona"
+
+- **Pico:** "Como funciona" passa a ser um ato preso, no navy da marca. As 20 células de um treino de exemplo são marcadas, corrigidas, viram os segmentos das barras por tema e convergem no ponto final da curva de evolução, conforme a rolagem. A seção sobe para logo depois da demo e emenda na Aurora, cujo gradiente abre em círculo.
+- **Hero:** fundo, palco, questão e diagnóstico em planos independentes na rolagem e no ponteiro. Na chegada a alternativa é marcada e o diagnóstico aparece. O destaque do H1 troca o texto em degradê por azul da marca com grifo de marca-texto.
+- **Fechamento:** o mini-diagnóstico da demo reaparece ao lado do CTA; quem respondeu as três questões lê "Seu diagnóstico já começou.".
+- **Demais seções:** entrada única ao aparecer, números da faixa de fatos sobem, gabarito se preenche. Percentuais de exemplo unificados entre hero e ciclo (43%, 83%, 86%; 14 de 20).
+- **Base:** `LandingScroll`, runtime de rolagem com o contrato `data-sc-*` da skill scroll-craft, com desmontagem na troca de rota e sem esconder nada no HTML do servidor. Com movimento reduzido nada fica preso e "Como funciona" vira abas. `?motion=full` (só em dev) mostra o movimento em máquina com animações do sistema desligadas.
+- **Verificação:** harness da skill em 1440×900 e 390×844 sem rolagem morta nem erro de console; ato preso conferido em oito viewports; build com prerender, 1.004 testes unitários e E2E da seção de planos. Vídeos reproduzíveis por `frontend/tests/screenshots/landing-rolagem.mjs`. Não conferido em iPhone real. Sem mudanças de banco, RPC ou preços.
+- Docs: `docs/ui/landing.md` e `docs/design-system.md`.
+
 ## 2026-11-10 | Melhoria | Competitivo com desafio confirmado e ranking contextualizado
 
 - Indicadores compactos, com ícone, contexto e valor na mesma linha e sem altura vazia reservada; desafio e ranking lado a lado no desktop, mantendo coroas e manto do pódio.
