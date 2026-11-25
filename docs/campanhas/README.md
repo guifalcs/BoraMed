@@ -80,7 +80,7 @@ assunto derruba entregabilidade (ver seção 6 de `docs/campanhas-email.md`).
 | Plano | Mensal | Semestral |
 | --- | --- | --- |
 | Essencial | R$ 23,90/mês | R$ 13,90/mês (R$ 83,40, até 6x) |
-| Avançado | R$ 69,90/mês | R$ 49,90/mês (R$ 299,40, até 6x) |
+| Avançado | R$ 49,90/mês (promoção reta final, cheio R$ 69,90, desde 25/11/2026) | R$ 49,90/mês (R$ 299,40, até 6x) |
 
 O e-mail cita só o "a partir de R$ 13,90/mês" (Essencial semestral). **Reconferir antes de disparar** —
 o preço vive no banco (`plano.preco_centavos`) e já divergiu do que estava no

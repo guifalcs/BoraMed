@@ -121,7 +121,10 @@ test.describe('Página de planos (/planos)', () => {
     await expect(planos.headingEssencial).toContainText('Essencial Mensal');
     await expect(planos.headingAvancado).toContainText('Avançado Mensal');
     await expect(page.getByText('R$ 23,90', { exact: true })).toBeVisible();
-    await expect(page.getByText('R$ 69,90', { exact: true })).toBeVisible();
+    // Avançado Mensal em promoção: R$ 49,90 com o preço normal riscado.
+    await expect(page.getByText('R$ 49,90', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('plano-preco-original')).toHaveText('R$ 69,90');
+    await expect(page.getByTestId('plano-promo-flag')).toContainText('Promoção reta final');
   });
 
   test('card Avançado exibe o badge "Recomendado"', async ({ page }) => {

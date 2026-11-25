@@ -502,8 +502,18 @@ dela e mantém o contrato antigo (NULL para quem não paga).
   |---|---|---|---|
   | `essencial-mensal` | essencial | R$ 23,90 | 1 mês |
   | `essencial-semestral` | essencial | R$ 83,40 | 6 meses |
-  | `mensal` | avancado | R$ 69,90 | 1 mês |
+  | `mensal` | avancado | R$ 49,90 (promo; cheio R$ 69,90) | 1 mês |
   | `semestral` | avancado | R$ 299,40 | 6 meses |
+
+  **Promoção (coluna `plano.preco_original_centavos`, desde 2026-11-25):**
+  quando preenchida, é o preço cheio exibido riscado com o selo de promoção
+  (landing, `/planos`, checkout). O valor cobrado é sempre `preco_centavos`.
+  Reta final de 2026.2: Avançado Mensal a R$ 49,90 (`preco_original_centavos`
+  = 6990), o mesmo valor por mês do semestral. Enquanto isso o Avançado
+  Semestral não mostra âncora nem "Economize" (seria falso contra o mensal) e
+  o badge do toggle usa o maior desconto entre os tiers (Essencial, -42%).
+  Encerrar: `update plano set preco_centavos = 6990, preco_original_centavos =
+  null where slug = 'mensal'` e reverter a landing (`pricingPlans`, JSON-LD).
 
   O plano gratuito NÃO tem linha em `plano`: é a ausência de assinatura ativa.
   As colunas `mp_preapproval_plan_id`/`mp_init_point` são legadas (redirect) e

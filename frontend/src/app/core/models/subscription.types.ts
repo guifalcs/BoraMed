@@ -63,6 +63,8 @@ export interface Plano {
   nome: string;
   descricao: string | null;
   preco_centavos: number;
+  /** Preço cheio durante promoção (exibido riscado). Null/ausente = sem promoção. */
+  preco_original_centavos?: number | null;
   moeda: string;
   frequency: number;
   frequency_type: 'days' | 'months';

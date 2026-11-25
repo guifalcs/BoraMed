@@ -42,7 +42,8 @@ const PLANO_MOCKS: Plano[] = [
     slug: 'mensal',
     nome: 'Avançado Mensal',
     descricao: 'Acesso completo por 1 mês.',
-    preco_centavos: 6990,
+    preco_centavos: 4990,
+    preco_original_centavos: 6990,
     moeda: 'BRL',
     frequency: 1,
     frequency_type: 'months',
@@ -153,6 +154,31 @@ describe('PlanosComponent', () => {
     component.assinar(avancado!);
 
     expect(router.navigate).toHaveBeenCalledWith(['/checkout', 'mensal']);
+  });
+
+  it('mensal em promoção exibe o preço original riscado e o selo', () => {
+    component.onCicloChange('mensal');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    expect(component.precoOriginal(component.planoAvancado()!)).toBe('R$\u00a069,90');
+    expect(component.precoOriginal(component.planoEssencial()!)).toBeNull();
+    expect(el.querySelector('[data-testid="plano-preco-original"]')?.textContent).toContain('69,90');
+    expect(el.querySelector('[data-testid="plano-promo-flag"]')?.textContent).toContain('Promoção reta final');
+  });
+
+  it('semestral do Avançado sem economia não exibe âncora nem "Economize"', () => {
+    const semestral = component.planoAvancado()!;
+
+    expect(component.economia(semestral)).toBeNull();
+    expect(component.anchorTotal(semestral)).toBeNull();
+    // O Essencial segue com desconto real no semestral.
+    expect(component.economia(component.planoEssencial()!)).not.toBeNull();
+  });
+
+  it('badge do toggle usa o maior desconto entre os tiers', () => {
+    const semestral = component.cicloOptions().find((o) => o.value === 'semestral');
+    expect(semestral?.badge).toBe('-42%');
   });
 
   it('exibe erro quando a lista de planos vem vazia', async () => {

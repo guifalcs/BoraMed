@@ -83,7 +83,8 @@ const AVANCADO_BENEFICIOS: readonly string[] = [
 ];
 
 // Percentual de economia do plano semestral em relação ao mensal, usado no
-// badge do toggle. Calculado a partir do tier Avançado (o mais representativo).
+// badge do toggle. Vale o maior entre os tiers: com o Avançado Mensal em
+// promoção no mesmo valor por mês do semestral, o Avançado economiza 0%.
 function calcularPercentualEconomia(mensal: Plano, semestral: Plano): number {
   const totalMensal = mensal.preco_centavos * semestral.frequency;
   const economia = totalMensal - semestral.preco_centavos;
@@ -271,9 +272,30 @@ function calcularPercentualEconomia(mensal: Plano, semestral: Plano): number {
                       </p>
                       <p class="mt-1 text-xs text-white/80">em até 6x sem juros de {{ porMes(pa) }}</p>
                     } @else {
-                      <div class="mt-6 flex items-baseline gap-1">
-                        <span class="text-4xl font-extrabold">{{ preco(pa) }}</span>
-                        <span class="text-sm text-white/70">{{ periodo(pa) }}</span>
+                      @if (precoOriginal(pa); as original) {
+                        <p class="mt-4 text-xs text-white/60">
+                          <s data-testid="plano-preco-original">{{ original }}</s>
+                          preço normal do mensal
+                        </p>
+                      }
+                      <div
+                        class="flex flex-wrap items-end justify-between gap-2"
+                        [class.mt-2]="precoOriginal(pa)"
+                        [class.mt-6]="!precoOriginal(pa)"
+                      >
+                        <div class="flex items-baseline gap-1">
+                          <span class="text-4xl font-extrabold">{{ preco(pa) }}</span>
+                          <span class="text-sm text-white/70">{{ periodo(pa) }}</span>
+                        </div>
+                        @if (precoOriginal(pa)) {
+                          <span
+                            data-testid="plano-promo-flag"
+                            class="inline-flex items-center gap-1 rounded-full bg-emerald-400 px-2.5 py-1 text-xs font-bold text-emerald-950 shadow-sm ring-1 ring-emerald-300/50"
+                          >
+                            <app-ui-icon [icon]="sparklesIcon" [size]="13" class="shrink-0" />
+                            Promoção reta final
+                          </span>
+                        }
                       </div>
                       <p class="mt-1 text-xs text-white/80">pagamento único — não renova automaticamente</p>
                     }
@@ -380,7 +402,7 @@ export class PlanosComponent implements OnInit {
     {
       value: 'semestral',
       label: 'Semestral',
-      badge: `-${this.percentualEconomiaMax()}%`,
+      ...(this.percentualEconomiaMax() > 0 ? { badge: `-${this.percentualEconomiaMax()}%` } : {}),
     },
   ]);
 
@@ -443,12 +465,23 @@ export class PlanosComponent implements OnInit {
     return eco > 0 ? this.brl(eco, plano.moeda) : null;
   }
 
-  /** Preço cheio do mesmo tier no plano mensal, multiplicado pelos meses — usado como âncora riscada. */
+  /**
+   * Preço do mesmo tier no plano mensal, multiplicado pelos meses — usado como
+   * âncora riscada. Some quando não há economia (ex.: mensal em promoção no
+   * mesmo valor por mês do semestral), senão o riscado igualaria o preço.
+   */
   anchorTotal(plano: Plano): string | null {
-    if (!(plano.frequency_type === 'months' && plano.frequency > 1)) return null;
+    if (!this.economia(plano)) return null;
     const mensal = this.planos().find((p) => p.tier === plano.tier && p.frequency === 1);
     if (!mensal) return null;
     return this.brl(mensal.preco_centavos * plano.frequency, plano.moeda);
+  }
+
+  /** Preço cheio riscado quando o plano está em promoção (`preco_original_centavos`). */
+  precoOriginal(plano: Plano): string | null {
+    const original = plano.preco_original_centavos;
+    if (original == null || original <= plano.preco_centavos) return null;
+    return this.brl(original, plano.moeda);
   }
 
   periodo(plano: Plano): string {
@@ -496,10 +529,13 @@ export class PlanosComponent implements OnInit {
   }
 
   private percentualEconomiaMax(): number {
-    const mensal = this.planos().find((p) => p.tier === 'avancado' && p.frequency === 1);
-    const semestral = this.planos().find((p) => p.tier === 'avancado' && p.frequency === 6);
-    if (!mensal || !semestral) return 0;
-    return calcularPercentualEconomia(mensal, semestral);
+    const tiers: readonly PlanoTier[] = ['essencial', 'avancado'];
+    return tiers.reduce((max, tier) => {
+      const mensal = this.planos().find((p) => p.tier === tier && p.frequency === 1);
+      const semestral = this.planos().find((p) => p.tier === tier && p.frequency === 6);
+      if (!mensal || !semestral) return max;
+      return Math.max(max, calcularPercentualEconomia(mensal, semestral));
+    }, 0);
   }
 
   private brl(centavos: number, moeda: string): string {
