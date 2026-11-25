@@ -79,6 +79,8 @@ interface PricingPlan {
   readonly economy?: string;
   readonly anchorPrice?: string;
   readonly anchorNote?: string;
+  /** Selo de promoção ao lado do preço (substitui o "Economize"). */
+  readonly promoLabel?: string;
   readonly ctaLabel: string;
   readonly features: readonly string[];
   readonly featured: boolean;
@@ -249,10 +251,15 @@ export class LandingComponent implements OnDestroy {
       slug: 'mensal',
       name: 'Avançado',
       tagline: 'Acesso completo, do 1º ao 8º período',
-      price: 'R$ 69,90',
+      // Promoção de reta final: mensal no mesmo valor por mês do semestral.
+      // Espelha plano.preco_original_centavos (migration 20261125120000).
+      price: 'R$ 49,90',
       period: '/mês',
+      anchorPrice: 'R$ 69,90',
+      anchorNote: 'preço normal do mensal',
+      promoLabel: 'Promoção reta final',
       note: 'Pagamento único. Não renova automaticamente. Renove só se quiser.',
-      ctaLabel: 'Começar no Avançado',
+      ctaLabel: 'Aproveitar a promoção',
       features: LandingComponent.AVANCADO_FEATURES,
       featured: true,
     },
@@ -264,11 +271,10 @@ export class LandingComponent implements OnDestroy {
       tagline: 'Acesso completo, do 1º ao 8º período',
       price: 'R$ 49,90',
       period: '/mês',
+      // Sem âncora/economia enquanto o mensal está em promoção no mesmo valor
+      // por mês: "economize R$ 120" contra o mensal seria falso.
       note: 'R$ 299,40 no semestre, em até 6x sem juros.',
-      economy: 'R$ 120,00',
-      anchorPrice: 'R$ 419,40',
-      anchorNote: 'preço de 6 meses no plano mensal',
-      ctaLabel: 'Garantir 6 meses com desconto',
+      ctaLabel: 'Garantir 6 meses',
       features: LandingComponent.AVANCADO_FEATURES,
       featured: true,
     },
@@ -278,7 +284,8 @@ export class LandingComponent implements OnDestroy {
   protected readonly cicloSelecionado = signal<PlanCycle>('semestral');
 
   // -42% é o maior desconto do semestral (Essencial: R$ 83,40 contra
-  // R$ 143,40 de 6 meses avulsos). O Avançado economiza 29%.
+  // R$ 143,40 de 6 meses avulsos). No Avançado, com o mensal em promoção, o
+  // semestral sai pelo mesmo valor por mês.
   protected readonly cicloOptions: SegmentedToggleOption[] = [
     { value: 'mensal', label: 'Mensal' },
     { value: 'semestral', label: 'Semestral', badge: '-42%' },
@@ -499,7 +506,7 @@ export class LandingComponent implements OnDestroy {
       offers: {
         '@type': 'AggregateOffer',
         lowPrice: '13.90',
-        highPrice: '69.90',
+        highPrice: '49.90',
         priceCurrency: 'BRL',
         offerCount: 4,
       },

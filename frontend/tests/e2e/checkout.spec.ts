@@ -13,7 +13,8 @@ const planoMocks = [
     slug: 'mensal',
     nome: 'Mensal',
     descricao: 'Acesso completo por 1 mês, sem renovação automática',
-    preco_centavos: 6990,
+    preco_centavos: 4990,
+    preco_original_centavos: 6990,
     moeda: 'BRL',
     frequency: 1,
     frequency_type: 'months',
@@ -443,7 +444,7 @@ test.describe('Checkout embutido (/checkout/:plano)', () => {
     await expect(banner).toContainText(/Pix/);
     // Saídas: Pix em 1 clique e, por ser falta de limite no semestral, os mensais.
     await expect(page.getByTestId('pagar-com-pix')).toBeVisible();
-    await expect(page.getByTestId('ver-planos-mensais')).toContainText('R$ 69,90');
+    await expect(page.getByTestId('ver-planos-mensais')).toContainText('R$ 49,90');
     // Permanece no checkout, com o Brick disponível para nova tentativa.
     await expect(page).toHaveURL(/\/checkout\/semestral/);
     await expect(page.getByTestId('stub-pagar')).toBeVisible();

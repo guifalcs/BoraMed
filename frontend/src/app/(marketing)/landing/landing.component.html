@@ -408,7 +408,9 @@
               <div class="pricing-price">
                 <strong class="pricing-amount">{{ plan.price }}</strong>
                 <span class="pricing-period">{{ plan.period }}</span>
-                @if (plan.economy) {
+                @if (plan.promoLabel) {
+                  <span class="pricing-economy" data-testid="landing-promo-flag">{{ plan.promoLabel }}</span>
+                } @else if (plan.economy) {
                   <span class="pricing-economy">Economize {{ plan.economy }}</span>
                 }
               </div>

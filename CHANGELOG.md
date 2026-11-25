@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-25 | Melhoria | Promoção de reta final no Avançado Mensal
+
+- **Preço:** Avançado Mensal cai de R$ 69,90 para **R$ 49,90**, o mesmo valor por mês do Avançado Semestral (R$ 299,40 / 6). Cupons continuam aplicados sobre o preço novo, no servidor.
+- **Indicativo de promoção:** "R$ 69,90 preço normal do mensal" riscado e selo "Promoção reta final" na landing (CTA "Aproveitar a promoção") e em `/planos`; no checkout, selo "Promoção" com o preço cheio riscado (com cupom aplicado vale o riscado do cupom).
+- **Semestral do Avançado:** sem âncora "R$ 419,40" nem "Economize R$ 120,00" enquanto a promoção durar, porque contra o mensal promocional a economia é zero. Badge do toggle em `/planos` passa a usar o maior desconto entre os tiers (-42%, Essencial) e some se não houver desconto.
+- **Banco:** migration `20261125120000_promo_avancado_mensal_reta_final` cria `plano.preco_original_centavos` (nullable, check `> preco_centavos`) e aplica `mensal` = 4990 / original 6990. Encerrar a promoção: `preco_centavos = 6990, preco_original_centavos = null` no mesmo UPDATE e reverter `pricingPlans` + JSON-LD da landing.
+- **Verificação:** 1.010 testes unitários (3 novos em `planos.component.spec.ts`), build com prerender, 60 E2E (`tier-essencial`, `checkout`, `pagamento`) e revisão visual headless em 1280px e 375px.
+- Docs: `docs/business-rules.md` e `docs/campanhas/README.md`.
+
 ## 2026-11-11 | Correção | "Apenas imprimir" respeita Discursivas/Objetivas e traz gabarito
 
 - **Formato da questão ignorado:** no Montar simulado, "Apenas imprimir" não repassava a escolha Objetivas/Discursivas/Misto, e `gerar_simulado_impressao` sorteava do acervo inteiro. Quem pedia só discursivas recebia fechadas misturadas, e a fechada podia sair junto com a sua gêmea discursiva, porque o sorteio também não deduplicava por `grupo_equivalencia_id`. A RPC passa a aplicar os mesmos filtros de `gerar_simulado_personalizado`. Também deixa de exigir imagem em laboratório, o que alinha o sorteio com a contagem por tema.

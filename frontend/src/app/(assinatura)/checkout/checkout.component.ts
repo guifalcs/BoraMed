@@ -109,6 +109,16 @@ const JANELA_CARTAO_EM_ANALISE_MS = 15 * 60 * 1000;
               <div class="text-right">
                 @if (cupomAplicado()) {
                   <p class="text-sm text-gray-400 line-through">{{ precoOriginalFormatado() }}</p>
+                } @else if (precoPromoOriginalFormatado(); as original) {
+                  <p class="flex items-center justify-end gap-2 text-sm text-gray-400">
+                    <span
+                      data-testid="checkout-promo-flag"
+                      class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200"
+                    >
+                      Promoção
+                    </span>
+                    <s>{{ original }}</s>
+                  </p>
                 }
                 <p class="text-2xl font-extrabold text-gray-900">{{ precoFormatado() }}</p>
                 <p class="text-xs text-gray-500">{{ notaPreco() }}</p>
@@ -503,6 +513,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     const p = this.plano();
     if (!p) return '';
     return this.brl(this.valorExibidoCentavos(), p.moeda || 'BRL');
+  }
+
+  /** Preço cheio riscado quando o plano está em promoção (sem cupom aplicado). */
+  precoPromoOriginalFormatado(): string | null {
+    const p = this.plano();
+    const original = p?.preco_original_centavos;
+    if (!p || original == null || original <= p.preco_centavos) return null;
+    return this.brl(original, p.moeda || 'BRL');
   }
 
   precoOriginalFormatado(): string {
